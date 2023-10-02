@@ -36,7 +36,7 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
-PROTOVALIDATE_VERSION := v0.4.2
+PROTOVALIDATE_VERSION := v0.4.3
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk

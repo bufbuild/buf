@@ -3202,8 +3202,8 @@ message RepeatedRules {
   //
   //```proto
   //message MyRepeated {
-  // // repeated value must contain unique items
-  // repeated string value = 1 [(buf.validate.field).repeated.unique = true];
+  //  // repeated value must contain unique items
+  //  repeated string value = 1 [(buf.validate.field).repeated.unique = true];
   //}
   //```
   optional bool unique = 3 [(priv.field).cel = {
@@ -3226,6 +3226,7 @@ message RepeatedRules {
   //    }
   //  }];
   //}
+  //```
   optional FieldConstraints items = 4;
 }
 

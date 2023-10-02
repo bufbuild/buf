@@ -4855,10 +4855,12 @@ type RepeatedRules struct {
 	// types, with message types not being supported.
 	//
 	// ```proto
-	// message MyRepeated {
-	// // repeated value must contain unique items
-	// repeated string value = 1 [(buf.validate.field).repeated.unique = true];
-	// }
+	//
+	//	message MyRepeated {
+	//	 // repeated value must contain unique items
+	//	 repeated string value = 1 [(buf.validate.field).repeated.unique = true];
+	//	}
+	//
 	// ```
 	Unique *bool `protobuf:"varint,3,opt,name=unique,proto3,oneof" json:"unique,omitempty"`
 	// `items` details the constraints to be applied to each item
@@ -4876,6 +4878,8 @@ type RepeatedRules struct {
 	//	   }
 	//	 }];
 	//	}
+	//
+	// ```
 	Items *FieldConstraints `protobuf:"bytes,4,opt,name=items,proto3,oneof" json:"items,omitempty"`
 }
 

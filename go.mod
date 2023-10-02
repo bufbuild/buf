@@ -6,6 +6,7 @@ require (
 	connectrpc.com/connect v1.11.1
 	connectrpc.com/otelconnect v0.5.0
 	github.com/bufbuild/protocompile v0.6.0
+	github.com/bufbuild/protovalidate-go v0.3.3-0.20231002212436-9023bd754f7f
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/gofrs/flock v0.8.1
@@ -42,12 +43,10 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230914171853-63dfe56cc2c4.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
-	github.com/bufbuild/protovalidate-go v0.3.3-0.20231002212436-9023bd754f7f // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
