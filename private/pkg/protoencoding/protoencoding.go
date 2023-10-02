@@ -67,7 +67,7 @@ func NewWireMarshaler() Marshaler {
 // NewJSONMarshaler returns a new Marshaler for JSON.
 //
 // This has the potential to be unstable over time.
-// resolver can be nil if unknown and are only needed for extensions.
+// resolver can be nil if unknown and is only needed for extensions.
 func NewJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
 	return newJSONMarshaler(resolver, options...)
 }
@@ -98,15 +98,14 @@ func JSONMarshalerWithEmitUnpopulated() JSONMarshalerOption {
 
 // NewTxtpbMarshaler returns a new Marshaler for txtpb.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// resolver can be nil if unknown and is only needed for extensions.
 func NewTxtpbMarshaler(resolver Resolver) Marshaler {
 	return newTxtpbMarshaler(resolver)
 }
 
 // NewYAMLMarshaler returns a new Marshaler for YAML.
 //
-// This has the potential to be unstable over time.
-// resolver can be nil if unknown and are only needed for extensions.
+// resolver can be nil if unknown and is only needed for extensions.
 func NewYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshaler {
 	return newYAMLMarshaler(resolver, options...)
 }
