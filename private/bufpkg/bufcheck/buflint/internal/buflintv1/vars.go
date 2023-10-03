@@ -56,6 +56,7 @@ var (
 		buflintbuild.PackageSameRubyPackageRuleBuilder,
 		buflintbuild.PackageSameSwiftPrefixRuleBuilder,
 		buflintbuild.PackageVersionSuffixRuleBuilder,
+		buflintbuild.ProtovalidateCelRuleBuilder,
 		buflintbuild.RPCNoClientStreamingRuleBuilder,
 		buflintbuild.RPCNoServerStreamingRuleBuilder,
 		buflintbuild.RPCPascalCaseRuleBuilder,
@@ -65,7 +66,6 @@ var (
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
-		buflintbuild.ValidateCelExpressionsCompileRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -200,6 +200,9 @@ var (
 		"PACKAGE_VERSION_SUFFIX": {
 			"DEFAULT",
 		},
+		"PROTOVALIDATE_CEL": {
+			"DEFAULT",
+		},
 		"RPC_NO_CLIENT_STREAMING": {
 			"UNARY_RPC",
 		},
@@ -228,9 +231,6 @@ var (
 		},
 		"SYNTAX_SPECIFIED": {
 			"BASIC",
-			"DEFAULT",
-		},
-		"VALIDATE_CEL_EXPRESSIONS_COMPILE": {
 			"DEFAULT",
 		},
 	}

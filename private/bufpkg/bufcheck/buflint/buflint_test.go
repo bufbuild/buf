@@ -556,6 +556,21 @@ func TestRunPackageVersionSuffix(t *testing.T) {
 	)
 }
 
+func TestRunProtovalidateCel(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"validate_cel_expressions_compile",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 39, 38, 4, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 59, 3, 63, 5, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 79, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 87, 5, 91, 6, "PROTOVALIDATE_CEL"),
+	)
+}
+
 func TestRunRPCNoStreaming(t *testing.T) {
 	t.Parallel()
 	testLint(
@@ -845,21 +860,6 @@ func TestRunIgnores4(t *testing.T) {
 	)
 }
 
-func TestRunValidateCelExpressionsCompile(t *testing.T) {
-	t.Parallel()
-	testLintWithValidate(
-		t,
-		"validate_cel_expressions_compile",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 39, 38, 4, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 59, 3, 63, 5, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 79, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 87, 5, 91, 6, "VALIDATE_CEL_EXPRESSIONS_COMPILE"),
-	)
-}
-
 func TestCommentIgnoresOff(t *testing.T) {
 	t.Parallel()
 	testLint(
@@ -994,7 +994,7 @@ func testLintWithValidate(
 		t,
 		relDirPath,
 		func(config *bufconfig.Config) {
-			config.Lint.IgnoreRootPaths = []string{"buf"}
+			config.Lint.IgnoreRootPaths = []string{"buf/validate"}
 		},
 		nil,
 		"deps/protovalidate",

@@ -630,6 +630,28 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 	return nil
 }
 
+// CheckProtovalidateCel is a check function.
+func CheckProtovalidateCel(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return nil, err
+	}
+	helper := internal.NewHelper(id, ignoreFunc)
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		if err := buflintvalidate.ValidateCELCompiles(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
+			return nil, err
+		}
+	}
+	return helper.FileAnnotations(), nil
+}
+
 // CheckRPCNoClientStreaming is a check function.
 var CheckRPCNoClientStreaming = newMethodCheckFunc(checkRPCNoClientStreaming)
 
@@ -974,26 +996,4 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
 	}
 	return nil
-}
-
-// CheckValidateCelExpressionsCompile is a check function.
-func CheckValidateCelExpressionsCompile(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return nil, err
-	}
-	helper := internal.NewHelper(id, ignoreFunc)
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		if err := buflintvalidate.CheckCelInFile(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
-			return nil, err
-		}
-	}
-	return helper.FileAnnotations(), nil
 }

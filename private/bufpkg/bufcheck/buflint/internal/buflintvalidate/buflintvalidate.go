@@ -19,18 +19,20 @@ import (
 	"google.golang.org/protobuf/reflect/protodesc"
 )
 
-func CheckCelInFile(
+// ValidateCELCompiles validates that all CEL expressions defined for protovalidate
+// in the given file compile.
+func ValidateCELCompiles(
 	resolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	file protosource.File,
 ) error {
 	for _, message := range file.Messages() {
-		if err := checkCelInMessage(resolver, add, message); err != nil {
+		if err := validateCELCompilesMessage(resolver, add, message); err != nil {
 			return err
 		}
 	}
 	for _, extensionField := range file.Extensions() {
-		if err := checkCelInField(resolver, add, extensionField); err != nil {
+		if err := validateCELCompilesField(resolver, add, extensionField); err != nil {
 			return err
 		}
 	}

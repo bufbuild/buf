@@ -37,18 +37,18 @@ const (
 	celFieldTagInMessageConstraints = 3
 )
 
-func checkCelInMessage(
+func validateCELCompilesMessage(
 	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	message protosource.Message,
 ) error {
 	for _, field := range message.Fields() {
-		if err := checkCelInField(descriptorResolver, add, field); err != nil {
+		if err := validateCELCompilesField(descriptorResolver, add, field); err != nil {
 			return err
 		}
 	}
 	for _, nestedMessage := range message.Messages() {
-		if err := checkCelInMessage(descriptorResolver, add, nestedMessage); err != nil {
+		if err := validateCELCompilesMessage(descriptorResolver, add, nestedMessage); err != nil {
 			return err
 		}
 	}
@@ -81,7 +81,7 @@ func checkCelInMessage(
 	return nil
 }
 
-func checkCelInField(
+func validateCELCompilesField(
 	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	field protosource.Field,
