@@ -292,7 +292,7 @@ func push(
 			Manifest:   bucketManifest,
 			Blobs:      blobs,
 			Tags:       flags.Tags,
-			DraftName:  flags.Draft,
+			DraftName:  draftOrBranchName,
 		}),
 	)
 	if err != nil {
