@@ -104,7 +104,7 @@ type UserServiceClient interface {
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
 	// GetUserPluginPreferences returns the preferred language and plugins a user has selected.
-	// Plugin preferences is the language and the list of plugins a user has selected in the Generated SDKs tab.
+	// Plugin preference is the language and the list of plugins a user has selected in the Generated SDKs tab.
 	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
 	// UpdateUserPluginPreferences updates the user plugin preferences.
 	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
@@ -293,7 +293,7 @@ type UserServiceHandler interface {
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
 	// GetUserPluginPreferences returns the preferred language and plugins a user has selected.
-	// Plugin preferences is the language and the list of plugins a user has selected in the Generated SDKs tab.
+	// Plugin preference is the language and the list of plugins a user has selected in the Generated SDKs tab.
 	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
 	// UpdateUserPluginPreferences updates the user plugin preferences.
 	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
