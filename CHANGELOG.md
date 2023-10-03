@@ -5,7 +5,6 @@
 - Update `buf beta price` with the latest pricing information.
 - Fix issue where `buf generate --exclude-path` was not properly excluding paths
   for remote modules.
-- Alias the `--draft` flag for `buf push` to `--branch` and update flag description.
 
 ## [v1.26.1] - 2023-08-09
 
