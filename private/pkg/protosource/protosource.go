@@ -219,7 +219,6 @@ type File interface {
 	ContainerDescriptor
 	OptionExtensionDescriptor
 
-	FileDescriptor() protodescriptor.FileDescriptor
 	Syntax() Syntax
 	Package() string
 	FileImports() []FileImport
@@ -269,6 +268,13 @@ type File interface {
 	PyGenericServicesLocation() Location
 	PhpGenericServicesLocation() Location
 	CcEnableArenasLocation() Location
+
+	// FileDescriptor returns the backing FileDescriptor for this File.
+	//
+	// Users should prefer to use the core protosource API to read properties of the File as opposed
+	// to using the FileDescriptor directly, however we needed to add this to be able to build
+	// Resolvers, and did not want to rewrite the whole API.
+	FileDescriptor() protodescriptor.FileDescriptor
 }
 
 // FileImport is a file import descriptor.
