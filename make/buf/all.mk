@@ -28,6 +28,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+PROTOVALIDATE_VERSION := v0.4.3
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -35,8 +36,6 @@ BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
-
-PROTOVALIDATE_VERSION := v0.4.3
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
@@ -101,31 +100,33 @@ bufgeneratedeps:: \
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-.PHONY: bufgeneratecleanprotovalidatetestdata
-bufgeneratecleanprotovalidatetestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+.PHONY: bufgeneratecleanbuflinttestdata
+bufgeneratecleanbuflinttestdata:
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
 
 bufgenerateclean:: \
 	bufgeneratecleango \
-	bufgeneratecleanprotovalidatetestdata
+	bufgeneratecleanbuflinttestdata
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --template data/template/buf.go.gen.yaml
+	echo module protovalidate > private/gen/proto/go/buf/validate/go.mod
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
-.PHONY: bufgenerateprotovalidatetestdata
-bufgenerateprotovalidatetestdata:
+.PHONY: bufgeneratebuflinttestdata
+bufgeneratebuflinttestdata:
 	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
 	bufgenerateprotogoclient \
-	bufgenerateprotovalidatetestdata
+	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)

@@ -80,3 +80,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230913181813-007df8e322eb // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230913181813-007df8e322eb // indirect
 )
+
+// The Buf CLI is the one library that should not depend on BSR generated SDKs
+// as this could cause bootstrapping errors.
+replace buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate => ./private/gen/proto/go/buf/validate
