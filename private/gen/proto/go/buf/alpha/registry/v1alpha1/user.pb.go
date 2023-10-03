@@ -332,8 +332,10 @@ func (x *OrganizationUser) GetOrganizationRoleSource() OrganizationRoleSource {
 	return OrganizationRoleSource_ORGANIZATION_ROLE_SOURCE_UNSPECIFIED
 }
 
-// UserPluginPreference contains the users selected language as well as a list of plugins selected for that language.
-// This is used for Generate SDKs where the user can choose a language and corresponding plugins to be persisted.
+// UserPluginPreference contains the user's preferred language and the
+// list of plugins for that language, which they selected in the BSR's Generated SDKs UI flow.
+// These preferences are stored in the database so the language and plugins
+// are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
 type UserPluginPreference struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

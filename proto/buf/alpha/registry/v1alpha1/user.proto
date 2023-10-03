@@ -54,8 +54,10 @@ message OrganizationUser {
   OrganizationRoleSource organization_role_source = 4;
 }
 
-// UserPluginPreference contains the users selected language as well as a list of plugins selected for that language.
-// This is used for Generate SDKs where the user can choose a language and corresponding plugins to be persisted.
+// UserPluginPreference contains the user's preferred language and the
+// list of plugins for that language, which they selected in the BSR's Generated SDKs UI flow.
+// These preferences are stored in the database so the language and plugins
+// are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
 message UserPluginPreference {
   // The id of the user.
   string user_id = 1;
@@ -117,8 +119,9 @@ service UserService {
   }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
-  // GetUserPluginPreferences returns the preferred language and plugins a user has selected.
-  // Plugin preference is the language and the list of plugins a user has selected in the Generated SDKs tab.
+  // GetUserPluginPreferences returns the preferred language and plugins a user has selected in the BSR's Generated SDKs UI flow.
+  // If the user does not have a stored preference in the database this will return a CodeNotFound error and
+  // on the UI, the user will be prompted to select a language and plugins in the Generated SDKs flow.
   rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
