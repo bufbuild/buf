@@ -279,6 +279,11 @@ func push(
 	if err != nil {
 		return nil, err
 	}
+	draftOrBranchName := flags.Draft
+	if draftOrBranchName == "" {
+		// If draft is not set, then we we set the draft name to branch.
+		draftOrBranchName = flags.Branch
+	}
 	resp, err := service.PushManifestAndBlobs(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
