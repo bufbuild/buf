@@ -332,20 +332,18 @@ func (x *OrganizationUser) GetOrganizationRoleSource() OrganizationRoleSource {
 	return OrganizationRoleSource_ORGANIZATION_ROLE_SOURCE_UNSPECIFIED
 }
 
-// UserPluginPreference is a nested structure that contains the
-// users preferred or selected language as well as a list of plugins
-// selected for that language
+// UserPluginPreference contains the users selected language as well as a list of plugins selected for that language.
+// This is used for Generate SDKs where the user can choose a language and corresponding plugins to be persisted.
 type UserPluginPreference struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The id of the user
+	// The id of the user.
 	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The selected language that the user has indicidated
-	// as their preferred language for plugins
+	// The language that the user has indicidated as their preferred language for plugins.
 	SelectedLanguage PluginLanguage `protobuf:"varint,2,opt,name=selected_language,json=selectedLanguage,proto3,enum=buf.alpha.registry.v1alpha1.PluginLanguage" json:"selected_language,omitempty"`
-	// A list of plugin names selected by the user
+	// A list of plugin names selected by the user.
 	SelectedPlugins []string `protobuf:"bytes,3,rep,name=selected_plugins,json=selectedPlugins,proto3" json:"selected_plugins,omitempty"`
 }
 

@@ -103,7 +103,8 @@ type UserServiceClient interface {
 	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
-	// GetUserPluginPreferences gets plugin preferences for the user.
+	// GetUserPluginPreferences returns the preferred language and plugins a user has selected.
+	// Plugin preferences is the language and the list of plugins a user has selected in the Generated SDKs tab.
 	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
 	// UpdateUserPluginPreferences updates the user plugin preferences.
 	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
@@ -291,7 +292,8 @@ type UserServiceHandler interface {
 	CountUsers(context.Context, *connect.Request[v1alpha1.CountUsersRequest]) (*connect.Response[v1alpha1.CountUsersResponse], error)
 	// UpdateUserSettings update the user settings including description.
 	UpdateUserSettings(context.Context, *connect.Request[v1alpha1.UpdateUserSettingsRequest]) (*connect.Response[v1alpha1.UpdateUserSettingsResponse], error)
-	// GetUserPluginPreferences gets plugin preferences for the user.
+	// GetUserPluginPreferences returns the preferred language and plugins a user has selected.
+	// Plugin preferences is the language and the list of plugins a user has selected in the Generated SDKs tab.
 	GetUserPluginPreferences(context.Context, *connect.Request[v1alpha1.GetUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.GetUserPluginPreferencesResponse], error)
 	// UpdateUserPluginPreferences updates the user plugin preferences.
 	UpdateUserPluginPreferences(context.Context, *connect.Request[v1alpha1.UpdateUserPluginPreferencesRequest]) (*connect.Response[v1alpha1.UpdateUserPluginPreferencesResponse], error)
