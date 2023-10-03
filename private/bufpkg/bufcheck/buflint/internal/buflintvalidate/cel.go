@@ -37,11 +37,6 @@ const (
 	celFieldTagInMessageConstraints = 3
 )
 
-var (
-	messageConstraintsExtensionType = dynamicpb.NewExtensionType(validate.E_Message.TypeDescriptor())
-	fieldConstraintsExtensionType   = dynamicpb.NewExtensionType(validate.E_Field.TypeDescriptor())
-)
-
 func checkCelInMessage(
 	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
@@ -75,7 +70,7 @@ func checkCelInMessage(
 	}
 	for i, celConstraint := range messageConstraints.GetCel() {
 		messageConstraintsOptionLocation := message.OptionExtensionLocation(
-			messageConstraintsExtensionType,
+			validate.E_Message,
 			celFieldTagInMessageConstraints,
 			int32(i),
 		)
@@ -115,7 +110,7 @@ func checkCelInField(
 	}
 	for i, celConstraint := range fieldConstraints.GetCel() {
 		celLocation := field.OptionExtensionLocation(
-			fieldConstraintsExtensionType,
+			validate.E_Field,
 			celFieldTagInFieldConstraints,
 			int32(i),
 		)
