@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/gen/proto/go/buf/validate"
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/protovalidate-go/celext"
+	"github.com/bufbuild/protovalidate-go/resolver"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -43,31 +43,25 @@ var (
 )
 
 func checkCelInMessage(
-	resolver protodesc.Resolver,
+	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	message protosource.Message,
 ) error {
 	for _, field := range message.Fields() {
-		if err := checkCelInField(resolver, add, field); err != nil {
+		if err := checkCelInField(descriptorResolver, add, field); err != nil {
 			return err
 		}
 	}
 	for _, nestedMessage := range message.Messages() {
-		if err := checkCelInMessage(resolver, add, nestedMessage); err != nil {
+		if err := checkCelInMessage(descriptorResolver, add, nestedMessage); err != nil {
 			return err
 		}
 	}
-	messageConstraints, found, err := getMessageConstraints(message)
+	reflectMessageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
 	if err != nil {
 		return err
 	}
-	if !found {
-		return nil
-	}
-	reflectMessageDescriptor, err := getReflectMessageDescriptor(resolver, message)
-	if err != nil {
-		return err
-	}
+	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(reflectMessageDescriptor)
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
@@ -107,33 +101,27 @@ func checkCelInMessage(
 }
 
 func checkCelInField(
-	resolver protodesc.Resolver,
+	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	field protosource.Field,
 ) error {
-	fieldConstraints, found, err := getFieldConstraints(field)
+	reflectFieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
 	if err != nil {
 		return err
 	}
-	if !found {
-		return nil
-	}
-	fieldDesc, err := getReflectFieldDescriptor(resolver, field)
+	fieldConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(reflectFieldDescriptor)
+	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
 	}
-	env, err := celext.DefaultEnv(false)
-	if err != nil {
-		return err
-	}
-	if fieldDesc.Kind() == protoreflect.MessageKind {
-		env, err = env.Extend(
-			cel.Types(dynamicpb.NewMessage(fieldDesc.Message())),
-			cel.Variable("this", cel.ObjectType(string(fieldDesc.Message().FullName()))),
+	if reflectFieldDescriptor.Kind() == protoreflect.MessageKind {
+		celEnv, err = celEnv.Extend(
+			cel.Types(dynamicpb.NewMessage(reflectFieldDescriptor.Message())),
+			cel.Variable("this", cel.ObjectType(string(reflectFieldDescriptor.Message().FullName()))),
 		)
 	} else {
-		env, err = env.Extend(
-			cel.Variable("this", protoKindToCELType(fieldDesc.Kind())),
+		celEnv, err = celEnv.Extend(
+			cel.Variable("this", protoKindToCELType(reflectFieldDescriptor.Kind())),
 		)
 	}
 	if err != nil {
@@ -149,7 +137,7 @@ func checkCelInField(
 			add(field, celLocation, nil, "cel expression is empty")
 			continue
 		}
-		ast, compileIssues := env.Compile(cel.Expression)
+		ast, compileIssues := celEnv.Compile(cel.Expression)
 		switch ast.OutputType() {
 		case types.BoolType, types.StringType, types.ErrorType:
 			// If type is types.ErrorType, compilation has failed and we will
@@ -196,50 +184,6 @@ func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Fi
 		return nil, fmt.Errorf("%s is not a field", descriptor.FullName())
 	}
 	return fieldDescriptor, nil
-}
-
-func getMessageConstraints(message protosource.Message) (*validate.MessageConstraints, bool, error) {
-	messageConstraintsMessageUntyped, found := message.OptionExtension(messageConstraintsExtensionType)
-	if !found {
-		return nil, false, nil
-	}
-	messageConstraintsMessage, ok := messageConstraintsMessageUntyped.(protoreflect.Message)
-	if !ok {
-		// this should never happen
-		return nil, false, fmt.Errorf("field extension expected to be `protoreflect.Message`, but has type %T", messageConstraintsMessageUntyped)
-	}
-	data, err := proto.Marshal(messageConstraintsMessage.Interface())
-	if err != nil {
-		return nil, false, err
-	}
-	messageConstraints := &validate.MessageConstraints{}
-	err = proto.Unmarshal(data, messageConstraints)
-	if err != nil {
-		return nil, false, err
-	}
-	return messageConstraints, true, nil
-}
-
-func getFieldConstraints(field protosource.Field) (*validate.FieldConstraints, bool, error) {
-	fieldConstraintsMessageUntyped, found := field.OptionExtension(fieldConstraintsExtensionType)
-	if !found {
-		return nil, false, nil
-	}
-	fieldConstraintsMessage, ok := fieldConstraintsMessageUntyped.(protoreflect.Message)
-	if !ok {
-		// this should never happen
-		return nil, false, fmt.Errorf("field extension expected to be `protoreflect.Message`, but has type %T", fieldConstraintsMessageUntyped)
-	}
-	data, err := proto.Marshal(fieldConstraintsMessage.Interface())
-	if err != nil {
-		return nil, false, err
-	}
-	fieldConstraints := &validate.FieldConstraints{}
-	err = proto.Unmarshal(data, fieldConstraints)
-	if err != nil {
-		return nil, false, err
-	}
-	return fieldConstraints, true, nil
 }
 
 // this depends on the undocumented behavior of cel-go's error message

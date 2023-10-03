@@ -3,10 +3,11 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20230914171853-63dfe56cc2c4.1
 	connectrpc.com/connect v1.11.1
 	connectrpc.com/otelconnect v0.5.0
 	github.com/bufbuild/protocompile v0.6.0
-	github.com/bufbuild/protovalidate-go v0.3.3
+	github.com/bufbuild/protovalidate-go v0.3.4-0.20231003193126-05525acfab0c
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/gofrs/flock v0.8.1
