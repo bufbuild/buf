@@ -52,18 +52,18 @@ func checkCelInMessage(
 			return err
 		}
 	}
-	messageReflectDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
+	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
 	if err != nil {
 		return err
 	}
-	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageReflectDescriptor)
+	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
 	}
 	celEnv, err = celEnv.Extend(
-		cel.Types(dynamicpb.NewMessage(messageReflectDescriptor)),
-		cel.Variable("this", cel.ObjectType(string(messageReflectDescriptor.FullName()))),
+		cel.Types(dynamicpb.NewMessage(messageDescriptor)),
+		cel.Variable("this", cel.ObjectType(string(messageDescriptor.FullName()))),
 	)
 	if err != nil {
 		return err
@@ -86,23 +86,23 @@ func checkCelInField(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	field protosource.Field,
 ) error {
-	fieldReflectDescrptor, err := getReflectFieldDescriptor(descriptorResolver, field)
+	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
 	if err != nil {
 		return err
 	}
-	fieldConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldReflectDescrptor)
+	fieldConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
 	}
-	if fieldReflectDescrptor.Kind() == protoreflect.MessageKind {
+	if fieldDescriptor.Kind() == protoreflect.MessageKind {
 		celEnv, err = celEnv.Extend(
-			cel.Types(dynamicpb.NewMessage(fieldReflectDescrptor.Message())),
-			cel.Variable("this", cel.ObjectType(string(fieldReflectDescrptor.Message().FullName()))),
+			cel.Types(dynamicpb.NewMessage(fieldDescriptor.Message())),
+			cel.Variable("this", cel.ObjectType(string(fieldDescriptor.Message().FullName()))),
 		)
 	} else {
 		celEnv, err = celEnv.Extend(
-			cel.Variable("this", protoKindToCELType(fieldReflectDescrptor.Kind())),
+			cel.Variable("this", protoKindToCELType(fieldDescriptor.Kind())),
 		)
 	}
 	if err != nil {
