@@ -54,16 +54,14 @@ message OrganizationUser {
   OrganizationRoleSource organization_role_source = 4;
 }
 
-// UserPluginPreference is a nested structure that contains the
-// users preferred or selected language as well as a list of plugins
-// selected for that language
+// UserPluginPreference contains the users selected language as well as a list of plugins selected for that language.
 message UserPluginPreference {
-  // The id of the user
+  // The id of the user.
   string user_id = 1;
   // The selected language that the user has indicidated
-  // as their preferred language for plugins
+  // as their preferred language for plugins.
   PluginLanguage selected_language = 2;
-  // A list of plugin names selected by the user
+  // A list of plugin names selected by the user.
   repeated string selected_plugins = 3;
 }
 
@@ -119,7 +117,7 @@ service UserService {
   }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
-  // GetUserPluginPreferences gets plugin preferences for the user.
+  // GetUserPluginPreferences returns the preferred language and plugins a user has selected.
   rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
