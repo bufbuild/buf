@@ -253,6 +253,12 @@ var (
 		"protovalidate CEL expressions compile",
 		newAdapter(buflintcheck.CheckProtovalidateCel),
 	)
+	// ProtovalidateRulesRuleBuilder is a rule builder.
+	ProtovalidateRulesRuleBuilder = internal.NewNopRuleBuilder(
+		"PROTOVALIDATE_RULES",
+		"protovalidate rules are valid",
+		newAdapter(buflintcheck.CheckProtovalidateRules),
+	)
 	// RPCNoClientStreamingRuleBuilder is a rule builder.
 	RPCNoClientStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_NO_CLIENT_STREAMING",
@@ -353,12 +359,6 @@ var (
 		"SYNTAX_SPECIFIED",
 		"all files have a syntax specified",
 		newAdapter(buflintcheck.CheckSyntaxSpecified),
-	)
-	// ValidateConstraintsCheckRuleBuilder is a rule builder.
-	ValidateConstraintsCheckRuleBuilder = internal.NewNopRuleBuilder(
-		"VALIDATE_CONSTRAINTS_CHECK",
-		"fields contain constraints which match the same type",
-		newAdapter(buflintcheck.CheckValidateConstraintsCheck),
 	)
 )
 

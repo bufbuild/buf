@@ -652,6 +652,38 @@ func CheckProtovalidateCel(id string, ignoreFunc internal.IgnoreFunc, files []pr
 	return helper.FileAnnotations(), nil
 }
 
+// CheckProtovalidateRules is a check function.
+var CheckProtovalidateRules = newFilesWithImportsCheckFunc(checkProtovalidateRules)
+
+func checkProtovalidateRules(add addFunc, files []protosource.File) error {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		for _, message := range file.Messages() {
+			for _, field := range message.Fields() {
+				if err := buflintvalidate.ValidateRules(
+					descriptorResolver,
+					add,
+					files,
+					field,
+				); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // CheckRPCNoClientStreaming is a check function.
 var CheckRPCNoClientStreaming = newMethodCheckFunc(checkRPCNoClientStreaming)
 
@@ -994,38 +1026,6 @@ var CheckSyntaxSpecified = newFileCheckFunc(checkSyntaxSpecified)
 func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 	if file.Syntax() == protosource.SyntaxUnspecified {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
-	}
-	return nil
-}
-
-// CheckValidateConstraintsCheck is a check function.
-var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
-
-func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		for _, message := range file.Messages() {
-			for _, field := range message.Fields() {
-				if err := buflintvalidate.ValidateRules(
-					descriptorResolver,
-					add,
-					files,
-					field,
-				); err != nil {
-					return err
-				}
-			}
-		}
 	}
 	return nil
 }

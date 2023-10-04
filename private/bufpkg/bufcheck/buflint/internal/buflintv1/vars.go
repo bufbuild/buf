@@ -66,7 +66,7 @@ var (
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
-		buflintbuild.ValidateConstraintsCheckRuleBuilder,
+		buflintbuild.ProtovalidateRulesRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -204,6 +204,9 @@ var (
 		"PROTOVALIDATE_CEL": {
 			"DEFAULT",
 		},
+		"PROTOVALIDATE_RULES": {
+			"DEFAULT",
+		},
 		"RPC_NO_CLIENT_STREAMING": {
 			"UNARY_RPC",
 		},
@@ -232,9 +235,6 @@ var (
 		},
 		"SYNTAX_SPECIFIED": {
 			"BASIC",
-			"DEFAULT",
-		},
-		"VALIDATE_CONSTRAINTS_CHECK": {
 			"DEFAULT",
 		},
 	}
