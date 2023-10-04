@@ -26,6 +26,7 @@ func TestCelIssuesErrorTextMatch(t *testing.T) {
 	celEnv, err := cel.NewEnv()
 	require.NoError(t, err)
 	t.Run("parse_single_issue", func(t *testing.T) {
+		t.Parallel()
 		_, issues := celEnv.Compile("1 / 'a'")
 		expectedErrorText := `ERROR: <input>:1:3: found no matching overload for '_/_' applied to '(int, string)'
  | 1 / 'a'
@@ -39,6 +40,7 @@ func TestCelIssuesErrorTextMatch(t *testing.T) {
 		require.Equal(t, expectedParsedTexts, parseCelIssuesText(issues.Err().Error()))
 	})
 	t.Run("parse_multiple_issues", func(t *testing.T) {
+		t.Parallel()
 		_, issues := celEnv.Compile("(1 / 'a') * (1 - 'a') * (1 * 'a')")
 		expectedErrorText := `ERROR: <input>:1:4: found no matching overload for '_/_' applied to '(int, string)'
  | (1 / 'a') * (1 - 'a') * (1 * 'a')
