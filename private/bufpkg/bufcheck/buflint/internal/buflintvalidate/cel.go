@@ -175,6 +175,8 @@ func checkCel(
 			add("validation message is specified but the cel expression's result will be used instead")
 		}
 	case ast.OutputType().IsExactType(types.ErrorType):
+		// If the output type is error, it means compilation has failed and we
+		// only need to add the compilation issues.
 	default:
 		add("cel expression evaluates to unsupported type: %v", ast.OutputType())
 	}
@@ -211,7 +213,7 @@ func parseCelIssuesText(issuesText string) []string {
 		}
 		// now issue looks like 1:2:<error message>
 		parts := strings.SplitAfterN(issue, ":", 3)
-		parsedIssues = append(parsedIssues, parts[len(parts)-1])
+		parsedIssues = append(parsedIssues, strings.TrimSpace(parts[len(parts)-1]))
 	}
 	return parsedIssues
 }
