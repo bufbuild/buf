@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-- Update `buf beta price` with the latest pricing information.
 - Fix issue where `buf generate --exclude-path` was not properly excluding paths
   for remote modules.
+- Fix issue where `buf curl` had a user agent that did not properly place the
+  extension as a suffix.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.26.1] - 2023-08-09
 
