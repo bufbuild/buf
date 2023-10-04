@@ -1,0 +1,4 @@
+version: v1
+lint:
+  use:
+    - PROTOVALIDATE_CEL

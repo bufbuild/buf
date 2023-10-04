@@ -17,6 +17,7 @@ package buflintvalidate
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/reflect/protodesc"
 )
 
 func NewValidateField(
@@ -30,4 +31,24 @@ func NewValidateField(
 		field:    field,
 		location: field.OptionExtensionLocation(validate.E_Field),
 	}
+}
+
+// ValidateCELCompiles validates that all CEL expressions defined for protovalidate
+// in the given file compile.
+func ValidateCELCompiles(
+	resolver protodesc.Resolver,
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	file protosource.File,
+) error {
+	for _, message := range file.Messages() {
+		if err := validateCELCompilesMessage(resolver, add, message); err != nil {
+			return err
+		}
+	}
+	for _, extensionField := range file.Extensions() {
+		if err := validateCELCompilesField(resolver, add, extensionField); err != nil {
+			return err
+		}
+	}
+	return nil
 }

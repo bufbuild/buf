@@ -28,10 +28,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
@@ -630,6 +632,28 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 		add(file, file.PackageLocation(), nil, `Package name %q should be suffixed with a correctly formed version, such as %q.`, pkg, pkg+".v1")
 	}
 	return nil
+}
+
+// CheckProtovalidateCel is a check function.
+func CheckProtovalidateCel(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return nil, err
+	}
+	helper := internal.NewHelper(id, ignoreFunc)
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		if err := buflintvalidate.ValidateCELCompiles(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
+			return nil, err
+		}
+	}
+	return helper.FileAnnotations(), nil
 }
 
 // CheckRPCNoClientStreaming is a check function.
