@@ -53,7 +53,7 @@ func DefaultUserAgent(protocol string, bufVersion string) string {
 	if strings.Contains(protocol, "grpc") {
 		libUserAgent = "grpc-go-connect"
 	}
-	return fmt.Sprintf("buf/%s %s/%s (%s)", bufVersion, libUserAgent, connect.Version, runtime.Version())
+	return fmt.Sprintf("%s/%s (%s) buf/%s", libUserAgent, connect.Version, runtime.Version(), bufVersion)
 }
 
 // NewVerboseHTTPClient creates a new HTTP client with the given transport and
