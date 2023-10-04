@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.27.0] - 2023-10-04
 
 - Fix issue where `buf generate --exclude-path` was not properly excluding paths
   for remote modules.
@@ -956,7 +956,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.26.1...HEAD
+[v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
 [v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
 [v1.26.0]: https://github.com/bufbuild/buf/compare/v1.25.1...v1.26.0
 [v1.25.1]: https://github.com/bufbuild/buf/compare/v1.25.0...v1.25.1
