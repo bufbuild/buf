@@ -23,12 +23,17 @@ import (
 	"strconv"
 	"strings"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -266,7 +271,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
-	message := field.Message()
+	message := field.ParentMessage()
 	if message == nil {
 		// just a sanity check
 		return errors.New("field.Message() was nil")
@@ -284,7 +289,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
@@ -306,7 +311,7 @@ func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
@@ -971,4 +976,61 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 		add(file, file.SyntaxLocation(), nil, `Files must have a syntax explicitly specified. If no syntax is specified, the file defaults to "proto2".`)
 	}
 	return nil
+}
+
+// CheckValidateConstraintsCheck is a check function.
+var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
+
+func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
+	for _, file := range files {
+		for _, message := range file.Messages() {
+			for _, field := range message.Fields() {
+				data, err := getDataByExtension(field, validate.E_Field)
+				if err != nil {
+					return err
+				}
+				if data == nil {
+					continue
+				}
+				constraints := &validate.FieldConstraints{}
+				if err := proto.Unmarshal(data, constraints); err != nil {
+					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
+				}
+				buflintvalidate.NewValidateField(
+					add,
+					files,
+					field,
+				).CheckFieldRules(constraints)
+			}
+		}
+	}
+	return nil
+}
+
+// getDataByExtension retrieves extension data from a proto field of a given extension type.
+// It marshals the extension data into bytes to make it suitable for storage or transmission.
+// The function returns the marshaled data or an error if any occurred.
+func getDataByExtension(
+	field protosource.OptionExtensionDescriptor, // The proto field containing the extension
+	extensionType protoreflect.ExtensionType, // The type of the extension to retrieve
+) ([]byte, error) {
+	// Retrieve the extension data associated with the given extension type from the field.
+	extension, ok := field.OptionExtension(extensionType)
+	if !ok {
+		// If the extension is not found, return nil data and no error.
+		return nil, nil
+	}
+	// Type assertion to dynamicpb.Message since the extension data is expected to be in this form.
+	dynamicMessage, ok := extension.(*dynamicpb.Message)
+	if !ok {
+		return nil, fmt.Errorf("unexpected extension type for field, got %T", extension)
+	}
+	// Marshal the extension data into proto bytes such that it is ready
+	// to be unmarshalled into the appropriate extension type.
+	out, err := proto.Marshal(dynamicMessage)
+	if err != nil {
+		return nil, fmt.Errorf("marshal error for field: %v", err)
+	}
+	// Return the marshaled data and no error.
+	return out, nil
 }

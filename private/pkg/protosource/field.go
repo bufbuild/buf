@@ -20,11 +20,11 @@ type field struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	message  Message
-	number   int
-	label    descriptorpb.FieldDescriptorProto_Label
-	typ      descriptorpb.FieldDescriptorProto_Type
-	typeName string
+	parentMessage Message
+	number        int
+	label         descriptorpb.FieldDescriptorProto_Label
+	typ           descriptorpb.FieldDescriptorProto_Type
+	typeName      string
 	// if the field is an extension, this is the type being extended
 	extendee string
 	// this has to be the pointer to the private struct or you have the bug where the
@@ -52,7 +52,7 @@ type field struct {
 func newField(
 	namedDescriptor namedDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
-	message Message,
+	parentMessage Message,
 	number int,
 	label descriptorpb.FieldDescriptorProto_Label,
 	typ descriptorpb.FieldDescriptorProto_Type,
@@ -80,7 +80,7 @@ func newField(
 	return &field{
 		namedDescriptor:           namedDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
-		message:                   message,
+		parentMessage:             parentMessage,
 		number:                    number,
 		label:                     label,
 		typ:                       typ,
@@ -107,8 +107,16 @@ func newField(
 	}
 }
 
-func (f *field) Message() Message {
-	return f.message
+func (f *field) ParentMessage() Message {
+	return f.parentMessage
+}
+
+func (f *field) IsMap() bool {
+	fullNameToMessage, err := FullNameToMessage(f.file)
+	if err != nil {
+		return false
+	}
+	return isFieldAMap(f, fullNameToMessage)
 }
 
 func (f *field) Number() int {

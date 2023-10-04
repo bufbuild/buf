@@ -90,12 +90,12 @@ type LocationDescriptor interface {
 type NamedDescriptor interface {
 	LocationDescriptor
 
-	// FullName returns the fully-qualified name, i.e. some.pkg.Nested.Message.FooEnum.ENUM_VALUE.
+	// FullName returns the fully-qualified name, i.e. some.pkg.Nested.ParentMessage.FooEnum.ENUM_VALUE.
 	//
 	// Always non-empty.
 	FullName() string
-	// NestedName returns the full nested name without the package, i.e. Nested.Message.FooEnum
-	// or Nested.Message.FooEnum.ENUM_VALUE.
+	// NestedName returns the full nested name without the package, i.e. Nested.ParentMessage.FooEnum
+	// or Nested.ParentMessage.FooEnum.ENUM_VALUE.
 	//
 	// Always non-empty.
 	NestedName() string
@@ -390,7 +390,8 @@ type Field interface {
 	OptionExtensionDescriptor
 
 	// May be nil if this is attached to a file.
-	Message() Message
+	ParentMessage() Message
+	IsMap() bool
 	Number() int
 	Label() descriptorpb.FieldDescriptorProto_Label
 	Type() descriptorpb.FieldDescriptorProto_Type
@@ -1251,4 +1252,22 @@ type tagRangeGroup struct {
 	ranges []TagRange
 	start  int
 	end    int
+}
+
+func isFieldAMap(field Field, fullNameToMessage map[string]Message) bool {
+	// For this to be a map field, it must be a repeated field
+	// with a synthetic message as the type, that synthetic message
+	// must be in the enclosing message for the field, and it must
+	// have map_entry set to true.
+	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		return false
+	}
+	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return false
+	}
+	message, ok := fullNameToMessage[field.TypeName()]
+	if !ok {
+		return false
+	}
+	return message.IsMapEntry()
 }

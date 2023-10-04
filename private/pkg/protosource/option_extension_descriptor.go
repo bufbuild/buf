@@ -35,13 +35,36 @@ func newOptionExtensionDescriptor(message proto.Message, optionsPath []int32, lo
 	}
 }
 
+// OptionExtension retrieves the value of a specified extension for the given message.
+// It takes an extensionType as a parameter and returns the corresponding extension value
+// and a boolean indicating whether the extension was found.
 func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool) {
+	// Check if the extension's containing message full name matches the full name of the current message.
 	if extensionType.TypeDescriptor().ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
-		return nil, false
+		return nil, false // Return early if the extension is not applicable to the current message.
 	}
+
+	// Check if the message actually has the specified extension.
 	if !proto.HasExtension(o.message, extensionType) {
-		return nil, false
+		return nil, false // Return early if the extension is not present in the message.
 	}
+
+	// If the extension type is a message, search for the extension and retrieve its value.
+	if extensionType.TypeDescriptor().Kind() == protoreflect.MessageKind {
+		var val any // Variable to store the found extension value.
+		// Iterate through all extensions of the message using RangeExtensions.
+		proto.RangeExtensions(o.message, func(extTyp protoreflect.ExtensionType, extVal interface{}) bool {
+			// Check if the current extension's full name matches the requested extension's full name.
+			if extTyp.TypeDescriptor().FullName() == extensionType.TypeDescriptor().FullName() {
+				val = extVal // Store the extension value.
+				return false // Stop iterating since the desired extension was found.
+			}
+			return true // Continue iterating through extensions.
+		})
+		return val, val != nil // Return the extension value and a boolean indicating if it was found.
+	}
+
+	// If the extension type is not a message, simply retrieve and return its value.
 	return proto.GetExtension(o.message, extensionType), true
 }
 

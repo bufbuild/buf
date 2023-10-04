@@ -65,6 +65,7 @@ var (
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
 		buflintbuild.SyntaxSpecifiedRuleBuilder,
+		buflintbuild.ValidateConstraintsCheckRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -227,6 +228,9 @@ var (
 		},
 		"SYNTAX_SPECIFIED": {
 			"BASIC",
+			"DEFAULT",
+		},
+		"VALIDATE_CONSTRAINTS_CHECK": {
 			"DEFAULT",
 		},
 	}

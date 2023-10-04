@@ -31,14 +31,14 @@ type addFunc func(protosource.Descriptor, protosource.Location, []protosource.Lo
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToLowerSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
+	// return stringutil.ToLowerSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
 	return stringutil.ToLowerSnakeCase(s)
 }
 
 func fieldToUpperSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToUpperSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
+	// return stringutil.ToUpperSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
 	return stringutil.ToUpperSnakeCase(s)
 }
 
