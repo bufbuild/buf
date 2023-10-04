@@ -41,6 +41,7 @@ const (
 	tagFlagName              = "tag"
 	tagFlagShortName         = "t"
 	draftFlagName            = "draft"
+	branchFlagName           = "branch"
 	errorFormatFlagName      = "error-format"
 	disableSymlinksFlagName  = "disable-symlinks"
 	createFlagName           = "create"
@@ -72,6 +73,7 @@ func NewCommand(
 
 type flags struct {
 	Tags             []string
+	Branch           string
 	Draft            string
 	ErrorFormat      string
 	DisableSymlinks  bool
@@ -106,9 +108,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		draftFlagName,
 		"",
 		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s)",
+			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s) or --%s",
 			tagFlagName,
 			tagFlagShortName,
+			branchFlagName,
+		),
+	)
+	flagSet.StringVar(
+		&f.Branch,
+		branchFlagName,
+		"",
+		fmt.Sprintf(
+			"Push a commit to a branch with the specified name. Cannot be used together with --%s (-%s) or --%s",
+			tagFlagName,
+			tagFlagShortName,
+			draftFlagName,
 		),
 	)
 	flagSet.StringVar(
@@ -146,8 +160,16 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
+	if flags.Draft != "" && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+	}
 	if len(flags.Tags) > 0 && flags.Draft != "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+	}
+	// For now, we are restricting branch behavior to be exactly the same as drafts, and thus
+	// cannot be used in conjunction with tags.
+	if len(flags.Tags) > 0 && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
 	}
 	if flags.CreateVisibility != "" {
 		if !flags.Create {
@@ -257,6 +279,11 @@ func push(
 	if err != nil {
 		return nil, err
 	}
+	draftOrBranchName := flags.Draft
+	if draftOrBranchName == "" {
+		// If draft is not set, then we we set the draft name to branch.
+		draftOrBranchName = flags.Branch
+	}
 	resp, err := service.PushManifestAndBlobs(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
@@ -265,7 +292,7 @@ func push(
 			Manifest:   bucketManifest,
 			Blobs:      blobs,
 			Tags:       flags.Tags,
-			DraftName:  flags.Draft,
+			DraftName:  draftOrBranchName,
 		}),
 	)
 	if err != nil {
