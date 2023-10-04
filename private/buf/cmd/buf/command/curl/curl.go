@@ -814,11 +814,11 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	if err != nil {
 		return err
 	}
+	userAgent := f.UserAgent
+	if userAgent == "" {
+		userAgent = bufcurl.DefaultUserAgent(f.Protocol, bufcli.Version)
+	}
 	if len(requestHeaders.Values("user-agent")) == 0 {
-		userAgent := f.UserAgent
-		if userAgent == "" {
-			userAgent = bufcurl.DefaultUserAgent(f.Protocol, bufcli.Version)
-		}
 		requestHeaders.Set("user-agent", userAgent)
 	}
 	var basicCreds *string
@@ -884,6 +884,9 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 			if creds != "" {
 				reflectHeaders.Set("authorization", creds)
 			}
+		}
+		if len(reflectHeaders.Values("user-agent")) == 0 {
+			reflectHeaders.Set("user-agent", userAgent)
 		}
 		reflectProtocol, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol)
 		if err != nil {
