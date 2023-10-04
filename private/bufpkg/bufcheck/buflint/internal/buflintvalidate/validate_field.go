@@ -49,6 +49,19 @@ type validateField struct {
 	location protosource.Location
 }
 
+func newValidateField(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	files []protosource.File,
+	field protosource.Field,
+) *validateField {
+	return &validateField{
+		add:      add,
+		files:    files,
+		field:    field,
+		location: field.OptionExtensionLocation(validate.E_Field),
+	}
+}
+
 func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 	if rules == nil {
 		return
@@ -206,7 +219,7 @@ func (m *validateField) assertFieldTypeMatches(pt descriptorpb.FieldDescriptorPr
 		if emb := embed(m.field, m.files...); emb != nil {
 			if wkt := lookupWellKnownType(emb.Name()); wkt.valid() && wkt == wrapper {
 				field := emb.Fields()[0]
-				NewValidateField(m.add, m.files, field).assertFieldTypeMatches(field.Type(), unknownWKT)
+				newValidateField(m.add, m.files, field).assertFieldTypeMatches(field.Type(), unknownWKT)
 				return
 			}
 		}

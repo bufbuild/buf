@@ -15,22 +15,30 @@
 package buflintvalidate
 
 import (
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
 
-func NewValidateField(
+// ValidateRules validates that protovalidate rules defined for this field are
+// are valid, not including CEL expressions.
+func ValidateRules(
+	descritporResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	files []protosource.File,
 	field protosource.Field,
-) *validateField {
-	return &validateField{
-		add:      add,
-		files:    files,
-		field:    field,
-		location: field.OptionExtensionLocation(validate.E_Field),
+) error {
+	fieldDescriptor, err := getReflectFieldDescriptor(descritporResolver, field)
+	if err != nil {
+		return err
 	}
+	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
+	newValidateField(
+		add,
+		files,
+		field,
+	).CheckFieldRules(constraints)
+	return nil
 }
 
 // ValidateCELCompiles validates that all CEL expressions defined for protovalidate

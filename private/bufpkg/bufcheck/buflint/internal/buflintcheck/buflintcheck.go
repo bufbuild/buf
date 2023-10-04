@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
@@ -32,10 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -1006,55 +1002,30 @@ func checkSyntaxSpecified(add addFunc, file protosource.File) error {
 var CheckValidateConstraintsCheck = newFilesWithImportsCheckFunc(checkValidateConstraintsCheck)
 
 func checkValidateConstraintsCheck(add addFunc, files []protosource.File) error {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
 	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
 		for _, message := range file.Messages() {
 			for _, field := range message.Fields() {
-				data, err := getDataByExtension(field, validate.E_Field)
-				if err != nil {
-					return err
-				}
-				if data == nil {
-					continue
-				}
-				constraints := &validate.FieldConstraints{}
-				if err := proto.Unmarshal(data, constraints); err != nil {
-					return fmt.Errorf("unmarshal error for field %q: %v", field.FullName(), err)
-				}
-				buflintvalidate.NewValidateField(
+				if err := buflintvalidate.ValidateRules(
+					descriptorResolver,
 					add,
 					files,
 					field,
-				).CheckFieldRules(constraints)
+				); err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
-}
-
-// getDataByExtension retrieves extension data from a proto field of a given extension type.
-// It marshals the extension data into bytes to make it suitable for storage or transmission.
-// The function returns the marshaled data or an error if any occurred.
-func getDataByExtension(
-	field protosource.OptionExtensionDescriptor, // The proto field containing the extension
-	extensionType protoreflect.ExtensionType, // The type of the extension to retrieve
-) ([]byte, error) {
-	// Retrieve the extension data associated with the given extension type from the field.
-	extension, ok := field.OptionExtension(extensionType)
-	if !ok {
-		// If the extension is not found, return nil data and no error.
-		return nil, nil
-	}
-	// Type assertion to dynamicpb.Message since the extension data is expected to be in this form.
-	dynamicMessage, ok := extension.(*dynamicpb.Message)
-	if !ok {
-		return nil, fmt.Errorf("unexpected extension type for field, got %T", extension)
-	}
-	// Marshal the extension data into proto bytes such that it is ready
-	// to be unmarshalled into the appropriate extension type.
-	out, err := proto.Marshal(dynamicMessage)
-	if err != nil {
-		return nil, fmt.Errorf("marshal error for field: %v", err)
-	}
-	// Return the marshaled data and no error.
-	return out, nil
 }
