@@ -15,7 +15,7 @@
 package buflintvalidate
 
 import (
-	"reflect"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/protosource"
 )
@@ -57,39 +57,35 @@ func resolveLimits[
 	return
 }
 
-func validateNumberField[T any](
+func validateNumberField[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
 	m *validateField,
 	in, notIn int,
-	constIn, greaterThanIn, greaterThanEqualIn, lessThanIn, lessThanEqualIn T,
+	constant, greaterThan, greaterThanEqual, lessThan, lessThanEqual *T,
 ) {
 	m.checkIns(in, notIn)
 
-	constant := reflect.ValueOf(constIn)
-	lessThan, lessThanEqual := reflect.ValueOf(lessThanIn), reflect.ValueOf(lessThanEqualIn)
-	greaterThan, greaterThanEqual := reflect.ValueOf(greaterThanIn), reflect.ValueOf(greaterThanEqualIn)
-
-	m.assertf(constant.IsNil() ||
+	m.assertf(constant == nil ||
 		in == 0 && notIn == 0 &&
-			lessThan.IsNil() && lessThanEqual.IsNil() &&
-			greaterThan.IsNil() && greaterThanEqual.IsNil(),
+			lessThan == nil && lessThanEqual == nil &&
+			greaterThan == nil && greaterThanEqual == nil,
 		"const can be the only rule on a field",
 	)
 
 	m.assertf(in == 0 ||
-		lessThan.IsNil() && lessThanEqual.IsNil() &&
-			greaterThan.IsNil() && greaterThanEqual.IsNil(),
+		lessThan == nil && lessThanEqual == nil &&
+			greaterThan == nil && greaterThanEqual == nil,
 		"cannot have both in and range constraint rules on the same field",
 	)
 
-	if !lessThan.IsNil() {
-		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanIn),
+	if !(lessThan == nil) {
+		m.assertf(greaterThan == nil || *lessThan != *greaterThan,
 			"cannot have equal gt and lt rules on the same field")
-		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanIn, greaterThanEqualIn),
+		m.assertf(greaterThanEqual == nil || *lessThan != *greaterThanEqual,
 			"cannot have equal gte and lt rules on the same field")
-	} else if !lessThanEqual.IsNil() {
-		m.assertf(greaterThan.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanIn),
+	} else if !(lessThanEqual == nil) {
+		m.assertf(greaterThan == nil || *lessThanEqual != *greaterThan,
 			"cannot have equal gt and lte rules on the same field")
-		m.assertf(greaterThanEqual.IsNil() || !reflect.DeepEqual(lessThanEqualIn, greaterThanEqualIn),
+		m.assertf(greaterThanEqual == nil || *lessThanEqual != *greaterThanEqual,
 			"use const instead of equal lte and gte rules")
 	}
 }
