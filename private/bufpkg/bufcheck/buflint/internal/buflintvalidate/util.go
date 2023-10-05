@@ -60,7 +60,7 @@ func resolveLimits[
 func validateNumberField[T any](
 	m *validateField,
 	in, notIn int,
-	constIn, lessThanIn, lessThanEqualIn, greaterThanIn, greaterThanEqualIn T,
+	constIn, greaterThanIn, greaterThanEqualIn, lessThanIn, lessThanEqualIn T,
 ) {
 	m.checkIns(in, notIn)
 
