@@ -560,7 +560,7 @@ func TestRunProtovalidateCel(t *testing.T) {
 	t.Parallel()
 	testLintWithValidate(
 		t,
-		"validate_cel_expressions_compile",
+		"protovalidate_cel",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "PROTOVALIDATE_CEL"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "PROTOVALIDATE_CEL"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "PROTOVALIDATE_CEL"),
