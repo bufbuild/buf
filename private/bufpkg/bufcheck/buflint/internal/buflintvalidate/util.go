@@ -20,6 +20,48 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
+var (
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.Int32Rules and
+	// and all other <number type>Rules have the same set of tags.
+	defaultNumericTagSet = numericTagSet{
+		constant: 1,
+		lt:       2,
+		lte:      3,
+		gt:       4,
+		gte:      5,
+		in:       6,
+		notIn:    7,
+	}
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.DurationRules
+	durationNumericTagSet = numericTagSet{
+		constant: 2,
+		lt:       3,
+		lte:      4,
+		gt:       5,
+		gte:      6,
+		in:       7,
+		notIn:    8,
+	}
+	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.TimestampRules
+	timestampNumericTagSet = numericTagSet{
+		constant: 2,
+		lt:       3,
+		lte:      4,
+		gt:       5,
+		gte:      6,
+	}
+)
+
+type numericTagSet struct {
+	constant int32
+	lt       int32
+	lte      int32
+	gt       int32
+	gte      int32
+	in       int32
+	notIn    int32
+}
+
 type numericRules[N comparable] interface {
 	GetGt() N
 	GetGte() N
@@ -59,6 +101,7 @@ func resolveLimits[
 
 func validateNumberField[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
 	m *validateField,
+	tagSet numericTagSet,
 	in, notIn int,
 	constant, greaterThan, greaterThanEqual, lessThan, lessThanEqual *T,
 ) {

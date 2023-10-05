@@ -79,7 +79,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.FloatRules_Lt,
 			*validate.FloatRules_Lte,
 		](r.Float, r.Float.GreaterThan, r.Float.LessThan)
-		validateNumberField(m, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Double:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_DOUBLE, doubleValueWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -89,7 +89,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.DoubleRules_Lt,
 			*validate.DoubleRules_Lte,
 		](r.Double, r.Double.GreaterThan, r.Double.LessThan)
-		validateNumberField(m, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Int32:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT32, int32ValueWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -99,7 +99,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.Int32Rules_Lt,
 			*validate.Int32Rules_Lte,
 		](r.Int32, r.Int32.GreaterThan, r.Int32.LessThan)
-		validateNumberField(m, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Int64:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT64, int64ValueWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -109,7 +109,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.Int64Rules_Lt,
 			*validate.Int64Rules_Lte,
 		](r.Int64, r.Int64.GreaterThan, r.Int64.LessThan)
-		validateNumberField(m, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Uint32:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT32, uInt32ValueWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -119,7 +119,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.UInt32Rules_Lt,
 			*validate.UInt32Rules_Lte,
 		](r.Uint32, r.Uint32.GreaterThan, r.Uint32.LessThan)
-		validateNumberField(m, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Uint64:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT64, uInt64ValueWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -129,7 +129,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.UInt64Rules_Lt,
 			*validate.UInt64Rules_Lte,
 		](r.Uint64, r.Uint64.GreaterThan, r.Uint64.LessThan)
-		validateNumberField(m, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Sint32:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT32, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -139,7 +139,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.SInt32Rules_Lt,
 			*validate.SInt32Rules_Lte,
 		](r.Sint32, r.Sint32.GreaterThan, r.Sint32.LessThan)
-		validateNumberField(m, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Sint64:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT64, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -149,7 +149,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.SInt64Rules_Lt,
 			*validate.SInt64Rules_Lte,
 		](r.Sint64, r.Sint64.GreaterThan, r.Sint64.LessThan)
-		validateNumberField(m, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Fixed32:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED32, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -159,7 +159,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.Fixed32Rules_Lt,
 			*validate.Fixed32Rules_Lte,
 		](r.Fixed32, r.Fixed32.GreaterThan, r.Fixed32.LessThan)
-		validateNumberField(m, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Fixed64:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED64, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -169,7 +169,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.Fixed64Rules_Lt,
 			*validate.Fixed64Rules_Lte,
 		](r.Fixed64, r.Fixed64.GreaterThan, r.Fixed64.LessThan)
-		validateNumberField(m, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Sfixed32:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED32, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -179,7 +179,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.SFixed32Rules_Lt,
 			*validate.SFixed32Rules_Lte,
 		](r.Sfixed32, r.Sfixed32.GreaterThan, r.Sfixed32.LessThan)
-		validateNumberField(m, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Sfixed64:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, unknownWKT)
 		gt, gte, lt, lte := resolveLimits[
@@ -189,7 +189,7 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 			*validate.SFixed64Rules_Lt,
 			*validate.SFixed64Rules_Lte,
 		](r.Sfixed64, r.Sfixed64.GreaterThan, r.Sfixed64.LessThan)
-		validateNumberField(m, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, gt, gte, lt, lte)
+		validateNumberField(m, defaultNumericTagSet, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, gt, gte, lt, lte)
 	case *validate.FieldConstraints_Bool:
 		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_BOOL, boolValueWKT)
 	case *validate.FieldConstraints_String_:
@@ -351,6 +351,7 @@ func (m *validateField) validateAnyField(r *validate.AnyRules) {
 
 func (m *validateField) validateDurationField(r *validate.DurationRules) {
 	validateNumberField(m,
+		durationNumericTagSet,
 		len(r.GetIn()),
 		len(r.GetNotIn()),
 		m.checkDur(r.GetConst()),
@@ -371,7 +372,7 @@ func (m *validateField) validateDurationField(r *validate.DurationRules) {
 }
 
 func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
-	validateNumberField(m, 0, 0,
+	validateNumberField(m, timestampNumericTagSet, 0, 0,
 		m.checkTS(r.GetConst()),
 		m.checkTS(r.GetLt()),
 		m.checkTS(r.GetLte()),
