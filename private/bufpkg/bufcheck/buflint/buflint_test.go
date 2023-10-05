@@ -974,7 +974,7 @@ func TestValidateRulesTypesDontMatch(t *testing.T) {
 	t.Parallel()
 	testLintWithValidate(
 		t,
-		"validate_rules_types_dont_match",
+		"protovalidate_rules_types_dont_match",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "PROTOVALIDATE_RULES"),
@@ -1011,7 +1011,7 @@ func TestValidateRulesTypesMatchSuccess(t *testing.T) {
 	t.Parallel()
 	testLintWithValidate(
 		t,
-		"validate_rules_types_match_success",
+		"protovalidate_rules_types_match_success",
 	)
 }
 
@@ -1019,7 +1019,7 @@ func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 	t.Parallel()
 	testLintWithValidate(
 		t,
-		"validate_rules_incompatible_usage_errors",
+		"protovalidate_rules_incompatible_usage_errors",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 5, 13, 38, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 5, 18, 39, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 5, 23, 38, "PROTOVALIDATE_RULES"),
