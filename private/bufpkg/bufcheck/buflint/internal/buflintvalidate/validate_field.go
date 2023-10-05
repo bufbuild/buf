@@ -331,8 +331,18 @@ func (m *validateField) validateMapField(r *validate.MapRules) {
 
 	m.checkMinMax(r.MinPairs, r.MaxPairs)
 
-	m.CheckFieldRules(r.Keys)
-	m.CheckFieldRules(r.Values)
+	mapMessage := embed(m.field, m.files...)
+	// TODO: make sure it has two fields
+	newValidateField(
+		m.add,
+		m.files,
+		mapMessage.Fields()[0],
+	).CheckFieldRules(r.Keys)
+	newValidateField(
+		m.add,
+		m.files,
+		mapMessage.Fields()[1],
+	).CheckFieldRules(r.Values)
 }
 
 func (m *validateField) validateAnyField(r *validate.AnyRules) {
