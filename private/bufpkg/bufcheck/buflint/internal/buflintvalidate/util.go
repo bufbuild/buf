@@ -15,8 +15,11 @@
 package buflintvalidate
 
 import (
+	"fmt"
+	"os"
 	"time"
 
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
@@ -69,6 +72,94 @@ type numericRules[N comparable] interface {
 	GetLte() N
 }
 
+type numericRange[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration] struct {
+	lowerBound            *T
+	isLowerBoundInclusive bool
+	upperBound            *T
+	isUpperBoundInclusive bool
+}
+
+func newNumericRange[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
+	gt, gte, lt, lte *T,
+) *numericRange[T] {
+	numericRange := &numericRange[T]{
+		lowerBound: gt,
+		upperBound: lt,
+	}
+	if gte != nil {
+		numericRange.lowerBound = gte
+		numericRange.isLowerBoundInclusive = true
+	}
+	if lte != nil {
+		numericRange.upperBound = lte
+		numericRange.isUpperBoundInclusive = true
+	}
+	return numericRange
+}
+
+func (r *numericRange[T]) isDefined() bool {
+	return r.lowerBound != nil || r.upperBound != nil
+}
+
+func (r *numericRange[T]) allowsSingleValue() bool {
+	fmt.Fprintf(os.Stderr, "THIS IS: %s\n", r)
+	return r.lowerBound != nil && r.upperBound != nil && *r.lowerBound == *r.upperBound && r.isLowerBoundInclusive && r.isUpperBoundInclusive
+}
+
+func (r *numericRange[T]) isValid() bool {
+	if r.lowerBound == nil || r.upperBound == nil {
+		return true
+	}
+	if *r.lowerBound < *r.upperBound {
+		return true
+	}
+	if *r.lowerBound > *r.upperBound {
+		return false
+	}
+	return r.isLowerBoundInclusive && r.isUpperBoundInclusive
+}
+
+// func (r *numericRange[T]) contains(number T) bool {
+// 	if r.lowerBound != nil {
+// 		if number < *r.lowerBound {
+// 			return false
+// 		}
+// 		if number == *r.lowerBound && !r.isLowerBoundInclusive {
+// 			return false
+// 		}
+// 	}
+// 	if r.upperBound != nil {
+// 		if number > *r.upperBound {
+// 			return false
+// 		}
+// 		if number == *r.upperBound && !r.isUpperBoundInclusive {
+// 			return false
+// 		}
+// 	}
+// 	return true
+// }
+
+func (r *numericRange[T]) String() string {
+	leftDelimiter := "("
+	if r.isLowerBoundInclusive {
+		leftDelimiter = "["
+	}
+	// type is any because string(<some float>) is not possible.
+	var lowerBound any = "-Infinity"
+	if r.lowerBound != nil {
+		lowerBound = *r.lowerBound
+	}
+	var upperBound any = "Infinity"
+	if r.upperBound != nil {
+		upperBound = *r.upperBound
+	}
+	rightDelimiter := ")"
+	if r.isUpperBoundInclusive {
+		rightDelimiter = "]"
+	}
+	return fmt.Sprintf("%s%v,%v%s", leftDelimiter, lowerBound, upperBound, rightDelimiter)
+}
+
 func resolveLimits[
 	N comparable,
 	GT any,
@@ -101,35 +192,46 @@ func resolveLimits[
 
 func validateNumberField[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
 	m *validateField,
+	ruleTag int32,
 	tagSet numericTagSet,
 	in, notIn int,
 	constant, greaterThan, greaterThanEqual, lessThan, lessThanEqual *T,
 ) {
 	m.checkIns(in, notIn)
-
-	m.assertf(constant == nil ||
-		in == 0 && notIn == 0 &&
-			lessThan == nil && lessThanEqual == nil &&
-			greaterThan == nil && greaterThanEqual == nil,
-		"const can be the only rule on a field",
-	)
-
-	m.assertf(in == 0 ||
-		lessThan == nil && lessThanEqual == nil &&
-			greaterThan == nil && greaterThanEqual == nil,
-		"cannot have both in and range constraint rules on the same field",
-	)
-
-	if !(lessThan == nil) {
-		m.assertf(greaterThan == nil || *lessThan != *greaterThan,
-			"cannot have equal gt and lt rules on the same field")
-		m.assertf(greaterThanEqual == nil || *lessThan != *greaterThanEqual,
-			"cannot have equal gte and lt rules on the same field")
-	} else if !(lessThanEqual == nil) {
-		m.assertf(greaterThan == nil || *lessThanEqual != *greaterThan,
-			"cannot have equal gt and lte rules on the same field")
-		m.assertf(greaterThanEqual == nil || *lessThanEqual != *greaterThanEqual,
-			"use const instead of equal lte and gte rules")
+	numberRange := newNumericRange(greaterThan, greaterThanEqual, lessThan, lessThanEqual)
+	if constant != nil && (in != 0 || notIn != 0 || numberRange.isDefined()) {
+		m.add(
+			m.field,
+			m.field.OptionExtensionLocation(validate.E_Field, ruleTag, tagSet.constant),
+			nil,
+			"all other rules are ignored when const is specified on a field",
+		)
+	}
+	if in != 0 && numberRange.isDefined() {
+		m.add(
+			m.field,
+			m.field.OptionExtensionLocation(validate.E_Field, ruleTag, tagSet.in),
+			nil,
+			"cannot have both in and range constraint rules on the same field",
+		)
+	}
+	if !numberRange.isValid() {
+		m.add(
+			m.field,
+			m.field.OptionExtensionLocation(validate.E_Field, ruleTag),
+			nil,
+			"%v is not a valid range",
+			numberRange,
+		)
+	}
+	if numberRange.allowsSingleValue() {
+		m.add(
+			m.field,
+			m.field.OptionExtensionLocation(validate.E_Field, ruleTag),
+			nil,
+			"use const instead of equal lte and gte values for range %v",
+			numberRange,
+		)
 	}
 }
 
