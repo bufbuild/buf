@@ -92,7 +92,7 @@ jobs:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repositories:
-            - ${{ github.repository }} ]
+            - ${{ github.repository }}
           permissions: >-
             {"contents": "write"}
       - name: Set VERSION variable from tag
