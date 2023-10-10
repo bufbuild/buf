@@ -328,7 +328,7 @@ jobs:
           app_id: ${{secrets.BUF_BUILD_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_BUILD_RELEASE_APP_PRIVATE_KEY }}
           repositories:
-            "bufbuild/buf.build"
+            - "bufbuild/buf.build"
           permissions: >-
             {"actions": "write"}
       - name: trigger buf.build release
