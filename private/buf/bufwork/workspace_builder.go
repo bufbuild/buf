@@ -115,27 +115,31 @@ func (w *workspaceBuilder) BuildWorkspace(
 		if err != nil {
 			return nil, err
 		}
-		subDirRelPaths := make([]string, 0, len(externalToSubDirRelPaths))
-		for _, subDirRelPath := range externalToSubDirRelPaths {
-			subDirRelPaths = append(subDirRelPaths, subDirRelPath)
-		}
-		subDirRelExcludePaths := make([]string, 0, len(excludeToSubDirRelExcludePaths))
-		for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
-			subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
-		}
-		var externalIncludePaths []string
-		var includePaths []string
+		var (
+			externalIncludePaths  []string
+			externalExcludePaths  []string
+			subDirRelIncludePaths []string
+			subDirRelExcludePaths []string
+		)
 		if targetSubDirPath == "." || targetSubDirPath == directory {
 			externalIncludePaths = externalDirOrFilePaths
-			includePaths = subDirRelPaths
+			externalExcludePaths = externalExcludeDirOrFilePaths
+			subDirRelIncludePaths = make([]string, 0, len(externalToSubDirRelPaths))
+			for _, subDirRelPath := range externalToSubDirRelPaths {
+				subDirRelIncludePaths = append(subDirRelIncludePaths, subDirRelPath)
+			}
+			subDirRelExcludePaths = make([]string, 0, len(excludeToSubDirRelExcludePaths))
+			for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+				subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
+			}
 		}
 		buildOptions, err := BuildOptionsForWorkspaceDirectory(
 			ctx,
 			workspaceConfig,
 			moduleConfig,
 			externalIncludePaths,
-			externalExcludeDirOrFilePaths,
-			includePaths,
+			externalExcludePaths,
+			subDirRelIncludePaths,
 			subDirRelExcludePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
