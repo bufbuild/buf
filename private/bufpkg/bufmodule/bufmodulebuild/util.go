@@ -114,6 +114,7 @@ type buildOptions struct {
 	// Paths that will be excluded from the module build process. This is handled in conjunction
 	// with `paths`.
 	excludePaths []string
+	id           string
 }
 
 type buildModuleFileSetOptions struct {

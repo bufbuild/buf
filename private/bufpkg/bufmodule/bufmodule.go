@@ -165,6 +165,11 @@ type Module interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
+	// Id returns the some Id for the module. If ModuleIdentity is not nil,
+	// this returns its identity string. Otherwise, it returns the Id set at
+	// construction time.
+	// Note this can be empty.
+	Id() string
 	isModule()
 }
 
@@ -186,6 +191,13 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	return func(module *module) {
 		module.moduleIdentity = moduleIdentity
 		module.commit = commit
+	}
+}
+
+// ModuleWithId is used to construct a Module with an id.
+func ModuleWithId(id string) ModuleOption {
+	return func(module *module) {
+		module.id = id
 	}
 }
 

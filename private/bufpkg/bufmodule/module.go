@@ -45,6 +45,7 @@ type module struct {
 	lintConfig                 *buflintconfig.Config
 	manifest                   *manifest.Manifest
 	blobSet                    *manifest.BlobSet
+	id                         string
 }
 
 func newModuleForProto(
@@ -362,6 +363,13 @@ func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
 
 func (m *module) Commit() string {
 	return m.commit
+}
+
+func (m *module) Id() string {
+	if m.moduleIdentity != nil {
+		return "mod:" + m.moduleIdentity.IdentityString()
+	}
+	return m.id
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {

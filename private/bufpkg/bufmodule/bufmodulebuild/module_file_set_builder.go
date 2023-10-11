@@ -59,12 +59,8 @@ func (m *moduleFileSetBuilder) build(
 	workspace bufmodule.Workspace,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
-	hashes := make(map[string]struct{})
-	moduleHash, err := protoPathsHash(ctx, module)
-	if err != nil {
-		return nil, err
-	}
-	hashes[moduleHash] = struct{}{}
+	moduleIds := make(map[string]struct{})
+	moduleIds[module.Id()] = struct{}{}
 	if workspace != nil {
 		// From the perspective of the ModuleFileSet, we include all of the files
 		// specified in the workspace. When we build the Image from the ModuleFileSet,
@@ -114,13 +110,9 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			potentialDependencyModuleHash, err := protoPathsHash(ctx, potentialDependencyModule)
-			if err != nil {
-				return nil, err
-			}
-			if _, ok := hashes[potentialDependencyModuleHash]; !ok {
+			if _, ok := moduleIds[potentialDependencyModule.Id()]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				hashes[potentialDependencyModuleHash] = struct{}{}
+				moduleIds[potentialDependencyModule.Id()] = struct{}{}
 			}
 		}
 	}
@@ -138,16 +130,12 @@ func (m *moduleFileSetBuilder) build(
 		if err != nil {
 			return nil, err
 		}
-		dependencyModuleHash, err := protoPathsHash(ctx, dependencyModule)
-		if err != nil {
-			return nil, err
-		}
 		// At this point, this is really just a safety check.
-		if _, ok := hashes[dependencyModuleHash]; ok {
+		if _, ok := moduleIds[dependencyModule.Id()]; ok {
 			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
-		hashes[dependencyModuleHash] = struct{}{}
+		moduleIds[dependencyModule.Id()] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
 }
