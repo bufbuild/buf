@@ -125,7 +125,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 		}
 		var externalIncludePaths []string
 		var includePaths []string
-		if directory == targetSubDirPath {
+		if targetSubDirPath == "." || targetSubDirPath == directory {
 			externalIncludePaths = externalDirOrFilePaths
 			includePaths = subDirRelPaths
 		}
