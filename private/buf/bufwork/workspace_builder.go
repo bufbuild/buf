@@ -123,13 +123,19 @@ func (w *workspaceBuilder) BuildWorkspace(
 		for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
 			subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
 		}
+		var externalIncludePaths []string
+		var includePaths []string
+		if directory == targetSubDirPath {
+			externalIncludePaths = externalDirOrFilePaths
+			includePaths = subDirRelPaths
+		}
 		buildOptions, err := BuildOptionsForWorkspaceDirectory(
 			ctx,
 			workspaceConfig,
 			moduleConfig,
-			externalDirOrFilePaths,
+			externalIncludePaths,
 			externalExcludeDirOrFilePaths,
-			subDirRelPaths,
+			includePaths,
 			subDirRelExcludePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
