@@ -165,9 +165,8 @@ type Module interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
-	// ID returns the some Id for the module. If ModuleIdentity is not nil,
-	// this returns its identity string. Otherwise, it returns the Id set at
-	// construction time.
+	// ID returns the Id for the module. If ModuleIdentity is not nil, this returns
+	// its identity string. Otherwise, it returns the Id set at construction time.
 	// Note this can be empty.
 	ID() string
 	isModule()
