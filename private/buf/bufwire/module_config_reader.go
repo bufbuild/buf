@@ -620,10 +620,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			}
 			bucketRelPaths[i] = bucketRelPath
 		}
-		buildOptions = append(
-			buildOptions,
-			bufmodulebuild.WithExcludePaths(bucketRelPaths),
-		)
+		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(bucketRelPaths))
 	}
 	buildOptions = append(buildOptions, bufmodulebuild.WithID("dir:"+subDirPath))
 	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
