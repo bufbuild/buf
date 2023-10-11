@@ -59,6 +59,10 @@ func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(path)
 }
 
+func (r *sourceRef) ID() string {
+	return r.bucketRef.ID()
+}
+
 func (r *sourceRef) internalRef() internal.Ref {
 	return r.bucketRef
 }

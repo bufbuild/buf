@@ -67,6 +67,10 @@ func newDirectDirRef(
 	}
 }
 
+func (r *dirRef) ID() string {
+	return r.path
+}
+
 func (r *dirRef) Format() string {
 	return r.format
 }

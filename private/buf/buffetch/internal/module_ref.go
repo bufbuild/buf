@@ -61,6 +61,10 @@ func newDirectModuleRef(format string, moduleReference bufmoduleref.ModuleRefere
 	}
 }
 
+func (r *moduleRef) ID() string {
+	return r.moduleReference.IdentityString()
+}
+
 func (r *moduleRef) Format() string {
 	return r.format
 }

@@ -87,6 +87,11 @@ func newDirectArchiveRef(
 	}
 }
 
+func (r *archiveRef) ID() string {
+	// TODO: maybe "path" + ":" + "subDirPath" ?
+	return r.path
+}
+
 func (r *archiveRef) Format() string {
 	return r.format
 }

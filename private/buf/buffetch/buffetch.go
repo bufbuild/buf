@@ -93,6 +93,8 @@ type PathResolver interface {
 // Ref is an image file or source bucket reference.
 type Ref interface {
 	PathResolver
+	// ID is the Ref's ID.
+	ID() string
 
 	internalRef() internal.Ref
 }

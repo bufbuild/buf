@@ -36,6 +36,10 @@ func newImageRef(
 	}
 }
 
+func (r *imageRef) ID() string {
+	return r.fileRef.ID()
+}
+
 func (r *imageRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(externalPath)
 }

@@ -86,6 +86,8 @@ type CompressionType int
 
 // Ref is a reference.
 type Ref interface {
+	// ID is the ref's ID.
+	ID() string
 	ref()
 }
 

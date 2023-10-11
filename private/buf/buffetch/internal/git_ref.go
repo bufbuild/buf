@@ -97,6 +97,10 @@ func newDirectGitRef(
 	}
 }
 
+func (r *gitRef) ID() string {
+	return r.path
+}
+
 func (r *gitRef) Format() string {
 	return r.format
 }

@@ -123,6 +123,10 @@ func newDirectSingleRef(
 	}
 }
 
+func (r *singleRef) ID() string {
+	return r.path
+}
+
 func (r *singleRef) Format() string {
 	return r.format
 }

@@ -35,6 +35,10 @@ func (r *moduleRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(externalPath)
 }
 
+func (r *moduleRef) ID() string {
+	return r.iModuleRef.ID()
+}
+
 func (r *moduleRef) internalRef() internal.Ref {
 	return r.iModuleRef
 }

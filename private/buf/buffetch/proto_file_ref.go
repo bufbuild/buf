@@ -53,6 +53,10 @@ func (r *protoFileRef) PathForExternalPath(externalPath string) (string, error) 
 	return ".", nil
 }
 
+func (r *protoFileRef) ID() string {
+	return r.protoFileRef.ID()
+}
+
 func (r *protoFileRef) IncludePackageFiles() bool {
 	return r.protoFileRef.IncludePackageFiles()
 }
