@@ -174,8 +174,8 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 	}
 }
 
-// WithId returns a new BuildOption that specifies the module's Id.
-func WithId(id string) BuildOption {
+// WithID returns a new BuildOption that specifies the module's Id.
+func WithID(id string) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.id = id
 	}

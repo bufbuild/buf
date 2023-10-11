@@ -141,7 +141,7 @@ func (b *moduleBucketBuilder) buildForBucket(
 		bufmodule.ModuleWithModuleIdentity(
 			buildOptions.moduleIdentity, // This may be nil
 		),
-		bufmodule.ModuleWithId(
+		bufmodule.ModuleWithID(
 			buildOptions.id, // This may be empty
 		),
 	)

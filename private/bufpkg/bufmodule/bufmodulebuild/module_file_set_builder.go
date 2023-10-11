@@ -16,11 +16,9 @@ package bufmodulebuild
 
 import (
 	"context"
-	"encoding/hex"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/sha3"
 )
 
 type moduleFileSetBuilder struct {
@@ -60,7 +58,7 @@ func (m *moduleFileSetBuilder) build(
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
 	moduleIds := make(map[string]struct{})
-	moduleIds[module.Id()] = struct{}{}
+	moduleIds[module.ID()] = struct{}{}
 	if workspace != nil {
 		// From the perspective of the ModuleFileSet, we include all of the files
 		// specified in the workspace. When we build the Image from the ModuleFileSet,
@@ -110,9 +108,9 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			if _, ok := moduleIds[potentialDependencyModule.Id()]; !ok {
+			if _, ok := moduleIds[potentialDependencyModule.ID()]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				moduleIds[potentialDependencyModule.Id()] = struct{}{}
+				moduleIds[potentialDependencyModule.ID()] = struct{}{}
 			}
 		}
 	}
@@ -131,36 +129,11 @@ func (m *moduleFileSetBuilder) build(
 			return nil, err
 		}
 		// At this point, this is really just a safety check.
-		if _, ok := moduleIds[dependencyModule.Id()]; ok {
+		if _, ok := moduleIds[dependencyModule.ID()]; ok {
 			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
-		moduleIds[dependencyModule.Id()] = struct{}{}
+		moduleIds[dependencyModule.ID()] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
-}
-
-// protoPathsHash returns a hash representing the paths of the .proto files within the Module.
-func protoPathsHash(ctx context.Context, module bufmodule.Module) (string, error) {
-	// Use TargetFileInfos instead of SourceFileInfos as otherwise this will iterate over
-	// all files in a bucket in the case of using i.e. --path, which causes massive performance problems.
-	//
-	// If you are targeting a specific set of files, it's fair to have our duplication detection only
-	// use target files.
-	fileInfos, err := module.TargetFileInfos(ctx)
-	if err != nil {
-		return "", err
-	}
-	shakeHash := sha3.NewShake256()
-	for _, fileInfo := range fileInfos {
-		_, err := shakeHash.Write([]byte(fileInfo.Path()))
-		if err != nil {
-			return "", err
-		}
-	}
-	data := make([]byte, 64)
-	if _, err := shakeHash.Read(data); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(data), nil
 }

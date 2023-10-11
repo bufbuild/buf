@@ -365,7 +365,7 @@ func (m *module) Commit() string {
 	return m.commit
 }
 
-func (m *module) Id() string {
+func (m *module) ID() string {
 	if m.moduleIdentity != nil {
 		return "mod:" + m.moduleIdentity.IdentityString()
 	}
