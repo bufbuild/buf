@@ -625,7 +625,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			bufmodulebuild.WithExcludePaths(bucketRelPaths),
 		)
 	}
-	buildOptions = append(buildOptions, bufmodulebuild.WithID(subDirPath))
+	buildOptions = append(buildOptions, bufmodulebuild.WithID("dir:"+subDirPath))
 	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		mappedReadBucket,
