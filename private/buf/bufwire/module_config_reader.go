@@ -448,7 +448,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 		moduleConfig, err := m.getSourceModuleConfig(
 			ctx,
 			sourceRef,
-			sourceRef.ID()+":"+directory,
+			fmt.Sprintf("%s:%s", sourceRef.ID(), directory),
 			readBucket,
 			relativeRootPath,
 			directory,

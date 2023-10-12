@@ -366,10 +366,13 @@ func (m *module) Commit() string {
 }
 
 func (m *module) ID() string {
-	if m.moduleIdentity != nil {
-		return "mod:" + m.moduleIdentity.IdentityString()
+	if m.id != "" {
+		return m.id
 	}
-	return m.id
+	if m.moduleIdentity != nil {
+		return m.moduleIdentity.IdentityString()
+	}
+	return ""
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
