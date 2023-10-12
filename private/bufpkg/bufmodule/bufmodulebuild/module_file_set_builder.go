@@ -90,7 +90,7 @@ func (m *moduleFileSetBuilder) build(
 		//     This doesn't work when the `--path` filter is passed. Suppose there are module A, B and C
 		//     in the workspace and we are building for A, with `--path some/path/only/in/A`. The filter
 		//     applies to all modules, and module B and C will have no TargetFileInfo left, and both of
-		//     their hashes will be the hash for an emtpy directory, meaning they will have the same hash.
+		//     their hashes will be the hash for an empty directory, meaning they will have the same hash.
 		//     This causes https://github.com/bufbuild/buf/issues/2480.
 		//   - If there are any overlapping files: for example, one module has a.proto, one module
 		//     has b.proto, and both have c.proto. We don't use this heuristic as what we are looking
