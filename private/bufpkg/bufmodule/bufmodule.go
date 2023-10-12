@@ -165,9 +165,12 @@ type Module interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
-	// ID returns the Id for the module. If ModuleIdentity is not nil, this returns
-	// its identity string. Otherwise, it returns the Id set at construction time.
-	// Note this can be empty.
+	// ID returns the ID for the module. This is not a truly unique ID and
+	// should be only used to distinguish modules within the same workspace
+	// while building a ModuleFileSet with a workspace. Do not use it elsewhere.
+	//
+	// The ID's form should not be relied on and will change in the future.
+	// It should be derived from the module's content.
 	ID() string
 	isModule()
 }
@@ -193,7 +196,11 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	}
 }
 
-// ModuleWithID is used to construct a Module with an ID.
+// ModuleWithID is used to construct a Module with an ID. This ID is used to
+// distinguish different modules. For any module built locally from a buffetch.Ref,
+// this option should be set to the Ref's ID. If the Ref points the workspace that
+// contains this module, set the module's ID to <Ref id>:<subdirectory for module>.
+// That said, the form of ID is unstable and should not be relied on.
 func ModuleWithID(id string) ModuleOption {
 	return func(module *module) {
 		module.id = id

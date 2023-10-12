@@ -174,7 +174,11 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 	}
 }
 
-// WithID returns a new BuildOption that specifies the module's ID.
+// WithID returns a new BuildOption that specifies the module's ID. This ID is used to
+// distinguish different modules. For any module built locally from a buffetch.Ref,
+// this option should be set to the Ref's ID. If the Ref points the workspace that
+// contains this module, set the module's ID to <Ref id>:<subdirectory for module>.
+// That said, the form of ID is unstable and should not be relied on.
 func WithID(id string) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.id = id
