@@ -99,7 +99,8 @@ type Ref interface {
 	// ID string is unstable and should not be relied on.
 	// The purpose of this ID is to allow distinguishing locally built modules.
 	// More specifically, they are used to identify modules from directories in
-	// the same workspace.
+	// the same workspace, to fix https://github.com/bufbuild/buf/issues/2480.
+	// This should not be used when bufmodule is refactored.
 	ID() string
 
 	internalRef() internal.Ref

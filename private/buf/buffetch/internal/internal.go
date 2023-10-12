@@ -87,11 +87,13 @@ type CompressionType int
 // Ref is a reference.
 type Ref interface {
 	// ID returns a string that identitifies a Ref. Two Refs pointing to different
-	// images or source buckets have different IDs. For example, a Ref for path/to/foo
-	// has a different ID from the path/to/bar's Ref ID. The form of the ID string is unstable
-	// and should not be relied on.
-	// The purpose of this ID is to allow distinguishing locally built modules. The ID
-	// should not be used elsewhere.
+	// images or source buckets have different IDs. For example, the Ref for
+	// path/to/foo has a different ID from path/to/bar's Ref ID. The form of the
+	// ID string is unstable and should not be relied on.
+	// The purpose of this ID is to allow distinguishing locally built modules.
+	// More specifically, they are used to identify modules from directories in
+	// the same workspace, to fix https://github.com/bufbuild/buf/issues/2480.
+	// This should not be used when bufmodule is refactored.
 	// An archiveRef's ID is its path, or <path>#subdir=<subdir> if it has subdir.
 	// A dirRef's ID is its path.
 	// A gitRef's ID is its path, or <path>#name=<reference> if it has a reference.
