@@ -110,6 +110,7 @@ type WorkspaceBuilder interface {
 	BuildWorkspace(
 		ctx context.Context,
 		workspaceConfig *Config,
+		workspaceRefID string,
 		readBucket storage.ReadBucket,
 		relativeRootPath string,
 		targetSubDirPath string,

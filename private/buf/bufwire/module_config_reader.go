@@ -165,6 +165,7 @@ func (m *moduleConfigReader) getSourceModuleConfigSet(
 	moduleConfig, err := m.getSourceModuleConfig(
 		ctx,
 		sourceRef,
+		sourceRef.ID(),
 		readBucketCloser,
 		readBucketCloser.RelativeRootPath(),
 		readBucketCloser.SubDirPath(),
@@ -322,6 +323,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigSet(
 	moduleConfig, err := m.getSourceModuleConfig(
 		ctx,
 		protoFileRef,
+		protoFileRef.ID(),
 		readBucketCloser,
 		readBucketCloser.RelativeRootPath(),
 		readBucketCloser.SubDirPath(),
@@ -363,6 +365,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 	workspace, err := workspaceBuilder.BuildWorkspace(
 		ctx,
 		workspaceConfig,
+		sourceRef.ID(),
 		readBucket,
 		relativeRootPath,
 		subDirPath, // this is used to only apply the config override to this directory
@@ -378,6 +381,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 		moduleConfig, err := m.getSourceModuleConfig(
 			ctx,
 			sourceRef,
+			sourceRef.ID(),
 			readBucket,
 			relativeRootPath,
 			subDirPath,
@@ -444,6 +448,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 		moduleConfig, err := m.getSourceModuleConfig(
 			ctx,
 			sourceRef,
+			sourceRef.ID()+":"+directory,
 			readBucket,
 			relativeRootPath,
 			directory,
@@ -479,6 +484,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigSet(
 func (m *moduleConfigReader) getSourceModuleConfig(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
+	moduleID string,
 	readBucket storage.ReadBucket,
 	relativeRootPath string,
 	subDirPath string,
@@ -622,7 +628,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 		}
 		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(bucketRelPaths))
 	}
-	buildOptions = append(buildOptions, bufmodulebuild.WithID("dir:"+subDirPath))
+	buildOptions = append(buildOptions, bufmodulebuild.WithID(moduleID))
 	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		mappedReadBucket,
