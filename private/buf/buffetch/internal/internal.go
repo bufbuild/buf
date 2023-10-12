@@ -87,7 +87,7 @@ type CompressionType int
 // Ref is a reference.
 type Ref interface {
 	// ID returns a string that identitifies a Ref. Two Refs pointing to different
-	// image or source buckets have different IDs. For example, a Ref for path/to/foo
+	// images or source buckets have different IDs. For example, a Ref for path/to/foo
 	// has a different ID from path/to/bar's. The form of the ID string is unstable
 	// and should not be relied on.
 	// The purpose of this ID is to allow distinguishing locally built modules. The ID
