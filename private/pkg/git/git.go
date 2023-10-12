@@ -17,6 +17,7 @@ package git
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -62,6 +63,7 @@ type ObjectMode uint32
 
 // Name is a name identifiable by git.
 type Name interface {
+	fmt.Stringer
 	// If cloneBranch returns a non-empty string, any clones will be performed with --branch set to the value.
 	cloneBranch() string
 	// If checkout returns a non-empty string, a checkout of the value will be performed after cloning.

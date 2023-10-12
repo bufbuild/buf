@@ -73,7 +73,16 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt)
+	moduleReference, err := bufmoduleref.NewModuleReference(
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+		modulePin.Commit(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt, bufmodule.ModuleWithID(moduleReference.String()))
 }
 
 func (m *moduleReader) downloadManifestAndBlobs(

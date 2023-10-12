@@ -38,6 +38,9 @@ func newProtoFileRef(format string, path string, includePackageFiles bool) (*pro
 }
 
 func (s *protoFileRef) ID() string {
+	if s.includePackageFiles {
+		return s.path + "#include_package_files=true"
+	}
 	return s.path
 }
 

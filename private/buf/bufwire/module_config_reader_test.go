@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
@@ -144,7 +145,7 @@ func TestExcludePathsForModule(t *testing.T) {
 			moduleConfigReader := NewModuleConfigReader(
 				zap.NewNop(),
 				storageos.NewProvider(),
-				&fakeModuleFetcher{
+				&fetchReader{
 					fileContent: testcase.moduleContent,
 				},
 				nil,
@@ -179,11 +180,187 @@ func TestExcludePathsForModule(t *testing.T) {
 	}
 }
 
-type fakeModuleFetcher struct {
-	fileContent map[string][]byte
+func TestModuleIDsFromGetModuleConfigSet(t *testing.T) {
+	t.Parallel()
+	workspaceConfigContent := `
+version: v1
+directories:
+  - dir1
+  - dir2
+`
+	dir1ConfigContent := `
+version: v1
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+`
+	dir2ConfigContent := `
+version: v1
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+`
+	testcases := []struct {
+		description                string
+		input                      string
+		content                    map[string][]byte
+		subDir                     string
+		expectedIDs                []string
+		expectedWorkspaceModuleIds []string
+	}{
+		{
+			description: "git",
+			input:       ".git",
+			content:     map[string][]byte{},
+			expectedIDs: []string{".git"},
+		},
+		{
+			description: "git_target_the_entire_workspace",
+			input:       ".git",
+			content: map[string][]byte{
+				"buf.work.yaml":  []byte(workspaceConfigContent),
+				"dir1/buf.yaml":  []byte(dir1ConfigContent),
+				"dir1/foo.proto": []byte("message Foo {}"),
+				"dir2/buf.yaml":  []byte(dir2ConfigContent),
+				"dir2/bar.proto": []byte("message Bar {}"),
+			},
+			// the module is for the entire workspace, and ID should be the ref's ID itself
+			expectedIDs:                []string{".git"},
+			expectedWorkspaceModuleIds: []string{".git:dir1", ".git:dir2"},
+		},
+		{
+			description: "git_target_the_entire_workspace",
+			input:       ".git#branch=main",
+			content: map[string][]byte{
+				"buf.work.yaml":  []byte(workspaceConfigContent),
+				"dir1/buf.yaml":  []byte(dir1ConfigContent),
+				"dir1/foo.proto": []byte("message Foo {}"),
+				"dir2/buf.yaml":  []byte(dir2ConfigContent),
+				"dir2/bar.proto": []byte("message Bar {}"),
+			},
+			expectedIDs:                []string{".git#name=main"},
+			expectedWorkspaceModuleIds: []string{".git#name=main:dir1", ".git#name=main:dir2"},
+		},
+		{
+			description: "git_target_a_module_in_workspace",
+			input:       ".git#subdir=dir1",
+			content: map[string][]byte{
+				"buf.work.yaml":  []byte(workspaceConfigContent),
+				"dir1/buf.yaml":  []byte(dir1ConfigContent),
+				"dir1/foo.proto": []byte("message Foo {}"),
+				"dir2/buf.yaml":  []byte(dir2ConfigContent),
+				"dir2/bar.proto": []byte("message Bar {}"),
+			},
+			subDir: "dir1",
+			// the module is for the entire workspace, and ID should be the ref's ID itself
+			expectedIDs:                []string{".git:dir1"},
+			expectedWorkspaceModuleIds: []string{".git:dir1", ".git:dir2"},
+		},
+		{
+			description: "non_module_directory",
+			input:       "foo",
+			content: map[string][]byte{
+				"baz.proto": []byte("message Baz {}"),
+			},
+			expectedIDs: []string{"foo"},
+		},
+		{
+			description: "module_directory",
+			input:       "foo",
+			content: map[string][]byte{
+				"buf.yaml":  []byte(dir1ConfigContent),
+				"baz.proto": []byte("message Baz {}"),
+			},
+			expectedIDs: []string{"foo"},
+		},
+		{
+			description: "workspace_directory",
+			input:       "dir",
+			content: map[string][]byte{
+				"buf.work.yaml":  []byte(workspaceConfigContent),
+				"dir1/buf.yaml":  []byte(dir1ConfigContent),
+				"dir1/foo.proto": []byte("message Foo {}"),
+				"dir2/buf.yaml":  []byte(dir2ConfigContent),
+				"dir2/bar.proto": []byte("message Bar {}"),
+			},
+			expectedIDs:                []string{"dir"},
+			expectedWorkspaceModuleIds: []string{"dir:dir1", "dir:dir2"},
+		},
+		{
+			description: "module_directory_in_workspace",
+			input:       "foo",
+			content: map[string][]byte{
+				"buf.work.yaml":  []byte(workspaceConfigContent),
+				"dir1/buf.yaml":  []byte(dir1ConfigContent),
+				"dir1/foo.proto": []byte("message Foo {}"),
+				"dir2/buf.yaml":  []byte(dir2ConfigContent),
+				"dir2/bar.proto": []byte("message Bar {}"),
+			},
+			subDir:                     "dir1",
+			expectedIDs:                []string{"foo:dir1"},
+			expectedWorkspaceModuleIds: []string{"foo:dir1", "foo:dir2"},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+			nopLogger := zap.NewNop()
+			readBucket, err := storagemem.NewReadBucket(testcase.content)
+			require.NoError(t, err)
+			moduleConfigReader := NewModuleConfigReader(
+				nopLogger,
+				storageos.NewProvider(),
+				&fetchReader{
+					readBucketCloserWithTerminateFileProvider: readBucketCloserWithTerminateFileProvider{
+						ReadBucketCloser: storage.NopReadBucketCloser(readBucket),
+						subDirPath:       testcase.subDir,
+					},
+					fileContent: testcase.content,
+				},
+				nil,
+			)
+			ref, err := buffetch.NewRefParser(nopLogger).GetSourceOrModuleRef(context.Background(), testcase.input)
+			require.NoError(t, err)
+			moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
+				context.Background(),
+				nil,
+				ref,
+				"",
+				nil,
+				nil,
+				true,
+			)
+			require.NoError(t, err)
+			require.NotNil(t, moduleConfigSet)
+			require.Len(t, moduleConfigSet.ModuleConfigs(), len(testcase.expectedIDs))
+			for i, expexpectedID := range testcase.expectedIDs {
+				require.Equal(t, expexpectedID, moduleConfigSet.ModuleConfigs()[i].Module().ID())
+			}
+			if len(testcase.expectedWorkspaceModuleIds) > 0 {
+				workspace := moduleConfigSet.Workspace()
+				require.NotNil(t, workspace)
+				require.Len(t, workspace.GetModules(), len(testcase.expectedWorkspaceModuleIds))
+				for i, expectedWorkspaceModuleID := range testcase.expectedWorkspaceModuleIds {
+					require.Equal(t, expectedWorkspaceModuleID, workspace.GetModules()[i].ID())
+				}
+			}
+		})
+	}
 }
 
-func (r *fakeModuleFetcher) GetModule(
+type fetchReader struct {
+	fileContent map[string][]byte
+	readBucketCloserWithTerminateFileProvider
+}
+
+func (r *fetchReader) GetModule(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef buffetch.ModuleRef,
@@ -200,7 +377,7 @@ func (r *fakeModuleFetcher) GetModule(
 	)
 }
 
-func (r *fakeModuleFetcher) GetImageFile(
+func (r *fetchReader) GetImageFile(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	imageRef buffetch.ImageRef,
@@ -208,11 +385,38 @@ func (r *fakeModuleFetcher) GetImageFile(
 	return nil, nil
 }
 
-func (r *fakeModuleFetcher) GetSourceBucket(
+func (r *fetchReader) GetSourceBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef buffetch.SourceRef,
 	options ...buffetch.GetSourceBucketOption,
 ) (buffetch.ReadBucketCloserWithTerminateFileProvider, error) {
-	return nil, nil
+	return &r.readBucketCloserWithTerminateFileProvider, nil
+}
+
+type readBucketCloserWithTerminateFileProvider struct {
+	storage.ReadBucketCloser
+	relativeRootPath string
+	subDirPath       string
+}
+
+func (r *readBucketCloserWithTerminateFileProvider) TerminateFileProvider() buffetch.TerminateFileProvider {
+	return r
+}
+
+func (r *readBucketCloserWithTerminateFileProvider) GetTerminateFiles() []buffetch.TerminateFile {
+	// Logic on terminateFiles depend on the call site, see terminateFilesOnOS in private/buf/buffetch/internal/reader.go.
+	return nil
+}
+
+func (r *readBucketCloserWithTerminateFileProvider) RelativeRootPath() string {
+	return r.relativeRootPath
+}
+
+func (r *readBucketCloserWithTerminateFileProvider) SubDirPath() string {
+	return r.subDirPath
+}
+
+func (r *readBucketCloserWithTerminateFileProvider) SetSubDirPath(subDirPath string) {
+	r.subDirPath = subDirPath
 }

@@ -98,6 +98,9 @@ func newDirectGitRef(
 }
 
 func (r *gitRef) ID() string {
+	if r.gitName != nil {
+		return r.path + "#name=" + r.gitName.String()
+	}
 	return r.path
 }
 
