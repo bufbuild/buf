@@ -72,20 +72,26 @@ func (m *moduleFileSetBuilder) build(
 		// By including all the Modules from the workspace, we are potentially including the input
 		// Module itself. This is bad, and will result in errors when using the result ModuleFileSet.
 		// The ModuleFileSet expects a Module, and its dependency Modules, but it is not OK for
-		// a Module to both be the input Module and a dependency Module. We have no concept
-		// of Module "ID" - a Module may have a ModuleIdentity and commit associated with it,
-		// but there is no guarantee of this. To get around this, we do a hash of the .proto file
-		// paths within a Module, and say that Modules are equivalent if they contain the exact
-		// same .proto file paths. If they have the same .proto file paths, then we do not
-		// add the Module as a dependency.
-		//
-		// We know from bufmodule.Workspace that no two Modules in a Workspace will have overlapping
-		// file paths, therefore if the Module is in the Workspace and has equivalent file paths,
-		// we know that it must be the same module. If the Module is not in the workspace...why
-		// did we provide a workspace?
+		// a Module to both be the input Module and a dependency Module. To distinguish workspace
+		// modules, an ID is added to module and locally built modules are guaranteed to have an ID
+		// based on its Ref, essentially its path (or URL). If a module is in a workspace, its ID
+		// will be based on the workspace directory's Ref and this module's directory. This means
+		// two directories from the same workspace have different module IDs.
+		// This is a temporary hacky ID and is not globally unique, and we will need to revisit module ID
+		// in the future. Ideally it should be based on a module's content.
 		//
 		// We could use other methods for equivalence or to say "do not add":
 		//
+		//   - Do a hash of the .proto file paths within a Module, and say that Modules are equivalent
+		//     if they contain the exact same .proto file paths. If they have the same .proto file paths,
+		//     then we do not add the Module as a dependency. We know from bufmodule.Workspace that no
+		//     two Modules in a Workspace will have overlapping file paths, therefore if the Module is in
+		//     the Workspace and has equivalent file paths, we know that it must be the same module.
+		//     This doesn't work when the `--path` filter is passed. Suppose there are module A, B and C
+		//     in the workspace and we are building for A, with `--path some/path/only/in/A`. The filter
+		//     applies to all modules, and module B and C will have no TargetFileInfo left, and both of
+		//     their hashes will be the hash for an emtpy directory, meaning they will have the same hash.
+		//     This causes https://github.com/bufbuild/buf/issues/2480.
 		//   - If there are any overlapping files: for example, one module has a.proto, one module
 		//     has b.proto, and both have c.proto. We don't use this heuristic as what we are looking
 		//     for here is a situation where based on our Module construction, we have two actually-equivalent
