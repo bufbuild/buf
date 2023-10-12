@@ -86,7 +86,18 @@ type CompressionType int
 
 // Ref is a reference.
 type Ref interface {
-	// ID is the ref's ID.
+	// ID returns a string that identitifies a Ref. Two Refs pointing to different
+	// image or source buckets have different IDs. For example, a Ref for path/to/foo
+	// has a different ID from path/to/bar's. The form of the ID string is unstable
+	// and should not be relied on.
+	// The purpose of this ID is to allow distinguishing locally built modules. The ID
+	// should not be used elsewhere.
+	// An archiveRef's ID is its path, or <path>#subdir=<subdir> if it has subdir.
+	// A dirRef's ID is its path.
+	// A gitRef's ID is its path, or <path>#name=<reference> if it has a reference.
+	// A moduleRef's ID is its reference string, <host>/<owner>/<repo>/<reference-if-not-main>.
+	// A protoFileRef's ID is its path, or <path>#include_package_files=true if set.
+	// A singleRef's ID is its path.
 	ID() string
 	ref()
 }

@@ -93,7 +93,12 @@ type PathResolver interface {
 // Ref is an image file or source bucket reference.
 type Ref interface {
 	PathResolver
-	// ID is the Ref's ID.
+	// ID returns a string that identitifies a Ref. Two Refs pointing to different
+	// image or source buckets have different IDs. For example, a Ref for path/to/foo
+	// has a different ID from path/to/bar's. The form of the ID string is unstable
+	// and should not be relied on.
+	// The purpose of this ID is to allow distinguishing locally built modules. The ID
+	// should not be used elsewhere.
 	ID() string
 
 	internalRef() internal.Ref
