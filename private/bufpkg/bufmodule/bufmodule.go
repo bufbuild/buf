@@ -193,7 +193,7 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	}
 }
 
-// ModuleWithID is used to construct a Module with an id.
+// ModuleWithID is used to construct a Module with an ID.
 func ModuleWithID(id string) ModuleOption {
 	return func(module *module) {
 		module.id = id
