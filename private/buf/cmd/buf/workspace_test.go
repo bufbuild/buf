@@ -304,48 +304,6 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 	)
 }
 
-func TestWorkspaceGit(t *testing.T) {
-	t.Skip("skip until the move to private/buf is merged")
-	// Directory paths specified as a git reference within a workspace.
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"build",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto`),
-		"ls-files",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
-		"lint",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
-		"lint",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-		"--path",
-		filepath.Join("internal", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
-	)
-}
-
 func TestWorkspaceDetached(t *testing.T) {
 	// The workspace doesn't include the 'proto' directory, so
 	// its contents aren't included in the workspace.
