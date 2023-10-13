@@ -225,12 +225,6 @@ type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 // ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
 type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
 
-// TerminateFileProvider provides TerminateFiles.
-type TerminateFileProvider = internal.TerminateFileProvider
-
-// TerminateFile is a terminate file.
-type TerminateFile = internal.TerminateFile
-
 // ImageReader is an image reader.
 type ImageReader interface {
 	// GetImageFile gets the image file.
