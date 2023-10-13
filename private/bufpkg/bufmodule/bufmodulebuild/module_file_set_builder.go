@@ -59,8 +59,12 @@ func (m *moduleFileSetBuilder) build(
 	workspace bufmodule.Workspace,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
-	moduleIds := make(map[string]struct{})
-	moduleIds[module.ID()] = struct{}{}
+	moduleIdentifiers := make(map[string]struct{})
+	moduleIdentifier, err := getModuleIdentifier(ctx, module)
+	if err != nil {
+		return nil, err
+	}
+	moduleIdentifiers[moduleIdentifier] = struct{}{}
 	if workspace != nil {
 		// From the perspective of the ModuleFileSet, we include all of the files
 		// specified in the workspace. When we build the Image from the ModuleFileSet,
@@ -116,17 +120,13 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			moduleIdentifier := potentialDependencyModule.ID()
-			if moduleIdentifier == "" {
-				var err error
-				moduleIdentifier, err = protoPathsHash(ctx, potentialDependencyModule)
-				if err != nil {
-					return nil, err
-				}
+			moduleIdentifier, err := getModuleIdentifier(ctx, module)
+			if err != nil {
+				return nil, err
 			}
-			if _, ok := moduleIds[moduleIdentifier]; !ok {
+			if _, ok := moduleIdentifiers[moduleIdentifier]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				moduleIds[moduleIdentifier] = struct{}{}
+				moduleIdentifiers[moduleIdentifier] = struct{}{}
 			}
 		}
 	}
@@ -145,13 +145,26 @@ func (m *moduleFileSetBuilder) build(
 			return nil, err
 		}
 		// At this point, this is really just a safety check.
-		if _, ok := moduleIds[dependencyModule.ID()]; ok {
+		if _, ok := moduleIdentifiers[dependencyModule.ID()]; ok {
 			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
-		moduleIds[dependencyModule.ID()] = struct{}{}
+		moduleIdentifiers[dependencyModule.ID()] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
+}
+
+// getModuleIdentifier returns the module's ID, or it's protoPathsHash if ID is empty.
+func getModuleIdentifier(ctx context.Context, module bufmodule.Module) (string, error) {
+	moduleIdentifier := module.ID()
+	if moduleIdentifier == "" {
+		var err error
+		moduleIdentifier, err = protoPathsHash(ctx, module)
+		if err != nil {
+			return "", err
+		}
+	}
+	return moduleIdentifier, nil
 }
 
 // protoPathsHash returns a hash representing the paths of the .proto files within the Module.
