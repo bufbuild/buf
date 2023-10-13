@@ -168,6 +168,7 @@ type Module interface {
 	// ID returns the ID for the module. This is not a truly unique ID and
 	// should be only used to distinguish modules within the same workspace
 	// while building a ModuleFileSet with a workspace. Do not use it elsewhere.
+	// This is also guaranteed to not be empty if its ModuleIdentity is not nil.
 	//
 	// The ID's form should not be relied on and will change in the future.
 	// It should be derived from the module's content.

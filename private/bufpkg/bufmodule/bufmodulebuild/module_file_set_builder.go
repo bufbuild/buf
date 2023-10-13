@@ -16,9 +16,11 @@ package bufmodulebuild
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/sha3"
 )
 
 type moduleFileSetBuilder struct {
@@ -114,9 +116,17 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			if _, ok := moduleIds[potentialDependencyModule.ID()]; !ok {
+			moduleIdentifier := potentialDependencyModule.ID()
+			if moduleIdentifier == "" {
+				var err error
+				moduleIdentifier, err = protoPathsHash(ctx, potentialDependencyModule)
+				if err != nil {
+					return nil, err
+				}
+			}
+			if _, ok := moduleIds[moduleIdentifier]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				moduleIds[potentialDependencyModule.ID()] = struct{}{}
+				moduleIds[moduleIdentifier] = struct{}{}
 			}
 		}
 	}
@@ -142,4 +152,29 @@ func (m *moduleFileSetBuilder) build(
 		moduleIds[dependencyModule.ID()] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
+}
+
+// protoPathsHash returns a hash representing the paths of the .proto files within the Module.
+func protoPathsHash(ctx context.Context, module bufmodule.Module) (string, error) {
+	// Use TargetFileInfos instead of SourceFileInfos as otherwise this will iterate over
+	// all files in a bucket in the case of using i.e. --path, which causes massive performance problems.
+	//
+	// If you are targeting a specific set of files, it's fair to have our duplication detection only
+	// use target files.
+	fileInfos, err := module.TargetFileInfos(ctx)
+	if err != nil {
+		return "", err
+	}
+	shakeHash := sha3.NewShake256()
+	for _, fileInfo := range fileInfos {
+		_, err := shakeHash.Write([]byte(fileInfo.Path()))
+		if err != nil {
+			return "", err
+		}
+	}
+	data := make([]byte, 64)
+	if _, err := shakeHash.Read(data); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(data), nil
 }
