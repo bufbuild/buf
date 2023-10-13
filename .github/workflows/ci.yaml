@@ -82,7 +82,7 @@ jobs:
       # not have any CGO and care should be taken in the Dockerfile to ensure
       # that go cross compilation happens on the build platform.
       - name: setup-qemu
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         id: qemu
         with:
           # alpine image doesn't support linux/riscv64
