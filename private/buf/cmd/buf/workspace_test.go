@@ -116,7 +116,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/a/proto/a/v1/a.proto
+		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
 		    testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -144,7 +145,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/breaking/a/proto/a/v1/a.proto
+		    testdata/workspace/success/breaking/other/proto/request.proto
 		    testdata/workspace/success/breaking/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", "breaking"),
@@ -303,7 +305,6 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 }
 
 func TestWorkspaceGit(t *testing.T) {
-	t.Skip("skip until the move to private/buf is merged")
 	// Directory paths specified as a git reference within a workspace.
 	t.Parallel()
 	testRunStdout(
@@ -313,6 +314,16 @@ func TestWorkspaceGit(t *testing.T) {
 		``,
 		"build",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+		"--path",
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
 	testRunStdout(
 		t,
@@ -340,7 +351,7 @@ func TestWorkspaceGit(t *testing.T) {
 		"lint",
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
 		"--path",
-		filepath.Join("internal", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
 }
 
@@ -900,7 +911,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input contained 1 images, whereas against contained 2 images`,
+		`Failure: input contained 1 images, whereas against contained 3 images`,
 		"breaking",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",

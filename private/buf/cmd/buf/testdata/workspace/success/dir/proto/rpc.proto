@@ -5,5 +5,5 @@ package example;
 import "request.proto";
 
 message RPC {
-    request.Request req = 1;
+  request.Request req = 1;
 }
