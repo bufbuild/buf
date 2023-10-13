@@ -125,8 +125,8 @@ func run(
 			}),
 		)
 		if err != nil {
-			if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufconnect.DefaultRemote {
-				return bufcli.NewUnimplementedRemoteError(err, remote, config.ModuleIdentity.IdentityString())
+			if remote != bufconnect.DefaultRemote {
+				return bufcli.NewInvalidRemoteError(err, remote, config.ModuleIdentity.IdentityString())
 			}
 			return err
 		}

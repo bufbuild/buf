@@ -3,8 +3,10 @@
 1fddd89116e24df213d43b7d837f5dd29ee9cbf0 refs/heads/paralleltest
 45c2edc61040013349e094663e492996e0c044e3 refs/remotes/origin/main
 1fddd89116e24df213d43b7d837f5dd29ee9cbf0 refs/remotes/origin/paralleltest
+1fddd89116e24df213d43b7d837f5dd29ee9cbf1 refs/remotes/origin/other/branch
 27523d9000238e0f7fb35d6052d10016852beee3 refs/remotes/otherorigin/main
 959e716b38b179bd5a4e7edfc549db2e30df3c8e refs/remotes/otherorigin/paralleltest
+959e716b38b179bd5a4e7edfc549db2e30df3c8f refs/remotes/otherorigin/yet/another/branch
 4acbbca27c6d7bc0f4027c1897f89da140789e55 refs/tags/v0.1.0
 ^157c7ae554844ff7ae178536ec10787b5b74b5db
 ebb191e8268db7cee389e3abb0d1edc1852337a3 refs/tags/v1.10.0

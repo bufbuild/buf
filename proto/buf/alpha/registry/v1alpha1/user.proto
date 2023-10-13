@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/plugin_curation.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
 import "google/protobuf/timestamp.proto";
@@ -51,6 +52,19 @@ message OrganizationUser {
   OrganizationRole organization_role = 3;
   // The source of the user's role in the organization above.
   OrganizationRoleSource organization_role_source = 4;
+}
+
+// UserPluginPreference contains the user's preferred language and the
+// list of plugins for that language, which they selected in the BSR's Generated SDKs UI flow.
+// These preferences are stored in the database so the language and plugins
+// are pre-selected when the user navigates back to the Generated SDKs page from any device or browser.
+message UserPluginPreference {
+  // The id of the user.
+  string user_id = 1;
+  // The language that the user has indicidated as their preferred language for plugins.
+  PluginLanguage selected_language = 2;
+  // A list of plugin names selected by the user.
+  repeated string selected_plugins = 3;
 }
 
 enum UserState {
@@ -105,6 +119,14 @@ service UserService {
   }
   // UpdateUserSettings update the user settings including description.
   rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UpdateUserSettingsResponse);
+  // GetUserPluginPreferences returns the preferred language and plugins a user has selected in the BSR's Generated SDKs UI flow.
+  // If the user does not have a stored preference in the database this will return a CodeNotFound error and
+  // on the UI, the user will be prompted to select a language and plugins in the Generated SDKs flow.
+  rpc GetUserPluginPreferences(GetUserPluginPreferencesRequest) returns (GetUserPluginPreferencesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // UpdateUserPluginPreferences updates the user plugin preferences.
+  rpc UpdateUserPluginPreferences(UpdateUserPluginPreferencesRequest) returns (UpdateUserPluginPreferencesResponse);
 }
 
 message CreateUserRequest {
@@ -199,3 +221,19 @@ message UpdateUserSettingsRequest {
 }
 
 message UpdateUserSettingsResponse {}
+
+message GetUserPluginPreferencesRequest {
+  string user_id = 1;
+}
+
+message GetUserPluginPreferencesResponse {
+  UserPluginPreference preference = 1;
+}
+
+message UpdateUserPluginPreferencesRequest {
+  UserPluginPreference preference = 1;
+}
+
+message UpdateUserPluginPreferencesResponse {
+  UserPluginPreference preference = 1;
+}
