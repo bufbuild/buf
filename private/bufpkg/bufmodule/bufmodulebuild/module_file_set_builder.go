@@ -120,13 +120,13 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
-			moduleIdentifier, err := getModuleIdentifier(ctx, module)
+			potentialDependencyModuleIdentifier, err := getModuleIdentifier(ctx, potentialDependencyModule)
 			if err != nil {
 				return nil, err
 			}
-			if _, ok := moduleIdentifiers[moduleIdentifier]; !ok {
+			if _, ok := moduleIdentifiers[potentialDependencyModuleIdentifier]; !ok {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				moduleIdentifiers[moduleIdentifier] = struct{}{}
+				moduleIdentifiers[potentialDependencyModuleIdentifier] = struct{}{}
 			}
 		}
 	}
@@ -144,12 +144,16 @@ func (m *moduleFileSetBuilder) build(
 		if err != nil {
 			return nil, err
 		}
+		dependencyModuleIdentifier, err := getModuleIdentifier(ctx, dependencyModule)
+		if err != nil {
+			return nil, err
+		}
 		// At this point, this is really just a safety check.
-		if _, ok := moduleIdentifiers[dependencyModule.ID()]; ok {
+		if _, ok := moduleIdentifiers[dependencyModuleIdentifier]; ok {
 			return nil, ErrDuplicateDependency
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
-		moduleIdentifiers[dependencyModule.ID()] = struct{}{}
+		moduleIdentifiers[dependencyModuleIdentifier] = struct{}{}
 	}
 	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
 }
@@ -157,14 +161,10 @@ func (m *moduleFileSetBuilder) build(
 // getModuleIdentifier returns the module's ID, or it's protoPathsHash if ID is empty.
 func getModuleIdentifier(ctx context.Context, module bufmodule.Module) (string, error) {
 	moduleIdentifier := module.ID()
-	if moduleIdentifier == "" {
-		var err error
-		moduleIdentifier, err = protoPathsHash(ctx, module)
-		if err != nil {
-			return "", err
-		}
+	if moduleIdentifier != "" {
+		return moduleIdentifier, nil
 	}
-	return moduleIdentifier, nil
+	return protoPathsHash(ctx, module)
 }
 
 // protoPathsHash returns a hash representing the paths of the .proto files within the Module.
