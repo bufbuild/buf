@@ -114,14 +114,14 @@ func (m *moduleFileSetBuilder) build(
 		// used. We already get this for free in Image construction, so it's simplest and
 		// most efficient to bundle all of the modules together like so.
 		for _, potentialDependencyModule := range workspace.GetModules() {
+			if module.WorkspaceDirectory() != potentialDependencyModule.WorkspaceDirectory() {
+				dependencyModules = append(dependencyModules, potentialDependencyModule)
+			}
 			potentialDependencyModuleHash, err := protoPathsHash(ctx, potentialDependencyModule)
 			if err != nil {
 				return nil, err
 			}
-			if _, ok := hashes[potentialDependencyModuleHash]; !ok {
-				dependencyModules = append(dependencyModules, potentialDependencyModule)
-				hashes[potentialDependencyModuleHash] = struct{}{}
-			}
+			hashes[potentialDependencyModuleHash] = struct{}{}
 		}
 	}
 	// We know these are unique by remote, owner, repository and

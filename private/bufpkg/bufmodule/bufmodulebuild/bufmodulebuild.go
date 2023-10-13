@@ -173,3 +173,12 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 		buildOptions.pathsAllowNotExist = true
 	}
 }
+
+// WithWorkspaceDirectory returns a new BuildOption that specifies the workspace directory.
+//
+// See the comment on Module.WorkspaceDirectory() for more details.
+func WithWorkspaceDirectory(workspaceDirectory string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.workspaceDirectory = workspaceDirectory
+	}
+}

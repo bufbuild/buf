@@ -141,6 +141,9 @@ func (b *moduleBucketBuilder) buildForBucket(
 		bufmodule.ModuleWithModuleIdentity(
 			buildOptions.moduleIdentity, // This may be nil
 		),
+		bufmodule.ModuleWithWorkspaceDirectory(
+			buildOptions.workspaceDirectory,
+		),
 	)
 	if err != nil {
 		return nil, err
