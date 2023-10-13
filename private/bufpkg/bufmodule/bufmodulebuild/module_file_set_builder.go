@@ -84,11 +84,13 @@ func (m *moduleFileSetBuilder) build(
 		// will be based on the workspace directory's Ref and this module's directory. This means
 		// two directories from the same workspace have different module IDs.
 		// This is a temporary hacky ID and is not globally unique, and we will need to revisit module ID
-		// in the future. Ideally it should be based on a module's content.
+		// in the future. Ideally it should be based on a module's content. In case the ID is empty, we fall
+		// back to hashing the .proto file paths from the module's TargetFileInfos. This only happens to local
+		// modules because dependency modules are guaranteed to have a ModuleIdentity and thus a non-empty ID.
 		//
 		// We could use other methods for equivalence or to say "do not add":
 		//
-		//   - Do a hash of the .proto file paths within a Module, and say that Modules are equivalent
+		//   - Only do a hash of the .proto file paths within a Module, and say that Modules are equivalent
 		//     if they contain the exact same .proto file paths. If they have the same .proto file paths,
 		//     then we do not add the Module as a dependency. We know from bufmodule.Workspace that no
 		//     two Modules in a Workspace will have overlapping file paths, therefore if the Module is in
