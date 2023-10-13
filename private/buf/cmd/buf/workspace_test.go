@@ -116,7 +116,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/a/proto/a/v1/a.proto
+		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
 		    testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -144,7 +145,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/breaking/a/proto/a/v1/a.proto
+		    testdata/workspace/success/breaking/other/proto/request.proto
 		    testdata/workspace/success/breaking/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", "breaking"),
@@ -900,7 +902,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input contained 1 images, whereas against contained 2 images`,
+		`Failure: input contained 1 images, whereas against contained 3 images`,
 		"breaking",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",
