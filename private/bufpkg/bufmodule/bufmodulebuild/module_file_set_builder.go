@@ -71,36 +71,15 @@ func (m *moduleFileSetBuilder) build(
 		// By including all the Modules from the workspace, we are potentially including the input
 		// Module itself. This is bad, and will result in errors when using the result ModuleFileSet.
 		// The ModuleFileSet expects a Module, and its dependency Modules, but it is not OK for
-		// a Module to both be the input Module and a dependency Module. We have no concept
-		// of Module "ID" - a Module may have a ModuleIdentity and commit associated with it,
-		// but there is no guarantee of this. To get around this, we do a hash of the .proto file
-		// paths within a Module, and say that Modules are equivalent if they contain the exact
-		// same .proto file paths. If they have the same .proto file paths, then we do not
-		// add the Module as a dependency.
-		//
-		// We know from bufmodule.Workspace that no two Modules in a Workspace will have overlapping
-		// file paths, therefore if the Module is in the Workspace and has equivalent file paths,
-		// we know that it must be the same module. If the Module is not in the workspace...why
-		// did we provide a workspace?
-		//
-		// We could use other methods for equivalence or to say "do not add":
-		//
-		//   - If there are any overlapping files: for example, one module has a.proto, one module
-		//     has b.proto, and both have c.proto. We don't use this heuristic as what we are looking
-		//     for here is a situation where based on our Module construction, we have two actually-equivalent
-		//     Modules. The existence of any overlapping files will result in an error during build, which
-		//     is what we want. This would also indicate this Module did not come from the Workspace, given
-		//     the property of file uniqueness in Workspaces.
-		//   - Golang object equivalence: for example, doing "module != potentialDependencyModule". This
-		//     happens to work since we only construct Modules once, but it's error-prone: it's totally
-		//     possible to create two Module objects from the same source, and if they represent the
-		//     same Module on disk/in the BSR, we don't want to include these as duplicates.
-		//   - Full module digest and/or proto file content: We could include buf.yaml, buf.lock,
-		//     README.md, etc, and also hash the actual content of the .proto files, but we're saying
-		//     that this doesn't help us any more than just comparing .proto files, and may lead to
-		//     false negatives. However, this is the most likely candidate as an alternative, as you
-		//     could argue that at the ModuleFileSetBuilder level, we should say "assume any difference
-		//     is a real difference".
+		// a Module to both be the input Module and a dependency Module. This means we need to check
+		// each module in the workspace to see if it is the same as the input module, and only add
+		// it as a depedency if it's not the same as the input module. We determine this by comparing
+		// each workspace module's WorkspaceDirectory with the input module's WorkspaceDirectory,
+		// where having the same WorkspaceDirectory means being the same module. This is correct
+		// because each module in a workspace are constructed with its WorkspaceDirectory set to its
+		// path relative to buf.work.yaml and this value is guaranteed to be unique within the same
+		// workspace. This is predicated on the input module belonging to the workspace, and it would
+		// be a bug if the input module doesn't belong to this workspace.
 		//
 		// We could also determine which modules could be omitted here, but it would incur
 		// the cost of parsing the target files and detecting exactly which imports are
