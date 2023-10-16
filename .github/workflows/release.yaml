@@ -92,7 +92,7 @@ jobs:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repositories: >-
-            [ ${{ github.repository }} ]
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write"}
       - name: Set VERSION variable from tag
@@ -122,7 +122,7 @@ jobs:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repositories: >-
-            [ ${{ github.repository }} ]
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
@@ -172,7 +172,7 @@ jobs:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
           repositories: >-
-            [ ${{ github.repository }} ]
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
