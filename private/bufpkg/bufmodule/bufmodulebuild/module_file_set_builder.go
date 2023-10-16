@@ -73,7 +73,7 @@ func (m *moduleFileSetBuilder) build(
 		// The ModuleFileSet expects a Module, and its dependency Modules, but it is not OK for
 		// a Module to both be the input Module and a dependency Module. This means we need to check
 		// each module in the workspace to see if it is the same as the input module, and only add
-		// it as a depedency if it's not the same as the input module. We determine this by comparing
+		// it as a dependency if it's not the same as the input module. We determine this by comparing
 		// each workspace module's WorkspaceDirectory with the input module's WorkspaceDirectory,
 		// where having the same WorkspaceDirectory means being the same module. This is correct
 		// because each module in a workspace are constructed with its WorkspaceDirectory set to its
