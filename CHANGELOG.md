@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue in v1.27.0 where `--path` did not work with workspaces under certain scenarios.
 
 ## [v1.27.0] - 2023-10-04
 
