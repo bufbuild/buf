@@ -11,7 +11,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1.26.1
         with:
           github_token: ${{ github.token }}
-      - uses: bufbuild/buf-lint-action@v1.0.3
+      - uses: bufbuild/buf-lint-action@v1.1.0
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
   breaking:
