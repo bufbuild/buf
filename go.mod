@@ -14,7 +14,7 @@ require (
 	github.com/google/go-containerregistry v0.16.1
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect v1.15.3
-	github.com/klauspost/compress v1.17.0
+	github.com/klauspost/compress v1.17.1
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/profile v1.7.0
