@@ -611,6 +611,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			}
 		}
 	}
+	buildOptions = append(buildOptions, bufmodulebuild.WithWorkspaceDirectory(subDirPath))
 	if len(externalExcludeDirOrFilePaths) > 0 {
 		bucketRelPaths := make([]string, len(externalExcludeDirOrFilePaths))
 		for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
