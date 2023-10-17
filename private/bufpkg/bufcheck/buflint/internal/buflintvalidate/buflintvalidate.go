@@ -41,11 +41,7 @@ func ValidateRules(
 		return nil
 	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	newValidateField(
-		add,
-		files,
-		field,
-	).checkConstraintsForField(
+	checkConstraintsForField(
 		&adder{
 			field:   field,
 			addFunc: add,
