@@ -30,7 +30,6 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// TODO: reivisit type validateField
 // TODO: consistent lint message tone/language
 // TODO: in cel linting, check no google.protobuf.Any is used (if this check makes sense).
 // TODO: report at one location or both location
@@ -38,6 +37,10 @@ import (
 
 const (
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
+	// These numbers are passed for two purposes:
+	// 1. Identity which type oneof is specified in a FieldConstraints. i.e. Is DoubleRules defined or
+	// StringRules defined?
+	// 2. Use it to construct a path to pass it to OptionExtensionLocation to get a more precise location.
 	floatRulesFieldNumber     = 1
 	doubleRulesFieldNumber    = 2
 	int32RulesFieldNumber     = 3
@@ -101,6 +104,7 @@ var (
 		durationRulesFieldNumber:  (&durationpb.Duration{}).ProtoReflect().Descriptor().FullName(),
 		timestampRulesFieldNumber: (&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName(),
 	}
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2846
 	wellKnownHttpHeaderNamePattern = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
@@ -134,7 +138,9 @@ func checkConstraintsForField(
 		validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
-	checkTypeMatch(adder, field, typeRulesFieldNumber, string(typeRulesField.Message().Name()))
+	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesField.Message().Name()))
+	// Number rules are FloatRules, DoubleRules, ..., SFixed64Rules. Their fields numbers in FieldConstraints
+	// are 1...12, see https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L171.
 	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
 		validateNumberRulesMessage(adder, typeRulesFieldNumber, numberRulesMessage)
@@ -158,7 +164,7 @@ func checkConstraintsForField(
 	}
 }
 
-func checkTypeMatch(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
+func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
 	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
 		if ok && string(expectedFieldMessageName) == field.TypeName() {

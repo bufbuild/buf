@@ -22,21 +22,21 @@ import (
 
 func validateNumberRulesMessage(
 	adder *adder,
-	ruleNumber int32,
+	numberRuleFieldNumber int32,
 	numberRuleMessage protoreflect.Message,
 ) {
-	validateFunc := numberRulesNumberToValidateFunc[ruleNumber]
-	validateFunc(adder, ruleNumber, numberRuleMessage)
+	validateFunc := numberRulesFieldNumberToValidateFunc[numberRuleFieldNumber]
+	validateFunc(adder, numberRuleFieldNumber, numberRuleMessage)
 }
 
 func validateNumRule[T int32 | int64 | uint32 | uint64 | float32 | float64](
 	adder *adder,
-	ruleTag int32,
+	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
 ) {
 	validateNumericRule[T](
 		adder,
-		ruleTag,
+		numberRuleFieldNumber,
 		ruleMessage,
 		getNumericPointer[T],
 		compareNumber[T],
@@ -163,7 +163,7 @@ func validateNumericRule[
 
 type validateNumberRuleFunc func(*adder, int32, protoreflect.Message)
 
-var numberRulesNumberToValidateFunc = map[int32]validateNumberRuleFunc{
+var numberRulesFieldNumberToValidateFunc = map[int32]validateNumberRuleFunc{
 	floatRulesFieldNumber:    validateNumRule[float32],
 	doubleRulesFieldNumber:   validateNumRule[float64],
 	int32RulesFieldNumber:    validateNumRule[int32],
