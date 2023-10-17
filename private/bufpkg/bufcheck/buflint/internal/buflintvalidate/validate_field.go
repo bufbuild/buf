@@ -158,7 +158,7 @@ func (m *validateField) checkConstraintsForField(
 	checkTypeMatch(m, field, typeRulesFieldNumber)
 	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
-		validateNumberRulesMessage(adder, m, field, typeRulesFieldNumber, numberRulesMessage)
+		validateNumberRulesMessage(adder, m, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch r := fieldConstraints.Type.(type) {
@@ -222,7 +222,6 @@ func checkIns(
 	if in != 0 && notIn != 0 {
 		adder.add("cannot have both in and not_in rules on the same field")
 	}
-
 }
 
 func (m *validateField) assertf(expr bool, format string, v ...interface{}) {
@@ -367,48 +366,38 @@ func (m *validateField) validateAnyField(adder *adder, r *validate.AnyRules) {
 }
 
 func (m *validateField) validateDurationField(adder *adder, r *validate.DurationRules) {
-	in := make([]time.Duration, 0, len(r.GetIn()))
-	for _, duration := range r.GetIn() {
-		if duration == nil {
-			// TODO: don't use assertf here
-			m.assertf(false, "cannot have nil values in in")
-			continue
-		}
-		in = append(in, *checkDur(adder, duration))
-	}
-	notIn := make([]time.Duration, 0, len(r.GetNotIn()))
-	for _, duration := range r.GetNotIn() {
-		if duration == nil {
-			// TODO: don't use asssertf here
-			m.assertf(false, "cannot have nil values in in")
-			continue
-		}
-		notIn = append(notIn, *checkDur(adder, duration))
-	}
-	validateCommonNumericRule[time.Duration](
+	validateNumericRule[copiableTime](
 		adder,
-		m,
 		durationRulesFieldNumber,
-		durationFieldNumberSet,
-		&numericCommonRule[time.Duration]{
-			constant: checkDur(adder, r.GetConst()),
-			in:       in,
-			notIn:    notIn,
-			valueRange: *newNumericRange[time.Duration](
-				checkDur(adder, r.GetGt()),
-				checkDur(adder, r.GetGte()),
-				checkDur(adder, r.GetLt()),
-				checkDur(adder, r.GetLte()),
-			),
+		r.ProtoReflect(),
+		func(value protoreflect.Value) *copiableTime {
+			bytes, _ := proto.Marshal(value.Message().Interface())
+			t := &durationpb.Duration{}
+			proto.Unmarshal(bytes, t)
+			if !t.IsValid() {
+				// TODO: report field name at least
+				adder.add("invalid timestamp")
+			}
+			return &copiableTime{
+				seconds: t.Seconds,
+				nanos:   t.Nanos,
+			}
+		},
+		func(ct1, ct2 copiableTime) float64 {
+			if ct1.seconds > ct2.seconds {
+				return 1
+			}
+			if ct1.seconds < ct2.seconds {
+				return -1
+			}
+			return float64(ct1.nanos - ct2.nanos)
 		},
 	)
 }
 
 func (m *validateField) validateTimestampField(adder *adder, r *validate.TimestampRules) {
-	validateTimeRule[timestamppb.Timestamp, copiableTime](
+	validateNumericRule[copiableTime](
 		adder,
-		m,
-		m.field,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
 		func(value protoreflect.Value) *copiableTime {
@@ -424,14 +413,14 @@ func (m *validateField) validateTimestampField(adder *adder, r *validate.Timesta
 				nanos:   t.Nanos,
 			}
 		},
-		func(ct1, ct2 copiableTime) int {
+		func(ct1, ct2 copiableTime) float64 {
 			if ct1.seconds > ct2.seconds {
 				return 1
 			}
 			if ct1.seconds < ct2.seconds {
 				return -1
 			}
-			return int(ct1.nanos - ct2.nanos)
+			return float64(ct1.nanos - ct2.nanos)
 		},
 	)
 	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
