@@ -117,7 +117,7 @@ func validateNumericRule[
 			}
 		}
 		if convertErrorMessage != "" {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{ruleNumber, int32(field.Number())},
 				convertErrorMessage,
 			)
@@ -125,13 +125,13 @@ func validateNumericRule[
 		return true
 	})
 	if constant != nil && fieldCount > 1 {
-		adder.addForPath(
+		adder.addForPathf(
 			[]int32{ruleNumber, constFieldNumber},
 			"all other rules are redundant when const is specified on a field",
 		)
 	}
 	if len(in) > 0 && fieldCount > 1 {
-		adder.addForPath(
+		adder.addForPathf(
 			[]int32{ruleNumber, inFieldNumber},
 			"in should be the only rule when defined",
 		)
@@ -151,7 +151,7 @@ func validateNumericRule[
 			failedChecks = append(failedChecks, "lte")
 		}
 		if len(failedChecks) > 0 {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{ruleNumber, notInFieldNumber},
 				"%v is already rejected by %s and does not need to be in not_in",
 				bannedValue,
@@ -163,7 +163,7 @@ func validateNumericRule[
 		return
 	}
 	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
-		adder.addForPaths(
+		adder.addForPathsf(
 			[][]int32{
 				{ruleNumber, lowerBoundFieldNumber},
 				{ruleNumber, upperBoundFieldNumber},
@@ -173,7 +173,7 @@ func validateNumericRule[
 		return
 	}
 	if compareFunc(upperBound, lowerBound) <= 0 {
-		adder.addForPaths(
+		adder.addForPathsf(
 			[][]int32{
 				{ruleNumber, lowerBoundFieldNumber},
 				{ruleNumber, upperBoundFieldNumber},
@@ -188,7 +188,7 @@ func validateNumericRule[
 func getNumericPointerFromValue[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](value protoreflect.Value) (*T, string) {
-	pointer := value.Interface().(T)
+	pointer, _ := value.Interface().(T)
 	return &pointer, ""
 }
 
@@ -196,7 +196,7 @@ func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, st
 	// TODO: what if this errors?
 	bytes, _ := proto.Marshal(value.Message().Interface())
 	timestamp := &timestamppb.Timestamp{}
-	proto.Unmarshal(bytes, timestamp)
+	_ = proto.Unmarshal(bytes, timestamp)
 	if !timestamp.IsValid() {
 		return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp)
 	}
@@ -207,7 +207,7 @@ func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, strin
 	// TODO: what if this errors?
 	bytes, _ := proto.Marshal(value.Message().Interface())
 	duration := &durationpb.Duration{}
-	proto.Unmarshal(bytes, duration)
+	_ = proto.Unmarshal(bytes, duration)
 	if !duration.IsValid() {
 		return nil, fmt.Sprintf("%v is an invalid duration", duration)
 	}

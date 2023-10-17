@@ -105,9 +105,9 @@ var (
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2846
-	wellKnownHttpHeaderNamePattern = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
+	wellKnownHTTPHeaderNamePattern = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2853
-	wellKnownHttpHeaderValuePattern = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
+	wellKnownHTTPHeaderValuePattern = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2854
 	wellKnownHeaderStringPattern = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
 )
@@ -166,7 +166,7 @@ func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFie
 		if ok && string(expectedFieldMessageName) == field.TypeName() {
 			return
 		}
-		adder.addForPath(
+		adder.addForPathf(
 			[]int32{ruleFieldNumber},
 			"%s should not be defined on a field of type %s",
 			ruleName,
@@ -180,7 +180,7 @@ func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFie
 		return
 	}
 	if expectedType != field.Type() {
-		adder.addForPath(
+		adder.addForPathf(
 			[]int32{ruleFieldNumber},
 			"%s should not be defined on a field of type %v",
 			ruleName,
@@ -195,33 +195,33 @@ func checkInAndNotIn(
 	notIn int,
 ) {
 	if in != 0 && notIn != 0 {
-		adder.add("cannot have both in and not_in rules on the same field")
+		adder.addf("cannot have both in and not_in rules on the same field")
 	}
 }
 
 func checkLenRules(
 	adder *adder,
-	len *uint64,
+	length *uint64,
 	lenFieldName string,
 	minLen *uint64,
 	minLenFieldName string,
 	maxLen *uint64,
 	maxLenFieldName string,
 ) {
-	if len != nil {
+	if length != nil {
 		if minLen != nil {
-			adder.add("cannot have both %s and %s on the same field", lenFieldName, minLenFieldName)
+			adder.addf("cannot have both %s and %s on the same field", lenFieldName, minLenFieldName)
 		}
 		if maxLen != nil {
-			adder.add("cannot have both %s and %s on the same field", lenFieldName, maxLenFieldName)
+			adder.addf("cannot have both %s and %s on the same field", lenFieldName, maxLenFieldName)
 		}
 	}
 	if maxLen != nil && minLen != nil {
 		if *minLen > *maxLen {
-			adder.add("%s should be greater than %s", minLenFieldName, maxLenFieldName)
+			adder.addf("%s should be greater than %s", minLenFieldName, maxLenFieldName)
 		}
 		if *minLen == *maxLen {
-			adder.add("%s is equal to %s, consider using %s", minLenFieldName, maxLenFieldName, lenFieldName)
+			adder.addf("%s is equal to %s, consider using %s", minLenFieldName, maxLenFieldName, lenFieldName)
 		}
 	}
 }
@@ -231,10 +231,10 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 	checkLenRules(adder, r.Len, "len", r.MinLen, "min_len", r.MaxLen, "max_len")
 	checkLenRules(adder, r.LenBytes, "len_bytes", r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
 	if r.MaxLen != nil && r.MaxBytes != nil && *r.MaxBytes < *r.MaxLen {
-		adder.add("max_bytes is less than max_len, making max_len redundant")
+		adder.addf("max_bytes is less than max_len, making max_len redundant")
 	}
 	if r.MinLen != nil && r.MinBytes != nil && *r.MinBytes < *r.MinLen {
-		adder.add("min_bytes is less than min_len, making min_bytes redundant")
+		adder.addf("min_bytes is less than min_len, making min_bytes redundant")
 	}
 	substringFields := []struct {
 		value *string
@@ -242,7 +242,7 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 	}{
 		{value: r.Prefix, name: "prefix"},
 		{value: r.Suffix, name: "suffix"},
-		{value: r.Contains, name: "containts"},
+		{value: r.Contains, name: "contains"},
 	}
 	for _, substringField := range substringFields {
 		if substringField.value == nil {
@@ -250,7 +250,7 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 		}
 		substring := *substringField.value
 		if r.MaxLen != nil && uint64(utf8.RuneCountInString(substring)) > *r.MaxLen {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{stringRulesFieldNumber},
 				"%s has length %d, exceeding max_len",
 				substringField.name,
@@ -258,7 +258,7 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 			)
 		}
 		if r.MaxBytes != nil && uint64(len(substring)) > *r.MaxBytes {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{stringRulesFieldNumber},
 				"%s has %d bytes, exceeding max_bytes",
 				substringField.name,
@@ -272,21 +272,21 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 	switch wellKnownRegex {
 	case validate.KnownRegex_KNOWN_REGEX_UNSPECIFIED:
 		if nonStrict {
-			adder.add("strict should not be set without well_known_regex")
+			adder.addf("strict should not be set without well_known_regex")
 		}
 	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_NAME:
 		if r.Pattern != nil {
-			adder.add("regex well_known_regex and regex pattern are incompatible")
+			adder.addf("regex well_known_regex and regex pattern are incompatible")
 		}
-		patternInEffect = &wellKnownHttpHeaderNamePattern
+		patternInEffect = &wellKnownHTTPHeaderNamePattern
 		if nonStrict {
 			patternInEffect = &wellKnownHeaderStringPattern
 		}
 	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_VALUE:
 		if r.Pattern != nil {
-			adder.add("regex well_known_regex and regex pattern are incompatible")
+			adder.addf("regex well_known_regex and regex pattern are incompatible")
 		}
-		patternInEffect = &wellKnownHttpHeaderValuePattern
+		patternInEffect = &wellKnownHTTPHeaderValuePattern
 		if nonStrict {
 			patternInEffect = &wellKnownHeaderStringPattern
 		}
@@ -303,11 +303,11 @@ func validateBytesField(adder *adder, r *validate.BytesRules) {
 	}{
 		{value: r.Prefix, name: "prefix"},
 		{value: r.Suffix, name: "suffix"},
-		{value: r.Contains, name: "containts"},
+		{value: r.Contains, name: "contains"},
 	}
 	for _, substringField := range substringFields {
 		if r.MaxLen != nil && uint64(len(substringField.value)) > *r.MaxLen {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{bytesRulesFieldNumber},
 				"%s has length %d, exceeding max_len",
 				substringField.name,
@@ -345,7 +345,7 @@ func validateEnumField(
 		for _, in := range r.In {
 			_, ok := vals[int(in)]
 			if !ok {
-				adder.add("undefined in value (%d) conflicts with defined_only rule", in)
+				adder.addf("undefined in value (%d) conflicts with defined_only rule", in)
 			}
 		}
 	}
@@ -353,7 +353,7 @@ func validateEnumField(
 		for _, notIn := range r.NotIn {
 			_, ok := vals[int(notIn)]
 			if !ok {
-				adder.add("undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
+				adder.addf("undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
 			}
 		}
 	}
@@ -367,11 +367,11 @@ func validateRepeatedField(
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
-		adder.add("field is not repeated but got repeated rules")
+		adder.addf("field is not repeated but got repeated rules")
 	}
 	checkMinMax(adder, r.MinItems, "min_items", r.MaxItems, "max_items")
 	if r.GetUnique() && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		adder.add("unique rule is only applicable for scalar types")
+		adder.addf("unique rule is only applicable for scalar types")
 	}
 	checkConstraintsForField(adder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
@@ -384,7 +384,7 @@ func validateMapField(
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if !field.IsMap() {
-		adder.add("field is not a map but got map rules")
+		adder.addf("field is not a map but got map rules")
 	}
 	checkMinMax(adder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
 	// TODO: error if not found
@@ -417,21 +417,21 @@ func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 		compareTimestamp,
 	)
 	if r.GetLtNow() && r.GetGtNow() {
-		adder.addForPath(
+		adder.addForPathf(
 			[]int32{timestampRulesFieldNumber},
 			"gt_now and lt_now cannot be used together",
 		)
 	}
 	if r.Within != nil {
 		if !r.Within.IsValid() {
-			adder.addForPath(
+			adder.addForPathf(
 				// TODO: append within field number
 				[]int32{timestampRulesFieldNumber},
 				"within duration is invalid",
 			)
 		}
 		if r.Within.Seconds <= 0 && r.Within.Nanos <= 0 {
-			adder.addForPath(
+			adder.addForPathf(
 				[]int32{timestampRulesFieldNumber},
 				"within duration must be positive",
 			)
@@ -441,10 +441,10 @@ func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
 	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
 	if areNowRulesDefined && areAbsoluteRulesDefined {
-		adder.add("now rules cannot be mixed with absolute lt/gt rules")
+		adder.addf("now rules cannot be mixed with absolute lt/gt rules")
 	}
 	if r.Within != nil && areAbsoluteRulesDefined {
-		adder.add("within rule cannot be used with absolute lt/gt rules")
+		adder.addf("within rule cannot be used with absolute lt/gt rules")
 	}
 }
 
@@ -456,7 +456,7 @@ func checkMinMax(
 	maxFieldName string,
 ) {
 	if min != nil && max != nil && *min > *max {
-		adder.add("%s value is greater than %s value", minFieldName, maxFieldName)
+		adder.addf("%s value is greater than %s value", minFieldName, maxFieldName)
 	}
 }
 
@@ -467,10 +467,10 @@ func checkPattern(adder *adder, pattern *string, in int) {
 		return
 	}
 	if in != 0 {
-		adder.add("regex pattern and in rules are incompatible")
+		adder.addf("regex pattern and in rules are incompatible")
 	}
 	_, err := regexp.Compile(*pattern)
 	if err != nil {
-		adder.add("unable to parse regex pattern %s: %w", *pattern, err)
+		adder.addf("unable to parse regex pattern %s: %w", *pattern, err)
 	}
 }

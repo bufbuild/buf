@@ -24,7 +24,7 @@ type adder struct {
 	addFunc func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
 }
 
-func (a *adder) add(format string, args ...interface{}) {
+func (a *adder) addf(format string, args ...interface{}) {
 	a.addFunc(
 		a.field,
 		a.field.OptionExtensionLocation(validate.E_Field),
@@ -34,7 +34,7 @@ func (a *adder) add(format string, args ...interface{}) {
 	)
 }
 
-func (a *adder) addForPath(path []int32, format string, args ...interface{}) {
+func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
 	a.addFunc(
 		a.field,
 		a.field.OptionExtensionLocation(validate.E_Field, path...),
@@ -44,7 +44,7 @@ func (a *adder) addForPath(path []int32, format string, args ...interface{}) {
 	)
 }
 
-func (a *adder) addForPaths(paths [][]int32, format string, args ...interface{}) {
+func (a *adder) addForPathsf(paths [][]int32, format string, args ...interface{}) {
 	locations := make([]protosource.Location, 0, len(paths))
 	for _, path := range paths {
 		locations = append(locations, a.field.OptionExtensionLocation(validate.E_Field, path...))

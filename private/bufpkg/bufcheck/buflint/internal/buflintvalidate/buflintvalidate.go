@@ -35,11 +35,11 @@ func ValidateRules(
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	fullNameToMessage, err := protosource.FullNameToMessage(files...)
 	if err != nil {
-		return nil
+		return err
 	}
 	fullNameToEnum, err := protosource.FullNameToEnum(files...)
 	if err != nil {
-		return nil
+		return err
 	}
 	checkConstraintsForField(
 		&adder{
