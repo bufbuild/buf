@@ -16,8 +16,8 @@ package buflintvalidate
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -50,7 +50,7 @@ func validateNumberRule[
 		adder,
 		numberRuleFieldNumber,
 		ruleMessage,
-		getNumericPointer[T],
+		getNumericPointerFromValue[T],
 		compareNumber[T],
 	)
 }
@@ -149,8 +149,7 @@ func validateNumericRule[
 				[]int32{ruleNumber},
 				"%v is already rejected by %s and does not need to be in not_in",
 				bannedValue,
-				// TODO: string util?
-				strings.Join(failedChecks, " and "),
+				stringutil.SliceToHumanString(failedChecks),
 			)
 		}
 	}
@@ -174,7 +173,7 @@ func validateNumericRule[
 	}
 }
 
-func getNumericPointer[
+func getNumericPointerFromValue[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](value protoreflect.Value) (*T, string) {
 	pointer := value.Interface().(T)
