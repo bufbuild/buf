@@ -169,7 +169,7 @@ func (m *validateField) checkConstraintsForField(
 	case *validate.FieldConstraints_Bytes:
 		m.validateBytesField(adder, r.Bytes)
 	case *validate.FieldConstraints_Enum:
-		m.validateEnumField(adder, r.Enum, field)
+		validateEnumField(adder, r.Enum, field, fullNameToEnum)
 	case *validate.FieldConstraints_Any:
 		validateAnyField(adder, r.Any)
 	case *validate.FieldConstraints_Duration:
@@ -272,7 +272,12 @@ func (m *validateField) validateStringField(adder *adder, r *validate.StringRule
 	}
 }
 
-func (m *validateField) validateEnumField(adder *adder, r *validate.EnumRules, field protosource.Field) {
+func validateEnumField(
+	adder *adder,
+	r *validate.EnumRules,
+	field protosource.Field,
+	fullNameToEnum map[string]protosource.Enum,
+) {
 	checkIns(adder, len(r.In), len(r.NotIn))
 	if !r.GetDefinedOnly() {
 		return
@@ -280,7 +285,7 @@ func (m *validateField) validateEnumField(adder *adder, r *validate.EnumRules, f
 	if len(r.In) == 0 && len(r.NotIn) == 0 {
 		return
 	}
-	enum := getEnum(field, m.files...)
+	enum := fullNameToEnum[field.TypeName()]
 	if enum == nil {
 		// TODO: return error
 		return
@@ -293,13 +298,17 @@ func (m *validateField) validateEnumField(adder *adder, r *validate.EnumRules, f
 	if len(r.In) > 0 {
 		for _, in := range r.In {
 			_, ok := vals[int(in)]
-			m.assertf(ok, "undefined in value (%d) conflicts with defined_only rule", in)
+			if !ok {
+				adder.add("undefined in value (%d) conflicts with defined_only rule", in)
+			}
 		}
 	}
 	if len(r.NotIn) > 0 {
 		for _, notIn := range r.NotIn {
 			_, ok := vals[int(notIn)]
-			m.assertf(ok, "undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
+			if !ok {
+				adder.add("undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
+			}
 		}
 	}
 }
