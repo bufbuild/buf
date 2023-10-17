@@ -15,13 +15,11 @@
 package buflintvalidate
 
 import (
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -143,7 +141,7 @@ func checkConstraintsForField(
 	// are 1...12, see https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L171.
 	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
-		validateNumberRulesMessage(adder, typeRulesFieldNumber, numberRulesMessage)
+		numberRulesFieldNumberToValidateFunc[typeRulesFieldNumber](adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch typeRules := fieldConstraints.Type.(type) {
@@ -403,46 +401,22 @@ func validateAnyField(adder *adder, r *validate.AnyRules) {
 }
 
 func validateDurationField(adder *adder, r *validate.DurationRules) {
-	validateNumericRule[copiableTime](
+	validateNumericRule[durationpb.Duration](
 		adder,
 		durationRulesFieldNumber,
 		r.ProtoReflect(),
-		func(value protoreflect.Value) (*copiableTime, string) {
-			// TODO: what if this errors?
-			bytes, _ := proto.Marshal(value.Message().Interface())
-			duration := &durationpb.Duration{}
-			proto.Unmarshal(bytes, duration)
-			if !duration.IsValid() {
-				return nil, fmt.Sprintf("%v is an invalid duration", duration)
-			}
-			return &copiableTime{
-				seconds: duration.Seconds,
-				nanos:   duration.Nanos,
-			}, ""
-		},
-		compareTime,
+		getDurationFromValue,
+		compareDuration,
 	)
 }
 
 func validateTimestampField(adder *adder, r *validate.TimestampRules) {
-	validateNumericRule[copiableTime](
+	validateNumericRule[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
-		func(value protoreflect.Value) (*copiableTime, string) {
-			// TODO: what if this errors?
-			bytes, _ := proto.Marshal(value.Message().Interface())
-			timestamp := &timestamppb.Timestamp{}
-			proto.Unmarshal(bytes, timestamp)
-			if !timestamp.IsValid() {
-				return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp)
-			}
-			return &copiableTime{
-				seconds: timestamp.Seconds,
-				nanos:   timestamp.Nanos,
-			}, ""
-		},
-		compareTime,
+		getTimestampFromValue,
+		compareTimestamp,
 	)
 	if r.GetLtNow() && r.GetGtNow() {
 		adder.addForPath(
@@ -465,7 +439,7 @@ func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 			)
 		}
 	}
-	// TODO: not sure if we need to validate the following:
+	// TODO: not sure if we really need to validate the following:
 	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
 	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
 	if areNowRulesDefined && areAbsoluteRulesDefined {
@@ -474,7 +448,6 @@ func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 	if r.Within != nil && areAbsoluteRulesDefined {
 		adder.add("within rule cannot be used with absolute lt/gt rules")
 	}
-
 }
 
 func checkMinMax(
@@ -490,15 +463,16 @@ func checkMinMax(
 }
 
 // TODO: update func signature
-func checkPattern(adder *adder, p *string, in int) {
-	if p == nil {
+// TODO: remove in.
+func checkPattern(adder *adder, pattern *string, in int) {
+	if pattern == nil {
 		return
 	}
 	if in != 0 {
 		adder.add("regex pattern and in rules are incompatible")
 	}
-	_, err := regexp.Compile(*p)
+	_, err := regexp.Compile(*pattern)
 	if err != nil {
-		adder.add("unable to parse regex pattern %s: %w", *p, err)
+		adder.add("unable to parse regex pattern %s: %w", *pattern, err)
 	}
 }

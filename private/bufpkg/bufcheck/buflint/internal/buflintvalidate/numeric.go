@@ -15,21 +15,33 @@
 package buflintvalidate
 
 import (
+	"fmt"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func validateNumberRulesMessage(
-	adder *adder,
-	numberRuleFieldNumber int32,
-	numberRuleMessage protoreflect.Message,
-) {
-	validateFunc := numberRulesFieldNumberToValidateFunc[numberRuleFieldNumber]
-	validateFunc(adder, numberRuleFieldNumber, numberRuleMessage)
+var numberRulesFieldNumberToValidateFunc = map[int32]func(*adder, int32, protoreflect.Message){
+	floatRulesFieldNumber:    validateNumberRule[float32],
+	doubleRulesFieldNumber:   validateNumberRule[float64],
+	int32RulesFieldNumber:    validateNumberRule[int32],
+	int64RulesFieldNumber:    validateNumberRule[int64],
+	uInt32RulesFieldNumber:   validateNumberRule[uint32],
+	uInt64RulesFieldNumber:   validateNumberRule[uint64],
+	sInt32RulesFieldNumber:   validateNumberRule[int32],
+	sInt64RulesFieldNumber:   validateNumberRule[int64],
+	fixed32RulesFieldNumber:  validateNumberRule[uint32],
+	fixed64RulesFieldNumber:  validateNumberRule[uint64],
+	sFixed32RulesFieldNumber: validateNumberRule[int32],
+	sFixed64RulesFieldNumber: validateNumberRule[int64],
 }
 
-func validateNumRule[T int32 | int64 | uint32 | uint64 | float32 | float64](
+func validateNumberRule[
+	T int32 | int64 | uint32 | uint64 | float32 | float64,
+](
 	adder *adder,
 	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
@@ -44,17 +56,18 @@ func validateNumRule[T int32 | int64 | uint32 | uint64 | float32 | float64](
 }
 
 func validateNumericRule[
-	T int32 | int64 | uint32 | uint64 | float32 | float64 | copiableTime,
+	T int32 | int64 | uint32 | uint64 | float32 | float64 | timestamppb.Timestamp | durationpb.Duration,
 ](
 	adder *adder,
 	ruleNumber int32,
 	message protoreflect.Message,
+	// These two functions must take pointers because of the generated types.
 	convertFunc func(protoreflect.Value) (*T, string),
-	compareFunc func(T, T) float64,
+	compareFunc func(*T, *T) float64,
 ) {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
 	var lowerBoundName, upperBoundName string
-	var in, notIn []T
+	var in, notIn []*T
 	var fieldCount int
 	// TODO: set field numbers during the loop
 	// TODO: make convertFunc return a file annotation as well
@@ -85,7 +98,7 @@ func validateNumericRule[
 				var converted *T
 				converted, convertErrorMessage = convertFunc(value.List().Get(i))
 				if converted != nil {
-					in = append(in, *converted)
+					in = append(in, converted)
 				}
 			}
 		case "not_in":
@@ -93,7 +106,7 @@ func validateNumericRule[
 				var converted *T
 				converted, convertErrorMessage = convertFunc(value.List().Get(i))
 				if converted != nil {
-					notIn = append(notIn, *converted)
+					notIn = append(notIn, converted)
 				}
 			}
 		}
@@ -108,7 +121,7 @@ func validateNumericRule[
 	if constant != nil && fieldCount > 1 {
 		adder.addForPath(
 			[]int32{ruleNumber},
-			"all other rules are ignored when const is specified on a field",
+			"all other rules are redundant when const is specified on a field",
 		)
 	}
 	if len(in) > 0 && fieldCount > 1 {
@@ -119,16 +132,16 @@ func validateNumericRule[
 	}
 	for _, bannedValue := range notIn {
 		var failedChecks []string
-		if gt != nil && compareFunc(bannedValue, *gt) <= 0 {
+		if gt != nil && compareFunc(bannedValue, gt) <= 0 {
 			failedChecks = append(failedChecks, "gt")
 		}
-		if gte != nil && compareFunc(bannedValue, *gte) < 0 {
+		if gte != nil && compareFunc(bannedValue, gte) < 0 {
 			failedChecks = append(failedChecks, "gte")
 		}
-		if lt != nil && compareFunc(bannedValue, *lt) >= 0 {
+		if lt != nil && compareFunc(bannedValue, lt) >= 0 {
 			failedChecks = append(failedChecks, "lt")
 		}
-		if lte != nil && compareFunc(bannedValue, *lte) > 0 {
+		if lte != nil && compareFunc(bannedValue, lte) > 0 {
 			failedChecks = append(failedChecks, "lte")
 		}
 		if len(failedChecks) > 0 {
@@ -144,14 +157,14 @@ func validateNumericRule[
 	if lowerBound == nil || upperBound == nil {
 		return
 	}
-	if gte != nil && lte != nil && *lowerBound == *upperBound {
+	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
 		adder.addForPath(
 			[]int32{ruleNumber},
 			"lte and gte have the same value, consider using const",
 		)
 		return
 	}
-	if compareFunc(*upperBound, *lowerBound) <= 0 {
+	if compareFunc(upperBound, lowerBound) <= 0 {
 		adder.addForPath(
 			[]int32{ruleNumber},
 			"%s should be greater than %s",
@@ -161,23 +174,6 @@ func validateNumericRule[
 	}
 }
 
-type validateNumberRuleFunc func(*adder, int32, protoreflect.Message)
-
-var numberRulesFieldNumberToValidateFunc = map[int32]validateNumberRuleFunc{
-	floatRulesFieldNumber:    validateNumRule[float32],
-	doubleRulesFieldNumber:   validateNumRule[float64],
-	int32RulesFieldNumber:    validateNumRule[int32],
-	int64RulesFieldNumber:    validateNumRule[int64],
-	uInt32RulesFieldNumber:   validateNumRule[uint32],
-	uInt64RulesFieldNumber:   validateNumRule[uint64],
-	sInt32RulesFieldNumber:   validateNumRule[int32],
-	sInt64RulesFieldNumber:   validateNumRule[int64],
-	fixed32RulesFieldNumber:  validateNumRule[uint32],
-	fixed64RulesFieldNumber:  validateNumRule[uint64],
-	sFixed32RulesFieldNumber: validateNumRule[int32],
-	sFixed64RulesFieldNumber: validateNumRule[int64],
-}
-
 func getNumericPointer[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](value protoreflect.Value) (*T, string) {
@@ -185,21 +181,48 @@ func getNumericPointer[
 	return &pointer, ""
 }
 
-func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a T, b T) float64 {
-	return float64(a - b)
+func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, string) {
+	// TODO: what if this errors?
+	bytes, _ := proto.Marshal(value.Message().Interface())
+	timestamp := &timestamppb.Timestamp{}
+	proto.Unmarshal(bytes, timestamp)
+	if !timestamp.IsValid() {
+		return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp)
+	}
+	return timestamp, ""
 }
 
-type copiableTime struct {
-	seconds int64
-	nanos   int32
+func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, string) {
+	// TODO: what if this errors?
+	bytes, _ := proto.Marshal(value.Message().Interface())
+	duration := &durationpb.Duration{}
+	proto.Unmarshal(bytes, duration)
+	if !duration.IsValid() {
+		return nil, fmt.Sprintf("%v is an invalid duration", duration)
+	}
+	return duration, ""
 }
 
-func compareTime(t1 copiableTime, t2 copiableTime) float64 {
-	if t1.seconds > t2.seconds {
+func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a *T, b *T) float64 {
+	return float64(*a - *b)
+}
+
+func compareTimestamp(t1 *timestamppb.Timestamp, t2 *timestamppb.Timestamp) float64 {
+	if t1.Seconds > t2.Seconds {
 		return 1
 	}
-	if t1.seconds < t2.seconds {
+	if t1.Seconds < t2.Seconds {
 		return -1
 	}
-	return float64(t1.nanos - t2.nanos)
+	return float64(t1.Nanos - t2.Nanos)
+}
+
+func compareDuration(d1 *durationpb.Duration, d2 *durationpb.Duration) float64 {
+	if d1.Seconds > d2.Seconds {
+		return 1
+	}
+	if d1.Seconds < d2.Seconds {
+		return -1
+	}
+	return float64(d1.Nanos - d2.Nanos)
 }
