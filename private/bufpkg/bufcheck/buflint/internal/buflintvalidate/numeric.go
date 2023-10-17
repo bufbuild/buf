@@ -103,7 +103,7 @@ func validateNumericRule[T int32 | int64 | uint32 | uint64 | float32 | float64 |
 
 func validateTimeRule[
 	T durationpb.Duration | timestamppb.Timestamp,
-	U commonTime,
+	U copiableTime,
 ](
 	adder *adder,
 	validateField *validateField,
@@ -409,7 +409,7 @@ func (r *numericRange[T]) String() string {
 	return fmt.Sprintf("%s%v,%v%s", leftDelimiter, lowerBound, upperBound, rightDelimiter)
 }
 
-type commonTime struct {
+type copiableTime struct {
 	seconds int64
 	nanos   int32
 }

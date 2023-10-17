@@ -142,23 +142,23 @@ func (m *validateField) checkConstraintsForField(
 		return
 	}
 	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
-	typeField := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
-	if typeField == nil {
+	typeRulesField := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
+	if typeRulesField == nil {
 		return
 	}
-	typeFieldNumber := int32(typeField.Number())
-	if typeFieldNumber == mapRulesFieldNumber {
+	typeRulesFieldNumber := int32(typeRulesField.Number())
+	if typeRulesFieldNumber == mapRulesFieldNumber {
 		m.validateMapField(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
-	if typeFieldNumber == repeatedRulesFieldNumber {
+	if typeRulesFieldNumber == repeatedRulesFieldNumber {
 		m.validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
-	checkTypeMatch(m, field, typeFieldNumber)
-	if floatRulesFieldNumber <= typeFieldNumber && typeFieldNumber <= sFixed64RulesFieldNumber {
-		numberRulesMessage := fieldConstraintsMessage.Get(typeField).Message()
-		validateNumberRulesMessage(adder, m, field, typeFieldNumber, numberRulesMessage)
+	checkTypeMatch(m, field, typeRulesFieldNumber)
+	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
+		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
+		validateNumberRulesMessage(adder, m, field, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch r := fieldConstraints.Type.(type) {
@@ -334,18 +334,13 @@ func (m *validateField) validateRepeatedField(
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) {
-	m.assertf(
-		field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !field.IsMap(),
-		"field is not repeated but got repeated rules",
-	)
-
-	checkMinMax(adder, r.MinItems, "min_items", r.MaxItems, "max_items")
-
-	if r.GetUnique() {
-		m.assertf(field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-			"unique rule is only applicable for scalar types")
+	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
+		adder.add("field is not repeated but got repeated rules")
 	}
-
+	checkMinMax(adder, r.MinItems, "min_items", r.MaxItems, "max_items")
+	if r.GetUnique() && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		adder.add("unique rule is only applicable for scalar types")
+	}
 	m.checkConstraintsForField(adder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
@@ -356,14 +351,12 @@ func (m *validateField) validateMapField(
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) {
-	m.assertf(
-		field.IsMap(),
-		"field is not a map but got map rules",
-	)
-
+	if !field.IsMap() {
+		adder.add("field is not a map but got map rules")
+	}
 	checkMinMax(adder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
-
-	mapMessage := embed(field, m.files...)
+	// TODO: error if not found
+	mapMessage := fullNameToMessage[field.TypeName()]
 	// TODO: make sure it has two fields
 	m.checkConstraintsForField(adder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
 	m.checkConstraintsForField(adder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
@@ -409,36 +402,29 @@ func (m *validateField) validateDurationField(adder *adder, r *validate.Duration
 			),
 		},
 	)
-
-	for _, v := range r.GetIn() {
-		m.assertf(v != nil, "cannot have nil values in in")
-		checkDur(adder, v)
-	}
-
-	for _, v := range r.GetNotIn() {
-		m.assertf(v != nil, "cannot have nil values in not_in")
-		checkDur(adder, v)
-	}
 }
 
 func (m *validateField) validateTimestampField(adder *adder, r *validate.TimestampRules) {
-	validateTimeRule[timestamppb.Timestamp, commonTime](
+	validateTimeRule[timestamppb.Timestamp, copiableTime](
 		adder,
 		m,
 		m.field,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
-		func(value protoreflect.Value) *commonTime {
+		func(value protoreflect.Value) *copiableTime {
 			bytes, _ := proto.Marshal(value.Message().Interface())
 			t := &timestamppb.Timestamp{}
 			proto.Unmarshal(bytes, t)
-			m.assertf(t.IsValid(), "invalid timestamp")
-			return &commonTime{
+			if !t.IsValid() {
+				// TODO: report field name at least
+				adder.add("invalid timestamp")
+			}
+			return &copiableTime{
 				seconds: t.Seconds,
 				nanos:   t.Nanos,
 			}
 		},
-		func(ct1, ct2 commonTime) int {
+		func(ct1, ct2 copiableTime) int {
 			if ct1.seconds > ct2.seconds {
 				return 1
 			}
@@ -448,18 +434,22 @@ func (m *validateField) validateTimestampField(adder *adder, r *validate.Timesta
 			return int(ct1.nanos - ct2.nanos)
 		},
 	)
-
 	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
 	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
-
-	m.assertf(!areNowRulesDefined || !areAbsoluteRulesDefined, "now rules cannot be mixed with absolute lt/gt rules")
-	m.assertf(r.Within == nil || !areAbsoluteRulesDefined, "within rule cannot be used with absolute lt/gt rules")
-
+	if areNowRulesDefined && areAbsoluteRulesDefined {
+		adder.add("now rules cannot be mixed with absolute lt/gt rules")
+	}
+	if r.Within != nil && areAbsoluteRulesDefined {
+		adder.add("within rule cannot be used with absolute lt/gt rules")
+	}
 	// TODO: merge location if possible
-	m.assertf(!r.GetLtNow() || !r.GetGtNow(), "gt_now and lt_now cannot be used together")
-
+	if r.GetLtNow() && r.GetGtNow() {
+		adder.add("gt_now and lt_now cannot be used together")
+	}
 	dur := checkDur(adder, r.Within)
-	m.assertf(dur == nil || *dur > 0, "within rule must be positive")
+	if dur != nil && *dur <= 0 {
+		adder.add("within rule must be positive")
+	}
 }
 
 func checkMinMax(
