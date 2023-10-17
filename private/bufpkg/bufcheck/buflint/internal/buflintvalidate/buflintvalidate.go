@@ -32,6 +32,7 @@ func ValidateRules(
 	if err != nil {
 		return err
 	}
+	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	fullNameToMessage, err := protosource.FullNameToMessage(files...)
 	if err != nil {
 		return nil
@@ -40,7 +41,6 @@ func ValidateRules(
 	if err != nil {
 		return nil
 	}
-	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	checkConstraintsForField(
 		&adder{
 			field:   field,
