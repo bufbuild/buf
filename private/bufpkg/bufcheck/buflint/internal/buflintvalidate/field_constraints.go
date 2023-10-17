@@ -137,11 +137,9 @@ func checkConstraintsForField(
 		return
 	}
 	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesField.Message().Name()))
-	// Number rules are FloatRules, DoubleRules, ..., SFixed64Rules. Their fields numbers in FieldConstraints
-	// are 1...12, see https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L171.
-	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
+	if numberRulesValidateFunc, ok := numberRulesFieldNumberToValidateFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
-		numberRulesFieldNumberToValidateFunc[typeRulesFieldNumber](adder, typeRulesFieldNumber, numberRulesMessage)
+		numberRulesValidateFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch typeRules := fieldConstraints.Type.(type) {
