@@ -15,8 +15,8 @@
 package buflintvalidate
 
 import (
+	"fmt"
 	"regexp"
-	"time"
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
@@ -155,10 +155,10 @@ func (m *validateField) checkConstraintsForField(
 		m.validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
-	checkTypeMatch(m, field, typeRulesFieldNumber)
+	checkTypeMatch(adder, field, typeRulesFieldNumber, string(typeRulesField.Message().Name()))
 	if floatRulesFieldNumber <= typeRulesFieldNumber && typeRulesFieldNumber <= sFixed64RulesFieldNumber {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
-		validateNumberRulesMessage(adder, m, typeRulesFieldNumber, numberRulesMessage)
+		validateNumberRulesMessage(adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch r := fieldConstraints.Type.(type) {
@@ -171,44 +171,38 @@ func (m *validateField) checkConstraintsForField(
 	case *validate.FieldConstraints_Enum:
 		m.validateEnumField(adder, r.Enum, field)
 	case *validate.FieldConstraints_Any:
-		m.validateAnyField(adder, r.Any)
+		validateAnyField(adder, r.Any)
 	case *validate.FieldConstraints_Duration:
-		m.validateDurationField(adder, r.Duration)
+		validateDurationField(adder, r.Duration)
 	case *validate.FieldConstraints_Timestamp:
-		m.validateTimestampField(adder, r.Timestamp)
+		validateTimestampField(adder, r.Timestamp)
 	}
 }
 
-func checkTypeMatch(validateField *validateField, field protosource.Field, ruleTag int32) {
+func checkTypeMatch(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
 	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleTag]
+		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
 		if ok && string(expectedFieldMessageName) == field.TypeName() {
 			return
 		}
-		validateField.add(
-			field,
-			validateField.location,
-			nil,
-			// TODO: instead of `rule tag 1`, say `FloatRules`.
-			"rule tag %d should not be defined on a field of type %s",
-			ruleTag,
+		adder.addForPath(
+			[]int32{ruleFieldNumber},
+			"%s should not be defined on a field of type %s",
+			ruleName,
 			field.TypeName(),
 		)
 		return
 	}
-	expectedType, ok := fieldNumberToAllowedProtoType[ruleTag]
+	expectedType, ok := fieldNumberToAllowedProtoType[ruleFieldNumber]
 	if !ok {
 		// TODO
 		return
 	}
 	if expectedType != field.Type() {
-		validateField.add(
-			field,
-			validateField.location,
-			nil,
-			// TODO: instead of `rule tag 1`, say `FloatRules`.
-			"rule tag %d should not be defined on a field of type %v",
-			ruleTag,
+		adder.addForPath(
+			[]int32{ruleFieldNumber},
+			"%s should not be defined on a field of type %v",
+			ruleName,
 			field.Type(),
 		)
 	}
@@ -361,68 +355,67 @@ func (m *validateField) validateMapField(
 	m.checkConstraintsForField(adder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
-func (m *validateField) validateAnyField(adder *adder, r *validate.AnyRules) {
+func validateAnyField(adder *adder, r *validate.AnyRules) {
 	checkIns(adder, len(r.In), len(r.NotIn))
 }
 
-func (m *validateField) validateDurationField(adder *adder, r *validate.DurationRules) {
+func validateDurationField(adder *adder, r *validate.DurationRules) {
 	validateNumericRule[copiableTime](
 		adder,
 		durationRulesFieldNumber,
 		r.ProtoReflect(),
-		func(value protoreflect.Value) *copiableTime {
+		func(value protoreflect.Value) (*copiableTime, string) {
+			// TODO: what if this errors?
 			bytes, _ := proto.Marshal(value.Message().Interface())
-			t := &durationpb.Duration{}
-			proto.Unmarshal(bytes, t)
-			if !t.IsValid() {
-				// TODO: report field name at least
-				adder.add("invalid timestamp")
+			duration := &durationpb.Duration{}
+			proto.Unmarshal(bytes, duration)
+			if !duration.IsValid() {
+				return nil, fmt.Sprintf("%v is an invalid duration", duration)
 			}
 			return &copiableTime{
-				seconds: t.Seconds,
-				nanos:   t.Nanos,
-			}
+				seconds: duration.Seconds,
+				nanos:   duration.Nanos,
+			}, ""
 		},
-		func(ct1, ct2 copiableTime) float64 {
-			if ct1.seconds > ct2.seconds {
-				return 1
-			}
-			if ct1.seconds < ct2.seconds {
-				return -1
-			}
-			return float64(ct1.nanos - ct2.nanos)
-		},
+		compareTime,
 	)
 }
 
-func (m *validateField) validateTimestampField(adder *adder, r *validate.TimestampRules) {
+func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 	validateNumericRule[copiableTime](
 		adder,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
-		func(value protoreflect.Value) *copiableTime {
+		func(value protoreflect.Value) (*copiableTime, string) {
+			// TODO: what if this errors?
 			bytes, _ := proto.Marshal(value.Message().Interface())
-			t := &timestamppb.Timestamp{}
-			proto.Unmarshal(bytes, t)
-			if !t.IsValid() {
-				// TODO: report field name at least
-				adder.add("invalid timestamp")
+			timestamp := &timestamppb.Timestamp{}
+			proto.Unmarshal(bytes, timestamp)
+			if !timestamp.IsValid() {
+				return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp)
 			}
 			return &copiableTime{
-				seconds: t.Seconds,
-				nanos:   t.Nanos,
-			}
+				seconds: timestamp.Seconds,
+				nanos:   timestamp.Nanos,
+			}, ""
 		},
-		func(ct1, ct2 copiableTime) float64 {
-			if ct1.seconds > ct2.seconds {
-				return 1
-			}
-			if ct1.seconds < ct2.seconds {
-				return -1
-			}
-			return float64(ct1.nanos - ct2.nanos)
-		},
+		compareTime,
 	)
+	if r.Within != nil {
+		if !r.Within.IsValid() {
+			adder.addForPath(
+				// TODO: append within field number
+				[]int32{timestampRulesFieldNumber},
+				"within duration is invalid",
+			)
+		}
+		if r.Within.Seconds <= 0 && r.Within.Nanos <= 0 {
+			adder.addForPath(
+				[]int32{timestampRulesFieldNumber},
+				"within duration must be positive",
+			)
+		}
+	}
 	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
 	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
 	if areNowRulesDefined && areAbsoluteRulesDefined {
@@ -434,10 +427,6 @@ func (m *validateField) validateTimestampField(adder *adder, r *validate.Timesta
 	// TODO: merge location if possible
 	if r.GetLtNow() && r.GetGtNow() {
 		adder.add("gt_now and lt_now cannot be used together")
-	}
-	dur := checkDur(adder, r.Within)
-	if dur != nil && *dur <= 0 {
-		adder.add("within rule must be positive")
 	}
 }
 
@@ -465,16 +454,4 @@ func checkPattern(adder *adder, p *string, in int) {
 	if err != nil {
 		adder.add("unable to parse regex pattern %s: %w", *p, err)
 	}
-}
-
-func checkDur(adder *adder, d *durationpb.Duration) *time.Duration {
-	if d == nil {
-		return nil
-	}
-
-	dur, err := d.AsDuration(), d.CheckValid()
-	if err != nil {
-		adder.add("could not resolve duration")
-	}
-	return &dur
 }

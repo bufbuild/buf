@@ -22,7 +22,6 @@ import (
 
 func validateNumberRulesMessage(
 	adder *adder,
-	validateField *validateField,
 	ruleNumber int32,
 	numberRuleMessage protoreflect.Message,
 ) {
@@ -40,7 +39,7 @@ func validateNumRule[T int32 | int64 | uint32 | uint64 | float32 | float64](
 		ruleTag,
 		ruleMessage,
 		getNumericPointer[T],
-		numberCompare[T],
+		compareNumber[T],
 	)
 }
 
@@ -50,7 +49,7 @@ func validateNumericRule[
 	adder *adder,
 	ruleNumber int32,
 	message protoreflect.Message,
-	convertFunc func(protoreflect.Value) *T,
+	convertFunc func(protoreflect.Value) (*T, string),
 	compareFunc func(T, T) float64,
 ) {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
@@ -61,39 +60,48 @@ func validateNumericRule[
 	// TODO: make convertFunc return a file annotation as well
 	message.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
+		var convertErrorMessage string
 		switch fieldName := string(field.Name()); fieldName {
 		case "const":
-			constant = convertFunc(value)
+			constant, convertErrorMessage = convertFunc(value)
 		case "gt":
-			gt = convertFunc(value)
+			gt, convertErrorMessage = convertFunc(value)
 			lowerBound = gt
 			lowerBoundName = fieldName
 		case "gte":
-			gte = convertFunc(value)
+			gte, convertErrorMessage = convertFunc(value)
 			lowerBound = gte
 			lowerBoundName = fieldName
 		case "lt":
-			lt = convertFunc(value)
+			lt, convertErrorMessage = convertFunc(value)
 			upperBound = lt
 			upperBoundName = fieldName
 		case "lte":
-			lte = convertFunc(value)
+			lte, convertErrorMessage = convertFunc(value)
 			upperBound = lte
 			upperBoundName = fieldName
 		case "in":
 			for i := 0; i < value.List().Len(); i++ {
-				u := convertFunc(value.List().Get(i))
-				if u != nil {
-					in = append(in, *u)
+				var converted *T
+				converted, convertErrorMessage = convertFunc(value.List().Get(i))
+				if converted != nil {
+					in = append(in, *converted)
 				}
 			}
 		case "not_in":
 			for i := 0; i < value.List().Len(); i++ {
-				u := convertFunc(value.List().Get(i))
-				if u != nil {
-					notIn = append(notIn, *u)
+				var converted *T
+				converted, convertErrorMessage = convertFunc(value.List().Get(i))
+				if converted != nil {
+					notIn = append(notIn, *converted)
 				}
 			}
+		}
+		if convertErrorMessage != "" {
+			adder.addForPath(
+				[]int32{ruleNumber, int32(field.Number())},
+				convertErrorMessage,
+			)
 		}
 		return true
 	})
@@ -172,16 +180,26 @@ var numberRulesNumberToValidateFunc = map[int32]validateNumberRuleFunc{
 
 func getNumericPointer[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
-](value protoreflect.Value) *T {
+](value protoreflect.Value) (*T, string) {
 	pointer := value.Interface().(T)
-	return &pointer
+	return &pointer, ""
 }
 
-func numberCompare[T int32 | int64 | uint32 | uint64 | float32 | float64](a T, b T) float64 {
+func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a T, b T) float64 {
 	return float64(a - b)
 }
 
 type copiableTime struct {
 	seconds int64
 	nanos   int32
+}
+
+func compareTime(t1 copiableTime, t2 copiableTime) float64 {
+	if t1.seconds > t2.seconds {
+		return 1
+	}
+	if t1.seconds < t2.seconds {
+		return -1
+	}
+	return float64(t1.nanos - t2.nanos)
 }
