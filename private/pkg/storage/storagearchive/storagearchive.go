@@ -234,8 +234,10 @@ func isAppleExtendedAttributesFile(fileInfo fs.FileInfo) bool {
 	// Archive Utility.app has a similar behavior when creating .zip archives,
 	// except they are placed under a separate MACOSX directory tree.
 	// Here, both are handled by just ignoring all files with a "._" prefix.
-	// This is a reasonable compromise because protobuf IDL files with a "._"
-	// prefix are very unlikely to occur.
+	// This is a reasonable compromise because files that live in a Module
+	// (.proto files, configuration files such as buf.yaml, README files) are
+	// almost never prefixed with ._, and fixing this issue in this manner
+	// outweighs the slight incorrectness.
 	return strings.HasPrefix(fileInfo.Name(), "._")
 }
 
