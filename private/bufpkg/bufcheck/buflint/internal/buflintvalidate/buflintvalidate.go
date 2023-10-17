@@ -32,12 +32,29 @@ func ValidateRules(
 	if err != nil {
 		return err
 	}
+	fullNameToMessage, err := protosource.FullNameToMessage(files...)
+	if err != nil {
+		return nil
+	}
+	fullNameToEnum, err := protosource.FullNameToEnum(files...)
+	if err != nil {
+		return nil
+	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	newValidateField(
 		add,
 		files,
 		field,
-	).CheckConstraintsForField(constraints, field)
+	).checkConstraintsForField(
+		&adder{
+			field:   field,
+			addFunc: add,
+		},
+		constraints,
+		field,
+		fullNameToEnum,
+		fullNameToMessage,
+	)
 	return nil
 }
 

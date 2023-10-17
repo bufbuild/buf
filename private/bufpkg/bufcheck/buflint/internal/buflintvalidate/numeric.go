@@ -85,6 +85,7 @@ type numericRange[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.D
 }
 
 func validateNumericRule[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
+	adder *adder,
 	m *validateField,
 	ruleTag int32,
 	tagSet commonNumericFieldNumberSet,
@@ -92,6 +93,7 @@ func validateNumericRule[T int32 | int64 | uint32 | uint64 | float32 | float64 |
 ) {
 	rules := normalizeConstraints[T](ruleMessage)
 	validateCommonNumericRule(
+		adder,
 		m,
 		ruleTag,
 		tagSet,
@@ -103,6 +105,7 @@ func validateTimeRule[
 	T durationpb.Duration | timestamppb.Timestamp,
 	U commonTime,
 ](
+	adder *adder,
 	validateField *validateField,
 	field protosource.Field,
 	ruleNumber int32,
@@ -161,7 +164,7 @@ func validateTimeRule[
 			"all other rules are ignored when const is specified on a field",
 		)
 	}
-	validateField.checkIns(len(in), len(notIn))
+	checkIns(adder, len(in), len(notIn))
 	for _, bannedValue := range notIn {
 		var failedChecks []string
 		if gt != nil && compareFunc(bannedValue, *gt) <= 0 {
@@ -211,16 +214,17 @@ func validateTimeRule[
 	}
 }
 
-type validateNumberRuleFunc func(*validateField, int32, commonNumericFieldNumberSet, protoreflect.Message)
+type validateNumberRuleFunc func(*adder, *validateField, int32, commonNumericFieldNumberSet, protoreflect.Message)
 
 func validateNumberRulesMessage(
+	adder *adder,
 	validateField *validateField,
 	field protosource.Field,
 	ruleNumber int32,
 	numberRuleMessage protoreflect.Message,
 ) {
 	validateFunc := tagToValidateFunc[ruleNumber]
-	validateFunc(validateField, ruleNumber, defaultFieldNumberSet, numberRuleMessage)
+	validateFunc(adder, validateField, ruleNumber, defaultFieldNumberSet, numberRuleMessage)
 }
 
 var tagToValidateFunc = map[int32]validateNumberRuleFunc{
@@ -239,12 +243,13 @@ var tagToValidateFunc = map[int32]validateNumberRuleFunc{
 }
 
 func validateCommonNumericRule[T int32 | int64 | uint32 | uint64 | float32 | float64 | time.Duration](
+	adder *adder,
 	m *validateField,
 	ruleTag int32,
 	tagSet commonNumericFieldNumberSet,
 	rules *numericCommonRule[T],
 ) {
-	m.checkIns(len(rules.in), len(rules.notIn))
+	checkIns(adder, len(rules.in), len(rules.notIn))
 	if rules.constant != nil && (len(rules.in) != 0 || len(rules.notIn) != 0 || rules.valueRange.isDefined()) {
 		m.add(
 			m.field,

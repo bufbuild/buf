@@ -131,7 +131,13 @@ func newValidateField(
 	}
 }
 
-func (m *validateField) CheckConstraintsForField(fieldConstraints *validate.FieldConstraints, field protosource.Field) {
+func (m *validateField) checkConstraintsForField(
+	adder *adder,
+	fieldConstraints *validate.FieldConstraints,
+	field protosource.Field,
+	fullNameToEnum map[string]protosource.Enum,
+	fullNameToMessage map[string]protosource.Message,
+) {
 	if fieldConstraints == nil {
 		return
 	}
@@ -142,34 +148,34 @@ func (m *validateField) CheckConstraintsForField(fieldConstraints *validate.Fiel
 	}
 	typeFieldNumber := int32(typeField.Number())
 	if typeFieldNumber == mapRulesFieldNumber {
-		m.validateMapField(fieldConstraints.GetMap(), field)
+		m.validateMapField(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
 	if typeFieldNumber == repeatedRulesFieldNumber {
-		m.validateRepeatedField(fieldConstraints.GetRepeated(), field)
+		m.validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
 	checkTypeMatch(m, field, typeFieldNumber)
 	if floatRulesFieldNumber <= typeFieldNumber && typeFieldNumber <= sFixed64RulesFieldNumber {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeField).Message()
-		validateNumberRulesMessage(m, field, typeFieldNumber, numberRulesMessage)
+		validateNumberRulesMessage(adder, m, field, typeFieldNumber, numberRulesMessage)
 		return
 	}
 	switch r := fieldConstraints.Type.(type) {
 	case *validate.FieldConstraints_Bool:
 		// Bool rules only have `const` and does not need validation.
 	case *validate.FieldConstraints_String_:
-		m.validateStringField(r.String_)
+		m.validateStringField(adder, r.String_)
 	case *validate.FieldConstraints_Bytes:
-		m.validateBytesField(r.Bytes)
+		m.validateBytesField(adder, r.Bytes)
 	case *validate.FieldConstraints_Enum:
-		m.validateEnumField(r.Enum, field)
+		m.validateEnumField(adder, r.Enum, field)
 	case *validate.FieldConstraints_Any:
-		m.validateAnyField(r.Any)
+		m.validateAnyField(adder, r.Any)
 	case *validate.FieldConstraints_Duration:
-		m.validateDurationField(r.Duration)
+		m.validateDurationField(adder, r.Duration)
 	case *validate.FieldConstraints_Timestamp:
-		m.validateTimestampField(r.Timestamp)
+		m.validateTimestampField(adder, r.Timestamp)
 	}
 }
 
@@ -208,12 +214,15 @@ func checkTypeMatch(validateField *validateField, field protosource.Field, ruleT
 	}
 }
 
-func (m *validateField) checkIns(
+func checkIns(
+	adder *adder,
 	in int,
 	notIn int,
 ) {
-	m.assertf(in == 0 || notIn == 0,
-		"cannot have both in and not_in rules on the same field")
+	if in != 0 && notIn != 0 {
+		adder.add("cannot have both in and not_in rules on the same field")
+	}
+
 }
 
 func (m *validateField) assertf(expr bool, format string, v ...interface{}) {
@@ -222,7 +231,7 @@ func (m *validateField) assertf(expr bool, format string, v ...interface{}) {
 	}
 }
 
-func (m *validateField) validateStringField(r *validate.StringRules) {
+func (m *validateField) validateStringField(adder *adder, r *validate.StringRules) {
 	if r.Len != nil {
 		m.assertf(r.MinLen == nil, "cannot have both len and min_len on the same field")
 		m.assertf(r.MaxLen == nil, "cannot have both len and max_len on the same field")
@@ -231,9 +240,9 @@ func (m *validateField) validateStringField(r *validate.StringRules) {
 		m.assertf(r.MinBytes == nil, "cannot have both len_bytes and min_bytes on the same field")
 		m.assertf(r.MaxBytes == nil, "cannot have both len_bytes and max_bytes on the same field")
 	}
-	m.checkMinMax(r.MinLen, "min_len", r.MaxLen, "max_len")
-	m.checkMinMax(r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
-	m.checkIns(len(r.In), len(r.NotIn))
+	checkMinMax(adder, r.MinLen, "min_len", r.MaxLen, "max_len")
+	checkMinMax(adder, r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
+	checkIns(adder, len(r.In), len(r.NotIn))
 	patternInEffect := r.Pattern
 	wellKnownRegex := r.GetWellKnownRegex()
 	nonStrict := r.Strict != nil && !*r.Strict
@@ -253,7 +262,7 @@ func (m *validateField) validateStringField(r *validate.StringRules) {
 			patternInEffect = &wellKnownHeaderStringPattern
 		}
 	}
-	m.checkPattern(patternInEffect, len(r.In))
+	checkPattern(adder, patternInEffect, len(r.In))
 	if r.MaxLen != nil {
 		max := r.GetMaxLen()
 		m.assertf(uint64(utf8.RuneCountInString(r.GetPrefix())) <= max, "prefix length exceeds max_len")
@@ -270,8 +279,8 @@ func (m *validateField) validateStringField(r *validate.StringRules) {
 	}
 }
 
-func (m *validateField) validateEnumField(r *validate.EnumRules, field protosource.Field) {
-	m.checkIns(len(r.In), len(r.NotIn))
+func (m *validateField) validateEnumField(adder *adder, r *validate.EnumRules, field protosource.Field) {
+	checkIns(adder, len(r.In), len(r.NotIn))
 	if !r.GetDefinedOnly() {
 		return
 	}
@@ -302,14 +311,14 @@ func (m *validateField) validateEnumField(r *validate.EnumRules, field protosour
 	}
 }
 
-func (m *validateField) validateBytesField(r *validate.BytesRules) {
+func (m *validateField) validateBytesField(adder *adder, r *validate.BytesRules) {
 	if r.Len != nil {
 		m.assertf(r.MinLen == nil, "cannot have both len and min_len on the same field")
 		m.assertf(r.MaxLen == nil, "cannot have both len and max_len on the same field")
 	}
-	m.checkMinMax(r.MinLen, "min_len", r.MaxLen, "max_len")
-	m.checkIns(len(r.In), len(r.NotIn))
-	m.checkPattern(r.Pattern, len(r.In))
+	checkMinMax(adder, r.MinLen, "min_len", r.MaxLen, "max_len")
+	checkIns(adder, len(r.In), len(r.NotIn))
+	checkPattern(adder, r.Pattern, len(r.In))
 	if r.MaxLen != nil {
 		max := r.GetMaxLen()
 		m.assertf(uint64(len(r.GetPrefix())) <= max, "prefix length exceeds max_len")
@@ -318,41 +327,53 @@ func (m *validateField) validateBytesField(r *validate.BytesRules) {
 	}
 }
 
-func (m *validateField) validateRepeatedField(r *validate.RepeatedRules, field protosource.Field) {
+func (m *validateField) validateRepeatedField(
+	adder *adder,
+	r *validate.RepeatedRules,
+	field protosource.Field,
+	fullNameToEnum map[string]protosource.Enum,
+	fullNameToMessage map[string]protosource.Message,
+) {
 	m.assertf(
 		field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !field.IsMap(),
 		"field is not repeated but got repeated rules",
 	)
 
-	m.checkMinMax(r.MinItems, "min_items", r.MaxItems, "max_items")
+	checkMinMax(adder, r.MinItems, "min_items", r.MaxItems, "max_items")
 
 	if r.GetUnique() {
 		m.assertf(field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 			"unique rule is only applicable for scalar types")
 	}
 
-	m.CheckConstraintsForField(r.Items, field)
+	m.checkConstraintsForField(adder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
-func (m *validateField) validateMapField(r *validate.MapRules, field protosource.Field) {
+func (m *validateField) validateMapField(
+	adder *adder,
+	r *validate.MapRules,
+	field protosource.Field,
+	fullNameToEnum map[string]protosource.Enum,
+	fullNameToMessage map[string]protosource.Message,
+) {
 	m.assertf(
 		field.IsMap(),
 		"field is not a map but got map rules",
 	)
 
-	m.checkMinMax(r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
+	checkMinMax(adder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
 
 	mapMessage := embed(field, m.files...)
 	// TODO: make sure it has two fields
-	m.CheckConstraintsForField(r.Keys, mapMessage.Fields()[0])
-	m.CheckConstraintsForField(r.Values, mapMessage.Fields()[1])
+	m.checkConstraintsForField(adder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	m.checkConstraintsForField(adder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
-func (m *validateField) validateAnyField(r *validate.AnyRules) {
-	m.checkIns(len(r.In), len(r.NotIn))
+func (m *validateField) validateAnyField(adder *adder, r *validate.AnyRules) {
+	checkIns(adder, len(r.In), len(r.NotIn))
 }
 
-func (m *validateField) validateDurationField(r *validate.DurationRules) {
+func (m *validateField) validateDurationField(adder *adder, r *validate.DurationRules) {
 	in := make([]time.Duration, 0, len(r.GetIn()))
 	for _, duration := range r.GetIn() {
 		if duration == nil {
@@ -360,7 +381,7 @@ func (m *validateField) validateDurationField(r *validate.DurationRules) {
 			m.assertf(false, "cannot have nil values in in")
 			continue
 		}
-		in = append(in, *m.checkDur(duration))
+		in = append(in, *checkDur(adder, duration))
 	}
 	notIn := make([]time.Duration, 0, len(r.GetNotIn()))
 	for _, duration := range r.GetNotIn() {
@@ -369,38 +390,40 @@ func (m *validateField) validateDurationField(r *validate.DurationRules) {
 			m.assertf(false, "cannot have nil values in in")
 			continue
 		}
-		notIn = append(notIn, *m.checkDur(duration))
+		notIn = append(notIn, *checkDur(adder, duration))
 	}
 	validateCommonNumericRule[time.Duration](
+		adder,
 		m,
 		durationRulesFieldNumber,
 		durationFieldNumberSet,
 		&numericCommonRule[time.Duration]{
-			constant: m.checkDur(r.GetConst()),
+			constant: checkDur(adder, r.GetConst()),
 			in:       in,
 			notIn:    notIn,
 			valueRange: *newNumericRange[time.Duration](
-				m.checkDur(r.GetGt()),
-				m.checkDur(r.GetGte()),
-				m.checkDur(r.GetLt()),
-				m.checkDur(r.GetLte()),
+				checkDur(adder, r.GetGt()),
+				checkDur(adder, r.GetGte()),
+				checkDur(adder, r.GetLt()),
+				checkDur(adder, r.GetLte()),
 			),
 		},
 	)
 
 	for _, v := range r.GetIn() {
 		m.assertf(v != nil, "cannot have nil values in in")
-		m.checkDur(v)
+		checkDur(adder, v)
 	}
 
 	for _, v := range r.GetNotIn() {
 		m.assertf(v != nil, "cannot have nil values in not_in")
-		m.checkDur(v)
+		checkDur(adder, v)
 	}
 }
 
-func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
+func (m *validateField) validateTimestampField(adder *adder, r *validate.TimestampRules) {
 	validateTimeRule[timestamppb.Timestamp, commonTime](
+		adder,
 		m,
 		m.field,
 		timestampRulesFieldNumber,
@@ -435,39 +458,44 @@ func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
 	// TODO: merge location if possible
 	m.assertf(!r.GetLtNow() || !r.GetGtNow(), "gt_now and lt_now cannot be used together")
 
-	dur := m.checkDur(r.Within)
+	dur := checkDur(adder, r.Within)
 	m.assertf(dur == nil || *dur > 0, "within rule must be positive")
 }
 
-func (m *validateField) checkMinMax(
+func checkMinMax(
+	adder *adder,
 	min *uint64,
 	minFieldName string,
 	max *uint64,
 	maxFieldName string,
 ) {
-	if min == nil || max == nil {
-		return
+	if min != nil && max != nil && *min > *max {
+		adder.add("%s value is greater than %s value", minFieldName, maxFieldName)
 	}
-
-	m.assertf(*min <= *max,
-		"%s value is greater than %s value", minFieldName, maxFieldName)
 }
 
-func (m *validateField) checkPattern(p *string, in int) {
+// TODO: update func signature
+func checkPattern(adder *adder, p *string, in int) {
 	if p == nil {
 		return
 	}
-	m.assertf(in == 0, "regex pattern and in rules are incompatible")
+	if in != 0 {
+		adder.add("regex pattern and in rules are incompatible")
+	}
 	_, err := regexp.Compile(*p)
-	m.assertf(err == nil, "unable to parse regex pattern %s: %w", *p, err)
+	if err != nil {
+		adder.add("unable to parse regex pattern %s: %w", *p, err)
+	}
 }
 
-func (m *validateField) checkDur(d *durationpb.Duration) *time.Duration {
+func checkDur(adder *adder, d *durationpb.Duration) *time.Duration {
 	if d == nil {
 		return nil
 	}
 
 	dur, err := d.AsDuration(), d.CheckValid()
-	m.assertf(err == nil, "could not resolve duration")
+	if err != nil {
+		adder.add("could not resolve duration")
+	}
 	return &dur
 }
