@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.27.1] - 2023-10-16
 
 - Fix issue in v1.27.0 where `--path` did not work with workspaces under certain scenarios.
@@ -960,6 +964,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.1...HEAD
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
 [v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
 [v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
