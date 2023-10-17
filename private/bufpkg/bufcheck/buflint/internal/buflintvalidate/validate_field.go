@@ -22,48 +22,92 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-var (
-	unknown         = ""
-	httpHeaderName  = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
-	httpHeaderValue = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
-	headerString    = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
-	// Map from well-known regex to a regex pattern.
-	regexMap = map[string]*string{
-		"UNKNOWN":           &unknown,
-		"HTTP_HEADER_NAME":  &httpHeaderName,
-		"HTTP_HEADER_VALUE": &httpHeaderValue,
-		"HEADER_STRING":     &headerString,
-	}
-)
+// TODO: reivisit type validateField
+// TODO: consistent lint message tone/language
+// TODO: in cel linting, check no google.protobuf.Any is used (if this check makes sense).
+// TODO: report at one location or both location
+// TODO: rename file names
 
 const (
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
-	floatRulesTag     = 1
-	doubleRulesTag    = 2
-	int32RulesTag     = 3
-	int64RulesTag     = 4
-	uInt32RulesTag    = 5
-	uInt64RulesTag    = 6
-	sInt32RulesTag    = 7
-	sInt64RulesTag    = 8
-	fixed32RulesTag   = 9
-	fixed64RulesTag   = 10
-	sFixed32RulesTag  = 11
-	sFixed64RulesTag  = 12
-	boolRulesTag      = 13
-	stringRulesTag    = 14
-	bytesRulesTag     = 15
-	enumRulesTag      = 16
-	repeatedRulesTag  = 18
-	mapRulesTag       = 19
-	anyRulesTag       = 20
-	durationRulesTag  = 21
-	timestampRulesTag = 22
+	floatRulesFieldNumber     = 1
+	doubleRulesFieldNumber    = 2
+	int32RulesFieldNumber     = 3
+	int64RulesFieldNumber     = 4
+	uInt32RulesFieldNumber    = 5
+	uInt64RulesFieldNumber    = 6
+	sInt32RulesFieldNumber    = 7
+	sInt64RulesFieldNumber    = 8
+	fixed32RulesFieldNumber   = 9
+	fixed64RulesFieldNumber   = 10
+	sFixed32RulesFieldNumber  = 11
+	sFixed64RulesFieldNumber  = 12
+	boolRulesFieldNumber      = 13
+	stringRulesFieldNumber    = 14
+	bytesRulesFieldNumber     = 15
+	enumRulesFieldNumber      = 16
+	repeatedRulesFieldNumber  = 18
+	mapRulesFieldNumber       = 19
+	anyRulesFieldNumber       = 20
+	durationRulesFieldNumber  = 21
+	timestampRulesFieldNumber = 22
+)
+
+var (
+	// Some rules can only be defined for fields of a specific primitive type.
+	// For example, SFixed64Rules can only be defined on a field of type sfixed64.
+	// Some rules can only be defined for fields of a specific message type. For
+	// example, TimestampRules can only be defined on fields of type google.protobuf.Timestamp.
+	// Others can be defined on either fields of a certain primitive type or fields
+	// of a certain message type. For example, Int32Rules can be defined on either
+	// a int32 field or a google.protobuf.Int32Value field.
+	fieldNumberToAllowedProtoType = map[int32]descriptorpb.FieldDescriptorProto_Type{
+		floatRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
+		doubleRulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
+		int32RulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_INT32,
+		int64RulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		uInt32RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_UINT32,
+		uInt64RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		sInt32RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_SINT32,
+		sInt64RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		fixed32RulesFieldNumber:  descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
+		fixed64RulesFieldNumber:  descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		sFixed32RulesFieldNumber: descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
+		sFixed64RulesFieldNumber: descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
+		boolRulesFieldNumber:     descriptorpb.FieldDescriptorProto_TYPE_BOOL,
+		stringRulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_STRING,
+		bytesRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_BYTES,
+		enumRulesFieldNumber:     descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+	}
+	fieldNumberToAllowedMessageName = map[int32]protoreflect.FullName{
+		floatRulesFieldNumber:     (&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName(),
+		doubleRulesFieldNumber:    (&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName(),
+		int32RulesFieldNumber:     (&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName(),
+		int64RulesFieldNumber:     (&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName(),
+		uInt32RulesFieldNumber:    (&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName(),
+		uInt64RulesFieldNumber:    (&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName(),
+		boolRulesFieldNumber:      (&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName(),
+		stringRulesFieldNumber:    (&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName(),
+		bytesRulesFieldNumber:     (&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName(),
+		anyRulesFieldNumber:       (&anypb.Any{}).ProtoReflect().Descriptor().FullName(),
+		durationRulesFieldNumber:  (&durationpb.Duration{}).ProtoReflect().Descriptor().FullName(),
+		timestampRulesFieldNumber: (&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName(),
+	}
+	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2846
+	wellKnownHttpHeaderNamePattern = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2853
+	wellKnownHttpHeaderValuePattern = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2854
+	wellKnownHeaderStringPattern = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
 )
 
 // validateField is a validate Field.
@@ -87,149 +131,39 @@ func newValidateField(
 	}
 }
 
-func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
-	if rules == nil {
+func (m *validateField) CheckConstraintsForField(fieldConstraints *validate.FieldConstraints, field protosource.Field) {
+	if fieldConstraints == nil {
 		return
 	}
-	if wkt := lookupWellKnownType(m.field.TypeName()); wkt.valid() && wkt == anyWKT {
-		m.validateNoCustomRulesApplied(rules)
+	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
+	typeField := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
+	if typeField == nil {
+		return
 	}
-	switch r := rules.Type.(type) {
-	case *validate.FieldConstraints_Float:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FLOAT, floatValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			float32,
-			*validate.FloatRules_Gt,
-			*validate.FloatRules_Gte,
-			*validate.FloatRules_Lt,
-			*validate.FloatRules_Lte,
-		](r.Float, r.Float.GreaterThan, r.Float.LessThan)
-		validateNumberField(m, floatRulesTag, defaultNumericTagSet, len(r.Float.In), len(r.Float.NotIn), r.Float.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Double:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_DOUBLE, doubleValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			float64,
-			*validate.DoubleRules_Gt,
-			*validate.DoubleRules_Gte,
-			*validate.DoubleRules_Lt,
-			*validate.DoubleRules_Lte,
-		](r.Double, r.Double.GreaterThan, r.Double.LessThan)
-		validateNumberField(m, doubleRulesTag, defaultNumericTagSet, len(r.Double.In), len(r.Double.NotIn), r.Double.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Int32:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT32, int32ValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int32,
-			*validate.Int32Rules_Gt,
-			*validate.Int32Rules_Gte,
-			*validate.Int32Rules_Lt,
-			*validate.Int32Rules_Lte,
-		](r.Int32, r.Int32.GreaterThan, r.Int32.LessThan)
-		validateNumberField(m, int32RulesTag, defaultNumericTagSet, len(r.Int32.In), len(r.Int32.NotIn), r.Int32.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Int64:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_INT64, int64ValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int64,
-			*validate.Int64Rules_Gt,
-			*validate.Int64Rules_Gte,
-			*validate.Int64Rules_Lt,
-			*validate.Int64Rules_Lte,
-		](r.Int64, r.Int64.GreaterThan, r.Int64.LessThan)
-		validateNumberField(m, int64RulesTag, defaultNumericTagSet, len(r.Int64.In), len(r.Int64.NotIn), r.Int64.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Uint32:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT32, uInt32ValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			uint32,
-			*validate.UInt32Rules_Gt,
-			*validate.UInt32Rules_Gte,
-			*validate.UInt32Rules_Lt,
-			*validate.UInt32Rules_Lte,
-		](r.Uint32, r.Uint32.GreaterThan, r.Uint32.LessThan)
-		validateNumberField(m, uInt32RulesTag, defaultNumericTagSet, len(r.Uint32.In), len(r.Uint32.NotIn), r.Uint32.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Uint64:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_UINT64, uInt64ValueWKT)
-		gt, gte, lt, lte := resolveLimits[
-			uint64,
-			*validate.UInt64Rules_Gt,
-			*validate.UInt64Rules_Gte,
-			*validate.UInt64Rules_Lt,
-			*validate.UInt64Rules_Lte,
-		](r.Uint64, r.Uint64.GreaterThan, r.Uint64.LessThan)
-		validateNumberField(m, uInt64RulesTag, defaultNumericTagSet, len(r.Uint64.In), len(r.Uint64.NotIn), r.Uint64.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Sint32:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT32, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int32,
-			*validate.SInt32Rules_Gt,
-			*validate.SInt32Rules_Gte,
-			*validate.SInt32Rules_Lt,
-			*validate.SInt32Rules_Lte,
-		](r.Sint32, r.Sint32.GreaterThan, r.Sint32.LessThan)
-		validateNumberField(m, sInt32RulesTag, defaultNumericTagSet, len(r.Sint32.In), len(r.Sint32.NotIn), r.Sint32.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Sint64:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SINT64, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int64,
-			*validate.SInt64Rules_Gt,
-			*validate.SInt64Rules_Gte,
-			*validate.SInt64Rules_Lt,
-			*validate.SInt64Rules_Lte,
-		](r.Sint64, r.Sint64.GreaterThan, r.Sint64.LessThan)
-		validateNumberField(m, sInt64RulesTag, defaultNumericTagSet, len(r.Sint64.In), len(r.Sint64.NotIn), r.Sint64.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Fixed32:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED32, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			uint32,
-			*validate.Fixed32Rules_Gt,
-			*validate.Fixed32Rules_Gte,
-			*validate.Fixed32Rules_Lt,
-			*validate.Fixed32Rules_Lte,
-		](r.Fixed32, r.Fixed32.GreaterThan, r.Fixed32.LessThan)
-		validateNumberField(m, fixed32RulesTag, defaultNumericTagSet, len(r.Fixed32.In), len(r.Fixed32.NotIn), r.Fixed32.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Fixed64:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_FIXED64, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			uint64,
-			*validate.Fixed64Rules_Gt,
-			*validate.Fixed64Rules_Gte,
-			*validate.Fixed64Rules_Lt,
-			*validate.Fixed64Rules_Lte,
-		](r.Fixed64, r.Fixed64.GreaterThan, r.Fixed64.LessThan)
-		validateNumberField(m, fixed64RulesTag, defaultNumericTagSet, len(r.Fixed64.In), len(r.Fixed64.NotIn), r.Fixed64.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Sfixed32:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED32, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int32,
-			*validate.SFixed32Rules_Gt,
-			*validate.SFixed32Rules_Gte,
-			*validate.SFixed32Rules_Lt,
-			*validate.SFixed32Rules_Lte,
-		](r.Sfixed32, r.Sfixed32.GreaterThan, r.Sfixed32.LessThan)
-		validateNumberField(m, sFixed32RulesTag, defaultNumericTagSet, len(r.Sfixed32.In), len(r.Sfixed32.NotIn), r.Sfixed32.Const, gt, gte, lt, lte)
-	case *validate.FieldConstraints_Sfixed64:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_SFIXED64, unknownWKT)
-		gt, gte, lt, lte := resolveLimits[
-			int64,
-			*validate.SFixed64Rules_Gt,
-			*validate.SFixed64Rules_Gte,
-			*validate.SFixed64Rules_Lt,
-			*validate.SFixed64Rules_Lte,
-		](r.Sfixed64, r.Sfixed64.GreaterThan, r.Sfixed64.LessThan)
-		validateNumberField(m, sFixed64RulesTag, defaultNumericTagSet, len(r.Sfixed64.In), len(r.Sfixed64.NotIn), r.Sfixed64.Const, gt, gte, lt, lte)
+	typeFieldNumber := int32(typeField.Number())
+	if typeFieldNumber == mapRulesFieldNumber {
+		m.validateMapField(fieldConstraints.GetMap(), field)
+		return
+	}
+	if typeFieldNumber == repeatedRulesFieldNumber {
+		m.validateRepeatedField(fieldConstraints.GetRepeated(), field)
+		return
+	}
+	checkTypeMatch(m, field, typeFieldNumber)
+	if floatRulesFieldNumber <= typeFieldNumber && typeFieldNumber <= sFixed64RulesFieldNumber {
+		numberRulesMessage := fieldConstraintsMessage.Get(typeField).Message()
+		validateNumberRulesMessage(m, field, typeFieldNumber, numberRulesMessage)
+		return
+	}
+	switch r := fieldConstraints.Type.(type) {
 	case *validate.FieldConstraints_Bool:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_BOOL, boolValueWKT)
+		// Bool rules only have `const` and does not need validation.
 	case *validate.FieldConstraints_String_:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_STRING, stringValueWKT)
 		m.validateStringField(r.String_)
 	case *validate.FieldConstraints_Bytes:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_BYTES, bytesValueWKT)
 		m.validateBytesField(r.Bytes)
 	case *validate.FieldConstraints_Enum:
-		m.assertFieldTypeMatches(descriptorpb.FieldDescriptorProto_TYPE_ENUM, unknownWKT)
-		m.validateEnumField(r.Enum)
-	case *validate.FieldConstraints_Repeated:
-		m.validateRepeatedField(r.Repeated)
-	case *validate.FieldConstraints_Map:
-		m.validateMapField(r.Map)
+		m.validateEnumField(r.Enum, field)
 	case *validate.FieldConstraints_Any:
 		m.validateAnyField(r.Any)
 	case *validate.FieldConstraints_Duration:
@@ -239,27 +173,45 @@ func (m *validateField) CheckFieldRules(rules *validate.FieldConstraints) {
 	}
 }
 
-func (m *validateField) assertFieldTypeMatches(pt descriptorpb.FieldDescriptorProto_Type, wrapper wellKnownType) {
-	if wrapper != unknownWKT {
-		if emb := embed(m.field, m.files...); emb != nil {
-			if wkt := lookupWellKnownType(emb.Name()); wkt.valid() && wkt == wrapper {
-				field := emb.Fields()[0]
-				newValidateField(m.add, m.files, field).assertFieldTypeMatches(field.Type(), unknownWKT)
-				return
-			}
+func checkTypeMatch(validateField *validateField, field protosource.Field, ruleTag int32) {
+	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleTag]
+		if ok && string(expectedFieldMessageName) == field.TypeName() {
+			return
 		}
+		validateField.add(
+			field,
+			validateField.location,
+			nil,
+			// TODO: instead of `rule tag 1`, say `FloatRules`.
+			"rule tag %d should not be defined on a field of type %s",
+			ruleTag,
+			field.TypeName(),
+		)
+		return
 	}
-
-	expr := m.field.Type() == pt
-	m.assertf(
-		expr,
-		"expected rules for %s but got %s",
-		m.field.Type(),
-		pt.String(),
-	)
+	expectedType, ok := fieldNumberToAllowedProtoType[ruleTag]
+	if !ok {
+		// TODO
+		return
+	}
+	if expectedType != field.Type() {
+		validateField.add(
+			field,
+			validateField.location,
+			nil,
+			// TODO: instead of `rule tag 1`, say `FloatRules`.
+			"rule tag %d should not be defined on a field of type %v",
+			ruleTag,
+			field.Type(),
+		)
+	}
 }
 
-func (m *validateField) checkIns(in, notIn int) {
+func (m *validateField) checkIns(
+	in int,
+	notIn int,
+) {
 	m.assertf(in == 0 || notIn == 0,
 		"cannot have both in and not_in rules on the same field")
 }
@@ -271,103 +223,129 @@ func (m *validateField) assertf(expr bool, format string, v ...interface{}) {
 }
 
 func (m *validateField) validateStringField(r *validate.StringRules) {
-	m.checkLen(r.Len, r.MinLen, r.MaxLen)
-	m.checkLen(r.LenBytes, r.MinBytes, r.MaxBytes)
-	m.checkMinMax(r.MinLen, r.MaxLen)
-	m.checkMinMax(r.MinBytes, r.MaxBytes)
-	m.checkIns(len(r.In), len(r.NotIn))
-	m.checkWellKnownRegex(r.GetWellKnownRegex(), r)
-	m.checkPattern(r.Pattern, len(r.In))
-
-	if r.MaxLen != nil {
-		max := int(r.GetMaxLen())
-		m.assertf(utf8.RuneCountInString(r.GetPrefix()) <= max, "prefix length exceeds the max_len")
-		m.assertf(utf8.RuneCountInString(r.GetSuffix()) <= max, "suffix length exceeds the max_len")
-		m.assertf(utf8.RuneCountInString(r.GetContains()) <= max, "contains length exceeds the max_len")
-
-		m.assertf(r.MaxBytes == nil || r.GetMaxBytes() >= r.GetMaxLen(),
-			"max_len cannot exceed max_bytes")
+	if r.Len != nil {
+		m.assertf(r.MinLen == nil, "cannot have both len and min_len on the same field")
+		m.assertf(r.MaxLen == nil, "cannot have both len and max_len on the same field")
 	}
+	if r.LenBytes != nil {
+		m.assertf(r.MinBytes == nil, "cannot have both len_bytes and min_bytes on the same field")
+		m.assertf(r.MaxBytes == nil, "cannot have both len_bytes and max_bytes on the same field")
+	}
+	m.checkMinMax(r.MinLen, "min_len", r.MaxLen, "max_len")
+	m.checkMinMax(r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
+	m.checkIns(len(r.In), len(r.NotIn))
+	patternInEffect := r.Pattern
+	wellKnownRegex := r.GetWellKnownRegex()
+	nonStrict := r.Strict != nil && !*r.Strict
+	switch wellKnownRegex {
+	case validate.KnownRegex_KNOWN_REGEX_UNSPECIFIED:
+		m.assertf(!nonStrict, "cannot specify strict without specifying well_known_regex")
+	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_NAME:
+		m.assertf(r.Pattern == nil, "regex well_known_regex and regex pattern are incompatible")
+		patternInEffect = &wellKnownHttpHeaderNamePattern
+		if nonStrict {
+			patternInEffect = &wellKnownHeaderStringPattern
+		}
+	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_VALUE:
+		m.assertf(r.Pattern == nil, "regex well_known_regex and regex pattern are incompatible")
+		patternInEffect = &wellKnownHttpHeaderValuePattern
+		if nonStrict {
+			patternInEffect = &wellKnownHeaderStringPattern
+		}
+	}
+	m.checkPattern(patternInEffect, len(r.In))
+	if r.MaxLen != nil {
+		max := r.GetMaxLen()
+		m.assertf(uint64(utf8.RuneCountInString(r.GetPrefix())) <= max, "prefix length exceeds max_len")
+		m.assertf(uint64(utf8.RuneCountInString(r.GetSuffix())) <= max, "suffix length exceeds max_len")
+		m.assertf(uint64(utf8.RuneCountInString(r.GetContains())) <= max, "contains length exceeds max_len")
 
+		m.assertf(r.MaxBytes == nil || r.GetMaxBytes() >= r.GetMaxLen(), "max_len cannot exceed max_bytes")
+	}
 	if r.MaxBytes != nil {
-		max := int(r.GetMaxBytes())
-		m.assertf(len(r.GetPrefix()) <= max, "prefix length exceeds the max_bytes")
-		m.assertf(len(r.GetSuffix()) <= max, "suffix length exceeds the max_bytes")
-		m.assertf(len(r.GetContains()) <= max, "contains length exceeds the max_bytes")
+		max := r.GetMaxBytes()
+		m.assertf(uint64(len(r.GetPrefix())) <= max, "prefix length exceeds the max_bytes")
+		m.assertf(uint64(len(r.GetSuffix())) <= max, "suffix length exceeds the max_bytes")
+		m.assertf(uint64(len(r.GetContains())) <= max, "contains length exceeds the max_bytes")
 	}
 }
 
-func (m *validateField) validateEnumField(r *validate.EnumRules) {
+func (m *validateField) validateEnumField(r *validate.EnumRules, field protosource.Field) {
 	m.checkIns(len(r.In), len(r.NotIn))
-
-	if r.GetDefinedOnly() && len(r.In) > 0 {
-		enum := getEnum(m.field, m.files...)
-		if enum == nil {
-			return
-		}
-		defined := enum.Values()
-		vals := make(map[int]struct{}, len(defined))
-
-		for _, val := range defined {
-			vals[val.Number()] = struct{}{}
-		}
-
+	if !r.GetDefinedOnly() {
+		return
+	}
+	if len(r.In) == 0 && len(r.NotIn) == 0 {
+		return
+	}
+	enum := getEnum(field, m.files...)
+	if enum == nil {
+		// TODO: return error
+		return
+	}
+	defined := enum.Values()
+	vals := make(map[int]struct{}, len(defined))
+	for _, val := range defined {
+		vals[val.Number()] = struct{}{}
+	}
+	if len(r.In) > 0 {
 		for _, in := range r.In {
 			_, ok := vals[int(in)]
 			m.assertf(ok, "undefined in value (%d) conflicts with defined_only rule", in)
 		}
 	}
+	if len(r.NotIn) > 0 {
+		for _, notIn := range r.NotIn {
+			_, ok := vals[int(notIn)]
+			m.assertf(ok, "undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
+		}
+	}
 }
 
 func (m *validateField) validateBytesField(r *validate.BytesRules) {
-	m.checkMinMax(r.MinLen, r.MaxLen)
+	if r.Len != nil {
+		m.assertf(r.MinLen == nil, "cannot have both len and min_len on the same field")
+		m.assertf(r.MaxLen == nil, "cannot have both len and max_len on the same field")
+	}
+	m.checkMinMax(r.MinLen, "min_len", r.MaxLen, "max_len")
 	m.checkIns(len(r.In), len(r.NotIn))
 	m.checkPattern(r.Pattern, len(r.In))
-
 	if r.MaxLen != nil {
-		max := int(r.GetMaxLen())
-		m.assertf(len(r.GetPrefix()) <= max, "prefix length exceeds the max_len")
-		m.assertf(len(r.GetSuffix()) <= max, "suffix length exceeds the max_len")
-		m.assertf(len(r.GetContains()) <= max, "contains length exceeds the max_len")
+		max := r.GetMaxLen()
+		m.assertf(uint64(len(r.GetPrefix())) <= max, "prefix length exceeds max_len")
+		m.assertf(uint64(len(r.GetSuffix())) <= max, "suffix length exceeds max_len")
+		m.assertf(uint64(len(r.GetContains())) <= max, "contains length exceeds max_len")
 	}
 }
 
-func (m *validateField) validateRepeatedField(r *validate.RepeatedRules) {
+func (m *validateField) validateRepeatedField(r *validate.RepeatedRules, field protosource.Field) {
 	m.assertf(
-		m.field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !m.field.IsMap(),
+		field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED && !field.IsMap(),
 		"field is not repeated but got repeated rules",
 	)
 
-	m.checkMinMax(r.MinItems, r.MaxItems)
+	m.checkMinMax(r.MinItems, "min_items", r.MaxItems, "max_items")
 
 	if r.GetUnique() {
-		m.assertf(m.field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
+		m.assertf(field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 			"unique rule is only applicable for scalar types")
 	}
 
-	m.CheckFieldRules(r.Items)
+	m.CheckConstraintsForField(r.Items, field)
 }
 
-func (m *validateField) validateMapField(r *validate.MapRules) {
+func (m *validateField) validateMapField(r *validate.MapRules, field protosource.Field) {
 	m.assertf(
-		m.field.IsMap(),
+		field.IsMap(),
 		"field is not a map but got map rules",
 	)
 
-	m.checkMinMax(r.MinPairs, r.MaxPairs)
+	m.checkMinMax(r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
 
-	mapMessage := embed(m.field, m.files...)
+	mapMessage := embed(field, m.files...)
 	// TODO: make sure it has two fields
-	newValidateField(
-		m.add,
-		m.files,
-		mapMessage.Fields()[0],
-	).CheckFieldRules(r.Keys)
-	newValidateField(
-		m.add,
-		m.files,
-		mapMessage.Fields()[1],
-	).CheckFieldRules(r.Values)
+	m.CheckConstraintsForField(r.Keys, mapMessage.Fields()[0])
+	m.CheckConstraintsForField(r.Values, mapMessage.Fields()[1])
 }
 
 func (m *validateField) validateAnyField(r *validate.AnyRules) {
@@ -375,16 +353,40 @@ func (m *validateField) validateAnyField(r *validate.AnyRules) {
 }
 
 func (m *validateField) validateDurationField(r *validate.DurationRules) {
-	validateNumberField(m,
-		durationRulesTag,
-		durationNumericTagSet,
-		len(r.GetIn()),
-		len(r.GetNotIn()),
-		m.checkDur(r.GetConst()),
-		m.checkDur(r.GetLt()),
-		m.checkDur(r.GetLte()),
-		m.checkDur(r.GetGt()),
-		m.checkDur(r.GetGte()))
+	in := make([]time.Duration, 0, len(r.GetIn()))
+	for _, duration := range r.GetIn() {
+		if duration == nil {
+			// TODO: don't use assertf here
+			m.assertf(false, "cannot have nil values in in")
+			continue
+		}
+		in = append(in, *m.checkDur(duration))
+	}
+	notIn := make([]time.Duration, 0, len(r.GetNotIn()))
+	for _, duration := range r.GetNotIn() {
+		if duration == nil {
+			// TODO: don't use asssertf here
+			m.assertf(false, "cannot have nil values in in")
+			continue
+		}
+		notIn = append(notIn, *m.checkDur(duration))
+	}
+	validateCommonNumericRule[time.Duration](
+		m,
+		durationRulesFieldNumber,
+		durationFieldNumberSet,
+		&numericCommonRule[time.Duration]{
+			constant: m.checkDur(r.GetConst()),
+			in:       in,
+			notIn:    notIn,
+			valueRange: *newNumericRange[time.Duration](
+				m.checkDur(r.GetGt()),
+				m.checkDur(r.GetGte()),
+				m.checkDur(r.GetLt()),
+				m.checkDur(r.GetLte()),
+			),
+		},
+	)
 
 	for _, v := range r.GetIn() {
 		m.assertf(v != nil, "cannot have nil values in in")
@@ -398,97 +400,66 @@ func (m *validateField) validateDurationField(r *validate.DurationRules) {
 }
 
 func (m *validateField) validateTimestampField(r *validate.TimestampRules) {
-	validateNumberField(
+	validateTimeRule[timestamppb.Timestamp, commonTime](
 		m,
-		timestampRulesTag,
-		timestampNumericTagSet,
-		0,
-		0,
-		m.checkTS(r.GetConst()),
-		m.checkTS(r.GetLt()),
-		m.checkTS(r.GetLte()),
-		m.checkTS(r.GetGt()),
-		m.checkTS(r.GetGte()),
+		m.field,
+		timestampRulesFieldNumber,
+		r.ProtoReflect(),
+		func(value protoreflect.Value) *commonTime {
+			bytes, _ := proto.Marshal(value.Message().Interface())
+			t := &timestamppb.Timestamp{}
+			proto.Unmarshal(bytes, t)
+			m.assertf(t.IsValid(), "invalid timestamp")
+			return &commonTime{
+				seconds: t.Seconds,
+				nanos:   t.Nanos,
+			}
+		},
+		func(ct1, ct2 commonTime) int {
+			if ct1.seconds > ct2.seconds {
+				return 1
+			}
+			if ct1.seconds < ct2.seconds {
+				return -1
+			}
+			return int(ct1.nanos - ct2.nanos)
+		},
 	)
-	var gt, gte, lt, lte *timestamppb.Timestamp
-	var ltNow, gtNow *bool
-	switch r.GreaterThan.(type) {
-	case *validate.TimestampRules_Gt:
-		n := r.GetGt()
-		gt = n
-	case *validate.TimestampRules_Gte:
-		n := r.GetGte()
-		gte = n
-	case *validate.TimestampRules_GtNow:
-		n := r.GetGtNow()
-		gtNow = &n
-	}
-	switch r.LessThan.(type) {
-	case *validate.TimestampRules_Lt:
-		n := r.GetLt()
-		lt = n
-	case *validate.TimestampRules_Lte:
-		n := r.GetLte()
-		lte = n
-	case *validate.TimestampRules_LtNow:
-		n := r.GetLtNow()
-		ltNow = &n
-	}
 
-	m.assertf((ltNow == nil && gtNow == nil) || (lt == nil && lte == nil && gt == nil && gte == nil),
-		"now rules cannot be mixed with absolute lt/gt rules")
+	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
+	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
 
-	m.assertf(r.Within == nil || (lt == nil && lte == nil && gt == nil && gte == nil),
-		"within rule cannot be used with absolute lt/gt rules")
+	m.assertf(!areNowRulesDefined || !areAbsoluteRulesDefined, "now rules cannot be mixed with absolute lt/gt rules")
+	m.assertf(r.Within == nil || !areAbsoluteRulesDefined, "within rule cannot be used with absolute lt/gt rules")
 
-	m.assertf(ltNow == nil || gtNow == nil,
-		"both now rules cannot be used together")
+	// TODO: merge location if possible
+	m.assertf(!r.GetLtNow() || !r.GetGtNow(), "gt_now and lt_now cannot be used together")
 
 	dur := m.checkDur(r.Within)
-	m.assertf(dur == nil || *dur > 0,
-		"within rule must be positive and non-zero")
+	m.assertf(dur == nil || *dur > 0, "within rule must be positive")
 }
 
-func (m *validateField) checkLen(length, min, max *uint64) {
-	if length == nil {
-		return
-	}
-
-	m.assertf(min == nil,
-		"cannot have both len and min_len rules on the same field")
-
-	m.assertf(max == nil,
-		"cannot have both len and max_len rules on the same field")
-}
-
-func (m *validateField) checkMinMax(min, max *uint64) {
+func (m *validateField) checkMinMax(
+	min *uint64,
+	minFieldName string,
+	max *uint64,
+	maxFieldName string,
+) {
 	if min == nil || max == nil {
 		return
 	}
 
 	m.assertf(*min <= *max,
-		"min value is greater than max value")
-}
-
-func (m *validateField) checkWellKnownRegex(wk validate.KnownRegex, r *validate.StringRules) {
-	if wk != 0 {
-		m.assertf(r.Pattern == nil, "regex well_known_regex and regex pattern are incompatible")
-		nonStrict := r.Strict != nil && !*r.Strict
-		if (wk.String() == "HTTP_HEADER_NAME" || wk.String() == "HTTP_HEADER_VALUE") && nonStrict {
-			// Use non-strict header validation.
-			r.Pattern = regexMap["HEADER_STRING"]
-		} else {
-			r.Pattern = regexMap[wk.String()]
-		}
-	}
+		"%s value is greater than %s value", minFieldName, maxFieldName)
 }
 
 func (m *validateField) checkPattern(p *string, in int) {
-	if p != nil {
-		m.assertf(in == 0, "regex pattern and in rules are incompatible")
-		_, err := regexp.Compile(*p)
-		m.assertf(err != nil, "unable to parse regex pattern")
+	if p == nil {
+		return
 	}
+	m.assertf(in == 0, "regex pattern and in rules are incompatible")
+	_, err := regexp.Compile(*p)
+	m.assertf(err == nil, "unable to parse regex pattern %s: %w", *p, err)
 }
 
 func (m *validateField) checkDur(d *durationpb.Duration) *time.Duration {
@@ -499,18 +470,4 @@ func (m *validateField) checkDur(d *durationpb.Duration) *time.Duration {
 	dur, err := d.AsDuration(), d.CheckValid()
 	m.assertf(err == nil, "could not resolve duration")
 	return &dur
-}
-
-func (m *validateField) checkTS(ts *timestamppb.Timestamp) *int64 {
-	if ts == nil {
-		return nil
-	}
-
-	t, err := ts.AsTime(), ts.CheckValid()
-	m.assertf(err == nil, "could not resolve timestamp")
-	return proto.Int64(t.UnixNano())
-}
-
-func (m *validateField) validateNoCustomRulesApplied(r *validate.FieldConstraints) {
-	m.assertf(len(r.GetCel()) == 0, "custom rules are not supported for this field type")
 }

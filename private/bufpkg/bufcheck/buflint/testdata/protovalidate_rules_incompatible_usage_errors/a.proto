@@ -80,8 +80,8 @@ message Foo {
     pattern: "ab.*"
     in: ["a"]
   }];
-  // Validates the syntax of the regex `pattern`.
-  string regex_pattern_parse = 16 [(buf.validate.field).string.pattern = "ab"];
+  // Detects invalid pattern.
+  string regex_pattern_parse = 16 [(buf.validate.field).string.pattern = "["];
   // Reports unexpected field type during validation.
   string unexpected_type = 17 [(buf.validate.field).int32 = {const: 1}];
   // Detects conflict between undefined `in` value and `defined_only` rule.
@@ -128,12 +128,12 @@ message Foo {
     gt: {seconds: 864010000000}
   }];
   // VALIDATE_NO_CUSTOM_CEL_ON_ANYPB - Assists with protecting against CELs
-  // that use custom functions on google.protobuf.Any fields.
-  google.protobuf.Any anypb = 29 [(buf.validate.field).cel = {
-    id: "foo.anypb",
-    message: "no can do with anypb"
-    expression: "this.type_url != this.value"
-  }];
+  // that use custom functions on google.protobuf.Any fields. TODO: move this test to cel linting.
+  // google.protobuf.Any anypb = 29 [(buf.validate.field).cel = {
+  //   id: "foo.anypb",
+  //   message: "no can do with anypb"
+  //   expression: "this.type_url != this.value"
+  // }];
   // Checks if `prefix` length exceeds `max_len` constraint.
   bytes prefix_max_len_bytes = 30 [
     (buf.validate.field).bytes.prefix = "ab",

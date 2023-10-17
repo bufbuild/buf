@@ -1035,8 +1035,7 @@ func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 44, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 75, 80, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 78, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 77, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 32, 86, 71, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 91, 51, 94, 4, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 97, 5, 97, 46, "PROTOVALIDATE_RULES"),
@@ -1046,10 +1045,13 @@ func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 118, 50, 121, 4, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 123, 51, 125, 4, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 127, 56, 129, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 132, 35, 136, 4, "PROTOVALIDATE_RULES"),
+		// TODO: this should belong to cel linting
+		// bufanalysistesting.NewFileAnnotation(t, "a.proto", 132, 35, 136, 4, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 139, 5, 139, 45, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 144, 5, 144, 45, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 149, 5, 149, 47, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 154, 5, 154, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 159, 5, 159, 39, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 164, 5, 164, 43, "PROTOVALIDATE_RULES"),
 	)
 }

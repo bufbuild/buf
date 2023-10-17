@@ -37,7 +37,7 @@ func ValidateRules(
 		add,
 		files,
 		field,
-	).CheckFieldRules(constraints)
+	).CheckConstraintsForField(constraints, field)
 	return nil
 }
 

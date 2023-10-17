@@ -16,6 +16,7 @@ package bufanalysistesting
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -127,6 +128,18 @@ func AssertFileAnnotationsEqual(
 			assert.Equal(t, expectedFileInfo, actualFileInfo)
 			assert.Equal(t, e, a)
 		}
+	} else {
+		se := strings.Builder{}
+		for _, e := range expected {
+			se.WriteString(e.String())
+			se.WriteString("\n")
+		}
+		sa := strings.Builder{}
+		for _, a := range actual {
+			sa.WriteString(a.String())
+			sa.WriteString("\n")
+		}
+		assert.Equal(t, se.String(), sa.String())
 	}
 }
 
