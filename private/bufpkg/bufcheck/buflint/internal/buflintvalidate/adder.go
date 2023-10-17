@@ -44,19 +44,18 @@ func (a *adder) addForPath(path []int32, format string, args ...interface{}) {
 	)
 }
 
-func (a *adder) addForPaths(path []int32, additionalPaths [][]int32, format string, args ...interface{}) {
-	locations := make([]protosource.Location, 0, len(additionalPaths)+1)
-	locations = append(locations, a.field.OptionExtensionLocation(validate.E_Field, path...))
-	for _, additionalPath := range additionalPaths {
-		locations = append(locations, a.field.OptionExtensionLocation(validate.E_Field, additionalPath...))
+func (a *adder) addForPaths(paths [][]int32, format string, args ...interface{}) {
+	locations := make([]protosource.Location, 0, len(paths))
+	for _, path := range paths {
+		locations = append(locations, a.field.OptionExtensionLocation(validate.E_Field, path...))
 	}
 	// different paths can have the same location
 	locations = deduplicateLocations(locations)
-	if len(locations) > 0 {
+	for _, location := range locations {
 		a.addFunc(
 			a.field,
-			locations[0],
-			locations[1:],
+			location,
+			nil,
 			format,
 			args...,
 		)
@@ -64,13 +63,25 @@ func (a *adder) addForPaths(path []int32, additionalPaths [][]int32, format stri
 }
 
 func deduplicateLocations(locations []protosource.Location) []protosource.Location {
-	exactLocations := map[int]map[int]map[int]map[int]struct{}{}
+	type locationFields struct {
+		startLine   int
+		startColumn int
+		endLine     int
+		endColumn   int
+	}
+	exactLocations := map[locationFields]struct{}{}
 	uniqueLocations := make([]protosource.Location, 0, len(locations))
 	for _, location := range locations {
-		if _, ok := exactLocations[location.StartLine()][location.StartColumn()][location.EndLine()][location.EndColumn()]; ok {
+		locationFields := locationFields{
+			startLine:   location.StartLine(),
+			startColumn: location.StartColumn(),
+			endLine:     location.EndLine(),
+			endColumn:   location.EndColumn(),
+		}
+		if _, ok := exactLocations[locationFields]; ok {
 			continue
 		}
-		exactLocations[location.StartLine()][location.StartColumn()][location.EndLine()][location.EndColumn()] = struct{}{}
+		exactLocations[locationFields] = struct{}{}
 		uniqueLocations = append(uniqueLocations, location)
 	}
 	return uniqueLocations

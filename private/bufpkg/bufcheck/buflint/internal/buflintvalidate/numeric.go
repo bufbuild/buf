@@ -69,31 +69,36 @@ func validateNumericRule[
 	var lowerBoundName, upperBoundName string
 	var in, notIn []*T
 	var fieldCount int
-	// TODO: set field numbers during the loop
-	// TODO: make convertFunc return a file annotation as well
+	var constFieldNumber, inFieldNumber, notInFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
 	message.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
 		var convertErrorMessage string
 		switch fieldName := string(field.Name()); fieldName {
 		case "const":
+			constFieldNumber = int32(field.Number())
 			constant, convertErrorMessage = convertFunc(value)
 		case "gt":
 			gt, convertErrorMessage = convertFunc(value)
 			lowerBound = gt
 			lowerBoundName = fieldName
+			lowerBoundFieldNumber = int32(field.Number())
 		case "gte":
 			gte, convertErrorMessage = convertFunc(value)
 			lowerBound = gte
 			lowerBoundName = fieldName
+			lowerBoundFieldNumber = int32(field.Number())
 		case "lt":
 			lt, convertErrorMessage = convertFunc(value)
 			upperBound = lt
 			upperBoundName = fieldName
+			upperBoundFieldNumber = int32(field.Number())
 		case "lte":
 			lte, convertErrorMessage = convertFunc(value)
 			upperBound = lte
 			upperBoundName = fieldName
+			upperBoundFieldNumber = int32(field.Number())
 		case "in":
+			inFieldNumber = int32(field.Number())
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
 				converted, convertErrorMessage = convertFunc(value.List().Get(i))
@@ -102,6 +107,7 @@ func validateNumericRule[
 				}
 			}
 		case "not_in":
+			notInFieldNumber = int32(field.Number())
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
 				converted, convertErrorMessage = convertFunc(value.List().Get(i))
@@ -120,13 +126,13 @@ func validateNumericRule[
 	})
 	if constant != nil && fieldCount > 1 {
 		adder.addForPath(
-			[]int32{ruleNumber},
+			[]int32{ruleNumber, constFieldNumber},
 			"all other rules are redundant when const is specified on a field",
 		)
 	}
 	if len(in) > 0 && fieldCount > 1 {
 		adder.addForPath(
-			[]int32{ruleNumber},
+			[]int32{ruleNumber, inFieldNumber},
 			"in should be the only rule when defined",
 		)
 	}
@@ -146,7 +152,7 @@ func validateNumericRule[
 		}
 		if len(failedChecks) > 0 {
 			adder.addForPath(
-				[]int32{ruleNumber},
+				[]int32{ruleNumber, notInFieldNumber},
 				"%v is already rejected by %s and does not need to be in not_in",
 				bannedValue,
 				stringutil.SliceToHumanString(failedChecks),
@@ -157,15 +163,21 @@ func validateNumericRule[
 		return
 	}
 	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
-		adder.addForPath(
-			[]int32{ruleNumber},
+		adder.addForPaths(
+			[][]int32{
+				{ruleNumber, lowerBoundFieldNumber},
+				{ruleNumber, upperBoundFieldNumber},
+			},
 			"lte and gte have the same value, consider using const",
 		)
 		return
 	}
 	if compareFunc(upperBound, lowerBound) <= 0 {
-		adder.addForPath(
-			[]int32{ruleNumber},
+		adder.addForPaths(
+			[][]int32{
+				{ruleNumber, lowerBoundFieldNumber},
+				{ruleNumber, upperBoundFieldNumber},
+			},
 			"%s should be greater than %s",
 			upperBoundName,
 			lowerBoundName,
