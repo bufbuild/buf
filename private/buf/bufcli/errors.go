@@ -141,7 +141,10 @@ func NewTokenNotFoundError(tokenID string) error {
 	return fmt.Errorf("a token with ID %q does not exist", tokenID)
 }
 
-func NewUnimplementedRemoteError(err error, remote string, moduleIdentity string) error {
+func NewInvalidRemoteError(err error, remote string, moduleIdentity string) error {
+	if connectErr, ok := asConnectError(err); ok {
+		err = connectErr.Unwrap()
+	}
 	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleIdentity)
 }
 
@@ -181,10 +184,10 @@ func wrapError(err error) error {
 			}
 			return errors.New(msg)
 		}
-		return fmt.Errorf("Failure: %s", connectErr.Message())
+		err = connectErr.Unwrap()
 	}
 
-	// Error was not a Connect error
+	// Error was not a known Connect error, so return it as-is.
 	return fmt.Errorf("Failure: %w", err)
 }
 

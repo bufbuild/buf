@@ -16,7 +16,6 @@ package bufmodulebuild
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
@@ -25,10 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
-
-// ErrDuplicateDependency is the error returned if a two modules have the same set of Protobuf file
-// paths.
-var ErrDuplicateDependency = errors.New("module declared in DependencyModulePins but not in workspace was already added to the dependency Module set")
 
 // ModuleFileSetBuilder builds ModuleFileSets from Modules.
 type ModuleFileSetBuilder interface {
@@ -171,5 +166,14 @@ func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.excludePaths = excludePaths
 		buildOptions.pathsAllowNotExist = true
+	}
+}
+
+// WithWorkspaceDirectory returns a new BuildOption that specifies the workspace directory.
+//
+// See the comment on Module.WorkspaceDirectory() for more details.
+func WithWorkspaceDirectory(workspaceDirectory string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.workspaceDirectory = workspaceDirectory
 	}
 }

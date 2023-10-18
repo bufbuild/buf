@@ -148,8 +148,6 @@ type Module interface {
 	// of every file in the module, which is useful for caching or recreating a module's
 	// original files.
 	BlobSet() *manifest.BlobSet
-
-	getSourceReadBucket() storage.ReadBucket
 	// ModuleIdentity returns the ModuleIdentity for the Module, if it was
 	// provided at construction time via ModuleWithModuleIdentity or ModuleWithModuleIdentityAndCommit.
 	//
@@ -165,6 +163,17 @@ type Module interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
+	// WorkspaceDirectory returns the directory within the workspace that this Module was constructed from,
+	// if this Module was constructed from a Workspace. If the Module was not constructed from a Workspace,
+	// This value will be empty.
+	//
+	// This is needed for now because we need to determine if the input for ModuleFileSetBuilder is equal
+	// to any Modules within the given optional Workspace. This is terrible. Once we have refactored
+	// the CLI to have Workspaces as a first-class citizen, where the typical case is a Workspace with
+	// a single Module, we will no longer need to do this type of check, and this can be removed.
+	WorkspaceDirectory() string
+
+	getSourceReadBucket() storage.ReadBucket
 	isModule()
 }
 
@@ -186,6 +195,15 @@ func ModuleWithModuleIdentityAndCommit(moduleIdentity bufmoduleref.ModuleIdentit
 	return func(module *module) {
 		module.moduleIdentity = moduleIdentity
 		module.commit = commit
+	}
+}
+
+// ModuleWithWorkspaceDirectory returns a new ModuleOption that sets the workspace directory.
+//
+// See the comment on Module.WorkspaceDirectory() for more details.
+func ModuleWithWorkspaceDirectory(workspaceDirectory string) ModuleOption {
+	return func(module *module) {
+		module.workspaceDirectory = workspaceDirectory
 	}
 }
 
