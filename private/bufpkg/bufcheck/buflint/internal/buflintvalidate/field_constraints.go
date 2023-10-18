@@ -157,21 +157,21 @@ func checkConstraintsForField(
 		numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
-	switch typeRules := fieldConstraints.Type.(type) {
-	case *validate.FieldConstraints_Bool:
+	switch typeRulesFieldNumber {
+	case boolRulesFieldNumber:
 		// Bool rules only have `const` and does not need validation.
-	case *validate.FieldConstraints_String_:
-		checkStringField(adder, typeRules.String_)
-	case *validate.FieldConstraints_Bytes:
-		checkBytesField(adder, typeRules.Bytes)
-	case *validate.FieldConstraints_Enum:
-		checkEnumField(adder, typeRules.Enum, field, fullNameToEnum)
-	case *validate.FieldConstraints_Any:
-		validateAnyField(adder, typeRules.Any)
-	case *validate.FieldConstraints_Duration:
-		validateDurationField(adder, typeRules.Duration)
-	case *validate.FieldConstraints_Timestamp:
-		validateTimestampField(adder, typeRules.Timestamp)
+	case stringRulesFieldNumber:
+		checkStringField(adder, fieldConstraints.GetString_())
+	case bytesRulesFieldNumber:
+		checkBytesField(adder, fieldConstraints.GetBytes())
+	case enumRulesFieldNumber:
+		checkEnumField(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
+	case anyRulesFieldNumber:
+		validateAnyField(adder, fieldConstraints.GetAny())
+	case durationRulesFieldNumber:
+		validateDurationField(adder, fieldConstraints.GetDuration())
+	case timestampRulesFieldNumber:
+		validateTimestampField(adder, fieldConstraints.GetTimestamp())
 	}
 }
 
