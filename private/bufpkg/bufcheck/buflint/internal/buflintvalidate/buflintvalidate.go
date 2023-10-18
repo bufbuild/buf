@@ -21,7 +21,10 @@ import (
 )
 
 // ValidateRules validates that protovalidate rules defined for this field are
-// are valid, not including CEL expressions.
+// are valid, not including CEL expressions. For a set of rules to be valid, it must
+// 1. permit _some_ value
+// 2. have no redundant rules
+// 3. have a matching type with the field it validates.
 func ValidateRules(
 	descritporResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),

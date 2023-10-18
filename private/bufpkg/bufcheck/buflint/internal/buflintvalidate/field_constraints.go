@@ -129,11 +129,13 @@ func checkConstraintsForField(
 		return
 	}
 	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
-	typeRulesField := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
-	if typeRulesField == nil {
+	// typeRulesFieldDescriptor is a FieldDescriptor for one of FloatRules,
+	// DoubleRules, ... , TimestampRules.
+	typeRulesFieldDescriptor := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
+	if typeRulesFieldDescriptor == nil {
 		return
 	}
-	typeRulesFieldNumber := int32(typeRulesField.Number())
+	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	if typeRulesFieldNumber == mapRulesFieldNumber {
 		validateMapField(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
 		return
@@ -142,9 +144,9 @@ func checkConstraintsForField(
 		validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
-	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesField.Message().Name()))
+	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesFieldDescriptor.Message().Name()))
 	if numberRulesValidateFunc, ok := numberRulesFieldNumberToValidateFunc[typeRulesFieldNumber]; ok {
-		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesField).Message()
+		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
 		numberRulesValidateFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
