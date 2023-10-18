@@ -561,13 +561,14 @@ func TestRunProtovalidateCel(t *testing.T) {
 	testLintWithValidate(
 		t,
 		"protovalidate_cel",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 37, 13, 4, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 5, 20, 6, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 32, 6, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 39, 38, 4, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 59, 3, 63, 5, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 79, 6, "PROTOVALIDATE_CEL"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 87, 5, 91, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 10, 37, 14, 4, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 5, 21, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 5, 33, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 39, 39, 4, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 3, 64, 5, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 80, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 88, 5, 92, 6, "PROTOVALIDATE_CEL"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 94, 47, 99, 4, "PROTOVALIDATE_CEL"),
 	)
 }
 
