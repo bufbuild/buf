@@ -27,11 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"google.golang.org/protobuf/reflect/protodesc"
 )
 
 const (
@@ -630,58 +628,11 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 	return nil
 }
 
-// CheckProtovalidateCel is a check function.
-func CheckProtovalidateCel(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return nil, err
-	}
-	helper := internal.NewHelper(id, ignoreFunc)
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		if err := buflintvalidate.ValidateCELCompiles(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
-			return nil, err
-		}
-	}
-	return helper.FileAnnotations(), nil
-}
+// CheckProtovalidate is a check function.
+var CheckProtovalidate = newFilesWithImportsCheckFunc(checkProtovalidate)
 
-// CheckProtovalidateRules is a check function.
-var CheckProtovalidateRules = newFilesWithImportsCheckFunc(checkProtovalidateRules)
-
-func checkProtovalidateRules(add addFunc, files []protosource.File) error {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		for _, message := range file.Messages() {
-			for _, field := range message.Fields() {
-				if err := buflintvalidate.ValidateRules(
-					descriptorResolver,
-					add,
-					files,
-					field,
-				); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
+func checkProtovalidate(add addFunc, files []protosource.File) error {
+	return buflintvalidate.Validate(add, files)
 }
 
 // CheckRPCNoClientStreaming is a check function.

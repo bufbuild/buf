@@ -37,6 +37,26 @@ const (
 	celFieldTagInMessageConstraints = 3
 )
 
+// validateCELCompiles validates that all CEL expressions defined for protovalidate
+// in the given file compile.
+func validateCELCompiles(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	descriptorResolver protodesc.Resolver,
+	file protosource.File,
+) error {
+	for _, message := range file.Messages() {
+		if err := validateCELCompilesMessage(descriptorResolver, add, message); err != nil {
+			return err
+		}
+	}
+	for _, extensionField := range file.Extensions() {
+		if err := validateCELCompilesField(descriptorResolver, add, extensionField); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func validateCELCompilesMessage(
 	descriptorResolver protodesc.Resolver,
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),

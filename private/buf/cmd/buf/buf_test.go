@@ -518,8 +518,7 @@ ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum valu
 ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values are suffixed with _UNSPECIFIED (suffix is configurable).
 FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.
 PACKAGE_VERSION_SUFFIX            DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
-PROTOVALIDATE_CEL                 DEFAULT                  Checks that protovalidate CEL expressions compile.
-PROTOVALIDATE_RULES               DEFAULT                  Checks that protovalidate rules are valid.
+PROTOVALIDATE                     DEFAULT                  Checks that protovalidate rules are valid and all CEL expressions compile.
 RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
 RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
 RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).

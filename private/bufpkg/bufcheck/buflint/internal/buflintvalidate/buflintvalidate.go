@@ -15,27 +15,29 @@
 package buflintvalidate
 
 import (
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
-	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
 
-// ValidateRules validates that protovalidate rules defined for this field are
-// are valid, not including CEL expressions. For a set of rules to be valid, it must
-// 1. permit _some_ value
-// 2. have no redundant rules
-// 3. have a type compatible with the field it validates.
-func ValidateRules(
-	descritporResolver protodesc.Resolver,
+// Validate validates that all rules on fields are valid, and all CEL expressions compile.
+//
+// For a set of rules to be valid, it must
+//  1. permit _some_ value
+//  2. have no redundant rules
+//  3. have a type compatible with the field it validates.
+func Validate(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	files []protosource.File,
-	field protosource.Field,
 ) error {
-	fieldDescriptor, err := getReflectFieldDescriptor(descritporResolver, field)
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
 	if err != nil {
 		return err
 	}
-	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	fullNameToMessage, err := protosource.FullNameToMessage(files...)
 	if err != nil {
 		return err
@@ -44,33 +46,25 @@ func ValidateRules(
 	if err != nil {
 		return err
 	}
-	return checkConstraintsForField(
-		&adder{
-			field:   field,
-			addFunc: add,
-		},
-		constraints,
-		field,
-		fullNameToEnum,
-		fullNameToMessage,
-	)
-}
-
-// ValidateCELCompiles validates that all CEL expressions defined for protovalidate
-// in the given file compile.
-func ValidateCELCompiles(
-	resolver protodesc.Resolver,
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	file protosource.File,
-) error {
-	for _, message := range file.Messages() {
-		if err := validateCELCompilesMessage(resolver, add, message); err != nil {
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		if err := validateCELCompiles(add, descriptorResolver, file); err != nil {
 			return err
 		}
-	}
-	for _, extensionField := range file.Extensions() {
-		if err := validateCELCompilesField(resolver, add, extensionField); err != nil {
-			return err
+		for _, message := range file.Messages() {
+			for _, field := range message.Fields() {
+				if err := validateRulesForSingleField(
+					add,
+					descriptorResolver,
+					fullNameToMessage,
+					fullNameToEnum,
+					field,
+				); err != nil {
+					return err
+				}
+			}
 		}
 	}
 	return nil

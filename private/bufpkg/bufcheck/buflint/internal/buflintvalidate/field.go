@@ -24,7 +24,9 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -155,6 +157,32 @@ var (
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 )
+
+// validateRulesForSingleField validates that protovalidate rules defined for this field are
+// valid, not including CEL expressions.
+func validateRulesForSingleField(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	descriptorResolver protodesc.Resolver,
+	fullNameToMessage map[string]protosource.Message,
+	fullNameToEnum map[string]protosource.Enum,
+	field protosource.Field,
+) error {
+	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
+	if err != nil {
+		return err
+	}
+	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
+	return checkConstraintsForField(
+		&adder{
+			field:   field,
+			addFunc: add,
+		},
+		constraints,
+		field,
+		fullNameToEnum,
+		fullNameToMessage,
+	)
+}
 
 func checkConstraintsForField(
 	adder *adder,
