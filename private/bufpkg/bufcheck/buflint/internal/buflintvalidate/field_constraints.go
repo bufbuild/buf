@@ -102,14 +102,7 @@ const (
 )
 
 var (
-	// Some rules can only be defined for fields of a specific primitive type.
-	// For example, SFixed64Rules can only be defined on a field of type sfixed64.
-	// Some rules can only be defined for fields of a specific message type. For
-	// example, TimestampRules can only be defined on fields of type google.protobuf.Timestamp.
-	// Others can be defined on either fields of a certain primitive type or fields
-	// of a certain message type. For example, Int32Rules can be defined on either
-	// a int32 field or a google.protobuf.Int32Value field.
-	fieldNumberToAllowedProtoType = map[int32]descriptorpb.FieldDescriptorProto_Type{
+	fieldNumberToAllowedScalarType = map[int32]descriptorpb.FieldDescriptorProto_Type{
 		floatRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
 		doubleRulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
 		int32RulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_INT32,
@@ -152,7 +145,6 @@ var (
 		string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()): {},
 		string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):  {},
 	}
-
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 )
@@ -204,21 +196,30 @@ func checkConstraintsForField(
 	return nil
 }
 
-func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
+// Assumes the rule isn't a map rule or repeated rule.
+func checkRulesTypeMatchFieldType(
+	adder *adder,
+	field protosource.Field,
+	ruleFieldNumber int32,
+	ruleName string,
+) {
+	// Rules like SFixed64Rules can only be specified on a certain type of scalar field.
+	// Rules like TimetampRules can only be specified on a field of a certain message type.
+	// Others such as Int32Rules can be specified either on a field of certain scalar type
+	// or a ceratin message type.
 	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
-		if ok && expectedFieldMessageName == field.TypeName() {
-			return
+		if !ok || expectedFieldMessageName != field.TypeName() {
+			adder.addForPathf(
+				[]int32{ruleFieldNumber},
+				"%s should not be defined on a field of type %s",
+				ruleName,
+				field.TypeName(),
+			)
 		}
-		adder.addForPathf(
-			[]int32{ruleFieldNumber},
-			"%s should not be defined on a field of type %s",
-			ruleName,
-			field.TypeName(),
-		)
 		return
 	}
-	expectedType, ok := fieldNumberToAllowedProtoType[ruleFieldNumber]
+	expectedType, ok := fieldNumberToAllowedScalarType[ruleFieldNumber]
 	if !ok || expectedType != field.Type() {
 		adder.addForPathf(
 			[]int32{ruleFieldNumber},
