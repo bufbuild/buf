@@ -240,7 +240,7 @@ func checkRepeatedRules(
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) error {
-	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
+	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || protosource.IsFieldAMap(field, fullNameToMessage) {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber},
 			"field is not repeated but has repeated rules",
@@ -279,7 +279,7 @@ func checkMapRules(
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) error {
-	if !field.IsMap() {
+	if !protosource.IsFieldAMap(field, fullNameToMessage) {
 		baseAdder.addForPathf(
 			[]int32{mapRulesFieldNumber},
 			"field is not a map but has map rules",

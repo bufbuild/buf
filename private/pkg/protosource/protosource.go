@@ -398,7 +398,6 @@ type Field interface {
 
 	// May be nil if this is attached to a file.
 	ParentMessage() Message
-	IsMap() bool
 	Number() int
 	Label() descriptorpb.FieldDescriptorProto_Label
 	Type() descriptorpb.FieldDescriptorProto_Type
@@ -1158,6 +1157,27 @@ func CheckTagRangeIsSubset(supersetRanges []TagRange, subsetRanges []TagRange) (
 	return true, nil
 }
 
+// IsFieldAMap returns true if the given Field is a map field.
+//
+// Requires the result of FullNameToMessage.
+func IsFieldAMap(field Field, fullNameToMessage map[string]Message) bool {
+	// For this to be a map field, it must be a repeated field
+	// with a synthetic message as the type, that synthetic message
+	// must be in the enclosing message for the field, and it must
+	// have map_entry set to true.
+	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
+		return false
+	}
+	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+		return false
+	}
+	message, ok := fullNameToMessage[field.TypeName()]
+	if !ok {
+		return false
+	}
+	return message.IsMapEntry()
+}
+
 // groupAdjacentTagRanges sorts and groups adjacent tag ranges.
 func groupAdjacentTagRanges(ranges []TagRange) []tagRangeGroup {
 	if len(ranges) == 0 {
@@ -1259,22 +1279,4 @@ type tagRangeGroup struct {
 	ranges []TagRange
 	start  int
 	end    int
-}
-
-func isFieldAMap(field Field, fullNameToMessage map[string]Message) bool {
-	// For this to be a map field, it must be a repeated field
-	// with a synthetic message as the type, that synthetic message
-	// must be in the enclosing message for the field, and it must
-	// have map_entry set to true.
-	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED {
-		return false
-	}
-	if field.Type() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		return false
-	}
-	message, ok := fullNameToMessage[field.TypeName()]
-	if !ok {
-		return false
-	}
-	return message.IsMapEntry()
 }
