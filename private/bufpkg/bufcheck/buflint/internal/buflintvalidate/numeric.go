@@ -142,7 +142,7 @@ func checkNumericRules[
 			"in should be the only rule when specified",
 		)
 	}
-	for _, bannedValue := range notIn {
+	for i, bannedValue := range notIn {
 		var failedChecks []string
 		if gt != nil && compareFunc(bannedValue, gt) <= 0 {
 			failedChecks = append(failedChecks, "gt")
@@ -158,7 +158,7 @@ func checkNumericRules[
 		}
 		if len(failedChecks) > 0 {
 			adder.addForPathf(
-				[]int32{ruleNumber, notInFieldNumber},
+				[]int32{ruleNumber, notInFieldNumber, int32(i)},
 				"%v is already rejected by %s and does not need to be in not_in",
 				bannedValue,
 				stringutil.SliceToHumanString(failedChecks),

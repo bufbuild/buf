@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+message Int32Test {
+  // valid
+  int32 no_protovalidate_option = 1;
+  // valid
+  int32 other_option = 2 [deprecated = true];
+  // valid
+  int32 valid_rules = 3 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 8
+  ];
+  // valid
+  int32 only_const = 4 [(buf.validate.field).int32.const = 5];
+  int32 const_and_other_fields = 5 [
+    (buf.validate.field).int32.lt = 10,
+    // the next line should be annotated
+    (buf.validate.field).int32.const = 1,
+    (buf.validate.field).int32.gt = 8
+  ];
+  int32 in_and_other_fields = 6 [
+    (buf.validate.field).int32.lt = 10,
+    // the next line should be annotated
+    (buf.validate.field).int32.in = 1,
+    (buf.validate.field).int32.gt = 8
+  ];
+  int32 redundant_not_in = 7 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.not_in = 2,
+    (buf.validate.field).int32.not_in = 3,
+    // the next line should be annotated
+    (buf.validate.field).int32.not_in = 100,
+    (buf.validate.field).int32.gt = 1
+  ];
+  int32 equal_lte_gte = 8 [
+    // the next line should be annotated
+    (buf.validate.field).int32.lte = 10,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).int32.gte = 10
+  ];
+  int32 invalid_bound_inclusive = 9 [
+    // the next line should be annotated
+    (buf.validate.field).int32.lte = 10,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).int32.gte = 11
+  ];
+  int32 invalid_bound_exclusive = 10 [
+    // the next line should be annotated
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).required = true,
+    // the next line should be annotated
+    (buf.validate.field).int32.gt = 11
+  ];
+  // the entire options should be annotated (64, 46) to (67, 4)
+  int32 invalid_bound_aggregate_syntax = 11 [(buf.validate.field).int32 = {
+    lt: 10
+    gte: 10
+  }];
+  // valid
+  google.protobuf.Int32Value int32_value = 12 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 8
+  ];
+  // valid
+  repeated google.protobuf.Int32Value wrapper_repeated = 13 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.int32.lt = 5
+  ];
+  repeated google.protobuf.Int32Value wrapper_repeated_invalid = 14 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.int32.lt = 5,
+    // the next line should be annotated
+    (buf.validate.field).repeated.items.int32.const = 1
+  ];
+  google.protobuf.Int32Value wrapper_mismatch = 15 [
+    // the next line should be annotated
+    (buf.validate.field).string.min_len = 5,
+    (buf.validate.field).string.max_len = 6
+  ];
+  google.protobuf.Int32Value primitive = 16 [
+    // the next line should be annotated
+    (buf.validate.field).string.min_len = 5,
+    (buf.validate.field).string.max_len = 6
+  ];
+  map<int32, int32> map_int32_int32 = 17 [
+    (buf.validate.field).map.keys.int32.lt = 1,
+    (buf.validate.field).map.values.int32.lt = 1,
+    // the next line should be annotated
+    (buf.validate.field).map.keys.int32.const = 0,
+    // the next line should be annotated
+    (buf.validate.field).map.values.int32.const = 0
+  ];
+}

@@ -572,6 +572,121 @@ func TestRunProtovalidateCel(t *testing.T) {
 	)
 }
 
+// TODO: use this test and remove the other protovalidate tests
+func TestRunProtovalidateRules(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"protovalidate_rules",
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 25, 5, 25, 41, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 31, 5, 31, 38, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 39, 5, 39, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 44, 5, 44, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 47, 5, 47, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 51, 5, 51, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 54, 5, 54, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 58, 5, 58, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 61, 5, 61, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 64, 46, 67, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 82, 5, 82, 56, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 86, 5, 86, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 91, 5, 91, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 98, 5, 98, 50, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 100, 5, 100, 52, "PROTOVALIDATE_RULES"),
+	)
+}
+
+func TestRunProtovalidateRulesTypesDontMatch(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"protovalidate_rules_types_dont_match",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 23, 17, 62, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 25, 18, 64, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 25, 19, 66, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 25, 20, 65, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 25, 21, 60, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 28, 22, 64, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 28, 23, 65, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 30, 24, 66, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 30, 25, 66, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 26, 22, 26, 59, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 26, 27, 63, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 24, 28, 61, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 36, 29, 71, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 35, 30, 72, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 36, 31, 72, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 46, 32, 82, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 33, 48, 33, 87, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 47, 34, 85, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 49, 35, 87, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 36, 47, 36, 86, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 47, 37, 86, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 38, 49, 38, 88, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 49, 39, 90, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 45, 40, 82, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 49, 41, 86, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 42, 47, 42, 84, "PROTOVALIDATE_RULES"),
+	)
+}
+
+func TestRunProtovalidateRulesTypesMatchSuccess(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"protovalidate_rules_types_match_success",
+	)
+}
+
+func TestProtovalidateRulesIncompatibleUsageErrors(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"protovalidate_rules_incompatible_usage_errors",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 5, 13, 38, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 5, 14, 38, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 5, 18, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 5, 19, 38, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 5, 23, 38, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 5, 24, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 28, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 5, 29, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 33, 32, 76, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 27, 37, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 5, 40, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 45, 5, 45, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 5, 50, 48, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 55, 5, 55, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 5, 60, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 65, 5, 65, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 71, 5, 71, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 75, 80, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 76, 47, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 77, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 32, 86, 71, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 91, 51, 94, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 97, 5, 97, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 102, 5, 102, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 107, 5, 107, 48, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 112, 36, 112, 79, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 118, 50, 121, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 123, 51, 125, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 127, 56, 129, 4, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 139, 5, 139, 45, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 144, 5, 144, 45, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 149, 5, 149, 47, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 154, 5, 154, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 159, 5, 159, 39, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 164, 5, 164, 43, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 165, 5, 165, 43, "PROTOVALIDATE_RULES"),
+	)
+}
+
 func TestRunRPCNoStreaming(t *testing.T) {
 	t.Parallel()
 	testLint(
@@ -968,99 +1083,6 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 		},
 		nil,
 		"",
-	)
-}
-
-func TestValidateRulesTypesDontMatch(t *testing.T) {
-	t.Parallel()
-	testLintWithValidate(
-		t,
-		"protovalidate_rules_types_dont_match",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 23, 14, 61, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 25, 15, 63, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 23, 16, 62, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 23, 17, 62, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 25, 18, 64, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 25, 19, 66, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 20, 25, 20, 65, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 21, 25, 21, 60, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 22, 28, 22, 64, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 28, 23, 65, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 30, 24, 66, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 25, 30, 25, 66, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 26, 22, 26, 59, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 27, 26, 27, 63, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 24, 28, 61, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 36, 29, 71, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 30, 35, 30, 72, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 31, 36, 31, 72, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 46, 32, 82, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 33, 48, 33, 87, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 47, 34, 85, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 49, 35, 87, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 36, 47, 36, 86, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 47, 37, 86, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 38, 49, 38, 88, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 49, 39, 90, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 45, 40, 82, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 49, 41, 86, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 42, 47, 42, 84, "PROTOVALIDATE_RULES"),
-	)
-}
-
-func TestValidateRulesTypesMatchSuccess(t *testing.T) {
-	t.Parallel()
-	testLintWithValidate(
-		t,
-		"protovalidate_rules_types_match_success",
-	)
-}
-
-func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
-	t.Parallel()
-	testLintWithValidate(
-		t,
-		"protovalidate_rules_incompatible_usage_errors",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 5, 13, 38, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 5, 14, 38, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 5, 18, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 19, 5, 19, 38, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 23, 5, 23, 38, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 5, 24, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 5, 28, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 29, 5, 29, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 33, 32, 76, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 34, 27, 37, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 5, 40, 46, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 45, 5, 45, 46, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 5, 50, 48, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 55, 5, 55, 44, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 5, 60, 40, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 65, 5, 65, 40, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 44, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 71, 5, 71, 44, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 75, 80, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 76, 47, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 77, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 32, 86, 71, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 91, 51, 94, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 97, 5, 97, 46, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 102, 5, 102, 46, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 107, 5, 107, 48, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 112, 36, 112, 79, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 118, 50, 121, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 123, 51, 125, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 127, 56, 129, 4, "PROTOVALIDATE_RULES"),
-		// TODO: this should belong to cel linting
-		// bufanalysistesting.NewFileAnnotation(t, "a.proto", 132, 35, 136, 4, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 139, 5, 139, 45, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 144, 5, 144, 45, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 149, 5, 149, 47, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 154, 5, 154, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 159, 5, 159, 39, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 164, 5, 164, 43, "PROTOVALIDATE_RULES"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 165, 5, 165, 43, "PROTOVALIDATE_RULES"),
 	)
 }
 
