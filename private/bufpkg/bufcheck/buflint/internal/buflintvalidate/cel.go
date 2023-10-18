@@ -91,11 +91,21 @@ func validateCELCompilesField(
 		return err
 	}
 	fieldConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
+	if len(fieldConstraints.GetCel()) == 0 {
+		return nil
+	}
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
 	}
-	if fieldDescriptor.Kind() == protoreflect.MessageKind {
+	if fieldDescriptor.Kind() == protoreflect.MessageKind &&
+		fieldDescriptor.Message().FullName() == "google.protobuf.Any" {
+		// The expression might compile at this point, but the validator will return
+		// a runtime error during validation.
+		location := field.OptionExtensionLocation(validate.E_Field, celFieldTagInFieldConstraints)
+		add(field, location, nil, "cel rules are not supported for google.protobuf.Any")
+		return nil
+	} else if fieldDescriptor.Kind() == protoreflect.MessageKind {
 		celEnv, err = celEnv.Extend(
 			cel.Types(dynamicpb.NewMessage(fieldDescriptor.Message())),
 			cel.Variable("this", cel.ObjectType(string(fieldDescriptor.Message().FullName()))),
