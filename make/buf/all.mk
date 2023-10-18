@@ -117,8 +117,6 @@ bufgenerateclean:: \
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --template data/template/buf.go.gen.yaml
-	echo module protovalidate > private/gen/proto/go/buf/validate/go.mod
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
