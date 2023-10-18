@@ -292,7 +292,7 @@ func checkMapRules(
 		return fmt.Errorf("unable to find message for %s", field.TypeName())
 	}
 	if len(mapMessage.Fields()) != 2 {
-		return fmt.Errorf("synthetic map message %s does not have enough fields", mapMessage.FullName())
+		return fmt.Errorf("synthetic map message %s does not exactly 2 fields", mapMessage.FullName())
 	}
 	keyAdder := &adder{
 		field:    baseAdder.field,
@@ -452,16 +452,16 @@ func checkEnumRules(
 	if enum == nil {
 		return fmt.Errorf("unable to resolve enum %s", field.TypeName())
 	}
-	defined := enum.Values()
-	vals := make(map[int]struct{}, len(defined))
-	for _, val := range defined {
+	definedValues := enum.Values()
+	vals := make(map[int]struct{}, len(definedValues))
+	for _, val := range definedValues {
 		vals[val.Number()] = struct{}{}
 	}
 	for _, notIn := range r.NotIn {
 		if _, ok := vals[int(notIn)]; !ok {
 			adder.addForPathf(
 				[]int32{enumRulesFieldNumber, notInFieldNumberInEnumRules},
-				"value (%d) is rejected by defined_only and does not need to be in not_in",
+				"value %d is rejected by defined_only and does not need to be in not_in",
 				notIn,
 			)
 		}
