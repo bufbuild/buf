@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/any.proto";
+
+message AnyTest {
+  // valid
+  google.protobuf.Any no_protovalidate_option = 1;
+  // valid
+  google.protobuf.Any other_option = 2 [deprecated = true];
+  // valid
+  google.protobuf.Any valid_in = 3 [
+    (buf.validate.field).any.in = "type.googleapis.com/MyType1",
+    (buf.validate.field).any.in = "type.googleapis.com/MyType2"
+  ];
+  // valid
+  google.protobuf.Any valid_not_in = 4 [
+    (buf.validate.field).any.not_in = "type.googleapis.com/MyType1",
+    (buf.validate.field).any.not_in = "type.googleapis.com/MyType2"
+  ];
+  google.protobuf.Any in_and_not_in = 5 [
+    (buf.validate.field).any.not_in = "type.googleapis.com/MyType1",
+    // the next line should be annotated
+    (buf.validate.field).any.in = "type.googleapis.com/MyType2"
+  ];
+}

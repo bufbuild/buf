@@ -578,6 +578,7 @@ func TestRunProtovalidateRules(t *testing.T) {
 	testLintWithValidate(
 		t,
 		"protovalidate_rules",
+		bufanalysistesting.NewFileAnnotation(t, "any.proto", 26, 5, 26, 64, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 25, 5, 25, 41, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 31, 5, 31, 38, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 39, 5, 39, 44, "PROTOVALIDATE_RULES"),
@@ -593,6 +594,20 @@ func TestRunProtovalidateRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 91, 5, 91, 44, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 98, 5, 98, 50, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 100, 5, 100, 52, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 30, 5, 30, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 35, 5, 35, 43, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 40, 5, 40, 47, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 45, 5, 45, 47, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 50, 5, 50, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 55, 5, 55, 46, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 60, 5, 60, 48, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 65, 5, 65, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 70, 5, 70, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 75, 5, 75, 40, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 79, 5, 79, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 80, 5, 80, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 83, 36, 83, 77, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 85, 32, 85, 71, "PROTOVALIDATE_RULES"),
 	)
 }
 
