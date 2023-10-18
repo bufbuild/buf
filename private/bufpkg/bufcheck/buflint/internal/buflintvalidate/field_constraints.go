@@ -235,7 +235,7 @@ func checkRulesTypeMatchFieldType(
 
 func checkRepeatedRules(
 	baseAdder *adder,
-	r *validate.RepeatedRules,
+	repeatedRules *validate.RepeatedRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
@@ -246,7 +246,7 @@ func checkRepeatedRules(
 			"field is not repeated but has repeated rules",
 		)
 	}
-	if r.GetUnique() {
+	if repeatedRules.GetUnique() {
 		_, isFieldWrapper := wrapperTypeNames[field.TypeName()]
 		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && !isFieldWrapper {
 			baseAdder.addForPathf(
@@ -255,7 +255,7 @@ func checkRepeatedRules(
 			)
 		}
 	}
-	if r.MinItems != nil && r.MaxItems != nil && *r.MinItems > *r.MaxItems {
+	if repeatedRules.MinItems != nil && repeatedRules.MaxItems != nil && *repeatedRules.MinItems > *repeatedRules.MaxItems {
 		baseAdder.addForPathsf(
 			[][]int32{
 				{repeatedRulesFieldNumber, maxItemsNumberInRepeatedFieldRules},
@@ -269,12 +269,12 @@ func checkRepeatedRules(
 		basePath: []int32{repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	return checkConstraintsForField(itemAdder, r.Items, field, fullNameToEnum, fullNameToMessage)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
 func checkMapRules(
 	baseAdder *adder,
-	r *validate.MapRules,
+	mapRules *validate.MapRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
@@ -285,7 +285,7 @@ func checkMapRules(
 			"field is not a map but has map rules",
 		)
 	}
-	if r.MinPairs != nil && r.MaxPairs != nil && *r.MinPairs > *r.MaxPairs {
+	if mapRules.MinPairs != nil && mapRules.MaxPairs != nil && *mapRules.MinPairs > *mapRules.MaxPairs {
 		baseAdder.addForPathsf(
 			[][]int32{
 				{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
@@ -306,7 +306,7 @@ func checkMapRules(
 		basePath: []int32{mapRulesFieldNumber, keysFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	err := checkConstraintsForField(keyAdder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
 	if err != nil {
 		return err
 	}
@@ -315,7 +315,7 @@ func checkMapRules(
 		basePath: []int32{mapRulesFieldNumber, valuesFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	return checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
+	return checkConstraintsForField(valueAdder, mapRules.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
@@ -524,15 +524,15 @@ func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 
 func checkEnumRules(
 	adder *adder,
-	r *validate.EnumRules,
+	enumRules *validate.EnumRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 ) error {
-	checkConstAndIn(adder, r, enumRulesFieldNumber)
-	if !r.GetDefinedOnly() {
+	checkConstAndIn(adder, enumRules, enumRulesFieldNumber)
+	if !enumRules.GetDefinedOnly() {
 		return nil
 	}
-	if len(r.In) == 0 && len(r.NotIn) == 0 {
+	if len(enumRules.In) == 0 && len(enumRules.NotIn) == 0 {
 		return nil
 	}
 	enum := fullNameToEnum[field.TypeName()]
@@ -544,7 +544,7 @@ func checkEnumRules(
 	for _, val := range definedValues {
 		vals[val.Number()] = struct{}{}
 	}
-	for _, notIn := range r.NotIn {
+	for _, notIn := range enumRules.NotIn {
 		if _, ok := vals[int(notIn)]; !ok {
 			adder.addForPathf(
 				[]int32{enumRulesFieldNumber, notInFieldNumberInEnumRules},
@@ -570,30 +570,30 @@ func checkDurationRules(adder *adder, r *validate.DurationRules) error {
 	)
 }
 
-func checkTimestampRules(adder *adder, r *validate.TimestampRules) error {
+func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) error {
 	if err := checkNumericRules[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
-		r.ProtoReflect(),
+		timestampRules.ProtoReflect(),
 		getTimestampFromValue,
 		compareTimestamp,
 	); err != nil {
 		return err
 	}
-	if r.GetLtNow() && r.GetGtNow() {
+	if timestampRules.GetLtNow() && timestampRules.GetGtNow() {
 		adder.addForPathf(
 			[]int32{timestampRulesFieldNumber},
 			"gt_now and lt_now cannot be used together",
 		)
 	}
-	if r.Within != nil {
-		if !r.Within.IsValid() {
+	if timestampRules.Within != nil {
+		if !timestampRules.Within.IsValid() {
 			adder.addForPathf(
 				[]int32{timestampRulesFieldNumber, withInFieldNumberInTimestampRules},
 				"within duration is invalid",
 			)
 		}
-		if r.Within.Seconds <= 0 && r.Within.Nanos <= 0 {
+		if timestampRules.Within.Seconds <= 0 && timestampRules.Within.Nanos <= 0 {
 			adder.addForPathf(
 				[]int32{timestampRulesFieldNumber},
 				"within duration must be positive",
@@ -601,8 +601,8 @@ func checkTimestampRules(adder *adder, r *validate.TimestampRules) error {
 		}
 	}
 	// TODO: not sure if we really need to check this:
-	areNowRulesDefined := r.GetLtNow() || r.GetGtNow() || r.Within != nil
-	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
+	areNowRulesDefined := timestampRules.GetLtNow() || timestampRules.GetGtNow() || timestampRules.Within != nil
+	areAbsoluteRulesDefined := timestampRules.GetLt() != nil || timestampRules.GetLte() != nil || timestampRules.GetGt() != nil || timestampRules.GetGte() != nil
 	if areNowRulesDefined && areAbsoluteRulesDefined {
 		adder.addForPathf(
 			[]int32{timestampRulesFieldNumber},
