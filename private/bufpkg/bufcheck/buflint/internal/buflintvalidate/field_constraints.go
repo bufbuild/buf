@@ -32,7 +32,7 @@ import (
 
 const (
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
-	// These numbers are passed for two purposes:
+	// These numbers are used for two purposes:
 	// 1. Identity which type oneof is specified in a FieldConstraints. i.e. Is DoubleRules defined or
 	// StringRules defined?
 	// 2. Use it to construct a path to pass it to OptionExtensionLocation to get a more precise location.
@@ -127,20 +127,32 @@ var (
 		bytesRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_BYTES,
 		enumRulesFieldNumber:     descriptorpb.FieldDescriptorProto_TYPE_ENUM,
 	}
-	fieldNumberToAllowedMessageName = map[int32]protoreflect.FullName{
-		floatRulesFieldNumber:     (&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName(),
-		doubleRulesFieldNumber:    (&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName(),
-		int32RulesFieldNumber:     (&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName(),
-		int64RulesFieldNumber:     (&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName(),
-		uInt32RulesFieldNumber:    (&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName(),
-		uInt64RulesFieldNumber:    (&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName(),
-		boolRulesFieldNumber:      (&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName(),
-		stringRulesFieldNumber:    (&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName(),
-		bytesRulesFieldNumber:     (&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName(),
-		anyRulesFieldNumber:       (&anypb.Any{}).ProtoReflect().Descriptor().FullName(),
-		durationRulesFieldNumber:  (&durationpb.Duration{}).ProtoReflect().Descriptor().FullName(),
-		timestampRulesFieldNumber: (&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName(),
+	fieldNumberToAllowedMessageName = map[int32]string{
+		floatRulesFieldNumber:     string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()),
+		doubleRulesFieldNumber:    string((&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName()),
+		int32RulesFieldNumber:     string((&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName()),
+		int64RulesFieldNumber:     string((&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName()),
+		uInt32RulesFieldNumber:    string((&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName()),
+		uInt64RulesFieldNumber:    string((&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName()),
+		boolRulesFieldNumber:      string((&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName()),
+		stringRulesFieldNumber:    string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()),
+		bytesRulesFieldNumber:     string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()),
+		anyRulesFieldNumber:       string((&anypb.Any{}).ProtoReflect().Descriptor().FullName()),
+		durationRulesFieldNumber:  string((&durationpb.Duration{}).ProtoReflect().Descriptor().FullName()),
+		timestampRulesFieldNumber: string((&timestamppb.Timestamp{}).ProtoReflect().Descriptor().FullName()),
 	}
+	wrapperTypeNames = map[string]struct{}{
+		string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()):  {},
+		string((&wrapperspb.DoubleValue{}).ProtoReflect().Descriptor().FullName()): {},
+		string((&wrapperspb.Int32Value{}).ProtoReflect().Descriptor().FullName()):  {},
+		string((&wrapperspb.Int64Value{}).ProtoReflect().Descriptor().FullName()):  {},
+		string((&wrapperspb.UInt32Value{}).ProtoReflect().Descriptor().FullName()): {},
+		string((&wrapperspb.UInt64Value{}).ProtoReflect().Descriptor().FullName()): {},
+		string((&wrapperspb.BoolValue{}).ProtoReflect().Descriptor().FullName()):   {},
+		string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()): {},
+		string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):  {},
+	}
+
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 )
@@ -195,7 +207,7 @@ func checkConstraintsForField(
 func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
 	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
-		if ok && string(expectedFieldMessageName) == field.TypeName() {
+		if ok && expectedFieldMessageName == field.TypeName() {
 			return
 		}
 		adder.addForPathf(
@@ -230,11 +242,14 @@ func checkRepeatedRules(
 			"field is not repeated but has repeated rules",
 		)
 	}
-	if r.GetUnique() && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		baseAdder.addForPathf(
-			[]int32{repeatedRulesFieldNumber},
-			"unique rule is only allowed for scalar types",
-		)
+	if r.GetUnique() {
+		_, isFieldWrapper := wrapperTypeNames[field.TypeName()]
+		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && !isFieldWrapper {
+			baseAdder.addForPathf(
+				[]int32{repeatedRulesFieldNumber},
+				"unique rule is only allowed for scalar types or wrapper types",
+			)
+		}
 	}
 	if r.MinItems != nil && r.MaxItems != nil && *r.MinItems > *r.MaxItems {
 		baseAdder.addForPathsf(
