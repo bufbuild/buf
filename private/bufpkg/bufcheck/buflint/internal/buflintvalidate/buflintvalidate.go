@@ -44,7 +44,7 @@ func ValidateRules(
 	if err != nil {
 		return err
 	}
-	checkConstraintsForField(
+	return checkConstraintsForField(
 		&adder{
 			field:   field,
 			addFunc: add,
@@ -54,7 +54,6 @@ func ValidateRules(
 		fullNameToEnum,
 		fullNameToMessage,
 	)
-	return nil
 }
 
 // ValidateCELCompiles validates that all CEL expressions defined for protovalidate

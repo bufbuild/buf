@@ -1037,7 +1037,9 @@ func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 5, 60, 40, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 65, 5, 65, 40, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 44, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 71, 5, 71, 44, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 75, 5, 75, 80, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 76, 47, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 42, 82, 4, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 84, 36, 84, 77, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 86, 32, 86, 71, "PROTOVALIDATE_RULES"),
@@ -1057,6 +1059,7 @@ func TestValidateRulesIncompatibleUsageErrors(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 154, 5, 154, 39, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 159, 5, 159, 39, "PROTOVALIDATE_RULES"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 164, 5, 164, 43, "PROTOVALIDATE_RULES"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 165, 5, 165, 43, "PROTOVALIDATE_RULES"),
 	)
 }
 

@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message){
+var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
 	floatRulesFieldNumber:    checkNumberRules[float32],
 	doubleRulesFieldNumber:   checkNumberRules[float64],
 	int32RulesFieldNumber:    checkNumberRules[int32],
@@ -45,8 +45,8 @@ func checkNumberRules[
 	adder *adder,
 	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
-) {
-	checkNumericRules[T](
+) error {
+	return checkNumericRules[T](
 		adder,
 		numberRuleFieldNumber,
 		ruleMessage,
@@ -61,41 +61,42 @@ func checkNumericRules[
 	adder *adder,
 	ruleNumber int32,
 	message protoreflect.Message,
-	// convertFunc returns the converted value and a file annotation string.
-	convertFunc func(protoreflect.Value) (*T, string),
+	// convertFunc returns the converted value, a file annotation string and an error.
+	convertFunc func(protoreflect.Value) (*T, string, error),
 	// compareFunc returns a positive value if the first argument is bigger,
 	// a negative value if the second argument is bigger or 0 if they are equal.
 	compareFunc func(*T, *T) float64,
-) {
+) error {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
 	var lowerBoundName, upperBoundName string
 	var in, notIn []*T
 	var fieldCount int
 	var constFieldNumber, inFieldNumber, notInFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
+	var err error
 	message.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
 		var convertErrorMessage string
 		switch fieldName := string(field.Name()); fieldName {
 		case "const":
 			constFieldNumber = int32(field.Number())
-			constant, convertErrorMessage = convertFunc(value)
+			constant, convertErrorMessage, err = convertFunc(value)
 		case "gt":
-			gt, convertErrorMessage = convertFunc(value)
+			gt, convertErrorMessage, err = convertFunc(value)
 			lowerBound = gt
 			lowerBoundName = fieldName
 			lowerBoundFieldNumber = int32(field.Number())
 		case "gte":
-			gte, convertErrorMessage = convertFunc(value)
+			gte, convertErrorMessage, err = convertFunc(value)
 			lowerBound = gte
 			lowerBoundName = fieldName
 			lowerBoundFieldNumber = int32(field.Number())
 		case "lt":
-			lt, convertErrorMessage = convertFunc(value)
+			lt, convertErrorMessage, err = convertFunc(value)
 			upperBound = lt
 			upperBoundName = fieldName
 			upperBoundFieldNumber = int32(field.Number())
 		case "lte":
-			lte, convertErrorMessage = convertFunc(value)
+			lte, convertErrorMessage, err = convertFunc(value)
 			upperBound = lte
 			upperBoundName = fieldName
 			upperBoundFieldNumber = int32(field.Number())
@@ -103,7 +104,7 @@ func checkNumericRules[
 			inFieldNumber = int32(field.Number())
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
-				converted, convertErrorMessage = convertFunc(value.List().Get(i))
+				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
 				if converted != nil {
 					in = append(in, converted)
 				}
@@ -112,7 +113,7 @@ func checkNumericRules[
 			notInFieldNumber = int32(field.Number())
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
-				converted, convertErrorMessage = convertFunc(value.List().Get(i))
+				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
 				if converted != nil {
 					notIn = append(notIn, converted)
 				}
@@ -126,16 +127,19 @@ func checkNumericRules[
 		}
 		return true
 	})
+	if err != nil {
+		return err
+	}
 	if constant != nil && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ruleNumber, constFieldNumber},
-			"all other rules are redundant when const is specified on a field",
+			"const should be the only rule when specified",
 		)
 	}
 	if len(in) > 0 && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ruleNumber, inFieldNumber},
-			"in should be the only rule when defined",
+			"in should be the only rule when specified",
 		)
 	}
 	for _, bannedValue := range notIn {
@@ -162,7 +166,7 @@ func checkNumericRules[
 		}
 	}
 	if lowerBound == nil || upperBound == nil {
-		return
+		return nil
 	}
 	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
 		adder.addForPathsf(
@@ -172,7 +176,7 @@ func checkNumericRules[
 			},
 			"lte and gte have the same value, consider using const",
 		)
-		return
+		return nil
 	}
 	if compareFunc(upperBound, lowerBound) <= 0 {
 		adder.addForPathsf(
@@ -185,35 +189,49 @@ func checkNumericRules[
 			lowerBoundName,
 		)
 	}
+	return nil
 }
 
 func getNumericPointerFromValue[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
-](value protoreflect.Value) (*T, string) {
-	pointer, _ := value.Interface().(T)
-	return &pointer, ""
+](value protoreflect.Value) (*T, string, error) {
+	number, ok := value.Interface().(T)
+	if !ok {
+		return nil, "", fmt.Errorf("unable to cast value to type %T", number)
+	}
+	return &number, "", nil
 }
 
-func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, string) {
-	// TODO: what if this errors?
-	bytes, _ := proto.Marshal(value.Message().Interface())
+func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, string, error) {
+	bytes, err := proto.Marshal(value.Message().Interface())
+	if err != nil {
+		return nil, "", err
+	}
 	timestamp := &timestamppb.Timestamp{}
-	_ = proto.Unmarshal(bytes, timestamp)
-	if !timestamp.IsValid() {
-		return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp)
+	err = proto.Unmarshal(bytes, timestamp)
+	if err != nil {
+		return nil, "", err
 	}
-	return timestamp, ""
+	if !timestamp.IsValid() {
+		return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp), nil
+	}
+	return timestamp, "", nil
 }
 
-func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, string) {
-	// TODO: what if this errors?
-	bytes, _ := proto.Marshal(value.Message().Interface())
-	duration := &durationpb.Duration{}
-	_ = proto.Unmarshal(bytes, duration)
-	if !duration.IsValid() {
-		return nil, fmt.Sprintf("%v is an invalid duration", duration)
+func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, string, error) {
+	bytes, err := proto.Marshal(value.Message().Interface())
+	if err != nil {
+		return nil, "", err
 	}
-	return duration, ""
+	duration := &durationpb.Duration{}
+	err = proto.Unmarshal(bytes, duration)
+	if err != nil {
+		return nil, "", err
+	}
+	if !duration.IsValid() {
+		return nil, fmt.Sprintf("%v is an invalid duration", duration), nil
+	}
+	return duration, "", nil
 }
 
 func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a *T, b *T) float64 {

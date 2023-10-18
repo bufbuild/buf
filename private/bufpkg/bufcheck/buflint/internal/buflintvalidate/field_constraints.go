@@ -15,11 +15,13 @@
 package buflintvalidate
 
 import (
+	"fmt"
 	"regexp"
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -27,11 +29,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
-
-// TODO: consistent lint message tone/language
-// TODO: in cel linting, check no google.protobuf.Any is used (if this check makes sense).
-// TODO: report at one location or both location
-// TODO: rename file names
 
 const (
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
@@ -60,20 +57,48 @@ const (
 	anyRulesFieldNumber       = 20
 	durationRulesFieldNumber  = 21
 	timestampRulesFieldNumber = 22
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2517
+	maxLenFieldNumberInStringRules = 3
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2548
+	minBytesFieldNumberInStringRules = 4
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2579
+	patternFieldNumberInStringRules = 6
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2595
+	prefixFieldNumberInStringRules = 7
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2610
+	suffixFieldNumberInStringRules = 8
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2625
+	containsFieldNumberInStringRules = 9
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2844
+	wellKnownRegexFieldNumberInStringRules = 24
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2874
+	strictFieldNumberInStringRules = 25
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2961
+	patternFieldNumberInBytesRules = 11
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2976
+	prefixFieldNumberInBytesRules = 5
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2991
+	suffixFieldNumberInBytesRules = 6
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3006
+	containsFieldNumberInBytesRules = 7
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3164
+	notInFieldNumberInEnumRules = 4
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3183
 	minItemsNumberInRepeatedFieldRules = 1
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3199
 	maxItemsNumberInRepeatedFieldRules = 2
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3244
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3235
+	itemsFieldNumberInRepeatedRules = 4
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3249
 	minPairsFieldNumberInMapRules = 1
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3258
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3263
 	maxPairsFieldNumberInMapRules = 2
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3276
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3281
 	keysFieldNumberInMapRules = 4
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3293
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3298
 	valuesFieldNumberInMapRules = 5
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3230
-	itemsFieldNumber = 4
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3696
+	withInFieldNumberInTimestampRules = 9
 )
 
 var (
@@ -118,12 +143,6 @@ var (
 	}
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2846
-	wellKnownHTTPHeaderNamePattern = "^:?[0-9a-zA-Z!#$%&'*+-.^_|~\x60]+$"
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2853
-	wellKnownHTTPHeaderValuePattern = "^[^\u0000-\u0008\u000A-\u001F\u007F]*$"
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L2854
-	wellKnownHeaderStringPattern = "^[^\u0000\u000A\u000D]*$" // For non-strict validation.
 )
 
 func checkConstraintsForField(
@@ -132,47 +151,45 @@ func checkConstraintsForField(
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
-) {
+) error {
 	if fieldConstraints == nil {
-		return
+		return nil
 	}
 	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
 	typeRulesFieldDescriptor := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
 	if typeRulesFieldDescriptor == nil {
-		return
+		return nil
 	}
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// checkMapRules and checkRepeatedRules are special cases that call checkConstraintsForField.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		checkMapRules(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
-		return
+		return checkMapRules(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		checkRepeatedRules(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
-		return
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 	}
 	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesFieldDescriptor.Message().Name()))
 	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-		numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
-		return
+		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 	}
 	switch typeRulesFieldNumber {
 	case boolRulesFieldNumber:
-		// Bool rules only have `const` and does not need validation.
+		// Bool rules only have `const` and does not need checking.
 	case stringRulesFieldNumber:
-		checkStringRules(adder, fieldConstraints.GetString_())
+		return checkStringRules(adder, fieldConstraints.GetString_())
 	case bytesRulesFieldNumber:
-		checkBytesRules(adder, fieldConstraints.GetBytes())
+		return checkBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:
-		checkEnumRules(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
+		return checkEnumRules(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
 	case anyRulesFieldNumber:
-		validateAnyRules(adder, fieldConstraints.GetAny())
+		checkAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
-		validateDurationRules(adder, fieldConstraints.GetDuration())
+		return checkDurationRules(adder, fieldConstraints.GetDuration())
 	case timestampRulesFieldNumber:
-		validateTimestampRules(adder, fieldConstraints.GetTimestamp())
+		return checkTimestampRules(adder, fieldConstraints.GetTimestamp())
 	}
+	return nil
 }
 
 func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFieldNumber int32, ruleName string) {
@@ -190,11 +207,7 @@ func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFie
 		return
 	}
 	expectedType, ok := fieldNumberToAllowedProtoType[ruleFieldNumber]
-	if !ok {
-		// TODO
-		return
-	}
-	if expectedType != field.Type() {
+	if !ok || expectedType != field.Type() {
 		adder.addForPathf(
 			[]int32{ruleFieldNumber},
 			"%s should not be defined on a field of type %v",
@@ -204,187 +217,13 @@ func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFie
 	}
 }
 
-// TODO: maybe inline this
-func checkInAndNotIn(
-	adder *adder,
-	in int,
-	notIn int,
-) {
-	if in != 0 && notIn != 0 {
-		adder.addf("cannot have both in and not_in rules on the same field")
-	}
-}
-
-// TODO: add field number to parameter or inline
-func checkLenRules(
-	adder *adder,
-	length *uint64,
-	lenFieldName string,
-	minLen *uint64,
-	minLenFieldName string,
-	maxLen *uint64,
-	maxLenFieldName string,
-) {
-	if length != nil {
-		if minLen != nil {
-			adder.addf("cannot have both %s and %s on the same field", lenFieldName, minLenFieldName)
-		}
-		if maxLen != nil {
-			adder.addf("cannot have both %s and %s on the same field", lenFieldName, maxLenFieldName)
-		}
-	}
-	if maxLen != nil && minLen != nil {
-		if *minLen > *maxLen {
-			adder.addf("%s should be greater than %s", minLenFieldName, maxLenFieldName)
-		}
-		if *minLen == *maxLen {
-			adder.addf("%s is equal to %s, consider using %s", minLenFieldName, maxLenFieldName, lenFieldName)
-		}
-	}
-}
-
-func checkStringRules(adder *adder, stringRules *validate.StringRules) {
-	checkInAndNotIn(adder, len(stringRules.In), len(stringRules.NotIn))
-	checkLenRules(adder, stringRules.Len, "len", stringRules.MinLen, "min_len", stringRules.MaxLen, "max_len")
-	checkLenRules(adder, stringRules.LenBytes, "len_bytes", stringRules.MinBytes, "min_bytes", stringRules.MaxBytes, "max_bytes")
-	if stringRules.MaxLen != nil && stringRules.MaxBytes != nil && *stringRules.MaxBytes < *stringRules.MaxLen {
-		// Saying a string has at most 5 bytes and at most 6 runes is the same as saying at most 5 bytes.
-		adder.addf("max_bytes is less than max_len, making max_len redundant")
-	}
-	if stringRules.MinLen != nil && stringRules.MinBytes != nil && *stringRules.MinBytes < *stringRules.MinLen {
-		// Saying a string has at least 5 bytes and at least 6 runes is the same as saying at least 6 runes.
-		adder.addf("min_bytes is less than min_len, making min_bytes redundant")
-	}
-	substringFields := []struct {
-		value *string
-		name  string
-	}{
-		{value: stringRules.Prefix, name: "prefix"},
-		{value: stringRules.Suffix, name: "suffix"},
-		{value: stringRules.Contains, name: "contains"},
-	}
-	for _, substringField := range substringFields {
-		if substringField.value == nil {
-			continue
-		}
-		substring := *substringField.value
-		if stringRules.MaxLen != nil && uint64(utf8.RuneCountInString(substring)) > *stringRules.MaxLen {
-			adder.addForPathf(
-				[]int32{stringRulesFieldNumber},
-				"%s has length %d, exceeding max_len",
-				substringField.name,
-				utf8.RuneCountInString(substring),
-			)
-		}
-		if stringRules.MaxBytes != nil && uint64(len(substring)) > *stringRules.MaxBytes {
-			adder.addForPathf(
-				[]int32{stringRulesFieldNumber},
-				"%s has %d bytes, exceeding max_bytes",
-				substringField.name,
-				len(substring),
-			)
-		}
-	}
-	patternInEffect := stringRules.Pattern
-	wellKnownRegex := stringRules.GetWellKnownRegex()
-	nonStrict := stringRules.Strict != nil && !*stringRules.Strict
-	switch wellKnownRegex {
-	case validate.KnownRegex_KNOWN_REGEX_UNSPECIFIED:
-		if nonStrict {
-			adder.addf("strict should not be set without well_known_regex")
-		}
-	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_NAME:
-		if stringRules.Pattern != nil {
-			adder.addf("regex well_known_regex and regex pattern are incompatible")
-		}
-		patternInEffect = &wellKnownHTTPHeaderNamePattern
-		if nonStrict {
-			patternInEffect = &wellKnownHeaderStringPattern
-		}
-	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_VALUE:
-		if stringRules.Pattern != nil {
-			adder.addf("regex well_known_regex and regex pattern are incompatible")
-		}
-		patternInEffect = &wellKnownHTTPHeaderValuePattern
-		if nonStrict {
-			patternInEffect = &wellKnownHeaderStringPattern
-		}
-	}
-	checkPattern(adder, patternInEffect, len(stringRules.In))
-}
-
-func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) {
-	checkInAndNotIn(adder, len(bytesRules.In), len(bytesRules.NotIn))
-	checkLenRules(adder, bytesRules.Len, "len", bytesRules.MinLen, "min_len", bytesRules.MaxLen, "max_len")
-	substringFields := []struct {
-		value []byte
-		name  string
-	}{
-		{value: bytesRules.Prefix, name: "prefix"},
-		{value: bytesRules.Suffix, name: "suffix"},
-		{value: bytesRules.Contains, name: "contains"},
-	}
-	for _, substringField := range substringFields {
-		if bytesRules.MaxLen != nil && uint64(len(substringField.value)) > *bytesRules.MaxLen {
-			adder.addForPathf(
-				[]int32{bytesRulesFieldNumber},
-				"%s has length %d, exceeding max_len",
-				substringField.name,
-				len(substringField.value),
-			)
-		}
-	}
-	checkPattern(adder, bytesRules.Pattern, len(bytesRules.In))
-}
-
-func checkEnumRules(
-	adder *adder,
-	r *validate.EnumRules,
-	field protosource.Field,
-	fullNameToEnum map[string]protosource.Enum,
-) {
-	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
-	if !r.GetDefinedOnly() {
-		return
-	}
-	if len(r.In) == 0 && len(r.NotIn) == 0 {
-		return
-	}
-	enum := fullNameToEnum[field.TypeName()]
-	if enum == nil {
-		// TODO: return error
-		return
-	}
-	defined := enum.Values()
-	vals := make(map[int]struct{}, len(defined))
-	for _, val := range defined {
-		vals[val.Number()] = struct{}{}
-	}
-	if len(r.In) > 0 {
-		for _, in := range r.In {
-			_, ok := vals[int(in)]
-			if !ok {
-				adder.addf("undefined in value (%d) conflicts with defined_only rule", in)
-			}
-		}
-	}
-	if len(r.NotIn) > 0 {
-		for _, notIn := range r.NotIn {
-			_, ok := vals[int(notIn)]
-			if !ok {
-				adder.addf("undefined not_in value (%d) is redundant, as it is already rejected by defined_only")
-			}
-		}
-	}
-}
-
 func checkRepeatedRules(
 	baseAdder *adder,
 	r *validate.RepeatedRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
-) {
+) error {
 	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber},
@@ -408,10 +247,10 @@ func checkRepeatedRules(
 	}
 	itemAdder := &adder{
 		field:    baseAdder.field,
-		basePath: []int32{repeatedRulesFieldNumber, itemsFieldNumber},
+		basePath: []int32{repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	checkConstraintsForField(itemAdder, r.Items, field, fullNameToEnum, fullNameToMessage)
+	return checkConstraintsForField(itemAdder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
 func checkMapRules(
@@ -420,7 +259,7 @@ func checkMapRules(
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
-) {
+) error {
 	if !field.IsMap() {
 		baseAdder.addForPathf(
 			[]int32{mapRulesFieldNumber},
@@ -436,29 +275,194 @@ func checkMapRules(
 			"min_pairs is greater than max_pairs",
 		)
 	}
-	// TODO: error if not found
-	mapMessage := fullNameToMessage[field.TypeName()]
-	// TODO: make sure the map message has two fields
+	mapMessage, ok := fullNameToMessage[field.TypeName()]
+	if !ok {
+		return fmt.Errorf("unable to find message for %s", field.TypeName())
+	}
+	if len(mapMessage.Fields()) != 2 {
+		return fmt.Errorf("synthetic map message %s does not have enough fields", mapMessage.FullName())
+	}
 	keyAdder := &adder{
 		field:    baseAdder.field,
 		basePath: []int32{mapRulesFieldNumber, keysFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	checkConstraintsForField(keyAdder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	err := checkConstraintsForField(keyAdder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	if err != nil {
+		return err
+	}
 	valueAdder := &adder{
 		field:    baseAdder.field,
 		basePath: []int32{mapRulesFieldNumber, valuesFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
-	checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
+	return checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
-func validateAnyRules(adder *adder, r *validate.AnyRules) {
-	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
+func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
+	checkConstAndIn(adder, stringRules, stringRulesFieldNumber)
+	if err := checkLenRules(adder, stringRules, stringRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
+		return err
+	}
+	if err := checkLenRules(adder, stringRules, stringRulesFieldNumber, "len_bytes", "min_bytes", "max_bytes"); err != nil {
+		return err
+	}
+	if stringRules.MaxLen != nil && stringRules.MaxBytes != nil && *stringRules.MaxBytes < *stringRules.MaxLen {
+		// Saying a string has at most 5 bytes and at most 6 runes is the same as saying at most 5 bytes.
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, maxLenFieldNumberInStringRules},
+			"max_bytes is less than max_len, making max_len redundant",
+		)
+	}
+	if stringRules.MinLen != nil && stringRules.MinBytes != nil && *stringRules.MinBytes < *stringRules.MinLen {
+		// Saying a string has at least 5 bytes and at least 6 runes is the same as saying at least 6 runes.
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, minBytesFieldNumberInStringRules},
+			"min_bytes is less than min_len, making min_bytes redundant",
+		)
+	}
+	substringFields := []struct {
+		value       *string
+		name        string
+		fieldNumber int32
+	}{
+		{value: stringRules.Prefix, name: "prefix", fieldNumber: prefixFieldNumberInStringRules},
+		{value: stringRules.Suffix, name: "suffix", fieldNumber: suffixFieldNumberInStringRules},
+		{value: stringRules.Contains, name: "contains", fieldNumber: containsFieldNumberInStringRules},
+	}
+	for _, substringField := range substringFields {
+		if substringField.value == nil {
+			continue
+		}
+		substring := *substringField.value
+		if runeCount := uint64(utf8.RuneCountInString(substring)); stringRules.MaxLen != nil && runeCount > *stringRules.MaxLen {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, substringField.fieldNumber},
+				"%s has length %d, exceeding max_len",
+				substringField.name,
+				runeCount,
+			)
+		}
+		if lenBytes := uint64(len(substring)); stringRules.MaxBytes != nil && lenBytes > *stringRules.MaxBytes {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, substringField.fieldNumber},
+				"%s has %d bytes, exceeding max_bytes",
+				substringField.name,
+				lenBytes,
+			)
+		}
+	}
+	wellKnownRegex := stringRules.GetWellKnownRegex()
+	nonStrict := stringRules.Strict != nil && !*stringRules.Strict
+	switch wellKnownRegex {
+	case validate.KnownRegex_KNOWN_REGEX_UNSPECIFIED:
+		if nonStrict {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, strictFieldNumberInStringRules},
+				"strict should not be set without well_known_regex",
+			)
+		}
+	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_NAME, validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_VALUE:
+		// TODO: do we care about this check? If the user wants an additional pattern
+		// to match, perhaps it shouldn't be treated as a mistake.
+		if stringRules.Pattern != nil {
+			adder.addForPathsf(
+				[][]int32{
+					{stringRulesFieldNumber, wellKnownRegexFieldNumberInStringRules},
+					{stringRulesFieldNumber, patternFieldNumberInStringRules},
+				},
+				"regex well_known_regex and regex pattern are incompatible",
+			)
+		}
+	}
+	if stringRules.Pattern == nil {
+		return nil
+	}
+	if _, err := regexp.Compile(*stringRules.Pattern); err != nil {
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, patternFieldNumberInStringRules},
+			"unable to parse regex pattern %s: %w", *stringRules.Pattern, err,
+		)
+	}
+	return nil
 }
 
-func validateDurationRules(adder *adder, r *validate.DurationRules) {
-	checkNumericRules[durationpb.Duration](
+func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
+	checkConstAndIn(adder, bytesRules, bytesRulesFieldNumber)
+	if err := checkLenRules(adder, bytesRules, bytesRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
+		return err
+	}
+	substringFields := []struct {
+		value       []byte
+		name        string
+		fieldNumber int32
+	}{
+		{value: bytesRules.Prefix, name: "prefix", fieldNumber: prefixFieldNumberInBytesRules},
+		{value: bytesRules.Suffix, name: "suffix", fieldNumber: suffixFieldNumberInBytesRules},
+		{value: bytesRules.Contains, name: "contains", fieldNumber: containsFieldNumberInBytesRules},
+	}
+	for _, substringField := range substringFields {
+		if bytesRules.MaxLen != nil && uint64(len(substringField.value)) > *bytesRules.MaxLen {
+			adder.addForPathf(
+				[]int32{bytesRulesFieldNumber, substringField.fieldNumber},
+				"%s has length %d, exceeding max_len",
+				substringField.name,
+				len(substringField.value),
+			)
+		}
+	}
+	if bytesRules.Pattern == nil {
+		return nil
+	}
+	if _, err := regexp.Compile(*bytesRules.Pattern); err != nil {
+		adder.addForPathf(
+			[]int32{bytesRulesFieldNumber, patternFieldNumberInBytesRules},
+			"unable to parse regex pattern %s: %w", *bytesRules.Pattern, err,
+		)
+	}
+	return nil
+}
+
+func checkEnumRules(
+	adder *adder,
+	r *validate.EnumRules,
+	field protosource.Field,
+	fullNameToEnum map[string]protosource.Enum,
+) error {
+	checkConstAndIn(adder, r, enumRulesFieldNumber)
+	if !r.GetDefinedOnly() {
+		return nil
+	}
+	if len(r.In) == 0 && len(r.NotIn) == 0 {
+		return nil
+	}
+	enum := fullNameToEnum[field.TypeName()]
+	if enum == nil {
+		return fmt.Errorf("unable to resolve enum %s", field.TypeName())
+	}
+	defined := enum.Values()
+	vals := make(map[int]struct{}, len(defined))
+	for _, val := range defined {
+		vals[val.Number()] = struct{}{}
+	}
+	for _, notIn := range r.NotIn {
+		if _, ok := vals[int(notIn)]; !ok {
+			adder.addForPathf(
+				[]int32{enumRulesFieldNumber, notInFieldNumberInEnumRules},
+				"value (%d) is rejected by defined_only and does not need to be in not_in",
+				notIn,
+			)
+		}
+	}
+	return nil
+}
+
+func checkAnyRules(adder *adder, anyRules *validate.AnyRules) {
+	checkConstAndIn(adder, anyRules, anyRulesFieldNumber)
+}
+
+func checkDurationRules(adder *adder, r *validate.DurationRules) error {
+	return checkNumericRules[durationpb.Duration](
 		adder,
 		durationRulesFieldNumber,
 		r.ProtoReflect(),
@@ -467,14 +471,16 @@ func validateDurationRules(adder *adder, r *validate.DurationRules) {
 	)
 }
 
-func validateTimestampRules(adder *adder, r *validate.TimestampRules) {
-	checkNumericRules[timestamppb.Timestamp](
+func checkTimestampRules(adder *adder, r *validate.TimestampRules) error {
+	if err := checkNumericRules[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
 		getTimestampFromValue,
 		compareTimestamp,
-	)
+	); err != nil {
+		return err
+	}
 	if r.GetLtNow() && r.GetGtNow() {
 		adder.addForPathf(
 			[]int32{timestampRulesFieldNumber},
@@ -484,8 +490,7 @@ func validateTimestampRules(adder *adder, r *validate.TimestampRules) {
 	if r.Within != nil {
 		if !r.Within.IsValid() {
 			adder.addForPathf(
-				// TODO: append within field number
-				[]int32{timestampRulesFieldNumber},
+				[]int32{timestampRulesFieldNumber, withInFieldNumberInTimestampRules},
 				"within duration is invalid",
 			)
 		}
@@ -496,28 +501,135 @@ func validateTimestampRules(adder *adder, r *validate.TimestampRules) {
 			)
 		}
 	}
-	// TODO: not sure if we really need to validate the following:
-	areNowRulesDefined := r.GetLtNow() || r.GetGtNow()
+	// TODO: not sure if we really need to check this:
+	areNowRulesDefined := r.GetLtNow() || r.GetGtNow() || r.Within != nil
 	areAbsoluteRulesDefined := r.GetLt() != nil || r.GetLte() != nil || r.GetGt() != nil || r.GetGte() != nil
 	if areNowRulesDefined && areAbsoluteRulesDefined {
-		adder.addf("now rules cannot be mixed with absolute lt/gt rules")
+		adder.addForPathf(
+			[]int32{timestampRulesFieldNumber},
+			"rules relative to now cannot be mixed with absolute gt/gte/lt/lte rules",
+		)
 	}
-	if r.Within != nil && areAbsoluteRulesDefined {
-		adder.addf("within rule cannot be used with absolute lt/gt rules")
+	return nil
+}
+
+func checkConstAndIn(adder *adder, rule proto.Message, ruleNumber int32) {
+	var (
+		fieldCount       int
+		constFieldNumber int32
+		inFieldNumber    int32
+		isConstSpecified bool
+		isInSpecified    bool
+	)
+	ruleMessage := rule.ProtoReflect()
+	ruleMessage.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		fieldCount++
+		switch string(fd.Name()) {
+		case "const":
+			isConstSpecified = true
+			constFieldNumber = int32(fd.Number())
+		case "in":
+			isInSpecified = true
+			inFieldNumber = int32(fd.Number())
+		}
+		return true
+	})
+	if isConstSpecified && fieldCount > 1 {
+		adder.addForPathf(
+			[]int32{ruleNumber, constFieldNumber},
+			"const should be the only rule when specified",
+		)
+	}
+	if isInSpecified && fieldCount > 1 {
+		adder.addForPathf(
+			[]int32{ruleNumber, inFieldNumber},
+			"in should be the only rule when specified",
+		)
 	}
 }
 
-// TODO: update func signature
-// TODO: remove in.
-func checkPattern(adder *adder, pattern *string, in int) {
-	if pattern == nil {
-		return
-	}
-	if in != 0 {
-		adder.addf("regex pattern and in rules are incompatible")
-	}
-	_, err := regexp.Compile(*pattern)
+func checkLenRules(
+	adder *adder,
+	rules proto.Message,
+	ruleFieldNumber int32,
+	lenFieldName string,
+	minLenFieldName string,
+	maxLenFieldName string,
+) error {
+	var (
+		length            *uint64
+		lengthFieldNumber int32
+		minLen            *uint64
+		minLenFieldNumber int32
+		maxLen            *uint64
+		maxLenFieldNumber int32
+		err               error
+	)
+	rules.ProtoReflect().Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
+		switch string(fd.Name()) {
+		case lenFieldName:
+			uint64Value, ok := v.Interface().(uint64)
+			if !ok {
+				err = fmt.Errorf("unable to cast %v to uint64", v.Interface())
+				return false
+			}
+			length = &uint64Value
+			lengthFieldNumber = int32(fd.Number())
+		case minLenFieldName:
+			uint64Value, ok := v.Interface().(uint64)
+			if !ok {
+				err = fmt.Errorf("unable to cast %v to uint64", v.Interface())
+				return false
+			}
+			minLen = &uint64Value
+			minLenFieldNumber = int32(fd.Number())
+		case maxLenFieldName:
+			uint64Value, ok := v.Interface().(uint64)
+			if !ok {
+				err = fmt.Errorf("unable to cast %v to uint64", v.Interface())
+				return false
+			}
+			maxLen = &uint64Value
+			maxLenFieldNumber = int32(fd.Number())
+		}
+		return true
+	})
 	if err != nil {
-		adder.addf("unable to parse regex pattern %s: %w", *pattern, err)
+		return err
 	}
+	if length != nil {
+		if minLen != nil {
+			adder.addForPathf(
+				[]int32{ruleFieldNumber, lengthFieldNumber},
+				"cannot have both %s and %s on the same field", lenFieldName, minLenFieldName,
+			)
+		}
+		if maxLen != nil {
+			adder.addForPathf(
+				[]int32{ruleFieldNumber, lengthFieldNumber},
+				"cannot have both %s and %s on the same field", lenFieldName, maxLenFieldName,
+			)
+		}
+	}
+	if maxLen == nil || minLen == nil {
+		return nil
+	}
+	if *minLen > *maxLen {
+		adder.addForPathsf(
+			[][]int32{
+				{ruleFieldNumber, minLenFieldNumber},
+				{ruleFieldNumber, maxLenFieldNumber},
+			},
+			"%s should be greater than %s", minLenFieldName, maxLenFieldName,
+		)
+	} else if *minLen == *maxLen {
+		adder.addForPathsf(
+			[][]int32{
+				{ruleFieldNumber, minLenFieldNumber},
+				{ruleFieldNumber, maxLenFieldNumber},
+			},
+			"%s is equal to %s, consider using %s", minLenFieldName, maxLenFieldName, lenFieldName,
+		)
+	}
+	return nil
 }
