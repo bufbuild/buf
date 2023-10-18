@@ -203,10 +203,6 @@ func checkRulesTypeMatchFieldType(
 	ruleFieldNumber int32,
 	ruleName string,
 ) {
-	// Rules like SFixed64Rules can only be specified on a certain type of scalar field.
-	// Rules like TimetampRules can only be specified on a field of a certain message type.
-	// Others such as Int32Rules can be specified either on a field of certain scalar type
-	// or a ceratin message type.
 	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
 		if !ok || expectedFieldMessageName != field.TypeName() {
