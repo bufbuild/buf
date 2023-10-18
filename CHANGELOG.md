@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where `buf build` and other commands may fail when handling certain
+  archives created on macOS that contain files with extended attributes.
 
 ## [v1.27.1] - 2023-10-16
 
