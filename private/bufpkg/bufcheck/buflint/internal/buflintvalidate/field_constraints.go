@@ -60,10 +60,18 @@ const (
 	anyRulesFieldNumber       = 20
 	durationRulesFieldNumber  = 21
 	timestampRulesFieldNumber = 22
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3183
+	minItemsNumberInRepeatedFieldRules = 1
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3199
+	maxItemsNumberInRepeatedFieldRules = 2
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3244
+	minPairsFieldNumberInMapRules = 1
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3258
+	maxPairsFieldNumberInMapRules = 2
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3276
-	keysFieldNumber = 4
+	keysFieldNumberInMapRules = 4
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3293
-	valuesFieldNumber = 5
+	valuesFieldNumberInMapRules = 5
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3230
 	itemsFieldNumber = 4
 )
@@ -129,36 +137,35 @@ func checkConstraintsForField(
 		return
 	}
 	fieldConstraintsMessage := fieldConstraints.ProtoReflect()
-	// typeRulesFieldDescriptor is a FieldDescriptor for one of FloatRules,
-	// DoubleRules, ... , TimestampRules.
 	typeRulesFieldDescriptor := fieldConstraintsMessage.WhichOneof(typeOneofDescriptor)
 	if typeRulesFieldDescriptor == nil {
 		return
 	}
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
+	// checkMapRules and checkRepeatedRules are special cases that call checkConstraintsForField.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		validateMapField(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
+		checkMapRules(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		validateRepeatedField(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
+		checkRepeatedRules(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
 		return
 	}
 	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesFieldDescriptor.Message().Name()))
-	if numberRulesValidateFunc, ok := numberRulesFieldNumberToValidateFunc[typeRulesFieldNumber]; ok {
+	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-		numberRulesValidateFunc(adder, typeRulesFieldNumber, numberRulesMessage)
+		numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 		return
 	}
 	switch typeRules := fieldConstraints.Type.(type) {
 	case *validate.FieldConstraints_Bool:
 		// Bool rules only have `const` and does not need validation.
 	case *validate.FieldConstraints_String_:
-		validateStringField(adder, typeRules.String_)
+		checkStringField(adder, typeRules.String_)
 	case *validate.FieldConstraints_Bytes:
-		validateBytesField(adder, typeRules.Bytes)
+		checkBytesField(adder, typeRules.Bytes)
 	case *validate.FieldConstraints_Enum:
-		validateEnumField(adder, typeRules.Enum, field, fullNameToEnum)
+		checkEnumField(adder, typeRules.Enum, field, fullNameToEnum)
 	case *validate.FieldConstraints_Any:
 		validateAnyField(adder, typeRules.Any)
 	case *validate.FieldConstraints_Duration:
@@ -197,6 +204,7 @@ func checkRulesTypeMatchFieldType(adder *adder, field protosource.Field, ruleFie
 	}
 }
 
+// TODO: maybe inline this
 func checkInAndNotIn(
 	adder *adder,
 	in int,
@@ -207,6 +215,7 @@ func checkInAndNotIn(
 	}
 }
 
+// TODO: add field number to parameter or inline
 func checkLenRules(
 	adder *adder,
 	length *uint64,
@@ -234,14 +243,16 @@ func checkLenRules(
 	}
 }
 
-func validateStringField(adder *adder, r *validate.StringRules) {
+func checkStringField(adder *adder, r *validate.StringRules) {
 	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
 	checkLenRules(adder, r.Len, "len", r.MinLen, "min_len", r.MaxLen, "max_len")
 	checkLenRules(adder, r.LenBytes, "len_bytes", r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
 	if r.MaxLen != nil && r.MaxBytes != nil && *r.MaxBytes < *r.MaxLen {
+		// Saying a string has at most 5 bytes and at most 6 runes is the same as saying at most 5 bytes.
 		adder.addf("max_bytes is less than max_len, making max_len redundant")
 	}
 	if r.MinLen != nil && r.MinBytes != nil && *r.MinBytes < *r.MinLen {
+		// Saying a string has at least 5 bytes and at least 6 runes is the same as saying at least 6 runes.
 		adder.addf("min_bytes is less than min_len, making min_bytes redundant")
 	}
 	substringFields := []struct {
@@ -302,7 +313,7 @@ func validateStringField(adder *adder, r *validate.StringRules) {
 	checkPattern(adder, patternInEffect, len(r.In))
 }
 
-func validateBytesField(adder *adder, r *validate.BytesRules) {
+func checkBytesField(adder *adder, r *validate.BytesRules) {
 	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
 	checkLenRules(adder, r.Len, "len", r.MinLen, "min_len", r.MaxLen, "max_len")
 	substringFields := []struct {
@@ -326,7 +337,7 @@ func validateBytesField(adder *adder, r *validate.BytesRules) {
 	checkPattern(adder, r.Pattern, len(r.In))
 }
 
-func validateEnumField(
+func checkEnumField(
 	adder *adder,
 	r *validate.EnumRules,
 	field protosource.Field,
@@ -367,7 +378,7 @@ func validateEnumField(
 	}
 }
 
-func validateRepeatedField(
+func checkRepeatedRules(
 	baseAdder *adder,
 	r *validate.RepeatedRules,
 	field protosource.Field,
@@ -375,11 +386,25 @@ func validateRepeatedField(
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
-		baseAdder.addf("field is not repeated but got repeated rules")
+		baseAdder.addForPathf(
+			[]int32{repeatedRulesFieldNumber},
+			"field is not repeated but has repeated rules",
+		)
 	}
-	checkMinMax(baseAdder, r.MinItems, "min_items", r.MaxItems, "max_items")
 	if r.GetUnique() && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		baseAdder.addf("unique rule is only applicable for scalar types")
+		baseAdder.addForPathf(
+			[]int32{repeatedRulesFieldNumber},
+			"unique rule is only allowed for scalar types",
+		)
+	}
+	if r.MinItems != nil && r.MaxItems != nil && *r.MinItems > *r.MaxItems {
+		baseAdder.addForPathsf(
+			[][]int32{
+				{repeatedRulesFieldNumber, maxItemsNumberInRepeatedFieldRules},
+				{repeatedRulesFieldNumber, minItemsNumberInRepeatedFieldRules},
+			},
+			"min_items is greater than max_items",
+		)
 	}
 	itemAdder := &adder{
 		field:    baseAdder.field,
@@ -389,7 +414,7 @@ func validateRepeatedField(
 	checkConstraintsForField(itemAdder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
-func validateMapField(
+func checkMapRules(
 	baseAdder *adder,
 	r *validate.MapRules,
 	field protosource.Field,
@@ -397,21 +422,32 @@ func validateMapField(
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if !field.IsMap() {
-		baseAdder.addf("field is not a map but got map rules")
+		baseAdder.addForPathf(
+			[]int32{mapRulesFieldNumber},
+			"field is not a map but has map rules",
+		)
 	}
-	checkMinMax(baseAdder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
+	if r.MinPairs != nil && r.MaxPairs != nil && *r.MinPairs > *r.MaxPairs {
+		baseAdder.addForPathsf(
+			[][]int32{
+				{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
+				{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
+			},
+			"min_pairs is greater than max_pairs",
+		)
+	}
 	// TODO: error if not found
 	mapMessage := fullNameToMessage[field.TypeName()]
 	// TODO: make sure the map message has two fields
 	keyAdder := &adder{
 		field:    baseAdder.field,
-		basePath: []int32{mapRulesFieldNumber, keysFieldNumber},
+		basePath: []int32{mapRulesFieldNumber, keysFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
 	checkConstraintsForField(keyAdder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
 	valueAdder := &adder{
 		field:    baseAdder.field,
-		basePath: []int32{mapRulesFieldNumber, valuesFieldNumber},
+		basePath: []int32{mapRulesFieldNumber, valuesFieldNumberInMapRules},
 		addFunc:  baseAdder.addFunc,
 	}
 	checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
@@ -422,7 +458,7 @@ func validateAnyField(adder *adder, r *validate.AnyRules) {
 }
 
 func validateDurationField(adder *adder, r *validate.DurationRules) {
-	validateNumericRule[durationpb.Duration](
+	checkNumericRules[durationpb.Duration](
 		adder,
 		durationRulesFieldNumber,
 		r.ProtoReflect(),
@@ -432,7 +468,7 @@ func validateDurationField(adder *adder, r *validate.DurationRules) {
 }
 
 func validateTimestampField(adder *adder, r *validate.TimestampRules) {
-	validateNumericRule[timestamppb.Timestamp](
+	checkNumericRules[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
 		r.ProtoReflect(),
@@ -468,18 +504,6 @@ func validateTimestampField(adder *adder, r *validate.TimestampRules) {
 	}
 	if r.Within != nil && areAbsoluteRulesDefined {
 		adder.addf("within rule cannot be used with absolute lt/gt rules")
-	}
-}
-
-func checkMinMax(
-	adder *adder,
-	min *uint64,
-	minFieldName string,
-	max *uint64,
-	maxFieldName string,
-) {
-	if min != nil && max != nil && *min > *max {
-		adder.addf("%s value is greater than %s value", minFieldName, maxFieldName)
 	}
 }
 

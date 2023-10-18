@@ -24,29 +24,29 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var numberRulesFieldNumberToValidateFunc = map[int32]func(*adder, int32, protoreflect.Message){
-	floatRulesFieldNumber:    validateNumberRule[float32],
-	doubleRulesFieldNumber:   validateNumberRule[float64],
-	int32RulesFieldNumber:    validateNumberRule[int32],
-	int64RulesFieldNumber:    validateNumberRule[int64],
-	uInt32RulesFieldNumber:   validateNumberRule[uint32],
-	uInt64RulesFieldNumber:   validateNumberRule[uint64],
-	sInt32RulesFieldNumber:   validateNumberRule[int32],
-	sInt64RulesFieldNumber:   validateNumberRule[int64],
-	fixed32RulesFieldNumber:  validateNumberRule[uint32],
-	fixed64RulesFieldNumber:  validateNumberRule[uint64],
-	sFixed32RulesFieldNumber: validateNumberRule[int32],
-	sFixed64RulesFieldNumber: validateNumberRule[int64],
+var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message){
+	floatRulesFieldNumber:    checkNumberRules[float32],
+	doubleRulesFieldNumber:   checkNumberRules[float64],
+	int32RulesFieldNumber:    checkNumberRules[int32],
+	int64RulesFieldNumber:    checkNumberRules[int64],
+	uInt32RulesFieldNumber:   checkNumberRules[uint32],
+	uInt64RulesFieldNumber:   checkNumberRules[uint64],
+	sInt32RulesFieldNumber:   checkNumberRules[int32],
+	sInt64RulesFieldNumber:   checkNumberRules[int64],
+	fixed32RulesFieldNumber:  checkNumberRules[uint32],
+	fixed64RulesFieldNumber:  checkNumberRules[uint64],
+	sFixed32RulesFieldNumber: checkNumberRules[int32],
+	sFixed64RulesFieldNumber: checkNumberRules[int64],
 }
 
-func validateNumberRule[
+func checkNumberRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](
 	adder *adder,
 	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
 ) {
-	validateNumericRule[T](
+	checkNumericRules[T](
 		adder,
 		numberRuleFieldNumber,
 		ruleMessage,
@@ -55,14 +55,16 @@ func validateNumberRule[
 	)
 }
 
-func validateNumericRule[
+func checkNumericRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64 | timestamppb.Timestamp | durationpb.Duration,
 ](
 	adder *adder,
 	ruleNumber int32,
 	message protoreflect.Message,
-	// These two functions must take pointers because of the generated types.
+	// convertFunc returns the converted value and a file annotation string.
 	convertFunc func(protoreflect.Value) (*T, string),
+	// compareFunc returns a positive value if the first argument is bigger,
+	// a negative value if the second argument is bigger or 0 if they are equal.
 	compareFunc func(*T, *T) float64,
 ) {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
