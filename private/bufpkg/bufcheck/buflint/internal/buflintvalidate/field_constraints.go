@@ -161,17 +161,17 @@ func checkConstraintsForField(
 	case boolRulesFieldNumber:
 		// Bool rules only have `const` and does not need validation.
 	case stringRulesFieldNumber:
-		checkStringField(adder, fieldConstraints.GetString_())
+		checkStringRules(adder, fieldConstraints.GetString_())
 	case bytesRulesFieldNumber:
-		checkBytesField(adder, fieldConstraints.GetBytes())
+		checkBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:
-		checkEnumField(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
+		checkEnumRules(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
 	case anyRulesFieldNumber:
-		validateAnyField(adder, fieldConstraints.GetAny())
+		validateAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
-		validateDurationField(adder, fieldConstraints.GetDuration())
+		validateDurationRules(adder, fieldConstraints.GetDuration())
 	case timestampRulesFieldNumber:
-		validateTimestampField(adder, fieldConstraints.GetTimestamp())
+		validateTimestampRules(adder, fieldConstraints.GetTimestamp())
 	}
 }
 
@@ -243,15 +243,15 @@ func checkLenRules(
 	}
 }
 
-func checkStringField(adder *adder, r *validate.StringRules) {
-	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
-	checkLenRules(adder, r.Len, "len", r.MinLen, "min_len", r.MaxLen, "max_len")
-	checkLenRules(adder, r.LenBytes, "len_bytes", r.MinBytes, "min_bytes", r.MaxBytes, "max_bytes")
-	if r.MaxLen != nil && r.MaxBytes != nil && *r.MaxBytes < *r.MaxLen {
+func checkStringRules(adder *adder, stringRules *validate.StringRules) {
+	checkInAndNotIn(adder, len(stringRules.In), len(stringRules.NotIn))
+	checkLenRules(adder, stringRules.Len, "len", stringRules.MinLen, "min_len", stringRules.MaxLen, "max_len")
+	checkLenRules(adder, stringRules.LenBytes, "len_bytes", stringRules.MinBytes, "min_bytes", stringRules.MaxBytes, "max_bytes")
+	if stringRules.MaxLen != nil && stringRules.MaxBytes != nil && *stringRules.MaxBytes < *stringRules.MaxLen {
 		// Saying a string has at most 5 bytes and at most 6 runes is the same as saying at most 5 bytes.
 		adder.addf("max_bytes is less than max_len, making max_len redundant")
 	}
-	if r.MinLen != nil && r.MinBytes != nil && *r.MinBytes < *r.MinLen {
+	if stringRules.MinLen != nil && stringRules.MinBytes != nil && *stringRules.MinBytes < *stringRules.MinLen {
 		// Saying a string has at least 5 bytes and at least 6 runes is the same as saying at least 6 runes.
 		adder.addf("min_bytes is less than min_len, making min_bytes redundant")
 	}
@@ -259,16 +259,16 @@ func checkStringField(adder *adder, r *validate.StringRules) {
 		value *string
 		name  string
 	}{
-		{value: r.Prefix, name: "prefix"},
-		{value: r.Suffix, name: "suffix"},
-		{value: r.Contains, name: "contains"},
+		{value: stringRules.Prefix, name: "prefix"},
+		{value: stringRules.Suffix, name: "suffix"},
+		{value: stringRules.Contains, name: "contains"},
 	}
 	for _, substringField := range substringFields {
 		if substringField.value == nil {
 			continue
 		}
 		substring := *substringField.value
-		if r.MaxLen != nil && uint64(utf8.RuneCountInString(substring)) > *r.MaxLen {
+		if stringRules.MaxLen != nil && uint64(utf8.RuneCountInString(substring)) > *stringRules.MaxLen {
 			adder.addForPathf(
 				[]int32{stringRulesFieldNumber},
 				"%s has length %d, exceeding max_len",
@@ -276,7 +276,7 @@ func checkStringField(adder *adder, r *validate.StringRules) {
 				utf8.RuneCountInString(substring),
 			)
 		}
-		if r.MaxBytes != nil && uint64(len(substring)) > *r.MaxBytes {
+		if stringRules.MaxBytes != nil && uint64(len(substring)) > *stringRules.MaxBytes {
 			adder.addForPathf(
 				[]int32{stringRulesFieldNumber},
 				"%s has %d bytes, exceeding max_bytes",
@@ -285,16 +285,16 @@ func checkStringField(adder *adder, r *validate.StringRules) {
 			)
 		}
 	}
-	patternInEffect := r.Pattern
-	wellKnownRegex := r.GetWellKnownRegex()
-	nonStrict := r.Strict != nil && !*r.Strict
+	patternInEffect := stringRules.Pattern
+	wellKnownRegex := stringRules.GetWellKnownRegex()
+	nonStrict := stringRules.Strict != nil && !*stringRules.Strict
 	switch wellKnownRegex {
 	case validate.KnownRegex_KNOWN_REGEX_UNSPECIFIED:
 		if nonStrict {
 			adder.addf("strict should not be set without well_known_regex")
 		}
 	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_NAME:
-		if r.Pattern != nil {
+		if stringRules.Pattern != nil {
 			adder.addf("regex well_known_regex and regex pattern are incompatible")
 		}
 		patternInEffect = &wellKnownHTTPHeaderNamePattern
@@ -302,7 +302,7 @@ func checkStringField(adder *adder, r *validate.StringRules) {
 			patternInEffect = &wellKnownHeaderStringPattern
 		}
 	case validate.KnownRegex_KNOWN_REGEX_HTTP_HEADER_VALUE:
-		if r.Pattern != nil {
+		if stringRules.Pattern != nil {
 			adder.addf("regex well_known_regex and regex pattern are incompatible")
 		}
 		patternInEffect = &wellKnownHTTPHeaderValuePattern
@@ -310,22 +310,22 @@ func checkStringField(adder *adder, r *validate.StringRules) {
 			patternInEffect = &wellKnownHeaderStringPattern
 		}
 	}
-	checkPattern(adder, patternInEffect, len(r.In))
+	checkPattern(adder, patternInEffect, len(stringRules.In))
 }
 
-func checkBytesField(adder *adder, r *validate.BytesRules) {
-	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
-	checkLenRules(adder, r.Len, "len", r.MinLen, "min_len", r.MaxLen, "max_len")
+func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) {
+	checkInAndNotIn(adder, len(bytesRules.In), len(bytesRules.NotIn))
+	checkLenRules(adder, bytesRules.Len, "len", bytesRules.MinLen, "min_len", bytesRules.MaxLen, "max_len")
 	substringFields := []struct {
 		value []byte
 		name  string
 	}{
-		{value: r.Prefix, name: "prefix"},
-		{value: r.Suffix, name: "suffix"},
-		{value: r.Contains, name: "contains"},
+		{value: bytesRules.Prefix, name: "prefix"},
+		{value: bytesRules.Suffix, name: "suffix"},
+		{value: bytesRules.Contains, name: "contains"},
 	}
 	for _, substringField := range substringFields {
-		if r.MaxLen != nil && uint64(len(substringField.value)) > *r.MaxLen {
+		if bytesRules.MaxLen != nil && uint64(len(substringField.value)) > *bytesRules.MaxLen {
 			adder.addForPathf(
 				[]int32{bytesRulesFieldNumber},
 				"%s has length %d, exceeding max_len",
@@ -334,10 +334,10 @@ func checkBytesField(adder *adder, r *validate.BytesRules) {
 			)
 		}
 	}
-	checkPattern(adder, r.Pattern, len(r.In))
+	checkPattern(adder, bytesRules.Pattern, len(bytesRules.In))
 }
 
-func checkEnumField(
+func checkEnumRules(
 	adder *adder,
 	r *validate.EnumRules,
 	field protosource.Field,
@@ -453,11 +453,11 @@ func checkMapRules(
 	checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
-func validateAnyField(adder *adder, r *validate.AnyRules) {
+func validateAnyRules(adder *adder, r *validate.AnyRules) {
 	checkInAndNotIn(adder, len(r.In), len(r.NotIn))
 }
 
-func validateDurationField(adder *adder, r *validate.DurationRules) {
+func validateDurationRules(adder *adder, r *validate.DurationRules) {
 	checkNumericRules[durationpb.Duration](
 		adder,
 		durationRulesFieldNumber,
@@ -467,7 +467,7 @@ func validateDurationField(adder *adder, r *validate.DurationRules) {
 	)
 }
 
-func validateTimestampField(adder *adder, r *validate.TimestampRules) {
+func validateTimestampRules(adder *adder, r *validate.TimestampRules) {
 	checkNumericRules[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
