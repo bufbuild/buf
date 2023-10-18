@@ -15,12 +15,15 @@
 package buflintvalidate
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
+	"strings"
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -69,6 +72,8 @@ const (
 	suffixFieldNumberInStringRules = 8
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2625
 	containsFieldNumberInStringRules = 9
+	// https://buf.build/bufbuild/protovalidate/file/main:buf/validate/validate.proto#L2669
+	notInFieldNumberInStringRules = 11
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2844
 	wellKnownRegexFieldNumberInStringRules = 24
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2874
@@ -81,6 +86,8 @@ const (
 	suffixFieldNumberInBytesRules = 6
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3006
 	containsFieldNumberInBytesRules = 7
+	// https://buf.build/bufbuild/protovalidate/file/main:buf/validate/validate.proto#L3037
+	notInFieldNumberInBytesRules = 9
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3164
 	notInFieldNumberInEnumRules = 4
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3183
@@ -387,14 +394,60 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 			)
 		}
 	}
-	if stringRules.Pattern == nil {
-		return nil
+	var regex *regexp.Regexp
+	var err error
+	if stringRules.Pattern != nil {
+		regex, err = regexp.Compile(*stringRules.Pattern)
+		if err != nil {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, patternFieldNumberInStringRules},
+				"unable to parse regex pattern %s: %w", *stringRules.Pattern, err,
+			)
+		}
 	}
-	if _, err := regexp.Compile(*stringRules.Pattern); err != nil {
-		adder.addForPathf(
-			[]int32{stringRulesFieldNumber, patternFieldNumberInStringRules},
-			"unable to parse regex pattern %s: %w", *stringRules.Pattern, err,
-		)
+	for i, bannedValue := range stringRules.GetNotIn() {
+		var rejectingRules []string
+		if stringRules.Len != nil && uint64(utf8.RuneCountInString(bannedValue)) != *stringRules.Len {
+			rejectingRules = append(rejectingRules, "len")
+		}
+		if stringRules.MaxLen != nil && uint64(utf8.RuneCountInString(bannedValue)) > *stringRules.MaxLen {
+			rejectingRules = append(rejectingRules, "max_len")
+		}
+		if stringRules.MinLen != nil && uint64(utf8.RuneCountInString(bannedValue)) < *stringRules.MinLen {
+			rejectingRules = append(rejectingRules, "min_len")
+		}
+		if stringRules.LenBytes != nil && uint64(len(bannedValue)) != *stringRules.LenBytes {
+			rejectingRules = append(rejectingRules, "len")
+		}
+		if stringRules.MaxBytes != nil && uint64(len(bannedValue)) > *stringRules.MaxBytes {
+			rejectingRules = append(rejectingRules, "max_bytes")
+		}
+		if stringRules.MinBytes != nil && uint64(len(bannedValue)) < *stringRules.MinBytes {
+			rejectingRules = append(rejectingRules, "min_bytes")
+		}
+		if stringRules.Prefix != nil && !strings.HasPrefix(bannedValue, *stringRules.Prefix) {
+			rejectingRules = append(rejectingRules, "prefix")
+		}
+		if stringRules.Suffix != nil && !strings.HasSuffix(bannedValue, *stringRules.Suffix) {
+			rejectingRules = append(rejectingRules, "suffix")
+		}
+		if stringRules.Contains != nil && !strings.Contains(bannedValue, *stringRules.Contains) {
+			rejectingRules = append(rejectingRules, "contains")
+		}
+		if stringRules.NotContains != nil && strings.Contains(bannedValue, *stringRules.NotContains) {
+			rejectingRules = append(rejectingRules, "not_contains")
+		}
+		if regex != nil && !regex.MatchString(bannedValue) {
+			rejectingRules = append(rejectingRules, "pattern")
+		}
+		if len(rejectingRules) > 0 {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, notInFieldNumberInStringRules, int32(i)},
+				"%s is already rejected by %s and does not need to be in not_in",
+				bannedValue,
+				stringutil.SliceToHumanString(rejectingRules),
+			)
+		}
 	}
 	return nil
 }
@@ -423,14 +476,48 @@ func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 			)
 		}
 	}
-	if bytesRules.Pattern == nil {
-		return nil
+	var regex *regexp.Regexp
+	var err error
+	if bytesRules.Pattern != nil {
+		regex, err = regexp.Compile(*bytesRules.Pattern)
+		if err != nil {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, patternFieldNumberInStringRules},
+				"unable to parse regex pattern %s: %w", *bytesRules.Pattern, err,
+			)
+		}
 	}
-	if _, err := regexp.Compile(*bytesRules.Pattern); err != nil {
-		adder.addForPathf(
-			[]int32{bytesRulesFieldNumber, patternFieldNumberInBytesRules},
-			"unable to parse regex pattern %s: %w", *bytesRules.Pattern, err,
-		)
+	for i, bannedValue := range bytesRules.GetNotIn() {
+		var rejectingRules []string
+		if bytesRules.Len != nil && uint64(len(bannedValue)) != *bytesRules.Len {
+			rejectingRules = append(rejectingRules, "len")
+		}
+		if bytesRules.MaxLen != nil && uint64(len(bannedValue)) > *bytesRules.MaxLen {
+			rejectingRules = append(rejectingRules, "max_bytes")
+		}
+		if bytesRules.MinLen != nil && uint64(len(bannedValue)) < *bytesRules.MinLen {
+			rejectingRules = append(rejectingRules, "min_bytes")
+		}
+		if !bytes.HasPrefix(bannedValue, bytesRules.Prefix) {
+			rejectingRules = append(rejectingRules, "prefix")
+		}
+		if !bytes.HasSuffix(bannedValue, bytesRules.Suffix) {
+			rejectingRules = append(rejectingRules, "suffi")
+		}
+		if !bytes.Contains(bannedValue, bytesRules.Contains) {
+			rejectingRules = append(rejectingRules, "contains")
+		}
+		if regex != nil && !regex.Match(bannedValue) {
+			rejectingRules = append(rejectingRules, "pattern")
+		}
+		if len(rejectingRules) > 0 {
+			adder.addForPathf(
+				[]int32{bytesRulesFieldNumber, notInFieldNumberInBytesRules, int32(i)},
+				"%s is already rejected by %s and does not need to be in not_in",
+				bannedValue,
+				stringutil.SliceToHumanString(rejectingRules),
+			)
+		}
 	}
 	return nil
 }
