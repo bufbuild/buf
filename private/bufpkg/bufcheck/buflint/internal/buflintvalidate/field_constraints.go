@@ -60,6 +60,12 @@ const (
 	anyRulesFieldNumber       = 20
 	durationRulesFieldNumber  = 21
 	timestampRulesFieldNumber = 22
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3276
+	keysFieldNumber = 4
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3293
+	valuesFieldNumber = 5
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.3:buf/validate/validate.proto#L3230
+	itemsFieldNumber = 4
 )
 
 var (
@@ -360,38 +366,53 @@ func validateEnumField(
 }
 
 func validateRepeatedField(
-	adder *adder,
+	baseAdder *adder,
 	r *validate.RepeatedRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || field.IsMap() {
-		adder.addf("field is not repeated but got repeated rules")
+		baseAdder.addf("field is not repeated but got repeated rules")
 	}
-	checkMinMax(adder, r.MinItems, "min_items", r.MaxItems, "max_items")
+	checkMinMax(baseAdder, r.MinItems, "min_items", r.MaxItems, "max_items")
 	if r.GetUnique() && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		adder.addf("unique rule is only applicable for scalar types")
+		baseAdder.addf("unique rule is only applicable for scalar types")
 	}
-	checkConstraintsForField(adder, r.Items, field, fullNameToEnum, fullNameToMessage)
+	itemAdder := &adder{
+		field:    baseAdder.field,
+		basePath: []int32{repeatedRulesFieldNumber, itemsFieldNumber},
+		addFunc:  baseAdder.addFunc,
+	}
+	checkConstraintsForField(itemAdder, r.Items, field, fullNameToEnum, fullNameToMessage)
 }
 
 func validateMapField(
-	adder *adder,
+	baseAdder *adder,
 	r *validate.MapRules,
 	field protosource.Field,
 	fullNameToEnum map[string]protosource.Enum,
 	fullNameToMessage map[string]protosource.Message,
 ) {
 	if !field.IsMap() {
-		adder.addf("field is not a map but got map rules")
+		baseAdder.addf("field is not a map but got map rules")
 	}
-	checkMinMax(adder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
+	checkMinMax(baseAdder, r.MinPairs, "min_pairs", r.MaxPairs, "max_pairs")
 	// TODO: error if not found
 	mapMessage := fullNameToMessage[field.TypeName()]
-	// TODO: make sure it has two fields
-	checkConstraintsForField(adder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
-	checkConstraintsForField(adder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
+	// TODO: make sure the map message has two fields
+	keyAdder := &adder{
+		field:    baseAdder.field,
+		basePath: []int32{mapRulesFieldNumber, keysFieldNumber},
+		addFunc:  baseAdder.addFunc,
+	}
+	checkConstraintsForField(keyAdder, r.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	valueAdder := &adder{
+		field:    baseAdder.field,
+		basePath: []int32{mapRulesFieldNumber, valuesFieldNumber},
+		addFunc:  baseAdder.addFunc,
+	}
+	checkConstraintsForField(valueAdder, r.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
 }
 
 func validateAnyField(adder *adder, r *validate.AnyRules) {
