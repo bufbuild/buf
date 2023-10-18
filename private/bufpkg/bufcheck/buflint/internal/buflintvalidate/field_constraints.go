@@ -482,7 +482,7 @@ func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 		regex, err = regexp.Compile(*bytesRules.Pattern)
 		if err != nil {
 			adder.addForPathf(
-				[]int32{stringRulesFieldNumber, patternFieldNumberInStringRules},
+				[]int32{bytesRulesFieldNumber, patternFieldNumberInBytesRules},
 				"unable to parse regex pattern %s: %w", *bytesRules.Pattern, err,
 			)
 		}
