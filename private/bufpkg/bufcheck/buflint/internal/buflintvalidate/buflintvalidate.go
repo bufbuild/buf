@@ -38,28 +38,22 @@ func Validate(
 	if err != nil {
 		return err
 	}
-	fullNameToMessage, err := protosource.FullNameToMessage(files...)
-	if err != nil {
-		return err
-	}
-	fullNameToEnum, err := protosource.FullNameToEnum(files...)
-	if err != nil {
-		return err
-	}
 	for _, file := range files {
 		if file.IsImport() {
 			continue
 		}
-		if err := validateCELCompiles(add, descriptorResolver, file); err != nil {
-			return err
-		}
 		for _, message := range file.Messages() {
+			if err := validateCELCompilesMessage(
+				descriptorResolver,
+				add,
+				message,
+			); err != nil {
+				return err
+			}
 			for _, field := range message.Fields() {
 				if err := validateRulesForSingleField(
 					add,
 					descriptorResolver,
-					fullNameToMessage,
-					fullNameToEnum,
 					field,
 				); err != nil {
 					return err

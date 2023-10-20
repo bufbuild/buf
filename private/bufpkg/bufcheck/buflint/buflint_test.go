@@ -568,7 +568,6 @@ func TestRunProtovalidateCel(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 3, 64, 5, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 80, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 88, 5, 92, 6, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 94, 47, 99, 4, "PROTOVALIDATE"),
 	)
 }
 

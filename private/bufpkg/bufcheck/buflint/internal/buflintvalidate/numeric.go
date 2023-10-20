@@ -16,6 +16,7 @@ package buflintvalidate
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
@@ -52,6 +53,7 @@ func checkNumberRules[
 		ruleMessage,
 		getNumericPointerFromValue[T],
 		compareNumber[T],
+		func(t *T) interface{} { return *t },
 	)
 }
 
@@ -59,49 +61,47 @@ func checkNumericRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64 | timestamppb.Timestamp | durationpb.Duration,
 ](
 	adder *adder,
-	ruleNumber int32,
-	message protoreflect.Message,
+	ruleFieldNumber int32,
+	ruleMessage protoreflect.Message,
 	// convertFunc returns the converted value, a file annotation string and an error.
 	convertFunc func(protoreflect.Value) (*T, string, error),
 	// compareFunc returns a positive value if the first argument is bigger,
 	// a negative value if the second argument is bigger or 0 if they are equal.
 	compareFunc func(*T, *T) float64,
+	formatFunc func(*T) interface{},
 ) error {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
-	var lowerBoundName, upperBoundName string
+	var finite bool
 	var in, notIn []*T
 	var fieldCount int
-	var constFieldNumber, inFieldNumber, notInFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
+	var constFieldNumber, inFieldNumber, notInFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber, finiteFieldNumber int32
 	var err error
-	message.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
+	ruleMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
 		var convertErrorMessage string
+		fieldNumber := int32(field.Number())
 		switch fieldName := string(field.Name()); fieldName {
 		case "const":
-			constFieldNumber = int32(field.Number())
+			constFieldNumber = fieldNumber
 			constant, convertErrorMessage, err = convertFunc(value)
 		case "gt":
 			gt, convertErrorMessage, err = convertFunc(value)
 			lowerBound = gt
-			lowerBoundName = fieldName
-			lowerBoundFieldNumber = int32(field.Number())
+			lowerBoundFieldNumber = fieldNumber
 		case "gte":
 			gte, convertErrorMessage, err = convertFunc(value)
 			lowerBound = gte
-			lowerBoundName = fieldName
-			lowerBoundFieldNumber = int32(field.Number())
+			lowerBoundFieldNumber = fieldNumber
 		case "lt":
 			lt, convertErrorMessage, err = convertFunc(value)
 			upperBound = lt
-			upperBoundName = fieldName
-			upperBoundFieldNumber = int32(field.Number())
+			upperBoundFieldNumber = fieldNumber
 		case "lte":
 			lte, convertErrorMessage, err = convertFunc(value)
 			upperBound = lte
-			upperBoundName = fieldName
-			upperBoundFieldNumber = int32(field.Number())
+			upperBoundFieldNumber = fieldNumber
 		case "in":
-			inFieldNumber = int32(field.Number())
+			inFieldNumber = fieldNumber
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
 				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
@@ -110,7 +110,7 @@ func checkNumericRules[
 				}
 			}
 		case "not_in":
-			notInFieldNumber = int32(field.Number())
+			notInFieldNumber = fieldNumber
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
 				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
@@ -118,10 +118,25 @@ func checkNumericRules[
 					notIn = append(notIn, converted)
 				}
 			}
+		case "finite":
+			finiteFieldNumber = fieldNumber
+			var ok bool
+			finite, ok = value.Interface().(bool)
+			if !ok {
+				err = fmt.Errorf(
+					"%s should be a bool but is %T",
+					adder.getFieldRuleName(ruleFieldNumber, finiteFieldNumber),
+					value.Interface(),
+				)
+				return false
+			}
 		}
 		if convertErrorMessage != "" {
 			adder.addForPathf(
-				[]int32{ruleNumber, int32(field.Number())},
+				[]int32{ruleFieldNumber, fieldNumber},
+				"Field %q has option %s with invalid value: %s.",
+				adder.fieldName(),
+				adder.getFieldRuleName(ruleFieldNumber, int32(field.Number())),
 				convertErrorMessage,
 			)
 		}
@@ -132,14 +147,20 @@ func checkNumericRules[
 	}
 	if constant != nil && fieldCount > 1 {
 		adder.addForPathf(
-			[]int32{ruleNumber, constFieldNumber},
-			"const should be the only rule when specified",
+			[]int32{ruleFieldNumber, constFieldNumber},
+			"Field %q has %s and does not need other rules in %s.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ruleFieldNumber, constFieldNumber),
+			adder.getFieldRuleName(ruleFieldNumber),
 		)
 	}
 	if len(in) > 0 && fieldCount > 1 {
 		adder.addForPathf(
-			[]int32{ruleNumber, inFieldNumber},
-			"in should be the only rule when specified",
+			[]int32{ruleFieldNumber, inFieldNumber},
+			"Field %q has %s and does not need other rules in %s.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ruleFieldNumber, inFieldNumber),
+			adder.getFieldRuleName(ruleFieldNumber),
 		)
 	}
 	for i, bannedValue := range notIn {
@@ -156,11 +177,26 @@ func checkNumericRules[
 		if lte != nil && compareFunc(bannedValue, lte) > 0 {
 			failedChecks = append(failedChecks, "lte")
 		}
+		if finite {
+			var floatValue *float64
+			switch t := any(bannedValue).(type) {
+			case *float32:
+				floatValue = new(float64)
+				*floatValue = float64(*t)
+			case *float64:
+				floatValue = t
+			}
+			if floatValue != nil && (math.IsInf(*floatValue, 0) || math.IsNaN(*floatValue)) {
+				failedChecks = append(failedChecks, "finite")
+			}
+		}
 		if len(failedChecks) > 0 {
 			adder.addForPathf(
-				[]int32{ruleNumber, notInFieldNumber, int32(i)},
-				"%v is already rejected by %s and does not need to be in not_in",
-				bannedValue,
+				[]int32{ruleFieldNumber, notInFieldNumber, int32(i)},
+				"Field %q has %v in %s but this value is already rejected by %s.",
+				adder.fieldName(),
+				formatFunc(bannedValue),
+				adder.getFieldRuleName(ruleFieldNumber, notInFieldNumber),
 				stringutil.SliceToHumanString(failedChecks),
 			)
 		}
@@ -171,22 +207,25 @@ func checkNumericRules[
 	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
 		adder.addForPathsf(
 			[][]int32{
-				{ruleNumber, lowerBoundFieldNumber},
-				{ruleNumber, upperBoundFieldNumber},
+				{ruleFieldNumber, lowerBoundFieldNumber},
+				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"lte and gte have the same value, consider using const",
+			"Field %q has both %s and lte, use const instead.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
 		)
 		return nil
 	}
 	if compareFunc(upperBound, lowerBound) <= 0 {
 		adder.addForPathsf(
 			[][]int32{
-				{ruleNumber, lowerBoundFieldNumber},
-				{ruleNumber, upperBoundFieldNumber},
+				{ruleFieldNumber, lowerBoundFieldNumber},
+				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"%s should be greater than %s",
-			upperBoundName,
-			lowerBoundName,
+			"Field %q should have a %s greater than its %s.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
+			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
 		)
 	}
 	return nil
@@ -229,7 +268,7 @@ func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, strin
 		return nil, "", err
 	}
 	if !duration.IsValid() {
-		return nil, fmt.Sprintf("%v is an invalid duration", duration), nil
+		return nil, fmt.Sprintf("%v is not a valid duration", duration), nil
 	}
 	return duration, "", nil
 }

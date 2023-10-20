@@ -28,7 +28,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -93,9 +92,11 @@ const (
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3164
 	notInFieldNumberInEnumRules = 4
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3183
-	minItemsNumberInRepeatedFieldRules = 1
+	minItemsFieldNumberInRepeatedFieldRules = 1
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3199
-	maxItemsNumberInRepeatedFieldRules = 2
+	maxItemsFieldNumberInRepeatedFieldRules = 2
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3214
+	uniqueFieldNumberInRepeatedFieldRules = 3
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3235
 	itemsFieldNumberInRepeatedRules = 4
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3249
@@ -111,23 +112,23 @@ const (
 )
 
 var (
-	fieldNumberToAllowedScalarType = map[int32]descriptorpb.FieldDescriptorProto_Type{
-		floatRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_FLOAT,
-		doubleRulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_DOUBLE,
-		int32RulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_INT32,
-		int64RulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_INT64,
-		uInt32RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_UINT32,
-		uInt64RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_UINT64,
-		sInt32RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_SINT32,
-		sInt64RulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_SINT64,
-		fixed32RulesFieldNumber:  descriptorpb.FieldDescriptorProto_TYPE_FIXED32,
-		fixed64RulesFieldNumber:  descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
-		sFixed32RulesFieldNumber: descriptorpb.FieldDescriptorProto_TYPE_SFIXED32,
-		sFixed64RulesFieldNumber: descriptorpb.FieldDescriptorProto_TYPE_SFIXED64,
-		boolRulesFieldNumber:     descriptorpb.FieldDescriptorProto_TYPE_BOOL,
-		stringRulesFieldNumber:   descriptorpb.FieldDescriptorProto_TYPE_STRING,
-		bytesRulesFieldNumber:    descriptorpb.FieldDescriptorProto_TYPE_BYTES,
-		enumRulesFieldNumber:     descriptorpb.FieldDescriptorProto_TYPE_ENUM,
+	fieldNumberToAllowedScalarType = map[int32]protoreflect.Kind{
+		floatRulesFieldNumber:    protoreflect.FloatKind,
+		doubleRulesFieldNumber:   protoreflect.DoubleKind,
+		int32RulesFieldNumber:    protoreflect.Int32Kind,
+		int64RulesFieldNumber:    protoreflect.Int64Kind,
+		uInt32RulesFieldNumber:   protoreflect.Uint32Kind,
+		uInt64RulesFieldNumber:   protoreflect.Uint64Kind,
+		sInt32RulesFieldNumber:   protoreflect.Sint32Kind,
+		sInt64RulesFieldNumber:   protoreflect.Sint64Kind,
+		fixed32RulesFieldNumber:  protoreflect.Fixed32Kind,
+		fixed64RulesFieldNumber:  protoreflect.Fixed64Kind,
+		sFixed32RulesFieldNumber: protoreflect.Sfixed32Kind,
+		sFixed64RulesFieldNumber: protoreflect.Sfixed64Kind,
+		boolRulesFieldNumber:     protoreflect.BoolKind,
+		stringRulesFieldNumber:   protoreflect.StringKind,
+		bytesRulesFieldNumber:    protoreflect.BytesKind,
+		enumRulesFieldNumber:     protoreflect.EnumKind,
 	}
 	fieldNumberToAllowedMessageName = map[int32]string{
 		floatRulesFieldNumber:     string((&wrapperspb.FloatValue{}).ProtoReflect().Descriptor().FullName()),
@@ -163,8 +164,6 @@ var (
 func validateRulesForSingleField(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
-	fullNameToMessage map[string]protosource.Message,
-	fullNameToEnum map[string]protosource.Enum,
 	field protosource.Field,
 ) error {
 	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
@@ -174,22 +173,19 @@ func validateRulesForSingleField(
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	return checkConstraintsForField(
 		&adder{
-			field:   field,
-			addFunc: add,
+			field:               field,
+			fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
+			addFunc:             add,
 		},
 		constraints,
-		field,
-		fullNameToEnum,
-		fullNameToMessage,
+		fieldDescriptor,
 	)
 }
 
 func checkConstraintsForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
-	field protosource.Field,
-	fullNameToEnum map[string]protosource.Enum,
-	fullNameToMessage map[string]protosource.Message,
+	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	if fieldConstraints == nil {
 		return nil
@@ -202,12 +198,15 @@ func checkConstraintsForField(
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// checkMapRules and checkRepeatedRules are special cases that call checkConstraintsForField.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return checkMapRules(adder, fieldConstraints.GetMap(), field, fullNameToEnum, fullNameToMessage)
+		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), field, fullNameToEnum, fullNameToMessage)
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor)
 	}
-	checkRulesTypeMatchFieldType(adder, field, typeRulesFieldNumber, string(typeRulesFieldDescriptor.Message().Name()))
+	typeCheck := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber)
+	if !typeCheck {
+		return nil
+	}
 	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
 		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
@@ -220,7 +219,7 @@ func checkConstraintsForField(
 	case bytesRulesFieldNumber:
 		return checkBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:
-		return checkEnumRules(adder, fieldConstraints.GetEnum(), field, fullNameToEnum)
+		return checkEnumRules(adder, fieldConstraints.GetEnum(), fieldDescriptor.Enum().Values())
 	case anyRulesFieldNumber:
 		checkAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
@@ -231,86 +230,82 @@ func checkConstraintsForField(
 	return nil
 }
 
-// Assumes the rule isn't a map rule or repeated rule.
+// Assumes the rule isn't a map rule or repeated rule, but the field could be a
+// map or a repeated field.
 func checkRulesTypeMatchFieldType(
 	adder *adder,
-	field protosource.Field,
+	fieldDescriptor protoreflect.FieldDescriptor,
 	ruleFieldNumber int32,
-	ruleName string,
-) {
-	if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-		expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]
-		if !ok || expectedFieldMessageName != field.TypeName() {
-			adder.addForPathf(
-				[]int32{ruleFieldNumber},
-				"%s should not be defined on a field of type %s",
-				ruleName,
-				field.TypeName(),
-			)
-		}
-		return
+) bool {
+	if expectedScalarType, ok := fieldNumberToAllowedScalarType[ruleFieldNumber]; ok &&
+		expectedScalarType == fieldDescriptor.Kind() {
+		return true
 	}
-	expectedType, ok := fieldNumberToAllowedScalarType[ruleFieldNumber]
-	if !ok || expectedType != field.Type() {
-		adder.addForPathf(
-			[]int32{ruleFieldNumber},
-			"%s should not be defined on a field of type %v",
-			ruleName,
-			field.Type(),
-		)
+	if expectedFieldMessageName, ok := fieldNumberToAllowedMessageName[ruleFieldNumber]; ok &&
+		isFieldDescriptorMessage(fieldDescriptor) && string(fieldDescriptor.Message().FullName()) == expectedFieldMessageName {
+		return true
 	}
+	adder.addForPathf(
+		[]int32{ruleFieldNumber},
+		"Field %q is a %s but has %s rules.",
+		adder.fieldName(),
+		adder.fieldPrettyTypeName,
+		adder.getFieldRuleName(ruleFieldNumber),
+	)
+	return false
 }
 
 func checkRepeatedRules(
 	baseAdder *adder,
 	repeatedRules *validate.RepeatedRules,
-	field protosource.Field,
-	fullNameToEnum map[string]protosource.Enum,
-	fullNameToMessage map[string]protosource.Message,
+	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	if field.Label() != descriptorpb.FieldDescriptorProto_LABEL_REPEATED || protosource.IsFieldAMap(field, fullNameToMessage) {
+	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber},
-			"field is not repeated but has repeated rules",
+			"Field %q is not a repeated field but has %s.",
+			baseAdder.fieldName(),
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber),
 		)
+		return nil
 	}
-	if repeatedRules.GetUnique() {
-		_, isFieldWrapper := wrapperTypeNames[field.TypeName()]
-		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE && !isFieldWrapper {
+	if repeatedRules.GetUnique() && isFieldDescriptorMessage(fieldDescriptor) {
+		if _, isFieldWrapper := wrapperTypeNames[string(fieldDescriptor.Message().FullName())]; !isFieldWrapper {
 			baseAdder.addForPathf(
-				[]int32{repeatedRulesFieldNumber},
-				"unique rule is only allowed for scalar types or wrapper types",
+				[]int32{repeatedRulesFieldNumber, uniqueFieldNumberInRepeatedFieldRules},
+				"Field %q is not a scalar type or a wrapper type but has %s set to true.",
+				baseAdder.fieldName(),
+				baseAdder.getFieldRuleName(repeatedRulesFieldNumber, uniqueFieldNumberInRepeatedFieldRules),
 			)
 		}
 	}
 	if repeatedRules.MinItems != nil && repeatedRules.MaxItems != nil && *repeatedRules.MinItems > *repeatedRules.MaxItems {
 		baseAdder.addForPathsf(
 			[][]int32{
-				{repeatedRulesFieldNumber, maxItemsNumberInRepeatedFieldRules},
-				{repeatedRulesFieldNumber, minItemsNumberInRepeatedFieldRules},
+				{repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules},
+				{repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules},
 			},
-			"min_items is greater than max_items",
+			"Field %q has a %s higher than %s.",
+			baseAdder.fieldName(),
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
 		)
 	}
-	itemAdder := &adder{
-		field:    baseAdder.field,
-		basePath: []int32{repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules},
-		addFunc:  baseAdder.addFunc,
-	}
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, field, fullNameToEnum, fullNameToMessage)
+	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor)
 }
 
 func checkMapRules(
 	baseAdder *adder,
 	mapRules *validate.MapRules,
-	field protosource.Field,
-	fullNameToEnum map[string]protosource.Enum,
-	fullNameToMessage map[string]protosource.Message,
+	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	if !protosource.IsFieldAMap(field, fullNameToMessage) {
+	if !fieldDescriptor.IsMap() {
 		baseAdder.addForPathf(
 			[]int32{mapRulesFieldNumber},
-			"field is not a map but has map rules",
+			"Field %q is not a map but has %s.",
+			baseAdder.fieldName(),
+			baseAdder.getFieldRuleName(mapRulesFieldNumber),
 		)
 	}
 	if mapRules.MinPairs != nil && mapRules.MaxPairs != nil && *mapRules.MinPairs > *mapRules.MaxPairs {
@@ -319,31 +314,19 @@ func checkMapRules(
 				{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
 				{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
 			},
-			"min_pairs is greater than max_pairs",
+			"Field %q has a %s higher than %s.",
+			baseAdder.fieldName(),
+			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
+			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
 		)
 	}
-	mapMessage, ok := fullNameToMessage[field.TypeName()]
-	if !ok {
-		return fmt.Errorf("unable to find message for %s", field.TypeName())
-	}
-	if len(mapMessage.Fields()) != 2 {
-		return fmt.Errorf("synthetic map message %s does not exactly 2 fields", mapMessage.FullName())
-	}
-	keyAdder := &adder{
-		field:    baseAdder.field,
-		basePath: []int32{mapRulesFieldNumber, keysFieldNumberInMapRules},
-		addFunc:  baseAdder.addFunc,
-	}
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, mapMessage.Fields()[0], fullNameToEnum, fullNameToMessage)
+	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey())
 	if err != nil {
 		return err
 	}
-	valueAdder := &adder{
-		field:    baseAdder.field,
-		basePath: []int32{mapRulesFieldNumber, valuesFieldNumberInMapRules},
-		addFunc:  baseAdder.addFunc,
-	}
-	return checkConstraintsForField(valueAdder, mapRules.Values, mapMessage.Fields()[1], fullNameToEnum, fullNameToMessage)
+	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
+	return checkConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue())
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
@@ -553,8 +536,7 @@ func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 func checkEnumRules(
 	adder *adder,
 	enumRules *validate.EnumRules,
-	field protosource.Field,
-	fullNameToEnum map[string]protosource.Enum,
+	enumValueDescriptors protoreflect.EnumValueDescriptors,
 ) error {
 	checkConstAndIn(adder, enumRules, enumRulesFieldNumber)
 	if !enumRules.GetDefinedOnly() {
@@ -563,17 +545,8 @@ func checkEnumRules(
 	if len(enumRules.In) == 0 && len(enumRules.NotIn) == 0 {
 		return nil
 	}
-	enum := fullNameToEnum[field.TypeName()]
-	if enum == nil {
-		return fmt.Errorf("unable to resolve enum %s", field.TypeName())
-	}
-	definedValues := enum.Values()
-	vals := make(map[int]struct{}, len(definedValues))
-	for _, val := range definedValues {
-		vals[val.Number()] = struct{}{}
-	}
 	for _, notIn := range enumRules.NotIn {
-		if _, ok := vals[int(notIn)]; !ok {
+		if enumValueDescriptors.ByNumber(protoreflect.EnumNumber(notIn)) == nil {
 			adder.addForPathf(
 				[]int32{enumRulesFieldNumber, notInFieldNumberInEnumRules},
 				"value %d is rejected by defined_only and does not need to be in not_in",
@@ -595,6 +568,7 @@ func checkDurationRules(adder *adder, r *validate.DurationRules) error {
 		r.ProtoReflect(),
 		getDurationFromValue,
 		compareDuration,
+		func(d *durationpb.Duration) interface{} { return d },
 	)
 }
 
@@ -605,6 +579,7 @@ func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) 
 		timestampRules.ProtoReflect(),
 		getTimestampFromValue,
 		compareTimestamp,
+		func(t *timestamppb.Timestamp) interface{} { return t },
 	); err != nil {
 		return err
 	}
@@ -759,4 +734,22 @@ func checkLenRules(
 		)
 	}
 	return nil
+}
+
+func getFieldTypePrettyNameName(fieldDescriptor protoreflect.FieldDescriptor) string {
+	if !isFieldDescriptorMessage(fieldDescriptor) {
+		return fieldDescriptor.Kind().String()
+	}
+	if fieldDescriptor.IsMap() {
+		return fmt.Sprintf(
+			"map<%s, %s>",
+			getFieldTypePrettyNameName(fieldDescriptor.MapKey()),
+			getFieldTypePrettyNameName(fieldDescriptor.MapValue()),
+		)
+	}
+	return string(fieldDescriptor.Message().FullName())
+}
+
+func isFieldDescriptorMessage(fieldDescriptor protoreflect.FieldDescriptor) bool {
+	return fieldDescriptor.Kind() == protoreflect.MessageKind || fieldDescriptor.Kind() == protoreflect.GroupKind
 }

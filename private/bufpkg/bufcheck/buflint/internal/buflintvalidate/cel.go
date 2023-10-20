@@ -37,25 +37,7 @@ const (
 	celFieldTagInMessageConstraints = 3
 )
 
-// validateCELCompiles validates that all CEL expressions defined for protovalidate
-// in the given file compile.
-func validateCELCompiles(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	descriptorResolver protodesc.Resolver,
-	file protosource.File,
-) error {
-	for _, message := range file.Messages() {
-		if err := validateCELCompilesMessage(descriptorResolver, add, message); err != nil {
-			return err
-		}
-	}
-	for _, extensionField := range file.Extensions() {
-		if err := validateCELCompilesField(descriptorResolver, add, extensionField); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// TODO: adder might be needed here
 
 func validateCELCompilesMessage(
 	descriptorResolver protodesc.Resolver,
@@ -88,16 +70,18 @@ func validateCELCompilesMessage(
 	if err != nil {
 		return err
 	}
-	for i, celConstraint := range messageConstraints.GetCel() {
-		messageConstraintsOptionLocation := message.OptionExtensionLocation(
-			validate.E_Message,
-			celFieldTagInMessageConstraints,
-			int32(i),
-		)
-		checkCel(celEnv, celConstraint, func(format string, args ...interface{}) {
+	checkCels(
+		celEnv,
+		messageConstraints.GetCel(),
+		func(index int, format string, args ...interface{}) {
+			messageConstraintsOptionLocation := message.OptionExtensionLocation(
+				validate.E_Message,
+				celFieldTagInMessageConstraints,
+				int32(index),
+			)
 			add(message, messageConstraintsOptionLocation, nil, format, args...)
-		})
-	}
+		},
+	)
 	return nil
 }
 
@@ -118,16 +102,9 @@ func validateCELCompilesField(
 	if err != nil {
 		return err
 	}
-	if fieldDescriptor.Kind() == protoreflect.MessageKind &&
-		fieldDescriptor.Message().FullName() == "google.protobuf.Any" {
-		// The expression might compile at this point, but the validator will return
-		// a runtime error during validation.
-		location := field.OptionExtensionLocation(validate.E_Field, celFieldTagInFieldConstraints)
-		add(field, location, nil, "cel rules are not supported for google.protobuf.Any")
-		return nil
-	} else if fieldDescriptor.Kind() == protoreflect.MessageKind {
+	if fieldDescriptor.Kind() == protoreflect.MessageKind {
 		celEnv, err = celEnv.Extend(
-			cel.Types(dynamicpb.NewMessage(fieldDescriptor.Message())),
+			cel.Types(dynamicpb.NewMessage(fieldDescriptor.ContainingMessage())),
 			cel.Variable("this", cel.ObjectType(string(fieldDescriptor.Message().FullName()))),
 		)
 	} else {
@@ -138,16 +115,18 @@ func validateCELCompilesField(
 	if err != nil {
 		return err
 	}
-	for i, celConstraint := range fieldConstraints.GetCel() {
-		celLocation := field.OptionExtensionLocation(
-			validate.E_Field,
-			celFieldTagInFieldConstraints,
-			int32(i),
-		)
-		checkCel(celEnv, celConstraint, func(format string, args ...interface{}) {
+	checkCels(
+		celEnv,
+		fieldConstraints.GetCel(),
+		func(index int, format string, args ...interface{}) {
+			celLocation := field.OptionExtensionLocation(
+				validate.E_Field,
+				celFieldTagInFieldConstraints,
+				int32(index),
+			)
 			add(field, celLocation, nil, format, args...)
-		})
-	}
+		},
+	)
 	return nil
 }
 
@@ -183,36 +162,49 @@ func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Fi
 	return fieldDescriptor, nil
 }
 
-// This operates on the assumption that id, message and expression share the same
-// source code location.
-func checkCel(
+// TODO: Field "Foo" ...
+// TODO: might need to use adder in this function's caller
+func checkCels(
 	celEnv *cel.Env,
-	celConstraint *validate.Constraint,
-	add func(string, ...interface{}),
+	celConstraints []*validate.Constraint,
+	add func(int, string, ...interface{}),
 ) {
-	if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
-		add("cel expression is empty")
-		return
-	}
-	ast, compileIssues := celEnv.Compile(celConstraint.Expression)
-	switch {
-	case ast.OutputType().IsAssignableType(cel.BoolType):
-		if celConstraint.Message == "" {
-			add("validation message isn't specified")
+	seenCelIDs := make(map[string]struct{}, len(celConstraints))
+	for i, celConstraint := range celConstraints {
+		if celID := celConstraint.GetId(); celID != "" {
+			// TODO: validate runes
+			if _, ok := seenCelIDs[celID]; ok {
+				add(i, "has duplicate ID %q", celID)
+			} else {
+				seenCelIDs[celID] = struct{}{}
+			}
+		} else {
+			add(i, "empty ID")
 		}
-	case ast.OutputType().IsAssignableType(cel.StringType):
-		if celConstraint.Message != "" {
-			add("validation message is specified but the cel expression's result will be used instead")
+		if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
+			add(i, "cel expression is empty")
+			continue
 		}
-	case ast.OutputType().IsExactType(types.ErrorType):
-		// If the output type is error, it means compilation has failed and we
-		// only need to add the compilation issues.
-	default:
-		add("cel expression evaluates to unsupported type: %v", ast.OutputType())
-	}
-	if compileIssues.Err() != nil {
-		for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
-			add(parsedIssue)
+		ast, compileIssues := celEnv.Compile(celConstraint.Expression)
+		switch {
+		case ast.OutputType().IsAssignableType(cel.BoolType):
+			if celConstraint.Message == "" {
+				add(i, "validation message isn't specified")
+			}
+		case ast.OutputType().IsAssignableType(cel.StringType):
+			if celConstraint.Message != "" {
+				add(i, "validation message is specified but the cel expression's result will be used instead")
+			}
+		case ast.OutputType().IsExactType(types.ErrorType):
+			// If the output type is error, it means compilation has failed and we
+			// only need to add the compilation issues.
+		default:
+			add(i, "cel expression evaluates to unsupported type: %v", ast.OutputType())
+		}
+		if compileIssues.Err() != nil {
+			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
+				add(i, parsedIssue)
+			}
 		}
 	}
 }

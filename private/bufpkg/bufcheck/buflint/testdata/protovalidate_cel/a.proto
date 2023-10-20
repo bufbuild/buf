@@ -94,10 +94,9 @@ message Foo {
   required google.protobuf.Any any_fail = 12 [(buf.validate.field).cel = {
     id: "Foo.any",
     message: "any fail",
-    // Cel is not supported for google.protobuf.Any.
+    // This should not fail.
     expression: "this == this"
   }];
-  required google.protobuf.Any any = 13 [(buf.validate.field).skipped = true];
 }
 
 enum CelEnum {

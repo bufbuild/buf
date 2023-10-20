@@ -12,8 +12,8 @@ github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 h
 github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9/go.mod h1:pSwJ0fSY5KhvocuWSx4fz3BA8OrA1bQn+K1Eli3BRwM=
 github.com/bufbuild/protocompile v0.6.0 h1:Uu7WiSQ6Yj9DbkdnOe7U4mNKp58y9WDMKDn28/ZlunY=
 github.com/bufbuild/protocompile v0.6.0/go.mod h1:YNP35qEYoYGme7QMtz5SBCoN4kL4g12jTtjuzRNdjpE=
-github.com/bufbuild/protovalidate-go v0.3.4-0.20231003193126-05525acfab0c h1:yLwpjZBhwOMErTl88t+CurnuuJR+cVaubEoDZYCwA4U=
-github.com/bufbuild/protovalidate-go v0.3.4-0.20231003193126-05525acfab0c/go.mod h1:36yOYnOgeU1gtdIC/J+SKt+jww0gXMW5j/KZzgYuOJU=
+github.com/bufbuild/protovalidate-go v0.3.4 h1:FrHcBBShspitvmC9Nkwu7BNs/EXWjkEQqrgFnWxYH60=
+github.com/bufbuild/protovalidate-go v0.3.4/go.mod h1:Au57xmLypglbQAF0GzuDDYbYIct7SZ9QnwJlaPolyFw=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=

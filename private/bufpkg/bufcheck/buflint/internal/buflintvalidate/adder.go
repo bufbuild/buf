@@ -17,6 +17,7 @@ package buflintvalidate
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // The typical use of adder is calling adder.addForPathf([]int32{int64RulesFieldNumber, someFieldNumber}, "message")
@@ -40,9 +41,19 @@ import (
 // depth is at most 2 -- if validateMapRules or validateRepeatedRules calls checkConstraintsForField,
 // this call of checkConstraintsForField won't call validateMapRules or validateRepeatedRules.
 type adder struct {
-	field    protosource.Field
-	basePath []int32
-	addFunc  func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
+	field               protosource.Field
+	fieldPrettyTypeName string
+	basePath            []int32
+	addFunc             func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
+}
+
+func (a *adder) cloneWithNewBasePath(basePath ...int32) *adder {
+	return &adder{
+		field:               a.field,
+		fieldPrettyTypeName: a.fieldPrettyTypeName,
+		basePath:            basePath,
+		addFunc:             a.addFunc,
+	}
 }
 
 func (a *adder) addForPathf(path []int32, format string, args ...interface{}) {
@@ -77,6 +88,35 @@ func (a *adder) addForPathsf(paths [][]int32, format string, args ...interface{}
 			args...,
 		)
 	}
+}
+
+func (a *adder) fieldName() string {
+	return a.field.Name()
+}
+
+func (a *adder) getFieldRuleName(path ...int32) string {
+	name := "(buf.validate.field)"
+	fields := typeOneofDescriptor.Fields()
+	combinedPath := path
+	if len(a.basePath) > 0 {
+		combinedPath = make([]int32, len(a.basePath), len(a.basePath)+len(path))
+		copy(combinedPath, a.basePath)
+		combinedPath = append(combinedPath, path...)
+	}
+	for _, fieldNumber := range combinedPath {
+		subField := fields.ByNumber(protowire.Number(fieldNumber))
+		if subField == nil {
+			return name
+		}
+		name += "."
+		name += string(subField.Name())
+		subFieldMessage := subField.Message()
+		if subFieldMessage == nil {
+			return name
+		}
+		fields = subField.Message().Fields()
+	}
+	return name
 }
 
 func deduplicateLocations(locations []protosource.Location) []protosource.Location {
