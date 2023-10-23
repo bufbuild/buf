@@ -381,6 +381,8 @@ message CreateCuratedPluginRequest {
   string license_url = 16;
   // Visibility indicates whether the plugin is public or private.
   CuratedPluginVisibility visibility = 17;
+  // The URL leading to the integration guide of the plugin, if available.
+  string integration_guide_url = 18;
 }
 
 message CreateCuratedPluginResponse {
