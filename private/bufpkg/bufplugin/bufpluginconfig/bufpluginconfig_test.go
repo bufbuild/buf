@@ -106,8 +106,9 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 					"separate_package": "true",
 				},
 			},
-			SPDXLicenseID: "Apache-2.0",
-			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			SPDXLicenseID:       "Apache-2.0",
+			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
 		},
 		pluginConfig,
 	)
