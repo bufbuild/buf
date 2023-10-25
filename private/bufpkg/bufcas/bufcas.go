@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	storagev1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"golang.org/x/crypto/sha3"
 )
@@ -42,6 +43,12 @@ var (
 	}
 	stringToDigestType = map[string]DigestType{
 		"shake256": DigestTypeShake256,
+	}
+	digestTypeToProto = map[DigestType]storagev1beta1.Digest_Type{
+		DigestTypeShake256: storagev1beta1.Digest_TYPE_SHAKE256,
+	}
+	protoToDigestType = map[storagev1beta1.Digest_Type]DigestType{
+		storagev1beta1.Digest_TYPE_SHAKE256: DigestTypeShake256,
 	}
 )
 
@@ -149,6 +156,42 @@ func NewDigestForString(s string) (Digest, error) {
 		return nil, err
 	}
 	return newDigest(digestType, value)
+}
+
+// DigestToProto converts the given Digest to a proto Digest.
+//
+// If the given Digest is nil, returns nil.
+//
+// TODO: validate the returned Digest.
+func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
+	if digest == nil {
+		return nil, nil
+	}
+	protoDigestType, ok := digestTypeToProto[digest.Type()]
+	// Technically we have aleady done this validation but just to be safe.
+	if !ok {
+		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
+	}
+	return &storagev1beta1.Digest{
+		Type:  protoDigestType,
+		Value: digest.Value(),
+	}, nil
+}
+
+// ProtoToDigest converts the given proto Digest to a Digest.
+//
+// If the given proto Digest is nil, returns nil.
+//
+// TODO: validate the input proto Digest.
+func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
+	if protoDigest == nil {
+		return nil, nil
+	}
+	digestType, ok := protoToDigestType[protoDigest.Type]
+	if !ok {
+		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
+	}
+	return NewDigest(digestType, protoDigest.Value)
 }
 
 // DigestEqual returns true if the given Digests are considered equal.
