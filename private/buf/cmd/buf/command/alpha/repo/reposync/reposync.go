@@ -24,7 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -33,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
@@ -516,19 +516,19 @@ func push(
 	moduleBucket storage.ReadBucket,
 ) (*registryv1alpha1.GitSyncPoint, error) {
 	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewSyncServiceClient)
-	m, blobSet, err := manifest.NewFromBucket(ctx, moduleBucket)
+	fileSet, err := bufcas.NewFileSetForBucket(ctx, moduleBucket)
 	if err != nil {
 		return nil, err
 	}
-	bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
+	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
 	if err != nil {
 		return nil, err
 	}
 	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
 		Owner:      moduleIdentity.Owner(),
 		Repository: moduleIdentity.Repository(),
-		Manifest:   bucketManifest,
-		Blobs:      blobs,
+		Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
+		Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
 		Hash:       commit.Hash().Hex(),
 		Branch:     branch,
 		Tags:       tags,

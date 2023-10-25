@@ -167,7 +167,7 @@ func FileSetToProtoManifestBlobAndBlobs(fileSet FileSet) (*storagev1beta1.Blob, 
 //
 // Validation is done to ensure the Manifest exactly matches the BlobSet.
 // TODO: validate the input proto Blobs.
-func ManifestBlobsAndBlobsToFileSet(
+func ProtoManifestBlobsAndBlobsToFileSet(
 	protoManifestBlob *storagev1beta1.Blob,
 	protoBlobs []*storagev1beta1.Blob,
 ) (FileSet, error) {

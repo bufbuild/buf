@@ -46,6 +46,7 @@ func TestGetModulePin(t *testing.T) {
 	t.Parallel()
 	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
 	require.NoError(t, err)
+	// TODO: what? Is the "null digest" not just empty?
 	nullDigest, err := digester.Digest(&bytes.Buffer{})
 	require.NoError(t, err)
 	testGetModulePin(
