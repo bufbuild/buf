@@ -105,10 +105,14 @@ bufgenerateclean:: bufgeneratecleango
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
+	# TODO: update when public
+	$(BUF_BIN) generate ../registry-proto --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
+	# TODO: update when public
+	$(BUF_BIN) generate ../registry-proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
