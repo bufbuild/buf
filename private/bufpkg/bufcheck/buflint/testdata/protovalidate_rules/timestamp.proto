@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+message TimestampTest {
+  // valid
+  google.protobuf.Timestamp no_protovalidate_option = 1;
+  // valid
+  google.protobuf.Timestamp other_option = 2 [deprecated = true];
+  // valid
+  google.protobuf.Timestamp valid_range_1 = 3 [
+    (buf.validate.field).timestamp.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).timestamp.lt = {
+      seconds: 5,
+      nanos: 2
+    }
+  ];
+  // valid
+  google.protobuf.Timestamp valid_range_2 = 4 [
+    (buf.validate.field).timestamp.gt = {
+      seconds: 4,
+      nanos: 10
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: 5,
+      nanos: 0
+    }
+  ];
+  google.protobuf.Timestamp valid_range_3 = 5 [
+    (buf.validate.field).timestamp.gte = {
+      seconds: -5,
+      nanos: 20
+    },
+    (buf.validate.field).timestamp.lt = {
+      seconds: -4,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp valid_range_4 = 6 [
+    (buf.validate.field).timestamp.gte = {
+      seconds: -4,
+      nanos: 1
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: -4,
+      nanos: 2
+    }
+  ];
+  google.protobuf.Timestamp invalid_range_1 = 7 [
+    // gt > lte
+    (buf.validate.field).timestamp.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: 4,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp invalid_range_2 = 8 [
+    // gte > lt
+    (buf.validate.field).timestamp.gte = {
+      seconds: 5,
+      nanos: 2
+    },
+    (buf.validate.field).timestamp.lt = {
+      seconds: 5,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp invalid_range_3 = 9 [
+    // gt > lt
+    (buf.validate.field).timestamp.gt = {
+      seconds: -5,
+      nanos: 2
+    },
+    (buf.validate.field).timestamp.lt = {
+      seconds: -5,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp equal_lte_gte = 10 [
+    // lte == gte
+    (buf.validate.field).timestamp.gte = {
+      seconds: -1,
+      nanos: 1
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: -1,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Timestamp invalid_timestamp = 11 [
+    (buf.validate.field).timestamp.gte = {
+      seconds: 1,
+      nanos: 1
+    },
+    // nanos cannot be negative
+    (buf.validate.field).timestamp.lte = {
+      seconds: 1,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Timestamp in_range_timestamp = 13 [
+    // a timestamp is at least -62135596800 seconds.
+    (buf.validate.field).timestamp.gte = {
+      seconds: -62135596800,
+      nanos: 0
+    },
+    // a timestamp is at most 253402300799 seconds.
+    (buf.validate.field).timestamp.lte = {
+      seconds: 253402300799,
+      nanos: 999999999
+    }
+  ];
+  google.protobuf.Timestamp out_of_range = 14 [
+    // a timestamp is at least -62135596800 seconds.
+    (buf.validate.field).timestamp.gte = {
+      seconds: -62135596801,
+      nanos: 0
+    },
+    // a timestamp is at most 253402300799 seconds.
+    (buf.validate.field).timestamp.lte = {
+      seconds: 2534023008000,
+      nanos: 999999999
+    }
+  ];
+  // valid
+  google.protobuf.Timestamp valid_within_duration = 15 [(buf.validate.field).timestamp.within = {
+    seconds: 5,
+    nanos: 1
+  }];
+  google.protobuf.Timestamp invalid_within_duraion = 16 [
+    (buf.validate.field).timestamp.lt_now = true,
+    // seconds and nanos must have the same sign
+    (buf.validate.field).timestamp.within = {
+      seconds: 1,
+      nanos: -1,
+    }
+  ];
+  google.protobuf.Timestamp negative_within_duraion = 17 [
+    (buf.validate.field).timestamp.lt_now = true,
+    // within must be positive
+    (buf.validate.field).timestamp.within = {
+      seconds: -1,
+      nanos: -1,
+    }
+  ];
+  NotTimestamp type_mismatch = 18 [
+    // timestamp rules can only be defined on a timestamp field
+    (buf.validate.field).timestamp.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).timestamp.lte = {
+      seconds: 4,
+      nanos: 1
+    }
+  ];
+}
+
+message NotTimestamp {}

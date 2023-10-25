@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+
+enum TestEnum {
+  TEST_ENUM_UNSPECIFIED = 0;
+  TEST_ENUM_FIRST = 1;
+  TEST_ENUM_SECOND = 2;
+}
+
+message EnumTest {
+  // valid
+  TestEnum no_protovalidate_option = 1;
+  // valid
+  TestEnum other_option = 2 [deprecated = true];
+  // valid const
+  TestEnum valid_const = 3 [(buf.validate.field).enum.const = 1];
+  // valid in
+  TestEnum valid_in = 4 [
+    (buf.validate.field).enum.in = 1,
+    (buf.validate.field).enum.in = 2
+  ];
+  TestEnum const_and_not_in = 5 [
+    (buf.validate.field).enum.not_in = 1,
+    // const should be the only field
+    (buf.validate.field).enum.const = 2
+  ];
+  TestEnum defined_only_and_in = 6 [
+    (buf.validate.field).enum.defined_only = true,
+    // in should be the only field
+    (buf.validate.field).enum.in = 1
+  ];
+}

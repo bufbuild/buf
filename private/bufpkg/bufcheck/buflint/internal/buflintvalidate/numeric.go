@@ -16,38 +16,36 @@ package buflintvalidate
 
 import (
 	"fmt"
-	"math"
 
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
-	floatRulesFieldNumber:    checkNumberRules[float32],
-	doubleRulesFieldNumber:   checkNumberRules[float64],
-	int32RulesFieldNumber:    checkNumberRules[int32],
-	int64RulesFieldNumber:    checkNumberRules[int64],
-	uInt32RulesFieldNumber:   checkNumberRules[uint32],
-	uInt64RulesFieldNumber:   checkNumberRules[uint64],
-	sInt32RulesFieldNumber:   checkNumberRules[int32],
-	sInt64RulesFieldNumber:   checkNumberRules[int64],
-	fixed32RulesFieldNumber:  checkNumberRules[uint32],
-	fixed64RulesFieldNumber:  checkNumberRules[uint64],
-	sFixed32RulesFieldNumber: checkNumberRules[int32],
-	sFixed64RulesFieldNumber: checkNumberRules[int64],
+var fieldNumberToValidateNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
+	floatRulesFieldNumber:    validateNumberRules[float32],
+	doubleRulesFieldNumber:   validateNumberRules[float64],
+	int32RulesFieldNumber:    validateNumberRules[int32],
+	int64RulesFieldNumber:    validateNumberRules[int64],
+	uInt32RulesFieldNumber:   validateNumberRules[uint32],
+	uInt64RulesFieldNumber:   validateNumberRules[uint64],
+	sInt32RulesFieldNumber:   validateNumberRules[int32],
+	sInt64RulesFieldNumber:   validateNumberRules[int64],
+	fixed32RulesFieldNumber:  validateNumberRules[uint32],
+	fixed64RulesFieldNumber:  validateNumberRules[uint64],
+	sFixed32RulesFieldNumber: validateNumberRules[int32],
+	sFixed64RulesFieldNumber: validateNumberRules[int64],
 }
 
-func checkNumberRules[
+func validateNumberRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](
 	adder *adder,
 	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
 ) error {
-	return checkNumericRules[T](
+	return validateNumericRules[T](
 		adder,
 		numberRuleFieldNumber,
 		ruleMessage,
@@ -57,7 +55,7 @@ func checkNumberRules[
 	)
 }
 
-func checkNumericRules[
+func validateNumericRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64 | timestamppb.Timestamp | durationpb.Duration,
 ](
 	adder *adder,
@@ -71,10 +69,9 @@ func checkNumericRules[
 	formatFunc func(*T) interface{},
 ) error {
 	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
-	var finite bool
 	var in, notIn []*T
 	var fieldCount int
-	var constFieldNumber, inFieldNumber, notInFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber, finiteFieldNumber int32
+	var constFieldNumber, inFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
 	var err error
 	ruleMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
@@ -110,7 +107,6 @@ func checkNumericRules[
 				}
 			}
 		case "not_in":
-			notInFieldNumber = fieldNumber
 			for i := 0; i < value.List().Len(); i++ {
 				var converted *T
 				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
@@ -118,23 +114,11 @@ func checkNumericRules[
 					notIn = append(notIn, converted)
 				}
 			}
-		case "finite":
-			finiteFieldNumber = fieldNumber
-			var ok bool
-			finite, ok = value.Interface().(bool)
-			if !ok {
-				err = fmt.Errorf(
-					"%s should be a bool but is %T",
-					adder.getFieldRuleName(ruleFieldNumber, finiteFieldNumber),
-					value.Interface(),
-				)
-				return false
-			}
 		}
 		if convertErrorMessage != "" {
 			adder.addForPathf(
 				[]int32{ruleFieldNumber, fieldNumber},
-				"Field %q has option %s with invalid value: %s.",
+				"Field %q has an invalid %s: %s.",
 				adder.fieldName(),
 				adder.getFieldRuleName(ruleFieldNumber, int32(field.Number())),
 				convertErrorMessage,
@@ -163,44 +147,6 @@ func checkNumericRules[
 			adder.getFieldRuleName(ruleFieldNumber),
 		)
 	}
-	for i, bannedValue := range notIn {
-		var failedChecks []string
-		if gt != nil && compareFunc(bannedValue, gt) <= 0 {
-			failedChecks = append(failedChecks, "gt")
-		}
-		if gte != nil && compareFunc(bannedValue, gte) < 0 {
-			failedChecks = append(failedChecks, "gte")
-		}
-		if lt != nil && compareFunc(bannedValue, lt) >= 0 {
-			failedChecks = append(failedChecks, "lt")
-		}
-		if lte != nil && compareFunc(bannedValue, lte) > 0 {
-			failedChecks = append(failedChecks, "lte")
-		}
-		if finite {
-			var floatValue *float64
-			switch t := any(bannedValue).(type) {
-			case *float32:
-				floatValue = new(float64)
-				*floatValue = float64(*t)
-			case *float64:
-				floatValue = t
-			}
-			if floatValue != nil && (math.IsInf(*floatValue, 0) || math.IsNaN(*floatValue)) {
-				failedChecks = append(failedChecks, "finite")
-			}
-		}
-		if len(failedChecks) > 0 {
-			adder.addForPathf(
-				[]int32{ruleFieldNumber, notInFieldNumber, int32(i)},
-				"Field %q has %v in %s but this value is already rejected by %s.",
-				adder.fieldName(),
-				formatFunc(bannedValue),
-				adder.getFieldRuleName(ruleFieldNumber, notInFieldNumber),
-				stringutil.SliceToHumanString(failedChecks),
-			)
-		}
-	}
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
@@ -210,7 +156,7 @@ func checkNumericRules[
 				{ruleFieldNumber, lowerBoundFieldNumber},
 				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"Field %q has both %s and lte, use const instead.",
+			"Field %q has equal %s and lte, use const instead.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
 		)
@@ -222,10 +168,12 @@ func checkNumericRules[
 				{ruleFieldNumber, lowerBoundFieldNumber},
 				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"Field %q should have a %s greater than its %s.",
+			"Field %q has a %s (%v) higher than its %s (%v).",
 			adder.fieldName(),
-			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
 			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
+			formatFunc(lowerBound),
+			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
+			formatFunc(upperBound),
 		)
 	}
 	return nil
@@ -251,8 +199,8 @@ func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, st
 	if err != nil {
 		return nil, "", err
 	}
-	if !timestamp.IsValid() {
-		return nil, fmt.Sprintf("%v is not a valid timestamp", timestamp), nil
+	if timestampErr := timestamp.CheckValid(); timestampErr != nil {
+		return nil, timestampErr.Error(), nil
 	}
 	return timestamp, "", nil
 }
@@ -267,8 +215,8 @@ func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, strin
 	if err != nil {
 		return nil, "", err
 	}
-	if !duration.IsValid() {
-		return nil, fmt.Sprintf("%v is not a valid duration", duration), nil
+	if durationErrString := validateDuration(duration); durationErrString != "" {
+		return nil, durationErrString, nil
 	}
 	return duration, "", nil
 }
@@ -295,4 +243,31 @@ func compareDuration(d1 *durationpb.Duration, d2 *durationpb.Duration) float64 {
 		return -1
 	}
 	return float64(d1.Nanos - d2.Nanos)
+}
+
+func validateDuration(duration *durationpb.Duration) string {
+	// This is slightly smaller than MaxInt64, 9,223,372,036,854,775,807,
+	// but 9,223,372,036,854,775,428 is the maximum value that does not cause a
+	// runtime error in protovalidate.
+	maxDuration := &durationpb.Duration{
+		Seconds: 9223372036,
+		Nanos:   854775428,
+	}
+	minDuration := &durationpb.Duration{
+		Seconds: -9223372036,
+		Nanos:   -854775428,
+	}
+	secs := duration.GetSeconds()
+	nanos := duration.GetNanos()
+	switch {
+	case nanos <= -1e9 || nanos >= +1e9:
+		return fmt.Sprintf("duration (%v) has out-of-range nanos", duration)
+	case (secs > 0 && nanos < 0) || (secs < 0 && nanos > 0):
+		return fmt.Sprintf("duration (%v) has seconds and nanos with different signs", duration)
+	case duration.AsDuration() > maxDuration.AsDuration():
+		return fmt.Sprintf("duration (%v) is greater than %v", duration, maxDuration)
+	case duration.AsDuration() < minDuration.AsDuration():
+		return fmt.Sprintf("duration (%v) is greater than %v", duration, minDuration)
+	}
+	return ""
 }

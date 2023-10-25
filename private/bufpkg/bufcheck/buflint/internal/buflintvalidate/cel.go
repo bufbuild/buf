@@ -32,28 +32,16 @@ import (
 
 const (
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.FieldConstraints
-	celFieldTagInFieldConstraints = 23
+	celFieldNumberInFieldConstraints = 23
 	// https://buf.build/bufbuild/protovalidate/docs/main:buf.validate#buf.validate.MessageConstraints
-	celFieldTagInMessageConstraints = 3
+	celFieldNumberInMessageConstraints = 3
 )
 
-// TODO: adder might be needed here
-
-func validateCELCompilesMessage(
-	descriptorResolver protodesc.Resolver,
+func validateCELMessage(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	descriptorResolver protodesc.Resolver,
 	message protosource.Message,
 ) error {
-	for _, field := range message.Fields() {
-		if err := validateCELCompilesField(descriptorResolver, add, field); err != nil {
-			return err
-		}
-	}
-	for _, nestedMessage := range message.Messages() {
-		if err := validateCELCompilesMessage(descriptorResolver, add, nestedMessage); err != nil {
-			return err
-		}
-	}
 	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
 	if err != nil {
 		return err
@@ -70,13 +58,16 @@ func validateCELCompilesMessage(
 	if err != nil {
 		return err
 	}
-	checkCels(
+	validateCEL(
 		celEnv,
 		messageConstraints.GetCel(),
+		fmt.Sprintf("message %q", message.Name()),
+		fmt.Sprintf("Message %q", message.Name()),
+		"(buf.validate.message).cel",
 		func(index int, format string, args ...interface{}) {
 			messageConstraintsOptionLocation := message.OptionExtensionLocation(
 				validate.E_Message,
-				celFieldTagInMessageConstraints,
+				celFieldNumberInMessageConstraints,
 				int32(index),
 			)
 			add(message, messageConstraintsOptionLocation, nil, format, args...)
@@ -85,16 +76,11 @@ func validateCELCompilesMessage(
 	return nil
 }
 
-func validateCELCompilesField(
-	descriptorResolver protodesc.Resolver,
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	field protosource.Field,
+func validateCELField(
+	adder *adder,
+	fieldConstraints *validate.FieldConstraints,
+	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
-	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
-	if err != nil {
-		return err
-	}
-	fieldConstraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
 	if len(fieldConstraints.GetCel()) == 0 {
 		return nil
 	}
@@ -104,7 +90,10 @@ func validateCELCompilesField(
 	}
 	if fieldDescriptor.Kind() == protoreflect.MessageKind {
 		celEnv, err = celEnv.Extend(
-			cel.Types(dynamicpb.NewMessage(fieldDescriptor.ContainingMessage())),
+			cel.Types(
+				dynamicpb.NewMessage(fieldDescriptor.ContainingMessage()),
+				dynamicpb.NewMessage(fieldDescriptor.Message()),
+			),
 			cel.Variable("this", cel.ObjectType(string(fieldDescriptor.Message().FullName()))),
 		)
 	} else {
@@ -115,16 +104,18 @@ func validateCELCompilesField(
 	if err != nil {
 		return err
 	}
-	checkCels(
+	validateCEL(
 		celEnv,
 		fieldConstraints.GetCel(),
+		fmt.Sprintf("field %q", adder.fieldName()),
+		fmt.Sprintf("Field %q", adder.fieldName()),
+		adder.getFieldRuleName(celFieldNumberInFieldConstraints),
 		func(index int, format string, args ...interface{}) {
-			celLocation := field.OptionExtensionLocation(
-				validate.E_Field,
-				celFieldTagInFieldConstraints,
-				int32(index),
+			adder.addForPathf(
+				[]int32{celFieldNumberInFieldConstraints, int32(index)},
+				format,
+				args...,
 			)
-			add(field, celLocation, nil, format, args...)
 		},
 	)
 	return nil
@@ -162,49 +153,99 @@ func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Fi
 	return fieldDescriptor, nil
 }
 
-// TODO: Field "Foo" ...
-// TODO: might need to use adder in this function's caller
-func checkCels(
+func validateCEL(
 	celEnv *cel.Env,
 	celConstraints []*validate.Constraint,
+	parentName string,
+	parentNameCapitalized string,
+	celName string,
 	add func(int, string, ...interface{}),
 ) {
-	seenCelIDs := make(map[string]struct{}, len(celConstraints))
+	idToConstraintIndices := make(map[string][]int, len(celConstraints))
 	for i, celConstraint := range celConstraints {
 		if celID := celConstraint.GetId(); celID != "" {
-			// TODO: validate runes
-			if _, ok := seenCelIDs[celID]; ok {
-				add(i, "has duplicate ID %q", celID)
-			} else {
-				seenCelIDs[celID] = struct{}{}
+			for _, char := range celID {
+				if 'a' <= char && char <= 'z' {
+					continue
+				} else if 'A' <= char && char <= 'Z' {
+					continue
+				} else if '0' <= char && char <= '9' {
+					continue
+				} else if char == '_' || char == '-' || char == '.' {
+					continue
+				}
+				add(
+					i,
+					"%s has an invalid %s.id, an id must contain only alphanumerics and '.', '_' and '-'.",
+					parentNameCapitalized,
+					celName,
+				)
+				break
 			}
+			idToConstraintIndices[celID] = append(idToConstraintIndices[celID], i)
 		} else {
-			add(i, "empty ID")
+			add(i, "%s has an empty %s.id.", parentNameCapitalized, celName)
 		}
 		if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
-			add(i, "cel expression is empty")
+			add(i, "%s has an empty %s.expression.", parentNameCapitalized, celName)
 			continue
 		}
 		ast, compileIssues := celEnv.Compile(celConstraint.Expression)
 		switch {
 		case ast.OutputType().IsAssignableType(cel.BoolType):
 			if celConstraint.Message == "" {
-				add(i, "validation message isn't specified")
+				add(
+					i,
+					"%s has an empty %s.message for an expression that evaluates to a boolean.",
+					parentNameCapitalized,
+					celName,
+				)
 			}
 		case ast.OutputType().IsAssignableType(cel.StringType):
 			if celConstraint.Message != "" {
-				add(i, "validation message is specified but the cel expression's result will be used instead")
+				add(
+					i,
+					"%s has a %s with a string expression and a redundant message.",
+					parentNameCapitalized,
+					celName,
+				)
 			}
 		case ast.OutputType().IsExactType(types.ErrorType):
 			// If the output type is error, it means compilation has failed and we
 			// only need to add the compilation issues.
 		default:
-			add(i, "cel expression evaluates to unsupported type: %v", ast.OutputType())
+			add(
+				i,
+				"%s.expression on %s evaluates to an expression of %q type, only string and bool are allowed.",
+				celName,
+				parentName,
+				cel.FormatCELType(ast.OutputType()),
+			)
 		}
 		if compileIssues.Err() != nil {
 			for _, parsedIssue := range parseCelIssuesText(compileIssues.Err().Error()) {
-				add(i, parsedIssue)
+				add(
+					i,
+					"%s.expression on %s fails to compile: %s",
+					celName,
+					parentName,
+					parsedIssue,
+				)
 			}
+		}
+	}
+	for celID, constraintIndices := range idToConstraintIndices {
+		if len(constraintIndices) <= 1 {
+			continue
+		}
+		for _, constraintIndex := range constraintIndices {
+			add(
+				constraintIndex,
+				"%s.id (%q) is not unique within %s.",
+				celName,
+				celID,
+				parentName,
+			)
 		}
 	}
 }

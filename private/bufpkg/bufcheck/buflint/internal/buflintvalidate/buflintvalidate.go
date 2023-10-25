@@ -43,22 +43,60 @@ func Validate(
 			continue
 		}
 		for _, message := range file.Messages() {
-			if err := validateCELCompilesMessage(
-				descriptorResolver,
+			if err := validateForMessage(
 				add,
+				descriptorResolver,
 				message,
 			); err != nil {
 				return err
 			}
-			for _, field := range message.Fields() {
-				if err := validateRulesForSingleField(
-					add,
-					descriptorResolver,
-					field,
-				); err != nil {
-					return err
-				}
+		}
+		for _, extension := range file.Extensions() {
+			if err := validateRulesForSingleField(
+				add,
+				descriptorResolver,
+				extension,
+			); err != nil {
+				return err
 			}
+		}
+	}
+	return nil
+}
+
+func validateForMessage(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	descriptorResolver protodesc.Resolver,
+	message protosource.Message,
+) error {
+	if err := validateCELMessage(
+		add,
+		descriptorResolver,
+		message,
+	); err != nil {
+		return err
+	}
+	for _, nestedMessage := range message.Messages() {
+		if err := validateForMessage(add, descriptorResolver, nestedMessage); err != nil {
+			return err
+		}
+	}
+	for _, field := range message.Fields() {
+		if err := validateRulesForSingleField(
+			add,
+			descriptorResolver,
+			field,
+		); err != nil {
+			return err
+		}
+	}
+	for _, extension := range message.Extensions() {
+		if err := validateRulesForSingleField(
+			add,
+			descriptorResolver,
+			extension,
+		); err != nil {
+			return err
 		}
 	}
 	return nil
