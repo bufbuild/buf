@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -321,8 +322,14 @@ func BlobToManifest(blob Blob) (Manifest, error) {
 // FileSet is a pair of a Manifest and its associated BlobSet.
 //
 // This can be read and written from and to a storage.Bucket.
+//
+// The Manifest is guaranteed to exactly correlate with the Blobs in the
+// BlobSet, that is the Digests in the Manifest will exactly match the
+// Digests in the Blobs.
 type FileSet interface {
+	// Manifest returns the associated Manifest.
 	Manifest() Manifest
+	// BlobSet returns the associated BlobSet.
 	BlobSet() BlobSet
 
 	// Protect against creation of a FileSet outside of this package, as we
@@ -330,6 +337,92 @@ type FileSet interface {
 	isFileSet()
 }
 
+// NewFileSet returns a new FileSet.
+//
+// Validation is done to ensure the Manifest exactly matches the BlobSet.
+func NewFileSet(manifest Manifest, blobSet BlobSet) (FileSet, error) {
+	manifestDigestStringMap := make(map[string]struct{})
+	blobDigestStringMap := make(map[string]struct{})
+	if err := manifest.ForEach(
+		func(_ string, digest Digest) error {
+			manifestDigestStringMap[digest.String()] = struct{}{}
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	for _, blob := range blobSet.Blobs() {
+		blobDigestStringMap[blob.Digest().String()] = struct{}{}
+	}
+	var onlyInManifest []string
+	var onlyInBlobSet []string
+	for manifestDigestString := range manifestDigestStringMap {
+		if _, ok := blobDigestStringMap[manifestDigestString]; !ok {
+			onlyInManifest = append(onlyInManifest, manifestDigestString)
+		}
+	}
+	for blobDigestString := range blobDigestStringMap {
+		if _, ok := manifestDigestStringMap[blobDigestString]; !ok {
+			onlyInBlobSet = append(onlyInBlobSet, blobDigestString)
+		}
+	}
+	if len(onlyInManifest) > 0 || len(onlyInBlobSet) > 0 {
+		sort.Strings(onlyInManifest)
+		sort.Strings(onlyInBlobSet)
+		return nil, fmt.Errorf("mismatched Manifest and BlobSet at FileSet construction, digests only in Manifest: [%v], digests only in BlobSet: [%v]", onlyInManifest, onlyInBlobSet)
+	}
+	return newFileSet(manifest, blobSet), nil
+}
+
+// NewFileSetForBucket returns a new FileSet for the given ReadBucket.
 func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSet, error) {
-	return nil, nil
+	pathToDigest := make(map[string]Digest)
+	var blobs []Blob
+	if err := storage.WalkReadObjects(
+		ctx,
+		bucket,
+		"",
+		func(readObject storage.ReadObject) error {
+			blob, err := NewBlobForContent(DigestTypeShake256, readObject)
+			if err != nil {
+				return err
+			}
+			pathToDigest[readObject.Path()] = blob.Digest()
+			blobs = append(blobs, blob)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	manifest, err := NewManifest(pathToDigest)
+	if err != nil {
+		return nil, err
+	}
+	return newFileSet(
+		manifest,
+		newBlobSet(blobs),
+	), nil
+}
+
+// PutFileSetToBucket writes the FileSet to the given WriteBucket.
+func PutFileSetToBucket(
+	ctx context.Context,
+	fileSet FileSet,
+	bucket storage.WriteBucket,
+) error {
+	if err := fileSet.Manifest().ForEach(
+		func(path string, digest Digest) error {
+			blob := fileSet.BlobSet().GetBlob(digest)
+			if blob == nil {
+				// This should never happen given our validation.
+				return errors.New("nil Blob in PutFileSetToBucket")
+			}
+			writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())
+			if err != nil {
+				return err
+			}
+
+		}
+	)
+	return nil
 }
