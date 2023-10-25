@@ -309,7 +309,7 @@ func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
 	}
 	digest, err := ProtoToDigest(protoBlob.Digest)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return NewBlobForContentWithKnownDigest(digest, bytes.NewReader(protoBlob.Content))
 }
@@ -429,6 +429,42 @@ func NewFileNodeForString(s string) (FileNode, error) {
 	}
 }
 
+// FileNodeToProto converts the given FileNode to a proto FileNode.
+//
+// If the given FileNode is nil, returns nil.
+//
+// TODO: validate the returned FileNode.
+func FileNodeToProto(fileNode FileNode) (*storagev1beta1.FileNode, error) {
+	if fileNode == nil {
+		return nil, nil
+	}
+	protoDigest, err := DigestToProto(fileNode.Digest())
+	if err != nil {
+		return nil, err
+	}
+	return &storagev1beta1.FileNode{
+		Path:   fileNode.Path(),
+		Digest: protoDigest,
+	}, nil
+}
+
+// ProtoToFileNode converts the given proto FileNode to a FileNode.
+//
+// If the given proto FileNode is nil, returns nil.
+//
+// The path is validated to be normalized and non-empty.
+// TODO: validate the input proto FileNode.
+func ProtoToFileNode(protoFileNode *storagev1beta1.FileNode) (FileNode, error) {
+	if protoFileNode == nil {
+		return nil, nil
+	}
+	digest, err := ProtoToDigest(protoFileNode.Digest)
+	if err != nil {
+		return nil, err
+	}
+	return NewFileNode(protoFileNode.Path, digest)
+}
+
 // Maniest is a set FileNodes.
 type Manifest interface {
 	// fmt.Stringer encodes the Manifest into its canonical form, consisting of
@@ -489,7 +525,7 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 	return NewBlobForContent(DigestTypeShake256, strings.NewReader(manifest.String()))
 }
 
-// BlobToManifest converts the given Blob representing the string representaion of a Manifest into a Manifest.
+// BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
 // The Blob is assumed to be non-nil
 func BlobToManifest(blob Blob) (Manifest, error) {
