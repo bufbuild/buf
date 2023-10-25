@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest2
+package cas
 
-type fileSet struct {
-	manifest Manifest
-	blobSet  BlobSet
+type blob struct {
+	digest  Digest
+	content []byte
 }
 
-func newFileSet(manifest Manifest, blobSet BlobSet) *fileSet {
-	return &fileSet{
-		manifest: manifest,
-		blobSet:  blobSet,
+func newBlob(digest Digest, content []byte) *blob {
+	return &blob{
+		digest:  digest,
+		content: content,
 	}
 }
 
-func (f *fileSet) Manifest() Manifest {
-	return f.manifest
+func (b *blob) Digest() Digest {
+	return b.digest
 }
 
-func (f *fileSet) BlobSet() BlobSet {
-	return f.blobSet
+func (b *blob) Content() []byte {
+	return b.content
 }
 
-func (*fileSet) isFileSet() {}
+func (*blob) isBlob() {}

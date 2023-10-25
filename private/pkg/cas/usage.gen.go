@@ -12,26 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manifest2
+// Generated. DO NOT EDIT.
 
-type blob struct {
-	digest  Digest
-	content []byte
-}
+package cas
 
-func newBlob(digest Digest, content []byte) *blob {
-	return &blob{
-		digest:  digest,
-		content: content,
-	}
-}
-
-func (b *blob) Digest() Digest {
-	return b.digest
-}
-
-func (b *blob) Content() []byte {
-	return b.content
-}
-
-func (*blob) isBlob() {}
+import _ "github.com/bufbuild/buf/private/usage"
