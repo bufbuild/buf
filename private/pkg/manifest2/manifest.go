@@ -249,5 +249,5 @@ type BlobSet interface {
 // is a basic expectation across our codebase. Given this and the previous TODO, NewBlobSet
 // no longer needs to return an error.
 func NewBlobSet(blobs []Blob) BlobSet {
-	return nil
+	return newBlobSet(blobs)
 }

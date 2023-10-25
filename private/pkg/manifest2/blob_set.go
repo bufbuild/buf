@@ -14,20 +14,40 @@
 
 package manifest2
 
+import "sort"
+
 type blobSet struct {
 	digestStringToBlob  map[string]Blob
 	sortedDigestStrings []string
 }
 
-//func newBlob(digest Digest, content []byte) *blob {
-//}
+func newBlobSet(blobs []Blob) *blobSet {
+	digestStringToBlob := make(map[string]Blob, len(blobs))
+	sortedDigestStrings := make([]string, 0, len(blobs))
+	for _, blob := range blobs {
+		digestString := blob.Digest().String()
+		if _, ok := digestStringToBlob[digestString]; !ok {
+			digestStringToBlob[digestString] = blob
+			sortedDigestStrings = append(sortedDigestStrings, digestString)
+		}
+	}
+	sort.Strings(sortedDigestStrings)
+	return &blobSet{
+		digestStringToBlob:  digestStringToBlob,
+		sortedDigestStrings: sortedDigestStrings,
+	}
+}
 
-//func (b *blob) Digest() Digest {
-//return b.digest
-//}
+func (b *blobSet) GetBlob(digest Digest) Blob {
+	return b.digestStringToBlob[digest.String()]
+}
 
-//func (b *blob) Content() []byte {
-//return b.content
-//}
+func (b *blobSet) Blobs() []Blob {
+	blobs := make([]Blob, 0, len(b.digestStringToBlob))
+	for _, digestString := range b.sortedDigestStrings {
+		blobs = append(blobs, b.digestStringToBlob[digestString])
+	}
+	return blobs
+}
 
-//func (*blob) isBlob() {}
+func (*blobSet) isBlobSet() {}
