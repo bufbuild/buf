@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cas
+package bufcas
 
-type blob struct {
-	digest  Digest
-	content []byte
+type fileSet struct {
+	manifest Manifest
+	blobSet  BlobSet
 }
 
-func newBlob(digest Digest, content []byte) *blob {
-	return &blob{
-		digest:  digest,
-		content: content,
+func newFileSet(manifest Manifest, blobSet BlobSet) *fileSet {
+	return &fileSet{
+		manifest: manifest,
+		blobSet:  blobSet,
 	}
 }
 
-func (b *blob) Digest() Digest {
-	return b.digest
+func (f *fileSet) Manifest() Manifest {
+	return f.manifest
 }
 
-func (b *blob) Content() []byte {
-	return b.content
+func (f *fileSet) BlobSet() BlobSet {
+	return f.blobSet
 }
 
-func (*blob) isBlob() {}
+func (*fileSet) isFileSet() {}

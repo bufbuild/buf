@@ -12,26 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cas
+// Generated. DO NOT EDIT.
 
-type fileSet struct {
-	manifest Manifest
-	blobSet  BlobSet
-}
+package bufcas
 
-func newFileSet(manifest Manifest, blobSet BlobSet) *fileSet {
-	return &fileSet{
-		manifest: manifest,
-		blobSet:  blobSet,
-	}
-}
-
-func (f *fileSet) Manifest() Manifest {
-	return f.manifest
-}
-
-func (f *fileSet) BlobSet() BlobSet {
-	return f.blobSet
-}
-
-func (*fileSet) isFileSet() {}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -12,8 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufcas
 
-package cas
+type blob struct {
+	digest  Digest
+	content []byte
+}
 
-import _ "github.com/bufbuild/buf/private/usage"
+func newBlob(digest Digest, content []byte) *blob {
+	return &blob{
+		digest:  digest,
+		content: content,
+	}
+}
+
+func (b *blob) Digest() Digest {
+	return b.digest
+}
+
+func (b *blob) Content() []byte {
+	return b.content
+}
+
+func (*blob) isBlob() {}
