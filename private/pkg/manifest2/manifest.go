@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	// DigestTypeShake256 represents the shake256 digest type.
 	DigestTypeShake256 DigestType = iota + 1
 
 	shake256Length = 64
@@ -40,8 +41,10 @@ var (
 	}
 )
 
+// DigestType is a type of digest.
 type DigestType int
 
+// String prints the string representation of the DigestType.
 func (d DigestType) String() string {
 	s, ok := digestTypeToString[d]
 	if !ok {
@@ -50,6 +53,9 @@ func (d DigestType) String() string {
 	return s
 }
 
+// ParseDigestType parses a DigestType from its string representation.
+//
+// Reverses DigestType.String().
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
@@ -58,18 +64,39 @@ func ParseDigestType(s string) (DigestType, error) {
 	return d, nil
 }
 
+// Digest is a digest of some content.
+//
+// It consists of a DigestType and a digest value.
 type Digest interface {
+	// String() prints typeString:hexValue.
 	fmt.Stringer
 
+	// The type of digest.
 	Type() DigestType
+	// The digest value.
 	Value() []byte
 }
 
+// NewDigest creates a new Digest for the given DigestType and digest value.
+//
+// Validation is performed to ensure the DigestType is known, and the value
+// is a valid digest value for the given DigestType.
 func NewDigest(digestType DigestType, value []byte) (Digest, error) {
-	return nil, nil
+	switch digestType {
+	case DigestTypeShake256:
+		if len(value) != shake256Length {
+			return nil, fmt.Errorf("invalid %s Digest value: expected %d bytes, got %d", digestType.String(), shake256Length, len(value))
+		}
+		return newDigest(digestType, value), nil
+	default:
+		return nil, fmt.Errorf("unknown DigestType: %v", digestType)
+	}
 }
 
-func NewDigestForReader(digestType DigestType, reader io.Reader) (Digest, error) {
+// NewDigestForContent creates a new Digest based on the given content read from the Reader.
+//
+// Validation is performed to ensure that the DigestType is known.
+func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error) {
 	switch digestType {
 	case DigestTypeShake256:
 		shakeHash := sha3.NewShake256()
@@ -89,6 +116,10 @@ func NewDigestForReader(digestType DigestType, reader io.Reader) (Digest, error)
 	}
 }
 
+// NewDigestForString returns a new Digest for the given Digest string.
+//
+// This reverses Digest.String().
+// A Digest string is of the form typeString:hexValue.
 func NewDigestForString(s string) (Digest, error) {
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
@@ -105,28 +136,79 @@ func NewDigestForString(s string) (Digest, error) {
 	return NewDigest(digestType, value)
 }
 
+// DigestEqual returns true if the given Digests are considered equal.
+//
+// This check both the DigestType and Digest value.
 func DigestEqual(a Digest, b Digest) bool {
+	// TODO
 	return false
 }
 
+// Blob is content with its associated Digest.
 type Blob interface {
+	// The Digest of the Blob.
+	//
+	// NewDigestForContent(blob.Digest.Type(), bytes.NewReader(blob.Content()) should
+	// always match this value.
 	Digest() Digest
+	// The content of the Blob.
 	Content() []byte
 }
 
 // validates content matches digest
+// NewBlob returns a new Blob for the given Digest and content.
+//
+// Validation is performed to ensure that the Digest matches the computed
+// Digest of the content.
 func NewBlob(digest Digest, content []byte) (Blob, error) {
-	contentDigest, err := NewDigestForReader(digest.Type(), bytes.NewReader(content))
+	contentDigest, err := NewDigestForContent(digest.Type(), bytes.NewReader(content))
 	if err != nil {
 		return nil, err
 	}
 	if !DigestEqual(digest, contentDigest) {
 		return nil, fmt.Errorf("Digest %v did not match Digest %v when creating a new Blob", digest, contentDigest)
 	}
-	return &blob{
-		digest:  digest,
-		content: content,
-	}, nil
+	return newBlob(digest, content), nil
+}
+
+// NewBlobForContent returns a new Blob with a Digest of the given DigestType,
+// and the content as read from the Reader.
+//
+// Validation is performed to ensure that the DigestType is known.
+func NewBlobForContent(digestType DigestType, reader io.Reader) (Blob, error) {
+	buffer := bytes.NewBuffer(nil)
+	teeReader := io.TeeReader(reader, buffer)
+	digest, err := NewDigestForContent(digestType, teeReader)
+	if err != nil {
+		return nil, err
+	}
+	return newBlob(digest, buffer.Bytes()), nil
+}
+
+// BlobEqual returns true if the given Blobs are considered equal.
+//
+// This checks both the Digest and the content.
+//
+// Technically we do not need to compare the contents, as we know that the Digest
+// is a valid Digest for the given content via valiation we did at construction time.
+// However, in the absence of a performance-related reason, we do equality on the
+// digests as a safety check. In the future, this could be removed.
+func BlobEqual(a Blob, b Blob) bool {
+	if !DigestEqual(a.Digest(), b.Digest()) {
+		return false
+	}
+	aContent := a.Content()
+	bContent := b.Content()
+	for i := 0; i < len(aContent); i += 4096 {
+		j := i + 4096
+		if j > len(aContent) {
+			j = len(aContent)
+		}
+		if !bytes.Equal(aContent[i:j], bContent[i:j]) {
+			return false
+		}
+	}
+	return true
 }
 
 type BlobSet interface {
@@ -137,8 +219,4 @@ type BlobSet interface {
 // Validates same digests have same content TODO isn't this already true via NewBlob validation?
 func NewBlobSet(blobs []Blob) (BlobSet, error) {
 	return nil, nil
-}
-
-func BlobEqual(a Blob, b Blob) bool {
-	return false
 }
