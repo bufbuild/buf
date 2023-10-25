@@ -15,9 +15,202 @@
 package bufcas
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
+	storagev1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/registry/storage/v1beta1"
+	"golang.org/x/crypto/sha3"
 )
+
+const (
+	// DigestTypeShake256 represents the shake256 digest type.
+	DigestTypeShake256 DigestType = iota + 1
+
+	shake256Length = 64
+)
+
+var (
+	digestTypeToString = map[DigestType]string{
+		DigestTypeShake256: "shake256",
+	}
+	stringToDigestType = map[string]DigestType{
+		"shake256": DigestTypeShake256,
+	}
+	digestTypeToProto = map[DigestType]storagev1beta1.Digest_Type{
+		DigestTypeShake256: storagev1beta1.Digest_TYPE_SHAKE256,
+	}
+	protoToDigestType = map[storagev1beta1.Digest_Type]DigestType{
+		storagev1beta1.Digest_TYPE_SHAKE256: DigestTypeShake256,
+	}
+)
+
+// DigestType is a type of digest.
+type DigestType int
+
+// String prints the string representation of the DigestType.
+func (d DigestType) String() string {
+	s, ok := digestTypeToString[d]
+	if !ok {
+		return strconv.Itoa(int(d))
+	}
+	return s
+}
+
+// ParseDigestType parses a DigestType from its string representation.
+//
+// Reverses DigestType.String().
+func ParseDigestType(s string) (DigestType, error) {
+	d, ok := stringToDigestType[s]
+	if !ok {
+		return 0, fmt.Errorf("unknown DigestType: %q", s)
+	}
+	return d, nil
+}
+
+// Digest is a digest of some content.
+//
+// It consists of a DigestType and a digest value.
+type Digest interface {
+	// String() prints typeString:hexValue.
+	fmt.Stringer
+
+	// Type returns the type of digest.
+	Type() DigestType
+	// Value returns the digest value.
+	Value() []byte
+
+	// Protect against creation of a Digest outside of this package, as we
+	// do very careful validation.
+	isDigest()
+}
+
+// NewDigest creates a new Digest for the given DigestType and digest value.
+//
+// If the length of value is 0, a nil Digest is returned.
+//
+// Validation is performed to ensure the DigestType is known, and the value
+// is a valid digest value for the given DigestType.
+func NewDigest(digestType DigestType, value []byte) (Digest, error) {
+	return newDigest(digestType, value)
+}
+
+// NewDigestForContent creates a new Digest based on the given content read from the Reader.
+//
+// If there is no content, a nil Digest is returned.
+//
+// The Reader is read until io.EOF.
+// Validation is performed to ensure that the DigestType is known.
+func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error) {
+	switch digestType {
+	case DigestTypeShake256:
+		shakeHash := sha3.NewShake256()
+		shakeHash.Reset()
+		n, err := io.Copy(shakeHash, reader)
+		if err != nil {
+			return nil, err
+		}
+		// No content, return a nil Digest.
+		if n == 0 {
+			return nil, nil
+		}
+		value := make([]byte, shake256Length)
+		if _, err := shakeHash.Read(value); err != nil {
+			// sha3.ShakeHash never errors or short reads. Something horribly wrong
+			// happened if your computer ended up here.
+			return nil, err
+		}
+		return newDigest(digestType, value)
+	default:
+		return nil, fmt.Errorf("unknown DigestType: %v", digestType)
+	}
+}
+
+// NewDigestForString returns a new Digest for the given Digest string.
+//
+// If the string is empty, a nil Digest is returned.
+//
+// This reverses Digest.String().
+// A Digest string is of the form typeString:hexValue.
+func NewDigestForString(s string) (Digest, error) {
+	if s == "" {
+		return nil, nil
+	}
+	digestTypeString, hexValue, ok := strings.Cut(s, ":")
+	if !ok {
+		return nil, fmt.Errorf("invalid Digest string: %q", s)
+	}
+	digestType, err := ParseDigestType(digestTypeString)
+	if err != nil {
+		return nil, err
+	}
+	value, err := hex.DecodeString(hexValue)
+	if err != nil {
+		return nil, err
+	}
+	return newDigest(digestType, value)
+}
+
+// DigestToProto converts the given Digest to a proto Digest.
+//
+// If the given Digest is nil, returns nil.
+//
+// TODO: validate the returned Digest.
+func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
+	if digest == nil {
+		return nil, nil
+	}
+	protoDigestType, ok := digestTypeToProto[digest.Type()]
+	// Technically we have aleady done this validation but just to be safe.
+	if !ok {
+		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
+	}
+	return &storagev1beta1.Digest{
+		Type:  protoDigestType,
+		Value: digest.Value(),
+	}, nil
+}
+
+// ProtoToDigest converts the given proto Digest to a Digest.
+//
+// If the given proto Digest is nil, returns nil.
+//
+// Validation is performed to ensure the DigestType is known, and the value
+// is a valid digest value for the given DigestType.
+// TODO: validate the input proto Digest.
+func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
+	if protoDigest == nil {
+		return nil, nil
+	}
+	digestType, ok := protoToDigestType[protoDigest.Type]
+	if !ok {
+		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
+	}
+	return NewDigest(digestType, protoDigest.Value)
+}
+
+// DigestEqual returns true if the given Digests are considered equal.
+//
+// If both Digests are nil, this returns true.
+//
+// This check both the DigestType and Digest value.
+func DigestEqual(a Digest, b Digest) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if a == nil {
+		return true
+	}
+	if a.Type() != b.Type() {
+		return false
+	}
+	return bytes.Equal(a.Value(), b.Value())
+}
+
+/// *** PRIVATE ***
 
 type digest struct {
 	digestType DigestType
