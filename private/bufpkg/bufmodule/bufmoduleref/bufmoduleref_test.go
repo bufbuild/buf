@@ -19,7 +19,6 @@ import (
 	"context"
 	"io"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -123,10 +122,8 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),
-		modulePin.Branch(),
 		modulePin.Commit(),
 		createDigest(t, []byte("abc")),
-		modulePin.CreateTime(),
 	)
 	require.NoError(t, err)
 	err = ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedDigest})
@@ -136,10 +133,8 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),
-		modulePin.Branch(),
 		"updatedcommit",
 		createDigest(t, []byte("abc")),
-		modulePin.CreateTime(),
 	)
 	require.NoError(t, err)
 	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedCommitAndDigest}))
@@ -170,10 +165,8 @@ func pin(t *testing.T, repository string) ModulePin {
 		"remote",
 		"owner",
 		repository,
-		"branch",
 		"commit",
 		createDigest(t, []byte{}),
-		time.Now(),
 	)
 	require.NoError(t, err)
 	return pin
@@ -251,7 +244,6 @@ func testDependencyModulePinsForBucket(
 			assert.Equal(t, modulePins[i].Repository(), actual.Repository())
 			assert.Equal(t, modulePins[i].Commit(), actual.Commit())
 			assert.Equal(t, modulePins[i].Digest(), actual.Digest())
-			assert.Equal(t, "", actual.Branch()) // branch is never consumed
 		}
 	})
 }

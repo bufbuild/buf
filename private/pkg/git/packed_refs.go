@@ -25,21 +25,22 @@ import (
 const (
 	// packedRefsHeader is the head for the `packed-refs` file
 	// based on https://github.com/git/git/blob/master/refs/packed-backend.c#LL1084C41-L1084C41
-	packedRefsHeader  = "# pack-refs with: peeled fully-peeled sorted "
-	tagRefPrefix      = "refs/tags/"
-	branchRefPrefix   = "refs/heads/"
-	unpeeledRefPrefix = '^'
+	packedRefsHeader      = "# pack-refs with: peeled fully-peeled sorted "
+	tagRefPrefix          = "refs/tags/"
+	localBranchRefPrefix  = "refs/heads/"
+	remoteBranchRefPrefix = "refs/remotes/"
+	unpeeledRefPrefix     = '^'
 )
 
 // parsePackedRefs reads a `packed-refs` file, returning the packed branches and tags
 func parsePackedRefs(data []byte) (
-	map[string]Hash, // branches
+	map[string]map[string]Hash, // branches
 	map[string]Hash, // tags
 	error,
 ) {
 	var (
-		packedBranches = map[string]Hash{}
-		packedTags     = map[string]Hash{}
+		packedBranches = make(map[string]map[string]Hash)
+		packedTags     = make(map[string]Hash)
 	)
 	/*
 		data is in the format
@@ -78,11 +79,31 @@ func parsePackedRefs(data []byte) (
 		}
 		hash, err := parseHashFromHex(hashHex)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("invalid hash for ref %s: %w", ref, err)
 		}
-		if strings.HasPrefix(ref, branchRefPrefix) {
-			branchName := strings.TrimPrefix(ref, branchRefPrefix)
-			packedBranches[branchName] = hash
+		if strings.HasPrefix(ref, localBranchRefPrefix) {
+			branchName := strings.TrimPrefix(ref, localBranchRefPrefix)
+			// empty remote means local
+			if packedBranches[""] == nil {
+				packedBranches[""] = make(map[string]Hash)
+			}
+			packedBranches[""][branchName] = hash
+		} else if strings.HasPrefix(ref, remoteBranchRefPrefix) {
+			remoteAndBranch := strings.TrimPrefix(ref, remoteBranchRefPrefix)
+			remoteName, branchName, found := strings.Cut(remoteAndBranch, "/")
+			if !found {
+				return nil, nil, fmt.Errorf("invalid packed-refs file: invalid ref %s", ref)
+			}
+			if remoteName == "" {
+				return nil, nil, fmt.Errorf("invalid packed-refs file: empty remote for ref %s", ref)
+			}
+			if branchName == "" {
+				return nil, nil, fmt.Errorf("invalid packed-refs file: empty branch for ref %s", ref)
+			}
+			if packedBranches[remoteName] == nil {
+				packedBranches[remoteName] = make(map[string]Hash)
+			}
+			packedBranches[remoteName][branchName] = hash
 		} else if strings.HasPrefix(ref, tagRefPrefix) {
 			tagName := strings.TrimPrefix(ref, tagRefPrefix)
 			// We're looking at a tag. If the tag is annotated, the next line is our actual

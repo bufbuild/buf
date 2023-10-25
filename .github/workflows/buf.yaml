@@ -7,18 +7,18 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.26.1
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1.27.1
         with:
           github_token: ${{ github.token }}
-      - uses: bufbuild/buf-lint-action@v1.0.3
+      - uses: bufbuild/buf-lint-action@v1.1.0
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
   breaking:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.26.1
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1.27.1
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-breaking-action@v1.1.3
@@ -32,8 +32,8 @@ jobs:
       - lint
       - breaking
     steps:
-      - uses: actions/checkout@v3
-      - uses: bufbuild/buf-setup-action@v1.26.1
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1.27.1
         with:
           github_token: ${{ github.token }}
       - uses: bufbuild/buf-push-action@v1.1.1

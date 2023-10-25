@@ -18,7 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-// GitIdentity is a Git user identity, typically either an author or a commiter.
+// GitIdentity is a Git user identity, typically either an author or a committer.
 message GitIdentity {
   // Name is the name of the Git identity. This is not the BSR user's username.
   string name = 1;
@@ -28,16 +28,16 @@ message GitIdentity {
   google.protobuf.Timestamp time = 3;
 }
 
-// GitCommitMetadata is Git metadata associated with a BSR commit.
-message GitCommitMetadata {
-  // Hash is the SHA1 hash of the Git commit.
+// GitCommitInformation is the information associated with a Git commit.
+// This always includes the hash.
+// The author and/or committer user identities are included when available.
+message GitCommitInformation {
+  // Hash is the SHA1 hash of the git commit.
   string hash = 1;
-  // Author is the author of the Git commit. This is typically an end-user.
+  // Author is metadata associated with the author of the git commit.
+  // This may not always be available, so it is not always populated.
   GitIdentity author = 2;
-  // Commiter is the commiter of the Git commit. This typically a CI system.
-  GitIdentity commiter = 3;
-  // Branch is the Git branch to which this Git commit belongs.
-  string branch = 4;
-  // Tags are the Git tags which point to this commit.
-  repeated string tags = 5;
+  // Committer is the metadata associated with the committer of the git commit.
+  // This may not always be available, so it is not always populated.
+  GitIdentity committer = 3;
 }

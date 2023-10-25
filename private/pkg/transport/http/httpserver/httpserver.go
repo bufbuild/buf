@@ -147,7 +147,9 @@ func Run(
 		<-ctx.Done()
 		start := time.Now()
 		logger.Info("shutdown_starting", zap.Duration("shutdown_timeout", s.shutdownTimeout))
-		defer logger.Info("shutdown_finished", zap.Duration("duration", time.Since(start)))
+		defer func() {
+			logger.Info("shutdown_finished", zap.Duration("duration", time.Since(start)))
+		}()
 		if s.shutdownTimeout != 0 {
 			ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 			defer cancel()

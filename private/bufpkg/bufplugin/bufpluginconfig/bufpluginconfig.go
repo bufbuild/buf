@@ -78,6 +78,9 @@ type Config struct {
 	SPDXLicenseID string
 	// LicenseURL specifies where the plugin's license can be found.
 	LicenseURL string
+	// IntegrationGuideURL is an optional attribute used to specify where
+	// the the plugin integration guide can be found.
+	IntegrationGuideURL string
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
@@ -330,16 +333,17 @@ func OptionsSliceToPluginOptions(options []string) map[string]string {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version         string                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Name            string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion   string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	SourceURL       string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
-	Description     string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps            []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
-	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
-	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
-	SPDXLicenseID   string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
-	LicenseURL      string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
+	Version             string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name                string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion       string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL           string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description         string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps                []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	OutputLanguages     []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
+	Registry            ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
+	SPDXLicenseID       string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
+	LicenseURL          string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
+	IntegrationGuideURL string                 `json:"integration_guide_url,omitempty" yaml:"integration_guide_url,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.

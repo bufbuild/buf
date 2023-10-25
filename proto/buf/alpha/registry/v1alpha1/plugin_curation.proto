@@ -264,6 +264,8 @@ message CuratedPlugin {
   bool deprecated = 19;
   // Optionally specify a message to be displayed when the plugin is deprecated.
   string deprecation_message = 20;
+  // The URL leading to the integration guide of the plugin, if available.
+  string integration_guide_url = 21;
 }
 
 // PluginCurationService manages curated plugins.
@@ -381,6 +383,8 @@ message CreateCuratedPluginRequest {
   string license_url = 16;
   // Visibility indicates whether the plugin is public or private.
   CuratedPluginVisibility visibility = 17;
+  // The URL leading to the integration guide of the plugin, if available.
+  string integration_guide_url = 18;
 }
 
 message CreateCuratedPluginResponse {

@@ -116,7 +116,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/a/proto/a/v1/a.proto
+		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto
 		    testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
@@ -144,7 +145,8 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			0,
-			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto
+			filepath.FromSlash(`testdata/workspace/success/breaking/a/proto/a/v1/a.proto
+		    testdata/workspace/success/breaking/other/proto/request.proto
 		    testdata/workspace/success/breaking/proto/rpc.proto`),
 			"ls-files",
 			filepath.Join("testdata", "workspace", "success", "breaking"),
@@ -299,48 +301,6 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 		filepath.Join(zipDir, "archive.zip#subdir=proto/internal"),
 		"--path",
 		filepath.Join("proto", "internal", "internal.proto"),
-	)
-}
-
-func TestWorkspaceGit(t *testing.T) {
-	t.Skip("skip until the move to private/buf is merged")
-	// Directory paths specified as a git reference within a workspace.
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"build",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto`),
-		"ls-files",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
-		"lint",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
-		"lint",
-		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
-		"--path",
-		filepath.Join("internal", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
 }
 
@@ -900,7 +860,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input contained 1 images, whereas against contained 2 images`,
+		`Failure: input contained 1 images, whereas against contained 3 images`,
 		"breaking",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",

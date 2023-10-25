@@ -27,15 +27,14 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
       - uses: actions/setup-go@v4
@@ -68,7 +67,7 @@ jobs:
     if: ${{ github.event_name == 'push' && startsWith(github.ref_name, 'release') }}
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -88,11 +87,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
+          repositories: >-
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write"}
       - name: Set VERSION variable from tag
@@ -100,7 +100,7 @@ jobs:
           VERSION=${{github.head_ref}}
           echo "VERSION=${VERSION##*/}" >> $GITHUB_ENV
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.generate_token.outputs.token }}
           fetch-depth: 0
@@ -117,15 +117,16 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
+          repositories: >-
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -166,15 +167,16 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{env.APP_ID}}
           private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          repository: ${{ github.repository }}
+          repositories: >-
+            [ "${{ github.repository }}" ]
           permissions: >-
             {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -209,11 +211,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.BUF_MAVEN_PUBLISH_APP_ID}}
           private_key: ${{ secrets.BUF_MAVEN_PUBLISH_APP_PRIVATE_KEY }}
-          repository: "bufbuild/buf-maven-publish"
+          repositories: >-
+            [ "bufbuild/buf-maven-publish" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger maven update
@@ -236,11 +239,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.BUF_NPM_PUBLISH_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_NPM_PUBLISH_RELEASE_APP_PRIVATE_KEY }}
-          repository: "bufbuild/buf-npm-publish"
+          repositories: >-
+            [ "bufbuild/buf-npm-publish" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger npm publish
@@ -263,11 +267,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.HOMEBREW_RELEASE_APP_ID}}
           private_key: ${{ secrets.HOMEBREW_RELEASE_APP_PRIVATE_KEY }}
-          repository: "bufbuild/homebrew-buf"
+          repositories: >-
+            [ "bufbuild/homebrew-buf" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger homebrew-buf release
@@ -290,11 +295,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.VIM_BUF_RELEASE_APP_ID}}
           private_key: ${{ secrets.VIM_BUF_RELEASE_APP_PRIVATE_KEY }}
-          repository: "bufbuild/vim-buf"
+          repositories: >-
+            [ "bufbuild/vim-buf" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger vim-buf release
@@ -317,11 +323,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.BUF_BUILD_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_BUILD_RELEASE_APP_PRIVATE_KEY }}
-          repository: "bufbuild/buf.build"
+          repositories: >-
+            [ "bufbuild/buf.build" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger buf.build release
@@ -344,11 +351,12 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@0d49dd721133f900ebd5e0dff2810704e8defbc6
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
           app_id: ${{secrets.BUF_SETUP_ACTION_RELEASE_APP_ID}}
           private_key: ${{ secrets.BUF_SETUP_ACTION_RELEASE_APP_PRIVATE_KEY }}
-          repository: "bufbuild/buf-setup-action"
+          repositories: >-
+            [ "bufbuild/buf-setup-action" ]
           permissions: >-
             {"actions": "write"}
       - name: trigger buf-setup-action release

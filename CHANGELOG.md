@@ -2,9 +2,20 @@
 
 ## [Unreleased]
 
-- Update `buf beta price` with the latest pricing information.
+- Fix issue where `buf build` and other commands may fail when handling certain
+  archives created on macOS that contain files with extended attributes.
+
+## [v1.27.1] - 2023-10-16
+
+- Fix issue in v1.27.0 where `--path` did not work with workspaces under certain scenarios.
+
+## [v1.27.0] - 2023-10-04
+
 - Fix issue where `buf generate --exclude-path` was not properly excluding paths
   for remote modules.
+- Fix issue where `buf curl` had a user agent that did not properly place the
+  extension as a suffix.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.26.1] - 2023-08-09
 
@@ -954,7 +965,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.26.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.1...HEAD
+[v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
+[v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
 [v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
 [v1.26.0]: https://github.com/bufbuild/buf/compare/v1.25.1...v1.26.0
 [v1.25.1]: https://github.com/bufbuild/buf/compare/v1.25.0...v1.25.1

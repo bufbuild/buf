@@ -64,9 +64,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		moduleReference.Remote(),
 		moduleReference.Owner(),
 		moduleReference.Repository(),
-		"", // branch
 		resp.Msg.RepositoryCommit.Name,
 		resp.Msg.RepositoryCommit.ManifestDigest,
-		resp.Msg.RepositoryCommit.CreateTime.AsTime(),
 	)
 }

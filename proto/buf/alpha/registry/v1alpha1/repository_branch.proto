@@ -47,13 +47,7 @@ service RepositoryBranchService {
   rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
-  // GetCurrentDefaultBranch returns the branch name that is mapped to the main/BSR_HEAD. This might
-  // not be the same value in the repository's `default_branch` field, since that value can be
-  // changed at will by repository's owners/admins for syncing git repositories. This RPC retrieves
-  // the branch from the latest commit labeled as BSR_HEAD, even if that value differs from the one
-  // stored in the `default_branch` field.
-  //
-  // TODO: Rename this RPC to something more appropriate like "GetLatestHEADCommit".
+  // GetCurrentDefaultBranch returns the branch that is mapped to the repository's `default_branch` field.
   rpc GetCurrentDefaultBranch(GetCurrentDefaultBranchRequest) returns (GetCurrentDefaultBranchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
