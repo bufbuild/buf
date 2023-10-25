@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -410,7 +411,7 @@ func PutFileSetToBucket(
 	fileSet FileSet,
 	bucket storage.WriteBucket,
 ) error {
-	if err := fileSet.Manifest().ForEach(
+	return fileSet.Manifest().ForEach(
 		func(path string, digest Digest) error {
 			blob := fileSet.BlobSet().GetBlob(digest)
 			if blob == nil {
@@ -421,8 +422,8 @@ func PutFileSetToBucket(
 			if err != nil {
 				return err
 			}
-
-		}
+			_, err = writeObjectCloser.Write(blob.Content())
+			return multierr.Append(err, writeObjectCloser.Close())
+		},
 	)
-	return nil
 }
