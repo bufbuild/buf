@@ -30,6 +30,10 @@ type digest struct {
 func newDigest(digestType DigestType, value []byte) (*digest, error) {
 	switch digestType {
 	case DigestTypeShake256:
+		// No content, return a nil Digest.
+		if len(value) == 0 {
+			return nil, nil
+		}
 		if len(value) != shake256Length {
 			return nil, fmt.Errorf("invalid %s Digest value: expected %d bytes, got %d", digestType.String(), shake256Length, len(value))
 		}

@@ -16,55 +16,49 @@ package cas
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"sort"
-
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 type manifest struct {
-	pathToDigest map[string]Digest
-	sortedPaths  []string
+	sortedUniqueFileNodes []FileNode
 }
 
-func newManifest(pathToDigest map[string]Digest) (*manifest, error) {
-	sortedPaths := make([]string, 0, len(pathToDigest))
-	for path := range pathToDigest {
-		if path == "" {
-			return nil, errors.New("empty path in Manifest construction")
+func newManifest(fileNodes []FileNode) (*manifest, error) {
+	pathToFileNode := make(map[string]FileNode)
+	for _, fileNode := range fileNodes {
+		if existingFileNode, ok := pathToFileNode[fileNode.Path()]; ok {
+			// Handles nil case
+			if !DigestEqual(existingFileNode.Digest(), fileNode.Digest()) {
+				return nil, fmt.Errorf("path %q had different Digests when constructing FileNode", fileNode.Path())
+			}
+		} else {
+			pathToFileNode[fileNode.Path()] = fileNode
 		}
-		normalizedPath, err := normalpath.NormalizeAndValidate(path)
-		if err != nil {
-			return nil, fmt.Errorf("normalization error in Manifest construction: %w", err)
-		}
-		if path != normalizedPath {
-			return nil, fmt.Errorf("path %q did not equal normalized path %q in Manifest construction", path, normalizedPath)
-		}
-		sortedPaths = append(sortedPaths, path)
 	}
-	sort.Strings(sortedPaths)
+	sortedUniqueFileNodes := make([]FileNode, 0, len(pathToFileNode))
+	for _, fileNode := range pathToFileNode {
+		sortedUniqueFileNodes = append(sortedUniqueFileNodes, fileNode)
+	}
+	sort.Slice(
+		sortedUniqueFileNodes,
+		func(i int, j int) bool {
+			return sortedUniqueFileNodes[i].Path() < sortedUniqueFileNodes[j].Path()
+		},
+	)
 	return &manifest{
-		pathToDigest: pathToDigest,
-		sortedPaths:  sortedPaths,
+		sortedUniqueFileNodes: sortedUniqueFileNodes,
 	}, nil
 }
 
-func (m *manifest) ForEach(f func(path string, digest Digest) error) error {
-	for _, path := range m.sortedPaths {
-		if err := f(path, m.pathToDigest[path]); err != nil {
-			return err
-		}
-	}
-	return nil
+func (m *manifest) FileNodes() []FileNode {
+	return m.sortedUniqueFileNodes
 }
 
 func (m *manifest) String() string {
 	buffer := bytes.NewBuffer(nil)
-	for _, path := range m.sortedPaths {
-		_, _ = buffer.WriteString(m.pathToDigest[path].String())
-		_, _ = buffer.WriteString("  ")
-		_, _ = buffer.WriteString(path)
+	for _, fileNode := range m.sortedUniqueFileNodes {
+		_, _ = buffer.WriteString(fileNode.String())
 		_, _ = buffer.WriteRune('\n')
 	}
 	return buffer.String()
