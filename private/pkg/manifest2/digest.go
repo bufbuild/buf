@@ -19,12 +19,16 @@ import "encoding/hex"
 type digest struct {
 	digestType DigestType
 	value      []byte
+	// Cache as we call String pretty often.
+	// We could do this lazily but not worth it.
+	stringValue string
 }
 
 func newDigest(digestType DigestType, value []byte) *digest {
 	return &digest{
-		digestType: digestType,
-		value:      value,
+		digestType:  digestType,
+		value:       value,
+		stringValue: digestType.String() + ":" + hex.EncodeToString(value),
 	}
 }
 
@@ -37,5 +41,7 @@ func (d *digest) Value() []byte {
 }
 
 func (d *digest) String() string {
-	return d.digestType.String() + ":" + hex.EncodeToString(d.value)
+	return d.stringValue
 }
+
+func (*digest) isDigest() {}

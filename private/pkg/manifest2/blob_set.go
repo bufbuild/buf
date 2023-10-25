@@ -14,24 +14,20 @@
 
 package manifest2
 
-type blob struct {
-	digest  Digest
-	content []byte
+type blobSet struct {
+	digestStringToBlob  map[string]Blob
+	sortedDigestStrings []string
 }
 
-func newBlob(digest Digest, content []byte) *blob {
-	return &blob{
-		digest:  digest,
-		content: content,
-	}
-}
+//func newBlob(digest Digest, content []byte) *blob {
+//}
 
-func (b *blob) Digest() Digest {
-	return b.digest
-}
+//func (b *blob) Digest() Digest {
+//return b.digest
+//}
 
-func (b *blob) Content() []byte {
-	return b.content
-}
+//func (b *blob) Content() []byte {
+//return b.content
+//}
 
-func (*blob) isBlob() {}
+//func (*blob) isBlob() {}
