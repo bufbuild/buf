@@ -182,6 +182,8 @@ func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
 //
 // If the given proto Digest is nil, returns nil.
 //
+// Validation is performed to ensure the DigestType is known, and the value
+// is a valid digest value for the given DigestType.
 // TODO: validate the input proto Digest.
 func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
 	if protoDigest == nil {
@@ -274,6 +276,42 @@ func NewBlobForContentWithKnownDigest(knownDigest Digest, reader io.Reader) (Blo
 		return nil, fmt.Errorf("Digest %v did not match known Digest %v when creating a new Blob", blob.Digest(), knownDigest)
 	}
 	return blob, nil
+}
+
+// BlobToProto converts the given Blob to a proto Blob.
+//
+// If the given Blob is nil, returns nil.
+//
+// TODO: validate the returned Blob.
+func BlobToProto(blob Blob) (*storagev1beta1.Blob, error) {
+	if blob == nil {
+		return nil, nil
+	}
+	protoDigest, err := DigestToProto(blob.Digest())
+	if err != nil {
+		return nil, err
+	}
+	return &storagev1beta1.Blob{
+		Digest:  protoDigest,
+		Content: blob.Content(),
+	}, nil
+}
+
+// ProtoToBlob converts the given proto Blob to a Blob.
+//
+// If the given proto Blob is nil, returns nil.
+//
+// Validation is performed to ensure that the Digest matches the computed Digest of the content.
+// TODO: validate the input proto Blob.
+func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
+	if protoBlob == nil {
+		return nil, nil
+	}
+	digest, err := ProtoToDigest(protoBlob.Digest)
+	if err != nil {
+		return nil, nil
+	}
+	return NewBlobForContentWithKnownDigest(digest, bytes.NewReader(protoBlob.Content))
 }
 
 // BlobEqual returns true if the given Blobs are considered equal.
