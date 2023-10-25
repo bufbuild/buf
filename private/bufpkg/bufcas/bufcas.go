@@ -365,6 +365,8 @@ type BlobSet interface {
 
 // NewBlobSet returns a new BlobSet.
 //
+// Blobs are deduplicated upon construction.
+//
 // TODO: in the former version of this package, we validated that Blob contents matched for Blobs
 // with the same Digest via BlobEqual, however we no longer do this as BlobEqual no longer
 // validates content matching. See the comment on BlobEqual for why.
@@ -373,6 +375,37 @@ type BlobSet interface {
 // no longer needs to return an error.
 func NewBlobSet(blobs []Blob) BlobSet {
 	return newBlobSet(blobs)
+}
+
+// BlobSetToProtoBlobs converts the given BlobSet into proto Blobs.
+//
+// TODO: validate the returned proto Blobs.
+func BlobSetToProtoBlobs(blobSet BlobSet) ([]*storagev1beta1.Blob, error) {
+	blobs := blobSet.Blobs()
+	protoBlobs := make([]*storagev1beta1.Blob, len(blobs))
+	for i, blob := range blobs {
+		protoBlob, err := BlobToProto(blob)
+		if err != nil {
+			return nil, err
+		}
+		protoBlobs[i] = protoBlob
+	}
+	return protoBlobs, nil
+}
+
+// ProtoBlobsToBlobSet convers the given proto Blobs into a BlobSet.
+//
+// TODO: validate the input proto Blobs.
+func ProtoBlobsToBlobSet(protoBlobs []*storagev1beta1.Blob) (BlobSet, error) {
+	blobs := make([]Blob, len(protoBlobs))
+	for i, protoBlob := range protoBlobs {
+		blob, err := ProtoToBlob(protoBlob)
+		if err != nil {
+			return nil, err
+		}
+		blobs[i] = blob
+	}
+	return NewBlobSet(blobs), nil
 }
 
 // FileNode is a path and associated digest.
@@ -530,6 +563,32 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 // The Blob is assumed to be non-nil
 func BlobToManifest(blob Blob) (Manifest, error) {
 	return NewManifestForString(string(blob.Content()))
+}
+
+// ManifestToProtoBlob converts the string representation of the given Manifest into a proto Blob.
+//
+// # The Manifest is assumed to be non-nil
+//
+// TODO: validate the returned proto Blob.
+func ManifestToProtoBlob(manifest Manifest) (*storagev1beta1.Blob, error) {
+	blob, err := ManifestToBlob(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return BlobToProto(blob)
+}
+
+// BlobToManifest converts the given proto Blob representing the string representation of a Manifest into a Manifest.
+//
+// # The proto Blob is assumed to be non-nil
+//
+// TODO: validate the input proto Blob.
+func ProtoBlobToManifest(protoBlob *storagev1beta1.Blob) (Manifest, error) {
+	blob, err := ProtoToBlob(protoBlob)
+	if err != nil {
+		return nil, err
+	}
+	return BlobToManifest(blob)
 }
 
 // FileSet is a pair of a Manifest and its associated BlobSet.
