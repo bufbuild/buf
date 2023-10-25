@@ -14,7 +14,10 @@
 
 package manifest2
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"fmt"
+)
 
 type digest struct {
 	digestType DigestType
@@ -24,11 +27,19 @@ type digest struct {
 	stringValue string
 }
 
-func newDigest(digestType DigestType, value []byte) *digest {
-	return &digest{
-		digestType:  digestType,
-		value:       value,
-		stringValue: digestType.String() + ":" + hex.EncodeToString(value),
+func newDigest(digestType DigestType, value []byte) (*digest, error) {
+	switch digestType {
+	case DigestTypeShake256:
+		if len(value) != shake256Length {
+			return nil, fmt.Errorf("invalid %s Digest value: expected %d bytes, got %d", digestType.String(), shake256Length, len(value))
+		}
+		return &digest{
+			digestType:  digestType,
+			value:       value,
+			stringValue: digestType.String() + ":" + hex.EncodeToString(value),
+		}, nil
+	default:
+		return nil, fmt.Errorf("unknown DigestType: %v", digestType)
 	}
 }
 
