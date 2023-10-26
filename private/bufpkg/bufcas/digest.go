@@ -80,8 +80,11 @@ type Digest interface {
 	fmt.Stringer
 
 	// Type returns the type of digest.
+	// Always a valid value
 	Type() DigestType
 	// Value returns the digest value.
+	//
+	// Always non-empty.
 	Value() []byte
 
 	// Protect against creation of a Digest outside of this package, as we

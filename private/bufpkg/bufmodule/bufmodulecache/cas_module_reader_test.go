@@ -16,6 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
+	"encoding/hex"
 	"io"
 	"strings"
 	"testing"
@@ -191,8 +192,8 @@ func createSampleFileSet(t *testing.T) bufcas.FileSet {
 
 func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir string, blob bufcas.Blob) {
 	t.Helper()
-	digestString := blob.Digest().String()
-	f, err := bucket.Get(context.Background(), normalpath.Join(basedir, digestString[:2], digestString[2:]))
+	digestHex := hex.EncodeToString(blob.Digest().Value())
+	f, err := bucket.Get(context.Background(), normalpath.Join(basedir, digestHex[:2], digestHex[2:]))
 	require.NoError(t, err)
 	defer f.Close()
 	cachedModule, err := io.ReadAll(f)

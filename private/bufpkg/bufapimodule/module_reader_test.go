@@ -131,7 +131,7 @@ func testDownload(
 		if errorContains != "" {
 			assert.ErrorContains(t, err, errorContains)
 		} else {
-			assert.NotNil(t, module)
+			require.NotNil(t, module)
 			assert.NoError(t, err)
 			fileSet := module.FileSet()
 			require.NotNil(t, fileSet)

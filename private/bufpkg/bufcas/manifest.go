@@ -66,6 +66,9 @@ func NewManifest(fileNodes []FileNode) (Manifest, error) {
 //
 // This reverses Manifest.String().
 func NewManifestForString(s string) (Manifest, error) {
+	if len(s) == 0 {
+		return NewManifest(nil)
+	}
 	var fileNodes []FileNode
 	if s[len(s)-1] != '\n' {
 		return nil, errors.New("string for Manifest did not end with newline")

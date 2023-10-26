@@ -17,6 +17,7 @@ package bufmodulecache
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strings"
@@ -139,8 +140,8 @@ func (c *casModuleCacher) readBlob(
 	moduleBasedir string,
 	digest bufcas.Digest,
 ) (_ bufcas.Blob, retErr error) {
-	digestString := digest.String()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestString[:2], digestString[2:])
+	digestHex := hex.EncodeToString(digest.Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
 	readObjectCloser, err := c.bucket.Get(ctx, blobPath)
 	if err != nil {
 		return nil, err
@@ -160,8 +161,8 @@ func (c *casModuleCacher) validateBlob(
 	moduleBasedir string,
 	digest bufcas.Digest,
 ) (_ bool, retErr error) {
-	digestString := digest.String()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestString[:2], digestString[2:])
+	digestHex := hex.EncodeToString(digest.Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
 	readObjectCloser, err := c.bucket.Get(ctx, blobPath)
 	if err != nil {
 		return false, err
@@ -206,8 +207,8 @@ func (c *casModuleCacher) writeBlob(
 			zap.String("digest", blob.Digest().String()),
 		)
 	}
-	digestString := blob.Digest().String()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestString[:2], digestString[2:])
+	digestHex := hex.EncodeToString(blob.Digest().Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
 	return c.atomicWrite(ctx, bytes.NewReader(blob.Content()), blobPath)
 }
 
