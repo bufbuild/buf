@@ -15,18 +15,17 @@
 package bufmodulecache
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -57,10 +56,10 @@ service PingService {
 
 func TestCASModuleReaderHappyPath(t *testing.T) {
 	t.Parallel()
-	moduleManifest, blobs := createSampleManifestAndBlobs(t)
-	moduleBlob, err := moduleManifest.Blob()
+	fileSet := createSampleFileSet(t)
+	manifestBlob, err := bufcas.ManifestToBlob(fileSet.Manifest())
 	require.NoError(t, err)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	testModule, err := bufmodule.NewModuleForFileSet(context.Background(), fileSet)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
@@ -74,27 +73,27 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 		"test",
 		"ping",
 		"abcd",
-		moduleBlob.Digest().String(),
+		manifestBlob.Digest().String(),
 	)
 	require.NoError(t, err)
 	_, err = moduleReader.GetModule(context.Background(), pin) // non-cached
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
-	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, fileSet)
 
 	cachedMod, err := moduleReader.GetModule(context.Background(), pin)
 	require.NoError(t, err)
 	assertModuleIdentity(t, cachedMod, pin.IdentityString(), pin.Commit())
 	assert.Equal(t, 2, moduleReader.stats.Count())
 	assert.Equal(t, 1, moduleReader.stats.Hits()) // We should have a cache hit the second time
-	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, fileSet)
 }
 
 func TestCASModuleReaderNoDigest(t *testing.T) {
 	t.Parallel()
-	moduleManifest, blobs := createSampleManifestAndBlobs(t)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	fileSet := createSampleFileSet(t)
+	testModule, err := bufmodule.NewModuleForFileSet(context.Background(), fileSet)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
@@ -114,13 +113,13 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, moduleReader.stats.Count())
 	assert.Equal(t, 0, moduleReader.stats.Hits())
-	verifyCache(t, storageBucket, pin, moduleManifest, blobs)
+	verifyCache(t, storageBucket, pin, fileSet)
 }
 
 func TestCASModuleReaderDigestMismatch(t *testing.T) {
 	t.Parallel()
-	moduleManifest, blobs := createSampleManifestAndBlobs(t)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	fileSet := createSampleFileSet(t)
+	testModule, err := bufmodule.NewModuleForFileSet(context.Background(), fileSet)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
@@ -151,23 +150,21 @@ func verifyCache(
 	t *testing.T,
 	bucket storage.ReadWriteBucket,
 	pin bufmoduleref.ModulePin,
-	moduleManifest *manifest.Manifest,
-	blobs *manifest.BlobSet,
+	fileSet bufcas.FileSet,
 ) {
 	t.Helper()
 	ctx := context.Background()
 	moduleCacheDir := normalpath.Join(pin.Remote(), pin.Owner(), pin.Repository())
 	// {remote}/{owner}/{repo}/manifests/{..}/{....} => should return manifest contents
-	moduleBlob, err := moduleManifest.Blob()
+	manifest := fileSet.Manifest()
+	manifestBlob, err := bufcas.ManifestToBlob(manifest)
 	require.NoError(t, err)
-	verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), moduleBlob)
-	for _, path := range moduleManifest.Paths() {
-		protoDigest, found := moduleManifest.DigestFor(path)
-		require.True(t, found)
-		protoBlob, found := blobs.BlobFor(protoDigest.String())
-		require.True(t, found)
+	verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), manifestBlob)
+	for _, fileNode := range manifest.FileNodes() {
+		blob := fileSet.BlobSet().GetBlob(fileNode.Digest())
+		require.NotNil(t, blob)
 		// {remote}/{owner}/{repo}/blobs/{..}/{....} => should return proto blob contents
-		verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), protoBlob)
+		verifyBlobContents(t, bucket, normalpath.Join(moduleCacheDir, blobsDir), blob)
 	}
 	f, err := bucket.Get(ctx, normalpath.Join(moduleCacheDir, commitsDir, pin.Commit()))
 	require.NoError(t, err)
@@ -175,35 +172,32 @@ func verifyCache(
 	commitContents, err := io.ReadAll(f)
 	require.NoError(t, err)
 	// {remote}/{owner}/{repo}/commits/{commit} => should return digest string format
-	assert.Equal(t, []byte(moduleBlob.Digest().String()), commitContents)
+	assert.Equal(t, []byte(manifestBlob.Digest().String()), commitContents)
 }
 
-func createSampleManifestAndBlobs(t *testing.T) (*manifest.Manifest, *manifest.BlobSet) {
+func createSampleFileSet(t *testing.T) bufcas.FileSet {
 	t.Helper()
-	blob, err := manifest.NewMemoryBlobFromReader(strings.NewReader(pingProto))
+	blob, err := bufcas.NewBlobForContent(bufcas.DigestTypeShake256, strings.NewReader(pingProto))
 	require.NoError(t, err)
-	var moduleManifest manifest.Manifest
-	err = moduleManifest.AddEntry("connect/ping/v1/ping.proto", *blob.Digest())
+	fileNode, err := bufcas.NewFileNode("connect/ping/v1/ping.proto", blob.Digest())
 	require.NoError(t, err)
-	blobSet, err := manifest.NewBlobSet(context.Background(), []manifest.Blob{blob})
+	manifest, err := bufcas.NewManifest([]bufcas.FileNode{fileNode})
 	require.NoError(t, err)
-	return &moduleManifest, blobSet
+	blobSet := bufcas.NewBlobSet([]bufcas.Blob{blob})
+	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
+	require.NoError(t, err)
+	return fileSet
 }
 
-func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir string, blob manifest.Blob) {
+func verifyBlobContents(t *testing.T, bucket storage.ReadWriteBucket, basedir string, blob bufcas.Blob) {
 	t.Helper()
-	moduleHexDigest := blob.Digest().Hex()
-	r, err := blob.Open(context.Background())
-	require.NoError(t, err)
-	var bb bytes.Buffer
-	_, err = io.Copy(&bb, r)
-	require.NoError(t, err)
-	f, err := bucket.Get(context.Background(), normalpath.Join(basedir, moduleHexDigest[:2], moduleHexDigest[2:]))
+	digestString := blob.Digest().String()
+	f, err := bucket.Get(context.Background(), normalpath.Join(basedir, digestString[:2], digestString[2:]))
 	require.NoError(t, err)
 	defer f.Close()
 	cachedModule, err := io.ReadAll(f)
 	require.NoError(t, err)
-	assert.Equal(t, bb.Bytes(), cachedModule)
+	assert.Equal(t, blob.Content(), cachedModule)
 }
 
 func assertModuleIdentity(t *testing.T, module bufmodule.Module, expectedModuleIdentity string, expectedCommit string) {

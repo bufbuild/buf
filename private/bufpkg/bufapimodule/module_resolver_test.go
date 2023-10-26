@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,10 +44,7 @@ func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
 
 func TestGetModulePin(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	// TODO: what? Is the "null digest" not just empty?
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	nilDigest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testGetModulePin(
 		t,
@@ -55,7 +52,7 @@ func TestGetModulePin(t *testing.T) {
 		&registryv1alpha1.GetRepositoryCommitByReferenceResponse{
 			RepositoryCommit: &registryv1alpha1.RepositoryCommit{
 				Id:     "commitid",
-				Digest: nullDigest.String(),
+				Digest: nilDigest.String(),
 				Name:   "commit",
 				Branch: "unsupported-feature",
 				Author: "John Doe",

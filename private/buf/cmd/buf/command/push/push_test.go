@@ -145,8 +145,7 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 		),
 	)
 	require.NoError(t, err)
-	_, ok := manifest.GetDigest("baz.file")
-	assert.False(t, ok, "baz.file should not be pushed")
+	assert.Nil(t, manifest.GetDigest("baz.file"), "baz.file should not be pushed")
 }
 
 func TestBucketBlobs(t *testing.T) {
