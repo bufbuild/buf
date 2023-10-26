@@ -17,6 +17,7 @@ package bufcas
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -90,7 +91,7 @@ type Digest interface {
 
 // NewDigest creates a new Digest for the given DigestType and digest value.
 //
-// If the length of value is 0, a nil Digest is returned.
+// The value must be non-empty, even in the case of a Digest representing empty content.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
@@ -100,7 +101,7 @@ func NewDigest(digestType DigestType, value []byte) (Digest, error) {
 
 // NewDigestForContent creates a new Digest based on the given content read from the Reader.
 //
-// If there is no content, a nil Digest is returned.
+// A valid Digest is returned, even in the case of empty content.
 //
 // The Reader is read until io.EOF.
 // Validation is performed to ensure that the DigestType is known.
@@ -109,13 +110,8 @@ func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error
 	case DigestTypeShake256:
 		shakeHash := sha3.NewShake256()
 		shakeHash.Reset()
-		n, err := io.Copy(shakeHash, reader)
-		if err != nil {
+		if _, err := io.Copy(shakeHash, reader); err != nil {
 			return nil, err
-		}
-		// No content, return a nil Digest.
-		if n == 0 {
-			return nil, nil
 		}
 		value := make([]byte, shake256Length)
 		if _, err := shakeHash.Read(value); err != nil {
@@ -131,13 +127,13 @@ func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error
 
 // NewDigestForString returns a new Digest for the given Digest string.
 //
-// If the string is empty, a nil Digest is returned.
+// The string is expected to be non-empty, If not, an error is treutned.
 //
 // This reverses Digest.String().
 // A Digest string is of the form typeString:hexValue.
 func NewDigestForString(s string) (Digest, error) {
 	if s == "" {
-		return nil, nil
+		return nil, errors.New("empty string passed to NewDigestForString")
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
@@ -156,13 +152,8 @@ func NewDigestForString(s string) (Digest, error) {
 
 // DigestToProto converts the given Digest to a proto Digest.
 //
-// If the given Digest is nil, returns nil.
-//
 // TODO: validate the returned Digest.
 func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
-	if digest == nil {
-		return nil, nil
-	}
 	protoDigestType, ok := digestTypeToProto[digest.Type()]
 	// Technically we have aleady done this validation but just to be safe.
 	if !ok {
@@ -176,15 +167,10 @@ func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
 
 // ProtoToDigest converts the given proto Digest to a Digest.
 //
-// If the given proto Digest is nil, returns nil.
-//
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
 // TODO: validate the input proto Digest.
 func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
-	if protoDigest == nil {
-		return nil, nil
-	}
 	digestType, ok := protoToDigestType[protoDigest.Type]
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
@@ -223,10 +209,6 @@ type digest struct {
 func newDigest(digestType DigestType, value []byte) (*digest, error) {
 	switch digestType {
 	case DigestTypeShake256:
-		// No content, return a nil Digest.
-		if len(value) == 0 {
-			return nil, nil
-		}
 		if len(value) != shake256Length {
 			return nil, fmt.Errorf("invalid %s Digest value: expected %d bytes, got %d", digestType.String(), shake256Length, len(value))
 		}

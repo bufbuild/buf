@@ -33,7 +33,7 @@ type Blob interface {
 	Digest() Digest
 	// Content returns the content of the Blob.
 	//
-	// Always non-empty.
+	// May be empty.
 	Content() []byte
 
 	// Protect against creation of a Blob outside of this package, as we
@@ -44,8 +44,6 @@ type Blob interface {
 // NewBlobForContent returns a new Blob with a Digest of the given DigestType,
 // and the content as read from the Reader.
 //
-// If the content is empty, returns nil.
-//
 // The reader is read until io.EOF.
 // Validation is performed to ensure that the DigestType is known.
 func NewBlobForContent(digestType DigestType, reader io.Reader) (Blob, error) {
@@ -55,17 +53,11 @@ func NewBlobForContent(digestType DigestType, reader io.Reader) (Blob, error) {
 	if err != nil {
 		return nil, err
 	}
-	// If the digest is nil, we have no content, return nil.
-	if digest == nil {
-		return nil, nil
-	}
 	return newBlob(digest, buffer.Bytes()), nil
 }
 
 // NewBlobForContentWithKnownDigest returns a new Blob for the given Digest and content
 // as read from the Reader.
-//
-// If the content is empty, returns nil after verifying the known Digest is nil.
 //
 // The reader is read until io.EOF.
 // Validation is performed to ensure that the Digest matches the computed Digest of the content.
@@ -73,12 +65,6 @@ func NewBlobForContentWithKnownDigest(knownDigest Digest, reader io.Reader) (Blo
 	blob, err := NewBlobForContent(knownDigest.Type(), reader)
 	if err != nil {
 		return nil, err
-	}
-	if blob == nil {
-		if knownDigest != nil {
-			return nil, fmt.Errorf("Blob was empty but had a known non-empty Digest %v", knownDigest)
-		}
-		return nil, nil
 	}
 	if !DigestEqual(blob.Digest(), knownDigest) {
 		return nil, fmt.Errorf("Digest %v did not match known Digest %v when creating a new Blob", blob.Digest(), knownDigest)
@@ -88,13 +74,8 @@ func NewBlobForContentWithKnownDigest(knownDigest Digest, reader io.Reader) (Blo
 
 // BlobToProto converts the given Blob to a proto Blob.
 //
-// If the given Blob is nil, returns nil.
-//
 // TODO: validate the returned Blob.
 func BlobToProto(blob Blob) (*storagev1beta1.Blob, error) {
-	if blob == nil {
-		return nil, nil
-	}
 	protoDigest, err := DigestToProto(blob.Digest())
 	if err != nil {
 		return nil, err
@@ -107,14 +88,9 @@ func BlobToProto(blob Blob) (*storagev1beta1.Blob, error) {
 
 // ProtoToBlob converts the given proto Blob to a Blob.
 //
-// If the given proto Blob is nil, returns nil.
-//
 // Validation is performed to ensure that the Digest matches the computed Digest of the content.
 // TODO: validate the input proto Blob.
 func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
-	if protoBlob == nil {
-		return nil, nil
-	}
 	digest, err := ProtoToDigest(protoBlob.Digest)
 	if err != nil {
 		return nil, err

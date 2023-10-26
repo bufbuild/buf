@@ -25,13 +25,7 @@ import (
 
 // FileNode is a path and associated digest.
 type FileNode interface {
-	// String encodes the FileNode into its canonical form.
-	//
-	// If the digest is nil, this is simply:
-	//
-	//   path
-	//
-	// If the digest is not nil, this is:
+	// String encodes the FileNode into its canonical form:
 	//
 	//   digestString[SP][SP]path
 	fmt.Stringer
@@ -42,7 +36,7 @@ type FileNode interface {
 	Path() string
 	// Digest returns the Digest of the file.
 	//
-	// The Digest may be nil, in which case the file is empty.
+	// The Digest is always non-nil.
 	Digest() Digest
 
 	// Protect against creation of a FileNode outside of this package, as we
@@ -55,6 +49,7 @@ type FileNode interface {
 // The Digest may be nil.
 //
 // The path is validated to be normalized and non-empty.
+// The digest is validated to not be nil.
 func NewFileNode(path string, digest Digest) (FileNode, error) {
 	return newFileNode(path, digest)
 }
@@ -63,29 +58,21 @@ func NewFileNode(path string, digest Digest) (FileNode, error) {
 //
 // This reverses FileNode.String().
 func NewFileNodeForString(s string) (FileNode, error) {
-	switch split := strings.Split(s, "  "); len(split) {
-	case 1:
-		return NewFileNode(split[0], nil)
-	case 2:
-		digest, err := NewDigestForString(split[0])
-		if err != nil {
-			return nil, err
-		}
-		return NewFileNode(split[1], digest)
-	default:
+	split := strings.Split(s, "  ")
+	if len(split) != 2 {
 		return nil, fmt.Errorf("unknown FileNode encoding: %q", s)
 	}
+	digest, err := NewDigestForString(split[0])
+	if err != nil {
+		return nil, err
+	}
+	return NewFileNode(split[1], digest)
 }
 
 // FileNodeToProto converts the given FileNode to a proto FileNode.
 //
-// If the given FileNode is nil, returns nil.
-//
 // TODO: validate the returned FileNode.
 func FileNodeToProto(fileNode FileNode) (*storagev1beta1.FileNode, error) {
-	if fileNode == nil {
-		return nil, nil
-	}
 	protoDigest, err := DigestToProto(fileNode.Digest())
 	if err != nil {
 		return nil, err
@@ -98,14 +85,9 @@ func FileNodeToProto(fileNode FileNode) (*storagev1beta1.FileNode, error) {
 
 // ProtoToFileNode converts the given proto FileNode to a FileNode.
 //
-// If the given proto FileNode is nil, returns nil.
-//
 // The path is validated to be normalized and non-empty.
 // TODO: validate the input proto FileNode.
 func ProtoToFileNode(protoFileNode *storagev1beta1.FileNode) (FileNode, error) {
-	if protoFileNode == nil {
-		return nil, nil
-	}
 	digest, err := ProtoToDigest(protoFileNode.Digest)
 	if err != nil {
 		return nil, err
@@ -130,6 +112,9 @@ func newFileNode(path string, digest Digest) (*fileNode, error) {
 	}
 	if path != normalizedPath {
 		return nil, fmt.Errorf("path %q was not equal to normalized path %q when constructing a FileNode", path, normalizedPath)
+	}
+	if digest == nil {
+		return nil, errors.New("nil Digest when constructing a FileNode")
 	}
 	return &fileNode{
 		path:   path,

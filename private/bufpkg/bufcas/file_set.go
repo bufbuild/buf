@@ -49,9 +49,7 @@ func NewFileSet(manifest Manifest, blobSet BlobSet) (FileSet, error) {
 	manifestDigestStringMap := make(map[string]struct{})
 	blobDigestStringMap := make(map[string]struct{})
 	for _, fileNode := range manifest.FileNodes() {
-		if digest := fileNode.Digest(); digest != nil {
-			manifestDigestStringMap[digest.String()] = struct{}{}
-		}
+		manifestDigestStringMap[fileNode.Digest().String()] = struct{}{}
 	}
 	for _, blob := range blobSet.Blobs() {
 		blobDigestStringMap[blob.Digest().String()] = struct{}{}
@@ -89,12 +87,7 @@ func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSe
 			if err != nil {
 				return err
 			}
-			var digest Digest
-			// Otherwise, we have an empty file.
-			if blob != nil {
-				digest = blob.Digest()
-			}
-			fileNode, err := NewFileNode(readObject.Path(), digest)
+			fileNode, err := NewFileNode(readObject.Path(), blob.Digest())
 			if err != nil {
 				return err
 			}
@@ -122,22 +115,13 @@ func PutFileSetToBucket(
 	bucket storage.WriteBucket,
 ) error {
 	for _, fileNode := range fileSet.Manifest().FileNodes() {
-		var blob Blob
-		if digest := fileNode.Digest(); digest != nil {
-			blob = fileSet.BlobSet().GetBlob(digest)
-			if blob == nil {
-				// This should never happen given our validation.
-				return fmt.Errorf("nil Blob with non-empty Digest %v in PutFileSetToBucket", digest)
-			}
-		}
 		writeObjectCloser, err := bucket.Put(ctx, fileNode.Path(), storage.PutWithAtomic())
 		if err != nil {
 			return err
 		}
-		if blob != nil {
-			if _, err := writeObjectCloser.Write(blob.Content()); err != nil {
-				return err
-			}
+		blob := fileSet.BlobSet().GetBlob(fileNode.Digest())
+		if _, err := writeObjectCloser.Write(blob.Content()); err != nil {
+			return err
 		}
 		if err := writeObjectCloser.Close(); err != nil {
 			return err

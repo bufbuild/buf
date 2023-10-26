@@ -27,7 +27,7 @@ import (
 // Maniest is a set FileNodes.
 type Manifest interface {
 	// fmt.Stringer encodes the Manifest into its canonical form, consisting of
-	// an ordered list of paths and their hash digests. Sorted by path.
+	// an ordered list of paths and their digests. Sorted by path.
 	//
 	// See the documentation on FileNode for how FileNodes are encoded.
 	//
@@ -36,7 +36,6 @@ type Manifest interface {
 	//	shake256:cd22db48cf7c274bbffcb5494a854000cd21b074df7c6edabbd0102c4be8d7623e3931560fcda7acfab286ae1d4f506911daa31f223ee159f59ffce0c7acbbaa  buf.lock
 	//	shake256:3b353aa5aacd11015e8577f16e2c4e7a242ce773d8e3a16806795bb94f76e601b0db9bf42d5e1907fda63303e1fa1c65f1c175ecc025a3ef29c3456ad237ad84  buf.md
 	//	shake256:7c88a20cf931702d042a4ddee3fde5de84814544411f1c62dbf435b1b81a12a8866a070baabcf8b5a0d31675af361ccb2d93ddada4cdcc11bab7ea3d8d7c4667  buf.yaml
-	//  pet/v1/empty_file.proto
 	//	shake256:9db25155eafd19b36882cff129daac575baa67ee44d1cb1fd3894342b28c72b83eb21aa595b806e9cb5344759bc8308200c5af98e4329aa83014dde99afa903a  pet/v1/pet.proto
 	fmt.Stringer
 
@@ -47,9 +46,8 @@ type Manifest interface {
 	FileNodes() []FileNode
 	// GetDigest gets the Digest for the given path.
 	//
-	// Returns nil and true if the path exists, but the file is empty.
-	// Returns false if the path does not exist.
-	GetDigest(path string) (Digest, bool)
+	// Returns nil if the path does not exist.
+	GetDigest(path string) Digest
 
 	// Protect against creation of a Manifest outside of this package, as we
 	// do very careful validation.
@@ -84,7 +82,7 @@ func NewManifestForString(s string) (Manifest, error) {
 
 // ManifestToBlob converts the string representation of the given Manifest into a Blob.
 //
-// The Manifest is assumed to be non-nil
+// The Manifest is assumed to be non-nil.
 func ManifestToBlob(manifest Manifest) (Blob, error) {
 	return NewBlobForContent(DigestTypeShake256, strings.NewReader(manifest.String()))
 }
@@ -98,7 +96,7 @@ func BlobToManifest(blob Blob) (Manifest, error) {
 
 // ManifestToProtoBlob converts the string representation of the given Manifest into a proto Blob.
 //
-// # The Manifest is assumed to be non-nil
+// The Manifest is assumed to be non-nil.
 //
 // TODO: validate the returned proto Blob.
 func ManifestToProtoBlob(manifest Manifest) (*storagev1beta1.Blob, error) {
@@ -125,7 +123,6 @@ func ProtoBlobToManifest(protoBlob *storagev1beta1.Blob) (Manifest, error) {
 // *** PRIVATE ***
 
 type manifest struct {
-	// Stores valid paths with nil digests as well
 	pathToFileNode        map[string]FileNode
 	sortedUniqueFileNodes []FileNode
 }
@@ -134,7 +131,6 @@ func newManifest(fileNodes []FileNode) (*manifest, error) {
 	pathToFileNode := make(map[string]FileNode)
 	for _, fileNode := range fileNodes {
 		if existingFileNode, ok := pathToFileNode[fileNode.Path()]; ok {
-			// Handles nil case
 			if !DigestEqual(existingFileNode.Digest(), fileNode.Digest()) {
 				return nil, fmt.Errorf("path %q had different Digests when constructing FileNode", fileNode.Path())
 			}
@@ -163,12 +159,12 @@ func (m *manifest) FileNodes() []FileNode {
 	return m.sortedUniqueFileNodes
 }
 
-func (m *manifest) GetDigest(path string) (Digest, bool) {
+func (m *manifest) GetDigest(path string) Digest {
 	fileNode, ok := m.pathToFileNode[path]
 	if !ok {
-		return nil, false
+		return nil
 	}
-	return fileNode.Digest(), true
+	return fileNode.Digest()
 }
 
 func (m *manifest) String() string {
