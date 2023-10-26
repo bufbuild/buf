@@ -25,12 +25,12 @@ import (
 // https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L72
 const disabledFieldNumberInMesageConstraints = 1
 
-// Validate validates that all rules on fields are valid, and all CEL expressions compile.
+// Check validates that all rules on fields are valid, and all CEL expressions compile.
 //
 // For a set of rules to be valid, it must
 //  1. permit _some_ value
 //  2. have a type compatible with the field it validates.
-func Validate(
+func Check(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	files []protosource.File,
 ) error {
@@ -47,7 +47,7 @@ func Validate(
 			continue
 		}
 		for _, message := range file.Messages() {
-			if err := validateForMessage(
+			if err := checkForMessage(
 				add,
 				descriptorResolver,
 				message,
@@ -56,7 +56,7 @@ func Validate(
 			}
 		}
 		for _, extension := range file.Extensions() {
-			if err := validateForField(
+			if err := checkForField(
 				add,
 				descriptorResolver,
 				extension,
@@ -68,7 +68,7 @@ func Validate(
 	return nil
 }
 
-func validateForMessage(
+func checkForMessage(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
 	message protosource.Message,
@@ -87,7 +87,7 @@ func validateForMessage(
 			message.Name(),
 		)
 	}
-	if err := validateCELForMessage(
+	if err := checkCELForMessage(
 		add,
 		messageConstraints,
 		messageDescriptor,
@@ -96,12 +96,12 @@ func validateForMessage(
 		return err
 	}
 	for _, nestedMessage := range message.Messages() {
-		if err := validateForMessage(add, descriptorResolver, nestedMessage); err != nil {
+		if err := checkForMessage(add, descriptorResolver, nestedMessage); err != nil {
 			return err
 		}
 	}
 	for _, field := range message.Fields() {
-		if err := validateForField(
+		if err := checkForField(
 			add,
 			descriptorResolver,
 			field,
@@ -110,7 +110,7 @@ func validateForMessage(
 		}
 	}
 	for _, extension := range message.Extensions() {
-		if err := validateForField(
+		if err := checkForField(
 			add,
 			descriptorResolver,
 			extension,

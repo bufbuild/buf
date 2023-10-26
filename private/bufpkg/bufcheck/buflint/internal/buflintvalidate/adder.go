@@ -21,25 +21,25 @@ import (
 )
 
 // The typical use of adder is calling adder.addForPathf([]int32{int64RulesFieldNumber, someFieldNumber}, "message")
-// from validateConstraintsForField (or a function that it calls). Notice that validateConstraintsForField
-// is recursive, because it can call validateMapRules and validateRepeatedRules, both of which can
-// call validateConstraintsForField.
+// from checkConstraintsForField (or a function that it calls). Notice that checkConstraintsForField
+// is recursive, because it can call checkMapRules and checkRepeatedRules, both of which can
+// call checkConstraintsForField.
 //
-// If validateConstraintsForField is called by validateMapRules, when we add a file annotation, the
+// If checkConstraintsForField is called by checkMapRules, when we add a file annotation, the
 // location should be for something like `repeated.items.string.max_len`. We need to search for the
 // location by a path like [mapRulesFieldNumber, keysFieldNumber, StringRulesFieldNumber, ...].
 //
-// If validateConstraintsForField is not in a recursive call, when we add a file annotation, the
+// If checkConstraintsForField is not in a recursive call, when we add a file annotation, the
 // location should be for something like `string.max_len`. We need to search for the location by
 // a path like [int64RulesFieldNumber, ...].
 //
-// However, from validateConstraintsForField's perspective, it doesn't know whether it's in a recursive
+// However, from checkConstraintsForField's perspective, it doesn't know whether it's in a recursive
 // call. It always treats the path like [int64RulesFieldNumber, ...], as opposed to [mapRulesFieldNumber, keysFieldNumber, StringRulesFieldNumber, ...].
 // To preserve the first part of the path, [mapRulesFieldNumber, keysFieldNumber], we create a new adder
-// with a base path when we recursively call validateConstraintsForField. The new adder will automatically
+// with a base path when we recursively call checkConstraintsForField. The new adder will automatically
 // prepend the base path whenever it searches for a location. This is manageable because the recursion
-// depth is at most 2 -- if validateMapRules or validateRepeatedRules calls validateConstraintsForField,
-// this call of validateConstraintsForField won't call validateMapRules or validateRepeatedRules.
+// depth is at most 2 -- if checkMapRules or checkRepeatedRules calls checkConstraintsForField,
+// this call of checkConstraintsForField won't call checkMapRules or checkRepeatedRules.
 type adder struct {
 	field               protosource.Field
 	fieldPrettyTypeName string

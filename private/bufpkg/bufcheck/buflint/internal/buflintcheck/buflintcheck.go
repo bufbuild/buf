@@ -632,7 +632,7 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 var CheckProtovalidate = newFilesWithImportsCheckFunc(checkProtovalidate)
 
 func checkProtovalidate(add addFunc, files []protosource.File) error {
-	return buflintvalidate.Validate(add, files)
+	return buflintvalidate.Check(add, files)
 }
 
 // CheckRPCNoClientStreaming is a check function.

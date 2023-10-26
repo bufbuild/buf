@@ -36,7 +36,7 @@ const (
 	celFieldNumberInMessageConstraints = 3
 )
 
-func validateCELForMessage(
+func checkCELForMessage(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	messageConstraints *validate.MessageConstraints,
 	messageDescriptor protoreflect.MessageDescriptor,
@@ -53,7 +53,7 @@ func validateCELForMessage(
 	if err != nil {
 		return err
 	}
-	validateCEL(
+	checkCEL(
 		celEnv,
 		messageConstraints.GetCel(),
 		fmt.Sprintf("message %q", message.Name()),
@@ -71,7 +71,7 @@ func validateCELForMessage(
 	return nil
 }
 
-func validateCELForField(
+func checkCELForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -99,7 +99,7 @@ func validateCELForField(
 	if err != nil {
 		return err
 	}
-	validateCEL(
+	checkCEL(
 		celEnv,
 		fieldConstraints.GetCel(),
 		fmt.Sprintf("field %q", adder.fieldName()),
@@ -116,39 +116,7 @@ func validateCELForField(
 	return nil
 }
 
-func getReflectMessageDescriptor(resolver protodesc.Resolver, message protosource.Message) (protoreflect.MessageDescriptor, error) {
-	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(message.FullName()))
-	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("unable to resolve MessageDescriptor: %s", message.FullName())
-	}
-	if err != nil {
-		return nil, err
-	}
-	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		// this should not happen
-		return nil, fmt.Errorf("%s is not a message", descriptor.FullName())
-	}
-	return messageDescriptor, nil
-}
-
-func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Field) (protoreflect.FieldDescriptor, error) {
-	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(field.FullName()))
-	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("unable to resolve FieldDescriptor: %s", field.FullName())
-	}
-	if err != nil {
-		return nil, err
-	}
-	fieldDescriptor, ok := descriptor.(protoreflect.FieldDescriptor)
-	if !ok {
-		// this should never happen
-		return nil, fmt.Errorf("%s is not a field", descriptor.FullName())
-	}
-	return fieldDescriptor, nil
-}
-
-func validateCEL(
+func checkCEL(
 	celEnv *cel.Env,
 	celConstraints []*validate.Constraint,
 	parentName string,
@@ -243,6 +211,38 @@ func validateCEL(
 			)
 		}
 	}
+}
+
+func getReflectMessageDescriptor(resolver protodesc.Resolver, message protosource.Message) (protoreflect.MessageDescriptor, error) {
+	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(message.FullName()))
+	if err == protoregistry.NotFound {
+		return nil, fmt.Errorf("unable to resolve MessageDescriptor: %s", message.FullName())
+	}
+	if err != nil {
+		return nil, err
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		// this should not happen
+		return nil, fmt.Errorf("%s is not a message", descriptor.FullName())
+	}
+	return messageDescriptor, nil
+}
+
+func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Field) (protoreflect.FieldDescriptor, error) {
+	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(field.FullName()))
+	if err == protoregistry.NotFound {
+		return nil, fmt.Errorf("unable to resolve FieldDescriptor: %s", field.FullName())
+	}
+	if err != nil {
+		return nil, err
+	}
+	fieldDescriptor, ok := descriptor.(protoreflect.FieldDescriptor)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("%s is not a field", descriptor.FullName())
+	}
+	return fieldDescriptor, nil
 }
 
 // this depends on the undocumented behavior of cel-go's error message

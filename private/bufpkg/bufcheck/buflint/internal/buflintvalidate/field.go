@@ -166,9 +166,9 @@ var (
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 )
 
-// validateForField validates that protovalidate rules defined for this field are
+// checkForField validates that protovalidate rules defined for this field are
 // valid, not including CEL expressions.
-func validateForField(
+func checkForField(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
 	field protosource.Field,
@@ -178,7 +178,7 @@ func validateForField(
 		return err
 	}
 	constraints := resolver.DefaultResolver{}.ResolveFieldConstraints(fieldDescriptor)
-	return validateConstraintsForField(
+	return checkConstraintsForField(
 		&adder{
 			field:               field,
 			fieldPrettyTypeName: getFieldTypePrettyNameName(fieldDescriptor),
@@ -189,7 +189,7 @@ func validateForField(
 	)
 }
 
-func validateConstraintsForField(
+func checkConstraintsForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -198,10 +198,10 @@ func validateConstraintsForField(
 		return nil
 	}
 	if fieldDescriptor.IsExtension() {
-		validateConstraintsForExtension(adder, fieldConstraints)
+		checkConstraintsForExtension(adder, fieldConstraints)
 	}
-	validateFieldFlags(adder, fieldConstraints)
-	if err := validateCELForField(
+	checkFieldFlags(adder, fieldConstraints)
+	if err := checkCELForField(
 		adder,
 		fieldConstraints,
 		fieldDescriptor,
@@ -216,39 +216,39 @@ func validateConstraintsForField(
 	typeRulesFieldNumber := int32(typeRulesFieldDescriptor.Number())
 	// Map and repeated special cases that contain fieldConstraints.
 	if typeRulesFieldNumber == mapRulesFieldNumber {
-		return validateMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor)
+		return checkMapRules(adder, fieldConstraints.GetMap(), fieldDescriptor)
 	}
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
-		return validateRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor)
+		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor)
 	}
-	typesMatch := validateRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber)
+	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber)
 	if !typesMatch {
 		return nil
 	}
-	if numberRulesValidateFunc, ok := fieldNumberToValidateNumberRulesFunc[typeRulesFieldNumber]; ok {
+	if numberRulesCheckFunc, ok := fieldNumberToCheckNumberRulesFunc[typeRulesFieldNumber]; ok {
 		numberRulesMessage := fieldConstraintsMessage.Get(typeRulesFieldDescriptor).Message()
-		return numberRulesValidateFunc(adder, typeRulesFieldNumber, numberRulesMessage)
+		return numberRulesCheckFunc(adder, typeRulesFieldNumber, numberRulesMessage)
 	}
 	switch typeRulesFieldNumber {
 	case boolRulesFieldNumber:
 		// Bool rules only have `const` and does not need validating.
 	case stringRulesFieldNumber:
-		return validateStringRules(adder, fieldConstraints.GetString_())
+		return checkStringRules(adder, fieldConstraints.GetString_())
 	case bytesRulesFieldNumber:
-		return validateBytesRules(adder, fieldConstraints.GetBytes())
+		return checkBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:
-		validateEnumRules(adder, fieldConstraints.GetEnum())
+		checkEnumRules(adder, fieldConstraints.GetEnum())
 	case anyRulesFieldNumber:
-		validateAnyRules(adder, fieldConstraints.GetAny())
+		checkAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
-		return validateDurationRules(adder, fieldConstraints.GetDuration())
+		return checkDurationRules(adder, fieldConstraints.GetDuration())
 	case timestampRulesFieldNumber:
-		return validateTimestampRules(adder, fieldConstraints.GetTimestamp())
+		return checkTimestampRules(adder, fieldConstraints.GetTimestamp())
 	}
 	return nil
 }
 
-func validateFieldFlags(
+func checkFieldFlags(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 ) {
@@ -282,7 +282,7 @@ func validateFieldFlags(
 
 // Assumes the rule isn't a map rule or repeated rule, but the field could be a
 // map or a repeated field.
-func validateRulesTypeMatchFieldType(
+func checkRulesTypeMatchFieldType(
 	adder *adder,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	ruleFieldNumber int32,
@@ -305,7 +305,7 @@ func validateRulesTypeMatchFieldType(
 	return false
 }
 
-func validateConstraintsForExtension(
+func checkConstraintsForExtension(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 ) {
@@ -327,7 +327,7 @@ func validateConstraintsForExtension(
 	}
 }
 
-func validateRepeatedRules(
+func checkRepeatedRules(
 	baseAdder *adder,
 	repeatedRules *validate.RepeatedRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -366,10 +366,10 @@ func validateRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return validateConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor)
 }
 
-func validateMapRules(
+func checkMapRules(
 	baseAdder *adder,
 	mapRules *validate.MapRules,
 	fieldDescriptor protoreflect.FieldDescriptor,
@@ -395,20 +395,20 @@ func validateMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := validateConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey())
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey())
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return validateConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue())
+	return checkConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue())
 }
 
-func validateStringRules(adder *adder, stringRules *validate.StringRules) error {
-	validateConstAndIn(adder, stringRules, stringRulesFieldNumber)
-	if err := validateLenRules(adder, stringRules, stringRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
+func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
+	checkConstAndIn(adder, stringRules, stringRulesFieldNumber)
+	if err := checkLenRules(adder, stringRules, stringRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
 		return err
 	}
-	if err := validateLenRules(adder, stringRules, stringRulesFieldNumber, "len_bytes", "min_bytes", "max_bytes"); err != nil {
+	if err := checkLenRules(adder, stringRules, stringRulesFieldNumber, "len_bytes", "min_bytes", "max_bytes"); err != nil {
 		return err
 	}
 	if stringRules.MinLen != nil && stringRules.MaxBytes != nil && *stringRules.MaxBytes < *stringRules.MinLen {
@@ -521,9 +521,9 @@ func validateStringRules(adder *adder, stringRules *validate.StringRules) error 
 	return nil
 }
 
-func validateBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
-	validateConstAndIn(adder, bytesRules, bytesRulesFieldNumber)
-	if err := validateLenRules(adder, bytesRules, bytesRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
+func checkBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
+	checkConstAndIn(adder, bytesRules, bytesRulesFieldNumber)
+	if err := checkLenRules(adder, bytesRules, bytesRulesFieldNumber, "len", "min_len", "max_len"); err != nil {
 		return err
 	}
 	subBytesFields := []struct {
@@ -561,19 +561,19 @@ func validateBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 	return nil
 }
 
-func validateEnumRules(
+func checkEnumRules(
 	adder *adder,
 	enumRules *validate.EnumRules,
 ) {
-	validateConstAndIn(adder, enumRules, enumRulesFieldNumber)
+	checkConstAndIn(adder, enumRules, enumRulesFieldNumber)
 }
 
-func validateAnyRules(adder *adder, anyRules *validate.AnyRules) {
-	validateConstAndIn(adder, anyRules, anyRulesFieldNumber)
+func checkAnyRules(adder *adder, anyRules *validate.AnyRules) {
+	checkConstAndIn(adder, anyRules, anyRulesFieldNumber)
 }
 
-func validateDurationRules(adder *adder, r *validate.DurationRules) error {
-	return validateNumericRules[durationpb.Duration](
+func checkDurationRules(adder *adder, r *validate.DurationRules) error {
+	return checkNumericRules[durationpb.Duration](
 		adder,
 		durationRulesFieldNumber,
 		r.ProtoReflect(),
@@ -583,8 +583,8 @@ func validateDurationRules(adder *adder, r *validate.DurationRules) error {
 	)
 }
 
-func validateTimestampRules(adder *adder, timestampRules *validate.TimestampRules) error {
-	if err := validateNumericRules[timestamppb.Timestamp](
+func checkTimestampRules(adder *adder, timestampRules *validate.TimestampRules) error {
+	if err := checkNumericRules[timestamppb.Timestamp](
 		adder,
 		timestampRulesFieldNumber,
 		timestampRules.ProtoReflect(),
@@ -607,7 +607,7 @@ func validateTimestampRules(adder *adder, timestampRules *validate.TimestampRule
 		)
 	}
 	if timestampRules.Within != nil {
-		if durationErrString := validateDuration(timestampRules.Within); durationErrString != "" {
+		if durationErrString := checkDuration(timestampRules.Within); durationErrString != "" {
 			adder.addForPathf(
 				[]int32{timestampRulesFieldNumber, withInFieldNumberInTimestampRules},
 				"Field %q has an invalid %s: %s.",
@@ -628,7 +628,7 @@ func validateTimestampRules(adder *adder, timestampRules *validate.TimestampRule
 	return nil
 }
 
-func validateConstAndIn(adder *adder, rule proto.Message, ruleFieldNumber int32) {
+func checkConstAndIn(adder *adder, rule proto.Message, ruleFieldNumber int32) {
 	var (
 		fieldCount       int
 		constFieldNumber int32
@@ -669,7 +669,7 @@ func validateConstAndIn(adder *adder, rule proto.Message, ruleFieldNumber int32)
 	}
 }
 
-func validateLenRules(
+func checkLenRules(
 	adder *adder,
 	rules proto.Message,
 	ruleFieldNumber int32,

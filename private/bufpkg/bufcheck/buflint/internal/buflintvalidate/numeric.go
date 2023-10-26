@@ -23,29 +23,29 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var fieldNumberToValidateNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
-	floatRulesFieldNumber:    validateNumberRules[float32],
-	doubleRulesFieldNumber:   validateNumberRules[float64],
-	int32RulesFieldNumber:    validateNumberRules[int32],
-	int64RulesFieldNumber:    validateNumberRules[int64],
-	uInt32RulesFieldNumber:   validateNumberRules[uint32],
-	uInt64RulesFieldNumber:   validateNumberRules[uint64],
-	sInt32RulesFieldNumber:   validateNumberRules[int32],
-	sInt64RulesFieldNumber:   validateNumberRules[int64],
-	fixed32RulesFieldNumber:  validateNumberRules[uint32],
-	fixed64RulesFieldNumber:  validateNumberRules[uint64],
-	sFixed32RulesFieldNumber: validateNumberRules[int32],
-	sFixed64RulesFieldNumber: validateNumberRules[int64],
+var fieldNumberToCheckNumberRulesFunc = map[int32]func(*adder, int32, protoreflect.Message) error{
+	floatRulesFieldNumber:    checkNumberRules[float32],
+	doubleRulesFieldNumber:   checkNumberRules[float64],
+	int32RulesFieldNumber:    checkNumberRules[int32],
+	int64RulesFieldNumber:    checkNumberRules[int64],
+	uInt32RulesFieldNumber:   checkNumberRules[uint32],
+	uInt64RulesFieldNumber:   checkNumberRules[uint64],
+	sInt32RulesFieldNumber:   checkNumberRules[int32],
+	sInt64RulesFieldNumber:   checkNumberRules[int64],
+	fixed32RulesFieldNumber:  checkNumberRules[uint32],
+	fixed64RulesFieldNumber:  checkNumberRules[uint64],
+	sFixed32RulesFieldNumber: checkNumberRules[int32],
+	sFixed64RulesFieldNumber: checkNumberRules[int64],
 }
 
-func validateNumberRules[
+func checkNumberRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64,
 ](
 	adder *adder,
 	numberRuleFieldNumber int32,
 	ruleMessage protoreflect.Message,
 ) error {
-	return validateNumericRules[T](
+	return checkNumericRules[T](
 		adder,
 		numberRuleFieldNumber,
 		ruleMessage,
@@ -55,7 +55,7 @@ func validateNumberRules[
 	)
 }
 
-func validateNumericRules[
+func checkNumericRules[
 	T int32 | int64 | uint32 | uint64 | float32 | float64 | timestamppb.Timestamp | durationpb.Duration,
 ](
 	adder *adder,
@@ -216,7 +216,7 @@ func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, strin
 	if err != nil {
 		return nil, "", err
 	}
-	if durationErrString := validateDuration(duration); durationErrString != "" {
+	if durationErrString := checkDuration(duration); durationErrString != "" {
 		return nil, durationErrString, nil
 	}
 	return duration, "", nil
@@ -246,7 +246,7 @@ func compareDuration(d1 *durationpb.Duration, d2 *durationpb.Duration) float64 {
 	return float64(d1.Nanos - d2.Nanos)
 }
 
-func validateDuration(duration *durationpb.Duration) string {
+func checkDuration(duration *durationpb.Duration) string {
 	// This is slightly smaller than MaxInt64, 9,223,372,036,854,775,807,
 	// but 9,223,372,036,854,775,428 is the maximum value that does not cause a
 	// runtime error in protovalidate.
