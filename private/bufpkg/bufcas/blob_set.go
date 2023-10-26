@@ -67,7 +67,7 @@ func BlobSetToProtoBlobs(blobSet BlobSet) ([]*storagev1beta1.Blob, error) {
 	return protoBlobs, nil
 }
 
-// ProtoBlobsToBlobSet convers the given proto Blobs into a BlobSet.
+// ProtoBlobsToBlobSet converts the given proto Blobs into a BlobSet.
 //
 // TODO: validate the input proto Blobs.
 func ProtoBlobsToBlobSet(protoBlobs []*storagev1beta1.Blob) (BlobSet, error) {

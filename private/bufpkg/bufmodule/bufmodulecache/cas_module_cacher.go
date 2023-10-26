@@ -171,6 +171,9 @@ func (c *casModuleCacher) validateBlob(
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
 	cacheDigest, err := bufcas.NewDigestForContent(digest.Type(), readObjectCloser)
+	if err != nil {
+		return false, err
+	}
 	return bufcas.DigestEqual(digest, cacheDigest), nil
 }
 

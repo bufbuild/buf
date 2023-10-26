@@ -146,7 +146,7 @@ func FileSetToProtoManifestBlobAndBlobs(fileSet FileSet) (*storagev1beta1.Blob, 
 	return protoManifestBlob, protoBlobs, nil
 }
 
-// ManifestBlobsAndBlobsToFileSet convers the given manifest Blob and set of Blobs representing
+// ManifestBlobsAndBlobsToFileSet converts the given manifest Blob and set of Blobs representing
 // the Files into a FileSet.
 //
 // Validation is done to ensure the Manifest exactly matches the BlobSet.
