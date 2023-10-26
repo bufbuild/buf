@@ -73,6 +73,7 @@ func NewManifestForString(s string) (Manifest, error) {
 	if s[len(s)-1] != '\n' {
 		return nil, errors.New("string for Manifest did not end with newline")
 	}
+	s = s[:len(s)-1]
 	for i, line := range strings.Split(s, "\n") {
 		fileNode, err := NewFileNodeForString(line)
 		if err != nil {
