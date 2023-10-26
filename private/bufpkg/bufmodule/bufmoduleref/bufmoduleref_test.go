@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -173,9 +172,7 @@ func pin(t *testing.T, repository string) ModulePin {
 
 func createDigest(t *testing.T, b []byte) string {
 	t.Helper()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	digest, err := digester.Digest(bytes.NewReader(b))
+	digest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewReader(b))
 	require.NoError(t, err)
 	return digest.String()
 }
