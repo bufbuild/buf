@@ -20,12 +20,12 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,8 +133,10 @@ func testDownload(
 		} else {
 			assert.NotNil(t, module)
 			assert.NoError(t, err)
-			for _, path := range module.Manifest().Paths() {
-				moduleFile, err := module.GetModuleFile(ctx, path)
+			fileSet := module.FileSet()
+			require.NotNil(t, fileSet)
+			for _, fileNode := range fileSet.Manifest().FileNodes() {
+				moduleFile, err := module.GetModuleFile(ctx, fileNode.Path())
 				require.NoError(t, err)
 				assert.Equal(t, pin.Commit(), moduleFile.Commit())
 			}
@@ -161,27 +163,20 @@ func (fm filemap) apply(m *mockDownloadService) error {
 		return err
 	}
 	ctx := context.Background()
-	moduleManifest, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	fileSet, err := bufcas.NewFileSetForBucket(ctx, bucket)
 	if err != nil {
 		return err
 	}
-	mBlob, err := moduleManifest.Blob()
+	protoManifestBlob, err := bufcas.ManifestToProtoBlob(fileSet.Manifest())
 	if err != nil {
 		return err
 	}
-	m.manifestBlob, err = bufmanifest.AsProtoBlob(ctx, mBlob)
+	protoBlobs, err := bufcas.BlobSetToProtoBlobs(fileSet.BlobSet())
 	if err != nil {
 		return err
 	}
-	blobs := blobSet.Blobs()
-	m.blobs = make([]*modulev1alpha1.Blob, 0, len(blobs))
-	for _, blob := range blobs {
-		protoBlob, err := bufmanifest.AsProtoBlob(ctx, blob)
-		if err != nil {
-			return err
-		}
-		m.blobs = append(m.blobs, protoBlob)
-	}
+	m.manifestBlob = bufcasalpha.BlobToAlpha(protoManifestBlob)
+	m.blobs = bufcasalpha.BlobsToAlpha(protoBlobs)
 	return nil
 }
 
