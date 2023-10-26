@@ -32,14 +32,14 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	storagev1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -139,15 +139,13 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 	request := mock.PushManifestRequest()
 	require.NotNil(t, request)
 	requestManifest := request.Manifest
-	blob, err := bufmanifest.NewBlobFromProto(requestManifest)
+	manifest, err := bufcas.ProtoBlobToManifest(
+		bufcasalpha.AlphaToBlob(
+			requestManifest,
+		),
+	)
 	require.NoError(t, err)
-	ctx := context.Background()
-	reader, err := blob.Open(ctx)
-	require.NoError(t, err)
-	defer reader.Close()
-	m, err := manifest.NewFromReader(reader)
-	require.NoError(t, err)
-	_, ok := m.DigestFor("baz.file")
+	_, ok := manifest.GetDigest("baz.file")
 	assert.False(t, ok, "baz.file should not be pushed")
 }
 
@@ -162,19 +160,19 @@ func TestBucketBlobs(t *testing.T) {
 	)
 	require.NoError(t, err)
 	ctx := context.Background()
-	m, blobSet, err := manifest.NewFromBucket(ctx, bucket)
+	fileSet, err := bufcas.NewFileSetForBucket(ctx, bucket)
 	require.NoError(t, err)
-	_, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
+	_, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(blobs))
+	assert.Equal(t, 2, len(protoBlobs))
 	digests := make(map[string]struct{})
-	for _, blob := range blobs {
+	for _, protoBlob := range protoBlobs {
 		assert.Equal(
 			t,
-			modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
-			blob.Digest.DigestType,
+			storagev1beta1.Digest_TYPE_SHAKE256,
+			protoBlob.Digest.Type,
 		)
-		hexDigest := hex.EncodeToString(blob.Digest.Digest)
+		hexDigest := hex.EncodeToString(protoBlob.Digest.Value)
 		assert.NotContains(t, digests, hexDigest, "duplicated blob")
 		digests[hexDigest] = struct{}{}
 	}
