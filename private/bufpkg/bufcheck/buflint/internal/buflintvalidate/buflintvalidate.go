@@ -15,10 +15,15 @@
 package buflintvalidate
 
 import (
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
+
+// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L72
+const disabledFieldNumberInMesageConstraints = 1
 
 // Validate validates that all rules on fields are valid, and all CEL expressions compile.
 //
@@ -68,9 +73,24 @@ func validateForMessage(
 	descriptorResolver protodesc.Resolver,
 	message protosource.Message,
 ) error {
+	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
+	if err != nil {
+		return err
+	}
+	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
+	if messageConstraints.GetDisabled() && len(messageConstraints.GetCel()) > 0 {
+		add(
+			message,
+			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMesageConstraints),
+			nil,
+			"Message %q has (buf.validate.message).disabled and does not need other rules in (buf.validate.message).",
+			message.Name(),
+		)
+	}
 	if err := validateCELForMessage(
 		add,
-		descriptorResolver,
+		messageConstraints,
+		messageDescriptor,
 		message,
 	); err != nil {
 		return err

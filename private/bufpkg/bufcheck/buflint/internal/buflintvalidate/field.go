@@ -78,6 +78,8 @@ const (
 	suffixFieldNumberInStringRules = 8
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2625
 	containsFieldNumberInStringRules = 9
+	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2640
+	notContainsFieldNumberInStringRules = 23
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2844
 	wellKnownRegexFieldNumberInStringRules = 24
 	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2874
@@ -235,7 +237,7 @@ func validateConstraintsForField(
 	case bytesRulesFieldNumber:
 		return validateBytesRules(adder, fieldConstraints.GetBytes())
 	case enumRulesFieldNumber:
-		return validateEnumRules(adder, fieldConstraints.GetEnum(), fieldDescriptor.Enum().Values())
+		validateEnumRules(adder, fieldConstraints.GetEnum())
 	case anyRulesFieldNumber:
 		validateAnyRules(adder, fieldConstraints.GetAny())
 	case durationRulesFieldNumber:
@@ -483,6 +485,17 @@ func validateStringRules(adder *adder, stringRules *validate.StringRules) error 
 				*stringRules.NotContains,
 			)
 		}
+		if stringRules.NotContains != nil && strings.Contains(*stringRules.NotContains, substring) {
+			adder.addForPathf(
+				[]int32{stringRulesFieldNumber, substringFieldNumber},
+				"Field %q has a %s (%q) containing its %s (%q).",
+				adder.fieldName(),
+				adder.getFieldRuleName(stringRulesFieldNumber, notContainsFieldNumberInStringRules),
+				*stringRules.NotContains,
+				substringField.name,
+				substring,
+			)
+		}
 	}
 	if stringRules.Pattern != nil {
 		if _, err := regexp.Compile(*stringRules.Pattern); err != nil {
@@ -551,16 +564,8 @@ func validateBytesRules(adder *adder, bytesRules *validate.BytesRules) error {
 func validateEnumRules(
 	adder *adder,
 	enumRules *validate.EnumRules,
-	enumValueDescriptors protoreflect.EnumValueDescriptors,
-) error {
+) {
 	validateConstAndIn(adder, enumRules, enumRulesFieldNumber)
-	if !enumRules.GetDefinedOnly() {
-		return nil
-	}
-	if len(enumRules.In) == 0 && len(enumRules.NotIn) == 0 {
-		return nil
-	}
-	return nil
 }
 
 func validateAnyRules(adder *adder, anyRules *validate.AnyRules) {

@@ -138,4 +138,12 @@ message StringTest {
     (buf.validate.field).string.min_len = 10,
     (buf.validate.field).string.in = "foo"
   ];
+  string valid_prefix_and_not_contains = 30 [
+    (buf.validate.field).string.prefix = "foo",
+    (buf.validate.field).string.not_contains = "bar"
+  ];
+  string not_contains_conatins_prefix = 31 [
+    (buf.validate.field).string.not_contains = "bar_foo",
+    (buf.validate.field).string.prefix = "foo"
+  ];
 }

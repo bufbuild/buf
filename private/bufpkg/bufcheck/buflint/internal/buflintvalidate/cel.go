@@ -21,7 +21,6 @@ import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/protovalidate-go/celext"
-	"github.com/bufbuild/protovalidate-go/resolver"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -39,14 +38,10 @@ const (
 
 func validateCELForMessage(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	descriptorResolver protodesc.Resolver,
+	messageConstraints *validate.MessageConstraints,
+	messageDescriptor protoreflect.MessageDescriptor,
 	message protosource.Message,
 ) error {
-	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
-	if err != nil {
-		return err
-	}
-	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
 		return err
