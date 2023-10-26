@@ -24,8 +24,7 @@ import (
 //
 // For a set of rules to be valid, it must
 //  1. permit _some_ value
-//  2. have no redundant rules
-//  3. have a type compatible with the field it validates.
+//  2. have a type compatible with the field it validates.
 func Validate(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	files []protosource.File,
@@ -52,7 +51,7 @@ func Validate(
 			}
 		}
 		for _, extension := range file.Extensions() {
-			if err := validateRulesForSingleField(
+			if err := validateForField(
 				add,
 				descriptorResolver,
 				extension,
@@ -69,7 +68,7 @@ func validateForMessage(
 	descriptorResolver protodesc.Resolver,
 	message protosource.Message,
 ) error {
-	if err := validateCELMessage(
+	if err := validateCELForMessage(
 		add,
 		descriptorResolver,
 		message,
@@ -82,7 +81,7 @@ func validateForMessage(
 		}
 	}
 	for _, field := range message.Fields() {
-		if err := validateRulesForSingleField(
+		if err := validateForField(
 			add,
 			descriptorResolver,
 			field,
@@ -91,7 +90,7 @@ func validateForMessage(
 		}
 	}
 	for _, extension := range message.Extensions() {
-		if err := validateRulesForSingleField(
+		if err := validateForField(
 			add,
 			descriptorResolver,
 			extension,

@@ -199,10 +199,11 @@ func getTimestampFromValue(value protoreflect.Value) (*timestamppb.Timestamp, st
 	if err != nil {
 		return nil, "", err
 	}
-	if timestampErr := timestamp.CheckValid(); timestampErr != nil {
-		return nil, timestampErr.Error(), nil
+	timestampErr := timestamp.CheckValid()
+	if timestampErr == nil {
+		return timestamp, "", nil
 	}
-	return timestamp, "", nil
+	return nil, timestampErr.Error(), nil
 }
 
 func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, string, error) {

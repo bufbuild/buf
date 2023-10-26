@@ -37,7 +37,7 @@ const (
 	celFieldNumberInMessageConstraints = 3
 )
 
-func validateCELMessage(
+func validateCELForMessage(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
 	message protosource.Message,
@@ -76,7 +76,7 @@ func validateCELMessage(
 	return nil
 }
 
-func validateCELField(
+func validateCELForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,

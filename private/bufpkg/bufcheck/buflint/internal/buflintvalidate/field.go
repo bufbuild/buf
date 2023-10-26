@@ -164,9 +164,9 @@ var (
 	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
 )
 
-// validateRulesForSingleField validates that protovalidate rules defined for this field are
+// validateForField validates that protovalidate rules defined for this field are
 // valid, not including CEL expressions.
-func validateRulesForSingleField(
+func validateForField(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
 	field protosource.Field,
@@ -199,7 +199,7 @@ func validateConstraintsForField(
 		validateConstraintsForExtension(adder, fieldConstraints)
 	}
 	validateFieldFlags(adder, fieldConstraints)
-	if err := validateCELField(
+	if err := validateCELForField(
 		adder,
 		fieldConstraints,
 		fieldDescriptor,
