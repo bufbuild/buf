@@ -68,10 +68,9 @@ func checkNumericRules[
 	compareFunc func(*T, *T) float64,
 	formatFunc func(*T) interface{},
 ) error {
-	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
-	var in, notIn []*T
 	var fieldCount int
-	var constFieldNumber, inFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
+	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
+	var constFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
 	var err error
 	ruleMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
 		fieldCount++
@@ -97,23 +96,6 @@ func checkNumericRules[
 			lte, convertErrorMessage, err = convertFunc(value)
 			upperBound = lte
 			upperBoundFieldNumber = fieldNumber
-		case "in":
-			inFieldNumber = fieldNumber
-			for i := 0; i < value.List().Len(); i++ {
-				var converted *T
-				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
-				if converted != nil {
-					in = append(in, converted)
-				}
-			}
-		case "not_in":
-			for i := 0; i < value.List().Len(); i++ {
-				var converted *T
-				converted, convertErrorMessage, err = convertFunc(value.List().Get(i))
-				if converted != nil {
-					notIn = append(notIn, converted)
-				}
-			}
 		}
 		if convertErrorMessage != "" {
 			adder.addForPathf(
@@ -132,18 +114,9 @@ func checkNumericRules[
 	if constant != nil && fieldCount > 1 {
 		adder.addForPathf(
 			[]int32{ruleFieldNumber, constFieldNumber},
-			"Field %q has %s and does not need other rules in %s.",
+			"Field %q has %s, therefore other rules in %s are not applied and should be removed.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, constFieldNumber),
-			adder.getFieldRuleName(ruleFieldNumber),
-		)
-	}
-	if len(in) > 0 && fieldCount > 1 {
-		adder.addForPathf(
-			[]int32{ruleFieldNumber, inFieldNumber},
-			"Field %q has %s and does not need other rules in %s.",
-			adder.fieldName(),
-			adder.getFieldRuleName(ruleFieldNumber, inFieldNumber),
 			adder.getFieldRuleName(ruleFieldNumber),
 		)
 	}
@@ -156,9 +129,11 @@ func checkNumericRules[
 				{ruleFieldNumber, lowerBoundFieldNumber},
 				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"Field %q has equal %s and lte, use const instead.",
+			"Field %q has equal %s and %s, use %s.const instead.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
+			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
+			adder.getFieldRuleName(ruleFieldNumber),
 		)
 		return nil
 	}

@@ -30,11 +30,6 @@ message StringTest {
     // const should be the only field if defined
     (buf.validate.field).string.const = "foo"
   ];
-  string in = 7 [
-    (buf.validate.field).string.max_len = 1,
-    // in should be the only field is defined
-    (buf.validate.field).string.in = "foo"
-  ];
   string len_and_min_len = 8 [
     (buf.validate.field).string.min_len = 1,
     // len is exclusive with min_len
@@ -132,11 +127,11 @@ message StringTest {
   ];
   google.protobuf.StringValue string_wrapper_invalid = 28 [
     (buf.validate.field).string.min_len = 10,
-    (buf.validate.field).string.in = "foo"
+    (buf.validate.field).string.const = "foo"
   ];
   bytes type_mismatch = 29 [
     (buf.validate.field).string.min_len = 10,
-    (buf.validate.field).string.in = "foo"
+    (buf.validate.field).string.max_len = 20
   ];
   string valid_prefix_and_not_contains = 30 [
     (buf.validate.field).string.prefix = "foo",

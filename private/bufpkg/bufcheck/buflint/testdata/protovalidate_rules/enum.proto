@@ -27,9 +27,4 @@ message EnumTest {
     // const should be the only field
     (buf.validate.field).enum.const = 2
   ];
-  TestEnum defined_only_and_in = 6 [
-    (buf.validate.field).enum.defined_only = true,
-    // in should be the only field
-    (buf.validate.field).enum.in = 1
-  ];
 }

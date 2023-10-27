@@ -20,12 +20,6 @@ message Int32Test {
     (buf.validate.field).uint32.const = 1,
     (buf.validate.field).uint32.gt = 8
   ];
-  sint32 in_and_other_fields = 6 [
-    (buf.validate.field).sint32.lt = 10,
-    // the next line should be annotated
-    (buf.validate.field).sint32.in = 1,
-    (buf.validate.field).sint32.gt = 8
-  ];
   double equal_lte_gte = 8 [
     // the next line should be annotated
     (buf.validate.field).double.lte = 10.0,
