@@ -122,7 +122,25 @@ func checkNumericRules[
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
-	if isUpperBoundInclusive && isLowerBoundInclusive && compareFunc(upperBound, lowerBound) == 0 {
+	if compareFunc(upperBound, lowerBound) > 0 {
+		return nil
+	}
+	if compareFunc(upperBound, lowerBound) < 0 {
+		adder.addForPathsf(
+			[][]int32{
+				{ruleFieldNumber, lowerBoundFieldNumber},
+				{ruleFieldNumber, upperBoundFieldNumber},
+			},
+			"Field %q has value %v for %s, which is higher than value %v for %s.",
+			adder.fieldName(),
+			formatFunc(lowerBound),
+			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
+			formatFunc(upperBound),
+			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
+		)
+		return nil
+	}
+	if isUpperBoundInclusive && isLowerBoundInclusive {
 		adder.addForPathsf(
 			[][]int32{
 				{ruleFieldNumber, lowerBoundFieldNumber},
@@ -136,20 +154,18 @@ func checkNumericRules[
 		)
 		return nil
 	}
-	if compareFunc(upperBound, lowerBound) <= 0 {
-		adder.addForPathsf(
-			[][]int32{
-				{ruleFieldNumber, lowerBoundFieldNumber},
-				{ruleFieldNumber, upperBoundFieldNumber},
-			},
-			"Field %q has value %v for %s, which is higher than value %v for %s.",
-			adder.fieldName(),
-			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
-			formatFunc(lowerBound),
-			formatFunc(upperBound),
-			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
-		)
-	}
+	adder.addForPathsf(
+		[][]int32{
+			{ruleFieldNumber, lowerBoundFieldNumber},
+			{ruleFieldNumber, upperBoundFieldNumber},
+		},
+		"Field %q has value %v for %s, which is equal to value %v for %s.",
+		adder.fieldName(),
+		formatFunc(lowerBound),
+		adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
+		formatFunc(upperBound),
+		adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
+	)
 	return nil
 }
 

@@ -297,7 +297,7 @@ func checkRulesTypeMatchFieldType(
 	}
 	adder.addForPathf(
 		[]int32{ruleFieldNumber},
-		"Field %q has type %s but has %s rules.",
+		"Field %q is %s but has %s rules.",
 		adder.fieldName(),
 		adder.fieldPrettyTypeName,
 		adder.getFieldRuleName(ruleFieldNumber),
@@ -360,8 +360,8 @@ func checkRepeatedRules(
 			},
 			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			baseAdder.fieldName(),
-			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
 			*repeatedRules.MinItems,
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
 			*repeatedRules.MaxItems,
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
 		)
@@ -391,8 +391,8 @@ func checkMapRules(
 			},
 			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			baseAdder.fieldName(),
-			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
 			*mapRules.MinPairs,
+			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
 			*mapRules.MaxPairs,
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
 		)
@@ -422,8 +422,8 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 			},
 			"Field %q has value %d for %s, which is higher than value %d for %s. A string with %d UTF-8 characters has at least %d bytes, which is higher than %d bytes.",
 			adder.fieldName(),
-			adder.getFieldRuleName(stringRulesFieldNumber, minLenFieldNumberInStringRules),
 			*stringRules.MinLen,
+			adder.getFieldRuleName(stringRulesFieldNumber, minLenFieldNumberInStringRules),
 			*stringRules.MaxBytes,
 			adder.getFieldRuleName(stringRulesFieldNumber, maxBytesFieldNumberInStringRules),
 			*stringRules.MinLen,
@@ -437,11 +437,10 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 				{stringRulesFieldNumber, minBytesFieldNumberInStringRules},
 				{stringRulesFieldNumber, maxLenFieldNumberInStringRules},
 			},
-			"Field %q has a %s (%d) higher than 4 times its %s (%d), the maximum number of bytes a string of length %d can have.",
+			"Field %q has value %d for %s, which is higher than 4 times its %d, the maximum number of bytes a string of length %d can have.",
 			adder.fieldName(),
-			adder.getFieldRuleName(stringRulesFieldNumber, maxLenFieldNumberInStringRules),
 			*stringRules.MaxLen,
-			adder.getFieldRuleName(stringRulesFieldNumber, minBytesFieldNumberInStringRules),
+			adder.getFieldRuleName(stringRulesFieldNumber, maxLenFieldNumberInStringRules),
 			*stringRules.MinBytes,
 			*stringRules.MaxLen,
 		)
@@ -751,8 +750,8 @@ func checkLenRules(
 			},
 			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			adder.fieldName(),
-			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			*minLen,
+			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			*maxLen,
 			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
 		)

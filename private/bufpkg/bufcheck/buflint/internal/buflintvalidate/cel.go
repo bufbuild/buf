@@ -204,11 +204,10 @@ func checkCEL(
 		for _, constraintIndex := range constraintIndices {
 			add(
 				constraintIndex,
-				"%s.id (%q) is not unique within %s. IDs must be unique within %s.",
+				"%s.id (%q) is not unique within %s.",
 				celName,
 				celID,
 				parentName,
-				celID,
 			)
 		}
 	}
