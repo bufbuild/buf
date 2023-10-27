@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.27.2] - 2023-10-27
 
 - Fix issue where `buf build` and other commands may fail when handling certain
@@ -965,6 +969,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.2...HEAD
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
 [v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
