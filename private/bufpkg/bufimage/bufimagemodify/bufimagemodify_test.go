@@ -104,6 +104,7 @@ func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(
 		context.Background(),
+		zap.NewNop(),
 		readWriteBucket,
 		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, bufmoduletesting.TestCommit),
 	)

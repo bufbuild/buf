@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
@@ -369,10 +370,11 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 // the same dependency commit.
 func ValidateModulePinsConsistentDigests(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	modulePins []ModulePin,
 ) error {
-	currentConfig, err := buflock.ReadConfig(ctx, bucket)
+	currentConfig, err := buflock.ReadConfig(ctx, logger, bucket)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return nil
@@ -443,9 +445,10 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 // DependencyModulePinsForBucket reads the module dependencies from the lock file in the bucket.
 func DependencyModulePinsForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 ) ([]ModulePin, error) {
-	lockFile, err := buflock.ReadConfig(ctx, readBucket)
+	lockFile, err := buflock.ReadConfig(ctx, logger, readBucket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read lock file: %w", err)
 	}

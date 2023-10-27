@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -60,7 +61,7 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 	moduleManifest, blobs := createSampleManifestAndBlobs(t)
 	moduleBlob, err := moduleManifest.Blob()
 	require.NoError(t, err)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), zap.NewNop(), moduleManifest, blobs)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
@@ -94,7 +95,7 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 func TestCASModuleReaderNoDigest(t *testing.T) {
 	t.Parallel()
 	moduleManifest, blobs := createSampleManifestAndBlobs(t)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), zap.NewNop(), moduleManifest, blobs)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
@@ -120,7 +121,7 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 func TestCASModuleReaderDigestMismatch(t *testing.T) {
 	t.Parallel()
 	moduleManifest, blobs := createSampleManifestAndBlobs(t)
-	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), moduleManifest, blobs)
+	testModule, err := bufmodule.NewModuleForManifestAndBlobSet(context.Background(), zap.NewNop(), moduleManifest, blobs)
 	require.NoError(t, err)
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())

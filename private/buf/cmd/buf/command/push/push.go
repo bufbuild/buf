@@ -203,7 +203,7 @@ func run(
 		return err
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
-	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
 		ctx,
 		sourceBucket,
 		sourceConfig.Build,

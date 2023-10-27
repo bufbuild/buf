@@ -196,6 +196,7 @@ func (r *fakeModuleFetcher) GetModule(
 	}
 	return bufmodule.NewModuleForBucket(
 		context.Background(),
+		zap.NewNop(),
 		moduleBucket,
 	)
 }

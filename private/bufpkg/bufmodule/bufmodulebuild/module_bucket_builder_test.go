@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestBucketGetFileInfos1(t *testing.T) {
@@ -368,7 +369,7 @@ lint:
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder().BuildForBucket(
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		ctx,
 		bucket,
 		config,
@@ -420,7 +421,7 @@ func testBucketGetFileInfos(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder().BuildForBucket(
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -443,7 +444,7 @@ func testBucketGetFileInfos(
 			require.NoError(t, err)
 			bucketRelPaths[i] = bucketRelPath
 		}
-		module, err := NewModuleBucketBuilder().BuildForBucket(
+		module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 			context.Background(),
 			readWriteBucket,
 			config,
@@ -472,7 +473,7 @@ func testBucketGetAllFileInfosError(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder().BuildForBucket(
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -506,7 +507,7 @@ func testBucketGetFileInfosForExternalPathsError(
 		require.NoError(t, err)
 		bucketRelPaths[i] = bucketRelPath
 	}
-	_, err = NewModuleBucketBuilder().BuildForBucket(
+	_, err = NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -531,7 +532,7 @@ func testDocumentationBucket(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder().BuildForBucket(
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -565,7 +566,7 @@ func testLicenseBucket(
 		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
-	module, err := NewModuleBucketBuilder().BuildForBucket(
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,

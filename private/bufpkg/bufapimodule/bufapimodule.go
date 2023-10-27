@@ -39,10 +39,12 @@ func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config)
 
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
+	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
+		logger,
 		downloadClientFactory,
 		opts...,
 	)

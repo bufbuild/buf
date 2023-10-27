@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestPutDependencyModulePinsToBucket(t *testing.T) {
@@ -113,10 +114,11 @@ func TestDependencyModulePinsForBucket(t *testing.T) {
 func TestValidateModulePinsConsistentDigests(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	logger := zap.NewNop()
 	modulePin := pin(t, "repo")
 	bucket := bucketWithBufLock(t, modulePin)
 	// Pin matches all fields
-	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePin}))
+	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, logger, bucket, []ModulePin{modulePin}))
 	// Change digest and nothing else
 	modulePinChangedDigest, err := NewModulePin(
 		modulePin.Remote(),
@@ -126,7 +128,7 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		createDigest(t, []byte("abc")),
 	)
 	require.NoError(t, err)
-	err = ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedDigest})
+	err = ValidateModulePinsConsistentDigests(ctx, logger, bucket, []ModulePin{modulePinChangedDigest})
 	assert.True(t, IsDigestChanged(err))
 	// Change commit and digest - this is ok
 	modulePinChangedCommitAndDigest, err := NewModulePin(
@@ -137,7 +139,7 @@ func TestValidateModulePinsConsistentDigests(t *testing.T) {
 		createDigest(t, []byte("abc")),
 	)
 	require.NoError(t, err)
-	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, bucket, []ModulePin{modulePinChangedCommitAndDigest}))
+	require.NoError(t, ValidateModulePinsConsistentDigests(ctx, logger, bucket, []ModulePin{modulePinChangedCommitAndDigest}))
 }
 
 func bucketWithBufLock(t *testing.T, pin ModulePin) storage.ReadWriteBucket {
@@ -235,7 +237,7 @@ func testDependencyModulePinsForBucket(
 			modulePins,
 		)
 		require.NoError(t, err)
-		retPins, err := DependencyModulePinsForBucket(ctx, writeBucket)
+		retPins, err := DependencyModulePinsForBucket(ctx, zap.NewNop(), writeBucket)
 		require.NoError(t, err)
 		assert.Equal(t, len(modulePins), len(retPins))
 		for i, actual := range retPins {

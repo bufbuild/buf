@@ -86,7 +86,7 @@ func testBuildWorkspace(ctx context.Context, workspacePath string) (bufmodule.Wo
 	if err != nil {
 		return nil, err
 	}
-	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder()
+	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop())
 	namedModules := make(map[string]bufmodule.Module, len(workspaceConfig.Directories))
 	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
 	for _, directory := range workspaceConfig.Directories {

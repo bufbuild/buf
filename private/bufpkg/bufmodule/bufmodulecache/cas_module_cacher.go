@@ -79,6 +79,7 @@ func (c *casModuleCacher) GetModule(
 	}
 	return bufmodule.NewModuleForManifestAndBlobSet(
 		ctx,
+		c.logger,
 		manifestFromCache,
 		blobSet,
 		bufmodule.ModuleWithModuleIdentityAndCommit(

@@ -127,7 +127,7 @@ func run(
 		container.Logger(),
 		storageosProvider,
 		bufcli.NewFetchReader(container.Logger(), storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
+		bufmodulebuild.NewModuleBucketBuilder(container.Logger()),
 	)
 	if err != nil {
 		return err

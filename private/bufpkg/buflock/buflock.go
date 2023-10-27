@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 const (
@@ -50,8 +51,8 @@ type Dependency struct {
 
 // ReadConfig reads the lock file at ExternalConfigFilePath relative
 // to the root of the bucket.
-func ReadConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error) {
-	return readConfig(ctx, readBucket)
+func ReadConfig(ctx context.Context, logger *zap.Logger, readBucket storage.ReadBucket) (*Config, error) {
+	return readConfig(ctx, logger, readBucket)
 }
 
 // WriteConfig writes the lock file to the WriteBucket at ExternalConfigFilePath.

@@ -25,14 +25,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 type workspaceBuilder struct {
+	logger      *zap.Logger
 	moduleCache map[string]*cachedModule
 }
 
-func newWorkspaceBuilder() *workspaceBuilder {
+func newWorkspaceBuilder(logger *zap.Logger) *workspaceBuilder {
 	return &workspaceBuilder{
+		logger:      logger,
 		moduleCache: make(map[string]*cachedModule),
 	}
 }
@@ -137,7 +140,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 			return nil, err
 		}
 		buildOptions = append(buildOptions, bufmodulebuild.WithWorkspaceDirectory(directory))
-		module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+		module, err := bufmodulebuild.NewModuleBucketBuilder(w.logger).BuildForBucket(
 			ctx,
 			readBucketForDirectory,
 			moduleConfig.Build,

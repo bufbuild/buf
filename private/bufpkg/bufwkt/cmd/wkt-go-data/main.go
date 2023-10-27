@@ -154,7 +154,7 @@ func getProtosourceFiles(
 	//bucket,
 	//&bufmoduleconfig.Config{},
 	//)
-	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
+	module, err := bufmodule.NewModuleForBucket(ctx, container.Logger(), bucket)
 	if err != nil {
 		return nil, err
 	}
