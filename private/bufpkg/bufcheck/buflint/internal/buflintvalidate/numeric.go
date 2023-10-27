@@ -262,13 +262,11 @@ func checkDuration(duration *durationpb.Duration) string {
 	nanos := duration.GetNanos()
 	switch {
 	case nanos <= -1e9 || nanos >= +1e9:
-		return fmt.Sprintf("duration (%v) has out-of-range nanos", duration)
+		return fmt.Sprintf("duration (%v) must have nanos in the range 0 to 999999999", duration)
 	case (secs > 0 && nanos < 0) || (secs < 0 && nanos > 0):
 		return fmt.Sprintf("duration (%v) has seconds and nanos with different signs", duration)
-	case duration.AsDuration() > maxDuration.AsDuration():
-		return fmt.Sprintf("duration (%v) is greater than %v", duration, maxDuration)
-	case duration.AsDuration() < minDuration.AsDuration():
-		return fmt.Sprintf("duration (%v) is greater than %v", duration, minDuration)
+	case duration.AsDuration() > maxDuration.AsDuration() || duration.AsDuration() < minDuration.AsDuration():
+		return fmt.Sprintf("duration (%v) must be in the range %v to %v", duration, minDuration, maxDuration)
 	}
 	return ""
 }

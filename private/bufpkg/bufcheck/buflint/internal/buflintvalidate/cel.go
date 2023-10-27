@@ -139,7 +139,7 @@ func checkCEL(
 				}
 				add(
 					i,
-					"%s has an invalid %s.id, an id must contain only alphanumerics and '.', '_' and '-'.",
+					"%s has invalid characters for %s.id. IDs must contain only characters a-z, A-Z, 0-9, '.', '_', '-'.",
 					parentNameCapitalized,
 					celName,
 				)
@@ -147,10 +147,10 @@ func checkCEL(
 			}
 			idToConstraintIndices[celID] = append(idToConstraintIndices[celID], i)
 		} else {
-			add(i, "%s has an empty %s.id.", parentNameCapitalized, celName)
+			add(i, "%s has an empty %s.id. IDs should always be specified.", parentNameCapitalized, celName)
 		}
 		if len(strings.TrimSpace(celConstraint.Expression)) == 0 {
-			add(i, "%s has an empty %s.expression.", parentNameCapitalized, celName)
+			add(i, "%s has an empty %s.expression. Expressions should always be specified.", parentNameCapitalized, celName)
 			continue
 		}
 		ast, compileIssues := celEnv.Compile(celConstraint.Expression)
@@ -159,7 +159,7 @@ func checkCEL(
 			if celConstraint.Message == "" {
 				add(
 					i,
-					"%s has an empty %s.message for an expression that evaluates to a boolean.",
+					"%s has an empty %s.message for an expression that evaluates to a boolean. If an expression evaluates to a boolean, a message should always be specified.",
 					parentNameCapitalized,
 					celName,
 				)
@@ -168,7 +168,7 @@ func checkCEL(
 			if celConstraint.Message != "" {
 				add(
 					i,
-					"%s has a %s with a string expression and a redundant message.",
+					"%s has a %s with an expression that evaluates to a string, and also has a message. The message is redundant - since the expression evaluates to a string, its result will be printed instead of the message, so the message should be removed.",
 					parentNameCapitalized,
 					celName,
 				)
@@ -179,7 +179,7 @@ func checkCEL(
 		default:
 			add(
 				i,
-				"%s.expression on %s evaluates to an expression of %q type, only string and bool are allowed.",
+				"%s.expression on %s evaluates to a %s, only string and boolean are allowed.",
 				celName,
 				parentName,
 				cel.FormatCELType(ast.OutputType()),
@@ -204,10 +204,11 @@ func checkCEL(
 		for _, constraintIndex := range constraintIndices {
 			add(
 				constraintIndex,
-				"%s.id (%q) is not unique within %s.",
+				"%s.id (%q) is not unique within %s. IDs must be unique within %s.",
 				celName,
 				celID,
 				parentName,
+				celID,
 			)
 		}
 	}

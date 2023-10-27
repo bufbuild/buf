@@ -83,7 +83,7 @@ func checkForMessage(
 			message,
 			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMesageConstraints),
 			nil,
-			"Message %q has (buf.validate.message).disabled and does not need other rules in (buf.validate.message).",
+			"Message %q has (buf.validate.message).disabled, therefore other rules in (buf.validate.message) are not applied and should be removed.",
 			message.Name(),
 		)
 	}
