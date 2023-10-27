@@ -31,14 +31,14 @@ message StringTest {
     (buf.validate.field).string.const = "foo"
   ];
   string len_and_min_len = 8 [
-    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.len = 1,
     // len is exclusive with min_len
-    (buf.validate.field).string.len = 1
+    (buf.validate.field).string.min_len = 1
   ];
   string len_and_max_len = 9 [
-    (buf.validate.field).string.max_len = 1,
+    (buf.validate.field).string.len = 1,
     // len is exclusive with max_len
-    (buf.validate.field).string.len = 1
+    (buf.validate.field).string.max_len = 1
   ];
   string min_len_greater_than_max_len = 10 [
     // invalid bound
@@ -53,14 +53,14 @@ message StringTest {
     (buf.validate.field).string.min_len = 1
   ];
   string len_bytes_and_min_bytes = 12 [
-    (buf.validate.field).string.min_bytes = 1,
+    (buf.validate.field).string.len_bytes = 1,
     // len_bytes is exclusive with min_bytes
-    (buf.validate.field).string.len_bytes = 1
+    (buf.validate.field).string.min_bytes = 1
   ];
   string len_bytes_and_max_bytes = 13 [
-    (buf.validate.field).string.max_bytes = 1,
+    (buf.validate.field).string.len_bytes = 1,
     // len bytes is exclusive with max_bytes
-    (buf.validate.field).string.len_bytes = 1
+    (buf.validate.field).string.max_bytes = 1
   ];
   string min_bytes_greater_than_max_bytes = 14 [
     // invalid bound

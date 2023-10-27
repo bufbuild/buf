@@ -272,7 +272,7 @@ func checkFieldFlags(
 				{requiredFieldNumber},
 				{ignoreEmptyFieldNumber},
 			},
-			"Field %q has both %s and %s. A field cannot be required and empty.",
+			"Field %q has both %s and %s. A field cannot be empty if it is required.",
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
 			adder.getFieldRuleName(ignoreEmptyFieldNumber),
@@ -335,7 +335,7 @@ func checkRepeatedRules(
 	if !fieldDescriptor.IsList() {
 		baseAdder.addForPathf(
 			[]int32{repeatedRulesFieldNumber},
-			"Field %q is not a repeated field but has %s.",
+			"Field %q is not repeated but has %s.",
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber),
 		)
@@ -358,12 +358,12 @@ func checkRepeatedRules(
 				{repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules},
 				{repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules},
 			},
-			"Field %q has a %s (%d) higher than its %s (%d), making all values invalid.",
+			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
 			*repeatedRules.MinItems,
-			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
 			*repeatedRules.MaxItems,
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
@@ -389,9 +389,11 @@ func checkMapRules(
 				{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
 				{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
 			},
-			"Field %q has a %s higher than its %s.",
+			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
+			*mapRules.MinPairs,
+			*mapRules.MaxPairs,
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
 		)
 	}
@@ -418,13 +420,14 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 				{stringRulesFieldNumber, minLenFieldNumberInStringRules},
 				{stringRulesFieldNumber, maxBytesFieldNumberInStringRules},
 			},
-			"Field %q has a %s (%d) lower than its %s (%d). A string with %d UTF-8 characters has at least %d bytes.",
+			"Field %q has value %d for %s, which is higher than value %d for %s. A string with %d UTF-8 characters has at least %d bytes, which is higher than %d bytes.",
 			adder.fieldName(),
-			adder.getFieldRuleName(stringRulesFieldNumber, maxBytesFieldNumberInStringRules),
-			*stringRules.MaxBytes,
 			adder.getFieldRuleName(stringRulesFieldNumber, minLenFieldNumberInStringRules),
 			*stringRules.MinLen,
+			*stringRules.MaxBytes,
+			adder.getFieldRuleName(stringRulesFieldNumber, maxBytesFieldNumberInStringRules),
 			*stringRules.MinLen,
+			*stringRules.MaxBytes,
 			*stringRules.MaxBytes,
 		)
 	}
@@ -721,8 +724,8 @@ func checkLenRules(
 	}
 	if length != nil && minLen != nil {
 		adder.addForPathf(
-			[]int32{ruleFieldNumber, lengthFieldNumber},
-			"Field %q has both %s and %s.",
+			[]int32{ruleFieldNumber, minLenFieldNumber},
+			"Field %q has %s and therefore, %s is redundant and should be removed.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, lengthFieldNumber),
 			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
@@ -730,8 +733,8 @@ func checkLenRules(
 	}
 	if length != nil && maxLen != nil {
 		adder.addForPathf(
-			[]int32{ruleFieldNumber, lengthFieldNumber},
-			"Field %q has both %s and %s.",
+			[]int32{ruleFieldNumber, maxLenFieldNumber},
+			"Field %q has %s and therefore, %s is redundant and should be removed.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, lengthFieldNumber),
 			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
@@ -746,12 +749,12 @@ func checkLenRules(
 				{ruleFieldNumber, minLenFieldNumber},
 				{ruleFieldNumber, maxLenFieldNumber},
 			},
-			"Field %q has a %s (%d) higher than its %s (%d).",
+			"Field %q has value %d for %s, which is higher than value %d for %s.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			*minLen,
-			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
 			*maxLen,
+			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
 		)
 	} else if *minLen == *maxLen {
 		adder.addForPathsf(
@@ -759,10 +762,11 @@ func checkLenRules(
 				{ruleFieldNumber, minLenFieldNumber},
 				{ruleFieldNumber, maxLenFieldNumber},
 			},
-			"Field %q has equal %s and %s, use const instead.",
+			"Field %q has equal %s and %s, use %s.const instead.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			maxLenFieldName,
+			adder.getFieldRuleName(ruleFieldNumber),
 		)
 	}
 	return nil

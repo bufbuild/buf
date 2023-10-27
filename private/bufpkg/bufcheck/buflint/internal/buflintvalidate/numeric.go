@@ -69,7 +69,8 @@ func checkNumericRules[
 	formatFunc func(*T) interface{},
 ) error {
 	var fieldCount int
-	var constant, lowerBound, gt, gte, upperBound, lt, lte *T
+	var constant, lowerBound, upperBound *T
+	var isLowerBoundInclusive, isUpperBoundInclusive bool
 	var constFieldNumber, lowerBoundFieldNumber, upperBoundFieldNumber int32
 	var err error
 	ruleMessage.Range(func(field protoreflect.FieldDescriptor, value protoreflect.Value) bool {
@@ -81,21 +82,19 @@ func checkNumericRules[
 			constFieldNumber = fieldNumber
 			constant, convertErrorMessage, err = convertFunc(value)
 		case "gt":
-			gt, convertErrorMessage, err = convertFunc(value)
-			lowerBound = gt
+			lowerBound, convertErrorMessage, err = convertFunc(value)
 			lowerBoundFieldNumber = fieldNumber
 		case "gte":
-			gte, convertErrorMessage, err = convertFunc(value)
-			lowerBound = gte
+			lowerBound, convertErrorMessage, err = convertFunc(value)
 			lowerBoundFieldNumber = fieldNumber
+			isLowerBoundInclusive = true
 		case "lt":
-			lt, convertErrorMessage, err = convertFunc(value)
-			upperBound = lt
+			upperBound, convertErrorMessage, err = convertFunc(value)
 			upperBoundFieldNumber = fieldNumber
 		case "lte":
-			lte, convertErrorMessage, err = convertFunc(value)
-			upperBound = lte
+			upperBound, convertErrorMessage, err = convertFunc(value)
 			upperBoundFieldNumber = fieldNumber
+			isUpperBoundInclusive = true
 		}
 		if convertErrorMessage != "" {
 			adder.addForPathf(
@@ -123,7 +122,7 @@ func checkNumericRules[
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
-	if gte != nil && lte != nil && compareFunc(upperBound, lowerBound) == 0 {
+	if isUpperBoundInclusive && isLowerBoundInclusive && compareFunc(upperBound, lowerBound) == 0 {
 		adder.addForPathsf(
 			[][]int32{
 				{ruleFieldNumber, lowerBoundFieldNumber},
@@ -143,12 +142,12 @@ func checkNumericRules[
 				{ruleFieldNumber, lowerBoundFieldNumber},
 				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"Field %q has a %s (%v) higher than its %s (%v).",
+			"Field %q has value %v for %s, which is higher than value %v for %s.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
 			formatFunc(lowerBound),
-			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
 			formatFunc(upperBound),
+			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
 		)
 	}
 	return nil
