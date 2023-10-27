@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.27.2] - 2023-10-27
 
 - Fix issue where `buf build` and other commands may fail when handling certain
   archives created on macOS that contain files with extended attributes.
@@ -965,7 +965,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.1...HEAD
+[v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
 [v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
 [v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
