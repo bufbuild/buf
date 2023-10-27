@@ -62,7 +62,7 @@ func readConfig(ctx context.Context, logger *zap.Logger, readBucket storage.Read
 			}
 		}
 		if isB3DigestFound {
-			logger.Sugar().Warnf(`found b3 digest in lock file, which will be deprecated. Run "buf mod update" to update the lock file`)
+			logger.Sugar().Warnf(`found b3 digest in buf.yaml, which will no longer be shorted in a future version. Run "buf mod update" to update the lock file.`)
 		}
 		return config, nil
 	default:
