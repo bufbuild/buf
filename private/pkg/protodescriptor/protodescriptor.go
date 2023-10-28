@@ -158,6 +158,9 @@ func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.Co
 	if len(request.FileToGenerate) == 0 {
 		return errors.New("empty CodeGeneratorRequest.FileToGenerate")
 	}
+	// TODO: Should this validate that ProtoFile actually contains the files named by FileToGenerate?
+	//       Maybe also validate that len(SourceFileDescriptors) == len(FileToGenerate) and that
+	//       SourceFileDescriptors contains *exactly* the files named by FileToGenerate?
 	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
 		return err
 	}

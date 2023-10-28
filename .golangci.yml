@@ -233,3 +233,8 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/pkg/git/repository_test.go
+    # This greatly simplifies creation of descriptors, and it's safe enough since
+    # it's just test code.
+    - linters:
+        - forcetypeassert
+      path: private/bufpkg/bufimage/strip_source_only_test.go

@@ -56,6 +56,16 @@ func executePlugin(
 		storageosProvider,
 		runner,
 	)
+	requests, err := bufimage.ImagesToCodeGeneratorRequests(
+		images,
+		strings.Join(pluginInfo.Opt, ","),
+		bufpluginexec.DefaultVersion,
+		false,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
 	var options []bufpluginexec.GenerateOption
 	if pluginInfo.Path != "" {
 		options = append(options, bufpluginexec.GenerateWithPluginPath(pluginInfo.Path))
@@ -64,13 +74,7 @@ func executePlugin(
 		ctx,
 		container,
 		pluginName,
-		bufimage.ImagesToCodeGeneratorRequests(
-			images,
-			strings.Join(pluginInfo.Opt, ","),
-			bufpluginexec.DefaultVersion,
-			false,
-			false,
-		),
+		requests,
 		options...,
 	)
 	if err != nil {

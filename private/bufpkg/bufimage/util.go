@@ -414,7 +414,7 @@ func imageToCodeGeneratorRequest(
 	includeWellKnownTypes bool,
 	alreadyUsedPaths map[string]struct{},
 	nonImportPaths map[string]struct{},
-) *pluginpb.CodeGeneratorRequest {
+) (*pluginpb.CodeGeneratorRequest, error) {
 	imageFiles := image.Files()
 	request := &pluginpb.CodeGeneratorRequest{
 		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
@@ -424,7 +424,12 @@ func imageToCodeGeneratorRequest(
 		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
-		request.ProtoFile[i] = imageFile.FileDescriptorProto()
+		// ProtoFile should include runtime-retained options only. So strip source-only options.
+		var err error
+		request.ProtoFile[i], err = stripSourceOnlyOptionsFromFile(imageFile.FileDescriptorProto())
+		if err != nil {
+			return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
+		}
 		if isFileToGenerate(
 			imageFile,
 			alreadyUsedPaths,
@@ -433,9 +438,12 @@ func imageToCodeGeneratorRequest(
 			includeWellKnownTypes,
 		) {
 			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
+			// Source-only options are only made available for items in FileToGenerate.
+			// They are provided in SourceFileDescriptors.
+			request.SourceFileDescriptors = append(request.SourceFileDescriptors, imageFile.FileDescriptorProto())
 		}
 	}
-	return request
+	return request, nil
 }
 
 func isFileToGenerate(
