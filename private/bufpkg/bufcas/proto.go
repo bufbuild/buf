@@ -218,10 +218,10 @@ func ManifestToProtoBlob(manifest Manifest, options ...ProtoOption) (*storagev1b
 	return BlobToProto(blob, options...)
 }
 
-// BlobToManifest converts the given proto Blob representing the string representation of a
+// ProtoBlobToManifest converts the given proto Blob representing the string representation of a
 // Manifest into a Manifest.
 //
-// # The proto Blob is assumed to be non-nil
+// The proto Blob is assumed to be non-nil
 func ProtoBlobToManifest(protoBlob *storagev1beta1.Blob, options ...ProtoOption) (Manifest, error) {
 	// Rely on validation in ProtoToBlob.
 	blob, err := ProtoToBlob(protoBlob, options...)

@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-// Maniest is a set FileNodes.
+// Manifest is a set of FileNodes.
 type Manifest interface {
 	// fmt.Stringer encodes the Manifest into its canonical form, consisting of
 	// an sorted list of paths and their digests, sorted by path.
