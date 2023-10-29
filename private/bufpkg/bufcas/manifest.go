@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 )
 
 // Maniest is a set FileNodes.
@@ -96,32 +94,6 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 // The Blob is assumed to be non-nil
 func BlobToManifest(blob Blob) (Manifest, error) {
 	return ParseManifest(string(blob.Content()))
-}
-
-// ManifestToProtoBlob converts the string representation of the given Manifest into a proto Blob.
-//
-// The Manifest is assumed to be non-nil.
-//
-// TODO: validate the returned proto Blob.
-func ManifestToProtoBlob(manifest Manifest) (*storagev1beta1.Blob, error) {
-	blob, err := ManifestToBlob(manifest)
-	if err != nil {
-		return nil, err
-	}
-	return BlobToProto(blob)
-}
-
-// BlobToManifest converts the given proto Blob representing the string representation of a Manifest into a Manifest.
-//
-// # The proto Blob is assumed to be non-nil
-//
-// TODO: validate the input proto Blob.
-func ProtoBlobToManifest(protoBlob *storagev1beta1.Blob) (Manifest, error) {
-	blob, err := ProtoToBlob(protoBlob)
-	if err != nil {
-		return nil, err
-	}
-	return BlobToManifest(blob)
 }
 
 // *** PRIVATE ***

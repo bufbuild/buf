@@ -16,8 +16,6 @@ package bufcas
 
 import (
 	"sort"
-
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 )
 
 // BlobSet is a set of deduplicated Blobs.
@@ -49,37 +47,6 @@ type BlobSet interface {
 // no longer needs to return an error.
 func NewBlobSet(blobs []Blob) BlobSet {
 	return newBlobSet(blobs)
-}
-
-// BlobSetToProtoBlobs converts the given BlobSet into proto Blobs.
-//
-// TODO: validate the returned proto Blobs.
-func BlobSetToProtoBlobs(blobSet BlobSet) ([]*storagev1beta1.Blob, error) {
-	blobs := blobSet.Blobs()
-	protoBlobs := make([]*storagev1beta1.Blob, len(blobs))
-	for i, blob := range blobs {
-		protoBlob, err := BlobToProto(blob)
-		if err != nil {
-			return nil, err
-		}
-		protoBlobs[i] = protoBlob
-	}
-	return protoBlobs, nil
-}
-
-// ProtoBlobsToBlobSet converts the given proto Blobs into a BlobSet.
-//
-// TODO: validate the input proto Blobs.
-func ProtoBlobsToBlobSet(protoBlobs []*storagev1beta1.Blob) (BlobSet, error) {
-	blobs := make([]Blob, len(protoBlobs))
-	for i, protoBlob := range protoBlobs {
-		blob, err := ProtoToBlob(protoBlob)
-		if err != nil {
-			return nil, err
-		}
-		blobs[i] = blob
-	}
-	return NewBlobSet(blobs), nil
 }
 
 // *** PRIVATE ***

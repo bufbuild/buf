@@ -163,34 +163,6 @@ func ParseDigest(s string) (Digest, error) {
 	return newDigest(digestType, value)
 }
 
-// DigestToProto converts the given Digest to a proto Digest.
-//
-// TODO: validate the returned Digest.
-func DigestToProto(digest Digest) (*storagev1beta1.Digest, error) {
-	protoDigestType, ok := digestTypeToProto[digest.Type()]
-	// Technically we have aleady done this validation but just to be safe.
-	if !ok {
-		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
-	}
-	return &storagev1beta1.Digest{
-		Type:  protoDigestType,
-		Value: digest.Value(),
-	}, nil
-}
-
-// ProtoToDigest converts the given proto Digest to a Digest.
-//
-// Validation is performed to ensure the DigestType is known, and the value
-// is a valid digest value for the given DigestType.
-// TODO: validate the input proto Digest.
-func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
-	digestType, ok := protoToDigestType[protoDigest.Type]
-	if !ok {
-		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
-	}
-	return newDigest(digestType, protoDigest.Value)
-}
-
 // DigestEqual returns true if the given Digests are considered equal.
 //
 // If both Digests are nil, this returns true.

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -69,32 +68,6 @@ func ParseFileNode(s string) (FileNode, error) {
 		return nil, err
 	}
 	return NewFileNode(split[1], digest)
-}
-
-// FileNodeToProto converts the given FileNode to a proto FileNode.
-//
-// TODO: validate the returned FileNode.
-func FileNodeToProto(fileNode FileNode) (*storagev1beta1.FileNode, error) {
-	protoDigest, err := DigestToProto(fileNode.Digest())
-	if err != nil {
-		return nil, err
-	}
-	return &storagev1beta1.FileNode{
-		Path:   fileNode.Path(),
-		Digest: protoDigest,
-	}, nil
-}
-
-// ProtoToFileNode converts the given proto FileNode to a FileNode.
-//
-// The path is validated to be normalized and non-empty.
-// TODO: validate the input proto FileNode.
-func ProtoToFileNode(protoFileNode *storagev1beta1.FileNode) (FileNode, error) {
-	digest, err := ProtoToDigest(protoFileNode.Digest)
-	if err != nil {
-		return nil, err
-	}
-	return NewFileNode(protoFileNode.Path, digest)
 }
 
 // *** PRIVATE ***

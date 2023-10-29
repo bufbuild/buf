@@ -18,8 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 )
 
 // Blob is content with its associated Digest.
@@ -80,32 +78,6 @@ func BlobWithDigestType(digestType DigestType) BlobOption {
 	return func(blobOptions *blobOptions) {
 		blobOptions.digestType = digestType
 	}
-}
-
-// BlobToProto converts the given Blob to a proto Blob.
-//
-// TODO: validate the returned Blob.
-func BlobToProto(blob Blob) (*storagev1beta1.Blob, error) {
-	protoDigest, err := DigestToProto(blob.Digest())
-	if err != nil {
-		return nil, err
-	}
-	return &storagev1beta1.Blob{
-		Digest:  protoDigest,
-		Content: blob.Content(),
-	}, nil
-}
-
-// ProtoToBlob converts the given proto Blob to a Blob.
-//
-// Validation is performed to ensure that the Digest matches the computed Digest of the content.
-// TODO: validate the input proto Blob.
-func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
-	digest, err := ProtoToDigest(protoBlob.Digest)
-	if err != nil {
-		return nil, err
-	}
-	return NewBlobForContent(bytes.NewReader(protoBlob.Content), BlobWithKnownDigest(digest))
 }
 
 // BlobEqual returns true if the given Blobs are considered equal.

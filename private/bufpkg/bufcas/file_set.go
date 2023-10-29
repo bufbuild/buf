@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sort"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -128,42 +127,6 @@ func PutFileSetToBucket(
 		}
 	}
 	return nil
-}
-
-// FileSetToProtoManifestBlobAndBlobs converts the given FileSet into a proto Blob representing the
-// Manifest, and a set of Blobs representing the Files.
-//
-// TODO: validate the returned proto Blobs.
-func FileSetToProtoManifestBlobAndBlobs(fileSet FileSet) (*storagev1beta1.Blob, []*storagev1beta1.Blob, error) {
-	protoManifestBlob, err := ManifestToProtoBlob(fileSet.Manifest())
-	if err != nil {
-		return nil, nil, err
-	}
-	protoBlobs, err := BlobSetToProtoBlobs(fileSet.BlobSet())
-	if err != nil {
-		return nil, nil, err
-	}
-	return protoManifestBlob, protoBlobs, nil
-}
-
-// ManifestBlobsAndBlobsToFileSet converts the given manifest Blob and set of Blobs representing
-// the Files into a FileSet.
-//
-// Validation is done to ensure the Manifest exactly matches the BlobSet.
-// TODO: validate the input proto Blobs.
-func ProtoManifestBlobsAndBlobsToFileSet(
-	protoManifestBlob *storagev1beta1.Blob,
-	protoBlobs []*storagev1beta1.Blob,
-) (FileSet, error) {
-	manifest, err := ProtoBlobToManifest(protoManifestBlob)
-	if err != nil {
-		return nil, err
-	}
-	blobSet, err := ProtoBlobsToBlobSet(protoBlobs)
-	if err != nil {
-		return nil, err
-	}
-	return NewFileSet(manifest, blobSet)
 }
 
 // *** PRIVATE ****
