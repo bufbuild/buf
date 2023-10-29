@@ -80,38 +80,6 @@ func BlobWithDigestType(digestType DigestType) BlobOption {
 	}
 }
 
-// BlobEqual returns true if the given Blobs are considered equal.
-//
-// This checks both the Digest and the content.
-func BlobEqual(a Blob, b Blob) bool {
-	if (a == nil) != (b == nil) {
-		return false
-	}
-	if a == nil {
-		return true
-	}
-	if !DigestEqual(a.Digest(), b.Digest()) {
-		return false
-	}
-	// Note that in the former version of this package, we compared content values as well.
-	// An example of this is commented out below. Given that we ensure that Blob construction
-	// only happens in this package via the private isBlob() method, we do not
-	// need to compare the contents, as we know that the Digest is a valid Digest for the
-	// given content via validation we did at construction time.
-	//aContent := a.Content()
-	//bContent := b.Content()
-	//for i := 0; i < len(aContent); i += 4096 {
-	//j := i + 4096
-	//if j > len(aContent) {
-	//j = len(aContent)
-	//}
-	//if !bytes.Equal(aContent[i:j], bContent[i:j]) {
-	//return false
-	//}
-	//}
-	return true
-}
-
 // *** PRIVATE ***
 
 type blob struct {
