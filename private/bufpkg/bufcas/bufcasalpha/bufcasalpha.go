@@ -20,7 +20,7 @@ package bufcasalpha
 
 import (
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	storagev1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/registry/storage/v1beta1"
+	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/storage/v1beta1"
 )
 
 var (

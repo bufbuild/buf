@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231027204749-9db5df978d8a.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
