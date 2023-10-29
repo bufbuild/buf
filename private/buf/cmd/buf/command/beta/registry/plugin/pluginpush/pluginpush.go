@@ -355,6 +355,7 @@ func createCuratedPluginRequest(
 		SpdxLicenseId:        pluginConfig.SPDXLicenseID,
 		LicenseUrl:           pluginConfig.LicenseURL,
 		Visibility:           visibility,
+		IntegrationGuideUrl:  pluginConfig.IntegrationGuideURL,
 	}, nil
 }
 

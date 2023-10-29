@@ -21,7 +21,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"math"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -108,6 +110,9 @@ func Untar(
 		}
 		if tarHeader.Size < 0 {
 			return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
+		}
+		if isAppleExtendedAttributesFile(tarHeader.FileInfo()) {
+			continue
 		}
 		path, ok, err := unmapArchivePath(tarHeader.Name, mapper, stripComponentCount)
 		if err != nil {
@@ -210,6 +215,9 @@ func Unzip(
 		if !ok {
 			continue
 		}
+		if isAppleExtendedAttributesFile(zipFile.FileInfo()) {
+			continue
+		}
 		if zipFile.FileInfo().Mode().IsRegular() {
 			if err := copyZipFile(ctx, writeBucket, zipFile, path); err != nil {
 				return err
@@ -217,6 +225,20 @@ func Unzip(
 		}
 	}
 	return nil
+}
+
+func isAppleExtendedAttributesFile(fileInfo fs.FileInfo) bool {
+	// On macOS, .tar archives created with libarchive will contain additional
+	// files with a prefix of "._" if there are files with extended attributes
+	// and copyfile is enabled.
+	// Archive Utility.app has a similar behavior when creating .zip archives,
+	// except they are placed under a separate MACOSX directory tree.
+	// Here, both are handled by just ignoring all files with a "._" prefix.
+	// This is a reasonable compromise because files that live in a Module
+	// (.proto files, configuration files such as buf.yaml, README files) are
+	// almost never prefixed with ._, and fixing this issue in this manner
+	// outweighs the slight incorrectness.
+	return strings.HasPrefix(fileInfo.Name(), "._")
 }
 
 func copyZipFile(
