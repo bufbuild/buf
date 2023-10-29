@@ -41,35 +41,36 @@ type Blob interface {
 	isBlob()
 }
 
-// NewBlobForContent returns a new Blob with a Digest of the given DigestType,
-// and the content as read from the Reader.
+// NewBlobForContent returns a new Blob for the content as read from the Reader.
 //
 // The reader is read until io.EOF.
-// Validation is performed to ensure that the DigestType is known.
-func NewBlobForContent(digestType DigestType, reader io.Reader) (Blob, error) {
+func NewBlobForContent(reader io.Reader, options ...BlobOption) (Blob, error) {
+	blobOptions := newBlobOptions()
+	for _, option := range options {
+		option(blobOptions)
+	}
 	buffer := bytes.NewBuffer(nil)
 	teeReader := io.TeeReader(reader, buffer)
-	digest, err := NewDigestForContent(digestType, teeReader)
+	digest, err := NewDigestForContent(teeReader)
 	if err != nil {
 		return nil, err
 	}
-	return newBlob(digest, buffer.Bytes()), nil
-}
-
-// NewBlobForContentWithKnownDigest returns a new Blob for the given Digest and content
-// as read from the Reader.
-//
-// The reader is read until io.EOF.
-// Validation is performed to ensure that the Digest matches the computed Digest of the content.
-func NewBlobForContentWithKnownDigest(knownDigest Digest, reader io.Reader) (Blob, error) {
-	blob, err := NewBlobForContent(knownDigest.Type(), reader)
-	if err != nil {
-		return nil, err
-	}
-	if !DigestEqual(blob.Digest(), knownDigest) {
-		return nil, fmt.Errorf("Digest %v did not match known Digest %v when creating a new Blob", blob.Digest(), knownDigest)
+	blob := newBlob(digest, buffer.Bytes())
+	if blobOptions.knownDigest != nil && !DigestEqual(blob.Digest(), blobOptions.knownDigest) {
+		return nil, fmt.Errorf("Digest %v did not match known Digest %v when creating a new Blob", blob.Digest(), blobOptions.knownDigest)
 	}
 	return blob, nil
+}
+
+// BlobOption is an option when constructing a new Blob
+type BlobOption func(*blobOptions)
+
+// BlobWithKnownDigest returns a new BlobOption that results in validation that the
+// Digest for the new Blob matches an existing known Digest.
+func BlobWithKnownDigest(knownDigest Digest) BlobOption {
+	return func(blobOptions *blobOptions) {
+		blobOptions.knownDigest = knownDigest
+	}
 }
 
 // BlobToProto converts the given Blob to a proto Blob.
@@ -95,7 +96,7 @@ func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewBlobForContentWithKnownDigest(digest, bytes.NewReader(protoBlob.Content))
+	return NewBlobForContent(bytes.NewReader(protoBlob.Content), BlobWithKnownDigest(digest))
 }
 
 // BlobEqual returns true if the given Blobs are considered equal.
@@ -153,3 +154,11 @@ func (b *blob) Content() []byte {
 }
 
 func (*blob) isBlob() {}
+
+type blobOptions struct {
+	knownDigest Digest
+}
+
+func newBlobOptions() *blobOptions {
+	return &blobOptions{}
+}

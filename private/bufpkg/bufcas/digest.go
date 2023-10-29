@@ -29,6 +29,12 @@ import (
 
 const (
 	// DigestTypeShake256 represents the shake256 digest type.
+	//
+	// This is both the default and the only currently-known value for DigestType.
+	//
+	// The current API of this package does not expose the ability to set a different DigestType,
+	// however does imagine providing options in the future on various constructors
+	// (NewDigestForContent, NewBlobForContent, etc) to do so. In the mean time, we do not expose this.
 	DigestTypeShake256 DigestType = iota + 1
 
 	shake256Length = 64
@@ -63,7 +69,7 @@ func (d DigestType) String() string {
 
 // ParseDigestType parses a DigestType from its string representation.
 //
-// Reverses DigestType.String().
+// This reverses DigestType.String().
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
@@ -80,7 +86,7 @@ type Digest interface {
 	fmt.Stringer
 
 	// Type returns the type of digest.
-	// Always a valid value
+	// Always a valid value.
 	Type() DigestType
 	// Value returns the digest value.
 	//
@@ -92,49 +98,37 @@ type Digest interface {
 	isDigest()
 }
 
-// NewDigest creates a new Digest for the given DigestType and digest value.
-//
-// The value must be non-empty, even in the case of a Digest representing empty content.
-//
-// Validation is performed to ensure the DigestType is known, and the value
-// is a valid digest value for the given DigestType.
-func NewDigest(digestType DigestType, value []byte) (Digest, error) {
-	return newDigest(digestType, value)
-}
-
-// NewDigestForContent creates a new Digest based on the given content read from the Reader.
+// NewDigestForContent creates a new Digest with DigestTypeShake256 based on the
+// given content read from the Reader.
 //
 // A valid Digest is returned, even in the case of empty content.
 //
 // The Reader is read until io.EOF.
-// Validation is performed to ensure that the DigestType is known.
-func NewDigestForContent(digestType DigestType, reader io.Reader) (Digest, error) {
-	switch digestType {
-	case DigestTypeShake256:
-		shakeHash := sha3.NewShake256()
-		shakeHash.Reset()
-		if _, err := io.Copy(shakeHash, reader); err != nil {
-			return nil, err
-		}
-		value := make([]byte, shake256Length)
-		if _, err := shakeHash.Read(value); err != nil {
-			// sha3.ShakeHash never errors or short reads. Something horribly wrong
-			// happened if your computer ended up here.
-			return nil, err
-		}
-		return newDigest(digestType, value)
-	default:
-		return nil, fmt.Errorf("unknown DigestType: %v", digestType)
+func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, error) {
+	shakeHash := sha3.NewShake256()
+	shakeHash.Reset()
+	if _, err := io.Copy(shakeHash, reader); err != nil {
+		return nil, err
 	}
+	value := make([]byte, shake256Length)
+	if _, err := shakeHash.Read(value); err != nil {
+		// sha3.ShakeHash never errors or short reads. Something horribly wrong
+		// happened if your computer ended up here.
+		return nil, err
+	}
+	return newDigest(DigestTypeShake256, value)
 }
 
-// NewDigestForString returns a new Digest for the given Digest string.
+// DigestOption is an option for a new Digest.
+type DigestOption func(*digestOptions)
+
+// ParseDigest parses a Digest from its string representation.
 //
+// A Digest string is of the form typeString:hexValue.
 // The string is expected to be non-empty, If not, an error is treutned.
 //
 // This reverses Digest.String().
-// A Digest string is of the form typeString:hexValue.
-func NewDigestForString(s string) (Digest, error) {
+func ParseDigest(s string) (Digest, error) {
 	if s == "" {
 		return nil, errors.New("empty string passed to NewDigestForString")
 	}
@@ -178,7 +172,7 @@ func ProtoToDigest(protoDigest *storagev1beta1.Digest) (Digest, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
 	}
-	return NewDigest(digestType, protoDigest.Value)
+	return newDigest(digestType, protoDigest.Value)
 }
 
 // DigestEqual returns true if the given Digests are considered equal.
@@ -238,3 +232,6 @@ func (d *digest) String() string {
 }
 
 func (*digest) isDigest() {}
+
+// Placeholder for a future where we want DigestWithDigestType.
+type digestOptions struct{}

@@ -83,7 +83,7 @@ func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSe
 		bucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			blob, err := NewBlobForContent(DigestTypeShake256, readObject)
+			blob, err := NewBlobForContent(readObject)
 			if err != nil {
 				return err
 			}

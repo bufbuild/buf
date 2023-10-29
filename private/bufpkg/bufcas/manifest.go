@@ -62,10 +62,10 @@ func NewManifest(fileNodes []FileNode) (Manifest, error) {
 	return newManifest(fileNodes)
 }
 
-// NewManifestForString returns a new Manifest for the given Manifest string.
+// ParseManifest parses a Manifest from its string representation.
 //
 // This reverses Manifest.String().
-func NewManifestForString(s string) (Manifest, error) {
+func ParseManifest(s string) (Manifest, error) {
 	if len(s) == 0 {
 		return NewManifest(nil)
 	}
@@ -75,7 +75,7 @@ func NewManifestForString(s string) (Manifest, error) {
 	}
 	s = s[:len(s)-1]
 	for i, line := range strings.Split(s, "\n") {
-		fileNode, err := NewFileNodeForString(line)
+		fileNode, err := ParseFileNode(line)
 		if err != nil {
 			return nil, fmt.Errorf("invalid Manifest at line %d: %w", i, err)
 		}
@@ -88,14 +88,14 @@ func NewManifestForString(s string) (Manifest, error) {
 //
 // The Manifest is assumed to be non-nil.
 func ManifestToBlob(manifest Manifest) (Blob, error) {
-	return NewBlobForContent(DigestTypeShake256, strings.NewReader(manifest.String()))
+	return NewBlobForContent(strings.NewReader(manifest.String()))
 }
 
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
 // The Blob is assumed to be non-nil
 func BlobToManifest(blob Blob) (Manifest, error) {
-	return NewManifestForString(string(blob.Content()))
+	return ParseManifest(string(blob.Content()))
 }
 
 // ManifestToProtoBlob converts the string representation of the given Manifest into a proto Blob.

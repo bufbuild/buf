@@ -54,15 +54,17 @@ func NewFileNode(path string, digest Digest) (FileNode, error) {
 	return newFileNode(path, digest)
 }
 
-// NewFileNodeForString returns a new FileNode for the given FileNode string.
+// ParseFileNode parses the FileNode from its string representation.
+//
+// The string representation is "digestString[SP][SP]path".
 //
 // This reverses FileNode.String().
-func NewFileNodeForString(s string) (FileNode, error) {
+func ParseFileNode(s string) (FileNode, error) {
 	split := strings.Split(s, "  ")
 	if len(split) != 2 {
 		return nil, fmt.Errorf("unknown FileNode encoding: %q", s)
 	}
-	digest, err := NewDigestForString(split[0])
+	digest, err := ParseDigest(split[0])
 	if err != nil {
 		return nil, err
 	}
