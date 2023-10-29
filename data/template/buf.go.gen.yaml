@@ -4,8 +4,6 @@ managed:
   enabled: true
   go_package_prefix:
     default: github.com/bufbuild/buf/private/gen/proto/go
-    override:
-      buf.build/bufbuild/protovalidate: buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go
 plugins:
   - name: go
     out: private/gen/proto/go
