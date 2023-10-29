@@ -37,6 +37,7 @@ func TestNewBlobForContent(t *testing.T) {
 
 	differentContent := "some different file content"
 	differentDigest, err := NewDigestForContent(strings.NewReader(differentContent))
+	require.NoError(t, err)
 	_, err = NewBlobForContent(
 		strings.NewReader(content),
 		BlobWithKnownDigest(differentDigest),
