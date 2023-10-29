@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231027204749-9db5df978d8a.2
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231029173807-05fb659ddef2.2
 	connectrpc.com/connect v1.11.1
 	connectrpc.com/otelconnect v0.6.0
 	github.com/bufbuild/protocompile v0.6.0
