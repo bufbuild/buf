@@ -297,7 +297,7 @@ func checkRulesTypeMatchFieldType(
 	}
 	adder.addForPathf(
 		[]int32{ruleFieldNumber},
-		"Field %q is %s but has %s rules.",
+		"Field %q is of type %s but has %s rules.",
 		adder.fieldName(),
 		adder.fieldPrettyTypeName,
 		adder.getFieldRuleName(ruleFieldNumber),
@@ -345,7 +345,7 @@ func checkRepeatedRules(
 		if _, isFieldWrapper := wrapperTypeNames[string(fieldDescriptor.Message().FullName())]; !isFieldWrapper {
 			baseAdder.addForPathf(
 				[]int32{repeatedRulesFieldNumber, uniqueFieldNumberInRepeatedFieldRules},
-				"Field %q is a %s but has %s set to true, which is only allowed for scalar types and wrapper types.",
+				"Field %q is of type %s but has %s set to true, which is only allowed for scalar types and wrapper types.",
 				baseAdder.fieldName(),
 				baseAdder.fieldPrettyTypeName,
 				baseAdder.getFieldRuleName(repeatedRulesFieldNumber, uniqueFieldNumberInRepeatedFieldRules),
