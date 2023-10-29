@@ -110,6 +110,7 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 	switch digestOptions.digestType {
 	case DigestTypeShake256:
 		shakeHash := sha3.NewShake256()
+		// TODO: remove in the future, this should have no effect
 		shakeHash.Reset()
 		if _, err := io.Copy(shakeHash, reader); err != nil {
 			return nil, err
