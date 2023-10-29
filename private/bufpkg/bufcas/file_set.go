@@ -28,8 +28,7 @@ import (
 //
 // The Manifest is guaranteed to exactly correlate with the Blobs in the BlobSet,
 // that is the Digests of the FileNodes in the Manifest will exactly match the
-// Digests in the Blobs. Note that some FileNodes may have empty Digests, in which
-// case there is no corresponding Blob (as the content is empty).
+// Digests in the Blobs.
 type FileSet interface {
 	// Manifest returns the associated Manifest.
 	Manifest() Manifest
@@ -84,11 +83,11 @@ func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSe
 		func(readObject storage.ReadObject) error {
 			blob, err := NewBlobForContent(readObject)
 			if err != nil {
-				return err
+				return fmt.Errorf("error creating Blob for file %q: %w", readObject.Path(), err)
 			}
 			fileNode, err := NewFileNode(readObject.Path(), blob.Digest())
 			if err != nil {
-				return err
+				return fmt.Errorf("error creating FileNode for file %q: %w", readObject.Path(), err)
 			}
 			fileNodes = append(fileNodes, fileNode)
 			blobs = append(blobs, blob)

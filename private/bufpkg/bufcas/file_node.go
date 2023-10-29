@@ -45,10 +45,8 @@ type FileNode interface {
 
 // NewFileNode returns a new FileNode.
 //
-// The Digest may be nil.
-//
 // The path is validated to be normalized and non-empty.
-// The digest is validated to not be nil.
+// The digest is validated to be non-nil.
 func NewFileNode(path string, digest Digest) (FileNode, error) {
 	return newFileNode(path, digest)
 }
