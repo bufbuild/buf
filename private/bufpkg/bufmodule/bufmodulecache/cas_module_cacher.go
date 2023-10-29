@@ -112,7 +112,7 @@ func (c *casModuleCacher) PutModule(
 		if err != nil {
 			return fmt.Errorf("invalid module pin digest %q: %w", modulePinDigestEncoded, err)
 		}
-		if bufcas.DigestEqual(manifestDigest, modulePinDigest) {
+		if !bufcas.DigestEqual(manifestDigest, modulePinDigest) {
 			return fmt.Errorf("manifest digest mismatch: pin=%q, module=%q", modulePinDigest.String(), manifestDigest.String())
 		}
 	}

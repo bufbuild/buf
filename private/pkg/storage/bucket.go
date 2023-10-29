@@ -67,9 +67,6 @@ type PutOption func(*PutOptions)
 // allow multi-part upload, and allow customizing the chunk size of each part
 // upload, or even disabling multi-part upload. This is a suggested chunk size,
 // implementations may choose to ignore this option.
-//
-// TODO: Why is this an individual Put option? Why would this not be done
-// at Bucket creation time on a per-implementation basis?
 func PutWithChunkSize(sizeInBytes int64) PutOption {
 	return func(opts *PutOptions) {
 		opts.CustomChunkSize = true
@@ -85,11 +82,6 @@ func PutWithChunkSize(sizeInBytes int64) PutOption {
 // The Put operation is complete and the path will be readable once the
 // returned WriteObjectCloser is written and closed (without an error).
 // Any errors will cause the Put to be skipped (no path will be created).
-//
-// TODO: when do we NOT want this to be true? I believe a ton of the Put calls
-// in the buf codebase assume this is true, and were never refactored to take
-// into account that this might not be true. This should likely be removed,
-// and if anything, replaced with a "PutWithoutAtomic".
 func PutWithAtomic() PutOption {
 	return func(opts *PutOptions) {
 		opts.Atomic = true
