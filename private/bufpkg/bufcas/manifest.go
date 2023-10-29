@@ -25,7 +25,7 @@ import (
 // Maniest is a set FileNodes.
 type Manifest interface {
 	// fmt.Stringer encodes the Manifest into its canonical form, consisting of
-	// an ordered list of paths and their digests. Sorted by path.
+	// an sorted list of paths and their digests, sorted by path.
 	//
 	// See the documentation on FileNode for how FileNodes are encoded.
 	//
