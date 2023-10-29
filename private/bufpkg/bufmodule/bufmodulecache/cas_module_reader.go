@@ -67,7 +67,7 @@ func (c *casModuleReader) GetModule(
 	var modulePinDigest bufcas.Digest
 	if digest := modulePin.Digest(); digest != "" {
 		var err error
-		modulePinDigest, err = bufcas.NewDigestForString(digest)
+		modulePinDigest, err = bufcas.ParseDigest(digest)
 		// Fail fast if the buf.lock file contains a malformed digest
 		if err != nil {
 			return nil, fmt.Errorf("malformed module digest %q: %w", digest, err)

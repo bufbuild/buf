@@ -390,7 +390,7 @@ func ValidateModulePinsConsistentDigests(
 		}
 		// Ignore dependencies with an invalid digest.
 		// We want to replace these with a valid digest.
-		if _, err := bufcas.NewDigestForString(dep.Digest); err != nil {
+		if _, err := bufcas.ParseDigest(dep.Digest); err != nil {
 			continue
 		}
 		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)

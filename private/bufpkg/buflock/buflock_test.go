@@ -198,7 +198,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 
 func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
 	t.Parallel()
-	nilDigest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewBuffer(nil))
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testDependencyForExternalConfigDependencyV1(
 		t,

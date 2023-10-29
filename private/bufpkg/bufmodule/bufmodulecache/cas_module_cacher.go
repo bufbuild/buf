@@ -57,7 +57,7 @@ func (c *casModuleCacher) GetModule(
 		}
 		digestString = string(digestBytes)
 	}
-	digest, err := bufcas.NewDigestForString(digestString)
+	digest, err := bufcas.ParseDigest(digestString)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *casModuleCacher) PutModule(
 	}
 	manifestDigest := manifestBlob.Digest()
 	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
-		modulePinDigest, err := bufcas.NewDigestForString(modulePinDigestEncoded)
+		modulePinDigest, err := bufcas.ParseDigest(modulePinDigestEncoded)
 		if err != nil {
 			return fmt.Errorf("invalid module pin digest %q: %w", modulePinDigestEncoded, err)
 		}
@@ -149,7 +149,7 @@ func (c *casModuleCacher) readBlob(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	blob, err := bufcas.NewBlobForContentWithKnownDigest(digest, readObjectCloser)
+	blob, err := bufcas.NewBlobForContent(readObjectCloser, bufcas.BlobWithKnownDigest(digest))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create blob from path %s: %w", blobPath, err)
 	}
@@ -170,7 +170,7 @@ func (c *casModuleCacher) validateBlob(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	cacheDigest, err := bufcas.NewDigestForContent(digest.Type(), readObjectCloser)
+	cacheDigest, err := bufcas.NewDigestForContent(readObjectCloser, bufcas.DigestWithDigestType(digest.Type()))
 	if err != nil {
 		return false, err
 	}

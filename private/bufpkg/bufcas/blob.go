@@ -51,7 +51,7 @@ func NewBlobForContent(reader io.Reader, options ...BlobOption) (Blob, error) {
 	}
 	buffer := bytes.NewBuffer(nil)
 	teeReader := io.TeeReader(reader, buffer)
-	digest, err := NewDigestForContent(teeReader)
+	digest, err := NewDigestForContent(teeReader, DigestWithDigestType(blobOptions.digestType))
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +70,15 @@ type BlobOption func(*blobOptions)
 func BlobWithKnownDigest(knownDigest Digest) BlobOption {
 	return func(blobOptions *blobOptions) {
 		blobOptions.knownDigest = knownDigest
+	}
+}
+
+// BlobWithDigestType returns a new BlobOption sets the DigestType to be used.
+//
+// The default is DigestTypeShake256.
+func BlobWithDigestType(digestType DigestType) BlobOption {
+	return func(blobOptions *blobOptions) {
+		blobOptions.digestType = digestType
 	}
 }
 
@@ -157,6 +166,7 @@ func (*blob) isBlob() {}
 
 type blobOptions struct {
 	knownDigest Digest
+	digestType  DigestType
 }
 
 func newBlobOptions() *blobOptions {

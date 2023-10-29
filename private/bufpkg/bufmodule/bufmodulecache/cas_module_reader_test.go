@@ -178,7 +178,7 @@ func verifyCache(
 
 func createSampleFileSet(t *testing.T) bufcas.FileSet {
 	t.Helper()
-	blob, err := bufcas.NewBlobForContent(bufcas.DigestTypeShake256, strings.NewReader(pingProto))
+	blob, err := bufcas.NewBlobForContent(strings.NewReader(pingProto))
 	require.NoError(t, err)
 	fileNode, err := bufcas.NewFileNode("connect/ping/v1/ping.proto", blob.Digest())
 	require.NoError(t, err)

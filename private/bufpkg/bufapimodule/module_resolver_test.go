@@ -44,7 +44,7 @@ func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
 
 func TestGetModulePin(t *testing.T) {
 	t.Parallel()
-	nilDigest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewBuffer(nil))
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testGetModulePin(
 		t,

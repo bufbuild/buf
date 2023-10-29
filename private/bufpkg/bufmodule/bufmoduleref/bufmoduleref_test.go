@@ -31,7 +31,7 @@ import (
 
 func TestPutDependencyModulePinsToBucket(t *testing.T) {
 	t.Parallel()
-	nilDigest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewBuffer(nil))
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	const lockV1Header = buflock.Header + "version: v1\n"
 	testPutDependencyModulePinsToBucket(
@@ -172,7 +172,7 @@ func pin(t *testing.T, repository string) ModulePin {
 
 func createDigest(t *testing.T, b []byte) string {
 	t.Helper()
-	digest, err := bufcas.NewDigestForContent(bufcas.DigestTypeShake256, bytes.NewReader(b))
+	digest, err := bufcas.NewDigestForContent(bytes.NewReader(b))
 	require.NoError(t, err)
 	return digest.String()
 }
