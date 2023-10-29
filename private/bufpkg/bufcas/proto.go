@@ -33,16 +33,19 @@ import (
 var (
 	// defaultValidate is the default Validator used in the absence of ProtoWithValidator
 	// being passed for a given Protobuf conversion function.
+	//
+	// Disabling validation by default for now by not instantiating this.
+	// TODO: discuss if we should do this by default, including on CLI side (probably not).
 	defaultValidator *protovalidate.Validator
 )
 
-func init() {
-	var err error
-	defaultValidator, err = protovalidate.New()
-	if err != nil {
-		panic(err.Error())
-	}
-}
+//func init() {
+//var err error
+//defaultValidator, err = protovalidate.New()
+//if err != nil {
+//panic(err.Error())
+//}
+//}
 
 // BlobToProto converts the given Blob to a proto Blob.
 func BlobToProto(blob Blob, options ...ProtoOption) (*storagev1beta1.Blob, error) {
@@ -274,7 +277,10 @@ func protoValidate(options []ProtoOption, message proto.Message) error {
 	if protoOptions.validator == nil {
 		protoOptions.validator = defaultValidator
 	}
-	return protoOptions.validator.Validate(message)
+	if protoOptions.validator != nil {
+		return protoOptions.validator.Validate(message)
+	}
+	return nil
 }
 
 // convenience function to not do validation when we call Protobuf conversion functions within
