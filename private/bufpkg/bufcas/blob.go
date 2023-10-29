@@ -115,7 +115,7 @@ func ProtoToBlob(protoBlob *storagev1beta1.Blob) (Blob, error) {
 // TODO: In the former version of this package, we compared content values as well.
 // We should be able to remove this, and this is commented out for now. Technically we do not
 // need to compare the contents, as we know that the Digest is a valid Digest for the
-// given content via valiation we did at construction time.
+// given content via validation we did at construction time.
 func BlobEqual(a Blob, b Blob) bool {
 	if (a == nil) != (b == nil) {
 		return false
