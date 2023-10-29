@@ -131,7 +131,7 @@ func checkNumericRules[
 				{ruleFieldNumber, lowerBoundFieldNumber},
 				{ruleFieldNumber, upperBoundFieldNumber},
 			},
-			"Field %q has value %v for %s, which is higher than value %v for %s.",
+			"Field %q has value %v for %s, which must be lower than value %v for %s.",
 			adder.fieldName(),
 			formatFunc(lowerBound),
 			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
