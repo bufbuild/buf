@@ -17,7 +17,7 @@ package bufcas
 import (
 	"sort"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/storage/v1beta1"
+	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 )
 
 // BlobSet is a set of deduplicated Blobs.
