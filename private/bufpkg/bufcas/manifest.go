@@ -107,9 +107,11 @@ func newManifest(fileNodes []FileNode) (*manifest, error) {
 	pathToFileNode := make(map[string]FileNode)
 	for _, fileNode := range fileNodes {
 		if existingFileNode, ok := pathToFileNode[fileNode.Path()]; ok {
+			errorMessage := fmt.Sprintf("path %q was duplicated when creating a Manifest", fileNode.Path())
 			if !DigestEqual(existingFileNode.Digest(), fileNode.Digest()) {
-				return nil, fmt.Errorf("path %q had different Digests when constructing FileNode", fileNode.Path())
+				errorMessage += " and the two path entries had different Digests"
 			}
+			return nil, errors.New(errorMessage)
 		} else {
 			pathToFileNode[fileNode.Path()] = fileNode
 		}
