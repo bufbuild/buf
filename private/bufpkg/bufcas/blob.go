@@ -26,8 +26,7 @@ type Blob interface {
 	//
 	// Always non-nil.
 	//
-	// NewDigestForContent(blob.Digest.Type(), bytes.NewReader(blob.Content()) should
-	// always match this value.
+	// NewDigestForContent(bytes.NewReader(blob.Content())) should always match this value.
 	Digest() Digest
 	// Content returns the content of the Blob.
 	//
