@@ -137,7 +137,7 @@ type Module interface {
 	//
 	// FileSet will be nil if the Module was not constructed with a FileSet.
 	//
-	// A FileSets's contents contain a lexicographically sorted list of path names along
+	// A FileSet's contents contain a lexicographically sorted list of path names along
 	// with each path's digest. In addition to the .proto files in the module, it also lists
 	// the buf.yaml, LICENSE, buf.md, and buf.lock files (if present).
 	FileSet() bufcas.FileSet
