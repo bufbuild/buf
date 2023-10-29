@@ -106,7 +106,7 @@ func ProtoBlobsToBlobSet(protoBlobs []*storagev1beta1.Blob, options ...ProtoOpti
 // DigestToProto converts the given Digest to a proto Digest.
 func DigestToProto(digest Digest, options ...ProtoOption) (*storagev1beta1.Digest, error) {
 	protoDigestType, ok := digestTypeToProto[digest.Type()]
-	// Technically we have aleady done this validation but just to be safe.
+	// Technically we have already done this validation but just to be safe.
 	if !ok {
 		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
 	}
@@ -184,11 +184,11 @@ func FileSetToProtoManifestBlobAndBlobs(
 	return protoManifestBlob, protoBlobs, nil
 }
 
-// ManifestBlobsAndBlobsToFileSet converts the given manifest Blob and set of Blobs representing
+// ManifestBlobAndBlobsToFileSet converts the given manifest Blob and set of Blobs representing
 // the Files into a FileSet.
 //
 // Validation is done to ensure the Manifest exactly matches the BlobSet.
-func ProtoManifestBlobsAndBlobsToFileSet(
+func ProtoManifestBlobAndBlobsToFileSet(
 	protoManifestBlob *storagev1beta1.Blob,
 	protoBlobs []*storagev1beta1.Blob,
 	options ...ProtoOption,

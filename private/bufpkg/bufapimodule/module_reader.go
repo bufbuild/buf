@@ -65,7 +65,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if resp.Manifest == nil {
 		return nil, errors.New("expected non-nil manifest")
 	}
-	fileSet, err := bufcas.ProtoManifestBlobsAndBlobsToFileSet(
+	fileSet, err := bufcas.ProtoManifestBlobAndBlobsToFileSet(
 		bufcasalpha.AlphaToBlob(resp.Manifest),
 		bufcasalpha.AlphaToBlobs(resp.Blobs),
 	)
