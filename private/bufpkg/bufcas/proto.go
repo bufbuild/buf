@@ -274,11 +274,14 @@ func protoValidate(options []ProtoOption, message proto.Message) error {
 	if protoOptions.doNotValidate {
 		return nil
 	}
-	if protoOptions.validator == nil {
-		protoOptions.validator = defaultValidator
-	}
 	if protoOptions.validator != nil {
 		return protoOptions.validator.Validate(message)
+	}
+	if defaultValidator != nil {
+		// Need to do this as opposed to setting protoOptions.validator and
+		// then checking if protoOptions.Validator != nil because of Golang
+		// interface nil weirdness.
+		return defaultValidator.Validate(message)
 	}
 	return nil
 }
