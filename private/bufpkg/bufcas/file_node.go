@@ -104,9 +104,6 @@ func (f *fileNode) Digest() Digest {
 }
 
 func (f *fileNode) String() string {
-	if f.digest == nil {
-		return f.path
-	}
 	return f.digest.String() + "  " + f.path
 }
 
