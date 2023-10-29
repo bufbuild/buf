@@ -67,11 +67,7 @@ func (c *casModuleCacher) GetModule(
 	}
 	blobs := make([]bufcas.Blob, 0, len(manifest.FileNodes()))
 	for _, fileNode := range manifest.FileNodes() {
-		fileDigest := fileNode.Digest()
-		if fileDigest == nil {
-			continue
-		}
-		blob, err := c.readBlob(ctx, moduleBasedir, fileDigest)
+		blob, err := c.readBlob(ctx, moduleBasedir, fileNode.Digest())
 		if err != nil {
 			return nil, err
 		}
