@@ -184,7 +184,8 @@ func createSampleFileSet(t *testing.T) bufcas.FileSet {
 	require.NoError(t, err)
 	manifest, err := bufcas.NewManifest([]bufcas.FileNode{fileNode})
 	require.NoError(t, err)
-	blobSet := bufcas.NewBlobSet([]bufcas.Blob{blob})
+	blobSet, err := bufcas.NewBlobSet([]bufcas.Blob{blob})
+	require.NoError(t, err)
 	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
 	require.NoError(t, err)
 	return fileSet

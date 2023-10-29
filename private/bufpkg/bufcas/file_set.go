@@ -100,9 +100,13 @@ func NewFileSetForBucket(ctx context.Context, bucket storage.ReadBucket) (FileSe
 	if err != nil {
 		return nil, err
 	}
+	blobSet, err := NewBlobSet(blobs)
+	if err != nil {
+		return nil, err
+	}
 	return newFileSet(
 		manifest,
-		newBlobSet(blobs),
+		blobSet,
 	), nil
 }
 

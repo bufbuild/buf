@@ -73,7 +73,10 @@ func (c *casModuleCacher) GetModule(
 		}
 		blobs = append(blobs, blob)
 	}
-	blobSet := bufcas.NewBlobSet(blobs)
+	blobSet, err := bufcas.NewBlobSet(blobs)
+	if err != nil {
+		return nil, err
+	}
 	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
 	if err != nil {
 		return nil, err

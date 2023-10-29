@@ -38,14 +38,7 @@ type BlobSet interface {
 // NewBlobSet returns a new BlobSet.
 //
 // Blobs are deduplicated upon construction.
-//
-// TODO: in the former version of this package, we validated that Blob contents matched for Blobs
-// with the same Digest via BlobEqual, however we no longer do this as BlobEqual no longer
-// validates content matching. See the comment on BlobEqual for why.
-// TODO: The former version of this package also validated that no Blobs were nil, but this
-// is a basic expectation across our codebase. Given this and the previous TODO, NewBlobSet
-// no longer needs to return an error.
-func NewBlobSet(blobs []Blob) BlobSet {
+func NewBlobSet(blobs []Blob) (BlobSet, error) {
 	return newBlobSet(blobs)
 }
 
@@ -56,10 +49,13 @@ type blobSet struct {
 	sortedDigestStrings []string
 }
 
-func newBlobSet(blobs []Blob) *blobSet {
+func newBlobSet(blobs []Blob) (*blobSet, error) {
 	digestStringToBlob := make(map[string]Blob, len(blobs))
 	sortedDigestStrings := make([]string, 0, len(blobs))
 	for _, blob := range blobs {
+		// In the former version of this package, we validated that Blob contents matched for Blobs
+		// with the same Digest via BlobEqual, however we no longer do this as BlobEqual no longer
+		// validates content matching. See the comment on BlobEqual for why.
 		digestString := blob.Digest().String()
 		if _, ok := digestStringToBlob[digestString]; !ok {
 			digestStringToBlob[digestString] = blob
@@ -70,7 +66,7 @@ func newBlobSet(blobs []Blob) *blobSet {
 	return &blobSet{
 		digestStringToBlob:  digestStringToBlob,
 		sortedDigestStrings: sortedDigestStrings,
-	}
+	}, nil
 }
 
 func (b *blobSet) GetBlob(digest Digest) Blob {

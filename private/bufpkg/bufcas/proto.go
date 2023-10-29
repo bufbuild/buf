@@ -100,7 +100,7 @@ func ProtoBlobsToBlobSet(protoBlobs []*storagev1beta1.Blob, options ...ProtoOpti
 		}
 		blobs[i] = blob
 	}
-	return NewBlobSet(blobs), nil
+	return NewBlobSet(blobs)
 }
 
 // DigestToProto converts the given Digest to a proto Digest.
