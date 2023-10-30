@@ -41,7 +41,7 @@ message MapTest {
   map<int64, google.protobuf.Duration> key_rules_invalid = 8 [
     (buf.validate.field).map.min_pairs = 1,
     // invalid range
-    (buf.validate.field).map.keys.int64.gt = 2,
+    (buf.validate.field).map.keys.int64.gt = 1,
     // invalid range
     (buf.validate.field).map.keys.int64.lt = 1
   ];

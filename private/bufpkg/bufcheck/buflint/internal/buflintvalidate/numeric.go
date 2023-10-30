@@ -122,22 +122,7 @@ func checkNumericRules[
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
-	if compareFunc(upperBound, lowerBound) > 0 {
-		return nil
-	}
-	if compareFunc(upperBound, lowerBound) < 0 {
-		adder.addForPathsf(
-			[][]int32{
-				{ruleFieldNumber, lowerBoundFieldNumber},
-				{ruleFieldNumber, upperBoundFieldNumber},
-			},
-			"Field %q has value %v for %s, which must be lower than value %v for %s.",
-			adder.fieldName(),
-			formatFunc(lowerBound),
-			adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
-			formatFunc(upperBound),
-			adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
-		)
+	if compareFunc(upperBound, lowerBound) != 0 {
 		return nil
 	}
 	if isUpperBoundInclusive && isLowerBoundInclusive {
@@ -159,11 +144,9 @@ func checkNumericRules[
 			{ruleFieldNumber, lowerBoundFieldNumber},
 			{ruleFieldNumber, upperBoundFieldNumber},
 		},
-		"Field %q has value %v for %s, which is equal to value %v for %s.",
+		"Field %q has equal %s and %s. All values are rejected by these checks.",
 		adder.fieldName(),
-		formatFunc(lowerBound),
 		adder.getFieldRuleName(ruleFieldNumber, lowerBoundFieldNumber),
-		formatFunc(upperBound),
 		adder.getFieldRuleName(ruleFieldNumber, upperBoundFieldNumber),
 	)
 	return nil

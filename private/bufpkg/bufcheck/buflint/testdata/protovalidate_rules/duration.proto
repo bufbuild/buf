@@ -21,15 +21,15 @@ message DurationTest {
       nanos: 2
     }
   ];
-  // valid
+  // it's ok to have gt > lt
   google.protobuf.Duration valid_range_2 = 4 [
     (buf.validate.field).duration.gt = {
-      seconds: 4,
-      nanos: 10
+      seconds: 5,
+      nanos: 2
     },
     (buf.validate.field).duration.lte = {
       seconds: 5,
-      nanos: 0
+      nanos: 1
     }
   ];
   google.protobuf.Duration valid_range_3 = 5 [
@@ -53,36 +53,36 @@ message DurationTest {
     }
   ];
   google.protobuf.Duration invalid_range_1 = 7 [
-    // gt > lte
+    // gt == lte
     (buf.validate.field).duration.gt = {
-      seconds: 5,
-      nanos: 1
+      seconds: 1,
+      nanos: 2
     },
     (buf.validate.field).duration.lte = {
-      seconds: 4,
-      nanos: 1
+      seconds: 1,
+      nanos: 2
     }
   ];
   google.protobuf.Duration invalid_range_2 = 8 [
-    // gte > lt
+    // gte == lt
     (buf.validate.field).duration.gte = {
-      seconds: 5,
-      nanos: 2
+      seconds: 2,
+      nanos: 1
     },
     (buf.validate.field).duration.lt = {
-      seconds: 5,
+      seconds: 2,
       nanos: 1
     }
   ];
   google.protobuf.Duration invalid_range_3 = 9 [
-    // gt > lt
+    // gt == lt
     (buf.validate.field).duration.gt = {
-      seconds: -5,
+      seconds: -2,
       nanos: -1
     },
     (buf.validate.field).duration.lt = {
-      seconds: -5,
-      nanos: -2
+      seconds: -2,
+      nanos: -1
     }
   ];
   google.protobuf.Duration equal_lte_gte = 10 [

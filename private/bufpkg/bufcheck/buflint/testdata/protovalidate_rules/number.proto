@@ -27,21 +27,21 @@ message Int32Test {
     // the next line should be annotated
     (buf.validate.field).double.gte = 10.0
   ];
-  sfixed32 invalid_bound_inclusive = 9 [
+  sfixed32 invalid_bounds_1 = 9 [
     // the next line should be annotated
-    (buf.validate.field).sfixed32.lte = 10,
+    (buf.validate.field).sfixed32.lt = 10,
     (buf.validate.field).required = true,
     // the next line should be annotated
-    (buf.validate.field).sfixed32.gte = 11
+    (buf.validate.field).sfixed32.gte = 10
   ];
-  sfixed64 invalid_bound_exclusive = 10 [
+  sfixed64 invalid_bounds_2 = 10 [
     // the next line should be annotated
-    (buf.validate.field).sfixed64.lt = 10,
+    (buf.validate.field).sfixed64.lte = 10,
     (buf.validate.field).required = true,
     // the next line should be annotated
-    (buf.validate.field).sfixed64.gt = 11
+    (buf.validate.field).sfixed64.gt = 10
   ];
-  // the entire option should be annotated (64, 48) to (67, 4)
+  // the entire option should be annotated. (45, 48) to (48, 4)
   fixed32 invalid_bound_aggregate_syntax = 11 [(buf.validate.field).fixed32 = {
     lt: 10
     gte: 10
@@ -140,5 +140,13 @@ message Int32Test {
     (buf.validate.field).map.values.float.lt = 1,
     // the next line should be annotated
     (buf.validate.field).map.values.float.const = 0
+  ];
+  int32 valid_range_gt_less_than_lt = 41 [
+    (buf.validate.field).int32.lt = 10,
+    (buf.validate.field).int32.gt = 9
+  ];
+  int32 valid_range_gt_greater_than_lt = 42 [
+    (buf.validate.field).int32.lt = 9,
+    (buf.validate.field).int32.gt = 10
   ];
 }

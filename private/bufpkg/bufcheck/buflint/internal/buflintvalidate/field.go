@@ -353,17 +353,23 @@ func checkRepeatedRules(
 		}
 	}
 	if repeatedRules.MinItems != nil && repeatedRules.MaxItems != nil && *repeatedRules.MinItems > *repeatedRules.MaxItems {
-		baseAdder.addForPathsf(
-			[][]int32{
-				{repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules},
-				{repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules},
-			},
-			"Field %q has value %d for %s, which must be lower than value %d for %s.",
+		baseAdder.addForPathf(
+			[]int32{repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules},
+			"Field %q has value %d for %s, which must be higher than value %d for %s.",
 			baseAdder.fieldName(),
 			*repeatedRules.MinItems,
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
 			*repeatedRules.MaxItems,
 			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
+		)
+		baseAdder.addForPathf(
+			[]int32{repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules},
+			"Field %q has value %d for %s, which must be lower than value %d for %s.",
+			baseAdder.fieldName(),
+			*repeatedRules.MaxItems,
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, maxItemsFieldNumberInRepeatedFieldRules),
+			*repeatedRules.MinItems,
+			baseAdder.getFieldRuleName(repeatedRulesFieldNumber, minItemsFieldNumberInRepeatedFieldRules),
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
@@ -384,17 +390,23 @@ func checkMapRules(
 		)
 	}
 	if mapRules.MinPairs != nil && mapRules.MaxPairs != nil && *mapRules.MinPairs > *mapRules.MaxPairs {
-		baseAdder.addForPathsf(
-			[][]int32{
-				{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
-				{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
-			},
+		baseAdder.addForPathf(
+			[]int32{mapRulesFieldNumber, minPairsFieldNumberInMapRules},
 			"Field %q has value %d for %s, which must be lower than value %d for %s.",
 			baseAdder.fieldName(),
 			*mapRules.MinPairs,
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
 			*mapRules.MaxPairs,
 			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
+		)
+		baseAdder.addForPathf(
+			[]int32{mapRulesFieldNumber, maxPairsFieldNumberInMapRules},
+			"Field %q has value %d for %s, which is lower than value %d for %s.",
+			baseAdder.fieldName(),
+			*mapRules.MaxPairs,
+			baseAdder.getFieldRuleName(mapRulesFieldNumber, maxPairsFieldNumberInMapRules),
+			*mapRules.MinPairs,
+			baseAdder.getFieldRuleName(mapRulesFieldNumber, minPairsFieldNumberInMapRules),
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
@@ -415,11 +427,8 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 		return err
 	}
 	if stringRules.MinLen != nil && stringRules.MaxBytes != nil && *stringRules.MaxBytes < *stringRules.MinLen {
-		adder.addForPathsf(
-			[][]int32{
-				{stringRulesFieldNumber, minLenFieldNumberInStringRules},
-				{stringRulesFieldNumber, maxBytesFieldNumberInStringRules},
-			},
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, minLenFieldNumberInStringRules},
 			"Field %q has value %d for %s, which must be lower than value %d for %s. A string with %d UTF-8 characters has at least %d bytes, which is higher than %d bytes.",
 			adder.fieldName(),
 			*stringRules.MinLen,
@@ -427,22 +436,44 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 			*stringRules.MaxBytes,
 			adder.getFieldRuleName(stringRulesFieldNumber, maxBytesFieldNumberInStringRules),
 			*stringRules.MinLen,
+			*stringRules.MinLen,
 			*stringRules.MaxBytes,
+		)
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, maxBytesFieldNumberInStringRules},
+			"Field %q has value %d for %s, which must be higher than value %d for %s. A string with %d UTF-8 characters has at least %d bytes, which is higher than %d bytes.",
+			adder.fieldName(),
+			*stringRules.MaxBytes,
+			adder.getFieldRuleName(stringRulesFieldNumber, maxBytesFieldNumberInStringRules),
+			*stringRules.MinLen,
+			adder.getFieldRuleName(stringRulesFieldNumber, minLenFieldNumberInStringRules),
+			*stringRules.MinLen,
+			*stringRules.MinLen,
 			*stringRules.MaxBytes,
 		)
 	}
 	if stringRules.MaxLen != nil && stringRules.MinBytes != nil && *stringRules.MaxLen*4 < *stringRules.MinBytes {
-		adder.addForPathsf(
-			[][]int32{
-				{stringRulesFieldNumber, minBytesFieldNumberInStringRules},
-				{stringRulesFieldNumber, maxLenFieldNumberInStringRules},
-			},
-			"Field %q has value %d for %s, which is higher than 4 times its %d, the maximum number of bytes a string of length %d can have.",
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, minBytesFieldNumberInStringRules},
+			"Field %q has value %d for %s but %d for %s. A string with %d UTF-8 characters has at most %d bytes.",
+			adder.fieldName(),
+			*stringRules.MinBytes,
+			adder.getFieldRuleName(stringRulesFieldNumber, minBytesFieldNumberInStringRules),
+			*stringRules.MaxLen,
+			adder.getFieldRuleName(stringRulesFieldNumber, maxLenFieldNumberInStringRules),
+			*stringRules.MaxLen,
+			*stringRules.MaxLen*4,
+		)
+		adder.addForPathf(
+			[]int32{stringRulesFieldNumber, maxLenFieldNumberInStringRules},
+			"Field %q has value %d for %s but %d for %s. A string with %d UTF-8 characters has at most %d bytes.",
 			adder.fieldName(),
 			*stringRules.MaxLen,
 			adder.getFieldRuleName(stringRulesFieldNumber, maxLenFieldNumberInStringRules),
 			*stringRules.MinBytes,
+			adder.getFieldRuleName(stringRulesFieldNumber, minBytesFieldNumberInStringRules),
 			*stringRules.MaxLen,
+			*stringRules.MaxLen*4,
 		)
 	}
 	substringFields := []struct {
@@ -743,17 +774,23 @@ func checkLenRules(
 		return nil
 	}
 	if *minLen > *maxLen {
-		adder.addForPathsf(
-			[][]int32{
-				{ruleFieldNumber, minLenFieldNumber},
-				{ruleFieldNumber, maxLenFieldNumber},
-			},
+		adder.addForPathf(
+			[]int32{ruleFieldNumber, minLenFieldNumber},
 			"Field %q has value %d for %s, which must be lower than value %d for %s.",
 			adder.fieldName(),
 			*minLen,
 			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 			*maxLen,
 			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
+		)
+		adder.addForPathf(
+			[]int32{ruleFieldNumber, maxLenFieldNumber},
+			"Field %q has value %d for %s, which must be higher than value %d for %s.",
+			adder.fieldName(),
+			*maxLen,
+			adder.getFieldRuleName(ruleFieldNumber, maxLenFieldNumber),
+			*minLen,
+			adder.getFieldRuleName(ruleFieldNumber, minLenFieldNumber),
 		)
 	} else if *minLen == *maxLen {
 		adder.addForPathsf(
