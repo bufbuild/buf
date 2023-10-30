@@ -338,13 +338,12 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 	if externalPythonRegistryConfig == nil {
 		return nil, nil
 	}
-	var dependencySpecifications []PythonRegistryDependencyConfig
-	for _, externalDependency := range externalPythonRegistryConfig.DependencySpecifications {
-		dependencySpecification, err := pythonExternalDependencyToDependencyConfig(externalDependency)
-		if err != nil {
-			return nil, err
+	var dependencySpecifications []string
+	for _, externalDependencySpecification := range externalPythonRegistryConfig.DependencySpecifications {
+		if externalDependencySpecification == "" {
+			return nil, fmt.Errorf("python registry config cannot have empty dependency specification")
 		}
-		dependencySpecifications = append(dependencySpecifications, dependencySpecification)
+		dependencySpecifications = append(dependencySpecifications, externalDependencySpecification)
 	}
 	switch externalPythonRegistryConfig.PackageType {
 	case "untyped", "stub-only":
@@ -356,13 +355,6 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		RequiresPython:           externalPythonRegistryConfig.RequiresPython,
 		PackageType:              externalPythonRegistryConfig.PackageType,
 	}, nil
-}
-
-func pythonExternalDependencyToDependencyConfig(externalDep ExternalPythonRegistryDependencyConfig) (PythonRegistryDependencyConfig, error) {
-	if externalDep.DistributionName == "" {
-		return PythonRegistryDependencyConfig{}, errors.New("python runtime dependency requires a non-empty distribution name")
-	}
-	return PythonRegistryDependencyConfig(externalDep), nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {

@@ -301,30 +301,28 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "python", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/python")
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/nipunn1313-mypy")
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
 			Name:            pluginIdentity,
-			PluginVersion:   "v24.0",
-			SourceURL:       "https://github.com/protocolbuffers/protobuf",
-			Description:     "Base types for Python. Generates message and enum types.",
+			PluginVersion:   "v3.5.0",
+			SourceURL:       "https://github.com/nipunn1313/mypy-protobuf",
+			Description:     "Generate mypy stub files from Protobuf definitions.",
+			SPDXLicenseID:   "Apache-2.0",
+			LicenseURL:      "https://github.com/nipunn1313/mypy-protobuf/blob/v3.5.0/LICENSE",
 			OutputLanguages: []string{"python"},
 			Registry: &RegistryConfig{
 				Python: &PythonRegistryConfig{
-					DependencySpecifications: []PythonRegistryDependencyConfig{
-						{
-							DistributionName: "google-protobuf",
-							VersionSpecifier: "v24.0",
-						},
+					PackageType:    "stub-only",
+					RequiresPython: ">=3.8",
+					DependencySpecifications: []string{
+						"protobuf>=4.23.4",
+						"types-protobuf>=4.23.0.2",
 					},
-					RequiresPython: ">=3.7",
-					PackageType:    "untyped",
 				},
 			},
-			SPDXLicenseID: "BSD-3-Clause",
-			LicenseURL:    "https://github.com/protocolbuffers/protobuf/blob/v24.0/LICENSE",
 		},
 		pluginConfig,
 	)

@@ -1,16 +1,16 @@
 version: v1
-name: buf.build/protocolbuffers/python
-plugin_version: v24.0
-source_url: https://github.com/protocolbuffers/protobuf
-description: Base types for Python. Generates message and enum types.
+name: buf.build/community/nipunn1313-mypy
+plugin_version: v3.5.0
+source_url: https://github.com/nipunn1313/mypy-protobuf
+description: Generate mypy stub files from Protobuf definitions.
+spdx_license_id: Apache-2.0
+license_url: https://github.com/nipunn1313/mypy-protobuf/blob/v3.5.0/LICENSE
 output_languages:
   - python
 registry:
   python:
-    package_type: "untyped"
-    requires_python: ">=3.7"
+    package_type: "stub-only"
+    requires_python: ">=3.8"
     dependency_specifications:
-      - distribution_name: 'google-protobuf'
-        version_specifier: 'v24.0'
-spdx_license_id: BSD-3-Clause
-license_url: https://github.com/protocolbuffers/protobuf/blob/v24.0/LICENSE
+      - "protobuf>=4.23.4"
+      - "types-protobuf>=4.23.0.2"

@@ -234,19 +234,11 @@ type SwiftRegistryDependencyPlatformConfig struct {
 // PythonRegistryConfig is the registry configuration for a Python plugin.
 type PythonRegistryConfig struct {
 	// DependencySpecifications are the dependency specifications for the remote package.
-	DependencySpecifications []PythonRegistryDependencyConfig
+	DependencySpecifications []string
 	// RequiresPython is the `Requires-Python` for the remote package.
 	RequiresPython string
 	// PackageType is the package type for the remote package.
 	PackageType string
-}
-
-// PythonRegistryDependencyConfig is the python registry dependency configuration.
-type PythonRegistryDependencyConfig struct {
-	// DistributionName is the name of the Python distribution.
-	DistributionName string
-	// VersionSpecifier is the version specifier of the Python distribution.
-	VersionSpecifier string
 }
 
 // ConfigOption is an optional option used when loading a Config.
@@ -489,19 +481,12 @@ type ExternalSwiftRegistryDependencyPlatformConfig struct {
 
 type ExternalPythonRegistryConfig struct {
 	// DependencySpecifications are dependency specifications for the remote package.
-	DependencySpecifications []ExternalPythonRegistryDependencyConfig `json:"dependency_specifications,omitempty" yaml:"dependency_specifications,omitempty"`
+	DependencySpecifications []string `json:"dependency_specifications,omitempty" yaml:"dependency_specifications,omitempty"`
 	// RequiresPython specifies the `Requires-Python` of the generated metadata file.
 	RequiresPython string `json:"requires_python,omitempty" yaml:"requires_python,omitempty"`
 	// PackageType is the type of package generated.
 	// Must be one of "untyped" or "stub-only".
 	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
-}
-
-type ExternalPythonRegistryDependencyConfig struct {
-	// DistributionName is the name of the Python distribution.
-	DistributionName string `json:"distribution_name,omitempty" yaml:"distribution_name,omitempty"`
-	// VersionSpecifier is the version specifier of the Python distribution.
-	VersionSpecifier string `json:"version_specifier,omitempty" yaml:"version_specifier,omitempty"`
 }
 
 type externalConfigVersion struct {

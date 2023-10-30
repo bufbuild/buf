@@ -281,14 +281,7 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 		return nil, fmt.Errorf("unknown package type: %v", protoPythonConfig.GetPackageType())
 	}
 	if dependencySpecifications := protoPythonConfig.GetDependencySpecifications(); dependencySpecifications != nil {
-		pythonConfig.DependencySpecifications = make([]bufpluginconfig.PythonRegistryDependencyConfig, 0, len(dependencySpecifications))
-		for _, dependencySpecification := range dependencySpecifications {
-			dependencyConfig := bufpluginconfig.PythonRegistryDependencyConfig{
-				DistributionName: dependencySpecification.GetDistributionName(),
-				VersionSpecifier: dependencySpecification.GetVersionSpecifier(),
-			}
-			pythonConfig.DependencySpecifications = append(pythonConfig.DependencySpecifications, dependencyConfig)
-		}
+		pythonConfig.DependencySpecifications = dependencySpecifications
 	}
 	return pythonConfig, nil
 }
@@ -306,14 +299,7 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "untyped" or "stub-only", got %q`, pythonConfig.PackageType)
 	}
 	if pythonConfig.DependencySpecifications != nil {
-		protoPythonConfig.DependencySpecifications = make([]*registryv1alpha1.PythonConfig_DependencySpecification, 0, len(pythonConfig.DependencySpecifications))
-		for _, dependencySpecification := range pythonConfig.DependencySpecifications {
-			dependencySpecification := &registryv1alpha1.PythonConfig_DependencySpecification{
-				DistributionName: dependencySpecification.DistributionName,
-				VersionSpecifier: dependencySpecification.VersionSpecifier,
-			}
-			protoPythonConfig.DependencySpecifications = append(protoPythonConfig.DependencySpecifications, dependencySpecification)
-		}
+		protoPythonConfig.DependencySpecifications = pythonConfig.DependencySpecifications
 	}
 	return protoPythonConfig, nil
 }
