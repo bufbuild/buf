@@ -79,8 +79,8 @@ type ModuleBucketBuilder interface {
 }
 
 // NewModuleBucketBuilder returns a new BucketBuilder.
-func NewModuleBucketBuilder(logger *zap.Logger) ModuleBucketBuilder {
-	return newModuleBucketBuilder(logger)
+func NewModuleBucketBuilder() ModuleBucketBuilder {
+	return newModuleBucketBuilder()
 }
 
 // ModuleIncludeBuilder builds modules for includes.

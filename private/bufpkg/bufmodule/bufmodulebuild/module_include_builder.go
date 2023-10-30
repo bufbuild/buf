@@ -103,7 +103,7 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 		// https://github.com/bufbuild/buf/issues/113
 		rootBuckets = append(rootBuckets, storage.MapReadBucket(rootBucket, storage.MatchPathExt(".proto")))
 	}
-	module, err := bufmodule.NewModuleForBucket(ctx, b.logger, storage.MultiReadBucket(rootBuckets...))
+	module, err := bufmodule.NewModuleForBucket(ctx, storage.MultiReadBucket(rootBuckets...))
 	if err != nil {
 		return nil, err
 	}

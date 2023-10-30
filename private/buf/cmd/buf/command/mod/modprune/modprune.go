@@ -82,7 +82,7 @@ func run(
 		return err
 	}
 
-	module, err := bufmodule.NewModuleForBucket(ctx, container.Logger(), readWriteBucket)
+	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
 		return fmt.Errorf("couldn't read current dependencies: %w", err)
 	}

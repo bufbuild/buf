@@ -403,7 +403,7 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(container.Logger()),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
@@ -428,7 +428,7 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(container.Logger()),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -450,7 +450,7 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(container.Logger()),
+		bufmodulebuild.NewModuleBucketBuilder(),
 	), nil
 }
 
@@ -474,7 +474,7 @@ func NewWireFileLister(
 		logger,
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(container.Logger()),
+		bufmodulebuild.NewModuleBucketBuilder(),
 		bufimagebuild.NewBuilder(logger, moduleReader),
 	), nil
 }
@@ -542,7 +542,6 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	delegateReader := bufapimodule.NewModuleReader(
-		container.Logger(),
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
 	)
 	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
@@ -823,7 +822,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 		return nil, err
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		datawkt.ReadBucket,
 		sourceConfig.Build,

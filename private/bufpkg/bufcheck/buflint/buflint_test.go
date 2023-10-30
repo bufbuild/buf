@@ -991,7 +991,7 @@ func testLintWithModifiers(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder(logger).BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

@@ -170,7 +170,7 @@ func TestTransitivePublic(t *testing.T) {
 		"c.proto": []byte(`syntax = "proto3";package c;import "b.proto";message Baz{ a.Foo foo = 1; }`),
 	})
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, zap.NewNop(), bucket)
+	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
 	require.NoError(t, err)
 	image, analysis, err := bufimagebuild.NewBuilder(
 		zaptest.NewLogger(t),
@@ -194,7 +194,6 @@ func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	logger := zap.NewNop()
 	moduleIdentityString := "buf.build/repo/main"
 	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleIdentityString)
 	require.NoError(t, err)
@@ -204,13 +203,13 @@ func TestTypesFromMainModule(t *testing.T) {
 	bucket := storagemem.NewReadWriteBucket()
 	require.NoError(t, storage.PutPath(ctx, bucket, "a.proto", []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`)))
 	require.NoError(t, bufmoduletesting.WriteTestLockFileToBucket(ctx, bucket, moduleIdentityDepString))
-	module, err := bufmodule.NewModuleForBucket(ctx, logger, bucket, bufmodule.ModuleWithModuleIdentity(moduleIdentity))
+	module, err := bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithModuleIdentity(moduleIdentity))
 	require.NoError(t, err)
 	bucketDep, err := storagemem.NewReadBucket(map[string][]byte{
 		"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
 	})
 	require.NoError(t, err)
-	moduleDep, err := bufmodule.NewModuleForBucket(ctx, logger, bucketDep, bufmodule.ModuleWithModuleIdentity(moduleIdentityDep))
+	moduleDep, err := bufmodule.NewModuleForBucket(ctx, bucketDep, bufmodule.ModuleWithModuleIdentity(moduleIdentityDep))
 	require.NoError(t, err)
 	image, analysis, err := bufimagebuild.NewBuilder(
 		zaptest.NewLogger(t),
@@ -247,7 +246,6 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	}
 	module, err := bufmodule.NewModuleForBucket(
 		ctx,
-		logger,
 		storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")),
 	)
 	if err != nil {

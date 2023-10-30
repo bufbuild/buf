@@ -69,7 +69,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 const (
@@ -126,8 +125,8 @@ type WorkspaceBuilder interface {
 }
 
 // NewWorkspaceBuilder returns a new WorkspaceBuilder.
-func NewWorkspaceBuilder(logger *zap.Logger) WorkspaceBuilder {
-	return newWorkspaceBuilder(logger)
+func NewWorkspaceBuilder() WorkspaceBuilder {
+	return newWorkspaceBuilder()
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for

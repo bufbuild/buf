@@ -20,10 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
-func readConfig(ctx context.Context, logger *zap.Logger, readBucket storage.ReadBucket) (_ *Config, retErr error) {
+func readConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {

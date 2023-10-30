@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestNewModuleForBucket(t *testing.T) {
@@ -115,7 +114,7 @@ func testNewModuleForBucket(
 		ctx := context.Background()
 		bucket, err := storagemem.NewReadBucket(files)
 		require.NoError(t, err)
-		module, err := bufmodule.NewModuleForBucket(ctx, zap.NewNop(), bucket)
+		module, err := bufmodule.NewModuleForBucket(ctx, bucket)
 		if isError {
 			assert.Error(t, err, "isError")
 			return

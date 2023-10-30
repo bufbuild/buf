@@ -22,14 +22,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestModuleDigestB3(t *testing.T) {
 	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfiguration)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(context.Background(), zap.NewNop(), readBucket)
+	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
 	require.NoError(t, err)
 	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
 	require.NoError(t, err)
@@ -40,7 +39,7 @@ func TestModuleDigestB3withFallbackDocumentationPath(t *testing.T) {
 	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfigurationAndFallbackDocumentationPath)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(context.Background(), zap.NewNop(), readBucket)
+	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
 	require.NoError(t, err)
 	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
 	require.NoError(t, err)
@@ -51,7 +50,7 @@ func TestModuleDigestB3WithLicense(t *testing.T) {
 	t.Parallel()
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithLicense)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(context.Background(), zap.NewNop(), readBucket)
+	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
 	require.NoError(t, err)
 	digest, err := bufmodule.ModuleDigestB3(context.Background(), module)
 	require.NoError(t, err)

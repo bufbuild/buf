@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemanifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"go.uber.org/zap"
 )
 
 type module struct {
@@ -153,11 +152,10 @@ func configsForProto(
 
 func newModuleForBucket(
 	ctx context.Context,
-	logger *zap.Logger,
 	sourceReadBucket storage.ReadBucket,
 	options ...ModuleOption,
 ) (*module, error) {
-	dependencyModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, logger, sourceReadBucket)
+	dependencyModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, sourceReadBucket)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +201,6 @@ func newModuleForBucket(
 
 func newModuleForManifestAndBlobSet(
 	ctx context.Context,
-	logger *zap.Logger,
 	moduleManifest *manifest.Manifest,
 	blobSet *manifest.BlobSet,
 	options ...ModuleOption,
@@ -217,7 +214,7 @@ func newModuleForManifestAndBlobSet(
 	if err != nil {
 		return nil, err
 	}
-	module, err := newModuleForBucket(ctx, logger, bucket, options...)
+	module, err := newModuleForBucket(ctx, bucket, options...)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestReadConfigV1Beta1(t *testing.T) {
@@ -54,17 +53,16 @@ func testReadConfig(t *testing.T, version string) {
 		},
 	}
 	ctx := context.Background()
-	logger := zap.NewNop()
 	provider := storageos.NewProvider()
 	readBucket, err := provider.NewReadWriteBucket(filepath.Join("testdata", version, "success"))
 	require.NoError(t, err)
-	config, err := buflock.ReadConfig(ctx, logger, readBucket)
+	config, err := buflock.ReadConfig(ctx, readBucket)
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 
 	readBucket, err = provider.NewReadWriteBucket(filepath.Join("testdata", version, "failure"))
 	require.NoError(t, err)
-	_, err = buflock.ReadConfig(ctx, logger, readBucket)
+	_, err = buflock.ReadConfig(ctx, readBucket)
 	require.Error(t, err)
 }
 
@@ -92,7 +90,7 @@ func TestWriteReadConfig(t *testing.T) {
 	err = buflock.WriteConfig(context.Background(), readWriteBucket, testConfig)
 	require.NoError(t, err)
 
-	readConfig, err := buflock.ReadConfig(context.Background(), zap.NewNop(), readWriteBucket)
+	readConfig, err := buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, testConfig, readConfig)
 }
@@ -105,7 +103,7 @@ func TestWriteReadEmptyConfig(t *testing.T) {
 	err = buflock.WriteConfig(context.Background(), readWriteBucket, &buflock.Config{})
 	require.NoError(t, err)
 
-	readConfig, err := buflock.ReadConfig(context.Background(), zap.NewNop(), readWriteBucket)
+	readConfig, err := buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, &buflock.Config{}, readConfig)
 }
@@ -147,7 +145,7 @@ func TestParseV1Beta1Config(t *testing.T) {
 	err = encoding.NewYAMLEncoder(writeObjectCloser).Encode(v1beta1Config)
 	require.NoError(t, err)
 
-	readConfig, err := buflock.ReadConfig(context.Background(), zap.NewNop(), readWriteBucket)
+	readConfig, err := buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, testConfig, readConfig)
 }
@@ -155,7 +153,7 @@ func TestParseV1Beta1Config(t *testing.T) {
 func TestParseNoConfig(t *testing.T) {
 	t.Parallel()
 	emptyReadBucket := storagemem.NewReadWriteBucket()
-	readConfig, err := buflock.ReadConfig(context.Background(), zap.NewNop(), emptyReadBucket)
+	readConfig, err := buflock.ReadConfig(context.Background(), emptyReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, readConfig)
 }
@@ -185,8 +183,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 	err = storage.PutPath(context.Background(), readWriteBucket, buflock.ExternalConfigFilePath, configBytes)
 	require.NoError(t, err)
 
-	logger := zap.NewNop()
-	readConfig, err := buflock.ReadConfig(context.Background(), logger, readWriteBucket)
+	readConfig, err := buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, testConfig, readConfig)
 
@@ -194,7 +191,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// And again after using the proper WriteConfig
-	readConfig, err = buflock.ReadConfig(context.Background(), logger, readWriteBucket)
+	readConfig, err = buflock.ReadConfig(context.Background(), readWriteBucket)
 	require.NoError(t, err)
 	require.Equal(t, testConfig, readConfig)
 }

@@ -602,7 +602,7 @@ func (s *syncer) readModuleAt(
 		readModuleErr.err = fmt.Errorf("invalid module config: %w", err)
 		return nil, readModuleErr
 	}
-	builtModule, err := bufmodulebuild.NewModuleBucketBuilder(s.logger).BuildForBucket(
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		moduleBucket,
 		sourceConfig.Build,

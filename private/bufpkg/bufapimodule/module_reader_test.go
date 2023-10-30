@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestDownload(t *testing.T) {
@@ -118,7 +117,7 @@ func testDownload(
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		var moduleReaderOpts []ModuleReaderOption
-		moduleReader := newModuleReader(zap.NewNop(), mock.factory, moduleReaderOpts...)
+		moduleReader := newModuleReader(mock.factory, moduleReaderOpts...)
 		ctx := context.Background()
 		pin, err := bufmoduleref.NewModulePin(
 			"remote",

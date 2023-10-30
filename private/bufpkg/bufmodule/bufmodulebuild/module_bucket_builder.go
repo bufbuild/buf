@@ -24,17 +24,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"go.uber.org/zap"
 )
 
 type moduleBucketBuilder struct {
-	logger *zap.Logger
 }
 
-func newModuleBucketBuilder(logger *zap.Logger) *moduleBucketBuilder {
-	return &moduleBucketBuilder{
-		logger: logger,
-	}
+func newModuleBucketBuilder() *moduleBucketBuilder {
+	return &moduleBucketBuilder{}
 }
 
 func (b *moduleBucketBuilder) BuildForBucket(
@@ -141,7 +137,6 @@ func (b *moduleBucketBuilder) buildForBucket(
 	bucket := storage.MultiReadBucket(rootBuckets...)
 	module, err := bufmodule.NewModuleForBucket(
 		ctx,
-		b.logger,
 		bucket,
 		bufmodule.ModuleWithModuleIdentity(
 			buildOptions.moduleIdentity, // This may be nil

@@ -24,21 +24,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 type moduleReader struct {
-	logger                *zap.Logger
 	downloadClientFactory DownloadServiceClientFactory
 }
 
 func newModuleReader(
-	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) *moduleReader {
 	reader := &moduleReader{
-		logger:                logger,
 		downloadClientFactory: downloadClientFactory,
 	}
 	for _, opt := range opts {
@@ -77,7 +73,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, m.logger, moduleManifest, blobSet, identityAndCommitOpt)
+	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt)
 }
 
 func (m *moduleReader) downloadManifestAndBlobs(

@@ -149,7 +149,7 @@ func run(
 		container.Logger().Warn(warnMsg)
 	}
 	// Before updating buf.lock file, verify that existing dependency digests didn't change for the same commit.
-	if err := bufmoduleref.ValidateModulePinsConsistentDigests(ctx, container.Logger(), readWriteBucket, dependencyModulePins); err != nil {
+	if err := bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		if bufmoduleref.IsDigestChanged(err) {
 			return err
 		}
@@ -157,7 +157,7 @@ func run(
 	}
 	// Before updating buf.lock file, verify that no file path exists in more than one module.
 	pathToModuleIdentityStrings := make(map[string][]string)
-	currentModule, err := bufmodule.NewModuleForBucket(ctx, container.Logger(), readWriteBucket)
+	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
@@ -250,7 +250,7 @@ func getDependencies(
 			}
 			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference))
 		}
-		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, container.Logger(), readWriteBucket)
+		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't read current dependencies: %w", err)
 		}

@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -212,11 +211,10 @@ func ModuleWithWorkspaceDirectory(workspaceDirectory string) ModuleOption {
 // from a lock file in the read bucket.
 func NewModuleForBucket(
 	ctx context.Context,
-	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 	options ...ModuleOption,
 ) (Module, error) {
-	return newModuleForBucket(ctx, logger, readBucket, options...)
+	return newModuleForBucket(ctx, readBucket, options...)
 }
 
 // NewModuleForProto returns a new Module for the given proto Module.
@@ -231,12 +229,11 @@ func NewModuleForProto(
 // NewModuleForManifestAndBlobSet returns a new Module given the manifest and blob set.
 func NewModuleForManifestAndBlobSet(
 	ctx context.Context,
-	logger *zap.Logger,
 	manifest *manifest.Manifest,
 	blobSet *manifest.BlobSet,
 	options ...ModuleOption,
 ) (Module, error) {
-	return newModuleForManifestAndBlobSet(ctx, logger, manifest, blobSet, options...)
+	return newModuleForManifestAndBlobSet(ctx, manifest, blobSet, options...)
 }
 
 // ModuleWithTargetPaths returns a new Module that specifies specific file or directory paths to build.
