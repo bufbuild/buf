@@ -297,6 +297,39 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigPythonYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "python", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/python")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v24.0",
+			SourceURL:       "https://github.com/protocolbuffers/protobuf",
+			Description:     "Base types for Python. Generates message and enum types.",
+			OutputLanguages: []string{"python"},
+			Registry: &RegistryConfig{
+				Python: &PythonRegistryConfig{
+					DependencySpecifications: []PythonRegistryDependencyConfig{
+						{
+							DistributionName: "google-protobuf",
+							VersionSpecifier: "v24.0",
+						},
+					},
+					RequiresPython: ">=3.7",
+					PackageType:    "untyped",
+				},
+			},
+			SPDXLicenseID: "BSD-3-Clause",
+			LicenseURL:    "https://github.com/protocolbuffers/protobuf/blob/v24.0/LICENSE",
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))

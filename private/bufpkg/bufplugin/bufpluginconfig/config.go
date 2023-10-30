@@ -87,10 +87,11 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty    = externalRegistryConfig.Go == nil
-		isNPMEmpty   = externalRegistryConfig.NPM == nil
-		isMavenEmpty = externalRegistryConfig.Maven == nil
-		isSwiftEmpty = externalRegistryConfig.Swift == nil
+		isGoEmpty     = externalRegistryConfig.Go == nil
+		isNPMEmpty    = externalRegistryConfig.NPM == nil
+		isMavenEmpty  = externalRegistryConfig.Maven == nil
+		isSwiftEmpty  = externalRegistryConfig.Swift == nil
+		isPythonEmpty = externalRegistryConfig.Python == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -98,6 +99,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isNPMEmpty,
 		isMavenEmpty,
 		isSwiftEmpty,
+		isPythonEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -148,6 +150,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Swift:   swiftRegistryConfig,
+			Options: options,
+		}, nil
+	case !isPythonEmpty:
+		pythonRegistryConfig, err := newPythonRegistryConfig(externalRegistryConfig.Python)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Python:  pythonRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -321,6 +332,37 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 			WatchOS: externalDep.Platforms.WatchOS,
 		},
 	}, nil
+}
+
+func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistryConfig) (*PythonRegistryConfig, error) {
+	if externalPythonRegistryConfig == nil {
+		return nil, nil
+	}
+	var dependencySpecifications []PythonRegistryDependencyConfig
+	for _, externalDependency := range externalPythonRegistryConfig.DependencySpecifications {
+		dependencySpecification, err := pythonExternalDependencyToDependencyConfig(externalDependency)
+		if err != nil {
+			return nil, err
+		}
+		dependencySpecifications = append(dependencySpecifications, dependencySpecification)
+	}
+	switch externalPythonRegistryConfig.PackageType {
+	case "untyped", "stub-only":
+	default:
+		return nil, errors.New(`python registry config package_type must be one of: "untyped" or "stub-only"`)
+	}
+	return &PythonRegistryConfig{
+		DependencySpecifications: dependencySpecifications,
+		RequiresPython:           externalPythonRegistryConfig.RequiresPython,
+		PackageType:              externalPythonRegistryConfig.PackageType,
+	}, nil
+}
+
+func pythonExternalDependencyToDependencyConfig(externalDep ExternalPythonRegistryDependencyConfig) (PythonRegistryDependencyConfig, error) {
+	if externalDep.DistributionName == "" {
+		return PythonRegistryDependencyConfig{}, errors.New("python runtime dependency requires a non-empty distribution name")
+	}
+	return PythonRegistryDependencyConfig(externalDep), nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {

@@ -74,6 +74,13 @@ enum SwiftPlatformType {
   SWIFT_PLATFORM_TYPE_TVOS = 4;
 }
 
+// PythonPackageType is used to specify the package type for a Python generated SDK.
+enum PythonPackageType {
+  PYTHON_PACKAGE_TYPE_UNSPECIFIED = 0;
+  PYTHON_PACKAGE_TYPE_UNTYPED = 1;
+  PYTHON_PACKAGE_TYPE_STUB_ONLY = 2;
+}
+
 // GoConfig is the configuration for a Go plugin.
 message GoConfig {
   // RuntimeLibrary describes the runtime library dependency of the generated code.
@@ -195,6 +202,36 @@ message SwiftConfig {
   repeated RuntimeLibrary runtime_libraries = 1;
 }
 
+message PythonConfig {
+  // DependencySpecification is a subset of a PEP 508 Dependency Specification.
+  //
+  // See https://peps.python.org/pep-0508/
+  message DependencySpecification {
+    // distribution_name is the name of the distribution to be installed.
+    //
+    // Ref: https://peps.python.org/pep-0508/#names
+    string distribution_name = 1;
+
+    // version_specifier is a PEP 440 Version Specifier that specifies the
+    // limits on the versions of the distribution that can be used.
+    //
+    // Ref:
+    // - https://peps.python.org/pep-0508/#versions
+    // - https://peps.python.org/pep-0440/
+    string version_specifier = 2;
+  }
+  // dependency_specifications is a list of DependencySpecifications.
+  repeated DependencySpecification dependency_specifications = 1;
+  // requires_python is a PEP 440 Version Specifier that specifies the value of
+  // the `Requires-Python` field in a metadata file.
+  //
+  // Ref:
+  // - https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python
+  // - https://peps.python.org/pep-0440/
+  string requires_python = 2;
+  PythonPackageType package_type = 3;
+}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
@@ -202,9 +239,10 @@ message RegistryConfig {
     NPMConfig npm_config = 2;
     MavenConfig maven_config = 3;
     SwiftConfig swift_config = 4;
+    PythonConfig python_config = 5;
   }
   // Reserved for future remote registry types.
-  reserved 5 to 9;
+  reserved 6 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;

@@ -79,7 +79,7 @@ type Config struct {
 	// LicenseURL specifies where the plugin's license can be found.
 	LicenseURL string
 	// IntegrationGuideURL is an optional attribute used to specify where
-	// the the plugin integration guide can be found.
+	// the plugin integration guide can be found.
 	IntegrationGuideURL string
 }
 
@@ -87,10 +87,11 @@ type Config struct {
 //
 // Only one field will be set.
 type RegistryConfig struct {
-	Go    *GoRegistryConfig
-	NPM   *NPMRegistryConfig
-	Maven *MavenRegistryConfig
-	Swift *SwiftRegistryConfig
+	Go     *GoRegistryConfig
+	NPM    *NPMRegistryConfig
+	Maven  *MavenRegistryConfig
+	Swift  *SwiftRegistryConfig
+	Python *PythonRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -230,6 +231,24 @@ type SwiftRegistryDependencyPlatformConfig struct {
 	WatchOS string
 }
 
+// PythonRegistryConfig is the registry configuration for a Python plugin.
+type PythonRegistryConfig struct {
+	// DependencySpecifications are the dependency specifications for the remote package.
+	DependencySpecifications []PythonRegistryDependencyConfig
+	// RequiresPython is the `Requires-Python` for the remote package.
+	RequiresPython string
+	// PackageType is the package type for the remote package.
+	PackageType string
+}
+
+// PythonRegistryDependencyConfig is the python registry dependency configuration.
+type PythonRegistryDependencyConfig struct {
+	// DistributionName is the name of the Python distribution.
+	DistributionName string
+	// VersionSpecifier is the version specifier of the Python distribution.
+	VersionSpecifier string
+}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -355,11 +374,12 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go    *ExternalGoRegistryConfig    `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM   *ExternalNPMRegistryConfig   `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Maven *ExternalMavenRegistryConfig `json:"maven,omitempty" yaml:"maven,omitempty"`
-	Swift *ExternalSwiftRegistryConfig `json:"swift,omitempty" yaml:"swift,omitempty"`
-	Opts  []string                     `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go     *ExternalGoRegistryConfig     `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM    *ExternalNPMRegistryConfig    `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Maven  *ExternalMavenRegistryConfig  `json:"maven,omitempty" yaml:"maven,omitempty"`
+	Swift  *ExternalSwiftRegistryConfig  `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
+	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -465,6 +485,23 @@ type ExternalSwiftRegistryDependencyPlatformConfig struct {
 	TVOS string `json:"tvos,omitempty" yaml:"tvos,omitempty"`
 	// WatchOS specifies the version of the watchOS platform.
 	WatchOS string `json:"watchos,omitempty" yaml:"watchos,omitempty"`
+}
+
+type ExternalPythonRegistryConfig struct {
+	// DependencySpecifications are dependency specifications for the remote package.
+	DependencySpecifications []ExternalPythonRegistryDependencyConfig `json:"dependency_specifications,omitempty" yaml:"dependency_specifications,omitempty"`
+	// RequiresPython specifies the `Requires-Python` of the generated metadata file.
+	RequiresPython string `json:"requires_python,omitempty" yaml:"requires_python,omitempty"`
+	// PackageType is the type of package generated.
+	// Must be one of "untyped" or "stub-only".
+	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
+}
+
+type ExternalPythonRegistryDependencyConfig struct {
+	// DistributionName is the name of the Python distribution.
+	DistributionName string `json:"distribution_name,omitempty" yaml:"distribution_name,omitempty"`
+	// VersionSpecifier is the version specifier of the Python distribution.
+	VersionSpecifier string `json:"version_specifier,omitempty" yaml:"version_specifier,omitempty"`
 }
 
 type externalConfigVersion struct {
