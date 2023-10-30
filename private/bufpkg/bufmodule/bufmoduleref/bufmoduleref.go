@@ -21,9 +21,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
@@ -390,7 +390,7 @@ func ValidateModulePinsConsistentDigests(
 		}
 		// Ignore dependencies with an invalid digest.
 		// We want to replace these with a valid digest.
-		if _, err := manifest.NewDigestFromString(dep.Digest); err != nil {
+		if _, err := bufcas.ParseDigest(dep.Digest); err != nil {
 			continue
 		}
 		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)

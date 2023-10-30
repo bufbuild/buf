@@ -37,9 +37,7 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 		return nil, err
 	}
 	defer func() {
-		if err := readObject.Close(); err != nil && retErr == nil {
-			retErr = err
-		}
+		retErr = multierr.Append(retErr, readObject.Close())
 	}()
 	return io.ReadAll(readObject)
 }
