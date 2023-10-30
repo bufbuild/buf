@@ -63,9 +63,9 @@ func checkNumericRules[
 	ruleMessage protoreflect.Message,
 	// convertFunc returns the converted value, a file annotation string and an error.
 	convertFunc func(protoreflect.Value) (*T, string, error),
-	// compareFunc returns a positive value if the first argument is bigger,
-	// a negative value if the second argument is bigger or 0 if they are equal.
-	compareFunc func(*T, *T) float64,
+	// equalFunc returns whether two values are equal.
+	equalFunc func(*T, *T) bool,
+	// formatFunc returns the value suitable for printing with %v.
 	formatFunc func(*T) interface{},
 ) error {
 	var fieldCount int
@@ -122,7 +122,7 @@ func checkNumericRules[
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
-	if compareFunc(upperBound, lowerBound) != 0 {
+	if !equalFunc(upperBound, lowerBound) {
 		return nil
 	}
 	if isUpperBoundInclusive && isLowerBoundInclusive {
@@ -195,28 +195,16 @@ func getDurationFromValue(value protoreflect.Value) (*durationpb.Duration, strin
 	return duration, "", nil
 }
 
-func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a *T, b *T) float64 {
-	return float64(*a - *b)
+func compareNumber[T int32 | int64 | uint32 | uint64 | float32 | float64](a *T, b *T) bool {
+	return *a == *b
 }
 
-func compareTimestamp(t1 *timestamppb.Timestamp, t2 *timestamppb.Timestamp) float64 {
-	if t1.Seconds > t2.Seconds {
-		return 1
-	}
-	if t1.Seconds < t2.Seconds {
-		return -1
-	}
-	return float64(t1.Nanos - t2.Nanos)
+func compareTimestamp(t1 *timestamppb.Timestamp, t2 *timestamppb.Timestamp) bool {
+	return t1.Seconds == t2.Seconds && t1.Nanos == t2.Nanos
 }
 
-func compareDuration(d1 *durationpb.Duration, d2 *durationpb.Duration) float64 {
-	if d1.Seconds > d2.Seconds {
-		return 1
-	}
-	if d1.Seconds < d2.Seconds {
-		return -1
-	}
-	return float64(d1.Nanos - d2.Nanos)
+func compareDuration(d1 *durationpb.Duration, d2 *durationpb.Duration) bool {
+	return d1.Seconds == d2.Seconds && d1.Nanos == d2.Nanos
 }
 
 func checkDuration(duration *durationpb.Duration) string {
