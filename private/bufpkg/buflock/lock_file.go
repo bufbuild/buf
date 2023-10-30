@@ -96,9 +96,6 @@ func checkDeprecatedDigests(
 	logger *zap.Logger,
 	readBucket storage.ReadBucket,
 ) error {
-	readBucket.Walk(ctx, "", func(oi storage.ObjectInfo) error {
-		return nil
-	})
 	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
