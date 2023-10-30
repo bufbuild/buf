@@ -122,6 +122,8 @@ func checkNumericRules[
 	if lowerBound == nil || upperBound == nil {
 		return nil
 	}
+	// We do not check which one is larger because in protovalidate, both
+	// {lt: 3, gt: 5} and `{lt: 5, gt: 3}` are valid.
 	if !equalFunc(upperBound, lowerBound) {
 		return nil
 	}
