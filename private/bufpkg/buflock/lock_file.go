@@ -121,7 +121,7 @@ func checkDeprecatedDigests(
 					`found %s digest in buf.yaml, which will no longer be supported in a future version. Run "buf mod update" to update the lock file.`,
 					deprecatedFormat,
 				)
-				break
+				return nil
 			}
 		}
 	}
