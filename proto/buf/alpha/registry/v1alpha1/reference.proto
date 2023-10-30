@@ -20,6 +20,7 @@ import "buf/alpha/registry/v1alpha1/git_metadata.proto";
 import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
+import "google/protobuf/timestamp.proto";
 
 message Reference {
   reserved 4;
@@ -36,6 +37,8 @@ message Reference {
     RepositoryMainReference main = 5;
     // The requested reference is a draft commit.
     RepositoryDraft draft = 6;
+    // The requested reference is a VCS commit.
+    RepositoryVCSCommit vcs_commit = 7;
   }
 }
 
@@ -52,6 +55,20 @@ message RepositoryDraft {
   string name = 1;
   // The commit this draft points to.
   RepositoryCommit commit = 2;
+}
+
+message RepositoryVCSCommit {
+  // primary key, unique.
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // The name of the VCS commit, e.g. for Git, it would be the Git hash.
+  string name = 3;
+  // The name of the BSR commit this VCS commit belongs to.
+  string commit_name = 4;
+  // The username of the author of the VCS commit. For Git, this is based on
+  // the committer.
+  string author = 5;
 }
 
 // ReferenceService is a service that provides RPCs that allow the BSR to query
