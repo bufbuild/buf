@@ -17,7 +17,6 @@ package buflock
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -54,15 +53,8 @@ func readConfig(ctx context.Context, logger *zap.Logger, readBucket storage.Read
 			return nil, fmt.Errorf("failed to unmarshal lock file at %s: %w", V1Version, err)
 		}
 		config := &Config{}
-		var isB3DigestFound bool
 		for _, dep := range externalConfig.Deps {
 			config.Dependencies = append(config.Dependencies, DependencyForExternalConfigDependencyV1(dep))
-			if !isB3DigestFound && strings.HasPrefix(dep.Digest, "b3-") {
-				isB3DigestFound = true
-			}
-		}
-		if isB3DigestFound {
-			logger.Sugar().Warnf(`found b3 digest in lock file, which will be deprecated. Run "buf mod update" to update the lock file`)
 		}
 		return config, nil
 	default:
