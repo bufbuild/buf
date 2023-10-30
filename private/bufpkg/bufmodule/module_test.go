@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,9 +31,7 @@ import (
 
 func TestNewModuleForBucket(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testNewModuleForBucket(t,
 		"an empty bucket is a valid parse",
@@ -50,7 +48,7 @@ func TestNewModuleForBucket(t *testing.T) {
 		"bar",
 		"baz",
 		"62f35d8aed1149c291d606d958a7ce32",
-		nullDigest.String(),
+		nilDigest.String(),
 	)
 	require.NoError(t, err)
 	testNewModuleForBucket(t,
@@ -64,7 +62,7 @@ deps:
     repository: baz
     commit: 62f35d8aed1149c291d606d958a7ce32
     digest: %s
-`, nullDigest)),
+`, nilDigest)),
 		},
 		false,
 		false,

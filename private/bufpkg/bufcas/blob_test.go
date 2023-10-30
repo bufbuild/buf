@@ -12,46 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmoduleref
+package bufcas
 
 import (
-	"bytes"
+	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewModulePin(t *testing.T) {
+func TestNewBlobForContent(t *testing.T) {
 	t.Parallel()
-	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
+	content := "some file content"
+	digest, err := NewDigestForContent(strings.NewReader(content))
 	require.NoError(t, err)
-	testNewModulePin(t, "no digest", "", true)
-	testNewModulePin(t, "nominal digest", nilDigest.String(), false)
-}
+	blob, err := NewBlobForContent(
+		strings.NewReader(content),
+		BlobWithKnownDigest(digest),
+	)
+	require.NoError(t, err)
+	assert.True(t, DigestEqual(blob.Digest(), digest))
+	assert.Equal(t, []byte(content), blob.Content())
 
-func testNewModulePin(
-	t *testing.T,
-	desc string,
-	digest string,
-	expectEmptyDigest bool,
-) {
-	t.Helper()
-	t.Run(desc, func(t *testing.T) {
-		t.Parallel()
-		pin, err := NewModulePin(
-			"remote",
-			"owner",
-			"repository",
-			"commit",
-			digest,
-		)
-		assert.NoError(t, err)
-		if expectEmptyDigest {
-			assert.Equal(t, "", pin.Digest())
-		} else {
-			assert.Equal(t, digest, pin.Digest())
-		}
-	})
+	differentContent := "some different file content"
+	differentDigest, err := NewDigestForContent(strings.NewReader(differentContent))
+	require.NoError(t, err)
+	_, err = NewBlobForContent(
+		strings.NewReader(content),
+		BlobWithKnownDigest(differentDigest),
+	)
+	require.Error(t, err)
 }

@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/connectrpc/connect-go 20230825 checked 20230828
-CONNECT_VERSION ?= v1.11.1
+# https://github.com/connectrpc/connect-go 20231024 checked 20231027
+CONNECT_VERSION ?= v1.12.0
 
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	connectrpc.com/connect@$(CONNECT_VERSION)
