@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package what;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+message Ds {
+  oneof haha {
+    int32 v1 = 1 [
+      (buf.validate.field).int32.lt = 3,
+      // must not have required
+      (buf.validate.field).required = true
+    ];
+    string v2 = 2;
+    google.protobuf.Duration v3 = 3 [
+      (buf.validate.field).duration.gt = {seconds: 5},
+      // must not have required
+      (buf.validate.field).required = true,
+      (buf.validate.field).duration.lt = {seconds: 10}
+    ];
+  }
+  // required is OK for non-oneof fields
+  string f4 = 4 [(buf.validate.field).required = true];
+}
