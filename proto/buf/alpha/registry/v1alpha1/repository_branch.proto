@@ -37,7 +37,7 @@ message RepositoryBranch {
   // if no commit in the branch history contains any associated git commit.
   string last_update_git_author_name = 7;
   // The git commit hash of the most recent associated git commit of the branch. May be an empty
-  // string if no commit in the branch history contains any git commit associated.
+  // string if no commit in the branch history contains any associated git commit.
   string last_update_git_commit_hash = 8;
 }
 
