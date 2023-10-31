@@ -63,12 +63,9 @@ message RepositoryVCSCommit {
   // immutable
   google.protobuf.Timestamp create_time = 2;
   // The name of the VCS commit, e.g. for Git, it would be the Git hash.
-  string name = 3;
+  string hash = 3;
   // The name of the BSR commit this VCS commit belongs to.
   string commit_name = 4;
-  // The username of the author of the VCS commit. For Git, this is based on
-  // the committer.
-  string author = 5;
 }
 
 // ReferenceService is a service that provides RPCs that allow the BSR to query
