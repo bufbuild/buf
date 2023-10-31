@@ -1,10 +1,9 @@
-package bufmod
+package bufmodule
 
 import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -41,46 +40,63 @@ import (
 // We should figure out how to move Config to something like CommandMeta below, similar to ModuleConfig/ImageConfig/ModuleConfigSet. This should be a type outside of bufwire.
 // We should figure out a nice way to deal with TargetFileInfos at a level outside of Module and Workspace.
 
-type CommandMeta interface {
-	Workspace() Workspace
-	// For buf.yaml v2, ModuleIdentity is ignored
-	DeclaredDepModuleReferences() []ModuleReference
-	// Need some way to not do this
-	TargetPaths(moduleID string) []string
-	Config() *bufconfig.Config
+type ModuleFullName interface {
+	Remote() string
+	Owner() string
+	Name() string
+
+	isModuleFullName()
 }
 
-type ModuleName interface{}
-type ModuleReference interface{}
-type ModulePin interface{}
+type ModuleReference interface {
+	ModuleFullName() ModuleFullName
+	Reference() string
 
-type Workspace interface {
+	isModuleReference()
+}
+
+type ModulePin interface {
+	ModuleFullName() ModuleFullName
+	Commit() string
+	Digest() string
+
+	isModulePin()
+}
+
+type ModuleSet interface {
+	GetModule(moduleID string) (Module, error)
 	Modules() []Module
 	Deps() []ModulePin
+
+	isModuleSet()
 }
 
-type FileInfo interface {
+type ProtoFileInfo interface {
 	storage.ObjectInfo
 
-	IsImport() bool
 	Module() Module
+
+	isProtoFileInfo()
 }
 
-type File interface {
-	FileInfo
+type ProtoFile interface {
+	ProtoFileInfo
 	io.ReadCloser
+
+	isProtoFile()
 }
 
 type Module interface {
-	TargetFileInfos(context.Context) (FileInfo, error)
-	SourceFileInfos(context.Context) (FileInfo, error)
-	GetFile(ctx context.Context, path string) (File, error)
-	Documentation() string
-	DocumentationPath() string
-	License() string
-	Workspace() Workspace
+	ProtoFileInfos(context.Context) (ProtoFileInfo, error)
+	GetProtoFile(ctx context.Context, path string) (ProtoFile, error)
+	DocContent() string
+	DocPath() string
+	LicenseContent() string
+	ModuleSet() ModuleSet
 
 	ID() string
-	Name() ModuleName
+	ModuleFullName() ModuleFullName
 	Commit() string
+
+	isModule()
 }
