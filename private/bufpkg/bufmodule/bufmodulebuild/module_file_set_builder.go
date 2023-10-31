@@ -57,6 +57,8 @@ func (m *moduleFileSetBuilder) build(
 	workspace bufmodule.Workspace,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
+	// To cache what we have already gotten from the ModuleRe:ader.
+	dependencyModulePinStrings := make(map[string]struct{})
 	moduleWorkspaceDirectory := module.WorkspaceDirectory()
 	if workspace != nil {
 		// From the perspective of the ModuleFileSet, we include all of the files
@@ -88,11 +90,31 @@ func (m *moduleFileSetBuilder) build(
 		for _, potentialDependencyModule := range workspace.GetModules() {
 			if moduleWorkspaceDirectory != potentialDependencyModule.WorkspaceDirectory() {
 				dependencyModules = append(dependencyModules, potentialDependencyModule)
+				// We also need to add in any transitive dependencies from other Modules in the workspace.
+				//
+				// TODO: refactor this and the last for loop into a function.
+				for _, transitiveDependencyModulePin := range potentialDependencyModule.DependencyModulePins() {
+					if workspace != nil {
+						if _, ok := workspace.GetModule(transitiveDependencyModulePin); ok {
+							// This dependency is already provided by the workspace, so we don't
+							// need to consult the ModuleReader.
+							continue
+						}
+					}
+					// If we've already read this from the ModuleReader, no need to do again.
+					if _, ok := dependencyModulePinStrings[transitiveDependencyModulePin.String()]; ok {
+						continue
+					}
+					dependencyModulePinStrings[transitiveDependencyModulePin.String()] = struct{}{}
+					transitiveDependencyModule, err := m.moduleReader.GetModule(ctx, transitiveDependencyModulePin)
+					if err != nil {
+						return nil, err
+					}
+					dependencyModules = append(dependencyModules, transitiveDependencyModule)
+				}
 			}
 		}
 	}
-	// We know these are unique by remote, owner, repository and
-	// contain all transitive dependencies.
 	for _, dependencyModulePin := range module.DependencyModulePins() {
 		if workspace != nil {
 			if _, ok := workspace.GetModule(dependencyModulePin); ok {
@@ -101,6 +123,11 @@ func (m *moduleFileSetBuilder) build(
 				continue
 			}
 		}
+		// If we've already read this from the ModuleReader, no need to do again.
+		if _, ok := dependencyModulePinStrings[dependencyModulePin.String()]; ok {
+			continue
+		}
+		dependencyModulePinStrings[dependencyModulePin.String()] = struct{}{}
 		dependencyModule, err := m.moduleReader.GetModule(ctx, dependencyModulePin)
 		if err != nil {
 			return nil, err
