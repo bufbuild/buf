@@ -62,57 +62,36 @@ const (
 	skippedFieldNumber        = 24
 	requiredFieldNumber       = 25
 	ignoreEmptyFieldNumber    = 26
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2501
-	minLenFieldNumberInStringRules = 2
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2517
-	maxLenFieldNumberInStringRules = 3
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2548
-	minBytesFieldNumberInStringRules = 4
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2563
-	maxBytesFieldNumberInStringRules = 5
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2579
-	patternFieldNumberInStringRules = 6
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2595
-	prefixFieldNumberInStringRules = 7
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2610
-	suffixFieldNumberInStringRules = 8
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2625
-	containsFieldNumberInStringRules = 9
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2640
-	notContainsFieldNumberInStringRules = 23
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2844
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.StringRules
+	minLenFieldNumberInStringRules         = 2
+	maxLenFieldNumberInStringRules         = 3
+	minBytesFieldNumberInStringRules       = 4
+	maxBytesFieldNumberInStringRules       = 5
+	patternFieldNumberInStringRules        = 6
+	prefixFieldNumberInStringRules         = 7
+	suffixFieldNumberInStringRules         = 8
+	containsFieldNumberInStringRules       = 9
+	notContainsFieldNumberInStringRules    = 23
 	wellKnownRegexFieldNumberInStringRules = 24
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2874
-	strictFieldNumberInStringRules = 25
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2961
-	patternFieldNumberInBytesRules = 4
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2976
-	prefixFieldNumberInBytesRules = 5
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L2991
-	suffixFieldNumberInBytesRules = 6
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3006
+	strictFieldNumberInStringRules         = 25
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.BytesRules
+	patternFieldNumberInBytesRules  = 4
+	prefixFieldNumberInBytesRules   = 5
+	suffixFieldNumberInBytesRules   = 6
 	containsFieldNumberInBytesRules = 7
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3183
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.RepeatedRules
 	minItemsFieldNumberInRepeatedFieldRules = 1
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3199
 	maxItemsFieldNumberInRepeatedFieldRules = 2
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3214
-	uniqueFieldNumberInRepeatedFieldRules = 3
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3235
-	itemsFieldNumberInRepeatedRules = 4
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3249
+	uniqueFieldNumberInRepeatedFieldRules   = 3
+	itemsFieldNumberInRepeatedRules         = 4
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MapRules
 	minPairsFieldNumberInMapRules = 1
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3263
 	maxPairsFieldNumberInMapRules = 2
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3281
-	keysFieldNumberInMapRules = 4
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3298
-	valuesFieldNumberInMapRules = 5
-	// https://buf.build/bufbuild/protovalidate/file/main:buf/validate/validate.proto#L3566
-	ltNowFieldNumberInTimestampRules = 7
-	// https://buf.build/bufbuild/protovalidate/file/main:buf/validate/validate.proto#L3682
-	gtNowFieldNumberInTimestampRules = 8
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L3696
+	keysFieldNumberInMapRules     = 4
+	valuesFieldNumberInMapRules   = 5
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.TimestampRules
+	ltNowFieldNumberInTimestampRules  = 7
+	gtNowFieldNumberInTimestampRules  = 8
 	withInFieldNumberInTimestampRules = 9
 )
 
@@ -160,10 +139,9 @@ var (
 		string((&wrapperspb.StringValue{}).ProtoReflect().Descriptor().FullName()): {},
 		string((&wrapperspb.BytesValue{}).ProtoReflect().Descriptor().FullName()):  {},
 	}
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L117
+	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.FieldConstraints
 	fieldConstraintsDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints")
-	// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L169
-	typeOneofDescriptor = validate.File_buf_validate_validate_proto.Messages().ByName("FieldConstraints").Oneofs().ByName("type")
+	typeOneofDescriptor        = fieldConstraintsDescriptor.Oneofs().ByName("type")
 )
 
 // checkForField validates that protovalidate rules defined for this field are

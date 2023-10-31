@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/reflect/protodesc"
 )
 
-// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L72
+// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.MessageConstraints
 const disabledFieldNumberInMesageConstraints = 1
 
 // Check validates that all rules on fields are valid, and all CEL expressions compile.
