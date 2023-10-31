@@ -5,8 +5,8 @@ package what;
 import "buf/validate/validate.proto";
 import "google/protobuf/duration.proto";
 
-message Ds {
-  oneof haha {
+message OneofTest {
+  oneof foo {
     int32 v1 = 1 [
       (buf.validate.field).int32.lt = 3,
       // must not have required
