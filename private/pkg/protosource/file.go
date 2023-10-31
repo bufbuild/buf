@@ -38,6 +38,10 @@ type file struct {
 	optimizeMode   descriptorpb.FileOptions_OptimizeMode
 }
 
+func (f *file) FileDescriptor() protodescriptor.FileDescriptor {
+	return f.fileDescriptor
+}
+
 func (f *file) Syntax() Syntax {
 	return f.syntax
 }

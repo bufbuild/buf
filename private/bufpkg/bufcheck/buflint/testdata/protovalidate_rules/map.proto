@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+message MapTest {
+  // valid
+  map<int32, string> no_protovalidate_option = 1;
+  // valid
+  map<int64, google.protobuf.Duration> other_option = 2 [deprecated = true];
+  // valid
+  map<int64, string> valid = 3 [
+    (buf.validate.field).map.min_pairs = 1,
+    (buf.validate.field).map.max_pairs = 2,
+    (buf.validate.field).map.keys.int64.gt = 1,
+    (buf.validate.field).map.keys.int64.lt = 10,
+    (buf.validate.field).map.values.string.min_len = 1,
+    (buf.validate.field).map.values.string.max_len = 10
+  ];
+  // not a map
+  repeated int32 repeated_field = 4 [(buf.validate.field).map.min_pairs = 1];
+  map<int64, string> invalid_range = 5 [
+    // invalid range
+    (buf.validate.field).map.min_pairs = 2,
+    // invalid range
+    (buf.validate.field).map.max_pairs = 1
+  ];
+  map<int64, google.protobuf.Duration> key_type_mismatch = 6 [
+    (buf.validate.field).map.min_pairs = 1,
+    // key has type int64
+    (buf.validate.field).map.keys.string.min_len = 1
+  ];
+  map<int64, google.protobuf.Duration> value_type_mistmatch = 7 [
+    (buf.validate.field).map.min_pairs = 1,
+    // value has type Duration
+    (buf.validate.field).map.values.string.min_len = 1
+  ];
+  map<int64, google.protobuf.Duration> key_rules_invalid = 8 [
+    (buf.validate.field).map.min_pairs = 1,
+    // invalid range
+    (buf.validate.field).map.keys.int64.gt = 1,
+    // invalid range
+    (buf.validate.field).map.keys.int64.lt = 1
+  ];
+  map<int64, google.protobuf.Duration> value_rules_invalid = 9 [
+    (buf.validate.field).map.min_pairs = 1,
+    (buf.validate.field).map.values.string.pattern = "["
+  ];
+}
