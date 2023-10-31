@@ -102,6 +102,7 @@ func (m *moduleFileSetBuilder) build(
 						}
 					}
 					// If we've already read this from the ModuleReader, no need to do again.
+					// TODO THIS IS WRONG how do we deal with dependency modules that have the same dep on different commits?
 					if _, ok := dependencyModulePinStrings[transitiveDependencyModulePin.String()]; ok {
 						continue
 					}
