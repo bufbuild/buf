@@ -192,7 +192,8 @@ func run(
 		}
 		moduleFileSets[i] = moduleFileSet
 	}
-	// There are two cases where we need an image to filter the output:
+
+	// We build the image to filter the output:
 	//   1) the input is a proto file reference
 	//   2) ensuring that we are including the relevant imports
 	//
@@ -204,42 +205,7 @@ func run(
 	// and use the fact that something is in an image to determine if it is actually used.
 	var images []bufimage.Image
 	_, isProtoFileRef := sourceOrModuleRef.(buffetch.ProtoFileRef)
-	// We gate on flags.ExcludeImports/buffetch.ProtoFileRef so that we don't waste time building if the
-	// result of the build is not relevant.
-	if !flags.ExcludeImports {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
-		for _, moduleFileSet := range moduleFileSets {
-			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
-			if err != nil {
-				return err
-			}
-			if len(targetFileInfos) == 0 {
-				// This ModuleFileSet doesn't have any targets, so we shouldn't build
-				// an image for it.
-				continue
-			}
-			image, fileAnnotations, err := imageBuilder.Build(
-				ctx,
-				moduleFileSet,
-				bufimagebuild.WithExcludeSourceCodeInfo(),
-			)
-			if err != nil {
-				return err
-			}
-			if len(fileAnnotations) > 0 {
-				// stderr since we do output to stdout potentially
-				if err := bufanalysis.PrintFileAnnotations(
-					container.Stderr(),
-					fileAnnotations,
-					bufanalysis.FormatText.String(),
-				); err != nil {
-					return err
-				}
-				return bufcli.ErrFileAnnotation
-			}
-			images = append(images, image)
-		}
-	} else if isProtoFileRef {
+	if isProtoFileRef {
 		// If the reference is a ProtoFileRef, we need to resolve the image for the reference,
 		// since the image config reader distills down the reference to the file and its dependencies,
 		// and also handles the #include_package_files option.
@@ -276,6 +242,39 @@ func run(
 		}
 		for _, imageConfig := range imageConfigs {
 			images = append(images, imageConfig.Image())
+		}
+	} else {
+		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
+		for _, moduleFileSet := range moduleFileSets {
+			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
+			if err != nil {
+				return err
+			}
+			if len(targetFileInfos) == 0 {
+				// This ModuleFileSet doesn't have any targets, so we shouldn't build
+				// an image for it.
+				continue
+			}
+			image, fileAnnotations, err := imageBuilder.Build(
+				ctx,
+				moduleFileSet,
+				bufimagebuild.WithExcludeSourceCodeInfo(),
+			)
+			if err != nil {
+				return err
+			}
+			if len(fileAnnotations) > 0 {
+				// stderr since we do output to stdout potentially
+				if err := bufanalysis.PrintFileAnnotations(
+					container.Stderr(),
+					fileAnnotations,
+					bufanalysis.FormatText.String(),
+				); err != nil {
+					return err
+				}
+				return bufcli.ErrFileAnnotation
+			}
+			images = append(images, image)
 		}
 	}
 	// images will only be non-empty if !flags.ExcludeImports || isProtoFileRef
@@ -350,16 +349,13 @@ func run(
 			}
 			// If the file is not an import in some ModuleFileSet, it will
 			// eventually be written via the iteration over moduleFileSets.
-			// TODO: fix
-			if true {
-				//if fileInfo.IsImport() {
-				if flags.ExcludeImports {
-					// Exclude imports, don't output here
-					continue
-				} else if mergedImage == nil || mergedImage.GetFile(path) == nil {
-					// We check the merged image to see if the path exists. If it does,
-					// we use this import, so we want to output the file. If it doesn't,
-					// continue.
+			imageFile := mergedImage.GetFile(path)
+			// We check the merged image to see if the path exists.
+			if imageFile == nil {
+				continue
+			}
+			if flags.ExcludeImports {
+				if imageFile.IsImport() {
 					continue
 				}
 			}
