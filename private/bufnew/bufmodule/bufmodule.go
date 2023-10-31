@@ -67,6 +67,8 @@ type ModuleSet interface {
 	GetModule(moduleID string) (Module, error)
 	Modules() []Module
 	Deps() []ModulePin
+	// Needed for v1 vs v2
+	IsDepsOnModule() bool
 
 	isModuleSet()
 }
@@ -87,12 +89,14 @@ type ProtoFile interface {
 }
 
 type Module interface {
-	ProtoFileInfos(context.Context) (ProtoFileInfo, error)
+	ProtoFileInfos(context.Context) ([]ProtoFileInfo, error)
 	GetProtoFile(ctx context.Context, path string) (ProtoFile, error)
 	DocContent() string
 	DocPath() string
 	LicenseContent() string
 	ModuleSet() ModuleSet
+	// Returns all deps in ModuleSet on v2
+	Deps() []ModulePin
 
 	ID() string
 	ModuleFullName() ModuleFullName

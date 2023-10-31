@@ -1,22 +1,109 @@
 package bufworkspace
 
-import "github.com/bufbuild/buf/private/bufnew/bufmodule"
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+)
+
+const (
+	ConfigVersionV1Beta1 ConfigVersion = iota + 1
+	ConfigVersionV1
+)
+
+var (
+	configVersionToString = map[ConfigVersion]string{
+		ConfigVersionV1Beta1: "v1beta1",
+		ConfigVersionV1:      "v1",
+	}
+	stringToConfigVersion = map[string]ConfigVersion{
+		"v1beta1": ConfigVersionV1Beta1,
+		"v1":      ConfigVersionV1,
+	}
+)
+
+type ConfigVersion int
+
+func (c ConfigVersion) String() string {
+	s, ok := configVersionToString[c]
+	if !ok {
+		return strconv.Itoa(int(c))
+	}
+	return s
+}
+
+func ParseConfigVersion(s string) (ConfigVersion, error) {
+	c, ok := stringToConfigVersion[s]
+	if !ok {
+		return 0, fmt.Errorf("unknown ConfigVersion: %q", s)
+	}
+	return c, nil
+}
 
 type Workspace interface {
+	Version() ConfigVersion
+
 	ModuleSet() bufmodule.ModuleSet
-	TargetPaths(moduleID string) ([]string, error)
-	ModuleConfig(moduleID string) (ModuleConfig, error)
+	GetTargetPaths(moduleID string) ([]string, error)
 	DeclaredDeps() []bufmodule.ModuleReference
+	Config() WorkspaceConfig
 
 	isWorkspace()
 }
 
-type ModuleConfig interface {
-	ExcludePaths() string
-	Lint() LintConfig
-	Breaking() BreakingConfig
+type WorkspaceConfig interface {
+	Version() ConfigVersion
+
+	GetModuleConfig(moduleID string) (ModuleConfig, error)
+	ModuleConfigs() []ModuleConfig
+	GenerateConfigs() []GenerateConfig
+
+	isWorkspaceConfig()
 }
 
-type LintConfig interface{}
+type ModuleConfig interface {
+	Version() ConfigVersion
 
-type BreakingConfig interface{}
+	// Note: You could make the argument that you don't actually need this, however there
+	// are situations where you just want to read a configuration on its own without
+	// a corresponding Workspace.
+	ModuleFullName() bufmodule.ModuleFullName
+	RootToExcludes() map[string][]string
+
+	LintConfig() LintConfig
+	BreakingConfig() BreakingConfig
+
+	isModuleConfig()
+}
+
+type LintConfig interface {
+	Version() ConfigVersion
+
+	UseIDs() []string
+	ExceptIDs() string
+	IgnoreRootPaths() []string
+	IgnoreIDToRootPaths() map[string][]string
+	EnumZeroValueSuffix() string
+	RPCAllowSameRequestResponse() bool
+	RPCAllowGoogleProtobufEmptyRequests() bool
+	RPCAllowGoogleProtobufEmptyResponses() bool
+	ServiceSuffix() string
+	AllowCommentIgnores() bool
+
+	isLintConfig()
+}
+
+type BreakingConfig interface {
+	Version() ConfigVersion
+
+	UseIDs() []string
+	ExceptIDs() string
+	IgnoreRootPaths() []string
+	IgnoreIDToRootPaths() map[string][]string
+	IgnoreUnstablePackages() bool
+
+	isBreakingConfig()
+}
+
+type GenerateConfig interface{}
