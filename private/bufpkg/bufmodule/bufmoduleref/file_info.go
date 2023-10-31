@@ -23,7 +23,6 @@ var _ FileInfo = &fileInfo{}
 type fileInfo struct {
 	path           string
 	externalPath   string
-	isImport       bool
 	moduleIdentity ModuleIdentity
 	commit         string
 }
@@ -31,7 +30,6 @@ type fileInfo struct {
 func newFileInfo(
 	path string,
 	externalPath string,
-	isImport bool,
 	moduleIdentity ModuleIdentity,
 	commit string,
 ) (*fileInfo, error) {
@@ -44,7 +42,6 @@ func newFileInfo(
 	return newFileInfoNoValidate(
 		path,
 		externalPath,
-		isImport,
 		moduleIdentity,
 		commit,
 	), nil
@@ -53,14 +50,12 @@ func newFileInfo(
 func newFileInfoNoValidate(
 	path string,
 	externalPath string,
-	isImport bool,
 	moduleIdentity ModuleIdentity,
 	commit string,
 ) *fileInfo {
 	return &fileInfo{
 		path:           path,
 		externalPath:   externalPath,
-		isImport:       isImport,
 		moduleIdentity: moduleIdentity,
 		commit:         commit,
 	}
@@ -74,26 +69,12 @@ func (f *fileInfo) ExternalPath() string {
 	return f.externalPath
 }
 
-func (f *fileInfo) IsImport() bool {
-	return f.isImport
-}
-
 func (f *fileInfo) ModuleIdentity() ModuleIdentity {
 	return f.moduleIdentity
 }
 
 func (f *fileInfo) Commit() string {
 	return f.commit
-}
-
-func (f *fileInfo) FileInfoWithIsImport(isImport bool) FileInfo {
-	return newFileInfoNoValidate(
-		f.path,
-		f.externalPath,
-		isImport,
-		f.moduleIdentity,
-		f.commit,
-	)
 }
 
 func (*fileInfo) isFileInfo() {}

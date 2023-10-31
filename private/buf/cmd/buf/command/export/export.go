@@ -350,7 +350,9 @@ func run(
 			}
 			// If the file is not an import in some ModuleFileSet, it will
 			// eventually be written via the iteration over moduleFileSets.
-			if fileInfo.IsImport() {
+			// TODO: fix
+			if true {
+				//if fileInfo.IsImport() {
 				if flags.ExcludeImports {
 					// Exclude imports, don't output here
 					continue

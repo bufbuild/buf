@@ -27,6 +27,7 @@ type imageFile struct {
 
 	fileDescriptorProto *descriptorpb.FileDescriptorProto
 
+	isImport                      bool
 	isSyntaxUnspecified           bool
 	storedUnusedDependencyIndexes []int32
 }
@@ -46,7 +47,6 @@ func newImageFile(
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		fileDescriptor.GetName(),
 		externalPath,
-		isImport,
 		moduleIdentity,
 		commit,
 	)
@@ -62,6 +62,7 @@ func newImageFile(
 		// protodescriptor.FileDescriptorProtoForFileDescriptor is a no-op if fileDescriptor
 		// is already a *descriptorpb.FileDescriptorProto
 		fileDescriptorProto:           protodescriptor.FileDescriptorProtoForFileDescriptor(fileDescriptor),
+		isImport:                      isImport,
 		isSyntaxUnspecified:           isSyntaxUnspecified,
 		storedUnusedDependencyIndexes: unusedDependencyIndexes,
 	}, nil
@@ -73,6 +74,10 @@ func (f *imageFile) Proto() *descriptorpb.FileDescriptorProto {
 
 func (f *imageFile) FileDescriptor() protodescriptor.FileDescriptor {
 	return f.fileDescriptorProto
+}
+
+func (f *imageFile) IsImport() bool {
+	return f.isImport
 }
 
 func (f *imageFile) IsSyntaxUnspecified() bool {
@@ -88,8 +93,9 @@ func (f *imageFile) ImageFileWithIsImport(isImport bool) ImageFile {
 		return f
 	}
 	return &imageFile{
-		FileInfo:                      f.FileInfo.FileInfoWithIsImport(isImport),
+		FileInfo:                      f.FileInfo,
 		fileDescriptorProto:           f.fileDescriptorProto,
+		isImport:                      isImport,
 		isSyntaxUnspecified:           f.isSyntaxUnspecified,
 		storedUnusedDependencyIndexes: f.storedUnusedDependencyIndexes,
 	}
