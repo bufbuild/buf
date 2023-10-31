@@ -42,7 +42,6 @@ jobs:
           add-paths: .
           commit-message: "Update version to v${{env.VERSION}}"
           branch: release/v${{env.VERSION}}
-          delete-branch: true
           title: "Release v${{env.VERSION}}"
           body: |
             Release prepared for ${{env.VERSION}}
