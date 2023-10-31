@@ -1,0 +1,47 @@
+syntax = "proto2";
+
+package a;
+
+import "buf/validate/validate.proto";
+
+message ExtensionTest {
+  optional string valid_required = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).required = true
+  ];
+  optional string valid_ignore_empty = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).ignore_empty = true
+  ];
+  extensions 10 to 10000;
+}
+
+message Extending {
+  extend ExtensionTest {
+    optional string valid = 12 [(buf.validate.field).string.min_len = 3];
+    optional string invalid_required = 13 [
+      (buf.validate.field).string.min_len = 3,
+      // required cannot be specified for extension
+      (buf.validate.field).required = true
+    ];
+    optional string invalid_ignore_empty = 14 [
+      (buf.validate.field).string.min_len = 3,
+      // ignore empty cannot be specified for extension
+      (buf.validate.field).ignore_empty = true
+    ];
+  }
+}
+
+extend ExtensionTest {
+  optional string valid = 22 [(buf.validate.field).string.min_len = 3];
+  optional string invalid_required = 23 [
+    (buf.validate.field).string.min_len = 3,
+    // required cannot be specified for extension
+    (buf.validate.field).required = true
+  ];
+  optional string invalid_ignore_empty = 24 [
+    (buf.validate.field).string.min_len = 3,
+    // ignore empty cannot be specified for extension
+    (buf.validate.field).ignore_empty = true
+  ];
+}

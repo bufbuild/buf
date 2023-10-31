@@ -1,0 +1,144 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/wrappers.proto";
+
+message StringTest {
+  // valid
+  string no_protovalidate_option = 1;
+  // valid
+  string other_option = 2 [deprecated = true];
+  // valid
+  string valid = 3 [
+    (buf.validate.field).string.max_len = 20,
+    (buf.validate.field).string.max_bytes = 32,
+    (buf.validate.field).string.prefix = "foo",
+    (buf.validate.field).string.not_in = "foo_1",
+    (buf.validate.field).string.not_in = "foo_2"
+  ];
+  // valid
+  string valid_const = 4 [(buf.validate.field).string.const = "foo"];
+  // valid
+  string valid_in = 5 [
+    (buf.validate.field).string.in = "foo",
+    (buf.validate.field).string.in = "bar"
+  ];
+  string const = 6 [
+    (buf.validate.field).string.max_len = 1,
+    // const should be the only field if defined
+    (buf.validate.field).string.const = "foo"
+  ];
+  string len_and_min_len = 8 [
+    (buf.validate.field).string.len = 1,
+    // len is exclusive with min_len
+    (buf.validate.field).string.min_len = 1
+  ];
+  string len_and_max_len = 9 [
+    (buf.validate.field).string.len = 1,
+    // len is exclusive with max_len
+    (buf.validate.field).string.max_len = 1
+  ];
+  string min_len_greater_than_max_len = 10 [
+    // invalid bound
+    (buf.validate.field).string.max_len = 1,
+    // invalid bound
+    (buf.validate.field).string.min_len = 2
+  ];
+  string min_len_equal_to_max_len = 11 [
+    // invalid bound
+    (buf.validate.field).string.max_len = 1,
+    // invalid bound
+    (buf.validate.field).string.min_len = 1
+  ];
+  string len_bytes_and_min_bytes = 12 [
+    (buf.validate.field).string.len_bytes = 1,
+    // len_bytes is exclusive with min_bytes
+    (buf.validate.field).string.min_bytes = 1
+  ];
+  string len_bytes_and_max_bytes = 13 [
+    (buf.validate.field).string.len_bytes = 1,
+    // len bytes is exclusive with max_bytes
+    (buf.validate.field).string.max_bytes = 1
+  ];
+  string min_bytes_greater_than_max_bytes = 14 [
+    // invalid bound
+    (buf.validate.field).string.max_bytes = 1,
+    // invalid bound
+    (buf.validate.field).string.min_bytes = 2
+  ];
+  string min_bytes_equal_to_max_bytes = 15 [
+    // use const instead
+    (buf.validate.field).string.max_bytes = 1,
+    // use const instead
+    (buf.validate.field).string.min_bytes = 1
+  ];
+  string max_bytes_less_than_min_len = 16 [
+    // invalid bound
+    (buf.validate.field).string.max_bytes = 1,
+    // invalid bound
+    (buf.validate.field).string.min_len = 2
+  ];
+  string min_bytes_greater_than_4_time_max_len = 17 [
+    // invalid bound
+    (buf.validate.field).string.min_bytes = 5,
+    // invalid bound
+    (buf.validate.field).string.max_len = 1
+  ];
+  string prefix_over_max_len = 19 [
+    (buf.validate.field).string.max_len = 2,
+    // len is 3
+    (buf.validate.field).string.prefix = "ÀÀÀ"
+  ];
+  string prefix_over_max_bytes = 21 [
+    (buf.validate.field).string.max_bytes = 3,
+    // prefix over max_bytes
+    (buf.validate.field).string.prefix = "ÀÀ"
+  ];
+  string prefix_contains_not_contains = 22 [
+    (buf.validate.field).string.not_contains = "À",
+    // prefix contains not_contains
+    (buf.validate.field).string.prefix = "bÀr"
+  ];
+  string suffix_contains_not_contains = 23 [
+    (buf.validate.field).string.not_contains = "À",
+    // suffix contains not_contains
+    (buf.validate.field).string.suffix = "bÀr"
+  ];
+  string contains_contains_not_contains = 24 [
+    (buf.validate.field).string.not_contains = "À",
+    // contains contains not_contains
+    (buf.validate.field).string.contains = "bÀr"
+  ];
+  string invalid_pattern = 25 [
+    (buf.validate.field).string.not_in = "foo",
+    // invalid pattern
+    (buf.validate.field).string.pattern = "["
+  ];
+  string non_strict_without_well_known_regex = 26 [
+    (buf.validate.field).string.min_len = 1,
+    // well_known_regex isn't set
+    (buf.validate.field).string.strict = false
+  ];
+  google.protobuf.StringValue string_wrapper_valid = 27 [
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 5
+  ];
+  google.protobuf.StringValue string_wrapper_invalid = 28 [
+    (buf.validate.field).string.min_len = 10,
+    (buf.validate.field).string.const = "foo"
+  ];
+  bytes type_mismatch = 29 [
+    (buf.validate.field).string.min_len = 10,
+    (buf.validate.field).string.max_len = 20
+  ];
+  string valid_prefix_and_not_contains = 30 [
+    (buf.validate.field).string.prefix = "foo",
+    (buf.validate.field).string.not_contains = "bar"
+  ];
+  string not_contains_conatins_prefix = 31 [
+    (buf.validate.field).string.not_contains = "bar_foo",
+    (buf.validate.field).string.prefix = "foo"
+  ];
+}

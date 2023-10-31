@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+message RepeatedTest {
+  // valid
+  repeated string no_protovalidate_option = 1;
+  // valid
+  repeated int32 other_option = 2 [deprecated = true];
+  // valid
+  repeated string valid = 3 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.max_items = 2,
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.string.min_len = 1,
+    (buf.validate.field).repeated.items.string.max_len = 10
+  ];
+  repeated string invalid_count_range = 4 [
+    (buf.validate.field).repeated.unique = true,
+    // invalid range
+    (buf.validate.field).repeated.min_items = 2,
+    // invalid range
+    (buf.validate.field).repeated.max_items = 1,
+    (buf.validate.field).repeated.items.string.min_len = 1,
+    (buf.validate.field).repeated.items.string.max_len = 10
+  ];
+  // wrappers can have unique has well.
+  repeated google.protobuf.DoubleValue double_wrapper = 5 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.FloatValue float_wrapper = 6 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.Int32Value int32_wrapper = 7 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.Int64Value int64_wrapper = 8 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.UInt32Value uint32_wrapper = 9 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.UInt64Value uint64_wrapper = 10 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.BoolValue bool_wrapper = 11 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.BytesValue bytes_wrapper = 12 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.StringValue string_wrapper = 13 [(buf.validate.field).repeated.unique = true];
+  repeated google.protobuf.Duration invalid_unique = 14 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.max_items = 2,
+    // unique cannot be set for non-scalar fields.
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.items.duration.gt.seconds = 0
+  ];
+  // field is not repeated
+  int32 not_repeated = 15 [(buf.validate.field).repeated.unique = true];
+  // map value is also not repeated
+  map<int32, string> map_field = 16 [(buf.validate.field).map.values.repeated.unique = true];
+}

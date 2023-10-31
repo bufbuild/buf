@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/wrappers.proto";
+
+message BytesTest {
+  // valid
+  bytes no_protovalidate_option = 1;
+  // valid
+  bytes other_option = 2 [deprecated = true];
+  // valid
+  bytes valid_prefix_and_max_len = 3 [
+    (buf.validate.field).bytes.prefix = "ÀÀÀÀÀ",
+    (buf.validate.field).bytes.max_len = 10
+  ];
+  bytes prefix_over_max_len = 4 [
+    (buf.validate.field).bytes.max_len = 9,
+    // len is 10
+    (buf.validate.field).bytes.prefix = "ÀÀÀÀÀ"
+  ];
+  bytes valid_pattern = 5 [(buf.validate.field).bytes.pattern = "[0-9]"];
+  bytes invalid_pattern = 6 [
+    (buf.validate.field).bytes.len = 1,
+    (buf.validate.field).bytes.pattern = "["
+  ];
+  google.protobuf.BytesValue valid_wrapper = 7 [(buf.validate.field).bytes.pattern = "[0-9]"];
+  bytes invalid_wrapper = 8 [
+    (buf.validate.field).bytes.len = 1,
+    (buf.validate.field).bytes.pattern = "["
+  ];
+}

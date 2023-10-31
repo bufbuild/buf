@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+message DurationTest {
+  // valid
+  google.protobuf.Duration no_protovalidate_option = 1;
+  // valid
+  google.protobuf.Duration other_option = 2 [deprecated = true];
+  // valid
+  google.protobuf.Duration valid_range_1 = 3 [
+    (buf.validate.field).duration.gt = {
+      seconds: 5,
+      nanos: 1
+    },
+    (buf.validate.field).duration.lt = {
+      seconds: 5,
+      nanos: 2
+    }
+  ];
+  // it's ok to have gt > lt
+  google.protobuf.Duration valid_range_2 = 4 [
+    (buf.validate.field).duration.gt = {
+      seconds: 5,
+      nanos: 2
+    },
+    (buf.validate.field).duration.lte = {
+      seconds: 5,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Duration valid_range_3 = 5 [
+    (buf.validate.field).duration.gte = {
+      seconds: -5,
+      nanos: -20
+    },
+    (buf.validate.field).duration.lt = {
+      seconds: -4,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Duration valid_range_4 = 6 [
+    (buf.validate.field).duration.gte = {
+      seconds: -4,
+      nanos: -2
+    },
+    (buf.validate.field).duration.lte = {
+      seconds: -4,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Duration invalid_range_1 = 7 [
+    // gt == lte
+    (buf.validate.field).duration.gt = {
+      seconds: 1,
+      nanos: 2
+    },
+    (buf.validate.field).duration.lte = {
+      seconds: 1,
+      nanos: 2
+    }
+  ];
+  google.protobuf.Duration invalid_range_2 = 8 [
+    // gte == lt
+    (buf.validate.field).duration.gte = {
+      seconds: 2,
+      nanos: 1
+    },
+    (buf.validate.field).duration.lt = {
+      seconds: 2,
+      nanos: 1
+    }
+  ];
+  google.protobuf.Duration invalid_range_3 = 9 [
+    // gt == lt
+    (buf.validate.field).duration.gt = {
+      seconds: -2,
+      nanos: -1
+    },
+    (buf.validate.field).duration.lt = {
+      seconds: -2,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Duration equal_lte_gte = 10 [
+    // lte == gte
+    (buf.validate.field).duration.gte = {
+      seconds: -1,
+      nanos: -1
+    },
+    (buf.validate.field).duration.lte = {
+      seconds: -1,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Duration invalid_Duration = 11 [
+    (buf.validate.field).duration.gte = {
+      seconds: 1,
+      nanos: 1
+    },
+    // seconds and nanos must have the same sign
+    (buf.validate.field).duration.lte = {
+      seconds: 1,
+      nanos: -1
+    }
+  ];
+  google.protobuf.Duration in_range_Duration = 13 [
+    (buf.validate.field).duration.gte = {
+      seconds: -9223372036,
+      nanos: -854775428
+    },
+    (buf.validate.field).duration.lte = {
+      seconds: 9223372036,
+      nanos: 854775428
+    }
+  ];
+  google.protobuf.Duration out_of_range = 14 [
+    // 1 nanosecond lower than the minimum value allowed
+    (buf.validate.field).duration.gte = {
+      seconds: -9223372036,
+      nanos: -854775429
+    },
+    // 1 nanosecond higher than the maximum value allowed
+    (buf.validate.field).duration.lte = {
+      seconds: 9223372036,
+      nanos: 854775429
+    }
+  ];
+}

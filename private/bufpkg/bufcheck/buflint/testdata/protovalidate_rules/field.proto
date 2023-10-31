@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+
+message FieldTest {
+  int32 valid_required = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).int32.lt = 1
+  ];
+  string valid_ignore_empty = 2 [
+    (buf.validate.field).ignore_empty = true,
+    (buf.validate.field).string.min_len = 5
+  ];
+  string invalid_required_and_ignore_empty = 3 [
+    (buf.validate.field).string.min_len = 5,
+    (buf.validate.field).required = true,
+    (buf.validate.field).ignore_empty = true
+  ];
+}
