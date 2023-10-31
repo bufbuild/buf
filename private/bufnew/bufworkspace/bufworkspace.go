@@ -1,10 +1,12 @@
 package bufworkspace
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 const (
@@ -52,12 +54,19 @@ type Workspace interface {
 	isWorkspace()
 }
 
+// Can read a single buf.yaml v 1
+// Can read a buf.work.yaml
+// Can read a buf.yaml v2
+func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket) (Workspace, error) {
+	return nil, nil
+}
+
 type WorkspaceConfig interface {
 	Version() ConfigVersion
 
 	GetModuleConfig(moduleID string) (ModuleConfig, error)
 	ModuleConfigs() []ModuleConfig
-	GenerateConfigs() []GenerateConfig
+	//GenerateConfigs() []GenerateConfig
 
 	isWorkspaceConfig()
 }
@@ -68,7 +77,10 @@ type ModuleConfig interface {
 	// Note: You could make the argument that you don't actually need this, however there
 	// are situations where you just want to read a configuration on its own without
 	// a corresponding Workspace.
+
+	ModuleID() string
 	ModuleFullName() bufmodule.ModuleFullName
+
 	RootToExcludes() map[string][]string
 
 	LintConfig() LintConfig
@@ -106,4 +118,4 @@ type BreakingConfig interface {
 	isBreakingConfig()
 }
 
-type GenerateConfig interface{}
+//type GenerateConfig interface{}

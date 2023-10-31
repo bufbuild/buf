@@ -99,7 +99,7 @@ type Module interface {
 	Deps() []ModulePin
 
 	ID() string
-	ModuleFullName() ModuleFullName
+	FullName() ModuleFullName
 	Commit() string
 
 	isModule()
