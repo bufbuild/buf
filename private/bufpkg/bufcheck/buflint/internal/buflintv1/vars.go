@@ -56,7 +56,7 @@ var (
 		buflintbuild.PackageSameRubyPackageRuleBuilder,
 		buflintbuild.PackageSameSwiftPrefixRuleBuilder,
 		buflintbuild.PackageVersionSuffixRuleBuilder,
-		buflintbuild.ProtovalidateCelRuleBuilder,
+		buflintbuild.ProtovalidateRuleBuilder,
 		buflintbuild.RPCNoClientStreamingRuleBuilder,
 		buflintbuild.RPCNoServerStreamingRuleBuilder,
 		buflintbuild.RPCPascalCaseRuleBuilder,
@@ -200,7 +200,7 @@ var (
 		"PACKAGE_VERSION_SUFFIX": {
 			"DEFAULT",
 		},
-		"PROTOVALIDATE_CEL": {
+		"PROTOVALIDATE": {
 			"DEFAULT",
 		},
 		"RPC_NO_CLIENT_STREAMING": {

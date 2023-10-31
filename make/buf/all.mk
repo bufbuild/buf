@@ -2,8 +2,7 @@ GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 # Need to pin until https://github.com/google/cel-go/pull/724 is resolved
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/google/cel-go@v0.18.1 \
-	github.com/antlr/antlr4/runtime/Go/antlr/v4@v4.0.0-20230512164433-5d1fd1a340c9 \
-	github.com/bufbuild/protovalidate-go@05525acfab0ce24973e71d6fba92b88459dd35cc
+	github.com/antlr/antlr4/runtime/Go/antlr/v4@v4.0.0-20230512164433-5d1fd1a340c9
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -117,8 +116,6 @@ bufgenerateclean:: \
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --template data/template/buf.go.gen.yaml
-	echo module protovalidate > private/gen/proto/go/buf/validate/go.mod
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:

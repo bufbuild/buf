@@ -27,11 +27,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"google.golang.org/protobuf/reflect/protodesc"
 )
 
 const (
@@ -269,7 +267,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
-	message := field.Message()
+	message := field.ParentMessage()
 	if message == nil {
 		// just a sanity check
 		return errors.New("field.Message() was nil")
@@ -287,7 +285,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
@@ -309,7 +307,7 @@ func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
@@ -630,26 +628,11 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 	return nil
 }
 
-// CheckProtovalidateCel is a check function.
-func CheckProtovalidateCel(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
-	for _, file := range files {
-		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
-	}
-	resolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
-	if err != nil {
-		return nil, err
-	}
-	helper := internal.NewHelper(id, ignoreFunc)
-	for _, file := range files {
-		if file.IsImport() {
-			continue
-		}
-		if err := buflintvalidate.ValidateCELCompiles(resolver, helper.AddFileAnnotationWithExtraIgnoreLocationsf, file); err != nil {
-			return nil, err
-		}
-	}
-	return helper.FileAnnotations(), nil
+// CheckProtovalidate is a check function.
+var CheckProtovalidate = newFilesWithImportsCheckFunc(checkProtovalidate)
+
+func checkProtovalidate(add addFunc, files []protosource.File) error {
+	return buflintvalidate.Check(add, files)
 }
 
 // CheckRPCNoClientStreaming is a check function.

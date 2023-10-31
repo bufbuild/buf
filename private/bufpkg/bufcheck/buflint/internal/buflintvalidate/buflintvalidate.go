@@ -15,24 +15,106 @@
 package buflintvalidate
 
 import (
+	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
 
-// ValidateCELCompiles validates that all CEL expressions defined for protovalidate
-// in the given file compile.
-func ValidateCELCompiles(
-	resolver protodesc.Resolver,
+// https://buf.build/bufbuild/protovalidate/file/v0.4.4:buf/validate/validate.proto#L72
+const disabledFieldNumberInMesageConstraints = 1
+
+// Check validates that all rules on fields are valid, and all CEL expressions compile.
+//
+// For a set of rules to be valid, it must
+//  1. permit _some_ value
+//  2. have a type compatible with the field it validates.
+func Check(
 	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	file protosource.File,
+	files []protosource.File,
 ) error {
-	for _, message := range file.Messages() {
-		if err := validateCELCompilesMessage(resolver, add, message); err != nil {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
+	for _, file := range files {
+		fileDescriptors = append(fileDescriptors, file.FileDescriptor())
+	}
+	descriptorResolver, err := protodesc.NewFiles(protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if file.IsImport() {
+			continue
+		}
+		for _, message := range file.Messages() {
+			if err := checkForMessage(
+				add,
+				descriptorResolver,
+				message,
+			); err != nil {
+				return err
+			}
+		}
+		for _, extension := range file.Extensions() {
+			if err := checkForField(
+				add,
+				descriptorResolver,
+				extension,
+			); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func checkForMessage(
+	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	descriptorResolver protodesc.Resolver,
+	message protosource.Message,
+) error {
+	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
+	if err != nil {
+		return err
+	}
+	messageConstraints := resolver.DefaultResolver{}.ResolveMessageConstraints(messageDescriptor)
+	if messageConstraints.GetDisabled() && len(messageConstraints.GetCel()) > 0 {
+		add(
+			message,
+			message.OptionExtensionLocation(validate.E_Message, disabledFieldNumberInMesageConstraints),
+			nil,
+			"Message %q has (buf.validate.message).disabled, therefore other rules in (buf.validate.message) are not applied and should be removed.",
+			message.Name(),
+		)
+	}
+	if err := checkCELForMessage(
+		add,
+		messageConstraints,
+		messageDescriptor,
+		message,
+	); err != nil {
+		return err
+	}
+	for _, nestedMessage := range message.Messages() {
+		if err := checkForMessage(add, descriptorResolver, nestedMessage); err != nil {
 			return err
 		}
 	}
-	for _, extensionField := range file.Extensions() {
-		if err := validateCELCompilesField(resolver, add, extensionField); err != nil {
+	for _, field := range message.Fields() {
+		if err := checkForField(
+			add,
+			descriptorResolver,
+			field,
+		); err != nil {
+			return err
+		}
+	}
+	for _, extension := range message.Extensions() {
+		if err := checkForField(
+			add,
+			descriptorResolver,
+			extension,
+		); err != nil {
 			return err
 		}
 	}

@@ -72,15 +72,16 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		}
 	}
 	return &Config{
-		Name:            pluginIdentity,
-		PluginVersion:   pluginVersion,
-		Dependencies:    dependencies,
-		Registry:        registryConfig,
-		SourceURL:       externalConfig.SourceURL,
-		Description:     externalConfig.Description,
-		OutputLanguages: externalConfig.OutputLanguages,
-		SPDXLicenseID:   spdxLicenseID,
-		LicenseURL:      externalConfig.LicenseURL,
+		Name:                pluginIdentity,
+		PluginVersion:       pluginVersion,
+		Dependencies:        dependencies,
+		Registry:            registryConfig,
+		SourceURL:           externalConfig.SourceURL,
+		Description:         externalConfig.Description,
+		OutputLanguages:     externalConfig.OutputLanguages,
+		SPDXLicenseID:       spdxLicenseID,
+		LicenseURL:          externalConfig.LicenseURL,
+		IntegrationGuideURL: externalConfig.IntegrationGuideURL,
 	}, nil
 }
 
