@@ -35,7 +35,17 @@ jobs:
         run: make installbuf
       - name: Update Buf Version
         run: make updateversion
-      - name: pr
-        run: gh pr create -B release/v${{env.VERSION}} -H main --title 'Release v${{env.VERSION}}' --body "Release prepared for ${{env.VERSION}} newline newline Reminder Update the changelog"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create PR
+        id: cpr
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        with:
+          add-paths: .
+          commit-message: "Update version to v${{env.VERSION}}"
+          branch: release/v${{env.VERSION}}
+          delete-branch: true
+          title: "Release v${{env.VERSION}}"
+          body: |
+            Release prepared for ${{env.VERSION}}
+
+            Reminder: Update the changelog
+          token: ${{ secrets.GITHUB_TOKEN }}
