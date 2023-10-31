@@ -25,19 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
-        with:
-          app_id: ${{env.APP_ID}}
-          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-          permissions: >-
-            {"contents": "write", "pull_requests": "write"}
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          token: ${{ steps.generate_token.outputs.token }}
-      - uses: actions/setup-go@v4
+      - name: setup-go
+        uses: actions/setup-go@v4
         with:
           go-version: "1.21.x"
       - name: Install Buf
