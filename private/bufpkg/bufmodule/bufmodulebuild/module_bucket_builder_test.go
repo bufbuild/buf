@@ -47,15 +47,15 @@ func TestBucketGetFileInfos1(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/c/1.proto", "testdata/1/proto/a/c/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/c/2.proto", "testdata/1/proto/a/c/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/c/3.proto", "testdata/1/proto/a/c/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/c/1.proto", "testdata/1/proto/a/c/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/c/2.proto", "testdata/1/proto/a/c/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/c/3.proto", "testdata/1/proto/a/c/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -71,12 +71,12 @@ func TestBucketGetFileInfos2(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -92,15 +92,15 @@ func TestBucketGetFileInfo3(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -119,12 +119,12 @@ func TestBucketGetFileInfos4(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
 	)
 }
 
@@ -158,15 +158,15 @@ func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -187,12 +187,12 @@ func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -213,15 +213,15 @@ func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -243,12 +243,12 @@ func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
 		t,
 		"testdata/1",
 		config,
-		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
 	)
 }
 
@@ -319,8 +319,8 @@ func TestDocumentation(t *testing.T) {
 		t,
 		"testdata/4",
 		bufmodule.DefaultDocumentationPath,
-		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", nil, ""),
 	)
 }
 
@@ -330,8 +330,8 @@ func TestLicense(t *testing.T) {
 		t,
 		"testdata/5",
 		"Test Module License",
-		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/5/proto/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/5/proto/a/2.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/5/proto/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/5/proto/a/2.proto", nil, ""),
 	)
 }
 
