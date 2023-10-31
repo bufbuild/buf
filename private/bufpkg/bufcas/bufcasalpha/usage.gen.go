@@ -12,22 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storagemanifest
+// Generated. DO NOT EDIT.
 
-import (
-	"io"
+package bufcasalpha
 
-	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
-)
-
-type readObjectCloser struct {
-	storageutil.ObjectInfo
-	io.ReadCloser
-}
-
-func newReadObjectCloser(path string, readCloser io.ReadCloser) *readObjectCloser {
-	return &readObjectCloser{
-		ObjectInfo: storageutil.NewObjectInfo(path, path),
-		ReadCloser: readCloser,
-	}
-}
+import _ "github.com/bufbuild/buf/private/usage"

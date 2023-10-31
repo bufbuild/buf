@@ -20,9 +20,9 @@ import (
 	"io"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -31,9 +31,7 @@ import (
 
 func TestPutDependencyModulePinsToBucket(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	const lockV1Header = buflock.Header + "version: v1\n"
 	testPutDependencyModulePinsToBucket(
@@ -55,7 +53,7 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 				Owner:      "owner",
 				Repository: "repository",
 				Commit:     "commit",
-				Digest:     nullDigest.String(),
+				Digest:     nilDigest.String(),
 			},
 		),
 	)
@@ -73,14 +71,14 @@ func TestPutDependencyModulePinsToBucket(t *testing.T) {
 				Owner:      "owner",
 				Repository: "repo-a",
 				Commit:     "commit",
-				Digest:     nullDigest.String(),
+				Digest:     nilDigest.String(),
 			},
 			buflock.ExternalConfigDependencyV1{
 				Remote:     "remote",
 				Owner:      "owner",
 				Repository: "repo-b",
 				Commit:     "commit",
-				Digest:     nullDigest.String(),
+				Digest:     nilDigest.String(),
 			},
 		),
 	)
@@ -174,9 +172,7 @@ func pin(t *testing.T, repository string) ModulePin {
 
 func createDigest(t *testing.T, b []byte) string {
 	t.Helper()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	digest, err := digester.Digest(bytes.NewReader(b))
+	digest, err := bufcas.NewDigestForContent(bytes.NewReader(b))
 	require.NoError(t, err)
 	return digest.String()
 }

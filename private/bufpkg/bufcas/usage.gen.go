@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package storagemanifest
+package bufcas
 
 import _ "github.com/bufbuild/buf/private/usage"

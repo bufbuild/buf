@@ -16,11 +16,12 @@ package bufmodulecache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
@@ -63,10 +64,10 @@ func (c *casModuleReader) GetModule(
 	ctx context.Context,
 	modulePin bufmoduleref.ModulePin,
 ) (bufmodule.Module, error) {
-	var modulePinDigest *manifest.Digest
+	var modulePinDigest bufcas.Digest
 	if digest := modulePin.Digest(); digest != "" {
 		var err error
-		modulePinDigest, err = manifest.NewDigestFromString(digest)
+		modulePinDigest, err = bufcas.ParseDigest(digest)
 		// Fail fast if the buf.lock file contains a malformed digest
 		if err != nil {
 			return nil, fmt.Errorf("malformed module digest %q: %w", digest, err)
@@ -83,17 +84,17 @@ func (c *casModuleReader) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	// Manifest and BlobSet should always be set.
-	if remoteModule.Manifest() == nil || remoteModule.BlobSet() == nil {
-		return nil, fmt.Errorf("required manifest/blobSet not set on module")
+	// FileSet should always be set.
+	if remoteModule.FileSet() == nil {
+		return nil, errors.New("required FileSet not set on Module")
 	}
 	if modulePinDigest != nil {
-		manifestBlob, err := remoteModule.Manifest().Blob()
+		manifestBlob, err := bufcas.ManifestToBlob(remoteModule.FileSet().Manifest())
 		if err != nil {
 			return nil, err
 		}
 		manifestDigest := manifestBlob.Digest()
-		if !modulePinDigest.Equal(*manifestDigest) {
+		if !bufcas.DigestEqual(modulePinDigest, manifestDigest) {
 			// buf.lock module digest and BSR module don't match - fail without overwriting cache
 			return nil, fmt.Errorf("module digest mismatch - expected: %q, found: %q", modulePinDigest, manifestDigest)
 		}

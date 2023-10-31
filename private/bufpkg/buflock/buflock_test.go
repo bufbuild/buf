@@ -20,10 +20,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -198,9 +198,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 
 func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testDependencyForExternalConfigDependencyV1(
 		t,
@@ -210,14 +208,14 @@ func TestDependencyForExternalConfigDependencyV1(t *testing.T) {
 			Owner:      "owner",
 			Repository: "repository",
 			Commit:     "aabbccd",
-			Digest:     nullDigest.String(),
+			Digest:     nilDigest.String(),
 		},
 		buflock.Dependency{
 			Remote:     "remote",
 			Owner:      "owner",
 			Repository: "repository",
 			Commit:     "aabbccd",
-			Digest:     nullDigest.String(),
+			Digest:     nilDigest.String(),
 		},
 	)
 	testDependencyForExternalConfigDependencyV1(
