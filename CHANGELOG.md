@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [v1.1.9]
 
-- No changes yet.
+- uhhhhhh
 
 ## [v1.27.2] - 2023-10-27
 
@@ -146,7 +146,7 @@
 
 - Update built-in Well-Known Types to Protobuf v22.0.
 - Fix bug in `buf format` where C-style block comments in which every
-  line includes a prefix (usually "*") would be incorrectly indented.
+  line includes a prefix (usually "\*") would be incorrectly indented.
 - Add `--private-network` flag to `buf beta studio-agent` to support handling CORS requests
   from Studio on private networks that set the `Access-Control-Request-Private-Network` header.
 
@@ -177,6 +177,7 @@
 - Remove `buf beta convert` in favor of the now-stable `buf convert`.
 
 ## [v1.12.0] - 2023-01-12
+
 - Add `buf curl` command to invoke RPCs via [Connect](https://connect-build),
   [gRPC](https://grpc.io/), or [gRPC-Web](https://github.com/grpc/grpc-web.)
 - Introduce `objc_class_prefix` option in managed mode, allowing a `default` value
@@ -188,6 +189,7 @@
   the same effect as having mananged mode enabled in previous versions.
 
 ## [v1.11.0] - 2022-12-19
+
 - `buf generate` now batches remote plugin generation calls for improved performance.
 - Update `optimize_for` option in managed mode, allowing a `default` value for `optimize_for`
   for all files, `except` and `override`, which both behave similarly to other `except`
@@ -210,6 +212,7 @@
 ## [v1.9.0] - 2022-10-19
 
 - New compiler that is faster and uses less memory than the outgoing one.
+
   - When generating source code info, the new compiler is 20% faster, and allocates
     13% less memory.
   - If _not_ generating source code info, the new compiler is 50% faster and
@@ -222,6 +225,7 @@
 
   The new compiler also addresses a few bugs where Buf would accept proto sources
   that protoc would reject:
+
   - In proto3 files, field and enum names undergo a validation that they are
     sufficiently different so that there will be no conflicts in JSON names.
   - Fully-qualified names of elements (like a message, enum, or service) may not
@@ -231,6 +235,7 @@
   - Nesting depth of messages may not be > 32.
   - Field types and method input/output types may not refer to synthetic
     map entry messages.
+
 - Push lint and breaking configuration to the registry.
 - Include `LICENSE` file in the module on `buf push`.
 - Formatter better edits/preserves whitespace around inline comments.
@@ -313,6 +318,7 @@
 - Remove check for proper usage of private packages due to a breaking change made in the Golang standard library in 1.18.
 
 ## [v1.1.0] - 2022-03-01
+
 - Add `--type` flag to the `build` command to create filtered images containing
   only the specified types and their required dependencies.
 - Trim spaces and new lines from user-supplied token for `buf registry login`.
@@ -638,15 +644,15 @@ There is no change in functionality.
 
 ## [v0.41.0] - 2021-04-01
 
-* Add `MESSAGE_SAME_REQUIRED_FIELDS` breaking change rule. This checks to make sure no `required` fields are added or deleted from existing messages.
-* Support multi-architecture Docker image.
-* Exit with code 100 for `FileAnnotation` errors.
+- Add `MESSAGE_SAME_REQUIRED_FIELDS` breaking change rule. This checks to make sure no `required` fields are added or deleted from existing messages.
+- Support multi-architecture Docker image.
+- Exit with code 100 for `FileAnnotation` errors.
 
 ## [v0.40.0] - 2021-03-15
 
-* Add `buf beta registry tag {create,list}` commands.
-* Add support for creating tags in `push` via `buf beta push -t`.
-* Fix an issue where errors were unnecessarily written in `buf lint` and `buf breaking`.
+- Add `buf beta registry tag {create,list}` commands.
+- Add support for creating tags in `push` via `buf beta push -t`.
+- Fix an issue where errors were unnecessarily written in `buf lint` and `buf breaking`.
 
 ## [v0.39.1] - 2021-03-04
 
@@ -654,9 +660,9 @@ There is no change in functionality.
 
 ## [v0.39.0] - 2021-03-04
 
-* `buf beta push` doesn't create a new commit if the content of the push is the same as the latest commit on the branch.
-* Fix an issue where no error was shown when authentication failed.
-* Fix an issue where `buf protoc` would error if a plugin returned an empty error string.
+- `buf beta push` doesn't create a new commit if the content of the push is the same as the latest commit on the branch.
+- Fix an issue where no error was shown when authentication failed.
+- Fix an issue where `buf protoc` would error if a plugin returned an empty error string.
 
 ## [v0.38.0] - 2021-02-25
 
@@ -677,7 +683,7 @@ There is no change in functionality.
 
 Allows comment ignores of the form `// buf:lint:ignore ID` to be cascaded upwards for specific rules.
 
-- For  `ENUM_VALUE_PREFIX, ENUM_VALUE_UPPER_SNAKE_CASE`, both the enum value and the enum are checked.
+- For `ENUM_VALUE_PREFIX, ENUM_VALUE_UPPER_SNAKE_CASE`, both the enum value and the enum are checked.
 - For `FIELD_LOWER_SNAKE_CASE, FIELD_NO_DESCRIPTOR`, both the field and message are checked.
 - For `ONEOF_LOWER_SNAKE_CASE`, both the oneof and message are checked.
 - For `RPC_NO_CLIENT_STREAMING, RPC_NO_SERVER_STREAMING, RPC_PASCAL_CASE, RPC_REQUEST_RESPONSE_UNIQUE`, both the method and service are checked.
