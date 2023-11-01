@@ -18,8 +18,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -202,7 +204,7 @@ func (c *casModuleCacher) writeBlob(
 	if err == nil && valid {
 		return nil
 	}
-	if !storage.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		c.logger.Debug(
 			"repairing cache entry",
 			zap.String("basedir", moduleBasedir),

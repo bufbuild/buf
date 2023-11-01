@@ -17,6 +17,7 @@ package bufapimodule
 import (
 	"context"
 	"errors"
+	"io/fs"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -24,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type moduleReader struct {
@@ -91,7 +91,7 @@ func (m *moduleReader) downloadManifestAndBlobs(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Required by ModuleReader interface spec
-			return nil, storage.NewErrNotExist(modulePin.String())
+			return nil, &fs.PathError{Op: "read", Path: modulePin.String(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}

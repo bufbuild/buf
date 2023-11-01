@@ -16,10 +16,10 @@ package bufmoduletesting
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type testModuleReader struct {
@@ -35,7 +35,7 @@ func newTestModuleReader(moduleIdentityStringToModule map[string]bufmodule.Modul
 func (r *testModuleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
 	module, ok := r.moduleIdentityStringToModule[modulePin.IdentityString()]
 	if !ok {
-		return nil, storage.NewErrNotExist(modulePin.String())
+		return nil, &fs.PathError{Op: "read", Path: modulePin.String(), Err: fs.ErrNotExist}
 	}
 	return module, nil
 }

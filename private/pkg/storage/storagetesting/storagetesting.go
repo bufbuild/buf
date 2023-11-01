@@ -18,8 +18,10 @@ package storagetesting
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -61,7 +63,7 @@ func AssertNotExist(
 ) {
 	_, err := readBucket.Stat(context.Background(), path)
 	assert.Error(t, err)
-	assert.True(t, storage.IsNotExist(err))
+	assert.True(t, errors.Is(err, fs.ErrNotExist))
 }
 
 // AssertObjectInfo asserts the path has the expected ObjectInfo.
@@ -1176,7 +1178,7 @@ func RunTestSuite(
 		t.Parallel()
 		writeBucket := newWriteBucket(t, defaultProvider)
 		err := writeBucket.Delete(context.Background(), "hello")
-		require.True(t, storage.IsNotExist(err))
+		require.True(t, errors.Is(err, fs.ErrNotExist))
 		writeObjectCloser, err := writeBucket.Put(
 			context.Background(),
 			"hello",
@@ -1188,7 +1190,7 @@ func RunTestSuite(
 		err = writeBucket.Delete(context.Background(), "hello")
 		require.NoError(t, err)
 		err = writeBucket.Delete(context.Background(), "hello")
-		require.True(t, storage.IsNotExist(err))
+		require.True(t, errors.Is(err, fs.ErrNotExist))
 		writeObjectCloser, err = writeBucket.Put(
 			context.Background(),
 			"hello",
@@ -1200,7 +1202,7 @@ func RunTestSuite(
 		err = writeBucket.Delete(context.Background(), "hello")
 		require.NoError(t, err)
 		err = writeBucket.Delete(context.Background(), "hello")
-		require.True(t, storage.IsNotExist(err))
+		require.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("write-bucket-put-delete-all", func(t *testing.T) {

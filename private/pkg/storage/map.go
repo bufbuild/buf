@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
@@ -91,7 +92,7 @@ func newMapReadBucket(
 }
 
 func (r *mapReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
-	fullPath, err := r.getFullPath(path)
+	fullPath, err := r.getFullPath("read", path)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ func (r *mapReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser,
 }
 
 func (r *mapReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, error) {
-	fullPath, err := r.getFullPath(path)
+	fullPath, err := r.getFullPath("stat", path)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +142,7 @@ func (r *mapReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectIn
 	)
 }
 
-func (r *mapReadBucket) getFullPath(path string) (string, error) {
+func (r *mapReadBucket) getFullPath(op string, path string) (string, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return "", err
@@ -151,7 +152,7 @@ func (r *mapReadBucket) getFullPath(path string) (string, error) {
 	}
 	fullPath, matches := r.mapper.MapPath(path)
 	if !matches {
-		return "", NewErrNotExist(path)
+		return "", &fs.PathError{Op: op, Path: path, Err: fs.ErrNotExist}
 	}
 	return fullPath, nil
 }

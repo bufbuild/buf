@@ -17,11 +17,11 @@ package bufapimodule
 import (
 	"context"
 	"errors"
+	"io/fs"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
 
@@ -53,7 +53,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Required by ModuleResolver interface spec
-			return nil, storage.NewErrNotExist(moduleReference.String())
+			return nil, &fs.PathError{Op: "read", Path: moduleReference.String(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
