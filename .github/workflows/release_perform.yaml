@@ -22,6 +22,8 @@ jobs:
       - name: Fetch Changelog
         run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
       # todo: remove this
+      - run: echo "hello"
+      # todo: remove this
       - run: cat ${{env.VERSION}}-CHANGELOG.md
       # todo: revert release files back to the assets
       - run: gh release create --notes-file ${{env.VERSION}}-CHANGELOG.md ${{env.VERSION}} ./random.txt
