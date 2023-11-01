@@ -22,6 +22,10 @@ jobs:
       - name: Fetch Changelog
         run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
       # todo: remove this
+      - run: .github/actions/changelog-action/entrypoint.sh
+      # todo: remove this
+      - run: cat ./random.txt
+      # todo: remove this
       - run: echo "hello"
       # todo: remove this
       - run: cat ${{env.VERSION}}-CHANGELOG.md
