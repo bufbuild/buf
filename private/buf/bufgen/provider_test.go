@@ -16,11 +16,12 @@ package bufgen
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -54,7 +55,7 @@ func TestProviderError(t *testing.T) {
 
 	provider := NewProvider(zap.NewNop())
 	_, err = provider.GetConfig(context.Background(), readWriteBucket)
-	require.True(t, storage.IsNotExist(err))
+	require.True(t, errors.Is(err, fs.ErrNotExist))
 }
 
 func testProvider(t *testing.T, version string) {

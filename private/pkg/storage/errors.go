@@ -17,9 +17,8 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
-
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var (
@@ -27,19 +26,21 @@ var (
 	ErrClosed = errors.New("already closed")
 	// ErrSetExternalPathUnsupported is the error returned if a bucket does not support SetExternalPath.
 	ErrSetExternalPathUnsupported = errors.New("setting the external path is unsupported for this bucket")
-
-	// errNotExist is the error returned if a path does not exist.
-	errNotExist = errors.New("does not exist")
 )
 
 // NewErrNotExist returns a new error for a path not existing.
+//
+// Deprecated: use &fs.PathError{Op: "Operation", Path: path, Err: fs.ErrNotExist} instead.
 func NewErrNotExist(path string) error {
-	return normalpath.NewError(path, errNotExist)
+	// fs.PathErrors should also have Op, but we don't have an obvious one here.
+	return &fs.PathError{Path: path, Err: fs.ErrNotExist}
 }
 
 // IsNotExist returns true for a error that is for a path not existing.
+//
+// Deprecated: Use errors.Is(err, fs.ErrNotExist) instead.
 func IsNotExist(err error) bool {
-	return errors.Is(err, errNotExist)
+	return errors.Is(err, fs.ErrNotExist)
 }
 
 // NewErrExistsMultipleLocations returns a new error if a path exists in multiple locations.

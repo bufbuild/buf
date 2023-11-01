@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"sort"
 	"strings"
 
@@ -368,7 +369,7 @@ func ValidateModulePinsConsistentDigests(
 ) error {
 	currentConfig, err := buflock.ReadConfig(ctx, bucket)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return err

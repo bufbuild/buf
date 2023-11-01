@@ -16,14 +16,15 @@ package bufmoduleprotocompile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
 
@@ -59,7 +60,7 @@ func newParserAccessorHandler(
 func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error) {
 	moduleFile, moduleErr := p.moduleFileReader.GetModuleFile(p.ctx, path)
 	if moduleErr != nil {
-		if !storage.IsNotExist(moduleErr) {
+		if !errors.Is(moduleErr, fs.ErrNotExist) {
 			return nil, moduleErr
 		}
 		if wktModuleFile, wktErr := datawkt.ReadBucket.Get(p.ctx, path); wktErr == nil {

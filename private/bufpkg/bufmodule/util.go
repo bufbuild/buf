@@ -16,7 +16,9 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"io"
+	"io/fs"
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -65,7 +67,7 @@ func getFileContentForBucket(
 ) (string, error) {
 	data, err := storage.ReadPath(ctx, readBucket, path)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return "", nil
 		}
 		return "", err

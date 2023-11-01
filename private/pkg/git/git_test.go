@@ -17,6 +17,7 @@ package git
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"net/http/cgi"
 	"net/http/httptest"
 	"os"
@@ -51,9 +52,9 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 		_, err = storage.ReadPath(ctx, readBucket, "submodule/test.proto")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("default_submodule", func(t *testing.T) {
@@ -64,7 +65,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 		content, err = storage.ReadPath(ctx, readBucket, "submodule/test.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// submodule", string(content))
@@ -78,7 +79,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 1", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("origin/main", func(t *testing.T) {
@@ -89,7 +90,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 3", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("origin/remote-branch", func(t *testing.T) {
@@ -100,7 +101,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 4", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("remote-tag", func(t *testing.T) {
@@ -111,7 +112,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 4", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("branch_and_main_ref", func(t *testing.T) {
@@ -122,7 +123,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 0", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("branch_and_ref", func(t *testing.T) {
@@ -133,7 +134,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 1", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("HEAD", func(t *testing.T) {
@@ -144,7 +145,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("commit-local", func(t *testing.T) {
@@ -157,7 +158,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 1", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 
 	t.Run("commit-remote", func(t *testing.T) {
@@ -170,7 +171,7 @@ func TestGitCloner(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 3", string(content))
 		_, err = readBucket.Stat(ctx, "nonexistent")
-		assert.True(t, storage.IsNotExist(err))
+		assert.True(t, errors.Is(err, fs.ErrNotExist))
 	})
 }
 
