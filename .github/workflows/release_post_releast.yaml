@@ -1,0 +1,44 @@
+name: Release Post
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Don't use it yet.
+  release:
+    types: [created]
+
+env:
+  VERSION: ${{ github.event.inputs.version }}
+  APP_ID: 251311
+
+jobs:
+  post-release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    outputs:
+      version: ${{ steps.output_version.outputs.version }}
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Set NEXT VERSION variable from tag
+        run: |
+          NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
+      - name: update version
+        run: make updateversion VERSION=${{env.NEXT_VERSION}}
+      # update homebrew badge is skipped here, should it be?
+      - name: create PR
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        with:
+          add-paths: .
+          commit-message: "Back to development"
+          branch: next/${{env.NEXT_VERSION}}
+          delete-branch: true
+          base: main
+          title: "Return to development"
+          body: Release complete for ${{github.ref_name}}
+          token: ${{ steps.generate_token.outputs.token }}
