@@ -48,7 +48,7 @@ type Workspace interface {
 
 	ModuleSet() bufmodule.ModuleSet
 	GetTargetPaths(moduleID string) ([]string, error)
-	DeclaredDeps() []bufmodule.ModuleReference
+	DeclaredDeps() []bufmodule.ModuleRef
 	Config() WorkspaceConfig
 
 	isWorkspace()

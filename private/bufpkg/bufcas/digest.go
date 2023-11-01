@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -125,6 +126,19 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 	default:
 		return nil, fmt.Errorf("unknown DigestType: %v", digestOptions.digestType)
 	}
+}
+
+// NewDigestForDigests returns a new Digest for the given Digests.
+//
+// Digests are sorted by string value, and then concatenated with newlines. The resulting
+// content is then turned into a Digest.
+func NewDigestForDigests(digests []Digest, options ...DigestOption) (Digest, error) {
+	digestStrings := make([]string, len(digests))
+	for i, digest := range digests {
+		digestStrings[i] = digest.String()
+	}
+	sort.Strings(digestStrings)
+	return NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")), options...)
 }
 
 // DigestOption is an option for a new Digest.
