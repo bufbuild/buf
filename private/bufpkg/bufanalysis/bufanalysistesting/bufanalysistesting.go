@@ -93,7 +93,6 @@ func newFileAnnotation(
 		fileInfo, err = bufmoduleref.NewFileInfo(
 			path,
 			"",
-			false,
 			nil,
 			"",
 		)
@@ -145,7 +144,6 @@ func normalizeFileAnnotations(
 			fileInfo, err = bufmoduleref.NewFileInfo(
 				fileInfo.Path(),
 				"",
-				false,
 				nil,
 				"",
 			)

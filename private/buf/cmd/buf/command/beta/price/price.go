@@ -32,23 +32,16 @@ import (
 )
 
 const (
-	disableSymlinksFlagName       = "disable-symlinks"
-	teamsDollarsPerType           = float64(0.50)
-	proDollarsPerType             = float64(5)
-	teamsDollarsPerTypeDiscounted = float64(0.40)
-	proDollarsPerTypeDiscounted   = float64(4)
-	proDollarsMinimumSpend        = float64(1000)
-	tmplCopy                      = `Current BSR pricing:
+	disableSymlinksFlagName = "disable-symlinks"
+	teamsDollarsPerType     = float64(0.50)
+	proDollarsPerType       = float64(5)
+	proDollarsMinimumSpend  = float64(1000)
+	tmplCopy                = `Current BSR pricing:
 
   - Teams: $0.50 per type
   - Pro: $5.00 per type, with a minimum spend of $1,000 per month
 
-If you sign up before October 15, 2023, we will give you a 20% discount for the first year:
-
-  - Teams: $0.40 per type for the first year
-  - Pro: $4.00 per type for the first year, with a minimum spend of $1,000 per month
-
-Pricing data last updated on August 22, 2023.
+Pricing data last updated on November 1, 2023.
 
 Make sure you are on the latest version of the Buf CLI to get the most updated pricing
 information, and see buf.build/pricing if in doubt - this command runs completely locally
@@ -66,11 +59,6 @@ Based on this, these sources will cost:
 
 - ${{.TeamsDollarsPerMonth}}/month for Teams
 - ${{.ProDollarsPerMonth}}/month for Pro
-
-If you sign up before October 15, 2023, for the first year, these sources will cost:
-
-- ${{.TeamsDollarsPerMonthDiscounted}}/month for Teams
-- ${{.ProDollarsPerMonthDiscounted}}/month for Pro
 
 These values should be treated as an estimate - we price based on the average number
 of private types you have on the BSR during your billing period.
@@ -181,11 +169,9 @@ func run(
 type tmplData struct {
 	*protostat.Stats
 
-	NumTypes                       int
-	TeamsDollarsPerMonth           string
-	ProDollarsPerMonth             string
-	TeamsDollarsPerMonthDiscounted string
-	ProDollarsPerMonthDiscounted   string
+	NumTypes             int
+	TeamsDollarsPerMonth string
+	ProDollarsPerMonth   string
 }
 
 func newTmplData(stats *protostat.Stats) *tmplData {
@@ -194,14 +180,6 @@ func newTmplData(stats *protostat.Stats) *tmplData {
 		NumTypes: stats.NumMessages + stats.NumEnums + stats.NumMethods,
 	}
 	tmplData.TeamsDollarsPerMonth = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerType)
-	tmplData.ProDollarsPerMonth = fmt.Sprintf(
-		"%.2f",
-		math.Max(float64(tmplData.NumTypes)*proDollarsPerType, proDollarsMinimumSpend),
-	)
-	tmplData.TeamsDollarsPerMonthDiscounted = fmt.Sprintf("%.2f", float64(tmplData.NumTypes)*teamsDollarsPerTypeDiscounted)
-	tmplData.ProDollarsPerMonthDiscounted = fmt.Sprintf(
-		"%.2f",
-		math.Max(float64(tmplData.NumTypes)*proDollarsPerTypeDiscounted, proDollarsMinimumSpend),
-	)
+	tmplData.ProDollarsPerMonth = fmt.Sprintf("%.2f", math.Max(float64(tmplData.NumTypes)*proDollarsPerType, proDollarsMinimumSpend))
 	return tmplData
 }

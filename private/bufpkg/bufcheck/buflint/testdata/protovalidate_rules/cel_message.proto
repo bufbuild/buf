@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/any.proto";
+
+message MessageTest {
+  string s = 1;
+  // valid bool expression
+  option (buf.validate.message).cel = {
+    id: "id1",
+    message: "message",
+    expression: "this == this"
+  };
+  // valid string expression
+  option (buf.validate.message).cel = {
+    id: "id_1_string",
+    expression: "this == this ? '' : 'error'"
+  };
+  // invalid id
+  option (buf.validate.message).cel = {
+    id: "?",
+    message: "message",
+    expression: "this == this"
+  };
+  // empty id
+  option (buf.validate.message).cel = {
+    id: "",
+    message: "message",
+    expression: "this == this"
+  };
+  // id is duplicate
+  option (buf.validate.message).cel = {
+    id: "id2",
+    message: "message",
+    expression: "this == this"
+  };
+  // id is duplicate
+  option (buf.validate.message).cel = {
+    id: "id2",
+    message: "message",
+    expression: "this == this"
+  };
+  // empty expression
+  option (buf.validate.message).cel = {
+    id: "id_empty_exp",
+    message: "message",
+    expression: " "
+  };
+  // failed compilation
+  option (buf.validate.message).cel = {
+    id: "id3",
+    message: "uh",
+    expression: "xyz"
+  };
+  // failed with multiple compilation errors
+  option (buf.validate.message).cel = {
+    id: "id4",
+    message: "uh",
+    expression: "foo + bar",
+  };
+  // missing message with a bool expression
+  option (buf.validate.message).cel = {
+    id: "id5",
+    message: "",
+    expression: "this == this"
+  };
+  // redundant message with a string expression
+  option (buf.validate.message).cel = {
+    id: "id6",
+    message: "message",
+    expression: "''"
+  };
+  // expression not string or bool
+  option (buf.validate.message).cel = {
+    id: "id7",
+    message: "message",
+    expression: "1 + 1"
+  };
+  message NestedMessage {
+    option (buf.validate.message).cel = {
+      id: "?",
+      message: "message",
+      expression: "this == this"
+    };
+  }
+}

@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
+  will now verify that your protovalidate rules are valid. A single rule `PROTOVALIDATE` has been
+  added to the `DEFAULT` group - given that protovalidate is net new, this does not represent
+  a breaking change.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.27.2] - 2023-10-27
 

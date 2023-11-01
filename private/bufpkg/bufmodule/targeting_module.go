@@ -104,7 +104,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 						fileInfo, err := bufmoduleref.NewFileInfo(
 							objectInfo.Path(),
 							objectInfo.ExternalPath(),
-							false,
 							m.Module.ModuleIdentity(),
 							m.Module.Commit(),
 						)
@@ -196,7 +195,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 				fileInfo, err := bufmoduleref.NewFileInfo(
 					objectInfo.Path(),
 					objectInfo.ExternalPath(),
-					false,
 					m.Module.ModuleIdentity(),
 					m.Module.Commit(),
 				)

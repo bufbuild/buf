@@ -55,10 +55,10 @@ type RepositoryBranch struct {
 	// The ID of the user who updated the branch.
 	LastUpdateUserId string `protobuf:"bytes,6,opt,name=last_update_user_id,json=lastUpdateUserId,proto3" json:"last_update_user_id,omitempty"`
 	// The author name of the most recent associated git commit of the branch. May be an empty string
-	// if the last branch update doesn't have a git commit associated.
+	// if no commit in the branch history contains any associated git commit.
 	LastUpdateGitAuthorName string `protobuf:"bytes,7,opt,name=last_update_git_author_name,json=lastUpdateGitAuthorName,proto3" json:"last_update_git_author_name,omitempty"`
-	// The git commit hash of the most recent associated git commit of the branch. May be an empty string
-	// if the last branch update doesn't have a git commit associated.
+	// The git commit hash of the most recent associated git commit of the branch. May be an empty
+	// string if no commit in the branch history contains any associated git commit.
 	LastUpdateGitCommitHash string `protobuf:"bytes,8,opt,name=last_update_git_commit_hash,json=lastUpdateGitCommitHash,proto3" json:"last_update_git_commit_hash,omitempty"`
 }
 

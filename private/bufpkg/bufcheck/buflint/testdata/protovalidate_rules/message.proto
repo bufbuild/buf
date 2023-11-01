@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+
+message ValidDisabled {
+  option (buf.validate.message).disabled = true;
+
+  message ValidNestedDisabled {
+    option (buf.validate.message).disabled = true;
+  }
+}
+
+message InvalidDisabled {
+  option (buf.validate.message).cel = {
+    id: "id",
+    expression: "''"
+  };
+  option (buf.validate.message).disabled = true;
+
+  message InvalidNestedDisabled {
+    option (buf.validate.message).cel = {
+      id: "nested",
+      expression: "''"
+    };
+    option (buf.validate.message).disabled = true;
+  }
+}

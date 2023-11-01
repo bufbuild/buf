@@ -90,12 +90,12 @@ type LocationDescriptor interface {
 type NamedDescriptor interface {
 	LocationDescriptor
 
-	// FullName returns the fully-qualified name, i.e. some.pkg.Nested.Message.FooEnum.ENUM_VALUE.
+	// FullName returns the fully-qualified name, i.e. some.pkg.Nested.ParentMessage.FooEnum.ENUM_VALUE.
 	//
 	// Always non-empty.
 	FullName() string
-	// NestedName returns the full nested name without the package, i.e. Nested.Message.FooEnum
-	// or Nested.Message.FooEnum.ENUM_VALUE.
+	// NestedName returns the full nested name without the package, i.e. Nested.ParentMessage.FooEnum
+	// or Nested.ParentMessage.FooEnum.ENUM_VALUE.
 	//
 	// Always non-empty.
 	NestedName() string
@@ -268,6 +268,13 @@ type File interface {
 	PyGenericServicesLocation() Location
 	PhpGenericServicesLocation() Location
 	CcEnableArenasLocation() Location
+
+	// FileDescriptor returns the backing FileDescriptor for this File.
+	//
+	// Users should prefer to use the core protosource API to read properties of the File as opposed
+	// to using the FileDescriptor directly, however we needed to add this to be able to build
+	// Resolvers, and did not want to rewrite the whole API.
+	FileDescriptor() protodescriptor.FileDescriptor
 }
 
 // FileImport is a file import descriptor.
@@ -390,7 +397,7 @@ type Field interface {
 	OptionExtensionDescriptor
 
 	// May be nil if this is attached to a file.
-	Message() Message
+	ParentMessage() Message
 	Number() int
 	Label() descriptorpb.FieldDescriptorProto_Label
 	Type() descriptorpb.FieldDescriptorProto_Type

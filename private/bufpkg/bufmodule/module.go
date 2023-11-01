@@ -276,7 +276,6 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, 
 		fileInfo, err := bufmoduleref.NewFileInfo(
 			objectInfo.Path(),
 			objectInfo.ExternalPath(),
-			false,
 			m.moduleIdentity,
 			m.commit,
 		)
@@ -304,7 +303,6 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		readObjectCloser.Path(),
 		readObjectCloser.ExternalPath(),
-		false,
 		m.moduleIdentity,
 		m.commit,
 	)

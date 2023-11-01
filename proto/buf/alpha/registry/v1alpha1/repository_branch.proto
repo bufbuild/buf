@@ -34,10 +34,10 @@ message RepositoryBranch {
   // The ID of the user who updated the branch.
   string last_update_user_id = 6;
   // The author name of the most recent associated git commit of the branch. May be an empty string
-  // if the last branch update doesn't have a git commit associated.
+  // if no commit in the branch history contains any associated git commit.
   string last_update_git_author_name = 7;
-  // The git commit hash of the most recent associated git commit of the branch. May be an empty string
-  // if the last branch update doesn't have a git commit associated.
+  // The git commit hash of the most recent associated git commit of the branch. May be an empty
+  // string if no commit in the branch history contains any associated git commit.
   string last_update_git_commit_hash = 8;
 }
 
