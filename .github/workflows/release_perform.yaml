@@ -21,6 +21,9 @@ jobs:
       # skip generating assets, which potentially requires setup-go
       - name: Fetch Changelog
         run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
+      # todo: remove this
+      - run: cat ${{env.VERSION}}-CHANGELOG.md
+      # todo: revert release files back to the assets
       - run: gh release create --notes-file ${{env.VERSION}}-CHANGELOG.md ${{env.VERSION}} ./random.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
