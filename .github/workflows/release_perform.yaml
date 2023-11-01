@@ -1,0 +1,27 @@
+name: Release Perform
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
+    steps:
+      - name: Set VERSION variable from tag
+        run: |
+          VERSION=${{github.head_ref}}
+          echo "VERSION=${VERSION##*/}" >> $GITHUB_ENV
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      # skip generating assets, which potentially requires setup-go
+      - name: Fetch Changelog
+        run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
+      - run: gh release create --notes-file ${{env.VERSION}}-CHANGELOG.md ${{env.VERSION}} ./random.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # placeholder for slack notification

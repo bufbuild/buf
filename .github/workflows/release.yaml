@@ -1,20 +1,10 @@
-name: Release
+name: Release Prepare
 on:
   workflow_dispatch:
     inputs:
       version:
         type: string
         description: The version you intend to release without leading 'v' (eg x.y.z and not vx.y.z)
-  pull_request:
-    types: [closed]
-  push:
-    branches:
-      - "release/**"
-      - "next/**"
-    tags:
-      - v*
-  release:
-    types: [created]
 
 env:
   VERSION: ${{ github.event.inputs.version }}
