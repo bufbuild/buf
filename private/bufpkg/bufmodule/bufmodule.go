@@ -97,7 +97,7 @@ type Module interface {
 	SourceFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error)
 	// GetModuleFile gets the source file for the given path.
 	//
-	// Returns storage.IsNotExist error if the file does not exist.
+	// Returns fs.ErrNotExist error if the file does not exist.
 	GetModuleFile(ctx context.Context, path string) (ModuleFile, error)
 	// DeclaredDirectDependencies returns the direct dependencies declared in the configuration file.
 	//
@@ -287,11 +287,11 @@ func ModuleWithExcludePathsAllowNotExist(
 type ModuleResolver interface {
 	// GetModulePin resolves the provided ModuleReference to a ModulePin.
 	//
-	// Returns an error that fufills storage.IsNotExist if the named Module does not exist.
+	// Returns an error with fs.ErrNotExist if the named Module does not exist.
 	GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error)
 }
 
-// NewNopModuleResolver returns a new ModuleResolver that always returns a storage.IsNotExist error.
+// NewNopModuleResolver returns a new ModuleResolver that always returns a fs.ErrNotExist error.
 func NewNopModuleResolver() ModuleResolver {
 	return newNopModuleResolver()
 }
@@ -300,11 +300,11 @@ func NewNopModuleResolver() ModuleResolver {
 type ModuleReader interface {
 	// GetModule gets the Module for the ModulePin.
 	//
-	// Returns an error that fulfills storage.IsNotExist if the Module does not exist.
+	// Returns an error with fs.ErrNotExist if the Module does not exist.
 	GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (Module, error)
 }
 
-// NewNopModuleReader returns a new ModuleReader that always returns a storage.IsNotExist error.
+// NewNopModuleReader returns a new ModuleReader that always returns a fs.ErrNotExist error.
 func NewNopModuleReader() ModuleReader {
 	return newNopModuleReader()
 }

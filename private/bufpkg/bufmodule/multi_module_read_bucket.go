@@ -16,6 +16,8 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -43,14 +45,14 @@ func (m *multiModuleReadBucket) StatModuleFile(ctx context.Context, path string)
 	for _, delegate := range m.delegates {
 		objectInfo, err := delegate.StatModuleFile(ctx, path)
 		if err != nil {
-			if storage.IsNotExist(err) {
+			if errors.Is(err, fs.ErrNotExist) {
 				continue
 			}
 			return nil, err
 		}
 		return objectInfo, nil
 	}
-	return nil, storage.NewErrNotExist(path)
+	return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 }
 
 func (m *multiModuleReadBucket) WalkModuleFiles(ctx context.Context, prefix string, f func(*moduleObjectInfo) error) error {

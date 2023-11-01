@@ -65,7 +65,7 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:nonexistent.proto: does not exist`)},
+		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:read nonexistent.proto: file does not exist`)},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -75,7 +75,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `people/v1/people_nonexistent.proto: does not exist`},
+		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `read people/v1/people_nonexistent.proto: file does not exist`},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)

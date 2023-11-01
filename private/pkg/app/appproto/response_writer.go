@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/fs"
 	"unicode"
 	"unicode/utf8"
 
@@ -53,7 +54,7 @@ func (h *responseWriter) WriteResponse(
 	for _, file := range response.File {
 		if file.GetInsertionPoint() != "" {
 			if writeResponseOptions.insertionPointReadBucket == nil {
-				return storage.NewErrNotExist(file.GetName())
+				return &fs.PathError{Op: "stat", Path: file.GetName(), Err: fs.ErrNotExist}
 			}
 			if err := applyInsertionPoint(ctx, file, writeResponseOptions.insertionPointReadBucket, writeBucket); err != nil {
 				return err

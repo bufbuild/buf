@@ -229,7 +229,7 @@ plugins:
 		nil,
 		1,
 		``,
-		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
 		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
 		"--template",
 		successTemplate,
@@ -324,7 +324,7 @@ plugins:
 		nil,
 		1,
 		``,
-		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
 		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
 		"--template",
 		fmt.Sprintf(successTemplate, receiverOut, writerOut),

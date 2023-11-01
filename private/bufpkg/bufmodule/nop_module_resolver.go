@@ -16,9 +16,9 @@ package bufmodule
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type nopModuleResolver struct{}
@@ -28,5 +28,5 @@ func newNopModuleResolver() *nopModuleResolver {
 }
 
 func (*nopModuleResolver) GetModulePin(_ context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
-	return nil, storage.NewErrNotExist(moduleReference.String())
+	return nil, &fs.PathError{Op: "read", Path: moduleReference.String(), Err: fs.ErrNotExist}
 }

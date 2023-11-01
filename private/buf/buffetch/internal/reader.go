@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -807,7 +808,7 @@ func getTerminateFileProviderForOS(
 	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotExist(subDirPath)
+			return nil, &fs.PathError{Op: "stat", Path: subDirPath, Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
