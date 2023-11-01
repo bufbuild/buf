@@ -33,6 +33,7 @@ jobs:
           commit-message: "Update version to v${{env.VERSION}}"
           branch: release/v${{env.VERSION}}
           title: "Release v${{env.VERSION}}"
+          delete-branch: true
           body: |
             Release prepared for ${{env.VERSION}}
 
