@@ -3,6 +3,7 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 
@@ -37,6 +38,9 @@ var (
 
 // ModuleFullName represents the full name of the Module, including its remote, owner, and name.
 type ModuleFullName interface {
+	// Prints "remote/owner/name"
+	fmt.Stringer
+
 	Remote() string
 	Owner() string
 	Name() string
@@ -48,6 +52,9 @@ type ModuleFullName interface {
 //
 // It can refer to the latest released commit, a different commit, a branch, a tag, or a VCS commit.
 type ModuleRef interface {
+	// Prints "remote/owner/name[:ref]"
+	fmt.Stringer
+
 	// ModuleFullName returns the full name of the Module.
 	ModuleFullName() ModuleFullName
 	// Ref returns the reference within the Module.
@@ -130,7 +137,23 @@ type File interface {
 	isFile()
 }
 
+type ModuleInfo interface {
+	// If ModuleFullName and CommitId are present, prints "remote/owner/name:commit".
+	// If only ModuleFullName is present, prints "remote/owner/name".
+	// Otherwise, if ModuleExternalPath is present, prints the external path.
+	// Otherwise, if none are present, prints empty.
+	fmt.Stringer
+
+	ModuleExternalPath() string
+	ModuleFullName() ModuleFullName
+	CommitID() string
+
+	isModuleInfo()
+}
+
 type Module interface {
+	ModuleInfo
+
 	// GetFile gets the File within the Module as specified by the path.
 	//
 	// Returns an error with fs.ErrNotExist if the path is not part of the Module.
@@ -160,10 +183,6 @@ type Module interface {
 	// TODO: You CANNOT base the ModuleDigestB5 on this. This does not contain the digests for workspace deps.
 	// Perhaps add a ModuleSetDeps() []Module?
 	Deps() []ModulePin
-
-	Ref() string
-	FullName() ModuleFullName
-	CommitID() string
 
 	isModule()
 }
