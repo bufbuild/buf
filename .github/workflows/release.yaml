@@ -48,3 +48,4 @@ jobs:
 
             Reminder: Update the changelog
           token: ${{ secrets.GITHUB_TOKEN }}
+      # placeholder for slack notification
