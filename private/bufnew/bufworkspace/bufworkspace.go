@@ -44,12 +44,9 @@ func ParseConfigVersion(s string) (ConfigVersion, error) {
 }
 
 type Workspace interface {
-	Version() ConfigVersion
-
 	ModuleSet() bufmodule.ModuleSet
-	GetTargetPaths(moduleID string) ([]string, error)
-	DeclaredDeps() []bufmodule.ModuleRef
 	Config() WorkspaceConfig
+	GetTargetPaths(moduleID string) ([]string, error)
 
 	isWorkspace()
 }
@@ -57,9 +54,21 @@ type Workspace interface {
 // Can read a single buf.yaml v 1
 // Can read a buf.work.yaml
 // Can read a buf.yaml v2
-func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket) (Workspace, error) {
+func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket, options ...WorkspaceOption) (Workspace, error) {
 	return nil, nil
 }
+
+type WorkspaceOption func(*workspaceOptions)
+
+func WorkspaceWithDirPaths(dirPaths []string) WorkspaceOption {
+	return nil
+}
+
+func WorkspaceWithProtoFilterPaths(paths []string, excludePaths []string) WorkspaceOption {
+	return nil
+}
+
+type workspaceOptions struct{}
 
 type WorkspaceConfig interface {
 	Version() ConfigVersion
@@ -67,6 +76,7 @@ type WorkspaceConfig interface {
 	GetModuleConfig(moduleID string) (ModuleConfig, error)
 	ModuleConfigs() []ModuleConfig
 	//GenerateConfigs() []GenerateConfig
+	DeclaredDeps() []bufmodule.ModuleRef
 
 	isWorkspaceConfig()
 }
