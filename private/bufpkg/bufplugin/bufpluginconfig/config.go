@@ -339,21 +339,21 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		return nil, nil
 	}
 	var dependencySpecifications []string
-	for _, externalDependencySpecification := range externalPythonRegistryConfig.DependencySpecifications {
+	for _, externalDependencySpecification := range externalPythonRegistryConfig.Deps {
 		if externalDependencySpecification == "" {
 			return nil, fmt.Errorf("python registry config cannot have empty dependency specification")
 		}
 		dependencySpecifications = append(dependencySpecifications, externalDependencySpecification)
 	}
 	switch externalPythonRegistryConfig.PackageType {
-	case "untyped", "stub-only":
+	case "code", "stub-only":
 	default:
-		return nil, errors.New(`python registry config package_type must be one of: "untyped" or "stub-only"`)
+		return nil, errors.New(`python registry config package_type must be one of: "code" or "stub-only"`)
 	}
 	return &PythonRegistryConfig{
-		DependencySpecifications: dependencySpecifications,
-		RequiresPython:           externalPythonRegistryConfig.RequiresPython,
-		PackageType:              externalPythonRegistryConfig.PackageType,
+		Deps:           dependencySpecifications,
+		RequiresPython: externalPythonRegistryConfig.RequiresPython,
+		PackageType:    externalPythonRegistryConfig.PackageType,
 	}, nil
 }
 

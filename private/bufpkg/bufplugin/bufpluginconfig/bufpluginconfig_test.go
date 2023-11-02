@@ -317,7 +317,7 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 				Python: &PythonRegistryConfig{
 					PackageType:    "stub-only",
 					RequiresPython: ">=3.8",
-					DependencySpecifications: []string{
+					Deps: []string{
 						"protobuf>=4.23.4",
 						"types-protobuf>=4.23.0.2",
 					},

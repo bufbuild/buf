@@ -233,8 +233,8 @@ type SwiftRegistryDependencyPlatformConfig struct {
 
 // PythonRegistryConfig is the registry configuration for a Python plugin.
 type PythonRegistryConfig struct {
-	// DependencySpecifications are the dependency specifications for the remote package.
-	DependencySpecifications []string
+	// Deps are the dependency specifications for the remote package.
+	Deps []string
 	// RequiresPython is the `Requires-Python` for the remote package.
 	RequiresPython string
 	// PackageType is the package type for the remote package.
@@ -480,8 +480,8 @@ type ExternalSwiftRegistryDependencyPlatformConfig struct {
 }
 
 type ExternalPythonRegistryConfig struct {
-	// DependencySpecifications are dependency specifications for the remote package.
-	DependencySpecifications []string `json:"dependency_specifications,omitempty" yaml:"dependency_specifications,omitempty"`
+	// Deps are dependency specifications for the remote package.
+	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
 	// RequiresPython specifies the `Requires-Python` of the generated metadata file.
 	RequiresPython string `json:"requires_python,omitempty" yaml:"requires_python,omitempty"`
 	// PackageType is the type of package generated.

@@ -11,6 +11,6 @@ registry:
   python:
     package_type: "stub-only"
     requires_python: ">=3.8"
-    dependency_specifications:
+    deps:
       - "protobuf>=4.23.4"
       - "types-protobuf>=4.23.0.2"

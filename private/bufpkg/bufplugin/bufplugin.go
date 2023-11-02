@@ -273,15 +273,17 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 		RequiresPython: protoPythonConfig.RequiresPython,
 	}
 	switch protoPythonConfig.GetPackageType() {
+	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_CODE:
+		pythonConfig.PackageType = "code"
 	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY:
 		pythonConfig.PackageType = "stub-only"
-	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_UNTYPED:
-		pythonConfig.PackageType = "untyped"
 	default:
 		return nil, fmt.Errorf("unknown package type: %v", protoPythonConfig.GetPackageType())
 	}
-	if dependencySpecifications := protoPythonConfig.GetDependencySpecifications(); dependencySpecifications != nil {
-		pythonConfig.DependencySpecifications = dependencySpecifications
+	if runtimeLibraries := protoPythonConfig.GetRuntimeLibraries(); runtimeLibraries != nil {
+		for _, runtimeLibrary := range runtimeLibraries {
+			pythonConfig.Deps = append(pythonConfig.Deps, runtimeLibrary.DependencySpecification)
+		}
 	}
 	return pythonConfig, nil
 }
@@ -291,15 +293,19 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 		RequiresPython: pythonConfig.RequiresPython,
 	}
 	switch pythonConfig.PackageType {
+	case "code":
+		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_CODE
 	case "stub-only":
 		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY
-	case "untyped":
-		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_UNTYPED
 	default:
-		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "untyped" or "stub-only", got %q`, pythonConfig.PackageType)
+		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "code" or "stub-only", got %q`, pythonConfig.PackageType)
 	}
-	if pythonConfig.DependencySpecifications != nil {
-		protoPythonConfig.DependencySpecifications = pythonConfig.DependencySpecifications
+	if pythonConfig.Deps != nil {
+		for _, dep := range pythonConfig.Deps {
+			protoPythonConfig.RuntimeLibraries = append(protoPythonConfig.RuntimeLibraries, &registryv1alpha1.PythonConfig_RuntimeLibrary{
+				DependencySpecification: dep,
+			})
+		}
 	}
 	return protoPythonConfig, nil
 }
