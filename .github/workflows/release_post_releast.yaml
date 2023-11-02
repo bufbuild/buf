@@ -21,7 +21,6 @@ jobs:
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Set NEXT VERSION variable from tag
         run: |
@@ -40,4 +39,4 @@ jobs:
           base: main
           title: "Return to development"
           body: Release complete for ${{github.ref_name}}
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
