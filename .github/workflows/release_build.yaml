@@ -40,7 +40,7 @@ jobs:
       - run: cat ${{env.VERSION}}-CHANGELOG.md
       # todo: revert release files back to the assets
       # the second ${{env.VERSION}} is the tag see https://cli.github.com/manual/gh_release_create
-      - run: gh release create --draft --notes-file ${{env.VERSION}}-CHANGELOG.md --title %{{env.VERSION}} ${{env.VERSION}} ./random.txt
+      - run: gh release create --draft --notes-file ${{env.VERSION}}-CHANGELOG.md --title ${{env.VERSION}} ${{env.VERSION}} ./random.txt
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
       # placeholder for slack notification

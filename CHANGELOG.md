@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.1.24]
+## [unreleased]
 
 - hey
 - hello
