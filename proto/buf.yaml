@@ -1,5 +1,7 @@
 version: v1
 name: buf.build/bufbuild/buf
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.0
 lint:
   use:
     - DEFAULT
