@@ -10,7 +10,7 @@ env:
   APP_ID: 417207
 
 jobs:
-  tag:
+  perform:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
     steps:

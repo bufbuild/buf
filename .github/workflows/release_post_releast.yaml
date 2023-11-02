@@ -19,7 +19,7 @@ jobs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
       - name: show
-        run: echo ${{ github.event }}
+        run: echo ${{ toJSON(github.event) }}
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
