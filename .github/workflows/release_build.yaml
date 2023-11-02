@@ -39,7 +39,7 @@ jobs:
       # todo: remove this
       - run: cat ${{env.VERSION}}-CHANGELOG.md
       # todo: revert release files back to the assets
-      - run: gh release create --notes-file ${{env.VERSION}}-CHANGELOG.md ${{env.VERSION}} ./random.txt
+      - run: gh release create --draft --notes-file ${{env.VERSION}}-CHANGELOG.md ${{env.VERSION}} ./random.txt
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
       # placeholder for slack notification
