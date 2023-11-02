@@ -8,5 +8,10 @@ lint:
     - UNARY_RPC
 breaking:
   use:
-    - FILE
+    - WIRE_JSON
+  except:
+    # TODO: Delete when editions work is complete
+    - FIELD_NO_DELETE_UNLESS_NAME_RESERVED
+    # TODO: Delete when editions work is complete
+    - FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED
   ignore_unstable_packages: true
