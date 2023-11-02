@@ -13,11 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
     steps:
-      - uses: actions/create-github-app-token@v1.5.1
-        id: app-token
+      # - uses: actions/create-github-app-token@v1.5.1
+      #   id: app-token
+      #   with:
+      #     app-id: ${{ env.APP_ID }}
+      #     private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a
         with:
-          app-id: ${{ env.APP_ID }}
-          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+          app_id: ${{env.APP_ID}}
+          private_key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+          permissions: >-
+            {"contents": "write", "pull_requests": "write"}
       - name: Set VERSION variable from tag
         run: |
           VERSION=${{github.head_ref}}
