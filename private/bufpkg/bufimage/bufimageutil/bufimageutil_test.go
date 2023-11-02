@@ -175,6 +175,7 @@ func TestTransitivePublic(t *testing.T) {
 	image, analysis, err := bufimagebuild.NewBuilder(
 		zaptest.NewLogger(t),
 		bufmodule.NewNopModuleReader(),
+		bufmoduleref.NewNopModulePinResolver(),
 	).Build(
 		ctx,
 		module,
@@ -218,6 +219,7 @@ func TestTypesFromMainModule(t *testing.T) {
 				moduleIdentityDep.IdentityString(): moduleDep,
 			},
 		),
+		bufmoduleref.NewNopModulePinResolver(),
 	).Build(
 		ctx,
 		module,
@@ -251,7 +253,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader())
+	builder := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver())
 	image, analysis, err := builder.Build(
 		ctx,
 		module,

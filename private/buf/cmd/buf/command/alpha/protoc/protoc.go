@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -132,7 +133,7 @@ func run(
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger(), moduleReader).Build(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger(), moduleReader, bufmoduleref.NewModulePinResolver(clientConfig)).Build(
 		ctx,
 		module,
 		buildOptions...,

@@ -38,8 +38,9 @@ type ModuleFileSetBuilder interface {
 func NewModuleFileSetBuilder(
 	logger *zap.Logger,
 	moduleReader bufmodule.ModuleReader,
+	modulePinResolver bufmoduleref.ModulePinResolver,
 ) ModuleFileSetBuilder {
-	return newModuleFileSetBuilder(logger, moduleReader)
+	return newModuleFileSetBuilder(logger, moduleReader, modulePinResolver)
 }
 
 // BuildModuleFileSetOption is an option for Build.

@@ -178,6 +178,7 @@ func run(
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		container.Logger(),
 		moduleReader,
+		bufmoduleref.NewModulePinResolver(clientConfig),
 	)
 	// TODO: this is going to be a mess when we want to remove ModuleFileSet
 	moduleFileSets := make([]bufmodule.ModuleFileSet, len(moduleConfigs))
@@ -244,7 +245,7 @@ func run(
 			images = append(images, imageConfig.Image())
 		}
 	} else {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
+		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader, bufmoduleref.NewModulePinResolver(clientConfig))
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {

@@ -50,12 +50,13 @@ type builder struct {
 	tracer               trace.Tracer
 }
 
-func newBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) *builder {
+func newBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader, modulePinResolver bufmoduleref.ModulePinResolver) *builder {
 	return &builder{
 		logger: logger.Named(loggerName),
 		moduleFileSetBuilder: bufmodulebuild.NewModuleFileSetBuilder(
 			logger,
 			moduleReader,
+			modulePinResolver,
 		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}

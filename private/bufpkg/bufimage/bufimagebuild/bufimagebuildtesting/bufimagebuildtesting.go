@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -96,7 +97,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalys
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader())
+	builder := bufimagebuild.NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver())
 	opt := bufimagebuild.WithExcludeSourceCodeInfo()
 	return builder.Build(ctx, module, opt)
 }

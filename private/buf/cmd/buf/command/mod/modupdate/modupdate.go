@@ -21,12 +21,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -215,29 +213,8 @@ func getDependencies(
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
-	var remote string
-	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
-		remote = moduleConfig.ModuleIdentity.Remote()
-	} else {
-		// At this point we know there's at least one dependency. If it's an unnamed module, select
-		// the right remote from the list of dependencies.
-		selectedRef := bufcli.SelectReferenceForRemote(moduleConfig.Build.DependencyModuleReferences)
-		if selectedRef == nil {
-			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
-		}
-		remote = selectedRef.Remote()
-		container.Logger().Debug(fmt.Sprintf(
-			`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
-			existingConfigFilePath,
-			selectedRef.IdentityString(),
-			remote,
-			remote,
-			existingConfigFilePath,
-		))
-	}
-	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
-	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
-	var currentProtoModulePins []*modulev1alpha1.ModulePin
+	var moduleReferencesToUpdate []bufmoduleref.ModuleReference
+	var resolveOptions []bufmoduleref.ResolveModulePinsOption
 	if len(flags.Only) > 0 {
 		referencesByIdentity := map[string]bufmoduleref.ModuleReference{}
 		for _, reference := range moduleConfig.Build.DependencyModuleReferences {
@@ -248,32 +225,22 @@ func getDependencies(
 			if !ok {
 				return nil, fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
 			}
-			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference))
+			moduleReferencesToUpdate = append(moduleReferencesToUpdate, moduleReference)
 		}
 		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't read current dependencies: %w", err)
 		}
-		currentProtoModulePins = bufmoduleref.NewProtoModulePinsForModulePins(currentModulePins...)
+		resolveOptions = append(resolveOptions, bufmoduleref.ResolveModulePinsWithExistingModulePins(currentModulePins))
 	} else {
-		protoDependencyModuleReferences = bufmoduleref.NewProtoModuleReferencesForModuleReferences(
-			moduleConfig.Build.DependencyModuleReferences...,
-		)
+		moduleReferencesToUpdate = moduleConfig.Build.DependencyModuleReferences
 	}
-	resp, err := service.GetModulePins(
+	modulePinResolver := bufmoduleref.NewModulePinResolver(clientConfig)
+	dependencyModulePins, err := modulePinResolver.ResolveModulePins(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{
-			ModuleReferences:  protoDependencyModuleReferences,
-			CurrentModulePins: currentProtoModulePins,
-		}),
+		moduleReferencesToUpdate,
+		resolveOptions...,
 	)
-	if err != nil {
-		if remote != bufconnect.DefaultRemote {
-			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
-		}
-		return nil, err
-	}
-	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
 	if err != nil {
 		return nil, bufcli.NewInternalError(err)
 	}

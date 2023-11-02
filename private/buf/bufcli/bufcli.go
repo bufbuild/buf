@@ -404,7 +404,7 @@ func NewWireImageConfigReader(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader),
+		bufimagebuild.NewBuilder(logger, moduleReader, bufmoduleref.NewModulePinResolver(clientConfig)),
 	), nil
 }
 
@@ -475,7 +475,7 @@ func NewWireFileLister(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader),
+		bufimagebuild.NewBuilder(logger, moduleReader, bufmoduleref.NewModulePinResolver(clientConfig)),
 	), nil
 }
 
@@ -830,7 +830,7 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader()).Build(ctx, module)
+	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver()).Build(ctx, module)
 	if err != nil {
 		return nil, err
 	}
