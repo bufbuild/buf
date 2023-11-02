@@ -30,6 +30,7 @@ import (
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
 	bufmoduleref.FileInfo
+
 	// Proto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// FileDescriptor should be preferred to Proto. We keep this method around
@@ -43,6 +44,8 @@ type ImageFile interface {
 	// This will never be nil.
 	// The value Path() is equal to FileDescriptor.GetName() .
 	FileDescriptor() protodescriptor.FileDescriptor
+	// IsImport returns true if this file is an import.
+	IsImport() bool
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
 	IsSyntaxUnspecified() bool
 	// UnusedDependencyIndexes returns the indexes of the unused dependencies within

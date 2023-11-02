@@ -30,14 +30,12 @@ func NewFileInfo(
 	t *testing.T,
 	path string,
 	externalPath string,
-	isImport bool,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 ) bufmoduleref.FileInfo {
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		path,
 		filepath.Clean(filepath.FromSlash(externalPath)),
-		isImport,
 		moduleIdentity,
 		commit,
 	)

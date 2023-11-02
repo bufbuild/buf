@@ -66,9 +66,6 @@ message RepositoryVCSCommit {
   string name = 3;
   // The name of the BSR commit this VCS commit belongs to.
   string commit_name = 4;
-  // The username of the author of the VCS commit. For Git, this is based on
-  // the committer.
-  string author = 5;
 }
 
 // ReferenceService is a service that provides RPCs that allow the BSR to query

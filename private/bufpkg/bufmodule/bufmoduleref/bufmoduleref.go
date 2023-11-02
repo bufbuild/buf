@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"sort"
 	"strings"
 
@@ -51,8 +52,6 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// IsImport returns true if this file is an import.
-	IsImport() bool
 	// ModuleIdentity is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
@@ -65,8 +64,6 @@ type FileInfo interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
-	// FileInfoWithIsImport returns this FileInfo with the given IsImport value.
-	FileInfoWithIsImport(isImport bool) FileInfo
 
 	isFileInfo()
 }
@@ -78,14 +75,12 @@ type FileInfo interface {
 func NewFileInfo(
 	path string,
 	externalPath string,
-	isImport bool,
 	moduleIdentity ModuleIdentity,
 	commit string,
 ) (FileInfo, error) {
 	return newFileInfo(
 		path,
 		externalPath,
-		isImport,
 		moduleIdentity,
 		commit,
 	)
@@ -374,7 +369,7 @@ func ValidateModulePinsConsistentDigests(
 ) error {
 	currentConfig, err := buflock.ReadConfig(ctx, bucket)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return err
