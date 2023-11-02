@@ -44,8 +44,75 @@ option java_outer_classname = "DescriptorProtos";
 option java_package = "com.google.protobuf";
 option objc_class_prefix = "GPB";
 option optimize_for = SPEED;
+message FeatureSet {
+  optional FieldPresence field_presence = 1 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional EnumType enum_type = 2 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional RepeatedFieldEncoding repeated_field_encoding = 3 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional Utf8Validation utf8_validation = 4 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional MessageEncoding message_encoding = 5 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional JsonFormat json_format = 6 [
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_MESSAGE,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  enum EnumType {
+    ENUM_TYPE_UNKNOWN = 0;
+    OPEN = 1;
+    CLOSED = 2;
+  }
+  enum FieldPresence {
+    FIELD_PRESENCE_UNKNOWN = 0;
+    EXPLICIT = 1;
+    IMPLICIT = 2;
+    LEGACY_REQUIRED = 3;
+  }
+  enum JsonFormat {
+    JSON_FORMAT_UNKNOWN = 0;
+    ALLOW = 1;
+    LEGACY_BEST_EFFORT = 2;
+  }
+  enum MessageEncoding {
+    MESSAGE_ENCODING_UNKNOWN = 0;
+    LENGTH_PREFIXED = 1;
+    DELIMITED = 2;
+  }
+  enum RepeatedFieldEncoding {
+    REPEATED_FIELD_ENCODING_UNKNOWN = 0;
+    PACKED = 1;
+    EXPANDED = 2;
+  }
+  enum Utf8Validation {
+    UTF8_VALIDATION_UNKNOWN = 0;
+    NONE = 1;
+    VERIFY = 2;
+  }
+  extensions 1000, 1001, 9995 to 9999;
+  reserved 999;
+}
 message ServiceOptions {
   optional bool deprecated = 33 [default = false];
+  optional FeatureSet features = 34;
   repeated UninterpretedOption uninterpreted_option = 999;
   extensions 1000 to max;
 }

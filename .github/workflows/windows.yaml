@@ -5,34 +5,34 @@ on: push
 permissions: read-all
 jobs:
   test:
-    env:
-      DOWNLOAD_CACHE: 'd:\downloadcache'
+    #env:
+      #DOWNLOAD_CACHE: 'd:\downloadcache'
     runs-on: windows-latest
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: go-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~\AppData\Local\go-build
-            ~\go\pkg\mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      #- name: go-cache
+        #uses: actions/cache@v3
+        #with:
+          #path: |
+            #~\AppData\Local\go-build
+            #~\go\pkg\mod
+          #key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          #restore-keys: |
+            #${{ runner.os }}-go-
       - name: setup-go
         uses: actions/setup-go@v4 # this contains a fix for Windows file extraction
         with:
           go-version: '1.21.x'
           cache: false
-      - name: windows-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.DOWNLOAD_CACHE }}
-          key: ${{ runner.os }}-buf-windows-${{ hashFiles('windows/**') }}
-          restore-keys: |
-            ${{ runner.os }}-buf-windows-
+      #- name: windows-cache
+        #uses: actions/cache@v3
+        #with:
+          #path: |
+            #${{ env.DOWNLOAD_CACHE }}
+          #key: ${{ runner.os }}-buf-windows-${{ hashFiles('windows/**') }}
+          #restore-keys: |
+            #${{ runner.os }}-buf-windows-
       - name: test
         shell: bash
         run: ./windows/test.bash
