@@ -14,7 +14,7 @@ env:
 jobs:
   post-release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
+    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     outputs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
