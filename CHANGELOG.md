@@ -1,9 +1,9 @@
 # Changelog
 
-## [v1.1.11]
+## [v1.1.24]
 
-- uhhhhhh
-- uhhhhhh2
+- hey
+- hello
 
 ## [v1.27.2] - 2023-10-27
 
