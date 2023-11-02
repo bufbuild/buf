@@ -6,6 +6,7 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
+  # TODO: use the acutal ID
   APP_ID: 417207
 
 jobs:

@@ -6,7 +6,6 @@ on:
         type: string
         description: Don't use it yet.
   release:
-    types: [created]
 
 env:
   VERSION: ${{ github.event.inputs.version }}
