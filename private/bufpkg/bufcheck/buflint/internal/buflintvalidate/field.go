@@ -178,6 +178,16 @@ func checkConstraintsForField(
 	if fieldDescriptor.IsExtension() {
 		checkConstraintsForExtension(adder, fieldConstraints)
 	}
+	if fieldDescriptor.ContainingOneof() != nil && fieldConstraints.GetRequired() {
+		adder.addForPathf(
+			[]int32{requiredFieldNumber},
+			"Field %q has %s but is in a oneof (%s). Oneof fields must not have %s.",
+			adder.fieldName(),
+			adder.getFieldRuleName(requiredFieldNumber),
+			fieldDescriptor.ContainingOneof().Name(),
+			adder.getFieldRuleName(requiredFieldNumber),
+		)
+	}
 	checkFieldFlags(adder, fieldConstraints)
 	if err := checkCELForField(
 		adder,
