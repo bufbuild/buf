@@ -6,19 +6,12 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  # TODO: use the acutal ID
-  APP_ID: 417207
 
 jobs:
   perform:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
     steps:
-      - uses: actions/create-github-app-token@v1.5.1
-        id: app-token
-        with:
-          app-id: ${{ env.APP_ID }}
-          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
       - name: Set VERSION variable from tag
         run: |
           VERSION=${{github.head_ref}}
@@ -30,17 +23,9 @@ jobs:
       # skip generating assets, which potentially requires setup-go
       - name: Fetch Changelog
         run: .github/actions/changelog-action/entrypoint.sh > ${{env.VERSION}}-CHANGELOG.md
-      # todo: remove this
-      - run: .github/actions/changelog-action/entrypoint.sh
-      # todo: remove this
-      - run: cat ./random.txt
-      # todo: remove this
-      - run: echo "hello"
-      # todo: remove this
-      - run: cat ${{env.VERSION}}-CHANGELOG.md
       # todo: revert release files back to the assets
       # the second ${{env.VERSION}} is the tag see https://cli.github.com/manual/gh_release_create
       - run: gh release create --draft --notes-file ${{env.VERSION}}-CHANGELOG.md --title ${{env.VERSION}} ${{env.VERSION}} ./random.txt
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
