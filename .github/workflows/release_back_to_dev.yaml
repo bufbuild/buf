@@ -1,4 +1,4 @@
-name: Release Post
+name: Back to Development
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +9,6 @@ on:
     types: [published]
 
 env:
-  APP_ID: 251311
   FULL_VERSION: ${{ github.event.release.tag_name }}
 
 jobs:
