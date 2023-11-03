@@ -22,8 +22,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: print ref
-        run: echo "ref is ${{ toJSON(github) }}"
+      # - name: print ref
+        # run: echo "ref is ${{ toJSON(github) }}"
       # - name: print payload
         # run: ${{ toJSON(github.event) }}
       - name: Set NEXT VERSION variable from tag
