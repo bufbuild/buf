@@ -16,7 +16,9 @@ jobs:
     steps:
       - name: ok
         if: ${{ startsWith(github.event.inputs.version, 'v') }}
-        run: echo "Version should not start with 'v'."
+        run: |
+          echo "Version should not start with 'v'."
+          exit 1
       - name: Checkout repository code
         uses: actions/checkout@v4
       # temporarily skipped
