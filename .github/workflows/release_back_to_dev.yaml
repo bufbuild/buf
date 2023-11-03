@@ -45,7 +45,7 @@ jobs:
           sed -i "/^Initial beta release.$/ {
           N;
           a\
-          [Unreleased]: https://github.com/bufbuild/buf/compare/v${{ github.ref_name }}...HEAD
+          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ github.ref_name }}...HEAD
           }" CHANGELOG.md
       # update homebrew badge is skipped here, should it be?
       - name: create PR
