@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
@@ -327,46 +326,6 @@ func NewProtoModulePinsForModulePins(modulePins ...ModulePin) []*modulev1alpha1.
 		protoModulePins[i] = NewProtoModulePinForModulePin(modulePin)
 	}
 	return protoModulePins
-}
-
-// ModulePinResolver is a resolver for module pins.
-type ModulePinResolver interface {
-	// ResolveModulePins resolves a set of module references to a set of distinct module pins, applying
-	// a dependency resolution algorithm to break ties for the same repository.
-	//
-	// Callers can optionally enable partial module pin updates by passing a set of existing module pins
-	// via ResolveModulePinsWithExistingModulePins. If an existing module pin is not in the transitive
-	// closure of pins resolved from the module references, it will be returned as-is. Otherwise it will
-	// serve as a candidate for tie-breaking pins in the transitive closure of pins resolved from the
-	// module references.
-	ResolveModulePins(
-		ctx context.Context,
-		moduleRefsToResolve []ModuleReference,
-		opts ...ResolveModulePinsOption,
-	) ([]ModulePin, error)
-}
-
-type resolveModulePinsOpts struct {
-	existingModulePins []ModulePin
-}
-
-// ResolveModulePinsOption configures module pin resolution.
-type ResolveModulePinsOption func(*resolveModulePinsOpts)
-
-// Configures the ResolveModulePins call with an existing set of module pins.
-func ResolveModulePinsWithExistingModulePins(existingModulePins []ModulePin) ResolveModulePinsOption {
-	return func(opts *resolveModulePinsOpts) {
-		opts.existingModulePins = existingModulePins
-	}
-}
-
-func NewModulePinResolver(clientConfig *connectclient.Config) ModulePinResolver {
-	return newModulePinResolver(clientConfig)
-}
-
-// NewNopModuleReader returns a new ModuleReader that always returns a the existing module pins, if any.
-func NewNopModulePinResolver() ModulePinResolver {
-	return newNopModulePinResolver()
 }
 
 // ValidateModuleReferencesUniqueByIdentity returns an error if the module references contain any duplicates.

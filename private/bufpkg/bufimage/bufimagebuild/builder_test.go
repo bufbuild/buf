@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -301,7 +300,11 @@ func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
 		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
-		_, _, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver()).Build(
+		_, _, err := NewBuilder(
+			zap.NewNop(),
+			bufmodule.NewNopModuleReader(),
+			bufmodule.NewNopModuleResolver(),
+		).Build(
 			context.Background(),
 			module,
 		)
@@ -339,7 +342,11 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.I
 	if !includeSourceInfo {
 		options = append(options, WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver()).Build(
+	image, fileAnnotations, err := NewBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleReader(),
+		bufmodule.NewNopModuleResolver(),
+	).Build(
 		context.Background(),
 		module,
 		options...,

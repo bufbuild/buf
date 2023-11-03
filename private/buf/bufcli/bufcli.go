@@ -394,6 +394,7 @@ func NewWireImageConfigReader(
 	moduleResolver := bufapimodule.NewModuleResolver(
 		logger,
 		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
 	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
@@ -404,7 +405,7 @@ func NewWireImageConfigReader(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader, bufmoduleref.NewModulePinResolver(clientConfig)),
+		bufimagebuild.NewBuilder(logger, moduleReader, moduleResolver),
 	), nil
 }
 
@@ -419,6 +420,7 @@ func NewWireModuleConfigReader(
 	moduleResolver := bufapimodule.NewModuleResolver(
 		logger,
 		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
 	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
@@ -445,6 +447,7 @@ func NewWireModuleConfigReaderForModuleReader(
 	moduleResolver := bufapimodule.NewModuleResolver(
 		logger,
 		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
 	)
 	return bufwire.NewModuleConfigReader(
 		logger,
@@ -465,6 +468,7 @@ func NewWireFileLister(
 	moduleResolver := bufapimodule.NewModuleResolver(
 		logger,
 		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
 	)
 	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
@@ -475,7 +479,7 @@ func NewWireFileLister(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader, bufmoduleref.NewModulePinResolver(clientConfig)),
+		bufimagebuild.NewBuilder(logger, moduleReader, moduleResolver),
 	), nil
 }
 
@@ -830,7 +834,11 @@ func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType s
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader(), bufmoduleref.NewNopModulePinResolver()).Build(ctx, module)
+	image, _, err := bufimagebuild.NewBuilder(
+		logger,
+		bufmodule.NewNopModuleReader(),
+		bufmodule.NewNopModuleResolver(),
+	).Build(ctx, module)
 	if err != nil {
 		return nil, err
 	}

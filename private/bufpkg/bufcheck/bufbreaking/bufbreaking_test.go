@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -788,7 +787,7 @@ func testBreaking(
 	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
-		bufmoduleref.NewNopModulePinResolver(),
+		bufmodule.NewNopModuleResolver(),
 	).Build(
 		ctx,
 		previousModule,
@@ -807,7 +806,7 @@ func testBreaking(
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
-		bufmoduleref.NewNopModulePinResolver(),
+		bufmodule.NewNopModuleResolver(),
 	).Build(
 		ctx,
 		module,

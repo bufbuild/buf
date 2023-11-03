@@ -20,6 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -213,8 +214,10 @@ func getDependencies(
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
-	var moduleReferencesToUpdate []bufmoduleref.ModuleReference
-	var resolveOptions []bufmoduleref.ResolveModulePinsOption
+	var (
+		moduleReferencesToUpdate []bufmoduleref.ModuleReference
+		existingModulePins       []bufmoduleref.ModulePin
+	)
 	if len(flags.Only) > 0 {
 		referencesByIdentity := map[string]bufmoduleref.ModuleReference{}
 		for _, reference := range moduleConfig.Build.DependencyModuleReferences {
@@ -231,15 +234,19 @@ func getDependencies(
 		if err != nil {
 			return nil, fmt.Errorf("couldn't read current dependencies: %w", err)
 		}
-		resolveOptions = append(resolveOptions, bufmoduleref.ResolveModulePinsWithExistingModulePins(currentModulePins))
+		existingModulePins = currentModulePins
 	} else {
 		moduleReferencesToUpdate = moduleConfig.Build.DependencyModuleReferences
 	}
-	modulePinResolver := bufmoduleref.NewModulePinResolver(clientConfig)
-	dependencyModulePins, err := modulePinResolver.ResolveModulePins(
+	moduleResolver := bufapimodule.NewModuleResolver(
+		container.Logger(),
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
+	)
+	dependencyModulePins, err := moduleResolver.GetModulePins(
 		ctx,
 		moduleReferencesToUpdate,
-		resolveOptions...,
+		existingModulePins,
 	)
 	if err != nil {
 		return nil, bufcli.NewInternalError(err)

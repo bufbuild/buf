@@ -24,6 +24,7 @@ import (
 
 type DownloadServiceClientFactory func(address string) registryv1alpha1connect.DownloadServiceClient
 type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1connect.RepositoryCommitServiceClient
+type ResolveServiceClientFactory func(address string) registryv1alpha1connect.ResolveServiceClient
 
 func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) DownloadServiceClientFactory {
 	return func(address string) registryv1alpha1connect.DownloadServiceClient {
@@ -34,6 +35,12 @@ func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) Downloa
 func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config) RepositoryCommitServiceClientFactory {
 	return func(address string) registryv1alpha1connect.RepositoryCommitServiceClient {
 		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryCommitServiceClient)
+	}
+}
+
+func NewResolveServiceClientFactory(clientConfig *connectclient.Config) ResolveServiceClientFactory {
+	return func(address string) registryv1alpha1connect.ResolveServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewResolveServiceClient)
 	}
 }
 
@@ -54,7 +61,12 @@ type ModuleReaderOption func(reader *moduleReader)
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(
 	logger *zap.Logger,
-	repositoryCommitClientFactory RepositoryCommitServiceClientFactory,
+	repositoryCommitServiceClientFactory RepositoryCommitServiceClientFactory,
+	resolveServiceClientFactory ResolveServiceClientFactory,
 ) bufmodule.ModuleResolver {
-	return newModuleResolver(logger, repositoryCommitClientFactory)
+	return newModuleResolver(
+		logger,
+		repositoryCommitServiceClientFactory,
+		resolveServiceClientFactory,
+	)
 }

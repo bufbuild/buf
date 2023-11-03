@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufgraph"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -119,6 +118,7 @@ func run(
 	moduleResolver := bufapimodule.NewModuleResolver(
 		container.Logger(),
 		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
 	)
 	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
@@ -137,7 +137,6 @@ func run(
 		container.Logger(),
 		moduleResolver,
 		moduleReader,
-		bufmoduleref.NewModulePinResolver(clientConfig),
 	)
 	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
 		ctx,

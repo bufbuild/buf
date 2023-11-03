@@ -43,8 +43,12 @@ type Builder interface {
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader, modulePinResolver bufmoduleref.ModulePinResolver) Builder {
-	return newBuilder(logger, moduleReader, modulePinResolver)
+func NewBuilder(
+	logger *zap.Logger,
+	moduleReader bufmodule.ModuleReader,
+	moduleResolver bufmodule.ModuleResolver,
+) Builder {
+	return newBuilder(logger, moduleReader, moduleResolver)
 }
 
 // BuildOption is an option for Build.

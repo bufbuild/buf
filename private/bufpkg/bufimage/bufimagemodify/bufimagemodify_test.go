@@ -80,7 +80,7 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	image, annotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),
-		bufmoduleref.NewNopModulePinResolver(),
+		bufmodule.NewNopModuleResolver(),
 	).Build(
 		context.Background(),
 		module,

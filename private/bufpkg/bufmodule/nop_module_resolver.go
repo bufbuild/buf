@@ -27,6 +27,17 @@ func newNopModuleResolver() *nopModuleResolver {
 	return &nopModuleResolver{}
 }
 
-func (*nopModuleResolver) GetModulePin(_ context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
+func (*nopModuleResolver) GetModulePin(
+	_ context.Context,
+	moduleReference bufmoduleref.ModuleReference,
+) (bufmoduleref.ModulePin, error) {
 	return nil, &fs.PathError{Op: "read", Path: moduleReference.String(), Err: fs.ErrNotExist}
+}
+
+func (r *nopModuleResolver) GetModulePins(
+	_ context.Context,
+	_ []bufmoduleref.ModuleReference,
+	existingModulePins []bufmoduleref.ModulePin,
+) ([]bufmoduleref.ModulePin, error) {
+	return existingModulePins, nil
 }

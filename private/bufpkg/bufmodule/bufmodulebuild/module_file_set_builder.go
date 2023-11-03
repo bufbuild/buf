@@ -23,20 +23,20 @@ import (
 )
 
 type moduleFileSetBuilder struct {
-	logger            *zap.Logger
-	moduleReader      bufmodule.ModuleReader
-	modulePinResolver bufmoduleref.ModulePinResolver
+	logger         *zap.Logger
+	moduleReader   bufmodule.ModuleReader
+	moduleResolver bufmodule.ModuleResolver
 }
 
 func newModuleFileSetBuilder(
 	logger *zap.Logger,
 	moduleReader bufmodule.ModuleReader,
-	modulePinResolver bufmoduleref.ModulePinResolver,
+	moduleResolver bufmodule.ModuleResolver,
 ) *moduleFileSetBuilder {
 	return &moduleFileSetBuilder{
-		logger:            logger,
-		moduleReader:      moduleReader,
-		modulePinResolver: modulePinResolver,
+		logger:         logger,
+		moduleReader:   moduleReader,
+		moduleResolver: moduleResolver,
 	}
 }
 func (m *moduleFileSetBuilder) Build(
@@ -162,10 +162,10 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 		// the module reader. These pins are guaranteed to not contain any modules within
 		// the workspace itself.
 		m.logger.Debug("found conflicts in dependenies across modules in a workspace, running dependency resolution")
-		resolvedPins, err := m.modulePinResolver.ResolveModulePins(
+		resolvedPins, err := m.moduleResolver.GetModulePins(
 			ctx,
 			conflicts,
-			bufmoduleref.ResolveModulePinsWithExistingModulePins(dependencyModulePins),
+			dependencyModulePins,
 		)
 		if err != nil {
 			return nil, err

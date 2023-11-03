@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -152,6 +153,14 @@ func run(
 	if err != nil {
 		return err
 	}
+	moduleResolver := bufapimodule.NewModuleResolver(
+		container.Logger(),
+		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+		bufapimodule.NewResolveServiceClientFactory(clientConfig),
+	)
+	if err != nil {
+		return err
+	}
 	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
 		container,
 		storageosProvider,
@@ -178,7 +187,7 @@ func run(
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		container.Logger(),
 		moduleReader,
-		bufmoduleref.NewModulePinResolver(clientConfig),
+		moduleResolver,
 	)
 	// TODO: this is going to be a mess when we want to remove ModuleFileSet
 	moduleFileSets := make([]bufmodule.ModuleFileSet, len(moduleConfigs))
@@ -245,7 +254,11 @@ func run(
 			images = append(images, imageConfig.Image())
 		}
 	} else {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader, bufmoduleref.NewModulePinResolver(clientConfig))
+		imageBuilder := bufimagebuild.NewBuilder(
+			container.Logger(),
+			moduleReader,
+			moduleResolver,
+		)
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {

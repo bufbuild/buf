@@ -19,7 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"go.uber.org/zap"
 )
@@ -69,13 +68,11 @@ func NewBuilder(
 	logger *zap.Logger,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
-	modulePinResolver bufmoduleref.ModulePinResolver,
 ) Builder {
 	return newBuilder(
 		logger,
 		moduleResolver,
 		moduleReader,
-		modulePinResolver,
 	)
 }
 

@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,6 +40,20 @@ func (m *mockCommitServiceClient) GetRepositoryCommitByReference(
 	_ context.Context,
 	_ *connect.Request[registryv1alpha1.GetRepositoryCommitByReferenceRequest],
 ) (*connect.Response[registryv1alpha1.GetRepositoryCommitByReferenceResponse], error) {
+	return connect.NewResponse(m.refResp), nil
+}
+
+type mockResolveServiceClient struct {
+	registryv1alpha1connect.UnimplementedResolveServiceHandler
+
+	t       *testing.T
+	refResp *registryv1alpha1.GetModulePinsResponse
+}
+
+func (m *mockResolveServiceClient) GetModulePins(
+	_ context.Context,
+	_ *connect.Request[registryv1alpha1.GetModulePinsRequest],
+) (*connect.Response[registryv1alpha1.GetModulePinsResponse], error) {
 	return connect.NewResponse(m.refResp), nil
 }
 
@@ -68,6 +83,32 @@ func TestGetModulePin(t *testing.T) {
 	)
 }
 
+func TestGetModulePins(t *testing.T) {
+	t.Parallel()
+	testGetModulePins(
+		t,
+		"nominal",
+		&registryv1alpha1.GetModulePinsResponse{
+			ModulePins: []*modulev1alpha1.ModulePin{
+				{
+					Remote:         "remote",
+					Owner:          "owner",
+					Repository:     "repository",
+					Commit:         "commit",
+					ManifestDigest: "digest",
+				},
+			},
+		},
+		false,
+	)
+	testGetModulePins(
+		t,
+		"success, empty pins",
+		&registryv1alpha1.GetModulePinsResponse{},
+		false,
+	)
+}
+
 func testGetModulePin(
 	t *testing.T,
 	desc string,
@@ -77,14 +118,18 @@ func testGetModulePin(
 	t.Helper()
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
-		clientFactory := func(_ string) registryv1alpha1connect.RepositoryCommitServiceClient {
+		commitServiceClientFactory := func(_ string) registryv1alpha1connect.RepositoryCommitServiceClient {
 			return &mockCommitServiceClient{
 				t:       t,
 				refResp: resp,
 			}
 		}
 		ctx := context.Background()
-		mr := newModuleResolver(nil, clientFactory) // logger is unused
+		mr := newModuleResolver(
+			nil, // logger is unused
+			commitServiceClientFactory,
+			nil, // resolveServiceClientFactory is unused
+		)
 		moduleReference, err := bufmoduleref.NewModuleReference(
 			"remote",
 			"owner",
@@ -102,6 +147,51 @@ func testGetModulePin(
 			assert.Equal(t, "repository", pin.Repository())
 			assert.Equal(t, resp.RepositoryCommit.Name, pin.Commit())
 			assert.Equal(t, resp.RepositoryCommit.ManifestDigest, pin.Digest())
+		}
+	})
+}
+
+func testGetModulePins(
+	t *testing.T,
+	desc string,
+	resp *registryv1alpha1.GetModulePinsResponse,
+	isError bool,
+) {
+	t.Helper()
+	t.Run(desc, func(t *testing.T) {
+		t.Parallel()
+		resolveServiceClientFactory := func(_ string) registryv1alpha1connect.ResolveServiceClient {
+			return &mockResolveServiceClient{
+				t:       t,
+				refResp: resp,
+			}
+		}
+		ctx := context.Background()
+		mr := newModuleResolver(
+			nil, // logger is unused
+			nil, // commitServiceClientFactory is unused
+			resolveServiceClientFactory,
+		)
+		moduleReference, err := bufmoduleref.NewModuleReference(
+			"remote",
+			"owner",
+			"repository",
+			"reference",
+		)
+		require.NoError(t, err)
+		pins, err := mr.GetModulePins(ctx, []bufmoduleref.ModuleReference{moduleReference}, nil)
+		if isError {
+			assert.Error(t, err)
+		} else {
+			assert.Len(t, pins, len(resp.ModulePins))
+			for i, gotModulePin := range pins {
+				expectedModulePin := resp.ModulePins[i]
+				assert.Equal(t, gotModulePin.Remote(), expectedModulePin.Remote)
+				assert.Equal(t, gotModulePin.Owner(), expectedModulePin.Owner)
+				assert.Equal(t, gotModulePin.Repository(), expectedModulePin.Repository)
+				assert.Equal(t, gotModulePin.Commit(), expectedModulePin.Commit)
+				assert.Equal(t, gotModulePin.Digest(), expectedModulePin.ManifestDigest)
+			}
 		}
 	})
 }

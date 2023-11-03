@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
@@ -40,7 +39,6 @@ func TestBasic(t *testing.T) {
 		zap.NewNop(),
 		bufmodule.NewNopModuleResolver(),
 		bufmodule.NewNopModuleReader(),
-		bufmoduleref.NewNopModulePinResolver(),
 	)
 	graph, fileAnnotations, err := builder.Build(
 		ctx,

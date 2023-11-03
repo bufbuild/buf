@@ -38,7 +38,6 @@ func newBuilder(
 	logger *zap.Logger,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
-	modulePinResolver bufmoduleref.ModulePinResolver,
 ) *builder {
 	return &builder{
 		logger:         logger,
@@ -47,7 +46,7 @@ func newBuilder(
 		imageBuilder: bufimagebuild.NewBuilder(
 			logger,
 			moduleReader,
-			modulePinResolver,
+			moduleResolver,
 		),
 	}
 }

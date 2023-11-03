@@ -289,6 +289,18 @@ type ModuleResolver interface {
 	//
 	// Returns an error with fs.ErrNotExist if the named Module does not exist.
 	GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error)
+	// GetModulePins resolves the provided module references to a set of distinct module pins, applying
+	// a dependency resolution algorithm to break ties for the same repository.
+	//
+	// Callers can optionally enable partial module pin resolution by passing a set of existing module pins.
+	// If an existing module pin is not in the transitive closure of pins resolved from the module references,
+	// it will be returned as-is. Otherwise it will serve as a candidate for tie-breaking pins in the
+	// transitive closure of pins resolved from the module references.
+	GetModulePins(
+		ctx context.Context,
+		moduleRefsToResolve []bufmoduleref.ModuleReference,
+		existingModulePins []bufmoduleref.ModulePin,
+	) ([]bufmoduleref.ModulePin, error)
 }
 
 // NewNopModuleResolver returns a new ModuleResolver that always returns a fs.ErrNotExist error.
