@@ -45,11 +45,11 @@ func newModuleResolver(
 	}
 }
 
-func (m *moduleResolver) GetModulePin(
+func (r *moduleResolver) GetModulePin(
 	ctx context.Context,
 	moduleReference bufmoduleref.ModuleReference,
 ) (bufmoduleref.ModulePin, error) {
-	repositoryCommitService := m.repositoryCommitClientFactory(moduleReference.Remote())
+	repositoryCommitService := r.repositoryCommitClientFactory(moduleReference.Remote())
 	resp, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{

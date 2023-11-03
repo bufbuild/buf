@@ -497,6 +497,21 @@ func TestWorkspaceWithLock(t *testing.T) {
 	)
 }
 
+func TestWorkspaceWithDependencyConflicts(t *testing.T) {
+	// The workspace contains two modules, one which depends on the other,
+	// and both of them depend on some other module but at different commits.
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		// This indicates that we tried to resolve the module pins, which fails because those modules are fake.
+		`Failure: the server hosted at that remote is unavailable. Are you sure "bufbuild.test" is a valid remote address?`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "pinconflict", "a"),
+	)
+}
+
 func TestWorkspaceWithTransitiveDependencies(t *testing.T) {
 	// The workspace points to a module that includes transitive
 	// dependencies (i.e. a depends on b, and b depends on c).

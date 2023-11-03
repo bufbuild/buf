@@ -92,13 +92,17 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 	var (
 		dependencyModulePins              []bufmoduleref.ModulePin
 		seenDependencyModulePinIdentities = make(map[string]bufmoduleref.ModulePin)
+		seenDependencyModulePins          = make(map[string]bufmoduleref.ModulePin)
 		conflicts                         []bufmoduleref.ModuleReference
 	)
-	// This includes all dependencies of this module, including transitive dependencies.
-	// However this transitive closure does not take into account implicit dependencies
-	// on workspace modules, who may have conflicting module pins as compared to these ones.
 	for _, dependencyModulePin := range module.DependencyModulePins() {
+		if _, ok := workspace.GetModule(dependencyModulePin); ok {
+			// This dependency will already be provided by the workspace, so we don't need to add
+			// it yet. We will add workspace modules as dependencies at the end.
+			continue
+		}
 		dependencyModulePins = append(dependencyModulePins, dependencyModulePin)
+		seenDependencyModulePins[dependencyModulePin.String()] = dependencyModulePin
 		seenDependencyModulePinIdentities[dependencyModulePin.IdentityString()] = dependencyModulePin
 	}
 	// From the perspective of the ModuleFileSet, we include all of the files
@@ -137,8 +141,12 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 				// This dependency will already be provided by the workspace, so we don't need to collect it.
 				continue
 			}
+			if _, seenPin := seenDependencyModulePins[pin.String()]; seenPin {
+				// We've already seen this pin, that's fine, this is not a conflict, we don't dupe it.
+				continue
+			}
 			if _, conflict := seenDependencyModulePinIdentities[pin.IdentityString()]; conflict {
-				// Conflicting dependency module. We carry on, but we'll need to
+				// Conflicting dependency module pin. We carry on, but we'll need to
 				// go through dependency resolution now.
 				conflictingPinAsRef, err := bufmoduleref.NewModuleReference(
 					pin.Remote(),
@@ -151,9 +159,10 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 				}
 				conflicts = append(conflicts, conflictingPinAsRef)
 			} else {
-				seenDependencyModulePinIdentities[pin.IdentityString()] = pin
 				dependencyModulePins = append(dependencyModulePins, pin)
 			}
+			seenDependencyModulePins[pin.String()] = pin
+			seenDependencyModulePinIdentities[pin.IdentityString()] = pin
 		}
 	}
 	if len(conflicts) > 0 {
@@ -161,7 +170,14 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 		// dependency resolution to obtain a new set of pins before we resolve the pins via
 		// the module reader. These pins are guaranteed to not contain any modules within
 		// the workspace itself.
-		m.logger.Debug("found conflicts in dependenies across modules in a workspace, running dependency resolution")
+		var conflictsAsStrings []string
+		for _, conflict := range conflicts {
+			conflictsAsStrings = append(conflictsAsStrings, conflict.IdentityString())
+		}
+		m.logger.Warn(
+			"found conflicts in dependencies across modules in a workspace, running dependency resolution",
+			zap.Strings("conflicts", conflictsAsStrings),
+		)
 		resolvedPins, err := m.moduleResolver.GetModulePins(
 			ctx,
 			conflicts,
