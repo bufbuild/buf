@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Remove some stuff.
 
 ## [v2.6.0] - 2023-11-03
 
