@@ -31,11 +31,11 @@ jobs:
         run: |
           sed -i "/^# Changelog/ {
           N;
-          a\\
-          eh \\
+          a\
+          eh\\
           \\
           ha\\
-          \\
+          
           }" CHANGELOG.md
       - name: create PR
         uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
