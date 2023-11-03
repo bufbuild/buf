@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v2.0.2] - 2023-11-03
 
 - No changes yet.
 
@@ -983,7 +983,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/foobar/foo/compare/v2.0.10...HEAD
+[v2.0.2]: https://github.com/foobar/foo/compare/v2.0.10...v2.0.2
 [v2.0.1]: https://github.com/bufbuild/buf/compare/v1.27.2...v2.0.1
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
