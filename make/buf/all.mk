@@ -167,8 +167,8 @@ updatechangelogversion:
 ifndef VERSION
 	$(error "VERSION must be set")
 endif
-	$(SED_I) "s/## \[Unreleased\]/## \[v$(VERSION)\] - $(shell date '+%Y-%m-%d')/" CHANGELOG.md
-	$(SED_I) -E "/^\[Unreleased\]: https:\/\/github\.com\/bufbuild\/buf\/compare.*HEAD$/s/(Unreleased|HEAD)/v$(VERSION)/g" CHANGELOG.md
+	$(SED_I) 's/## \[Unreleased\]/## \[v$(VERSION)\] - $(shell date '+%Y-%m-%d')/' CHANGELOG.md
+	$(SED_I) -E '/^\[Unreleased\]: .*HEAD$$/s/(Unreleased|HEAD)/v$(VERSION)/g' CHANGELOG.md
 
 .PHONY: unreleasechangelog
 unreleasechangelog:
