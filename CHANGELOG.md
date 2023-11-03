@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Foo.
+- Bar.
+- Baz.
 
 ## [v2.7.1] - 2023-11-03
 
