@@ -8,13 +8,15 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
-  APP_ID: 251311
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
     steps:
+      - name: ok
+        if: ${{ startsWith(github.event.inputs.version, 'v') }}
+        run: echo "Version should not start with 'v'."
       - name: Checkout repository code
         uses: actions/checkout@v4
       # temporarily skipped
