@@ -14,6 +14,7 @@ env:
 jobs:
   post-release:
     runs-on: ubuntu-latest
+    # TODO: can this be removed?
     outputs:
       version: ${{ steps.output_version.outputs.version }}
     steps:
@@ -21,16 +22,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # - name: print ref
-        # run: echo "ref is ${{ toJSON(github) }}"
-      # - name: print payload
-        # run: ${{ toJSON(github.event) }}
       - name: Set NEXT VERSION variable from tag
         run: |
-          NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          NEXT_VERSION=$(echo ${{ env.FULL_VERSION }} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
       - name: update version
-        run: make updateversion VERSION=${{env.NEXT_VERSION}}
+        run: make updateversion VERSION=${{ env.NEXT_VERSION }}
       - name: unrelease changelog
         run: |
           sed -i "/^# Changelog/ {
@@ -44,7 +41,7 @@ jobs:
           sed -i "/^Initial beta release.$/ {
           N;
           a\
-          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ github.ref_name }}...HEAD
+          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.FULL_VERSION }}...HEAD
           }" CHANGELOG.md
       # update homebrew badge is skipped here, should it be?
       - name: create PR
@@ -52,9 +49,9 @@ jobs:
         with:
           add-paths: .
           commit-message: "Back to development"
-          branch: next/${{env.NEXT_VERSION}}
+          branch: next/${{ env.NEXT_VERSION }}
           delete-branch: true
           base: main
           title: "Return to development"
-          body: Release complete for ${{github.ref_name}}
+          body: Release complete for ${{ env.FULL_VERSION }}
           token: ${{ secrets.GITHUB_TOKEN }}
