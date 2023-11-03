@@ -27,7 +27,7 @@ jobs:
       - name: Update Buf Version
         run: make updateversion
       - name: Update Changelog Version
-        run: make updatechangelogversion
+        run: make updatechangelogversion VERSION=${{env.VERSION}}
       - name: Create PR
         id: cpr
         uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
