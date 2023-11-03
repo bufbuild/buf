@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v2.9.0] - 2023-11-03
 
 - Something.
@@ -1010,6 +1014,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v2.9.0...HEAD
 [v2.9.0]: https://github.com/bufbuild/buf/compare/v2.8.0...v2.9.0
 [v2.8.0]: https://github.com/bufbuild/buf/compare/v2.7.1...v2.8.0
 [v2.7.1]: https://github.com/bufbuild/buf/compare/2.6.1...v2.7.1
