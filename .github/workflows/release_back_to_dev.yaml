@@ -9,7 +9,6 @@ on:
     types: [published]
 
 env:
-  VERSION: ${{ github.event.inputs.version }}
   APP_ID: 251311
 
 jobs:
@@ -22,10 +21,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: print ref
+        run: echo "ref is ${{ github.ref_name }}"
       - name: Set NEXT VERSION variable from tag
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
+      - name: Set
+        run: make unreleasechangelog VERSION=${{github.ref_name}}
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
       # update homebrew badge is skipped here, should it be?
