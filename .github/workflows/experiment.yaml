@@ -37,6 +37,11 @@ jobs:
           ha\\
           
           }" CHANGELOG.md
+          sed -i "/^Initial beta release.$/ {
+          N;
+          a\
+          [Unreleased]: https://github.com/bufbuild/buf/compare/${{github.event.inputs.version}}...HEAD
+          }" CHANGELOG.md
       - name: create PR
         uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
         with:
