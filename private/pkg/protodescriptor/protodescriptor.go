@@ -42,7 +42,7 @@ type FileDescriptor interface {
 	GetOptions() *descriptorpb.FileOptions
 	GetSourceCodeInfo() *descriptorpb.SourceCodeInfo
 	GetSyntax() string
-	GetEdition() string
+	GetEdition() descriptorpb.Edition
 }
 
 // FileDescriptorsForFileDescriptorProtos is a convenience function since Go does not have generics.
@@ -93,8 +93,8 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 	if syntax := fileDescriptor.GetSyntax(); syntax != "" {
 		fileDescriptorProto.Syntax = proto.String(syntax)
 	}
-	if edition := fileDescriptor.GetEdition(); edition != "" {
-		fileDescriptorProto.Edition = proto.String(edition)
+	if edition := fileDescriptor.GetEdition(); edition != descriptorpb.Edition_EDITION_UNKNOWN {
+		fileDescriptorProto.Edition = &edition
 	}
 	fileDescriptorProto.ProtoReflect().SetUnknown(fileDescriptor.ProtoReflect().GetUnknown())
 	return fileDescriptorProto

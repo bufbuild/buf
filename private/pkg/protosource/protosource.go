@@ -224,7 +224,7 @@ type File interface {
 	FileImports() []FileImport
 	Services() []Service
 	Extensions() []Field
-	Edition() string
+	Edition() descriptorpb.Edition
 
 	CsharpNamespace() string
 	GoPackage() string

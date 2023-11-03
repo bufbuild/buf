@@ -45,6 +45,7 @@ import (
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
 // SWITCH THIS TO TRUE, TURN OFF PARALLEL TESTING, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
+// go test -parallel 1 ./privage/pkg/bufimage/bufimageutil
 const shouldUpdateExpectations = false
 
 func TestOptions(t *testing.T) {
