@@ -25,7 +25,7 @@ jobs:
       # - name: Install Buf
       #   run: make installbuf
       - name: Update Buf Version
-        run: make updateversion
+        run: make updateversion VERSION=${{ env.VERSION }}
       - name: Update Changelog Version
         run: make releasechangelog VERSION=${{env.VERSION}}
       - name: Create PR
