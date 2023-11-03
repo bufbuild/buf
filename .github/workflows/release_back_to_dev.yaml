@@ -30,10 +30,23 @@ jobs:
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
-      - name: unrelease changelog
-        run: make unreleasechangelog VERSION=${{ env.FULL_VERSION }}
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
+      - name: unrelease changelog
+        run: |
+          sed -i "/^# Changelog/ {
+          N;
+          a\
+          ## [Unreleased]\\
+          \\
+          - No changes yet.\\
+          
+          }" CHANGELOG.md
+          sed -i "/^Initial beta release.$/ {
+          N;
+          a\
+          [Unreleased]: https://github.com/bufbuild/buf/compare/v${{ github.ref_name }}...HEAD
+          }" CHANGELOG.md
       # update homebrew badge is skipped here, should it be?
       - name: create PR
         uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
