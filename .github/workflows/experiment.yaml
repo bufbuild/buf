@@ -1,4 +1,4 @@
-name: Release Post
+name: Experiment with gnu-sed
 on:
   workflow_dispatch:
     inputs:
