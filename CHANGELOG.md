@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Something2.
+- Foo.jfialsjlkeafjaklsfj aslkfjeaklfja fjaelkwalkf ajklfjdaslkfdja fkldafj lkads fjlkas
+  fjdalsfjasl jaslfjaskl fjaslkfjaslkjas ljaslfkasjfklasjslka fasljfas lkfjadsklfjdskfjds kf
+- Bar.
+- Foo.jfialsjlkeafjaklsfj aslkfjeaklfja fjaelkwalkf ajklfjdaslkfdja fkldafj lkads fjlkas
+  fjdskalfjasdlkfjas
 
 ## [v3.0.1] - 2023-11-03
 
