@@ -49,12 +49,91 @@ option java_outer_classname = "DescriptorProtos";
 option java_package = "com.google.protobuf";
 option objc_class_prefix = "GPB";
 option optimize_for = SPEED;
+message FeatureSet {
+  optional FieldPresence field_presence = 1 [
+    edition_defaults = { value: "EXPLICIT", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "IMPLICIT", edition: EDITION_PROTO3 },
+    edition_defaults = { value: "EXPLICIT", edition: EDITION_2023 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional EnumType enum_type = 2 [
+    edition_defaults = { value: "CLOSED", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "OPEN", edition: EDITION_PROTO3 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional RepeatedFieldEncoding repeated_field_encoding = 3 [
+    edition_defaults = { value: "EXPANDED", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "PACKED", edition: EDITION_PROTO3 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional Utf8Validation utf8_validation = 4 [
+    edition_defaults = { value: "NONE", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "VERIFY", edition: EDITION_PROTO3 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional MessageEncoding message_encoding = 5 [
+    edition_defaults = { value: "LENGTH_PREFIXED", edition: EDITION_PROTO2 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_FIELD,
+    targets = TARGET_TYPE_FILE
+  ];
+  optional JsonFormat json_format = 6 [
+    edition_defaults = { value: "LEGACY_BEST_EFFORT", edition: EDITION_PROTO2 },
+    edition_defaults = { value: "ALLOW", edition: EDITION_PROTO3 },
+    retention = RETENTION_RUNTIME,
+    targets = TARGET_TYPE_MESSAGE,
+    targets = TARGET_TYPE_ENUM,
+    targets = TARGET_TYPE_FILE
+  ];
+  enum EnumType {
+    ENUM_TYPE_UNKNOWN = 0;
+    OPEN = 1;
+    CLOSED = 2;
+  }
+  enum FieldPresence {
+    FIELD_PRESENCE_UNKNOWN = 0;
+    EXPLICIT = 1;
+    IMPLICIT = 2;
+    LEGACY_REQUIRED = 3;
+  }
+  enum JsonFormat {
+    JSON_FORMAT_UNKNOWN = 0;
+    ALLOW = 1;
+    LEGACY_BEST_EFFORT = 2;
+  }
+  enum MessageEncoding {
+    MESSAGE_ENCODING_UNKNOWN = 0;
+    LENGTH_PREFIXED = 1;
+    DELIMITED = 2;
+  }
+  enum RepeatedFieldEncoding {
+    REPEATED_FIELD_ENCODING_UNKNOWN = 0;
+    PACKED = 1;
+    EXPANDED = 2;
+  }
+  enum Utf8Validation {
+    UTF8_VALIDATION_UNKNOWN = 0;
+    NONE = 1;
+    VERIFY = 2;
+  }
+  extensions 1000, 1001, 9995 to 9999;
+  reserved 999;
+}
 message MessageOptions {
   optional bool message_set_wire_format = 1 [default = false];
   optional bool no_standard_descriptor_accessor = 2 [default = false];
   optional bool deprecated = 3 [default = false];
   optional bool map_entry = 7;
   optional bool deprecated_legacy_json_field_conflicts = 11 [deprecated = true];
+  optional FeatureSet features = 12;
   repeated UninterpretedOption uninterpreted_option = 999;
   extensions 1000 to max;
   reserved 4, 5, 6, 8, 9;

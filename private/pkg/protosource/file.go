@@ -34,7 +34,7 @@ type file struct {
 	enums          []Enum
 	services       []Service
 	extensions     []Field
-	edition        string
+	edition        descriptorpb.Edition
 	optimizeMode   descriptorpb.FileOptions_OptimizeMode
 }
 
@@ -70,7 +70,7 @@ func (f *file) Extensions() []Field {
 	return f.extensions
 }
 
-func (f *file) Edition() string {
+func (f *file) Edition() descriptorpb.Edition {
 	return f.edition
 }
 
