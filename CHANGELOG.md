@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v2.6.1] - 2023-11-03
 
 - Remove some stuff.
 
@@ -996,7 +996,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v2.6.0...HEAD
+[v2.6.1]: https://github.com/bufbuild/buf/compare/v2.6.0...v2.6.1
 [v2.6.0]: https://github.com/foobar/foo/compare/v2.5.5...v2.6.0
 [v2.2.0]: https://github.com/bufbuild/buf/compare/v2.0.0...v2.2.0
 [v2.0.2]: https://github.com/bufbuild/buf/compare/v2.0.10...v2.0.2
