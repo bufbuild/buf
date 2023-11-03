@@ -172,7 +172,7 @@ endif
 
 .PHONY: unreleasechangelog
 unreleasechangelog:
-	$(SED_I) '/^# Changelog$$/ { \
+	$(SED_I) -E '/^# Changelog$$/ { \
 	N; \
 	a\ '$$'\n''\
 	## [Unreleased]'$$'\n'' \
@@ -183,7 +183,7 @@ unreleasechangelog:
 	a\ '$$'\n''\
 	'$$'\n'' \
 	}' CHANGELOG.md
-	$(SED_I) '/^Initial beta release.$$/ { \
+	$(SED_I) -E '/^Initial beta release.$$/ { \
 	N; \
 	a\ '$$'\n''\
 	[Unreleased]: https://github.com/foobar/foo/compare/v$(VERSION)...HEAD'$$'\n'' \

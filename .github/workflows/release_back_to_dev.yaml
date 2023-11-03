@@ -30,7 +30,7 @@ jobs:
         run: |
           NEXT_VERSION=$(echo ${{github.ref_name}} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
-      - name: Set
+      - name: unrelease changelog
         run: make unreleasechangelog VERSION=${{ env.FULL_VERSION }}
       - name: update version
         run: make updateversion VERSION=${{env.NEXT_VERSION}}
