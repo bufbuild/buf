@@ -186,7 +186,7 @@ unreleasechangelog:
 	$(SED_I) -E '/^Initial beta release.$$/ { \
 	N; \
 	a\ '$$'\n''\
-	[Unreleased]: https://github.com/foobar/foo/compare/v$(VERSION)...HEAD'$$'\n'' \
+	[Unreleased]: https://github.com/foobar/foo/compare/$(VERSION)...HEAD'$$'\n'' \
 	}' CHANGELOG.md
 
 .PHONY: gofuzz
