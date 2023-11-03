@@ -23,9 +23,9 @@ jobs:
           fetch-depth: 0
       # skip generating assets, which potentially requires setup-go
       - name: Fetch Changelog
-        run: sed -n "/^## \[Unreleased\]$/,/^##/{/## \[/b; /^$/b; p}" CHANGELOG.md > ${{env.VERSION}}-CHANGELOG.md
+        run: gsed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md > ${{env.VERSION}}-CHANGELOG.md
       - name: show notes
-        run: sed -n "/^## \[Unreleased\]$/,/^##/{/## \[/b; /^$/b; p}" CHANGELOG.md
+        run: gsed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md
       # todo: revert release files back to the assets
       # the second ${{env.VERSION}} is the tag see https://cli.github.com/manual/gh_release_create
       - run: gh release create --draft --notes-file ${{env.VERSION}}-CHANGELOG.md --title ${{env.VERSION}} ${{env.VERSION}} ./random.txt
