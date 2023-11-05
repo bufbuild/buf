@@ -63,7 +63,7 @@ message RepositoryVCSCommit {
   // immutable
   google.protobuf.Timestamp create_time = 2;
   // The name of the VCS commit, e.g. for Git, it would be the Git hash.
-  string hash = 3;
+  string name = 3;
   // The name of the BSR commit this VCS commit belongs to.
   string commit_name = 4;
 }

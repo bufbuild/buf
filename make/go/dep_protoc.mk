@@ -10,9 +10,9 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20230216 checked 20230216
+# https://github.com/protocolbuffers/protobuf/releases 20231101 checked 20231102
 # NOTE: Set to version compatible with genproto source code (only used in tests).
-PROTOC_VERSION ?= 22.0
+PROTOC_VERSION ?= 25.0
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx

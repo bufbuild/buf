@@ -345,7 +345,7 @@ no limit if this flag is not present`,
 		"",
 		fmt.Sprintf(`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s or -%s flag must also be
-present to provide tha certificate and public key that corresponds to the given
+present to provide the certificate and public key that corresponds to the given
 private key`,
 			certFlagName, certFlagShortName,
 		),
@@ -357,7 +357,7 @@ private key`,
 		"",
 		fmt.Sprintf(`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s flag must also be
-present to provide tha private key that corresponds to the given certificate`,
+present to provide the private key that corresponds to the given certificate`,
 			keyFlagName,
 		),
 	)
