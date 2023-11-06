@@ -28,8 +28,8 @@ import (
 	"go.uber.org/multierr"
 )
 
-// Format formats and writes the target module files into a read bucket.
-func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket, retErr error) {
+// FormatModule formats and writes the target module files into a read bucket.
+func FormatModule(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket, retErr error) {
 	fileInfos, err := module.TargetFileInfos(ctx)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 			defer func() {
 				retErr = multierr.Append(retErr, writeObjectCloser.Close())
 			}()
-			if err := newFormatter(writeObjectCloser, fileNode).Run(); err != nil {
+			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
 				return err
 			}
 			return writeObjectCloser.SetExternalPath(moduleFile.ExternalPath())
