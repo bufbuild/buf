@@ -16,11 +16,13 @@ package bufformat
 
 import (
 	"context"
+	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.uber.org/multierr"
@@ -65,4 +67,10 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 		return nil, err
 	}
 	return readWriteBucket, nil
+}
+
+// Formats the given file node, writing to dest.
+func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
+	formatter := newFormatter(dest, fileNode)
+	return formatter.Run()
 }
