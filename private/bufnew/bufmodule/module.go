@@ -2,11 +2,8 @@ package bufmodule
 
 import (
 	"context"
-	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
 
@@ -54,47 +51,6 @@ type Module interface {
 	isModule()
 }
 
-// ModuleToBucket converts the given Module to a storage.ReadBucket.
-func ModuleToBucket(module Module) storage.ReadBucket {
-	return newModuleBucket(module)
-}
-
-// WalkModuleProtoFileInfos is a convenience function that walks just the .proto FileInfos within a Module.
-func WalkModuleProtoFileInfos(ctx context.Context, module Module, f func(FileInfo) error) error {
-	return module.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) error {
-			if normalpath.Ext(fileInfo.Path()) != ".proto" {
-				return nil
-			}
-			return f(fileInfo)
-		},
-	)
-}
-
-// GetDocFile gets the singular documentation File for the Module, if it exists.
-//
-// When creating a Module from a Bucket, we check the file paths buf.md, README.md, and README.markdown
-// to exist, in that order. The first one to exist is chosen as the documentation File that is considered
-// part of the Module, and any others are discarded. This function will return that File that was chosen.
-//
-// Returns an error with fs.ErrNotExist if no documentation file exists.
-func GetModuleDocFile(ctx context.Context, module Module) (File, error) {
-	for _, docFilePath := range orderedDocFilePaths {
-		if _, err := module.StatFileInfo(ctx, docFilePath); err == nil {
-			return module.GetFile(ctx, docFilePath)
-		}
-	}
-	return nil, fs.ErrNotExist
-}
-
-// GetModuleLicenseFile gets the license File for the Module, if it exists.
-//
-// Returns an error with fs.ErrNotExist if the license File does not exist.
-func GetModuleLicenseFile(ctx context.Context, module Module) (File, error) {
-	return module.GetFile(ctx, licenseFilePath)
-}
-
 // ModuleDigestB5 computes a b5 Digest for the given Module.
 //
 // A Module Digest is a composite Digest of all Module Files, and all Module dependencies.
@@ -106,10 +62,10 @@ func GetModuleLicenseFile(ctx context.Context, module Module) (File, error) {
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
 func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	var fileNodes []bufcas.FileNode
-	if err := module.ModuleReadBucket().WalkFileInfos(
+	if err := module.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) (retErr error) {
-			file, err := module.ModuleReadBucket().GetFile(ctx, fileInfo.Path())
+			file, err := module.GetFile(ctx, fileInfo.Path())
 			if err != nil {
 				return err
 			}
@@ -140,8 +96,8 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	}
 	digests := []bufcas.Digest{manifestBlob.Digest()}
 	// TODO: THIS IS WRONG. This doesn't include workspace deps. Rework this, see comment above.
-	for _, dep := range module.Deps() {
-		digests = append(digests, dep.Digest())
-	}
+	//for _, dep := range module.Deps() {
+	//digests = append(digests, dep.Digest())
+	//}
 	return bufcas.NewDigestForDigests(digests)
 }

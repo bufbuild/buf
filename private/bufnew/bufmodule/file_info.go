@@ -12,10 +12,41 @@ type FileInfo interface {
 
 	// Module returns the Module that contains this file.
 	Module() Module
-	// Type returns the FileType of the file.
+	// FileType returns the FileType of the file.
 	//
 	// This denotes if the File is a .proto file, documentation file, or license file.
-	Type() FileType
+	FileType() FileType
 
 	isFileInfo()
 }
+
+// *** PRIVATE ***
+
+type fileInfo struct {
+	storage.ObjectInfo
+
+	module   Module
+	fileType FileType
+}
+
+func newFileInfo(
+	objectInfo storage.ObjectInfo,
+	module Module,
+	fileType FileType,
+) *fileInfo {
+	return &fileInfo{
+		ObjectInfo: objectInfo,
+		module:     module,
+		fileType:   fileType,
+	}
+}
+
+func (f *fileInfo) Module() Module {
+	return f.module
+}
+
+func (f *fileInfo) FileType() FileType {
+	return f.fileType
+}
+
+func (*fileInfo) isFileInfo() {}

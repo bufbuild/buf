@@ -2,6 +2,7 @@ package bufmodule
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -41,40 +42,85 @@ type ModuleReadBucket interface {
 	// Note that the Bucket may not contain all of these FileTypes - for example, a Bucket returned
 	// from a Module will contain all FileTypes, but may not have FileTypeDoc or FileTypeLicense.
 	FileTypes() []FileType
-	// IsSelfContained returns true if the .proto files within the Bucket are guaranteed to only
+	// IsProtoFilesSelfContained returns true if the .proto files within the Bucket are guaranteed to only
 	// import from each other. That is, an Image could be built from this Bucket directly.
 	//
-	// Note that this property may hold for this Bucket even if IsSelfContained() returns false,
-	// but it will never be the case that IsSelfContained() returns true if the bucket is not self-contained.
+	// Note that this property may hold for this Bucket even if IsProtoFilesSelfContained() returns false,
+	// but it will never be the case that IsProtoFilesSelfContained() returns true if the bucket is not self-contained.
 	// A Bucket created from a ModuleSet will always be self-contained, a Bucket created from a Module
 	// will never be self-contained.
-	IsSelfContained() bool
+	IsProtoFilesSelfContained() bool
 
 	isModuleReadBucket()
+}
+
+// ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
+func ModuleReadBucketToStorageReadBucket(moduleReadBucket ModuleReadBucket) storage.ReadBucket {
+	return newStorageReadBucket(moduleReadBucket)
+}
+
+// ModuleReadBucketWithOnlyFileTypes returns a new ModuleReadBucket that only contains the given
+// FileTypes.
+//
+// Common use case is to get only the .proto files.
+func ModuleReadBucketWithOnlyFileTypes(
+	moduleReadBucket ModuleReadBucket,
+	fileTypes ...FileType,
+) ModuleReadBucket {
+	return newFilteredModuleReadBucket(moduleReadBucket, fileTypes)
+}
+
+// ModuleReadBucketWithOnlyProtoFiles is a convenience function that returns a new
+// ModuleReadBucket that only contains the .proto files.
+func ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket ModuleReadBucket) ModuleReadBucket {
+	return ModuleReadBucketWithOnlyFileTypes(moduleReadBucket, FileTypeProto)
+}
+
+// GetDocFile gets the singular documentation File for the Module, if it exists.
+//
+// When creating a Module from a Bucket, we check the file paths buf.md, README.md, and README.markdown
+// to exist, in that order. The first one to exist is chosen as the documentation File that is considered
+// part of the Module, and any others are discarded. This function will return that File that was chosen.
+//
+// Returns an error with fs.ErrNotExist if no documentation file exists.
+func GetDocFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (File, error) {
+	for _, docFilePath := range orderedDocFilePaths {
+		if _, err := moduleReadBucket.StatFileInfo(ctx, docFilePath); err == nil {
+			return moduleReadBucket.GetFile(ctx, docFilePath)
+		}
+	}
+	return nil, fs.ErrNotExist
+}
+
+// GetLicenseFile gets the license File for the Module, if it exists.
+//
+// Returns an error with fs.ErrNotExist if the license File does not exist.
+func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (File, error) {
+	return moduleReadBucket.GetFile(ctx, licenseFilePath)
 }
 
 // *** PRIVATE ***
 
 type storageReadBucket struct {
-	moduleReadBucket ModuleReadBucket
+	delegate ModuleReadBucket
 }
 
-func newStorageReadBucket(moduleReadBucket ModuleReadBucket) *storageReadBucket {
+func newStorageReadBucket(delegate ModuleReadBucket) *storageReadBucket {
 	return &storageReadBucket{
-		moduleReadBucket: moduleReadBucket,
+		delegate: delegate,
 	}
 }
 
 func (b *storageReadBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	return b.moduleReadBucket.GetFile(ctx, path)
+	return b.delegate.GetFile(ctx, path)
 }
 
 func (b *storageReadBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	return b.moduleReadBucket.StatFileInfo(ctx, path)
+	return b.delegate.StatFileInfo(ctx, path)
 }
 
 func (b *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
-	return b.moduleReadBucket.WalkFileInfos(
+	return b.delegate.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
 			if !normalpath.EqualsOrContainsPath(prefix, fileInfo.Path(), normalpath.Relative) {
@@ -84,3 +130,70 @@ func (b *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 		},
 	)
 }
+
+type filteredModuleReadBucket struct {
+	delegate    ModuleReadBucket
+	fileTypeMap map[FileType]struct{}
+}
+
+func newFilteredModuleReadBucket(
+	delegate ModuleReadBucket,
+	fileTypes []FileType,
+) *filteredModuleReadBucket {
+	// Filter out FileTypes that are not in the delegate.
+	delegateFileTypeMap := fileTypeSliceToMap(delegate.FileTypes())
+	fileTypeMap := fileTypeSliceToMap(fileTypes)
+	for fileType := range fileTypeMap {
+		if _, ok := delegateFileTypeMap[fileType]; !ok {
+			delete(fileTypeMap, fileType)
+		}
+	}
+	return &filteredModuleReadBucket{
+		delegate:    delegate,
+		fileTypeMap: fileTypeSliceToMap(fileTypes),
+	}
+}
+
+func (f *filteredModuleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+	// Stat'ing the filtered bucket, not the delegate.
+	if _, err := f.StatFileInfo(ctx, path); err != nil {
+		return nil, err
+	}
+	return f.delegate.GetFile(ctx, path)
+}
+
+func (f *filteredModuleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	fileInfo, err := f.delegate.StatFileInfo(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := f.fileTypeMap[fileInfo.FileType()]; !ok {
+		return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
+	}
+	return fileInfo, nil
+}
+
+func (f *filteredModuleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) error) error {
+	return f.delegate.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			if _, ok := f.fileTypeMap[fileInfo.FileType()]; !ok {
+				return nil
+			}
+			return fn(fileInfo)
+		},
+	)
+}
+
+func (f *filteredModuleReadBucket) FileTypes() []FileType {
+	return fileTypeMapToSortedSlice(f.fileTypeMap)
+}
+
+func (f *filteredModuleReadBucket) IsProtoFilesSelfContained() bool {
+	if _, ok := f.fileTypeMap[FileTypeProto]; !ok {
+		return false
+	}
+	return f.delegate.IsProtoFilesSelfContained()
+}
+
+func (*filteredModuleReadBucket) isModuleReadBucket() {}

@@ -2,6 +2,7 @@ package bufmodule
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 )
 
@@ -40,4 +41,28 @@ func ParseFileType(s string) (FileType, error) {
 		return 0, fmt.Errorf("unknown FileType: %q", s)
 	}
 	return c, nil
+}
+
+// *** PRIVATE ***
+
+func fileTypeSliceToMap(fileTypes []FileType) map[FileType]struct{} {
+	fileTypeMap := make(map[FileType]struct{})
+	for _, fileType := range fileTypes {
+		fileTypeMap[fileType] = struct{}{}
+	}
+	return fileTypeMap
+}
+
+func fileTypeMapToSortedSlice(fileTypeMap map[FileType]struct{}) []FileType {
+	fileTypes := make([]FileType, 0, len(fileTypeMap))
+	for fileType := range fileTypeMap {
+		fileTypes = append(fileTypes, fileType)
+	}
+	sort.Slice(
+		fileTypes,
+		func(i int, j int) bool {
+			return fileTypes[i] < fileTypes[j]
+		},
+	)
+	return fileTypes
 }

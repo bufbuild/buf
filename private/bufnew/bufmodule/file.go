@@ -9,3 +9,19 @@ type File interface {
 
 	isFile()
 }
+
+// *** PRIVATE ***
+
+type file struct {
+	FileInfo
+	io.ReadCloser
+}
+
+func newFile(fileInfo FileInfo, readCloser io.ReadCloser) *file {
+	return &file{
+		FileInfo:   fileInfo,
+		ReadCloser: readCloser,
+	}
+}
+
+func (*file) isFile() {}
