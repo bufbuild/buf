@@ -273,8 +273,8 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 		RequiresPython: protoPythonConfig.RequiresPython,
 	}
 	switch protoPythonConfig.GetPackageType() {
-	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_CODE:
-		pythonConfig.PackageType = "code"
+	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_RUNTIME:
+		pythonConfig.PackageType = "runtime"
 	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY:
 		pythonConfig.PackageType = "stub-only"
 	default:
@@ -293,19 +293,17 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 		RequiresPython: pythonConfig.RequiresPython,
 	}
 	switch pythonConfig.PackageType {
-	case "code":
-		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_CODE
+	case "runtime":
+		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_RUNTIME
 	case "stub-only":
 		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY
 	default:
-		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "code" or "stub-only", got %q`, pythonConfig.PackageType)
+		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "runtime" or "stub-only", got %q`, pythonConfig.PackageType)
 	}
-	if pythonConfig.Deps != nil {
-		for _, dep := range pythonConfig.Deps {
-			protoPythonConfig.RuntimeLibraries = append(protoPythonConfig.RuntimeLibraries, &registryv1alpha1.PythonConfig_RuntimeLibrary{
-				DependencySpecification: dep,
-			})
-		}
+	for _, dependencySpecification := range pythonConfig.Deps {
+		protoPythonConfig.RuntimeLibraries = append(protoPythonConfig.RuntimeLibraries, &registryv1alpha1.PythonConfig_RuntimeLibrary{
+			DependencySpecification: dependencySpecification,
+		})
 	}
 	return protoPythonConfig, nil
 }

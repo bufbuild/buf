@@ -485,7 +485,7 @@ type ExternalPythonRegistryConfig struct {
 	// RequiresPython specifies the `Requires-Python` of the generated metadata file.
 	RequiresPython string `json:"requires_python,omitempty" yaml:"requires_python,omitempty"`
 	// PackageType is the type of package generated.
-	// Must be one of "untyped" or "stub-only".
+	// Must be one of "runtime" or "stub-only".
 	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
 }
 

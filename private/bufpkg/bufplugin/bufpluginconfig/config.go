@@ -346,9 +346,9 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		dependencySpecifications = append(dependencySpecifications, externalDependencySpecification)
 	}
 	switch externalPythonRegistryConfig.PackageType {
-	case "code", "stub-only":
+	case "runtime", "stub-only":
 	default:
-		return nil, errors.New(`python registry config package_type must be one of: "code" or "stub-only"`)
+		return nil, errors.New(`python registry config package_type must be one of: "runtime" or "stub-only"`)
 	}
 	return &PythonRegistryConfig{
 		Deps:           dependencySpecifications,
