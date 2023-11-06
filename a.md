@@ -1,0 +1,2 @@
+hey
+{{ env.VERSION }}

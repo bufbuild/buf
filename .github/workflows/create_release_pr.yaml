@@ -47,4 +47,14 @@ jobs:
 
             Reminder: Update the changelog
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release PR
+        run: |
+          PR_BRANCH=release/v${{ env.VERSION }}
+          git checkout -b "${PR_BRANCH}"
+          git add .
+          git commit -m "Update version to v${{ env.VERSION }}"
+          git push origin "${PR_BRANCH}" --force
+          gh pr create --title "Release v${{env.VERSION}}" --template a.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
