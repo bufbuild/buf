@@ -33,20 +33,20 @@ jobs:
         run: make updateversion
       - name: Update Changelog Version
         run: make releasechangelog
-      - name: Create PR
-        id: cpr
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
-        with:
-          add-paths: .
-          commit-message: "Update version to v${{env.VERSION}}"
-          branch: release/v${{env.VERSION}}
-          title: "Release v${{env.VERSION}}"
-          delete-branch: true
-          body: |
-            Release prepared for ${{env.VERSION}}
+      # - name: Create PR
+      #   id: cpr
+      #   uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+      #   with:
+      #     add-paths: .
+      #     commit-message: "Update version to v${{env.VERSION}}"
+      #     branch: release/v${{env.VERSION}}
+      #     title: "Release v${{env.VERSION}}"
+      #     delete-branch: true
+      #     body: |
+      #       Release prepared for ${{env.VERSION}}
 
-            Reminder: Update the changelog
-          token: ${{ secrets.GITHUB_TOKEN }}
+      #       Reminder: Update the changelog
+      #     token: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Release PR
         run: |
           PR_BRANCH=release/v${{ env.VERSION }}
