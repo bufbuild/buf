@@ -15,7 +15,7 @@ jobs:
       - name: Validate input version starts with 'v'
         if: ${{ github.event_name == 'workflow_dispatch' && !startsWith(github.event.inputs.version, 'v') }}
         run: |
-          echo "version must start with 'v'"
+          echo "version '${{ github.event.inputs.version }}' is invalid, it must start with 'v'"
           exit 1
       - name: Set VERSION variable from tag
         run: |

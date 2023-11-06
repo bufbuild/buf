@@ -16,7 +16,7 @@ jobs:
       - name: Validate input version does not start with 'v'
         if: ${{ env.VERSION == '' || startsWith(env.VERSION, 'v') }}
         run: |
-          echo "Version must not be empty or start with 'v'"
+          echo "version '${{ env.VERSION}}' is invalid, it must not be empty or start with 'v'"
           exit 1
       # - name: Validate input version
         # run: if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi

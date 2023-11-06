@@ -8,26 +8,23 @@ on:
   release:
     types: [published]
 
-env:
-  # RELEASED_VERSION_WITH_V
-  FULL_VERSION: ${{ github.event.release.tag_name }}
-
 jobs:
   post-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate input version starts with 'v'
-        if: ${{ github.event_name == 'workflow_dispatch' && !startsWith(github.event.inputs.version, 'v') }}
+      - name: Set VERSION variable from tag
         run: |
-          echo "version must start with 'v'"
-          exit 1
+          RELEASED_VERSION_WITH_V=`grep -oE "Version.*=.*\"[0-9]\.[0-9]+\.[0-9]+[^\"]*" private/buf/bufcli/bufcli.go`
+          echo "RELEASED_VERSION_WITH_V=${RELEASED_VERSION_WITH_V##Version.*=.*\"}" >> $GITHUB_ENV
+      - name: print version
+        run: echo "env version is set to ${{ env.RELEASED_VERSION_WITH_V }}"
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set NEXT VERSION variable from tag
         run: |
-          NEXT_VERSION=$(echo ${{ env.FULL_VERSION }} | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          NEXT_VERSION=$(echo ${{ env.RELEASED_VERSION_WITH_V }} | awk -F. -v OFS=. '{$NF += 1 ; print}')
           echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
       - name: update version
         run: make updateversion VERSION=${{ env.NEXT_VERSION }}
@@ -44,7 +41,7 @@ jobs:
           sed -i "/^Initial beta release.$/ {
           N;
           a\
-          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.FULL_VERSION }}...HEAD
+          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.RELEASED_VERSION_WITH_V }}...HEAD
           }" CHANGELOG.md
       # update homebrew badge is skipped here, should it be?
       - name: create PR
@@ -56,5 +53,5 @@ jobs:
           delete-branch: true
           base: main
           title: "Return to development"
-          body: Release complete for ${{ env.FULL_VERSION }}
+          body: Release complete for ${{ env.RELEASED_VERSION_WITH_V }}
           token: ${{ secrets.GITHUB_TOKEN }}
