@@ -1,10 +1,6 @@
 name: Go back to Development
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        type: string
-        description: The version that was just released. It must start with 'v', such as 'v1.0.0'.
   release:
     types: [published]
 
