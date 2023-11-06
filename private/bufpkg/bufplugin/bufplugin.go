@@ -280,10 +280,8 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 	default:
 		return nil, fmt.Errorf("unknown package type: %v", protoPythonConfig.GetPackageType())
 	}
-	if runtimeLibraries := protoPythonConfig.GetRuntimeLibraries(); runtimeLibraries != nil {
-		for _, runtimeLibrary := range runtimeLibraries {
-			pythonConfig.Deps = append(pythonConfig.Deps, runtimeLibrary.DependencySpecification)
-		}
+	for _, runtimeLibrary := range protoPythonConfig.GetRuntimeLibraries() {
+		pythonConfig.Deps = append(pythonConfig.Deps, runtimeLibrary.DependencySpecification)
 	}
 	return pythonConfig, nil
 }
