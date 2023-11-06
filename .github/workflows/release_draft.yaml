@@ -17,7 +17,7 @@ jobs:
           VERSION=${{ github.event.inputs.version || github.head_ref}}
           echo "VERSION=${VERSION##*/}" >> $GITHUB_ENV
       - name: print version
-        run: echo ${{ env.VERSION }}
+        run: echo "env version is set to ${{ env.VERSION }}"
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
