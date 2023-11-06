@@ -33,20 +33,6 @@ jobs:
         run: make updateversion
       - name: Update Changelog Version
         run: make releasechangelog
-      # - name: Create PR
-      #   id: cpr
-      #   uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
-      #   with:
-      #     add-paths: .
-      #     commit-message: "Update version to v${{env.VERSION}}"
-      #     branch: release/v${{env.VERSION}}
-      #     title: "Release v${{env.VERSION}}"
-      #     delete-branch: true
-      #     body: |
-      #       Release prepared for ${{env.VERSION}}
-
-      #       Reminder: Update the changelog
-      #     token: ${{ secrets.GITHUB_TOKEN }}
       - run: git config --global user.name "${{ github.actor }}"
       - run: git config --global user.email "${{ github.actor }}@users.noreply.github.com"
       - name: Create Release PR
@@ -58,7 +44,7 @@ jobs:
           git push origin "${PR_BRANCH}" --force
           gh pr create --title "Release v${{env.VERSION}}" --body "Release prepared for ${{ env.VERSION }}
 
-          Reminder: Update the changelog"
+          Reminder: Verify the changelog"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
