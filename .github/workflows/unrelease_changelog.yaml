@@ -4,7 +4,7 @@ on:
     inputs:
       version:
         type: string
-        description: Don't use it yet.
+        description: The version that was just released. It must start with 'v', such as 'v1.0.0'.
   release:
     types: [published]
 
@@ -16,6 +16,11 @@ jobs:
   post-release:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate input version starts with 'v'
+        if: ${{ github.event_name == 'workflow_dispatch' && !startsWith(github.event.inputs.version, 'v') }}
+        run: |
+          echo "version must start with 'v'"
+          exit 1
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:

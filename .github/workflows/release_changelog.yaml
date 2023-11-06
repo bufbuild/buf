@@ -13,13 +13,13 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
-      # - name: Check input version
-        # if: ${{ startsWith(github.event.inputs.version, 'v') }}
-        # run: |
-          # echo "Version should not start with 'v'."
-          # exit 1
-      - name: Validate input version
-        run: if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi
+      - name: Validate input version does not start with 'v'
+        if: ${{ env.VERSION == '' || startsWith(env.VERSION, 'v') }}
+        run: |
+          echo "Version must not be empty or start with 'v'"
+          exit 1
+      # - name: Validate input version
+        # run: if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi
       - name: Checkout repository code
         uses: actions/checkout@v4
       # temporarily skipped
