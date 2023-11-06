@@ -19,8 +19,7 @@ jobs:
           # echo "Version should not start with 'v'."
           # exit 1
       - name: Validate input version
-        run: |
-          if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi
+        run: if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi
       - name: Checkout repository code
         uses: actions/checkout@v4
       # temporarily skipped
