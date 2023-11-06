@@ -11,7 +11,6 @@ on:
 env:
   VERSION: ${{ github.event.inputs.version || github.head_ref }}
 
-#todo get rid of empty line top of release log
 jobs:
   perform:
     runs-on: ubuntu-latest
@@ -19,6 +18,9 @@ jobs:
     steps:
       - name: print version
         run: echo ${{ env.VERSION }}
+      # todo: delete this
+      - name: print more
+        run: echo ${{ github }}
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
