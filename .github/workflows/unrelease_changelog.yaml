@@ -1,4 +1,4 @@
-name: Update Changelog back to Development
+name: Go back to Development
 on:
   workflow_dispatch:
     inputs:

@@ -1,4 +1,4 @@
-name: Update Changelog for Release
+name: Create a Release PR
 on:
   workflow_dispatch:
     inputs:

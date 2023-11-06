@@ -1,4 +1,4 @@
-name: Draft Release
+name: Build and Draft Release
 on:
   pull_request:
     types: [closed]
