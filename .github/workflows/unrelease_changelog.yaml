@@ -1,4 +1,4 @@
-name: Back to Development
+name: Update Changelog back to Development
 on:
   workflow_dispatch:
     inputs:
@@ -9,14 +9,12 @@ on:
     types: [published]
 
 env:
+  # RELEASED_VERSION_WITH_V
   FULL_VERSION: ${{ github.event.release.tag_name }}
 
 jobs:
   post-release:
     runs-on: ubuntu-latest
-    # TODO: can this be removed?
-    outputs:
-      version: ${{ steps.output_version.outputs.version }}
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4

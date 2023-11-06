@@ -1,4 +1,4 @@
-name: Prepare Release
+name: Update Changelog for Release
 on:
   workflow_dispatch:
     inputs:

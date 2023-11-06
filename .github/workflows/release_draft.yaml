@@ -1,26 +1,23 @@
-name: Release
+name: Draft Release
 on:
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       version:
         type: string
-        description: The version you intend to release without leading 'v' (eg x.y.z and not vx.y.z)
-  pull_request:
-    types: [closed]
-
-env:
-  VERSION: ${{ github.event.inputs.version || github.head_ref }}
-
+        description: The version with a 'v'. For example, v1.0.0.
 jobs:
-  perform:
+  draft_release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release') }}
+    if: ${{ github.event_name = 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
     steps:
+      - name: Set VERSION variable from tag
+        run: |
+          VERSION=${{ github.event.inputs.version || github.head_ref}}
+          echo "VERSION=${VERSION##*/}" >> $GITHUB_ENV
       - name: print version
         run: echo ${{ env.VERSION }}
-      # todo: delete this
-      - name: print more
-        run: echo ${{ toJSON(github) }}
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
