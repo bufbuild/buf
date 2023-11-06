@@ -69,7 +69,7 @@ func FormatModule(ctx context.Context, module bufmodule.Module) (_ storage.ReadB
 	return readWriteBucket, nil
 }
 
-// Formats the given file node, writing to dest.
+// FormatFileNode formats the given file node and writes the result to dest.
 func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
 	formatter := newFormatter(dest, fileNode)
 	return formatter.Run()
