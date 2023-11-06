@@ -56,7 +56,9 @@ jobs:
           git add .
           git commit -m "Update version to v${{ env.VERSION }}"
           git push origin "${PR_BRANCH}" --force
-          gh pr create --title "Release v${{env.VERSION}}" --template a.md
+          gh pr create --title "Release v${{env.VERSION}}" --body "Release prepared for ${{ env.VERSION }}
+
+          Reminder: Update the changelog"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
