@@ -341,7 +341,7 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 	var dependencySpecifications []string
 	for _, externalDependencySpecification := range externalPythonRegistryConfig.Deps {
 		if externalDependencySpecification == "" {
-			return nil, fmt.Errorf("python registry config cannot have empty dependency specification")
+			return nil, fmt.Errorf("python registry config cannot have an empty dependency specification")
 		}
 		dependencySpecifications = append(dependencySpecifications, externalDependencySpecification)
 	}
