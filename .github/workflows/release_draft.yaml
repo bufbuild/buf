@@ -10,7 +10,7 @@ on:
 jobs:
   draft_release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name = 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
     steps:
       - name: Set VERSION variable from tag
         run: |
