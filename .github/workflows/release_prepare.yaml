@@ -12,13 +12,15 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
     steps:
-      - name: Check input version
-        if: ${{ startsWith(github.event.inputs.version, 'v') }}
+      # - name: Check input version
+        # if: ${{ startsWith(github.event.inputs.version, 'v') }}
+        # run: |
+          # echo "Version should not start with 'v'."
+          # exit 1
+      - name: Validate input version
         run: |
-          echo "Version should not start with 'v'."
-          exit 1
+          if [[ '${{ env.VERSION }}' == v* ]];then echo 'version must not start with v';exit 1;fi
       - name: Checkout repository code
         uses: actions/checkout@v4
       # temporarily skipped
