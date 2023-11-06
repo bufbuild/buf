@@ -20,7 +20,7 @@ jobs:
         run: echo ${{ env.VERSION }}
       # todo: delete this
       - name: print more
-        run: echo ${{ github }}
+        run: echo ${{ toJSON(github) }}
       - name: Checkout repository code
         uses: actions/checkout@v4
         with:
