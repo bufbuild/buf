@@ -20,7 +20,7 @@ jobs:
         # note that globbing patterns should be used in the parameter substitution within the echo command, not regex patterns.
         run: |
           RELEASED_VERSION_WITH_V=`grep -oE "Version.*=.*\"[0-9]\.[0-9]+\.[0-9]+[^\"]*" private/buf/bufcli/bufcli.go`
-          echo "RELEASED_VERSION_WITH_V=${RELEASED_VERSION_WITH_V##Version*=*\"}" >> $GITHUB_ENV
+          echo "RELEASED_VERSION_WITH_V='v${RELEASED_VERSION_WITH_V##Version*=*\"}'" >> $GITHUB_ENV
       - name: Print released version
         run: echo "the version released is ${{ env.RELEASED_VERSION_WITH_V }}"
       - name: Set NEXT VERSION variable from tag
