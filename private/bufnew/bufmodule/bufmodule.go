@@ -2,7 +2,6 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -19,11 +18,6 @@ const (
 )
 
 var (
-	// ErrNotExist is the error returned if a File retrieved does not exist.
-	//
-	// Ese errors.Is(err,
-	ErrNotExist = errors.New("file does not exist")
-
 	// orderedDocFilePaths are the potential documentation file paths for a Module.
 	//
 	// When creating a Module from a Bucket, we check the file paths buf.md, README.md, and README.markdown
@@ -137,20 +131,37 @@ type File interface {
 	isFile()
 }
 
+// ModuleInfo contains identifying information for a Module.
+//
+// It is embedded inside a Module, and therefore is always available from FileInfos as well.
 type ModuleInfo interface {
-	// If ModuleFullName and CommitId are present, prints "remote/owner/name:commit".
-	// If only ModuleFullName is present, prints "remote/owner/name".
-	// Otherwise, if ModuleExternalPath is present, prints the external path.
-	// Otherwise, if none are present, prints empty.
-	fmt.Stringer
-
-	ModuleExternalPath() string
+	// ModuleSetID returns a identifier for this Module in the context if its enclosing ModuleSet.
+	//
+	// This will always be non-empty.
+	// The shape of this should not be relied on outside of this being non-empty.
+	// Unique within a given ModuleSet.
+	//
+	// While the shape should not be relied upon, the current semantics are:
+	//   - If ModuleFullName and CommitID are present, this is "remote/owner/name:commit".
+	//   - If only ModuleFullName is present, this is "remote/owner/name".
+	//   - If neither are present, the constructor is responsible for coming up with
+	//   - a unique ID, usually related to the location on disk of the Module.
+	ModuleSetID() string
+	// ModuleFullName returns the full name of the Module, if present.
+	//
+	// May be nil.
 	ModuleFullName() ModuleFullName
+	// CommitID returns the ID of the Commit, if present.
+	//
+	// This is a BSR API ID.
+	// May be empty.
+	// If ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
 	isModuleInfo()
 }
 
+// Module presents a BSR module.
 type Module interface {
 	ModuleInfo
 

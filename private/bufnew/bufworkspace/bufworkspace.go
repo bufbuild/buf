@@ -46,7 +46,7 @@ func ParseConfigVersion(s string) (ConfigVersion, error) {
 type Workspace interface {
 	ModuleSet() bufmodule.ModuleSet
 	Config() WorkspaceConfig
-	GetTargetPaths(moduleID string) ([]string, error)
+	GetTargetPaths(moduleSetID string) ([]string, error)
 
 	isWorkspace()
 }
@@ -73,7 +73,7 @@ type workspaceOptions struct{}
 type WorkspaceConfig interface {
 	Version() ConfigVersion
 
-	GetModuleConfig(moduleID string) (ModuleConfig, error)
+	GetModuleConfig(moduleSetID string) (ModuleConfig, error)
 	ModuleConfigs() []ModuleConfig
 	//GenerateConfigs() []GenerateConfig
 	DeclaredDeps() []bufmodule.ModuleRef
