@@ -13,6 +13,9 @@ inputs:
   body:
     description: body
     required: true
+  token:
+    description: github token
+    required: true
 runs:
   using: "composite"
   steps:
@@ -31,4 +34,4 @@ runs:
     - run: gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}"
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.token }}
