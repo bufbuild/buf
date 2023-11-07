@@ -101,3 +101,7 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	//}
 	return bufcas.NewDigestForDigests(digests)
 }
+
+// *** PRIVATE ***
+
+type module struct{}

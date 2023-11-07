@@ -55,8 +55,8 @@ type ModuleReadBucket interface {
 }
 
 // ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
-func ModuleReadBucketToStorageReadBucket(moduleReadBucket ModuleReadBucket) storage.ReadBucket {
-	return newStorageReadBucket(moduleReadBucket)
+func ModuleReadBucketToStorageReadBucket(bucket ModuleReadBucket) storage.ReadBucket {
+	return newStorageReadBucket(bucket)
 }
 
 // ModuleReadBucketWithOnlyFileTypes returns a new ModuleReadBucket that only contains the given
@@ -84,10 +84,8 @@ func ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket ModuleReadBucket) Modul
 //
 // Returns an error with fs.ErrNotExist if no documentation file exists.
 func GetDocFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (File, error) {
-	for _, docFilePath := range orderedDocFilePaths {
-		if _, err := moduleReadBucket.StatFileInfo(ctx, docFilePath); err == nil {
-			return moduleReadBucket.GetFile(ctx, docFilePath)
-		}
+	if docFilePath := getDocFilePathForModuleReadBucket(ctx, moduleReadBucket); docFilePath != "" {
+		return moduleReadBucket.GetFile(ctx, docFilePath)
 	}
 	return nil, fs.ErrNotExist
 }
@@ -101,35 +99,91 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 
 // *** PRIVATE ***
 
-type storageReadBucket struct {
-	delegate ModuleReadBucket
+// moduleReadBucket
+
+type moduleReadBucket struct {
+	delegate storage.ReadBucket
+	module   *module
 }
 
-func newStorageReadBucket(delegate ModuleReadBucket) *storageReadBucket {
-	return &storageReadBucket{
-		delegate: delegate,
+// module cannot be assumed to be functional yet.
+// Do not call any functions on module.
+func newModuleReadBucket(
+	ctx context.Context,
+	delegate storage.ReadBucket,
+	module *module,
+) *moduleReadBucket {
+	docFilePath := getDocFilePathForStorageReadBucket(ctx, delegate)
+	return &moduleReadBucket{
+		delegate: storage.MapReadBucket(
+			delegate,
+			storage.MatchOr(
+				storage.MatchPathExt(".proto"),
+				storage.MatchPathEqual(licenseFilePath),
+				storage.MatchPathEqual(docFilePath),
+			),
+		),
+		module: module,
 	}
 }
 
-func (b *storageReadBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	return b.delegate.GetFile(ctx, path)
+func (f *moduleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+	fileInfo, err := f.StatFileInfo(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	readObjectCloser, err := f.delegate.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	return newFile(fileInfo, readObjectCloser), nil
 }
 
-func (b *storageReadBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	return b.delegate.StatFileInfo(ctx, path)
+func (f *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	objectInfo, err := f.delegate.Stat(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	return f.newFileInfo(objectInfo)
 }
 
-func (b *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
-	return b.delegate.WalkFileInfos(
+func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) error) error {
+	return f.delegate.Walk(
 		ctx,
-		func(fileInfo FileInfo) error {
-			if !normalpath.EqualsOrContainsPath(prefix, fileInfo.Path(), normalpath.Relative) {
-				return nil
+		"",
+		func(objectInfo storage.ObjectInfo) error {
+			fileInfo, err := f.newFileInfo(objectInfo)
+			if err != nil {
+				return err
 			}
-			return f(fileInfo)
+			return fn(fileInfo)
 		},
 	)
 }
+
+func (b *moduleReadBucket) FileTypes() []FileType {
+	fileTypes := make([]FileType, len(allFileTypes))
+	copy(fileTypes, allFileTypes)
+	return fileTypes
+}
+
+func (b *moduleReadBucket) IsProtoFilesSelfContained() bool {
+	return false
+}
+
+func (*moduleReadBucket) isModuleReadBucket() {}
+
+func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+	fileType, err := classifyPathFileType(objectInfo.Path())
+	if err != nil {
+		// Given our matching in the constructor, all file paths should be classified.
+		// A lack of classification is a system error.
+		return nil, err
+	}
+	return newFileInfo(objectInfo, f.module, fileType), nil
+}
+
+// filteredModuleReadBucket
 
 type filteredModuleReadBucket struct {
 	delegate    ModuleReadBucket
@@ -197,3 +251,35 @@ func (f *filteredModuleReadBucket) IsProtoFilesSelfContained() bool {
 }
 
 func (*filteredModuleReadBucket) isModuleReadBucket() {}
+
+// storageReadBucket
+
+type storageReadBucket struct {
+	delegate ModuleReadBucket
+}
+
+func newStorageReadBucket(delegate ModuleReadBucket) *storageReadBucket {
+	return &storageReadBucket{
+		delegate: delegate,
+	}
+}
+
+func (s *storageReadBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
+	return s.delegate.GetFile(ctx, path)
+}
+
+func (s *storageReadBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
+	return s.delegate.StatFileInfo(ctx, path)
+}
+
+func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
+	return bsdelegate.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			if !normalpath.EqualsOrContainsPath(prefix, fileInfo.Path(), normalpath.Relative) {
+				return nil
+			}
+			return f(fileInfo)
+		},
+	)
+}

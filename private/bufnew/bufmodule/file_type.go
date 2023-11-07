@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 const (
@@ -13,6 +15,11 @@ const (
 )
 
 var (
+	allFileTypes = []FileType{
+		FileTypeProto,
+		FileTypeDoc,
+		FileTypeLicense,
+	}
 	fileTypeToString = map[FileType]string{
 		FileTypeProto:   "proto",
 		FileTypeDoc:     "doc",
@@ -44,6 +51,19 @@ func ParseFileType(s string) (FileType, error) {
 }
 
 // *** PRIVATE ***
+
+func classifyPathFileType(path string) (FileType, error) {
+	if normalpath.Ext(path) == ".proto" {
+		return FileTypeProto, nil
+	}
+	if path == licenseFilePath {
+		return FileTypeLicense, nil
+	}
+	if _, ok := docFilePathMap[path]; ok {
+		return FileTypeDoc, nil
+	}
+	return 0, fmt.Errorf("could not classify FileType for path %q", path)
+}
 
 func fileTypeSliceToMap(fileTypes []FileType) map[FileType]struct{} {
 	fileTypeMap := make(map[FileType]struct{})
