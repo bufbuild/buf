@@ -47,7 +47,7 @@ jobs:
       #     Reminder: Verify the changelog"
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: ./.github/workflows/create_pr.yaml
+      - uses: ./.github/actions/create_pr
         with:
           branch: release/v${{ env.VERSION }}
           commit_message: Update version to v${{ env.VERSION }}
