@@ -4,7 +4,7 @@ on:
     inputs:
       version:
         type: string
-        description: The version to release without leading 'v' (eg x.y.z and not vx.y.z)
+        description: The released version without 'v'. For example, 1.0.0.
 
 env:
   VERSION: ${{ github.event.inputs.version }}
