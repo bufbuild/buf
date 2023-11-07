@@ -33,8 +33,8 @@ jobs:
         run: make updateversion
       - name: Update Changelog Version
         run: make releasechangelog
-      - run: git config --global user.name "${{ github.actor }}"
-      - run: git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+      # - run: git config --global user.name "${{ github.actor }}"
+      # - run: git config --global user.email "${{ github.actor }}@users.noreply.github.com"
       # - name: Create Release PR
       #   run: |
       #     PR_BRANCH=release/v${{ env.VERSION }}
