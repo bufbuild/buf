@@ -34,7 +34,10 @@ jobs:
       # todo: add release files back to the assets
       # the second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
       # todo: replace ./random.txt with actual files
-      - run: gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ./random.txt
+      - run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ./random.txt)" >> $GITHUB_OUTPUT
+        id: draft_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # todo: remove
+      - run: echo "release drafted at ${{ steps.draft_release.outputs.url }}"
       # todo: add slack notification back

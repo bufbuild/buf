@@ -17,7 +17,7 @@ inputs:
     description: The GitHub token.
     required: true
 outputs:
-  pr_url:
+  url:
     description: The URL of the pull request
     value: ${{ steps.create_pr.outputs.url }}
 runs:
@@ -40,6 +40,3 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
-      # todo: remove
-    - run: echo "pr url is ${{ steps.create_pr.outputs.url }}"
-      shell: bash

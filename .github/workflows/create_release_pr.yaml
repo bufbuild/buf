@@ -32,6 +32,7 @@ jobs:
       - name: Update Changelog Version
         run: make releasechangelog
       - uses: ./.github/actions/create-pr-action
+        id: create_pr
         with:
           branch: release/v${{ env.VERSION }}
           commit_message: Update version to v${{ env.VERSION }}
@@ -41,4 +42,5 @@ jobs:
 
             Reminder: Verify the changelog
           token: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "pr created at ${{ steps.create_pr.outputs.url }}"
       # placeholder for slack notification

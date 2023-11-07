@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- foo
+- bar
 
 ## [v3.10.0] - 2023-11-07
 
