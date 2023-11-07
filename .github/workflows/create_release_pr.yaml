@@ -20,13 +20,12 @@ jobs:
           exit 1
       - name: Checkout repository code
         uses: actions/checkout@v4
-      # temporarily skipped
-      # - name: setup-go
-      #   uses: actions/setup-go@v4
-      #   with:
-      #     go-version: "1.21.x"
-      # - name: Install Buf
-      #   run: make installbuf
+      - name: setup-go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+      - name: Install Buf
+        run: make installbuf
       - name: Update Buf Version
         run: make updateversion
       - name: Update Changelog Version
@@ -42,5 +41,7 @@ jobs:
             Release prepared for ${{ env.VERSION }}
             Reminder: Verify the changelog
           token: ${{ secrets.GITHUB_TOKEN }}
-      - run: echo "pr created at ${{ steps.create_pr.outputs.url }}"
-      # placeholder for slack notification
+      - name: Slack Notification
+        run: |
+          jq --null-input '{ text: "BufCLI Release v${{ env.VERSION }} has started: ${{ steps.create_pr.outputs.url }}" }' \
+          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'

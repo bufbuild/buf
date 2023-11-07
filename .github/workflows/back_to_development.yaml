@@ -38,7 +38,8 @@ jobs:
           a\
           [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.RELEASED_VERSION_WITH_V }}...HEAD
           }" CHANGELOG.md
-      # todo: add update homebrewbadge back
+      - name: update home brew badge
+        run: make updatehomebrewbadge VERSION=${{ env.RELEASED_VERSION_WITH_V }}
       - name: Create PR
         uses: ./.github/actions/create-pr-action
         with:
