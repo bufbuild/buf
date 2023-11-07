@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"go.uber.org/multierr"
 )
 
 // Module presents a BSR module.
@@ -56,40 +55,11 @@ type Module interface {
 //
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
 func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
-	var fileNodes []bufcas.FileNode
-	if err := module.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) (retErr error) {
-			file, err := module.GetFile(ctx, fileInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			digest, err := bufcas.NewDigestForContent(file)
-			if err != nil {
-				return err
-			}
-			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
-			if err != nil {
-				return err
-			}
-			fileNodes = append(fileNodes, fileNode)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	manifest, err := bufcas.NewManifest(fileNodes)
+	fileDigest, err := moduleReadBucketDigestB5(ctx, module)
 	if err != nil {
 		return nil, err
 	}
-	manifestBlob, err := bufcas.ManifestToBlob(manifest)
-	if err != nil {
-		return nil, err
-	}
-	digests := []bufcas.Digest{manifestBlob.Digest()}
+	digests := []bufcas.Digest{fileDigest}
 	// TODO: THIS IS WRONG. This doesn't include workspace deps. Rework this, see comment above.
 	//for _, dep := range module.Deps() {
 	//digests = append(digests, dep.Digest())
