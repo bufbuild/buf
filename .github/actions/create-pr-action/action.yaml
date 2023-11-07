@@ -2,20 +2,24 @@ name: Create a PR
 description: This action creates a new branch, commits current changes and creates a PR.
 inputs:
   branch:
-    description: branch
+    description: The branch to create and open a PR for.
     required: true
   commit_message:
-    description: commit message
+    description: The commit message.
     required: true
   title:
-    description: title
+    description: The PR's title.
     required: true
   body:
-    description: body
+    description: The PR's body.
     required: true
   token:
-    description: github token
+    description: The GitHub token.
     required: true
+outputs:
+  pr_url:
+    description: The URL of the pull request
+    value: ${{ steps.create_pr.outputs.url }}
 runs:
   using: "composite"
   steps:
@@ -31,7 +35,11 @@ runs:
       shell: bash
     - run: git push origin "${{ inputs.branch }}" --force
       shell: bash
-    - run: gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}"
+    - run: echo "url=$(gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}")" >> $GITHUB_OUTPUT
+      id: create_pr
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
+      # todo: remove
+    - run: echo "pr url is ${{ steps.create_pr.outputs.url }}"
+      shell: bash
