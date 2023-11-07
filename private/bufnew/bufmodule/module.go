@@ -35,13 +35,13 @@ type Module interface {
 	//
 	// Modules within the same ModuleSet will always have the same commits and digests for a given dependency, that is
 	// no two Modules will have a different commit for the same dependency.
-	ExternalDependencyModulePins(ctx context.Context) ([]ModulePin, error)
+	//ExternalDependencyModulePins(ctx context.Context) ([]ModulePin, error)
 	// ModuleSetDependencyModules returns the dependency list for Modules within the encompassing ModuleSet that this
 	// Module depends on.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
 	// in its files will be returned.
-	ModuleSetDependencyModules(ctx context.Context) ([]Module, error)
+	//ModuleSetDependencyModules(ctx context.Context) ([]Module, error)
 
 	isModule()
 }

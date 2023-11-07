@@ -37,19 +37,6 @@ type ModuleReadBucket interface {
 	// documentation or licenses, or if we allow multiple documentation or license files to
 	// exist within a Module (currently, only one of each is allowed).
 	WalkFileInfos(ctx context.Context, f func(FileInfo) error) error
-	// FileTypes returns the possible FileTypes that this Bucket may contain.
-	//
-	// Note that the Bucket may not contain all of these FileTypes - for example, a Bucket returned
-	// from a Module will contain all FileTypes, but may not have FileTypeDoc or FileTypeLicense.
-	FileTypes() []FileType
-	// IsProtoFilesSelfContained returns true if the .proto files within the Bucket are guaranteed to only
-	// import from each other. That is, an Image could be built from this Bucket directly.
-	//
-	// Note that this property may hold for this Bucket even if IsProtoFilesSelfContained() returns false,
-	// but it will never be the case that IsProtoFilesSelfContained() returns true if the bucket is not self-contained.
-	// A Bucket created from a ModuleSet will always be self-contained, a Bucket created from a Module
-	// will never be self-contained.
-	IsProtoFilesSelfContained() bool
 
 	isModuleReadBucket()
 }
@@ -161,16 +148,6 @@ func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) 
 	)
 }
 
-func (b *moduleReadBucket) FileTypes() []FileType {
-	fileTypes := make([]FileType, len(allFileTypes))
-	copy(fileTypes, allFileTypes)
-	return fileTypes
-}
-
-func (b *moduleReadBucket) IsProtoFilesSelfContained() bool {
-	return false
-}
-
 func (*moduleReadBucket) isModuleReadBucket() {}
 
 func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
@@ -194,14 +171,6 @@ func newFilteredModuleReadBucket(
 	delegate ModuleReadBucket,
 	fileTypes []FileType,
 ) *filteredModuleReadBucket {
-	// Filter out FileTypes that are not in the delegate.
-	delegateFileTypeMap := fileTypeSliceToMap(delegate.FileTypes())
-	fileTypeMap := fileTypeSliceToMap(fileTypes)
-	for fileType := range fileTypeMap {
-		if _, ok := delegateFileTypeMap[fileType]; !ok {
-			delete(fileTypeMap, fileType)
-		}
-	}
 	return &filteredModuleReadBucket{
 		delegate:    delegate,
 		fileTypeMap: fileTypeSliceToMap(fileTypes),
@@ -237,17 +206,6 @@ func (f *filteredModuleReadBucket) WalkFileInfos(ctx context.Context, fn func(Fi
 			return fn(fileInfo)
 		},
 	)
-}
-
-func (f *filteredModuleReadBucket) FileTypes() []FileType {
-	return fileTypeMapToSortedSlice(f.fileTypeMap)
-}
-
-func (f *filteredModuleReadBucket) IsProtoFilesSelfContained() bool {
-	if _, ok := f.fileTypeMap[FileTypeProto]; !ok {
-		return false
-	}
-	return f.delegate.IsProtoFilesSelfContained()
 }
 
 func (*filteredModuleReadBucket) isModuleReadBucket() {}

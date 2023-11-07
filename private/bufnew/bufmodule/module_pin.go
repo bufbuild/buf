@@ -3,6 +3,7 @@ package bufmodule
 import (
 	"sort"
 
+	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
@@ -40,6 +41,15 @@ func ModulePinToModuleRef(modulePin ModulePin) ModuleRef {
 	//modulePin.CommitID(),
 	//)
 	return nil
+}
+
+// this conversion should be possible.
+func ModulePinToModuleInfo(modulePin ModulePin) ModuleInfo {
+	return nil
+}
+
+func ProtoCommitToModulePin(protoCommit *modulev1beta1.Commit) (ModulePin, error) {
+	return nil, nil
 }
 
 // *** PRIVATE ***
