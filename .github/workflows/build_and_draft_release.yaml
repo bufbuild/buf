@@ -1,0 +1,44 @@
+name: Build and Draft Release
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The released version without 'v'. For example, 1.0.0.
+jobs:
+  draft_release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
+    steps:
+      - name: Fail manual trigger if input version is empty or starts with 'v'
+        if: ${{ github.event_name == 'workflow_dispatch' && (startsWith(github.event.inputs.version, 'v') || github.event.inputs.version == '') }}
+        run: |
+          echo "version '${{ github.event.inputs.version }}' is invalid, it must not be empty or start with 'v'"
+          exit 1
+      - name: Set VERSION_WITH_V variable
+        # VERSION_WITH_V is set to v + github.event.inputs.version if input is set, otherwise it's set to github.head_ref.
+        # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/`.
+        run: |
+          VERSION_WITH_V=${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.head_ref}}
+          echo "VERSION_WITH_V=${VERSION_WITH_V##*/}" >> $GITHUB_ENV
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # skip generating assets, which potentially requires setup-go
+      - name: Fetch Changelog
+        # this only works with gnu-sed, use gsed if you are on mac
+        run: sed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md > ${{env.VERSION_WITH_V}}-CHANGELOG.md
+      # todo: add release files back to the assets
+      # the second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
+      # todo: replace ./random.txt with actual files
+      - name: Draft Release
+        run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ./random.txt)" >> $GITHUB_OUTPUT
+        id: draft_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # todo: remove
+      - run: echo "release drafted at ${{ steps.draft_release.outputs.url }}"
+      # todo: add slack notification back

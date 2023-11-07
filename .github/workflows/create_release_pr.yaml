@@ -1,0 +1,46 @@
+name: Create Release PR
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The released version without 'v'. For example, 1.0.0.
+
+env:
+  VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if input version starts with 'v'
+        if: ${{ env.VERSION == '' || startsWith(env.VERSION, 'v') }}
+        run: |
+          echo "version '${{ env.VERSION}}' is invalid, it must not be empty or start with 'v'"
+          exit 1
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+      # temporarily skipped
+      # - name: setup-go
+      #   uses: actions/setup-go@v4
+      #   with:
+      #     go-version: "1.21.x"
+      # - name: Install Buf
+      #   run: make installbuf
+      - name: Update Buf Version
+        run: make updateversion
+      - name: Update Changelog Version
+        run: make releasechangelog
+      - name: Create PR
+        uses: ./.github/actions/create-pr-action
+        id: create_pr
+        with:
+          branch: release/v${{ env.VERSION }}
+          commit_message: Update version to v${{ env.VERSION }}
+          title: Release v${{env.VERSION}}
+          body: |
+            Release prepared for ${{ env.VERSION }}
+            Reminder: Verify the changelog
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "pr created at ${{ steps.create_pr.outputs.url }}"
+      # placeholder for slack notification

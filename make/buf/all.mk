@@ -150,6 +150,14 @@ endif
 	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
 
+.PHONY: releasechangelog
+releasechangelog:
+ifndef VERSION
+	$(error "VERSION must be set")
+endif
+	$(SED_I) 's/## \[Unreleased\]/## \[v$(VERSION)\] - $(shell date '+%Y-%m-%d')/' CHANGELOG.md
+	$(SED_I) -E '/^\[Unreleased\]: .*HEAD$$/s/(Unreleased|HEAD)/v$(VERSION)/g' CHANGELOG.md
+
 .PHONY: updategoversion
 updategoversion: installgit-ls-files-unstaged
 ifndef GOVERSION
