@@ -11,12 +11,12 @@ import (
 	"connectrpc.com/connect"
 )
 
-// ModuleProvider provides Modules for ModulePins.
+// ModuleProvider provides Modules for ModuleInfos.
 //
 // TODO: Add plural method? Will make calls below a lot more efficient in the case
-// of overlapping FileNodes.
+// of overlapinfog FileNodes.
 type ModuleProvider interface {
-	GetModuleForModulePin(context.Context, ModulePin) (Module, error)
+	GetModuleForModuleInfo(context.Context, ModuleInfo) (Module, error)
 }
 
 // NewAPIModuleProvider returns a new ModuleProvider for the given API client.
@@ -43,7 +43,7 @@ func newAPIModuleProvider(client modulev1beta1connect.CommitServiceClient) *apiM
 	}
 }
 
-func (a *apiModuleProvider) GetModuleForModulePin(ctx context.Context, modulePin ModulePin) (Module, error) {
+func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
 	response, err := a.client.GetCommitNodes(
 		ctx,
 		connect.NewRequest(
@@ -52,7 +52,7 @@ func (a *apiModuleProvider) GetModuleForModulePin(ctx context.Context, modulePin
 					&modulev1beta1.GetCommitNodesRequest_Value{
 						ResourceRef: &modulev1beta1.ResourceRef{
 							Value: &modulev1beta1.ResourceRef_Id{
-								Id: modulePin.CommitID(),
+								Id: moduleInfo.CommitID(),
 							},
 						},
 					},
@@ -69,10 +69,10 @@ func (a *apiModuleProvider) GetModuleForModulePin(ctx context.Context, modulePin
 		return nil, fmt.Errorf("expected 1 CommitNode, got %d", len(response.Msg.CommitNodes))
 	}
 	//commitNode := response.Msg.CommitNodes[0]
-	// Can ignore the Commit field, as we already have all this information on ModulePin.
+	// Can ignore the Commit field, as we already have all this information on ModuleInfo.
 	// TODO: deal with Deps field when we have figured out deps on Modules
 	return newLazyLoadModule(
-		ModulePinToModuleInfo(modulePin),
+		ModuleInfoToModuleInfo(moduleInfo),
 		func() (Module, error) {
 			// TODO: convert FileNodes to Blobs to a *module
 			return nil, errors.New("TODO")
@@ -92,13 +92,13 @@ func newLazyLoadModuleProvider(delegate ModuleProvider) *lazyLoadModuleProvider 
 	}
 }
 
-func (l *lazyLoadModuleProvider) GetModuleForModulePin(ctx context.Context, modulePin ModulePin) (Module, error) {
+func (l *lazyLoadModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
 	return newLazyLoadModule(
-		ModulePinToModuleInfo(modulePin),
+		ModuleInfoToModuleInfo(moduleInfo),
 		func() (Module, error) {
-			// Using ctx on GetModuleForModulePin and ignoring the contexts passed to
+			// Using ctx on GetModuleForModuleInfo and ignoring the contexts passed to
 			// Module functions - arguable both ways for different reasons.
-			return l.delegate.GetModuleForModulePin(ctx, modulePin)
+			return l.delegate.GetModuleForModuleInfo(ctx, moduleInfo)
 		},
 	), nil
 }

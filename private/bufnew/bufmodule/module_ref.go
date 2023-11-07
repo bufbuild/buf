@@ -28,3 +28,8 @@ type ModuleRef interface {
 
 	isModuleRef()
 }
+
+// *** PRIVATE ***
+
+type moduleRef struct {
+}
