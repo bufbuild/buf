@@ -33,25 +33,14 @@ jobs:
         run: make updateversion
       - name: Update Changelog Version
         run: make releasechangelog
-      # - run: git config --global user.name "${{ github.actor }}"
-      # - run: git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-      # - name: Create Release PR
-      #   run: |
-      #     PR_BRANCH=release/v${{ env.VERSION }}
-      #     git checkout -b "${PR_BRANCH}"
-      #     git add .
-      #     git commit -m "Update version to v${{ env.VERSION }}"
-      #     git push origin "${PR_BRANCH}" --force
-      #     gh pr create --title "Release v${{env.VERSION}}" --body "Release prepared for ${{ env.VERSION }}
-
-      #     Reminder: Verify the changelog"
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: ./.github/actions/create-pr-action
         with:
           branch: release/v${{ env.VERSION }}
           commit_message: Update version to v${{ env.VERSION }}
           title: Release v${{env.VERSION}}
-          body: Release prepared for ${{ env.VERSION }}
+          body: |
+            Release prepared for ${{ env.VERSION }}
+
+            Reminder: Verify the changelog
           token: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
