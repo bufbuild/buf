@@ -1,6 +1,9 @@
 package bufmodule
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // ModuleRef is an unresolved reference to a Module.
 //
@@ -10,6 +13,8 @@ type ModuleRef interface {
 	fmt.Stringer
 
 	// ModuleFullName returns the full name of the Module.
+	//
+	// Always present.
 	ModuleFullName() ModuleFullName
 	// Ref returns the reference within the Module.
 	//
@@ -24,6 +29,8 @@ type ModuleRef interface {
 	//       - VCS commit
 	//       - tag
 	//       - branch
+	//
+	// May be empty, as documented above.
 	Ref() string
 
 	isModuleRef()
@@ -32,4 +39,36 @@ type ModuleRef interface {
 // *** PRIVATE ***
 
 type moduleRef struct {
+	moduleFullName ModuleFullName
+	ref            string
 }
+
+func newModuleRef(
+	moduleFullName ModuleFullName,
+	ref string,
+) (*moduleRef, error) {
+	if moduleFullName == nil {
+		return nil, errors.New("new ModuleRef: ModuleFullName is nil")
+	}
+	return &moduleRef{
+		moduleFullName: moduleFullName,
+		ref:            ref,
+	}, nil
+}
+
+func (m *moduleRef) ModuleFullName() ModuleFullName {
+	return m.moduleFullName
+}
+
+func (m *moduleRef) Ref() string {
+	return m.ref
+}
+
+func (m *moduleRef) String() string {
+	if m.ref == "" {
+		return m.moduleFullName.String()
+	}
+	return m.moduleFullName.String() + ":" + m.ref
+}
+
+func (*moduleRef) isModuleRef() {}

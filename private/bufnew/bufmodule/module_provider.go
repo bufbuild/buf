@@ -26,7 +26,7 @@ type ModuleProvider interface {
 // as a type (such as with dependencies) without incurring the lookup and building cost when
 // all we want is ModuleInfo-related properties.
 func NewAPIModuleProvider(client modulev1beta1connect.CommitServiceClient) ModuleProvider {
-	return newLazyLoadModuleProvider(newAPIModuleProvider(client))
+	return newLazyModuleProvider(newAPIModuleProvider(client))
 }
 
 // *** PRIVATE ***
@@ -64,15 +64,13 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 		return nil, err
 	}
 	if len(response.Msg.CommitNodes) != 1 {
-		// TODO: should we just triple-document the API such that we guarantee the length of
-		// the response is equal to the length of the request, and not do these checks everywhere?
 		return nil, fmt.Errorf("expected 1 CommitNode, got %d", len(response.Msg.CommitNodes))
 	}
 	//commitNode := response.Msg.CommitNodes[0]
 	// Can ignore the Commit field, as we already have all this information on ModuleInfo.
 	// TODO: deal with Deps field when we have figured out deps on Modules
-	return newLazyLoadModule(
-		ModuleInfoToModuleInfo(moduleInfo),
+	return newLazyModule(
+		moduleInfo,
 		func() (Module, error) {
 			// TODO: convert FileNodes to Blobs to a *module
 			return nil, errors.New("TODO")
@@ -80,21 +78,21 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 	), nil
 }
 
-// lazyLoadModuleProvider
+// lazyModuleProvider
 
-type lazyLoadModuleProvider struct {
+type lazyModuleProvider struct {
 	delegate ModuleProvider
 }
 
-func newLazyLoadModuleProvider(delegate ModuleProvider) *lazyLoadModuleProvider {
-	return &lazyLoadModuleProvider{
+func newLazyModuleProvider(delegate ModuleProvider) *lazyModuleProvider {
+	return &lazyModuleProvider{
 		delegate: delegate,
 	}
 }
 
-func (l *lazyLoadModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
-	return newLazyLoadModule(
-		ModuleInfoToModuleInfo(moduleInfo),
+func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
+	return newLazyModule(
+		moduleInfo,
 		func() (Module, error) {
 			// Using ctx on GetModuleForModuleInfo and ignoring the contexts passed to
 			// Module functions - arguable both ways for different reasons.
@@ -103,25 +101,25 @@ func (l *lazyLoadModuleProvider) GetModuleForModuleInfo(ctx context.Context, mod
 	), nil
 }
 
-// lazyLoadModule
+// lazyModule
 
-type lazyLoadModule struct {
+type lazyModule struct {
 	ModuleInfo
 
 	getModule func() (Module, error)
 }
 
-func newLazyLoadModule(
+func newLazyModule(
 	moduleInfo ModuleInfo,
 	getModule func() (Module, error),
 ) Module {
-	return &lazyLoadModule{
+	return &lazyModule{
 		ModuleInfo: moduleInfo,
 		getModule:  sync.OnceValues(getModule),
 	}
 }
 
-func (m *lazyLoadModule) GetFile(ctx context.Context, path string) (File, error) {
+func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
 	module, err := m.getModule()
 	if err != nil {
 		return nil, err
@@ -129,7 +127,7 @@ func (m *lazyLoadModule) GetFile(ctx context.Context, path string) (File, error)
 	return module.GetFile(ctx, path)
 }
 
-func (m *lazyLoadModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
 	module, err := m.getModule()
 	if err != nil {
 		return nil, err
@@ -137,7 +135,7 @@ func (m *lazyLoadModule) StatFileInfo(ctx context.Context, path string) (FileInf
 	return module.StatFileInfo(ctx, path)
 }
 
-func (m *lazyLoadModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
+func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
 	module, err := m.getModule()
 	if err != nil {
 		return err
@@ -145,5 +143,5 @@ func (m *lazyLoadModule) WalkFileInfos(ctx context.Context, f func(FileInfo) err
 	return module.WalkFileInfos(ctx, f)
 }
 
-func (*lazyLoadModule) isModuleReadBucket() {}
-func (*lazyLoadModule) isModule()           {}
+func (*lazyModule) isModuleReadBucket() {}
+func (*lazyModule) isModule()           {}

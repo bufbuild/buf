@@ -3,7 +3,6 @@ package bufmodule
 import (
 	"context"
 
-	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
@@ -29,21 +28,44 @@ type ModuleInfo interface {
 	// If ModuleFullName is nil, this will always be empty.
 	CommitID() string
 	// Digest returns the Module digest.
+	//
+	// Implementations may choose to cache the Digest, in which case contexts passed
+	// to this function in future calls will be ignored.
 	Digest(context.Context) (bufcas.Digest, error)
 
 	isModuleInfo()
 }
 
-func ModuleInfoToModuleRef(moduleInfo ModuleInfo) ModuleRef {
-	//return newModuleRefNoValidate(
-	//moduleInfo.Registry(),
-	//moduleInfo.Owner(),
-	//moduleInfo.Name(),
-	//moduleInfo.CommitID(),
-	//)
-	return nil
+// *** PRIVATE ***
+
+type moduleInfo struct {
+	moduleFullName ModuleFullName
+	commitID       string
+	digest         bufcas.Digest
 }
 
-func ProtoCommitToModuleInfo(protoCommit *modulev1beta1.Commit) (ModuleInfo, error) {
-	return nil, nil
+func newModuleInfo(
+	moduleFullName ModuleFullName,
+	commitID string,
+	digest bufcas.Digest,
+) *moduleInfo {
+	return &moduleInfo{
+		moduleFullName: moduleFullName,
+		commitID:       commitID,
+		digest:         digest,
+	}
 }
+
+func (m *moduleInfo) ModuleFullName() ModuleFullName {
+	return m.moduleFullName
+}
+
+func (m *moduleInfo) CommitID() string {
+	return m.commitID
+}
+
+func (m *moduleInfo) Digest(context.Context) (bufcas.Digest, error) {
+	return m.digest, nil
+}
+
+func (*moduleInfo) isModuleInfo() {}

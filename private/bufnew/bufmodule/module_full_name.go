@@ -1,6 +1,9 @@
 package bufmodule
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // ModuleFullName represents the full name of the Module, including its registry, owner, and name.
 type ModuleFullName interface {
@@ -16,3 +19,50 @@ type ModuleFullName interface {
 
 	isModuleFullName()
 }
+
+// *** PRIVATE ***
+
+type moduleFullName struct {
+	registry string
+	owner    string
+	name     string
+}
+
+func newModuleFullName(
+	registry string,
+	owner string,
+	name string,
+) (*moduleFullName, error) {
+	if registry == "" {
+		return nil, errors.New("new ModuleFullName: registry is empty")
+	}
+	if owner == "" {
+		return nil, errors.New("new ModuleFullName: owner is empty")
+	}
+	if name == "" {
+		return nil, errors.New("new ModuleFullName: name is empty")
+	}
+	return &moduleFullName{
+		registry: registry,
+		owner:    owner,
+		name:     name,
+	}, nil
+}
+
+func (m *moduleFullName) Registry() string {
+	return m.registry
+}
+
+func (m *moduleFullName) Owner() string {
+	return m.owner
+}
+
+func (m *moduleFullName) Name() string {
+	return m.name
+}
+
+func (m *moduleFullName) String() string {
+	return m.registry + "/" + m.owner + "/" + m.name
+}
+
+func (*moduleFullName) isModuleFullName() {}
