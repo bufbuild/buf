@@ -29,7 +29,7 @@ runs:
       shell: bash
     - run: git commit -m "${{ inputs.commit_message }}"
       shell: bash
-    - run: git push origin "${ inputs.branch }" --force
+    - run: git push origin "${{ inputs.branch }}" --force
       shell: bash
     - run: gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}"
       shell: bash
