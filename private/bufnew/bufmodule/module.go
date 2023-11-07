@@ -106,21 +106,21 @@ func (*module) isModule() {}
 type lazyModule struct {
 	ModuleInfo
 
-	getModule func() (Module, error)
+	getModuleFunc func() (Module, error)
 }
 
 func newLazyModule(
 	moduleInfo ModuleInfo,
-	getModule func() (Module, error),
+	getModuleFunc func() (Module, error),
 ) Module {
 	return &lazyModule{
-		ModuleInfo: moduleInfo,
-		getModule:  sync.OnceValues(getModule),
+		ModuleInfo:    moduleInfo,
+		getModuleFunc: sync.OnceValues(getModuleFunc),
 	}
 }
 
 func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
-	module, err := m.getModule()
+	module, err := m.getModule(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,31 @@ func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
 }
 
 func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
-	module, err := m.getModule()
+	module, err := m.getModule(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return module.StatFileInfo(ctx, path)
+}
+
+func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
+	module, err := m.getModule(ctx)
+	if err != nil {
+		return err
+	}
+	return module.WalkFileInfos(ctx, f)
+}
+
+func (m *lazyModule) ModuleDeps(ctx context.Context) ([]ModuleDep, error) {
+	module, err := m.getModule(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return module.ModuleDeps(ctx)
+}
+
+func (m *lazyModule) getModule(ctx context.Context) (Module, error) {
+	module, err := m.getModuleFunc()
 	if err != nil {
 		return nil, err
 	}
@@ -143,23 +167,7 @@ func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, e
 	if !bufcas.DigestEqual(expectedDigest, actualDigest) {
 		return nil, fmt.Errorf("expected digest %v, got %v", expectedDigest, actualDigest)
 	}
-	return module.StatFileInfo(ctx, path)
-}
-
-func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
-	module, err := m.getModule()
-	if err != nil {
-		return err
-	}
-	return module.WalkFileInfos(ctx, f)
-}
-
-func (m *lazyModule) ModuleDeps(ctx context.Context) ([]ModuleDep, error) {
-	module, err := m.getModule()
-	if err != nil {
-		return nil, err
-	}
-	return module.ModuleDeps(ctx)
+	return module, nil
 }
 
 func (*lazyModule) isModuleReadBucket() {}
