@@ -2,17 +2,25 @@ package bufworkspace
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type Workspace interface {
-	Modules []bufmodule.Module
-	Config() WorkspaceConfig
-	GetTargetPaths(moduleSetID string) ([]string, error)
+	Modules() []WorkspaceModule
+	DeclaredDeps() []bufmodule.ModuleRef
+	//GenerateConfigs() []GenerateConfig
 
 	isWorkspace()
+}
+
+type WorkspaceModule interface {
+	bufmodule.Module
+
+	ModuleConfig() ModuleConfig
+	TargetPaths() []string
 }
 
 // Can read a single buf.yaml v 1
@@ -37,7 +45,7 @@ func WorkspaceWithProtoFilterPaths(paths []string, excludePaths []string) Worksp
 
 // Since ExternalDependencyModulePins is defined to have the same commit for a given dependency,
 // this is just the union of ModulePins from the Modules.
-func WorkspaceExternalDependencyModulePins(ctx context.Context, Workspace workspace) ([]ModulePin, error) {
+func WorkspaceNonColocatedModuleDeps(ctx context.Context, workspace Workspace) ([]bufmodule.ModuleDep, error) {
 	//var combinedModulePins []ModulePin
 	//for _, module := range moduleSet.Modules() {
 	//modulePins, err := module.ExternalDependencyModulePins(ctx)
@@ -47,35 +55,25 @@ func WorkspaceExternalDependencyModulePins(ctx context.Context, Workspace worksp
 	//combinedModulePins = append(combinedModulePins, modulePins...)
 	//}
 	//return uniqueSortedModulePins(combinedModulePins), nil
+	return nil, errors.New("TODO")
 }
 
-func GetFileInfo(
+func GetWorkspaceFileInfo(
 	ctx context.Context,
 	workspace Workspace,
 	path string,
-) (FileInfo, error) {
-	return nil, nil
+) (bufmodule.FileInfo, error) {
+	return nil, errors.New("TODO")
 }
 
-func WorkspaceToExportedProtoFileBucket(
+func WorkspaceToModuleReadBucketWithOnlyProtoFiles(
 	ctx context.Context,
-	//moduleReader ModuleReader,
 	workspace Workspace,
-) {
+) (bufmodule.ModuleReadBucket, error) {
+	return nil, errors.New("TODO")
 }
 
 type workspaceOptions struct{}
-
-type WorkspaceConfig interface {
-	Version() ConfigVersion
-
-	GetModuleConfig(moduleSetID string) (ModuleConfig, error)
-	ModuleConfigs() []ModuleConfig
-	//GenerateConfigs() []GenerateConfig
-	DeclaredDeps() []bufmodule.ModuleRef
-
-	isWorkspaceConfig()
-}
 
 type ModuleConfig interface {
 	Version() ConfigVersion
@@ -83,12 +81,9 @@ type ModuleConfig interface {
 	// Note: You could make the argument that you don't actually need this, however there
 	// are situations where you just want to read a configuration on its own without
 	// a corresponding Workspace.
-
-	ModuleID() string
 	ModuleFullName() bufmodule.ModuleFullName
 
 	RootToExcludes() map[string][]string
-
 	LintConfig() LintConfig
 	BreakingConfig() BreakingConfig
 

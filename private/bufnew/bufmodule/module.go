@@ -2,6 +2,7 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
@@ -34,7 +35,7 @@ type Module interface {
 	// within its .proto files will be returned.
 	//
 	// Colocated modules will always have the same commits and digests for a given dependency.
-	ModuleDeps() []ModuleDep
+	ModuleDeps(ctx context.Context) ([]ModuleDep, error)
 
 	isModule()
 }
@@ -53,8 +54,12 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
+	moduleDeps, err := module.ModuleDeps(ctx)
+	if err != nil {
+		return nil, err
+	}
 	digests := []bufcas.Digest{fileDigest}
-	for _, moduleDep := range module.ModuleDeps() {
+	for _, moduleDep := range moduleDeps {
 		digest, err := moduleDep.Digest(ctx)
 		if err != nil {
 			return nil, err
@@ -68,4 +73,82 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 
 // *** PRIVATE ***
 
-type module struct{}
+// module
+
+type module struct {
+	ModuleInfo
+	ModuleReadBucket
+
+	moduleDeps []ModuleDep
+}
+
+func newModule(
+	moduleInfo ModuleInfo,
+	moduleReadBucket ModuleReadBucket,
+	moduleDeps []ModuleDep,
+) *module {
+	return &module{
+		ModuleInfo:       moduleInfo,
+		ModuleReadBucket: moduleReadBucket,
+		moduleDeps:       moduleDeps,
+	}
+}
+
+func (m *module) ModuleDeps(context.Context) ([]ModuleDep, error) {
+	return m.moduleDeps, nil
+}
+
+func (*module) isModule() {}
+
+// lazyModule
+
+type lazyModule struct {
+	ModuleInfo
+
+	getModule func() (Module, error)
+}
+
+func newLazyModule(
+	moduleInfo ModuleInfo,
+	getModule func() (Module, error),
+) Module {
+	return &lazyModule{
+		ModuleInfo: moduleInfo,
+		getModule:  sync.OnceValues(getModule),
+	}
+}
+
+func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
+	module, err := m.getModule()
+	if err != nil {
+		return nil, err
+	}
+	return module.GetFile(ctx, path)
+}
+
+func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	module, err := m.getModule()
+	if err != nil {
+		return nil, err
+	}
+	return module.StatFileInfo(ctx, path)
+}
+
+func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
+	module, err := m.getModule()
+	if err != nil {
+		return err
+	}
+	return module.WalkFileInfos(ctx, f)
+}
+
+func (m *lazyModule) ModuleDeps(ctx context.Context) ([]ModuleDep, error) {
+	module, err := m.getModule()
+	if err != nil {
+		return nil, err
+	}
+	return module.ModuleDeps(ctx)
+}
+
+func (*lazyModule) isModuleReadBucket() {}
+func (*lazyModule) isModule()           {}

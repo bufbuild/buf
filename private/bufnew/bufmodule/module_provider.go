@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
@@ -100,48 +99,3 @@ func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleI
 		},
 	), nil
 }
-
-// lazyModule
-
-type lazyModule struct {
-	ModuleInfo
-
-	getModule func() (Module, error)
-}
-
-func newLazyModule(
-	moduleInfo ModuleInfo,
-	getModule func() (Module, error),
-) Module {
-	return &lazyModule{
-		ModuleInfo: moduleInfo,
-		getModule:  sync.OnceValues(getModule),
-	}
-}
-
-func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
-	module, err := m.getModule()
-	if err != nil {
-		return nil, err
-	}
-	return module.GetFile(ctx, path)
-}
-
-func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
-	module, err := m.getModule()
-	if err != nil {
-		return nil, err
-	}
-	return module.StatFileInfo(ctx, path)
-}
-
-func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
-	module, err := m.getModule()
-	if err != nil {
-		return err
-	}
-	return module.WalkFileInfos(ctx, f)
-}
-
-func (*lazyModule) isModuleReadBucket() {}
-func (*lazyModule) isModule()           {}
