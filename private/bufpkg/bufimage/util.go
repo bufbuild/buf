@@ -253,7 +253,7 @@ func addFileWithImports(
 	seenPaths[path] = struct{}{}
 
 	// then, add imports first, for proper ordering
-	for _, importPath := range imageFile.FileDescriptor().GetDependency() {
+	for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
 		if importFile := image.GetFile(importPath); importFile != nil {
 			accumulator = addFileWithImports(
 				accumulator,
@@ -270,7 +270,7 @@ func addFileWithImports(
 	_, isNotImport := nonImportPaths[path]
 	accumulator = append(
 		accumulator,
-		imageFile.ImageFileWithIsImport(!isNotImport),
+		ImageFileWithIsImport(imageFile, !isNotImport),
 	)
 	return accumulator
 }
@@ -303,7 +303,7 @@ func protoImageFilesToFileDescriptors(protoImageFiles []*imagev1.ImageFile) []pr
 func imageFilesToFileDescriptors(imageFiles []ImageFile) []protodescriptor.FileDescriptor {
 	fileDescriptors := make([]protodescriptor.FileDescriptor, len(imageFiles))
 	for i, imageFile := range imageFiles {
-		fileDescriptors[i] = imageFile.FileDescriptor()
+		fileDescriptors[i] = imageFile.FileDescriptorProto()
 	}
 	return fileDescriptors
 }

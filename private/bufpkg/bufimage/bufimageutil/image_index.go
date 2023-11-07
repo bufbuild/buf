@@ -92,7 +92,7 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 	}
 
 	for _, imageFile := range image.Files() {
-		pkg := addPackageToIndex(imageFile.FileDescriptor().GetPackage(), index)
+		pkg := addPackageToIndex(imageFile.FileDescriptorProto().GetPackage(), index)
 		pkg.files = append(pkg.files, imageFile)
 		fileName := imageFile.Path()
 		fileDescriptorProto := imageFile.FileDescriptorProto()
