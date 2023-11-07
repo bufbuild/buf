@@ -104,7 +104,7 @@ func csharpNamespaceForFile(
 		// value, so this is a no-op.
 		return nil
 	}
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
@@ -139,7 +139,7 @@ func shouldSkipCsharpNamespaceForFile(
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
 func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
+	pkg := imageFile.FileDescriptorProto().GetPackage()
 	if pkg == "" {
 		return ""
 	}

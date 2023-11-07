@@ -75,7 +75,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 	})
 
@@ -92,7 +92,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 	})
 }
@@ -116,7 +116,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
@@ -136,7 +136,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
@@ -158,7 +158,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -182,7 +182,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -219,7 +219,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
@@ -240,7 +240,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
@@ -262,7 +262,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -286,7 +286,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -316,7 +316,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
@@ -342,7 +342,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
@@ -490,7 +490,7 @@ func TestRubyPackageOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
@@ -517,7 +517,7 @@ func TestRubyPackageOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, overrideRubyPackage, descriptor.GetOptions().GetRubyPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
@@ -544,7 +544,7 @@ func TestRubyPackageOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
@@ -575,7 +575,7 @@ func TestRubyPackageOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue

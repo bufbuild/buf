@@ -46,7 +46,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, true)
@@ -67,7 +67,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
@@ -92,7 +92,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -117,7 +117,7 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -151,7 +151,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, true)
@@ -172,7 +172,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
@@ -198,7 +198,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -223,7 +223,7 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -257,7 +257,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, true)
@@ -279,7 +279,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
@@ -304,7 +304,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -329,7 +329,7 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetCcEnableArenas())
 				continue
@@ -361,7 +361,7 @@ func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			assert.True(t, imageFile.Proto().GetOptions().GetCcEnableArenas())
+			assert.True(t, imageFile.FileDescriptorProto().GetOptions().GetCcEnableArenas())
 		}
 	})
 
@@ -379,7 +379,7 @@ func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			assert.True(t, imageFile.Proto().GetOptions().GetCcEnableArenas())
+			assert.True(t, imageFile.FileDescriptorProto().GetOptions().GetCcEnableArenas())
 		}
 	})
 }

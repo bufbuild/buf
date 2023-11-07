@@ -99,7 +99,7 @@ func rubyPackageForFile(
 	rubyPackageValue string,
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty ruby_package
 		// value, so this is a no-op.
@@ -124,7 +124,7 @@ func rubyPackageForFile(
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
 func rubyPackageValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
+	pkg := imageFile.FileDescriptorProto().GetPackage()
 	if pkg == "" {
 		return ""
 	}

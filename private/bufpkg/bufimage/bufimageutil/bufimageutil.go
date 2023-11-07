@@ -255,7 +255,7 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 			continue
 		}
 		includedFiles = append(includedFiles, imageFile)
-		imageFileDescriptor := imageFile.Proto()
+		imageFileDescriptor := imageFile.FileDescriptorProto()
 
 		importsRequired := closure.imports[imageFile.Path()]
 		// If the file has source code info, we need to remap paths to correctly

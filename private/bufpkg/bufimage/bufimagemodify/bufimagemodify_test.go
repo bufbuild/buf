@@ -38,7 +38,7 @@ const (
 
 func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
 	for _, imageFile := range image.Files() {
-		descriptor := imageFile.Proto()
+		descriptor := imageFile.FileDescriptorProto()
 
 		if !includeSourceInfo {
 			assert.Empty(t, descriptor.SourceCodeInfo)
@@ -58,7 +58,7 @@ func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 
 func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32) {
 	for _, imageFile := range image.Files() {
-		descriptor := imageFile.Proto()
+		descriptor := imageFile.FileDescriptorProto()
 
 		var hasFileOption bool
 		for _, location := range descriptor.SourceCodeInfo.Location {
