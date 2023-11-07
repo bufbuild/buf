@@ -54,10 +54,15 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 		return nil, err
 	}
 	digests := []bufcas.Digest{fileDigest}
-	// TODO: THIS IS WRONG. This doesn't include workspace deps. Rework this, see comment above.
-	//for _, dep := range module.Deps() {
-	//digests = append(digests, dep.Digest())
-	//}
+	for _, moduleDep := range module.ModuleDeps() {
+		digest, err := moduleDep.Digest(ctx)
+		if err != nil {
+			return nil, err
+		}
+		digests = append(digests, digest)
+	}
+
+	// NewDigestForDigests deals with sorting.
 	return bufcas.NewDigestForDigests(digests)
 }
 
