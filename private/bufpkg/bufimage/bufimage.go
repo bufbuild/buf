@@ -34,7 +34,7 @@ type ImageFile interface {
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// This will never be nil.
-	// The value Path() is equal to Proto.GetName() .
+	// The value Path() is equal to FileDescriptorProto().GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	// IsImport returns true if this file is an import.
 	IsImport() bool
