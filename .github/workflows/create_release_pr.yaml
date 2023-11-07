@@ -53,4 +53,5 @@ jobs:
           commit_message: Update version to v${{ env.VERSION }}
           title: Release v${{env.VERSION}}
           body: Release prepared for ${{ env.VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       # placeholder for slack notification
