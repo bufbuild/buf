@@ -122,6 +122,9 @@ service AdminService {
   rpc GetReviewFlowGracePeriodPolicy(GetReviewFlowGracePeriodPolicyRequest) returns (GetReviewFlowGracePeriodPolicyResponse);
   // Update review flow grace period policy for the server.
   rpc UpdateReviewFlowGracePeriodPolicy(UpdateReviewFlowGracePeriodPolicyRequest) returns (UpdateReviewFlowGracePeriodPolicyResponse);
+  // GetClusterUsageTotals returns the summation of total types for every repository for each organization
+  // within a single tenant BSR instance
+  rpc GetClusterUsageTotals(GetClusterUsageTotalRequest) returns (GetClusterUsageTotalResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -233,3 +236,7 @@ message UpdateReviewFlowGracePeriodPolicyRequest {
 }
 
 message UpdateReviewFlowGracePeriodPolicyResponse {}
+
+message GetClusterUsageTotalRequest {}
+
+message GetClusterUsageTotalResponse {}
