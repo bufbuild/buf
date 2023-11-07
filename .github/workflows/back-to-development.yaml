@@ -13,7 +13,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set RELEASED_VERSION_WITH_V variable from bufcli.go
-        # in the echo command, globbing patterns are used in the parameter substitution  not regex patterns
+        # In the echo command, globbing patterns are used in the parameter substitution  not regex patterns
         run: |
           RELEASED_VERSION_WITH_V=`grep -oE "Version.*=.*\"[0-9]\.[0-9]+\.[0-9]+[^\"]*" private/buf/bufcli/bufcli.go`
           echo "RELEASED_VERSION_WITH_V=v${RELEASED_VERSION_WITH_V##Version*=*\"}" >> $GITHUB_ENV

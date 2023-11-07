@@ -41,11 +41,11 @@ jobs:
           unset RELEASE_MINISIGN_PRIVATE_KEY
           unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
       - name: Fetch Changelog
-        # this only works with gnu-sed, use gsed if you are on mac
+        # This only works with gnu-sed, use gsed if you are on mac
         # This starts a loop after seeing the first line starting with ## [. For each line in the loop, it is skipped (n)
         # if it's empty (^$). The loop ends (q) if it sees another line starting with ## [. Otherwise it's printed.
         run: sed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md > ${{env.VERSION_WITH_V}}-CHANGELOG.md
-      # the second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
+      # The second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
       - name: Draft Release
         run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ${{github.workspace}}/.build/release/buf/assets/*)" >> $GITHUB_OUTPUT
         id: draft_release
