@@ -34,4 +34,4 @@ runs:
     - run: gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}"
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.token }}
+        GH_TOKEN: ${{ inputs.token }}
