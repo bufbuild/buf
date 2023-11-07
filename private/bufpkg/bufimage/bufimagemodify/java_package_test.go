@@ -86,7 +86,7 @@ func TestJavaPackageEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 	})
 
@@ -104,7 +104,7 @@ func TestJavaPackageEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 	})
 }
@@ -129,7 +129,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaPackagePath)
@@ -150,7 +150,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)
@@ -173,7 +173,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 				continue
@@ -198,7 +198,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 				continue
@@ -231,7 +231,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, true)
@@ -253,7 +253,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)
@@ -277,7 +277,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 				continue
@@ -303,7 +303,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 				continue
@@ -335,7 +335,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetJavaPackage())
 				assert.NotEqual(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
@@ -362,7 +362,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetJavaPackage())
 				assert.NotEqual(t, modifiedJavaPackage, descriptor.GetOptions().GetJavaPackage())
@@ -523,7 +523,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				overrideJavaPackagePrefix+"."+descriptor.GetPackage(),
 				descriptor.GetOptions().GetJavaPackage(),
@@ -557,7 +557,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				overrideJavaPackagePrefix+"."+descriptor.GetPackage(),
 				descriptor.GetOptions().GetJavaPackage(),
@@ -593,7 +593,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, true)
@@ -624,7 +624,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)

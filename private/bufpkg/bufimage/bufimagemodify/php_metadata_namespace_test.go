@@ -74,7 +74,7 @@ func TestPhpMetadataNamespaceEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		require.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 	})
 
@@ -91,7 +91,7 @@ func TestPhpMetadataNamespaceEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		require.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 	})
 }
@@ -115,7 +115,7 @@ func TestPhpMetadataNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpMetadataNamespacePath)
@@ -135,7 +135,7 @@ func TestPhpMetadataNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
@@ -161,7 +161,7 @@ func TestPhpMetadataNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpMetadataNamespacePath)
@@ -181,7 +181,7 @@ func TestPhpMetadataNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
@@ -218,7 +218,7 @@ func testPhpMetadataNamespaceOptions(t *testing.T, dirPath string, classPrefix s
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, true)
@@ -239,7 +239,7 @@ func testPhpMetadataNamespaceOptions(t *testing.T, dirPath string, classPrefix s
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
@@ -262,7 +262,7 @@ func testPhpMetadataNamespaceOptions(t *testing.T, dirPath string, classPrefix s
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
@@ -287,7 +287,7 @@ func testPhpMetadataNamespaceOptions(t *testing.T, dirPath string, classPrefix s
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
@@ -317,7 +317,7 @@ func TestPhpMetadataNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpMetadataNamespace())
@@ -343,7 +343,7 @@ func TestPhpMetadataNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpMetadataNamespace())

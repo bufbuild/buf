@@ -91,11 +91,11 @@ func newImageIndexForImage(image bufimage.Image, opts *imageFilterOptions) (*ima
 		index.NameToExtensions = make(map[string][]*descriptorpb.FieldDescriptorProto)
 	}
 
-	for _, file := range image.Files() {
-		pkg := addPackageToIndex(file.FileDescriptor().GetPackage(), index)
-		pkg.files = append(pkg.files, file)
-		fileName := file.Path()
-		fileDescriptorProto := file.Proto()
+	for _, imageFile := range image.Files() {
+		pkg := addPackageToIndex(imageFile.FileDescriptor().GetPackage(), index)
+		pkg.files = append(pkg.files, imageFile)
+		fileName := imageFile.Path()
+		fileDescriptorProto := imageFile.FileDescriptorProto()
 		index.Files[fileName] = fileDescriptorProto
 		err := walk.DescriptorProtos(fileDescriptorProto, func(name protoreflect.FullName, msg proto.Message) error {
 			if existing := index.ByName[string(name)]; existing != nil {

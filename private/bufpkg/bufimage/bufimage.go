@@ -31,14 +31,14 @@ import (
 type ImageFile interface {
 	bufmoduleref.FileInfo
 
-	// Proto is the backing *descriptorpb.FileDescriptorProto for this File.
+	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// FileDescriptor should be preferred to Proto. We keep this method around
 	// because we have code that does modification to the ImageFile via this.
 	//
 	// This will never be nil.
 	// The value Path() is equal to Proto.GetName() .
-	Proto() *descriptorpb.FileDescriptorProto
+	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	// FileDescriptor is the backing FileDescriptor for this File.
 	//
 	// This will never be nil.

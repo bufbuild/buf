@@ -100,7 +100,7 @@ func optimizeForForFile(
 	value descriptorpb.FileOptions_OptimizeMode,
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	options := descriptor.GetOptions()
 	switch {
 	case isWellKnownType(ctx, imageFile):

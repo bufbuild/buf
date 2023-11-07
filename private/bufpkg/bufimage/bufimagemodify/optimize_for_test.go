@@ -48,7 +48,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
@@ -69,7 +69,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
@@ -94,7 +94,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -119,7 +119,7 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -153,7 +153,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
@@ -174,7 +174,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
@@ -199,7 +199,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -224,7 +224,7 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -258,7 +258,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
@@ -280,7 +280,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
@@ -305,7 +305,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -329,7 +329,7 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
 				continue
@@ -361,7 +361,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
 	})
@@ -380,7 +380,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
 	})
@@ -541,7 +541,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				overrideOptimizeFor,
 				descriptor.GetOptions().GetOptimizeFor(),
@@ -577,7 +577,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				overrideOptimizeFor,
 				descriptor.GetOptions().GetOptimizeFor(),
@@ -615,7 +615,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				descriptorpb.FileOptions_CODE_SIZE,
 				descriptor.GetOptions().GetOptimizeFor(),
@@ -653,7 +653,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				descriptorpb.FileOptions_CODE_SIZE,
 				descriptor.GetOptions().GetOptimizeFor(),

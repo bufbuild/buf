@@ -68,7 +68,7 @@ func newImageFile(
 	}, nil
 }
 
-func (f *imageFile) Proto() *descriptorpb.FileDescriptorProto {
+func (f *imageFile) FileDescriptorProto() *descriptorpb.FileDescriptorProto {
 	return f.fileDescriptorProto
 }
 

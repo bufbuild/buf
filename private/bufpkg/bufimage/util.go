@@ -311,14 +311,14 @@ func imageFilesToFileDescriptors(imageFiles []ImageFile) []protodescriptor.FileD
 func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.FileDescriptorProto {
 	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(imageFiles))
 	for i, imageFile := range imageFiles {
-		fileDescriptorProtos[i] = imageFile.Proto()
+		fileDescriptorProtos[i] = imageFile.FileDescriptorProto()
 	}
 	return fileDescriptorProtos
 }
 
 func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
 	return fileDescriptorProtoToProtoImageFile(
-		imageFile.Proto(),
+		imageFile.FileDescriptorProto(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
@@ -441,7 +441,7 @@ func imageToCodeGeneratorRequest(
 		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
-		request.ProtoFile[i] = imageFile.Proto()
+		request.ProtoFile[i] = imageFile.FileDescriptorProto()
 		if isFileToGenerate(
 			imageFile,
 			alreadyUsedPaths,
