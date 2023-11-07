@@ -31,7 +31,8 @@ jobs:
         run: make updateversion
       - name: Update Changelog Version
         run: make releasechangelog
-      - uses: ./.github/actions/create-pr-action
+      - name: Create PR
+        uses: ./.github/actions/create-pr-action
         id: create_pr
         with:
           branch: release/v${{ env.VERSION }}

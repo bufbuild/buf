@@ -34,7 +34,8 @@ jobs:
       # todo: add release files back to the assets
       # the second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
       # todo: replace ./random.txt with actual files
-      - run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ./random.txt)" >> $GITHUB_OUTPUT
+      - name: Draft Release
+        run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ./random.txt)" >> $GITHUB_OUTPUT
         id: draft_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
