@@ -30,13 +30,13 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
-	// ModuleDeps returns the dependency list for this specific module.
+	// DepModules returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
 	// within its .proto files will be returned.
 	//
-	// Colocated modules will always have the same commits and digests for a given dependency.
-	ModuleDeps(ctx context.Context) ([]ModuleDep, error)
+	// Dependencies with the same ModuleFullName will always have the same commits and digests.
+	DepModules(ctx context.Context) ([]Module, error)
 
 	isModule()
 }
@@ -55,13 +55,13 @@ func ModuleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleDeps, err := module.ModuleDeps(ctx)
+	depModules, err := module.DepModules(ctx)
 	if err != nil {
 		return nil, err
 	}
 	digests := []bufcas.Digest{fileDigest}
-	for _, moduleDep := range moduleDeps {
-		digest, err := moduleDep.Digest(ctx)
+	for _, depModule := range depModules {
+		digest, err := depModule.Digest(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -80,23 +80,23 @@ type module struct {
 	ModuleInfo
 	ModuleReadBucket
 
-	moduleDeps []ModuleDep
+	depModules []Module
 }
 
 func newModule(
 	moduleInfo ModuleInfo,
 	moduleReadBucket ModuleReadBucket,
-	moduleDeps []ModuleDep,
+	depModules []Module,
 ) *module {
 	return &module{
 		ModuleInfo:       moduleInfo,
 		ModuleReadBucket: moduleReadBucket,
-		moduleDeps:       moduleDeps,
+		depModules:       depModules,
 	}
 }
 
-func (m *module) ModuleDeps(context.Context) ([]ModuleDep, error) {
-	return m.moduleDeps, nil
+func (m *module) DepModules(context.Context) ([]Module, error) {
+	return m.depModules, nil
 }
 
 func (*module) isModule() {}
@@ -143,12 +143,12 @@ func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) 
 	return module.WalkFileInfos(ctx, f)
 }
 
-func (m *lazyModule) ModuleDeps(ctx context.Context) ([]ModuleDep, error) {
+func (m *lazyModule) DepModules(ctx context.Context) ([]Module, error) {
 	module, err := m.getModule(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return module.ModuleDeps(ctx)
+	return module.DepModules(ctx)
 }
 
 func (m *lazyModule) getModule(ctx context.Context) (Module, error) {

@@ -40,24 +40,6 @@ func WorkspaceWithProtoFilterPaths(paths []string, excludePaths []string) Worksp
 	return nil
 }
 
-// ModuleSetExternalDependencyModulePins returns the combined list of external
-// dependencies for all Modules in a ModuleSet.
-
-// Since ExternalDependencyModulePins is defined to have the same commit for a given dependency,
-// this is just the union of ModulePins from the Modules.
-func WorkspaceNonColocatedModuleDeps(ctx context.Context, workspace Workspace) ([]bufmodule.ModuleDep, error) {
-	//var combinedModulePins []ModulePin
-	//for _, module := range moduleSet.Modules() {
-	//modulePins, err := module.ExternalDependencyModulePins(ctx)
-	//if err != nil {
-	//return nil, err
-	//}
-	//combinedModulePins = append(combinedModulePins, modulePins...)
-	//}
-	//return uniqueSortedModulePins(combinedModulePins), nil
-	return nil, errors.New("TODO")
-}
-
 func GetWorkspaceFileInfo(
 	ctx context.Context,
 	workspace Workspace,
