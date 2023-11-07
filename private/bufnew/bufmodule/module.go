@@ -2,6 +2,7 @@ package bufmodule
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -130,6 +131,17 @@ func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, e
 	module, err := m.getModule()
 	if err != nil {
 		return nil, err
+	}
+	expectedDigest, err := m.ModuleInfo.Digest(ctx)
+	if err != nil {
+		return nil, err
+	}
+	actualDigest, err := module.Digest(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !bufcas.DigestEqual(expectedDigest, actualDigest) {
+		return nil, fmt.Errorf("expected digest %v, got %v", expectedDigest, actualDigest)
 	}
 	return module.StatFileInfo(ctx, path)
 }

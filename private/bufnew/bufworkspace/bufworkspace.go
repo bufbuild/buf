@@ -9,7 +9,7 @@ import (
 )
 
 type Workspace interface {
-	Modules() []WorkspaceModule
+	DirectModules() []WorkspaceModule
 	DeclaredDeps() []bufmodule.ModuleRef
 	//GenerateConfigs() []GenerateConfig
 
@@ -23,7 +23,7 @@ type WorkspaceModule interface {
 	TargetPaths() []string
 }
 
-// Can read a single buf.yaml v 1
+// Can read a single buf.yaml v1
 // Can read a buf.work.yaml
 // Can read a buf.yaml v2
 func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket, options ...WorkspaceOption) (Workspace, error) {
@@ -32,7 +32,7 @@ func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket, optio
 
 type WorkspaceOption func(*workspaceOptions)
 
-func WorkspaceWithDirPaths(dirPaths []string) WorkspaceOption {
+func WorkspaceWithSubDirPaths(subDirPaths []string) WorkspaceOption {
 	return nil
 }
 
