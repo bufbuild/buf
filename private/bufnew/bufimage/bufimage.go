@@ -2,7 +2,6 @@ package bufimage
 
 import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -12,7 +11,6 @@ type ImageFile interface {
 	bufmodule.ModuleInfo
 
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
-	FileDescriptor() protodescriptor.FileDescriptor
 	IsImport() bool
 	IsSyntaxUnspecified() bool
 	UnusedDependencyIndexes() int32
