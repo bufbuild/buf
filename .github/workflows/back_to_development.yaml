@@ -41,14 +41,21 @@ jobs:
           [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.RELEASED_VERSION_WITH_V }}...HEAD
           }" CHANGELOG.md
       # update homebrew badge is skipped here, should it be?
-      - name: create PR
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+      # - name: create PR
+        # uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        # with:
+          # add-paths: .
+          # commit-message: "Back to development"
+          # branch: next/${{ env.NEXT_VERSION }}
+          # delete-branch: true
+          # base: main
+          # title: "Return to development"
+          # body: Release complete for ${{ env.RELEASED_VERSION_WITH_V }}
+          # token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/create-pr-action
         with:
-          add-paths: .
-          commit-message: "Back to development"
           branch: next/${{ env.NEXT_VERSION }}
-          delete-branch: true
-          base: main
-          title: "Return to development"
+          commit_message: Back to development
+          title: Return to Development
           body: Release complete for ${{ env.RELEASED_VERSION_WITH_V }}
           token: ${{ secrets.GITHUB_TOKEN }}
