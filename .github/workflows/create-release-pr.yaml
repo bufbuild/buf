@@ -8,6 +8,7 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
+  APP_ID: 251311
 
 jobs:
   prepare:
@@ -20,6 +21,11 @@ jobs:
           exit 1
       - name: Checkout repository code
         uses: actions/checkout@v4
+      - uses: actions/create-github-app-token@v1
+        id: app_token
+        with:
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
       - name: setup-go
         uses: actions/setup-go@v4
         with:
@@ -40,7 +46,7 @@ jobs:
           body: |
             Release prepared for ${{ env.VERSION }}
             Reminder: Verify the changelog
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app_token.outputs.token }}
       - name: Slack Notification
         run: |
           jq --null-input '{ text: "BufCLI Release v${{ env.VERSION }} has started: ${{ steps.create_pr.outputs.url }}" }' \

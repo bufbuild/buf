@@ -1,0 +1,29 @@
+name: Verify Changelog
+on:
+  pull_request:
+    types:
+      - opened
+  push:
+    branches:
+      - "release/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') }}
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Check changelog is modified
+        run: |
+          files=`(git fetch origin main:main) && (git diff --name-only main)`
+          for file in $files; do
+            if [ "$file" = "CHANGELOG.md" ]; then
+              exit 0
+            fi
+          done
+          echo ERROR: CHANGELOG has not been updated
+          exit 1
