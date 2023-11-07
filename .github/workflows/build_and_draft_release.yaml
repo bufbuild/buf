@@ -21,7 +21,7 @@ jobs:
         # VERSION_WITH_V is set to v + github.event.inputs.version if input is set, otherwise it's set to github.head_ref.
         # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/`.
         run: |
-          VERSION_WITH_V=${{ github.event.inputs.version && join(['v', github.event.inputs.version], '') || github.head_ref}}
+          VERSION_WITH_V=${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.head_ref}}
           echo "VERSION_WITH_V=${VERSION_WITH_V##*/}" >> $GITHUB_ENV
       - name: Checkout repository code
         uses: actions/checkout@v4
