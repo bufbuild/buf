@@ -25,7 +25,7 @@ type apiModuleInfoProvider struct {
 	clientProvider bufapi.ClientProvider
 }
 
-func newAPIModuleInfoProvider(clientProvider bufapi.ClientProvider) ModuleInfoProvider {
+func newAPIModuleInfoProvider(clientProvider bufapi.ClientProvider) *apiModuleInfoProvider {
 	return &apiModuleInfoProvider{
 		clientProvider: clientProvider,
 	}
