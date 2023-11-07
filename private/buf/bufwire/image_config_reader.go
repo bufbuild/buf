@@ -278,7 +278,7 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 			// provided as the ref. This is expected since `PathForExternalPath` is meant to return the relative
 			// path based on the reference, which in this case will always be a specific file.
 			if _, err := protoFileRef.PathForExternalPath(imageFile.ExternalPath()); err == nil {
-				pkg = imageFile.Proto().GetPackage()
+				pkg = imageFile.FileDescriptorProto().GetPackage()
 				path = imageFile.Path()
 				config = imageConfig.Config()
 				break
@@ -298,7 +298,7 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 	var paths []string
 	if protoFileRef.IncludePackageFiles() {
 		for _, imageFile := range image.Files() {
-			if imageFile.Proto().GetPackage() == pkg {
+			if imageFile.FileDescriptorProto().GetPackage() == pkg {
 				paths = append(paths, imageFile.Path())
 			}
 		}

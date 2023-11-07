@@ -54,7 +54,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -79,7 +79,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -106,7 +106,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
@@ -128,7 +128,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
@@ -155,7 +155,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -179,7 +179,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -205,7 +205,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
@@ -226,7 +226,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
@@ -255,7 +255,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				fmt.Sprintf("%s;%s",
 					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
@@ -283,7 +283,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				fmt.Sprintf("%s;%s",
 					normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
@@ -313,7 +313,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 				continue
@@ -345,7 +345,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 				continue
@@ -386,7 +386,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				packageSuffix,
 			)
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
 				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
@@ -417,7 +417,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
 				packageSuffix,
 			)
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
 				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
@@ -578,7 +578,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(overrideGoPackagePrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -612,7 +612,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				normalpath.Dir(overrideGoPackagePrefix+"/"+imageFile.Path()),
 				descriptor.GetOptions().GetGoPackage(),
@@ -648,7 +648,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
@@ -679,7 +679,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetGoPackage())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)

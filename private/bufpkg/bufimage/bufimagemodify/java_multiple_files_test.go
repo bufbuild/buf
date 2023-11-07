@@ -47,7 +47,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
@@ -69,7 +69,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
@@ -95,7 +95,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
@@ -117,7 +117,7 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
@@ -147,7 +147,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
@@ -168,7 +168,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
@@ -194,7 +194,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -219,7 +219,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -244,7 +244,7 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -277,7 +277,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
@@ -298,7 +298,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -327,7 +327,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -351,7 +351,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
@@ -376,7 +376,7 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
@@ -404,7 +404,7 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			assert.True(t, imageFile.Proto().GetOptions().GetJavaMultipleFiles())
+			assert.True(t, imageFile.FileDescriptorProto().GetOptions().GetJavaMultipleFiles())
 		}
 	})
 
@@ -422,7 +422,7 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			assert.True(t, imageFile.Proto().GetOptions().GetJavaMultipleFiles())
+			assert.True(t, imageFile.FileDescriptorProto().GetOptions().GetJavaMultipleFiles())
 		}
 	})
 }

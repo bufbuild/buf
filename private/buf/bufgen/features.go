@@ -43,13 +43,13 @@ var allFeatures = map[pluginpb.CodeGeneratorResponse_Feature]featureChecker{
 func computeRequiredFeatures(image bufimage.Image) requiredFeatures {
 	features := requiredFeatures{}
 	for feature, checker := range allFeatures {
-		for _, file := range image.Files() {
-			if file.IsImport() {
+		for _, imageFile := range image.Files() {
+			if imageFile.IsImport() {
 				// we only want to check the sources in the module, not their dependencies
 				continue
 			}
-			if checker(file.Proto()) {
-				features[feature] = append(features[feature], file.Path())
+			if checker(imageFile.FileDescriptorProto()) {
+				features[feature] = append(features[feature], imageFile.Path())
 			}
 		}
 	}

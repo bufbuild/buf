@@ -102,8 +102,8 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 			t,
 			NewProtoImageFile(
 				t,
-				imageFile.FileDescriptor().GetName(),
-				imageFile.FileDescriptor().GetDependency()...,
+				imageFile.FileDescriptorProto().GetName(),
+				imageFile.FileDescriptorProto().GetDependency()...,
 			),
 			imageFile.ModuleIdentity(),
 			imageFile.Commit(),
