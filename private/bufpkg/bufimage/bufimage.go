@@ -39,11 +39,6 @@ type ImageFile interface {
 	// This will never be nil.
 	// The value Path() is equal to Proto.GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
-	// FileDescriptor is the backing FileDescriptor for this File.
-	//
-	// This will never be nil.
-	// The value Path() is equal to FileDescriptor.GetName() .
-	FileDescriptor() protodescriptor.FileDescriptor
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
@@ -54,12 +49,6 @@ type ImageFile interface {
 	// All indexes will be valid.
 	// Will return nil if empty.
 	UnusedDependencyIndexes() []int32
-	// ImageFileWithIsImport returns a copy of the ImageFile with the new ImageFile
-	// now marked as an import.
-	//
-	// If the original ImageFile was already an import, this returns
-	// the original ImageFile.
-	ImageFileWithIsImport(isImport bool) ImageFile
 
 	isImageFile()
 }
@@ -86,6 +75,25 @@ func NewImageFile(
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
+	)
+}
+
+// ImageFileWithIsImport returns a copy of the ImageFile with the new ImageFile
+// now marked as an import.
+//
+// If the original ImageFile was already an import, this returns
+// the original ImageFile.
+func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
+	if imageFile.IsImport() == isImport {
+		return imageFile
+	}
+	// No need to validate as ImageFile is already validated.
+	return newImageFileNoValidate(
+		imageFile.FileDescriptorProto(),
+		imageFile,
+		imageFile.IsImport(),
+		imageFile.IsSyntaxUnspecified(),
+		imageFile.UnusedDependencyIndexes(),
 	)
 }
 
@@ -537,7 +545,7 @@ func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
-			for _, dependency := range imageFile.FileDescriptor().GetDependency() {
+			for _, dependency := range imageFile.FileDescriptorProto().GetDependency() {
 				importsOfNonImports[dependency] = struct{}{}
 			}
 		}
