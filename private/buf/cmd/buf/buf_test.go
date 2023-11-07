@@ -2166,7 +2166,16 @@ func TestFormatExitCode(t *testing.T) {
 // equivalent to the original result.
 func TestFormatEquivalence(t *testing.T) {
 	t.Parallel()
-	tempDir := t.TempDir()
+	// The test data is in a workspace -- every module in this repository
+	// is in a workspace -- so we can't output the formatted module to a
+	// temp dir _outside_ this repository as it would suddenly exit the
+	// workspace. Instead, we make a temp dir in this repository and clean
+	// it up after.
+	tempDir, err := os.MkdirTemp(".", "TestFormatEquivalence")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, os.RemoveAll(tempDir))
+	})
 	testRunStdout(
 		t,
 		nil,

@@ -45,11 +45,11 @@ func newModuleResolver(
 	}
 }
 
-func (r *moduleResolver) GetModulePin(
+func (m *moduleResolver) GetModulePin(
 	ctx context.Context,
 	moduleReference bufmoduleref.ModuleReference,
 ) (bufmoduleref.ModulePin, error) {
-	repositoryCommitService := r.repositoryCommitClientFactory(moduleReference.Remote())
+	repositoryCommitService := m.repositoryCommitClientFactory(moduleReference.Remote())
 	resp, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
@@ -77,7 +77,7 @@ func (r *moduleResolver) GetModulePin(
 	)
 }
 
-func (r *moduleResolver) GetModulePins(
+func (m *moduleResolver) GetModulePins(
 	ctx context.Context,
 	moduleRefsToResolve []bufmoduleref.ModuleReference,
 	existingModulePins []bufmoduleref.ModulePin,
@@ -90,7 +90,7 @@ func (r *moduleResolver) GetModulePins(
 	selectedRef := bufmoduleref.SelectReferenceForRemote(moduleRefsToResolve)
 	remote := selectedRef.Remote()
 	// TODO: someday we'd like to be able to execute the core algorithm client-side.
-	service := r.resolveServiceClientFactory(remote)
+	service := m.resolveServiceClientFactory(remote)
 	protoDependencyModuleReferences := bufmoduleref.NewProtoModuleReferencesForModuleReferences(moduleRefsToResolve...)
 	currentProtoModulePins := bufmoduleref.NewProtoModulePinsForModulePins(existingModulePins...)
 	resp, err := service.GetModulePins(
