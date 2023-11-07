@@ -11,15 +11,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: go-cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~\AppData\Local\go-build
-            ~\go\pkg\mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      #- name: go-cache
+        #uses: actions/cache@v3
+        #with:
+          #path: |
+            #~\AppData\Local\go-build
+            #~\go\pkg\mod
+          #key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          #restore-keys: |
+            #${{ runner.os }}-go-
       - name: setup-go
         uses: actions/setup-go@v4 # this contains a fix for Windows file extraction
         with:
