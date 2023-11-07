@@ -17,6 +17,7 @@ package storageos
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -217,7 +218,7 @@ func (b *bucket) Delete(ctx context.Context, path string) error {
 	// created by the MkdirAll in Put.
 	if err := os.Remove(externalPath); err != nil {
 		if os.IsNotExist(err) {
-			return storage.NewErrNotExist(path)
+			return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		return err
 	}
@@ -268,7 +269,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	}
 	if err != nil {
 		if os.IsNotExist(err) {
-			return storage.NewErrNotExist(path)
+			return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		// The path might have a regular file in one of its
 		// elements (e.g. 'foo/bar/baz.proto' where 'bar' is a
@@ -298,7 +299,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 				// This error primarily serves as a sentinel error,
 				// but we preserve the original path argument so that
 				// the error still makes sense to the user.
-				return storage.NewErrNotExist(path)
+				return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 			}
 		}
 		return err
@@ -306,7 +307,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return storage.NewErrNotExist(path)
+		return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 	}
 	return nil
 }
@@ -426,9 +427,6 @@ func validateDirPathExists(dirPath string, symlinks bool) error {
 		fileInfo, err = os.Lstat(dirPath)
 	}
 	if err != nil {
-		if os.IsNotExist(err) {
-			return storage.NewErrNotExist(dirPath)
-		}
 		return err
 	}
 	if !fileInfo.IsDir() {

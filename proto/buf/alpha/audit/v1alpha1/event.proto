@@ -108,6 +108,7 @@ enum EventType {
   EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_ENABLED = 35;
   EVENT_TYPE_SERVER_UNIQUENESS_POLICY_DISABLED = 36;
+  EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP = 37;
 }
 
 // EventMetadata provides additional details about the audited event.
@@ -175,6 +176,7 @@ message Event {
     PayloadRepositoryDefaultBranchChanged repository_default_branch_changed = 40;
     PayloadServerUniquenessPolicyEnabled payload_server_uniqueness_policy_enabled = 41;
     PayloadServerUniquenessPolicyDisabled payload_server_uniqueness_policy_disabled = 42;
+    PayloadUserAutoMergedFromNewIdP user_auto_merged_from_new_idp = 43;
   }
 }
 
@@ -342,6 +344,12 @@ message PayloadUserDeleted {}
 message PayloadUserLoggedIn {}
 
 message PayloadUserLoggedOut {}
+
+// PayloadUserAutoMergedFromNewIdP is the payload for the audit event
+// EVENT_TYPE_USER_AUTO_MERGED_FROM_NEW_IDP. It has no additional information
+// to be included, since the new user is automatically merged to an existing user
+// without the new user being created.
+message PayloadUserAutoMergedFromNewIdP {}
 
 message PayloadCuratedPluginCreated {
   // owner_id is the id of the owner of the plugin.

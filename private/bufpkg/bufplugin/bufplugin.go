@@ -76,6 +76,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN
 		} else if plugin.Registry().Swift != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
+		} else if plugin.Registry().Python != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
 		}
 	}
 	return registryType
@@ -187,6 +189,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 	} else if pluginRegistry.Swift != nil {
 		swiftConfig := SwiftRegistryConfigToProtoSwiftConfig(pluginRegistry.Swift)
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_SwiftConfig{SwiftConfig: swiftConfig}
+	} else if pluginRegistry.Python != nil {
+		pythonConfig, err := PythonRegistryConfigToProtoPythonConfig(pluginRegistry.Python)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
 	}
 	return registryConfig, nil
 }
@@ -250,8 +258,52 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Swift = swiftConfig
+	} else if protoPythonConfig := config.GetPythonConfig(); protoPythonConfig != nil {
+		pythonConfig, err := ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Python = pythonConfig
 	}
 	return registryConfig, nil
+}
+
+func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1.PythonConfig) (*bufpluginconfig.PythonRegistryConfig, error) {
+	pythonConfig := &bufpluginconfig.PythonRegistryConfig{
+		RequiresPython: protoPythonConfig.RequiresPython,
+	}
+	switch protoPythonConfig.GetPackageType() {
+	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_RUNTIME:
+		pythonConfig.PackageType = "runtime"
+	case registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY:
+		pythonConfig.PackageType = "stub-only"
+	default:
+		return nil, fmt.Errorf("unknown package type: %v", protoPythonConfig.GetPackageType())
+	}
+	for _, runtimeLibrary := range protoPythonConfig.GetRuntimeLibraries() {
+		pythonConfig.Deps = append(pythonConfig.Deps, runtimeLibrary.DependencySpecification)
+	}
+	return pythonConfig, nil
+}
+
+func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.PythonRegistryConfig) (*registryv1alpha1.PythonConfig, error) {
+	protoPythonConfig := &registryv1alpha1.PythonConfig{
+		RequiresPython: pythonConfig.RequiresPython,
+	}
+	switch pythonConfig.PackageType {
+	case "runtime":
+		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_RUNTIME
+	case "stub-only":
+		protoPythonConfig.PackageType = registryv1alpha1.PythonPackageType_PYTHON_PACKAGE_TYPE_STUB_ONLY
+	default:
+		return nil, fmt.Errorf(`invalid python config package_type; expecting one of "runtime" or "stub-only", got %q`, pythonConfig.PackageType)
+	}
+	for _, dependencySpecification := range pythonConfig.Deps {
+		protoPythonConfig.RuntimeLibraries = append(protoPythonConfig.RuntimeLibraries, &registryv1alpha1.PythonConfig_RuntimeLibrary{
+			DependencySpecification: dependencySpecification,
+		})
+	}
+	return protoPythonConfig, nil
 }
 
 func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {

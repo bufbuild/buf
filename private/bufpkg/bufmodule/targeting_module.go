@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -88,7 +89,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			} else {
 				objectInfo, err := sourceReadBucket.Stat(ctx, targetPath)
 				if err != nil {
-					if !storage.IsNotExist(err) {
+					if !errors.Is(err, fs.ErrNotExist) {
 						return nil, err
 					}
 					// we do not have a file, so even though this path ends
