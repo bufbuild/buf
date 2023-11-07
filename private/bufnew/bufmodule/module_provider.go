@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufnew/bufapi"
 )
 
 // ModuleProvider provides Modules for ModuleInfos.
@@ -15,6 +15,9 @@ import (
 // TODO: Add plural method? Will make calls below a lot more efficient in the case
 // of overlapinfog FileNodes.
 type ModuleProvider interface {
+	// GetModuleForModuleInfo gets the Module for the given ModuleInfo.
+	//
+	// The ModuleInfo must have a non-nil ModuleFullName.
 	GetModuleForModuleInfo(context.Context, ModuleInfo) (Module, error)
 }
 
@@ -24,8 +27,8 @@ type ModuleProvider interface {
 // functions will be loaded only when called. This allows us to more widely use the Module
 // as a type (such as with dependencies) without incurring the lookup and building cost when
 // all we want is ModuleInfo-related properties.
-func NewAPIModuleProvider(client modulev1beta1connect.CommitServiceClient) ModuleProvider {
-	return newLazyModuleProvider(newAPIModuleProvider(client))
+func NewAPIModuleProvider(clientProvider bufapi.ClientProvider) ModuleProvider {
+	return newLazyModuleProvider(newAPIModuleProvider(clientProvider))
 }
 
 // *** PRIVATE ***
@@ -33,27 +36,52 @@ func NewAPIModuleProvider(client modulev1beta1connect.CommitServiceClient) Modul
 // apiModuleProvider
 
 type apiModuleProvider struct {
-	client modulev1beta1connect.CommitServiceClient
+	clientProvider bufapi.ClientProvider
 }
 
-func newAPIModuleProvider(client modulev1beta1connect.CommitServiceClient) *apiModuleProvider {
+func newAPIModuleProvider(clientProvider bufapi.ClientProvider) *apiModuleProvider {
 	return &apiModuleProvider{
-		client: client,
+		clientProvider: clientProvider,
 	}
 }
 
 func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
-	response, err := a.client.GetCommitNodes(
+	moduleFullName := moduleInfo.ModuleFullName()
+	if moduleFullName == nil {
+		return nil, fmt.Errorf("ModuleInfo %v did not have ModuleFullName, cannot call GetModuleForGetModuleInfo", moduleInfo)
+	}
+	var resourceRef *modulev1beta1.ResourceRef
+	if commitID := moduleInfo.CommitID(); commitID != "" {
+		resourceRef = &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Id{
+				Id: moduleInfo.CommitID(),
+			},
+		}
+	} else {
+		digest, err := moduleInfo.Digest(ctx)
+		if err != nil {
+			return nil, err
+		}
+		resourceRef = &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Name_{
+				Name: &modulev1beta1.ResourceRef_Name{
+					Owner:  moduleFullName.Owner(),
+					Module: moduleFullName.Name(),
+					// TODO: change to digest when PR is merged
+					Child: &modulev1beta1.ResourceRef_Name_Ref{
+						Ref: digest.String(),
+					},
+				},
+			},
+		}
+	}
+	response, err := a.clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommitNodes(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitNodesRequest{
 				Values: []*modulev1beta1.GetCommitNodesRequest_Value{
 					&modulev1beta1.GetCommitNodesRequest_Value{
-						ResourceRef: &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: moduleInfo.CommitID(),
-							},
-						},
+						ResourceRef: resourceRef,
 					},
 				},
 			},
