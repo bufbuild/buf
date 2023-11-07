@@ -87,10 +87,6 @@ func (f *imageFile) FileDescriptorProto() *descriptorpb.FileDescriptorProto {
 	return f.fileDescriptorProto
 }
 
-func (f *imageFile) FileDescriptor() protodescriptor.FileDescriptor {
-	return f.fileDescriptorProto
-}
-
 func (f *imageFile) IsImport() bool {
 	return f.isImport
 }
