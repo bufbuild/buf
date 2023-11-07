@@ -42,6 +42,8 @@ jobs:
           unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
       - name: Fetch Changelog
         # this only works with gnu-sed, use gsed if you are on mac
+        # This starts a loop after seeing the first line starting with ## [. For each line in the loop, it is skipped (n)
+        # if it's empty (^$). The loop ends (q) if it sees another line starting with ## [. Otherwise it's printed.
         run: sed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md > ${{env.VERSION_WITH_V}}-CHANGELOG.md
       # the second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
       - name: Draft Release
