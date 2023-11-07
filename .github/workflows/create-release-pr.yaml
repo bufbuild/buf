@@ -30,8 +30,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.21.x"
-      - name: Install Buf
-        run: make installbuf
       - name: Update Buf Version
         run: make updateversion
       - name: Update Changelog Version
