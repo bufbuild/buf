@@ -470,7 +470,7 @@ type InputFile interface {
 	// FileDescriptorProto is the backing FileDescriptorProto for this File.
 	//
 	// This will never be nil.
-	// The value Path() is equal to FileDescriptor().GetName() .
+	// The value Path() is equal to FileDescriptorProto().GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
 	IsSyntaxUnspecified() bool
