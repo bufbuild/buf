@@ -48,5 +48,7 @@ jobs:
           title: Return to Development
           body: Release complete for ${{ env.RELEASED_VERSION_WITH_V }}
           token: ${{ secrets.GITHUB_TOKEN }}
-      # todo: replace with a slack message
-      - run: echo "pr created at ${{ steps.create_pr.outputs.url }}"
+      - name: Slack Notification
+        run: |
+          jq --null-input '{ text: "PR back to development: ${{ steps.create_pr.outputs.url }}" }' \
+          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
