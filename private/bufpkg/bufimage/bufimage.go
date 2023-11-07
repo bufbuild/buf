@@ -91,7 +91,7 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	return newImageFileNoValidate(
 		imageFile.FileDescriptorProto(),
 		imageFile,
-		imageFile.IsImport(),
+		isImport,
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
 	)
