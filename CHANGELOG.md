@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Some changes.
+- More.
+- Foo.
+- Bar.
 
 ## [v3.7.0] - 2023-11-06
 
