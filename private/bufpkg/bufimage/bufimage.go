@@ -33,9 +33,6 @@ type ImageFile interface {
 
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
-	// FileDescriptor should be preferred to Proto. We keep this method around
-	// because we have code that does modification to the ImageFile via this.
-	//
 	// This will never be nil.
 	// The value Path() is equal to Proto.GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
