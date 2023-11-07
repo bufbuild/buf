@@ -18,7 +18,7 @@ import (
 //
 // The contents of a ModuleReadBucket are specific to its context. In the context of a Module,
 // a ModuleReadBucket will return .proto files, documentation file(s), and license file(s). However,
-// in the context of converting a ModuleSet into its corresponding .proto files, a ModuleReadBucket
+// in the context of converting a Workspace into its corresponding .proto files, a ModuleReadBucket
 // will only contain .proto files.
 type ModuleReadBucket interface {
 	// GetFile gets the File within the Module as specified by the path.

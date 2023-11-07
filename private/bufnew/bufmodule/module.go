@@ -8,8 +8,9 @@ import (
 
 // Module presents a BSR module.
 type Module interface {
-	// ModuleInfo contains a Module's ModuleSetID, optional ModuleFullName, and optional commit ID.
+	// ModuleInfo contains a Module's optional ModuleFullName, optional commit ID, and Digest.
 	ModuleInfo
+
 	// ModuleReadBucket allows for reading of a Module's files.
 	//
 	// A Module consists of .proto files, documentation file(s), and license file(s). All of these
@@ -27,20 +28,13 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
-	// ExternalDependencyModulePins returns the dependency list for this specific module that are not within the ModuleSet.
-	//
-	// This list is pruned - only Module that this Module actually depends on via import statements in its
-	// files will be returned.
-	//
-	// Modules within the same ModuleSet will always have the same commits and digests for a given dependency, that is
-	// no two Modules will have a different commit for the same dependency.
-	//ExternalDependencyModulePins(ctx context.Context) ([]ModulePin, error)
-	// ModuleSetDependencyModules returns the dependency list for Modules within the encompassing ModuleSet that this
-	// Module depends on.
+	// ModuleDeps returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
-	// in its files will be returned.
-	//ModuleSetDependencyModules(ctx context.Context) ([]Module, error)
+	// within its .proto files will be returned.
+	//
+	// Colocated modules will always have the same commits and digests for a given dependency.
+	ModuleDeps() []ModuleDep
 
 	isModule()
 }
