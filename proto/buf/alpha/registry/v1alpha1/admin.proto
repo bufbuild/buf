@@ -70,6 +70,18 @@ message CollisionSource {
   string path = 3;
 }
 
+// MonthlyUsage contains the usage of total types
+// for every organizations repositories within a single tenant BSR instance
+// for a given month and year.
+message MonthlyUsage {
+  // the numerical value of a month
+  uint32 month = 1;
+  // the value of the year
+  uint32 year = 2;
+  // the total type usage for the month and year
+  uint32 usage = 3;
+}
+
 // CollisionType is the type of collisions that can occur.
 enum CollisionType {
   // Unspecified collision type.
@@ -122,8 +134,8 @@ service AdminService {
   rpc GetReviewFlowGracePeriodPolicy(GetReviewFlowGracePeriodPolicyRequest) returns (GetReviewFlowGracePeriodPolicyResponse);
   // Update review flow grace period policy for the server.
   rpc UpdateReviewFlowGracePeriodPolicy(UpdateReviewFlowGracePeriodPolicyRequest) returns (UpdateReviewFlowGracePeriodPolicyResponse);
-  // GetClusterUsageTotals returns the summation of total types for every repository for each organization
-  // within a single tenant BSR instance
+  // GetClusterUsageTotals returns the summation of total types usage for every repository in each organization
+  // within a single tenant BSR instance.
   rpc GetClusterUsageTotals(GetClusterUsageTotalRequest) returns (GetClusterUsageTotalResponse);
 }
 
@@ -239,4 +251,6 @@ message UpdateReviewFlowGracePeriodPolicyResponse {}
 
 message GetClusterUsageTotalRequest {}
 
-message GetClusterUsageTotalResponse {}
+message GetClusterUsageTotalResponse {
+  repeated MonthlyUsage usage = 1;
+}
