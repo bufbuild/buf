@@ -19,6 +19,7 @@ jobs:
           exit 1
       - name: Set VERSION_WITH_V variable
         # VERSION_WITH_V is set to v<github.event.inputs.version> if input is set, otherwise it's set to github.head_ref.
+        # '&& ||' is the ternary operator: https://docs.github.com/en/actions/learn-github-actions/expressions#example
         # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/`.
         run: |
           VERSION_WITH_V=${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.head_ref}}
