@@ -8,7 +8,7 @@ import (
 )
 
 type Workspace interface {
-	ModuleSet() bufmodule.ModuleSet
+	Modules []bufmodule.Module
 	Config() WorkspaceConfig
 	GetTargetPaths(moduleSetID string) ([]string, error)
 
@@ -30,6 +30,38 @@ func WorkspaceWithDirPaths(dirPaths []string) WorkspaceOption {
 
 func WorkspaceWithProtoFilterPaths(paths []string, excludePaths []string) WorkspaceOption {
 	return nil
+}
+
+// ModuleSetExternalDependencyModulePins returns the combined list of external
+// dependencies for all Modules in a ModuleSet.
+
+// Since ExternalDependencyModulePins is defined to have the same commit for a given dependency,
+// this is just the union of ModulePins from the Modules.
+func WorkspaceExternalDependencyModulePins(ctx context.Context, Workspace workspace) ([]ModulePin, error) {
+	//var combinedModulePins []ModulePin
+	//for _, module := range moduleSet.Modules() {
+	//modulePins, err := module.ExternalDependencyModulePins(ctx)
+	//if err != nil {
+	//return nil, err
+	//}
+	//combinedModulePins = append(combinedModulePins, modulePins...)
+	//}
+	//return uniqueSortedModulePins(combinedModulePins), nil
+}
+
+func GetFileInfo(
+	ctx context.Context,
+	workspace Workspace,
+	path string,
+) (FileInfo, error) {
+	return nil, nil
+}
+
+func WorkspaceToExportedProtoFileBucket(
+	ctx context.Context,
+	//moduleReader ModuleReader,
+	workspace Workspace,
+) {
 }
 
 type workspaceOptions struct{}

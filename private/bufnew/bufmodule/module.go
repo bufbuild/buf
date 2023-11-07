@@ -18,7 +18,7 @@ type Module interface {
 	// return FileTypeProto, FileTypeDoc, FileTypeLicense.
 	//
 	// This bucket is not self-contained - it requires the files from dependencies to be so. As such,
-	// IsSelfContained() returns false.
+	// IsProtoFilesSelfContained() returns false.
 	//
 	// This package currently exposes functionality to walk just the .proto files, and get the singular
 	// documentation and license files, via WalkProtoFileInfos, GetDocFile, and GetLicenseFile.
@@ -28,11 +28,6 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
-	// ModuleSet returns the ModuleSet that encompasses this Module.
-	//
-	// Even in the case of a single Module, all Modules will have an encompassing ModuleSet,
-	// including ith buf.yaml v1 with no corresponding buf.work.yaml.
-	ModuleSet() ModuleSet
 	// ExternalDependencyModulePins returns the dependency list for this specific module that are not within the ModuleSet.
 	//
 	// This list is pruned - only Module that this Module actually depends on via import statements in its

@@ -180,7 +180,7 @@ func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo,
 		// A lack of classification is a system error.
 		return nil, err
 	}
-	return newFileInfo(objectInfo, f.module, fileType), nil
+	return newFileInfo(objectInfo, b.module, fileType), nil
 }
 
 // filteredModuleReadBucket
@@ -273,7 +273,7 @@ func (s *storageReadBucket) Stat(ctx context.Context, path string) (storage.Obje
 }
 
 func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
-	return bsdelegate.WalkFileInfos(
+	return s.delegate.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
 			if !normalpath.EqualsOrContainsPath(prefix, fileInfo.Path(), normalpath.Relative) {
