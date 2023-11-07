@@ -1,0 +1,34 @@
+name: Create a PR
+description: This action creates a new branch, commits current changes and creates a PR.
+inputs:
+  branch:
+    description: branch
+    required: true
+  commit_message:
+    description: commit message
+    required: true
+  title:
+    description: title
+    required: true
+  body:
+    description: body
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: git config --global user.name "${{ github.actor }}"
+      shell: bash
+    - run: git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+      shell: bash
+    - run: git checkout -b "${{ inputs.branch }}"
+      shell: bash
+    - run: git add .
+      shell: bash
+    - run: git commit -m "${{ inputs.commit_message }}"
+      shell: bash
+    - run: git push origin "${ inputs.branch }" --force
+      shell: bash
+    - run: gh pr create --title "${{ inputs.title }}" --body "${{ inputs.body }}"
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
