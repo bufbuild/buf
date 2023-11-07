@@ -1,5 +1,10 @@
 name: Verify Changelog
 on:
+  pull_request:
+    types:
+      - opened
+    branches:
+      - 'release/**'
   push:
     branches:
       - "release/**"
