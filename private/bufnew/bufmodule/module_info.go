@@ -10,6 +10,10 @@ import (
 //
 // It is embedded inside a Module, and therefore is always available from FileInfos as well.
 // It can also be used to get Modules with the ModuleProvider.
+//
+// A caller using ModuleInfo can choose to verify whether or not certain properties are set
+// depending on the context. For example, when dealing with non-colocated Modules, we will
+// expect that ModuleFullName and CommitID are present, and this can be validated for.
 type ModuleInfo interface {
 	// ModuleFullName returns the full name of the Module.
 	//
