@@ -166,26 +166,27 @@ func newAddModuleForBucketOptions() *addModuleForBucketOptions {
 // TODO: validate that modules with the same ModuleFullName have the same commit and digest.
 func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
 	alreadySeenOpaqueIDs := make(map[string]struct{})
-	alreadySeenDigestStrings := make(map[string]struct{})
+	//alreadySeenDigestStrings := make(map[string]struct{})
 	uniqueModules := make([]Module, 0, len(modules))
 	for _, module := range modules {
 		opaqueID := module.opaqueID()
 		if opaqueID == "" {
 			return nil, errors.New("opaqueID was empty which should never happen")
 		}
-		digest, err := module.Digest()
-		if err != nil {
-			return nil, err
-		}
-		digestString := digest.String()
+		//digest, err := module.Digest()
+		//if err != nil {
+		//return nil, err
+		//}
+		//digestString := digest.String()
 
 		_, alreadySeenModuleByID := alreadySeenOpaqueIDs[opaqueID]
-		_, alreadySeenModulebyDigest := alreadySeenDigestStrings[digestString]
+		//_, alreadySeenModulebyDigest := alreadySeenDigestStrings[digestString]
 
 		alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-		alreadySeenDigestStrings[digestString] = struct{}{}
+		//alreadySeenDigestStrings[digestString] = struct{}{}
 
-		if !alreadySeenModuleByID && !alreadySeenModulebyDigest {
+		//if !alreadySeenModuleByID && !alreadySeenModulebyDigest {
+		if !alreadySeenModuleByID {
 			uniqueModules = append(uniqueModules, module)
 		}
 	}

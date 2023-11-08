@@ -65,10 +65,10 @@ type Module interface {
 type module struct {
 	ModuleReadBucket
 
+	cache          *cache
 	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
-	cache          *cache
 
 	getDigest     func() (bufcas.Digest, error)
 	getDepModules func() ([]Module, error)
@@ -87,6 +87,7 @@ func newModule(
 		return nil, errors.New("bucketID was empty when constructing a new bucket-based Module")
 	}
 	module := &module{
+		cache:          cache,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
