@@ -16,18 +16,20 @@ package bufformat
 
 import (
 	"context"
+	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/protocompile/ast"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/reporter"
 	"go.uber.org/multierr"
 )
 
-// Format formats and writes the target module files into a read bucket.
-func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket, retErr error) {
+// FormatModule formats and writes the target module files into a read bucket.
+func FormatModule(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket, retErr error) {
 	fileInfos, err := module.TargetFileInfos(ctx)
 	if err != nil {
 		return nil, err
@@ -55,7 +57,7 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 			defer func() {
 				retErr = multierr.Append(retErr, writeObjectCloser.Close())
 			}()
-			if err := newFormatter(writeObjectCloser, fileNode).Run(); err != nil {
+			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
 				return err
 			}
 			return writeObjectCloser.SetExternalPath(moduleFile.ExternalPath())
@@ -65,4 +67,10 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 		return nil, err
 	}
 	return readWriteBucket, nil
+}
+
+// FormatFileNode formats the given file node and writ the result to dest.
+func FormatFileNode(dest io.Writer, fileNode *ast.FileNode) error {
+	formatter := newFormatter(dest, fileNode)
+	return formatter.Run()
 }

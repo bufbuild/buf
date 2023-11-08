@@ -468,8 +468,8 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			// not reported for imports, only for non-imports.
 			var newImageFiles []bufimage.ImageFile
 			for _, imageFile := range image.Files() {
-				if imageFile.FileDescriptor().GetPackage() == "b" {
-					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+				if imageFile.FileDescriptorProto().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, bufimage.ImageFileWithIsImport(imageFile, true))
 				} else {
 					require.False(t, imageFile.IsImport())
 					newImageFiles = append(newImageFiles, imageFile)

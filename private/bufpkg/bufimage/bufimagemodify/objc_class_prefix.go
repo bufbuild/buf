@@ -98,7 +98,7 @@ func objcClassPrefixForFile(
 	objcClassPrefixValue string,
 	exceptModuleIdentityStrings map[string]struct{},
 ) error {
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	if isWellKnownType(ctx, imageFile) || objcClassPrefixValue == "" {
 		// This is a well-known type or we could not resolve a non-empty objc_class_prefix
 		// value, so this is a no-op.
@@ -123,7 +123,7 @@ func objcClassPrefixForFile(
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
 func objcClassPrefixValue(imageFile bufimage.ImageFile) string {
-	pkg := imageFile.Proto().GetPackage()
+	pkg := imageFile.FileDescriptorProto().GetPackage()
 	if pkg == "" {
 		return ""
 	}

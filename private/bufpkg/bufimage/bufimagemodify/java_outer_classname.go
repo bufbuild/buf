@@ -72,7 +72,7 @@ func javaOuterClassnameForFile(
 		// The file is a well-known type - don't override the value.
 		return nil
 	}
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	options := descriptor.GetOptions()
 	if options != nil && options.JavaOuterClassname != nil && preserveExistingValue {
 		// The option is explicitly set in the file - don't override it if we want to preserve the existing value.

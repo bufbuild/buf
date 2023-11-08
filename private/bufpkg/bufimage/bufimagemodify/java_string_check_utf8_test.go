@@ -75,7 +75,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 	})
 
@@ -93,7 +93,7 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 	})
 }
@@ -117,7 +117,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
@@ -138,7 +138,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
@@ -160,7 +160,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
@@ -185,7 +185,7 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
@@ -216,7 +216,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
@@ -238,7 +238,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.True(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
@@ -260,7 +260,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
@@ -284,7 +284,7 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
@@ -312,7 +312,7 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue
@@ -335,7 +335,7 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.False(t, descriptor.GetOptions().GetJavaStringCheckUtf8())
 				continue

@@ -111,7 +111,7 @@ func javaPackageForFile(
 	if shouldSkipJavaPackageForFile(ctx, imageFile, javaPackageValue, exceptModuleIdentityStrings) {
 		return nil
 	}
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
@@ -146,7 +146,7 @@ func shouldSkipJavaPackageForFile(
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
 func javaPackageValue(imageFile bufimage.ImageFile, packagePrefix string) string {
-	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
+	if pkg := imageFile.FileDescriptorProto().GetPackage(); pkg != "" {
 		return packagePrefix + "." + pkg
 	}
 	return ""
