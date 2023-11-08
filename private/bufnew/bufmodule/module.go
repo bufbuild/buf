@@ -17,6 +17,7 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"sort"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -174,7 +175,87 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 func getActualDepModules(
 	ctx context.Context,
 	cache *cache,
-	moduleReadBucket ModuleReadBucket,
+	module Module,
 ) ([]Module, error) {
-	return nil, errors.New("TODO")
+	depOpaqueIDToDepModule := make(map[string]Module)
+	if err := getActualDepModulesRec(
+		ctx,
+		cache,
+		module,
+		make(map[string]struct{}),
+		depOpaqueIDToDepModule,
+	); err != nil {
+		return nil, err
+	}
+	depModules := make([]Module, 0, len(depOpaqueIDToDepModule))
+	for _, depModule := range depOpaqueIDToDepModule {
+		depModules = append(depModules, depModule)
+	}
+	// Sorting by at least Opaque ID to get a consistent return order for a given call.
+	// We should probably sort by digest TODO.
+	sort.Slice(
+		depModules,
+		func(i int, j int) bool {
+			return depModules[i].opaqueID() < depModules[j].opaqueID()
+		},
+	)
+	return depModules, nil
+}
+
+func getActualDepModulesRec(
+	ctx context.Context,
+	cache *cache,
+	module Module,
+	// to detect circular imports
+	visitedOpaqueIDs map[string]struct{},
+	// already discovered deps
+	depOpaqueIDToDepModule map[string]Module,
+) error {
+	opaqueID := module.opaqueID()
+	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
+		// TODO: detect cycles, this is just making sure we don't recurse
+		return nil
+	}
+	visitedOpaqueIDs[opaqueID] = struct{}{}
+	// Just optimizing the number of recursive calls a bit/doing this BFS.
+	var newDepModules []Module
+	if err := ModuleReadBucketWithOnlyProtoFiles(module).WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			imports, err := cache.GetImportsForFilePath(ctx, fileInfo.Path())
+			if err != nil {
+				return err
+			}
+			for imp := range imports {
+				potentialDepModule, err := cache.GetModuleForFilePath(ctx, imp)
+				if err != nil {
+					return err
+				}
+				potentialDepOpaqueID := potentialDepModule.opaqueID()
+				// If this is in the same module, it's not a dep
+				if potentialDepOpaqueID != opaqueID {
+					// No longer just potential, now real dep.
+					if _, ok := depOpaqueIDToDepModule[potentialDepOpaqueID]; !ok {
+						depOpaqueIDToDepModule[potentialDepOpaqueID] = potentialDepModule
+						newDepModules = append(newDepModules, potentialDepModule)
+					}
+				}
+			}
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+	for _, newDepModule := range newDepModules {
+		if err := getActualDepModulesRec(
+			ctx,
+			cache,
+			newDepModule,
+			visitedOpaqueIDs,
+			depOpaqueIDToDepModule,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
