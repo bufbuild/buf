@@ -31,6 +31,8 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
+	// PotentialDepModules? And say that that is less expensive, and prefer that for ie Image building?
+
 	// DepModules returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
