@@ -23,9 +23,9 @@ import (
 )
 
 type ModuleBuilder interface {
-	AddModuleForBucket(storage.ReadBucket, ...AddModuleForBucketOption) error
-	AddModuleForModuleInfo(ModuleInfo) error
-	Build(context.Context) ([]Module, error)
+	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) error
+	AddModuleForModuleInfo(moduleInfo ModuleInfo) error
+	Build(ctx context.Context) ([]Module, error)
 
 	isModuleBuilder()
 }
@@ -70,17 +70,25 @@ func newModuleBuilder(ctx context.Context, moduleProvider ModuleProvider) *modul
 	}
 }
 
-func (b *moduleBuilder) AddModuleForBucket(bucket storage.ReadBucket, options ...AddModuleForBucketOption) error {
+func (b *moduleBuilder) AddModuleForBucket(
+	bucketID string,
+	bucket storage.ReadBucket,
+	options ...AddModuleForBucketOption,
+) error {
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
 	for _, option := range options {
 		option(addModuleForBucketOptions)
 	}
-	module := newModule(
+	module, err := newModule(
 		b.ctx,
+		bucketID,
 		bucket,
 		addModuleForBucketOptions.moduleFullName,
 		addModuleForBucketOptions.commitID,
 	)
+	if err != nil {
+		return err
+	}
 	b.bucketModules = append(
 		b.bucketModules,
 		module,
@@ -107,7 +115,10 @@ func (b *moduleBuilder) Build(ctx context.Context) ([]Module, error) {
 	}
 
 	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.
-	modules := append(b.bucketModules, b.moduleInfoModules...)
+	modules, err := getUniqueModulesWithEarlierPreferred(ctx, append(b.bucketModules, b.moduleInfoModules...))
+	if err != nil {
+		return nil, err
+	}
 
 	for i, module := range modules {
 		allOtherModules := modules[0:i]
@@ -129,4 +140,43 @@ type addModuleForBucketOptions struct {
 
 func newAddModuleForBucketOptions() *addModuleForBucketOptions {
 	return &addModuleForBucketOptions{}
+}
+
+// uniqueModulesWithEarlierPreferred deduplicates the Module list with the earlier modules being preferred.
+//
+// Callers should put modules built from local sources earlier than Modules built from remote sources.
+//
+// Duplication determined based opaqueID and on Digest, that is if a Module has an equal
+// opaqueID, or an equal Digest, it is considered a duplicate.
+//
+// We want to account for Modules with the same name but different digests, that is a dep in a workspace
+// that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
+//
+// When returned, all modules have unique opaqueIDs and Digests.
+func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
+	alreadySeenOpaqueIDs := make(map[string]struct{})
+	alreadySeenDigestStrings := make(map[string]struct{})
+	uniqueModules := make([]Module, 0, len(modules))
+	for _, module := range modules {
+		opaqueID := module.opaqueID()
+		if opaqueID == "" {
+			return nil, errors.New("opaqueID was empty which should never happen")
+		}
+		digest, err := module.Digest()
+		if err != nil {
+			return nil, err
+		}
+		digestString := digest.String()
+
+		_, alreadySeenModuleByID := alreadySeenOpaqueIDs[opaqueID]
+		_, alreadySeenModulebyDigest := alreadySeenDigestStrings[digestString]
+
+		alreadySeenOpaqueIDs[opaqueID] = struct{}{}
+		alreadySeenDigestStrings[digestString] = struct{}{}
+
+		if !alreadySeenModuleByID && !alreadySeenModulebyDigest {
+			uniqueModules = append(uniqueModules, module)
+		}
+	}
+	return nil, errors.New("TODO")
 }

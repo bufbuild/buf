@@ -14,7 +14,9 @@
 
 package bufmodule
 
-import "sync"
+import (
+	"sync"
+)
 
 // onceThreeValues returns a function that invokes f only once and returns the values
 // returned by f. The returned function may be called concurrently.

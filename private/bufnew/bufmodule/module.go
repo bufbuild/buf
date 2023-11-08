@@ -17,7 +17,6 @@ package bufmodule
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -57,6 +56,7 @@ type Module interface {
 	DepModules(ctx context.Context) ([]Module, error)
 
 	addPotentialDepModules(...Module)
+	opaqueID() string
 	isModule()
 }
 
@@ -67,6 +67,7 @@ type Module interface {
 type module struct {
 	ModuleReadBucket
 
+	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
 
@@ -79,11 +80,16 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
+	bucketID string,
 	bucket storage.ReadBucket,
 	moduleFullName ModuleFullName,
 	commitID string,
-) *module {
+) (*module, error) {
+	if bucketID == "" {
+		return nil, errors.New("bucketID was empty when constructing a new bucket-based Module")
+	}
 	module := &module{
+		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
 	}
@@ -102,7 +108,7 @@ func newModule(
 			return getActualDepModules(ctx, module, module.potentialDepModules)
 		},
 	)
-	return module
+	return module, nil
 }
 
 func (m *module) ModuleFullName() ModuleFullName {
@@ -125,104 +131,16 @@ func (m *module) addPotentialDepModules(depModules ...Module) {
 	m.potentialDepModules = append(m.potentialDepModules, depModules...)
 }
 
+func (m *module) opaqueID() string {
+	if m.moduleFullName != nil {
+		return m.moduleFullName.String()
+	}
+	// We know bucketID is present via construction.
+	return m.bucketID
+}
+
 func (*module) isModuleInfo() {}
 func (*module) isModule()     {}
-
-// lazyModule
-
-type lazyModule struct {
-	ModuleInfo
-
-	getModuleAndDigest func() (Module, bufcas.Digest, error)
-	getDepModules      func() ([]Module, error)
-
-	potentialDepModules []Module
-}
-
-func newLazyModule(
-	ctx context.Context,
-	moduleInfo ModuleInfo,
-	getModuleFunc func() (Module, error),
-) Module {
-	lazyModule := &lazyModule{
-		ModuleInfo: moduleInfo,
-		getModuleAndDigest: onceThreeValues(
-			func() (Module, bufcas.Digest, error) {
-				module, err := getModuleFunc()
-				if err != nil {
-					return nil, nil, err
-				}
-				expectedDigest, err := moduleInfo.Digest()
-				if err != nil {
-					return nil, nil, err
-				}
-				actualDigest, err := module.Digest()
-				if err != nil {
-					return nil, nil, err
-				}
-				if !bufcas.DigestEqual(expectedDigest, actualDigest) {
-					return nil, nil, fmt.Errorf("expected digest %v, got %v", expectedDigest, actualDigest)
-				}
-				return module, actualDigest, nil
-			},
-		),
-	}
-	lazyModule.getDepModules = sync.OnceValues(
-		func() ([]Module, error) {
-			module, _, err := lazyModule.getModuleAndDigest()
-			if err != nil {
-				return nil, err
-			}
-			potentialDepModules, err := module.DepModules(ctx)
-			if err != nil {
-				return nil, err
-			}
-			// Prefer declared dependencies first, as these are not ready from remote.
-			return getActualDepModules(ctx, lazyModule, append(lazyModule.potentialDepModules, potentialDepModules...))
-		},
-	)
-	return lazyModule
-}
-
-func (m *lazyModule) Digest() (bufcas.Digest, error) {
-	_, digest, err := m.getModuleAndDigest()
-	return digest, err
-}
-
-func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
-	module, _, err := m.getModuleAndDigest()
-	if err != nil {
-		return nil, err
-	}
-	return module.GetFile(ctx, path)
-}
-
-func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
-	module, _, err := m.getModuleAndDigest()
-	if err != nil {
-		return nil, err
-	}
-	return module.StatFileInfo(ctx, path)
-}
-
-func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
-	module, _, err := m.getModuleAndDigest()
-	if err != nil {
-		return err
-	}
-	return module.WalkFileInfos(ctx, f)
-}
-
-func (m *lazyModule) DepModules(ctx context.Context) ([]Module, error) {
-	return m.getDepModules()
-}
-
-func (m *lazyModule) addPotentialDepModules(depModules ...Module) {
-	m.potentialDepModules = append(m.potentialDepModules, depModules...)
-}
-
-func (*lazyModule) isModuleReadBucket() {}
-func (*lazyModule) isModule()           {}
 
 // moduleDigestB5 computes a b5 Digest for the given Module.
 //
@@ -264,49 +182,5 @@ func getActualDepModules(
 	moduleReadBucket ModuleReadBucket,
 	potentialDepModules []Module,
 ) ([]Module, error) {
-	potentialDepModules, err := getUniqueModulesWithEarlierPreferred(ctx, potentialDepModules)
-	if err != nil {
-		return nil, err
-	}
-	return nil, errors.New("TODO")
-}
-
-// uniqueModulesWithEarlierPreferred deduplicates the Module list with the earlier modules being preferred.
-//
-// Callers should put modules built from local sources earlier than Modules built from remote sources.
-//
-// Duplication determined based ModuleFullName and on Digest, that is if a Module has an equal
-// ModuleFullName, or an equal Digest, it is considered a duplicate.
-//
-// We want to account for Modules with the same name but different digests, that is a dep in a workspace
-// that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
-func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
-	alreadySeenModuleFullNameStrings := make(map[string]struct{})
-	alreadySeenDigestStrings := make(map[string]struct{})
-	uniqueModules := make([]Module, 0, len(modules))
-	for _, module := range modules {
-		var moduleFullNameString string
-		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
-			moduleFullNameString = moduleFullName.String()
-		}
-		digest, err := module.Digest()
-		if err != nil {
-			return nil, err
-		}
-		digestString := digest.String()
-
-		var alreadySeenModuleByName bool
-		if moduleFullNameString != "" {
-			_, alreadySeenModuleByName = alreadySeenModuleFullNameStrings[moduleFullNameString]
-		}
-		_, alreadySeenModulebyDigest := alreadySeenDigestStrings[digestString]
-
-		alreadySeenModuleFullNameStrings[moduleFullNameString] = struct{}{}
-		alreadySeenDigestStrings[digestString] = struct{}{}
-
-		if !alreadySeenModuleByName && !alreadySeenModulebyDigest {
-			uniqueModules = append(uniqueModules, module)
-		}
-	}
 	return nil, errors.New("TODO")
 }

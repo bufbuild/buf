@@ -18,10 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
 // ModuleProvider provides Modules for ModuleInfos.
@@ -60,9 +62,9 @@ func newAPIModuleProvider(clientProvider bufapi.ClientProvider) *apiModuleProvid
 }
 
 func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
-	moduleFullName := moduleInfo.ModuleFullName()
-	if moduleFullName == nil {
-		return nil, fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
+	moduleFullName, err := getAndValidateModuleFullName(moduleInfo)
+	if err != nil {
+		return nil, err
 	}
 	var resourceRef *modulev1beta1.ResourceRef
 	if commitID := moduleInfo.CommitID(); commitID != "" {
@@ -129,6 +131,9 @@ func newLazyModuleProvider(delegate ModuleProvider) *lazyModuleProvider {
 }
 
 func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
+	if _, err := getAndValidateModuleFullName(moduleInfo); err != nil {
+		return nil, err
+	}
 	return newLazyModule(
 		ctx,
 		moduleInfo,
@@ -139,3 +144,105 @@ func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleI
 		},
 	), nil
 }
+
+// lazyModule
+
+type lazyModule struct {
+	ModuleInfo
+
+	getModuleAndDigest func() (Module, bufcas.Digest, error)
+	getDepModules      func() ([]Module, error)
+
+	potentialDepModules []Module
+}
+
+func newLazyModule(
+	ctx context.Context,
+	// We know this ModuleInfo always has a ModuleFullName via lazyModuleProvider.
+	moduleInfo ModuleInfo,
+	getModuleFunc func() (Module, error),
+) Module {
+	lazyModule := &lazyModule{
+		ModuleInfo: moduleInfo,
+		getModuleAndDigest: onceThreeValues(
+			func() (Module, bufcas.Digest, error) {
+				module, err := getModuleFunc()
+				if err != nil {
+					return nil, nil, err
+				}
+				expectedDigest, err := moduleInfo.Digest()
+				if err != nil {
+					return nil, nil, err
+				}
+				actualDigest, err := module.Digest()
+				if err != nil {
+					return nil, nil, err
+				}
+				if !bufcas.DigestEqual(expectedDigest, actualDigest) {
+					return nil, nil, fmt.Errorf("expected digest %v, got %v", expectedDigest, actualDigest)
+				}
+				return module, actualDigest, nil
+			},
+		),
+	}
+	lazyModule.getDepModules = sync.OnceValues(
+		func() ([]Module, error) {
+			module, _, err := lazyModule.getModuleAndDigest()
+			if err != nil {
+				return nil, err
+			}
+			potentialDepModules, err := module.DepModules(ctx)
+			if err != nil {
+				return nil, err
+			}
+			// Prefer declared dependencies first, as these are not ready from remote.
+			return getActualDepModules(ctx, lazyModule, append(lazyModule.potentialDepModules, potentialDepModules...))
+		},
+	)
+	return lazyModule
+}
+
+func (m *lazyModule) Digest() (bufcas.Digest, error) {
+	_, digest, err := m.getModuleAndDigest()
+	return digest, err
+}
+
+func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
+	module, _, err := m.getModuleAndDigest()
+	if err != nil {
+		return nil, err
+	}
+	return module.GetFile(ctx, path)
+}
+
+func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	module, _, err := m.getModuleAndDigest()
+	if err != nil {
+		return nil, err
+	}
+	return module.StatFileInfo(ctx, path)
+}
+
+func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
+	module, _, err := m.getModuleAndDigest()
+	if err != nil {
+		return err
+	}
+	return module.WalkFileInfos(ctx, f)
+}
+
+func (m *lazyModule) DepModules(ctx context.Context) ([]Module, error) {
+	return m.getDepModules()
+}
+
+func (m *lazyModule) addPotentialDepModules(depModules ...Module) {
+	m.potentialDepModules = append(m.potentialDepModules, depModules...)
+}
+
+func (m *lazyModule) opaqueID() string {
+	// We know ModuleFullName is present via construction.
+	return m.ModuleFullName().String()
+}
+
+func (*lazyModule) isModuleReadBucket() {}
+func (*lazyModule) isModule()           {}

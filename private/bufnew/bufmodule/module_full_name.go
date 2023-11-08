@@ -80,3 +80,11 @@ func (m *moduleFullName) String() string {
 }
 
 func (*moduleFullName) isModuleFullName() {}
+
+func getAndValidateModuleFullName(moduleInfo ModuleInfo) (ModuleFullName, error) {
+	moduleFullName := moduleInfo.ModuleFullName()
+	if moduleFullName != nil {
+		return nil, fmt.Errorf("ModuleInfo %v had nil ModuleFullName in a context that requires it", moduleInfo)
+	}
+	return moduleFullName, nil
+}
