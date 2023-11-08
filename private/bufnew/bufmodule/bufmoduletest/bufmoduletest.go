@@ -8,26 +8,31 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
+type TestProvider interface {
+	ModuleInfoProvider
+	ModuleProvider
+}
+
 type TestModuleData struct {
 	ModuleFullNameString string
 	ModuleBucket         storage.ReadBucket
 }
 
-func NewTestModuleProvider(
+func NewTestProvider(
 	ctx context.Context,
 	testModuleDatas ...*TestModuleData,
-) (bufmodule.ModuleProvider, error) {
-	return newTestModuleProvider(ctx, testModuleDatas)
+) (testProvider, error) {
+	return newTestProvider(ctx, testModuleDatas)
 }
 
 // *** PRIVATE ***
 
-type testModuleProvider struct {
+type testProvider struct {
 	moduleFullNameStringToModule map[string]bufmodule.Module
 	digestStringToModule         map[string]bufmodule.Module
 }
 
-func newTestModuleProvider(ctx, testModuleDatas []*TestModuleData) (*testModuleProvider, error) {
+func newTestProvider(ctx, testModuleDatas []*TestModuleData) (*testProvider, error) {
 	moduleBuilder := bufmodule.NewModuleBuilder(ctx, nil)
 	for i, testModuleData := range testModuleDatas {
 		moduleFullName, err := bufmodule.ParseModuleFullName(testModuleData.ModuleFullNameString)
@@ -65,13 +70,21 @@ func newTestModuleProvider(ctx, testModuleDatas []*TestModuleData) (*testModuleP
 		}
 		digestStringToModule[digestString] = module
 	}
-	return &testModuleProvider{
+	return &testProvider{
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		digestStringToModule:         digestStringToModule,
 	}, nil
 }
 
-func (t *testModuleProvider) GetModuleForModuleInfo(
+func (t *testProvider) GetModuleInfoForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleInfo, error) {
+	module, ok := t.moduleFullNameStringToModule[moduleRef.ModuleFullName().String()]
+	if !ok {
+		return nil, fmt.Errorf("no test ModuleInfo with name %q", moduleRef.ModuleFullName().String())
+	}
+	return module, nil
+}
+
+func (t *testProvider) GetModuleForModuleInfo(
 	ctx context.Context,
 	moduleInfo bufmodule.ModuleInfo,
 ) (bufmodule.Module, error) {
@@ -79,7 +92,7 @@ func (t *testModuleProvider) GetModuleForModuleInfo(
 	if moduleFullName != nil {
 		module, ok := t.moduleFullNameStringToModule[moduleFullName.String()]
 		if !ok {
-			return nil, fmt.Errorf("no test Module named %q", moduleFullName.String())
+			return nil, fmt.Errorf("no test Module with name %q", moduleFullName.String())
 		}
 		return module, nil
 	}

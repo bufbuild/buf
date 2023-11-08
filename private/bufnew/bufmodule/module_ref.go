@@ -51,7 +51,30 @@ type ModuleRef interface {
 	isModuleRef()
 }
 
+func NewModuleRef(
+	registry string,
+	owner string,
+	name string,
+	ref string,
+) (ModuleRef, error) {
+	moduleFullName, err := NewModuleFullName(registry, owner, name)
+	if err != nil {
+		return nil, err
+	}
+	return newModuleRef(moduleFullName, ref)
+}
+
+func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
+	registry, owner, name, ref, err := parseModuleRefComponents(moduleRefString)
+	if err != nil {
+		return nil, err
+	}
+	return NewModuleRef(registry, owner, name, ref)
+}
+
 // *** PRIVATE ***
+
+// TODO: deal with Main
 
 type moduleRef struct {
 	moduleFullName ModuleFullName

@@ -17,7 +17,6 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // ModuleFullName represents the full name of the Module, including its registry, owner, and name.
@@ -48,15 +47,11 @@ func NewModuleFullName(
 }
 
 func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
-	split := strings.Split(moduleFullNameString, "/")
-	if len(split) != 3 {
-		return nil, fmt.Errorf("invalidat ModuleFullName string: %q", moduleFullNameString)
+	registry, owner, name, err := parseModuleFullNameComponents(moduleFullNameString)
+	if err != nil {
+		return nil, err
 	}
-	return NewModuleFullName(
-		split[0],
-		split[1],
-		split[2],
-	)
+	return NewModuleFullName(registry, owner, name)
 }
 
 // *** PRIVATE ***

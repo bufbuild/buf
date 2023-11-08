@@ -15,8 +15,7 @@
 package bufmodule
 
 import (
-	"fmt"
-	"sync"
+	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
@@ -55,35 +54,27 @@ type ModuleInfo interface {
 	isModuleInfo()
 }
 
-func NewModuleInfo(
-	moduleFullName ModuleFullName,
-	commitID string,
-	getDigest func() (bufcas.Digest, error),
-) (ModuleInfo, error) {
-	return newModuleInfo(
-		moduleFullName,
-		commitID,
-		getDigest,
-	)
-}
-
 // *** PRIVATE ***
 
 type moduleInfo struct {
 	moduleFullName ModuleFullName
 	commitID       string
 	getDigest      func() (bufcas.Digest, error)
+	digest         bufcas.Digest
 }
 
 func newModuleInfo(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getDigest func() (bufcas.Digest, error),
+	digest bufcas.Digest,
 ) (*moduleInfo, error) {
+	if digest == nil {
+		return nil, errors.New("nil Digest when constructing ModuleInfo")
+	}
 	return &moduleInfo{
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
-		getDigest:      sync.OnceValues(getDigest),
+		digest:         digest,
 	}, nil
 }
 
@@ -96,14 +87,7 @@ func (m *moduleInfo) CommitID() string {
 }
 
 func (m *moduleInfo) Digest() (bufcas.Digest, error) {
-	digest, err := m.getDigest()
-	if err != nil {
-		return nil, err
-	}
-	if digest == nil {
-		return nil, fmt.Errorf("nil digest for ModuleInfo %v", m)
-	}
-	return digest, nil
+	return m.digest, nil
 }
 
 func (*moduleInfo) isModuleInfo() {}
