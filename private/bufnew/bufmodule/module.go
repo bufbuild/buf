@@ -64,7 +64,7 @@ type Module interface {
 	// This ID will never be empty.
 	OpaqueID() string
 
-	// DepModules returns the dependency list for this specific module.
+	// ModuleDeps returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
 	// within its .proto files will be returned.
@@ -73,7 +73,7 @@ type Module interface {
 	//
 	// The order of returned list of Modules will be stable between invocations, but should
 	// not be considered to be sorted in any way.
-	DepModules() ([]Module, error)
+	ModuleDeps() ([]ModuleDep, error)
 
 	isModule()
 }
@@ -96,14 +96,14 @@ func buildModuleOpaqueIDDAGRec(
 	graph *dag.Graph[string],
 ) error {
 	graph.AddNode(module.OpaqueID())
-	depModules, err := module.DepModules()
+	moduleDeps, err := module.ModuleDeps()
 	if err != nil {
 		return err
 	}
-	for _, depModule := range depModules {
-		graph.AddNode(depModule.OpaqueID())
-		graph.AddEdge(module.OpaqueID(), depModule.OpaqueID())
-		if err := buildModuleOpaqueIDDAGRec(depModule, graph); err != nil {
+	for _, moduleDep := range moduleDeps {
+		graph.AddNode(moduleDep.OpaqueID())
+		graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
+		if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
 			return err
 		}
 	}
@@ -121,7 +121,7 @@ type module struct {
 	commitID       string
 
 	getDigest     func() (bufcas.Digest, error)
-	getDepModules func() ([]Module, error)
+	getModuleDeps func() ([]ModuleDep, error)
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
@@ -153,9 +153,9 @@ func newModule(
 			return moduleDigestB5(ctx, module)
 		},
 	)
-	module.getDepModules = sync.OnceValues(
-		func() ([]Module, error) {
-			return getActualDepModules(ctx, module.cache, module)
+	module.getModuleDeps = sync.OnceValues(
+		func() ([]ModuleDep, error) {
+			return getActualModuleDeps(ctx, module.cache, module)
 		},
 	)
 	return module, nil
@@ -183,8 +183,8 @@ func (m *module) OpaqueID() string {
 	return m.bucketID
 }
 
-func (m *module) DepModules() ([]Module, error) {
-	return m.getDepModules()
+func (m *module) ModuleDeps() ([]ModuleDep, error) {
+	return m.getModuleDeps()
 }
 
 func (*module) isModuleInfo() {}
@@ -204,13 +204,13 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	depModules, err := module.DepModules()
+	moduleDeps, err := module.ModuleDeps()
 	if err != nil {
 		return nil, err
 	}
 	digests := []bufcas.Digest{fileDigest}
-	for _, depModule := range depModules {
-		digest, err := depModule.Digest()
+	for _, moduleDep := range moduleDeps {
+		digest, err := moduleDep.Digest()
 		if err != nil {
 			return nil, err
 		}
@@ -222,47 +222,49 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	return bufcas.NewDigestForDigests(digests)
 }
 
-// getActualDepModules gets the actual dependencies for the Module.
+// getActualModuleDeps gets the actual dependencies for the Module.
 //
 // TODO: go through imports, figure out which dep modules contain those imports, return just that list
 // Make sure to memoize file -> imports mapping, and pass it around the ModuleBuilder.
-func getActualDepModules(
+func getActualModuleDeps(
 	ctx context.Context,
 	cache *cache,
 	module Module,
-) ([]Module, error) {
-	depOpaqueIDToDepModule := make(map[string]Module)
-	if err := getActualDepModulesRec(
+) ([]ModuleDep, error) {
+	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
+	if err := getActualModuleDepsRec(
 		ctx,
 		cache,
 		module,
 		make(map[string]struct{}),
-		depOpaqueIDToDepModule,
+		depOpaqueIDToModuleDep,
+		true,
 	); err != nil {
 		return nil, err
 	}
-	depModules := make([]Module, 0, len(depOpaqueIDToDepModule))
-	for _, depModule := range depOpaqueIDToDepModule {
-		depModules = append(depModules, depModule)
+	moduleDeps := make([]ModuleDep, 0, len(depOpaqueIDToModuleDep))
+	for _, moduleDep := range depOpaqueIDToModuleDep {
+		moduleDeps = append(moduleDeps, moduleDep)
 	}
 	// Sorting by at least Opaque ID to get a consistent return order for a given call.
 	sort.Slice(
-		depModules,
+		moduleDeps,
 		func(i int, j int) bool {
-			return depModules[i].OpaqueID() < depModules[j].OpaqueID()
+			return moduleDeps[i].OpaqueID() < moduleDeps[j].OpaqueID()
 		},
 	)
-	return depModules, nil
+	return moduleDeps, nil
 }
 
-func getActualDepModulesRec(
+func getActualModuleDepsRec(
 	ctx context.Context,
 	cache *cache,
 	module Module,
 	// to detect circular imports
 	visitedOpaqueIDs map[string]struct{},
 	// already discovered deps
-	depOpaqueIDToDepModule map[string]Module,
+	depOpaqueIDToModuleDep map[string]ModuleDep,
+	isDirect bool,
 ) error {
 	opaqueID := module.OpaqueID()
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
@@ -270,8 +272,10 @@ func getActualDepModulesRec(
 		return nil
 	}
 	visitedOpaqueIDs[opaqueID] = struct{}{}
-	// Just optimizing the number of recursive calls a bit/doing this BFS.
-	var newDepModules []Module
+	// Doing this BFS so we add all the direct deps to the map first, then if we
+	// see a dep later, it will still be a direct dep in the map, but will be ignored
+	// on recursive calls.
+	var newModuleDeps []ModuleDep
 	if err := ModuleReadBucketWithOnlyProtoFiles(module).WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
@@ -280,17 +284,18 @@ func getActualDepModulesRec(
 				return err
 			}
 			for imp := range imports {
-				potentialDepModule, err := cache.GetModuleForFilePath(ctx, imp)
+				potentialModuleDep, err := cache.GetModuleForFilePath(ctx, imp)
 				if err != nil {
 					return err
 				}
-				potentialDepOpaqueID := potentialDepModule.OpaqueID()
+				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep
 				if potentialDepOpaqueID != opaqueID {
 					// No longer just potential, now real dep.
-					if _, ok := depOpaqueIDToDepModule[potentialDepOpaqueID]; !ok {
-						depOpaqueIDToDepModule[potentialDepOpaqueID] = potentialDepModule
-						newDepModules = append(newDepModules, potentialDepModule)
+					if _, ok := depOpaqueIDToModuleDep[potentialDepOpaqueID]; !ok {
+						moduleDep := newModuleDep(potentialModuleDep, isDirect)
+						depOpaqueIDToModuleDep[potentialDepOpaqueID] = moduleDep
+						newModuleDeps = append(newModuleDeps, moduleDep)
 					}
 				}
 			}
@@ -299,13 +304,15 @@ func getActualDepModulesRec(
 	); err != nil {
 		return err
 	}
-	for _, newDepModule := range newDepModules {
-		if err := getActualDepModulesRec(
+	for _, newModuleDep := range newModuleDeps {
+		if err := getActualModuleDepsRec(
 			ctx,
 			cache,
-			newDepModule,
+			newModuleDep,
 			visitedOpaqueIDs,
-			depOpaqueIDToDepModule,
+			depOpaqueIDToModuleDep,
+			// Always not direct on recursive calls
+			false,
 		); err != nil {
 			return err
 		}

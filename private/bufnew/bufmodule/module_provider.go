@@ -158,7 +158,7 @@ type lazyModule struct {
 	cache *cache
 
 	getModuleAndDigest func() (Module, bufcas.Digest, error)
-	getDepModules      func() ([]Module, error)
+	getModuleDeps      func() ([]ModuleDep, error)
 }
 
 func newLazyModule(
@@ -196,8 +196,8 @@ func newLazyModule(
 			},
 		),
 	}
-	lazyModule.getDepModules = sync.OnceValues(
-		func() ([]Module, error) {
+	lazyModule.getModuleDeps = sync.OnceValues(
+		func() ([]ModuleDep, error) {
 			module, _, err := lazyModule.getModuleAndDigest()
 			if err != nil {
 				return nil, err
@@ -209,9 +209,9 @@ func newLazyModule(
 				// we can use it.
 				//
 				// Make sure to pass the lazyModule, not the module! The lazyModule is what will be within the cache.
-				return getActualDepModules(ctx, cache, lazyModule)
+				return getActualModuleDeps(ctx, cache, lazyModule)
 			}
-			return module.DepModules()
+			return module.ModuleDeps()
 		},
 	)
 	return lazyModule
@@ -246,8 +246,8 @@ func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) 
 	return module.WalkFileInfos(ctx, f)
 }
 
-func (m *lazyModule) DepModules() ([]Module, error) {
-	return m.getDepModules()
+func (m *lazyModule) ModuleDeps() ([]ModuleDep, error) {
+	return m.getModuleDeps()
 }
 
 func (m *lazyModule) OpaqueID() string {

@@ -17,7 +17,6 @@ package bufmodule_test
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -102,22 +101,21 @@ func TestBasic(t *testing.T) {
 	module2 := testFindModuleWithOpaqueID(t, modules, "buf.build/bar/module2")
 	require.Equal(
 		t,
-		[]string{
-			"buf.build/foo/extdep1",
-			// Does not directly depend on extdep2
-			//"buf.build/foo/extdep2",
-			"path/to/module1",
+		map[string]bool{
+			"buf.build/foo/extdep1": true,
+			"buf.build/foo/extdep2": false,
+			"path/to/module1":       true,
 		},
-		testSortedDirectDepOpaqueIDs(t, module2),
+		testGetDepOpaqueIDToDirect(t, module2),
 	)
 
 	extdep2 := testFindModuleWithOpaqueID(t, modules, "buf.build/foo/extdep2")
 	require.Equal(
 		t,
-		[]string{
-			"buf.build/foo/extdep1",
+		map[string]bool{
+			"buf.build/foo/extdep1": true,
 		},
-		testSortedDirectDepOpaqueIDs(t, extdep2),
+		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
 
 	graph, err := bufmodule.GetModuleOpaqueIDDAG(modules...)
@@ -161,13 +159,12 @@ func testFindModuleWithOpaqueID(t *testing.T, modules []bufmodule.Module, opaque
 	}
 }
 
-func testSortedDirectDepOpaqueIDs(t *testing.T, module bufmodule.Module) []string {
-	depModules, err := module.DepModules()
+func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[string]bool {
+	moduleDeps, err := module.ModuleDeps()
 	require.NoError(t, err)
-	depOpaqueIDs := make([]string, 0, len(depModules))
-	for _, depModule := range depModules {
-		depOpaqueIDs = append(depOpaqueIDs, depModule.OpaqueID())
+	depOpaqueIDToDirect := make(map[string]bool)
+	for _, moduleDep := range moduleDeps {
+		depOpaqueIDToDirect[moduleDep.OpaqueID()] = moduleDep.IsDirect()
 	}
-	sort.Strings(depOpaqueIDs)
-	return depOpaqueIDs
+	return depOpaqueIDToDirect
 }
