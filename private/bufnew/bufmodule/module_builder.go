@@ -3,14 +3,14 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 type ModuleBuilder interface {
-	AddModuleForBucket(storage.ReadBucket, ...AddModuleForBucketOption)
-	AddModuleForModuleInfo(ModuleInfo)
+	AddModuleForBucket(storage.ReadBucket, ...AddModuleForBucketOption) error
+	AddModuleForModuleInfo(ModuleInfo) error
 	Build(context.Context) ([]Module, error)
 
 	isModuleBuilder()
@@ -45,7 +45,6 @@ type moduleBuilder struct {
 	bucketModules     []Module
 	moduleInfoModules []Module
 
-	errs         []error
 	alreadyBuilt bool
 }
 
@@ -57,44 +56,40 @@ func newModuleBuilder(ctx context.Context, moduleProvider ModuleProvider) *modul
 	}
 }
 
-func (b *moduleBuilder) AddModuleForBucket(bucket storage.ReadBucket, options ...AddModuleForBucketOption) {
+func (b *moduleBuilder) AddModuleForBucket(bucket storage.ReadBucket, options ...AddModuleForBucketOption) error {
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
 	for _, option := range options {
 		option(addModuleForBucketOptions)
 	}
 	module := newModule(
 		b.ctx,
+		bucket,
 		addModuleForBucketOptions.moduleFullName,
 		addModuleForBucketOptions.commitID,
-	)
-	module.setModuleReadBucket(
-		newModuleReadBucket(
-			b.ctx,
-			bucket,
-			module,
-		),
 	)
 	b.bucketModules = append(
 		b.bucketModules,
 		module,
 	)
+	return nil
 }
 
-func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) {
+func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
+	moduleFullName := moduleInfo.ModuleFullName()
+	if moduleFullName == nil {
+		return fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
+	}
 	module, err := b.moduleProvider.GetModuleForModuleInfo(b.ctx, moduleInfo)
 	if err != nil {
-		b.errs = append(b.errs, err)
-		return
+		return err
 	}
 	b.moduleInfoModules = append(b.moduleInfoModules, module)
+	return nil
 }
 
 func (b *moduleBuilder) Build(ctx context.Context) ([]Module, error) {
 	if b.alreadyBuilt {
 		return nil, errors.New("Build already called")
-	}
-	if b.errs != nil {
-		return nil, multierr.Combine(b.errs...)
 	}
 
 	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.

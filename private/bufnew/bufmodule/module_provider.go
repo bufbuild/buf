@@ -48,7 +48,7 @@ func newAPIModuleProvider(clientProvider bufapi.ClientProvider) *apiModuleProvid
 func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
 	moduleFullName := moduleInfo.ModuleFullName()
 	if moduleFullName == nil {
-		return nil, fmt.Errorf("ModuleInfo %v did not have ModuleFullName, cannot call GetModuleForGetModuleInfo", moduleInfo)
+		return nil, fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
 	}
 	var resourceRef *modulev1beta1.ResourceRef
 	if commitID := moduleInfo.CommitID(); commitID != "" {
