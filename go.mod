@@ -4,10 +4,11 @@ go 1.19
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231106192134-1baebb0a1518.2
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231107155709-53a0a97ee0bf.2
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.12.0-20231107195815-03f23b9e324e.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231107195815-03f23b9e324e.2
 	connectrpc.com/connect v1.12.0
 	connectrpc.com/otelconnect v0.6.0
-	github.com/bufbuild/protocompile v0.6.1-0.20231027200301-089712432bdc
+	github.com/bufbuild/protocompile v0.6.1-0.20231108163138-146b831231f7
 	github.com/bufbuild/protovalidate-go v0.4.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
@@ -38,14 +39,13 @@ require (
 	golang.org/x/mod v0.14.0
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.5.0
-	golang.org/x/term v0.13.0
+	golang.org/x/term v0.14.0
 	golang.org/x/tools v0.14.0
 	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.12.0-20231107155709-53a0a97ee0bf.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 // indirect

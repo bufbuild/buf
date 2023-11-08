@@ -1,3 +1,17 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package bufmodule
 
 import (
@@ -96,7 +110,7 @@ func (a *apiModuleInfoProvider) getProtoCommitForModuleRef(ctx context.Context, 
 		connect.NewRequest(
 			&modulev1beta1.ResolveCommitsRequest{
 				ResourceRefs: []*modulev1beta1.ResourceRef{
-					&modulev1beta1.ResourceRef{
+					{
 						Value: &modulev1beta1.ResourceRef_Name_{
 							Name: &modulev1beta1.ResourceRef_Name{
 								Owner:  moduleRef.ModuleFullName().Owner(),
@@ -126,7 +140,7 @@ func (a *apiModuleInfoProvider) getProtoModuleForModuleID(ctx context.Context, r
 		connect.NewRequest(
 			&modulev1beta1.GetModulesRequest{
 				ModuleRefs: []*modulev1beta1.ModuleRef{
-					&modulev1beta1.ModuleRef{
+					{
 						Value: &modulev1beta1.ModuleRef_Id{
 							Id: moduleID,
 						},
@@ -150,7 +164,7 @@ func (a *apiModuleInfoProvider) getProtoOwnerForOwnerID(ctx context.Context, reg
 		connect.NewRequest(
 			&ownerv1beta1.GetOwnersRequest{
 				OwnerRefs: []*ownerv1beta1.OwnerRef{
-					&ownerv1beta1.OwnerRef{
+					{
 						Value: &ownerv1beta1.OwnerRef_Id{
 							Id: ownerID,
 						},
