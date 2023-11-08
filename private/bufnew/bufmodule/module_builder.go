@@ -130,7 +130,10 @@ func (b *moduleBuilder) Build() ([]Module, error) {
 	b.buildCalled = true
 
 	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.
-	modules, err := getUniqueModulesWithEarlierPreferred(b.ctx, append(b.bucketModules, b.moduleInfoModules...))
+	modules, err := getUniqueModulesByOpaqueIDWithEarlierPreferred(
+		b.ctx,
+		append(b.bucketModules, b.moduleInfoModules...),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -149,46 +152,4 @@ type addModuleForBucketOptions struct {
 
 func newAddModuleForBucketOptions() *addModuleForBucketOptions {
 	return &addModuleForBucketOptions{}
-}
-
-// uniqueModulesWithEarlierPreferred deduplicates the Module list with the earlier modules being preferred.
-//
-// Callers should put modules built from local sources earlier than Modules built from remote sources.
-//
-// Duplication determined based opaqueID and on Digest, that is if a Module has an equal
-// opaqueID, or an equal Digest, it is considered a duplicate.
-//
-// We want to account for Modules with the same name but different digests, that is a dep in a workspace
-// that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
-//
-// When returned, all modules have unique opaqueIDs and Digests.
-//
-// TODO: validate that modules with the same ModuleFullName have the same commit and digest.
-func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
-	alreadySeenOpaqueIDs := make(map[string]struct{})
-	//alreadySeenDigestStrings := make(map[string]struct{})
-	uniqueModules := make([]Module, 0, len(modules))
-	for _, module := range modules {
-		opaqueID := module.OpaqueID()
-		if opaqueID == "" {
-			return nil, errors.New("opaqueID was empty which should never happen")
-		}
-		//digest, err := module.Digest()
-		//if err != nil {
-		//return nil, err
-		//}
-		//digestString := digest.String()
-
-		_, alreadySeenModuleByID := alreadySeenOpaqueIDs[opaqueID]
-		//_, alreadySeenModulebyDigest := alreadySeenDigestStrings[digestString]
-
-		alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-		//alreadySeenDigestStrings[digestString] = struct{}{}
-
-		//if !alreadySeenModuleByID && !alreadySeenModulebyDigest {
-		if !alreadySeenModuleByID {
-			uniqueModules = append(uniqueModules, module)
-		}
-	}
-	return uniqueModules, nil
 }

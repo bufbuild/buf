@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -50,6 +51,9 @@ type Module interface {
 	// An OpaqueID can be used to denote expected uniqueness of content; if two Modules
 	// have different IDs, they should be expected to be logically different Modules.
 	//
+	// If two Modules have the same ModuleFullName, they will have the same OpaqueID. This is
+	// useful when differentiating between a remotely-downloaded Module and a Module in a workspace.
+	//
 	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleBuilder.
@@ -74,7 +78,37 @@ type Module interface {
 	isModule()
 }
 
+// GetModuleOpaqueIDDAG gets a DAG of the OpaqueIDs of the given Modules.
+func GetModuleOpaqueIDDAG(modules ...Module) (*dag.Graph[string], error) {
+	graph := dag.NewGraph[string]()
+	for _, module := range modules {
+		if err := buildModuleOpaqueIDDAGRec(module, graph); err != nil {
+			return nil, err
+		}
+	}
+	return graph, nil
+}
+
 // *** PRIVATE ***
+
+func buildModuleOpaqueIDDAGRec(
+	module Module,
+	graph *dag.Graph[string],
+) error {
+	graph.AddNode(module.OpaqueID())
+	depModules, err := module.DepModules()
+	if err != nil {
+		return err
+	}
+	for _, depModule := range depModules {
+		graph.AddNode(depModule.OpaqueID())
+		graph.AddEdge(module.OpaqueID(), depModule.OpaqueID())
+		if err := buildModuleOpaqueIDDAGRec(depModule, graph); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // module
 
@@ -141,6 +175,8 @@ func (m *module) Digest() (bufcas.Digest, error) {
 
 func (m *module) OpaqueID() string {
 	// We know that one of bucketID and moduleFullName are present via construction.
+	//
+	// Prefer moduleFullName since modules with the same ModuleFullName should have the same OpaqueID.
 	if m.moduleFullName != nil {
 		return m.moduleFullName.String()
 	}
@@ -275,4 +311,40 @@ func getActualDepModulesRec(
 		}
 	}
 	return nil
+}
+
+// getUniqueModulesByOpaqueIDWithEarlierPreferred deduplicates the Module list with the earlier
+// Modules in the slice being preferred.
+//
+// Callers should put modules built from local sources earlier than Modules built from remote sources.
+//
+// Duplication determined based opaqueID, that is if a Module has an equal
+// opaqueID, it is considered a duplicate.
+//
+// We want to account for Modules with the same name but different digests, that is a dep in a workspace
+// that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
+//
+// When returned, all modules have unique opaqueIDs and Digests.
+//
+// Note: Modules with the same ModuleFullName will automatically have the same commit and Digest after this,
+// as there will be exactly one Module with a given ModuleFullName, given that an OpaqueID will be equal
+// for Modules with equal ModuleFullNames.
+func getUniqueModulesByOpaqueIDWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
+	// Digest *cannot* be used here - it's a chicken or egg problem. Computing the digest requires the cache,
+	// the cache requires the unique Modules, the unique Modules require this function. This is OK though -
+	// we want to add all Modules that we *think* are unique to the cache. If there is a duplicate, it
+	// will be detected via cache usage.
+	alreadySeenOpaqueIDs := make(map[string]struct{})
+	uniqueModules := make([]Module, 0, len(modules))
+	for _, module := range modules {
+		opaqueID := module.OpaqueID()
+		if opaqueID == "" {
+			return nil, errors.New("OpaqueID was empty which should never happen")
+		}
+		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
+			alreadySeenOpaqueIDs[opaqueID] = struct{}{}
+			uniqueModules = append(uniqueModules, module)
+		}
+	}
+	return uniqueModules, nil
 }

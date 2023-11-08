@@ -109,6 +109,30 @@ func TestBasic(t *testing.T) {
 		},
 		testSortedDepOpaqueIDs(t, module2),
 	)
+
+	extdep2 := testFindModuleWithOpaqueID(t, modules, "buf.build/foo/extdep2")
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep1",
+		},
+		testSortedDepOpaqueIDs(t, extdep2),
+	)
+
+	graph, err := bufmodule.GetModuleOpaqueIDDAG(modules...)
+	require.NoError(t, err)
+	topoSort, err := graph.TopoSort("buf.build/bar/module2")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep2",
+			"path/to/module1",
+			"buf.build/bar/module2",
+		},
+		topoSort,
+	)
 }
 
 func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) storage.ReadBucket {
