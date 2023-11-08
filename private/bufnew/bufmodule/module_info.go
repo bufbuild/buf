@@ -1,8 +1,6 @@
 package bufmodule
 
 import (
-	"context"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
@@ -35,7 +33,7 @@ type ModuleInfo interface {
 	//
 	// Implementations may choose to cache the Digest, in which case contexts passed
 	// to this function in future calls will be ignored.
-	Digest(context.Context) (bufcas.Digest, error)
+	Digest() (bufcas.Digest, error)
 
 	isModuleInfo()
 }
@@ -68,7 +66,7 @@ func (m *moduleInfo) CommitID() string {
 	return m.commitID
 }
 
-func (m *moduleInfo) Digest(context.Context) (bufcas.Digest, error) {
+func (m *moduleInfo) Digest() (bufcas.Digest, error) {
 	return m.digest, nil
 }
 

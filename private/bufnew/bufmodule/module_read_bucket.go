@@ -2,6 +2,7 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -92,7 +93,7 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 
 type moduleReadBucket struct {
 	delegate storage.ReadBucket
-	module   *module
+	module   Module
 }
 
 // module cannot be assumed to be functional yet.
@@ -100,7 +101,7 @@ type moduleReadBucket struct {
 func newModuleReadBucket(
 	ctx context.Context,
 	delegate storage.ReadBucket,
-	module *module,
+	module Module,
 ) *moduleReadBucket {
 	docFilePath := getDocFilePathForStorageReadBucket(ctx, delegate)
 	return &moduleReadBucket{
@@ -153,6 +154,9 @@ func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
 func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+	if b.module == nil {
+		return nil, errors.New("setModuleReadBucketModule never called with a non-nil Module")
+	}
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.

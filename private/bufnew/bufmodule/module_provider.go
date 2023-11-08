@@ -58,7 +58,7 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 			},
 		}
 	} else {
-		digest, err := moduleInfo.Digest(ctx)
+		digest, err := moduleInfo.Digest()
 		if err != nil {
 			return nil, err
 		}
@@ -96,13 +96,7 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 	//commitNode := response.Msg.CommitNodes[0]
 	// Can ignore the Commit field, as we already have all this information on ModuleInfo.
 	// TODO: deal with Deps field when we have figured out deps on Modules
-	return newLazyModule(
-		moduleInfo,
-		func() (Module, error) {
-			// TODO: convert FileNodes to Blobs to a *module
-			return nil, errors.New("TODO")
-		},
-	), nil
+	return nil, errors.New("TODO")
 }
 
 // lazyModuleProvider
@@ -112,6 +106,9 @@ type lazyModuleProvider struct {
 }
 
 func newLazyModuleProvider(delegate ModuleProvider) *lazyModuleProvider {
+	if lazyModuleProvider, ok := delegate.(*lazyModuleProvider); ok {
+		return lazyModuleProvider
+	}
 	return &lazyModuleProvider{
 		delegate: delegate,
 	}
@@ -119,6 +116,7 @@ func newLazyModuleProvider(delegate ModuleProvider) *lazyModuleProvider {
 
 func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
 	return newLazyModule(
+		ctx,
 		moduleInfo,
 		func() (Module, error) {
 			// Using ctx on GetModuleForModuleInfo and ignoring the contexts passed to
