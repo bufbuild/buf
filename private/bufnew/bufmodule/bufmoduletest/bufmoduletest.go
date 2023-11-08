@@ -47,7 +47,7 @@ func NewTestProviderForBuckets(
 	ctx context.Context,
 	moduleFullNameStringToBucket map[string]storage.ReadBucket,
 ) (TestProvider, error) {
-	testModuleDatas := make([]*testModuleData, len(moduleFullNameStringToBucket))
+	testModuleDatas := make([]*testModuleData, 0, len(moduleFullNameStringToBucket))
 	for moduleFullNameString, bucket := range moduleFullNameStringToBucket {
 		testModuleDatas = append(
 			testModuleDatas,
