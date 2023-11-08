@@ -189,5 +189,5 @@ func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module)
 			uniqueModules = append(uniqueModules, module)
 		}
 	}
-	return nil, errors.New("TODO")
+	return uniqueModules, nil
 }
