@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -124,6 +125,18 @@ func (m *module) Digest() (bufcas.Digest, error) {
 
 func (m *module) DepModules() ([]Module, error) {
 	return m.getDepModules()
+}
+
+func (m *module) String() string {
+	var builder strings.Builder
+	if m.moduleFullName != nil {
+		builder.WriteString(m.moduleFullName.String())
+		if m.commitID != "" {
+			builder.WriteString(":")
+			builder.WriteString(m.commitID)
+		}
+	}
+	return builder.String()
 }
 
 func (m *module) opaqueID() string {

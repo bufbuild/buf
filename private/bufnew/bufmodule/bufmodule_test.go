@@ -31,7 +31,7 @@ func TestBasic(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	externalDepModuleProvider, err := bufmoduletest.NewTestProviderForPathToData(
+	testBSRProvider, err := bufmoduletest.NewTestProviderForPathToData(
 		ctx,
 		map[string]map[string][]byte{
 			"buf.build/foo/extdep1": map[string][]byte{
@@ -47,7 +47,22 @@ func TestBasic(t *testing.T) {
 		},
 	)
 
-	moduleBuilder := bufmodule.NewModuleBuilder(ctx, externalDepModuleProvider)
+	moduleBuilder := bufmodule.NewModuleBuilder(ctx, testBSRProvider)
+
+	// Remember, the externalDepModuleProvider is just acting like a BSR; if we actually want to
+	// say dependencies are part of our workspace, we need to add them! We do so now.
+	moduleRef, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
+	require.NoError(t, err)
+	moduleInfo, err := testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
+	require.NoError(t, err)
+	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
+	require.NoError(t, err)
+	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	require.NoError(t, err)
+	moduleInfo, err = testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
+	require.NoError(t, err)
+	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
+	require.NoError(t, err)
 
 	// This module has no name but is part of the workspace.
 	err = moduleBuilder.AddModuleForBucket(
@@ -82,7 +97,7 @@ func TestBasic(t *testing.T) {
 
 	modules, err := moduleBuilder.Build()
 	require.NoError(t, err)
-	//require.Equal(t, 4, len(modules))
+	require.Equal(t, 4, len(modules))
 
 	module2 := testFindModuleWithName(t, modules, "buf.build/bar/module2")
 	require.Equal(
