@@ -25,6 +25,9 @@ import (
 type ModuleBuilder interface {
 	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) error
 	AddModuleForModuleInfo(moduleInfo ModuleInfo) error
+	// Build builds the Modules.
+	//
+	// The Modules will be sorted by OpaqueID.
 	Build() ([]Module, error)
 
 	isModuleBuilder()

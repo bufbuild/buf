@@ -39,7 +39,8 @@ func newModuleDep(
 	isDirect bool,
 ) *moduleDep {
 	return &moduleDep{
-		Module: module,
+		Module:   module,
+		isDirect: isDirect,
 	}
 }
 

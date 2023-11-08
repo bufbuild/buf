@@ -101,10 +101,12 @@ func buildModuleOpaqueIDDAGRec(
 		return err
 	}
 	for _, moduleDep := range moduleDeps {
-		graph.AddNode(moduleDep.OpaqueID())
-		graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
-		if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
-			return err
+		if moduleDep.IsDirect() {
+			graph.AddNode(moduleDep.OpaqueID())
+			graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
+			if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -155,7 +157,7 @@ func newModule(
 	)
 	module.getModuleDeps = sync.OnceValues(
 		func() ([]ModuleDep, error) {
-			return getActualModuleDeps(ctx, module.cache, module)
+			return getModuleDeps(ctx, module.cache, module)
 		},
 	)
 	return module, nil
@@ -222,17 +224,14 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	return bufcas.NewDigestForDigests(digests)
 }
 
-// getActualModuleDeps gets the actual dependencies for the Module.
-//
-// TODO: go through imports, figure out which dep modules contain those imports, return just that list
-// Make sure to memoize file -> imports mapping, and pass it around the ModuleBuilder.
-func getActualModuleDeps(
+// getModuleDeps gets the actual dependencies for the Module.
+func getModuleDeps(
 	ctx context.Context,
 	cache *cache,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
-	if err := getActualModuleDepsRec(
+	if err := getModuleDepsRec(
 		ctx,
 		cache,
 		module,
@@ -256,7 +255,7 @@ func getActualModuleDeps(
 	return moduleDeps, nil
 }
 
-func getActualModuleDepsRec(
+func getModuleDepsRec(
 	ctx context.Context,
 	cache *cache,
 	module Module,
@@ -305,7 +304,7 @@ func getActualModuleDepsRec(
 		return err
 	}
 	for _, newModuleDep := range newModuleDeps {
-		if err := getActualModuleDepsRec(
+		if err := getModuleDepsRec(
 			ctx,
 			cache,
 			newModuleDep,
@@ -353,5 +352,12 @@ func getUniqueModulesByOpaqueIDWithEarlierPreferred(ctx context.Context, modules
 			uniqueModules = append(uniqueModules, module)
 		}
 	}
+	// To have stable order.
+	sort.Slice(
+		uniqueModules,
+		func(i int, j int) bool {
+			return uniqueModules[i].OpaqueID() < uniqueModules[j].OpaqueID()
+		},
+	)
 	return uniqueModules, nil
 }

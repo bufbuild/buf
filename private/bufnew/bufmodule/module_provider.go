@@ -209,7 +209,7 @@ func newLazyModule(
 				// we can use it.
 				//
 				// Make sure to pass the lazyModule, not the module! The lazyModule is what will be within the cache.
-				return getActualModuleDeps(ctx, cache, lazyModule)
+				return getModuleDeps(ctx, cache, lazyModule)
 			}
 			return module.ModuleDeps()
 		},

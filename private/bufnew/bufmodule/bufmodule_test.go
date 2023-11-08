@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -120,6 +121,46 @@ func TestBasic(t *testing.T) {
 
 	graph, err := bufmodule.GetModuleOpaqueIDDAG(modules...)
 	require.NoError(t, err)
+	testWalkGraphNodes(
+		t,
+		graph,
+		[]testStringNode{
+			{
+				Key:     "buf.build/bar/module2",
+				Inbound: []string{},
+				Outbound: []string{
+					"buf.build/foo/extdep1",
+					"path/to/module1",
+				},
+			},
+			{
+				Key: "buf.build/foo/extdep1",
+				Inbound: []string{
+					"buf.build/bar/module2",
+					"buf.build/foo/extdep2",
+				},
+				Outbound: []string{},
+			},
+			{
+				Key: "path/to/module1",
+				Inbound: []string{
+					"buf.build/bar/module2",
+				},
+				Outbound: []string{
+					"buf.build/foo/extdep2",
+				},
+			},
+			{
+				Key: "buf.build/foo/extdep2",
+				Inbound: []string{
+					"path/to/module1",
+				},
+				Outbound: []string{
+					"buf.build/foo/extdep1",
+				},
+			},
+		},
+	)
 	topoSort, err := graph.TopoSort("buf.build/bar/module2")
 	require.NoError(t, err)
 	require.Equal(
@@ -167,4 +208,29 @@ func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[strin
 		depOpaqueIDToDirect[moduleDep.OpaqueID()] = moduleDep.IsDirect()
 	}
 	return depOpaqueIDToDirect
+}
+
+func testWalkGraphNodes(t *testing.T, graph *dag.Graph[string], expected []testStringNode) {
+	var results []testStringNode
+	err := graph.WalkNodes(
+		func(key string, inbound []string, outbound []string) error {
+			results = append(
+				results,
+				testStringNode{
+					Key:      key,
+					Inbound:  inbound,
+					Outbound: outbound,
+				},
+			)
+			return nil
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, expected, results)
+}
+
+type testStringNode struct {
+	Key      string
+	Inbound  []string
+	Outbound []string
 }
