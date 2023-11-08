@@ -104,10 +104,11 @@ func TestBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/extdep1",
-			"buf.build/foo/extdep2",
+			// Does not directly depend on extdep2
+			//"buf.build/foo/extdep2",
 			"path/to/module1",
 		},
-		testSortedDepOpaqueIDs(t, module2),
+		testSortedDirectDepOpaqueIDs(t, module2),
 	)
 
 	extdep2 := testFindModuleWithOpaqueID(t, modules, "buf.build/foo/extdep2")
@@ -116,7 +117,7 @@ func TestBasic(t *testing.T) {
 		[]string{
 			"buf.build/foo/extdep1",
 		},
-		testSortedDepOpaqueIDs(t, extdep2),
+		testSortedDirectDepOpaqueIDs(t, extdep2),
 	)
 
 	graph, err := bufmodule.GetModuleOpaqueIDDAG(modules...)
@@ -160,7 +161,7 @@ func testFindModuleWithOpaqueID(t *testing.T, modules []bufmodule.Module, opaque
 	}
 }
 
-func testSortedDepOpaqueIDs(t *testing.T, module bufmodule.Module) []string {
+func testSortedDirectDepOpaqueIDs(t *testing.T, module bufmodule.Module) []string {
 	depModules, err := module.DepModules()
 	require.NoError(t, err)
 	depOpaqueIDs := make([]string, 0, len(depModules))
