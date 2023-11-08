@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
@@ -27,8 +28,8 @@ import (
 
 type cache struct {
 	opaqueIDToModule  map[string]Module
-	filePathToImports map[string]*tuple[map[string]struct{}, error]
-	filePathToModule  map[string]*tuple[Module, error]
+	filePathToImports map[string]*internal.Tuple[map[string]struct{}, error]
+	filePathToModule  map[string]*internal.Tuple[Module, error]
 	// Just making thread-safe to future-proof a bit.
 	// Could have per-map lock but then we need to deal with lock ordering, not worth it for now.
 	lock sync.RWMutex
@@ -38,8 +39,8 @@ type cache struct {
 
 func newCache() *cache {
 	return &cache{
-		filePathToImports: make(map[string]*tuple[map[string]struct{}, error]),
-		filePathToModule:  make(map[string]*tuple[Module, error]),
+		filePathToImports: make(map[string]*internal.Tuple[map[string]struct{}, error]),
+		filePathToModule:  make(map[string]*internal.Tuple[Module, error]),
 	}
 }
 
@@ -60,7 +61,7 @@ func (c *cache) GetModuleForFilePath(ctx context.Context, filePath string) (Modu
 	if !c.setModulesCalled {
 		return nil, errors.New("cache.SetModules never called")
 	}
-	return getDoubleLock(
+	return internal.GetOrAddToCacheDoubleLock(
 		&c.lock,
 		c.filePathToModule,
 		filePath,
@@ -74,7 +75,7 @@ func (c *cache) GetImportsForFilePath(ctx context.Context, filePath string) (map
 	if !c.setModulesCalled {
 		return nil, errors.New("cache.SetModules never called")
 	}
-	return getDoubleLock(
+	return internal.GetOrAddToCacheDoubleLock(
 		&c.lock,
 		c.filePathToImports,
 		filePath,
@@ -141,7 +142,7 @@ func (c *cache) getImportsForFilePathUncached(ctx context.Context, filePath stri
 	// that we're going to have to load all the modules within a workspace even if just building
 	// a single module in the workspace, as an example. Luckily, modules within workspaces are
 	// the cheapest to load (ie not remote).
-	module, err := getWithinLock(
+	module, err := internal.GetOrAddToCache(
 		c.filePathToModule,
 		filePath,
 		func() (Module, error) {
@@ -163,48 +164,4 @@ func (c *cache) getImportsForFilePathUncached(ctx context.Context, filePath stri
 		return nil, err
 	}
 	return stringutil.SliceToMap(imports), nil
-}
-
-func getDoubleLock[T any](
-	lock *sync.RWMutex,
-	cache map[string]*tuple[T, error],
-	key string,
-	get func() (T, error),
-) (T, error) {
-	lock.RLock()
-	tuple, ok := cache[key]
-	lock.RUnlock()
-	if ok {
-		return tuple.V1, tuple.V2
-	}
-	lock.Lock()
-	value, err := getWithinLock(cache, key, get)
-	lock.Unlock()
-	return value, err
-}
-
-func getWithinLock[T any](
-	cache map[string]*tuple[T, error],
-	key string,
-	get func() (T, error),
-) (T, error) {
-	tuple, ok := cache[key]
-	if ok {
-		return tuple.V1, tuple.V2
-	}
-	value, err := get()
-	cache[key] = newTuple(value, err)
-	return value, err
-}
-
-type tuple[T1, T2 any] struct {
-	V1 T1
-	V2 T2
-}
-
-func newTuple[T1, T2 any](v1 T1, v2 T2) *tuple[T1, T2] {
-	return &tuple[T1, T2]{
-		V1: v1,
-		V2: v2,
-	}
 }

@@ -110,6 +110,11 @@ func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
 	if moduleFullName == nil {
 		return fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
 	}
+	if b.moduleProvider == nil {
+		// We should perhaps have a ModuleBuilder without this method at all.
+		// We do this in bufmoduletest.
+		return errors.New("cannot call AddModuleForModuleInfo with nil ModuleProvider")
+	}
 	module, err := b.moduleProvider.GetModuleForModuleInfo(b.ctx, moduleInfo)
 	if err != nil {
 		return err

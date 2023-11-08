@@ -17,6 +17,7 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // ModuleFullName represents the full name of the Module, including its registry, owner, and name.
@@ -32,6 +33,30 @@ type ModuleFullName interface {
 	Name() string
 
 	isModuleFullName()
+}
+
+func NewModuleFullName(
+	registry string,
+	owner string,
+	name string,
+) (ModuleFullName, error) {
+	return newModuleFullName(
+		registry,
+		owner,
+		name,
+	)
+}
+
+func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
+	split := strings.Split(moduleFullNameString, "/")
+	if len(split) != 3 {
+		return nil, fmt.Errorf("invalidat ModuleFullName string: %q", moduleFullNameString)
+	}
+	return NewModuleFullName(
+		split[0],
+		split[1],
+		split[2],
+	)
 }
 
 // *** PRIVATE ***

@@ -23,6 +23,7 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
@@ -170,7 +171,7 @@ func newLazyModule(
 ) Module {
 	lazyModule := &lazyModule{
 		ModuleInfo: moduleInfo,
-		getModuleAndDigest: onceThreeValues(
+		getModuleAndDigest: internal.OnceThreeValues(
 			func() (Module, bufcas.Digest, error) {
 				module, err := getModuleFunc()
 				if err != nil {
@@ -186,6 +187,10 @@ func newLazyModule(
 				}
 				if !bufcas.DigestEqual(expectedDigest, actualDigest) {
 					return nil, nil, fmt.Errorf("expected digest %v, got %v", expectedDigest, actualDigest)
+				}
+				if expectedDigest == nil {
+					// This should never happen.
+					return nil, nil, fmt.Errorf("digest was nil for ModuleInfo %v", moduleInfo)
 				}
 				return module, actualDigest, nil
 			},
