@@ -45,8 +45,6 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
-	// PotentialDepModules? And say that that is less expensive, and prefer that for ie Image building?
-
 	// DepModules returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
@@ -55,7 +53,6 @@ type Module interface {
 	// Dependencies with the same ModuleFullName will always have the same commits and digests.
 	DepModules(ctx context.Context) ([]Module, error)
 
-	addPotentialDepModules(...Module)
 	opaqueID() string
 	isModule()
 }
@@ -70,16 +67,16 @@ type module struct {
 	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
+	cache          *cache
 
 	getDigest     func() (bufcas.Digest, error)
 	getDepModules func() ([]Module, error)
-
-	potentialDepModules []Module
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
+	cache *cache,
 	bucketID string,
 	bucket storage.ReadBucket,
 	moduleFullName ModuleFullName,
@@ -105,7 +102,7 @@ func newModule(
 	)
 	module.getDepModules = sync.OnceValues(
 		func() ([]Module, error) {
-			return getActualDepModules(ctx, module, module.potentialDepModules)
+			return getActualDepModules(ctx, module.cache, module)
 		},
 	)
 	return module, nil
@@ -125,10 +122,6 @@ func (m *module) Digest() (bufcas.Digest, error) {
 
 func (m *module) DepModules(ctx context.Context) ([]Module, error) {
 	return m.getDepModules()
-}
-
-func (m *module) addPotentialDepModules(depModules ...Module) {
-	m.potentialDepModules = append(m.potentialDepModules, depModules...)
 }
 
 func (m *module) opaqueID() string {
@@ -173,14 +166,14 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	return bufcas.NewDigestForDigests(digests)
 }
 
-// getActualDepModules gets the actual dependencies for the Module  from the potential dependency list.
+// getActualDepModules gets the actual dependencies for the Module.
 //
 // TODO: go through imports, figure out which dep modules contain those imports, return just that list
 // Make sure to memoize file -> imports mapping, and pass it around the ModuleBuilder.
 func getActualDepModules(
 	ctx context.Context,
+	cache *cache,
 	moduleReadBucket ModuleReadBucket,
-	potentialDepModules []Module,
 ) ([]Module, error) {
 	return nil, errors.New("TODO")
 }

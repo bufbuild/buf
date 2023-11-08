@@ -58,15 +58,17 @@ type moduleBuilder struct {
 
 	bucketModules     []Module
 	moduleInfoModules []Module
+	cache             *cache
 
-	alreadyBuilt bool
+	buildCalled bool
 }
 
 func newModuleBuilder(ctx context.Context, moduleProvider ModuleProvider) *moduleBuilder {
+	cache := newCache()
 	return &moduleBuilder{
-		ctx: ctx,
-		// newLazyModuleProvider returns the parameter if the moduleProvider is already a *lazyModuleProvider.
-		moduleProvider: newLazyModuleProvider(moduleProvider),
+		ctx:            ctx,
+		moduleProvider: newLazyModuleProvider(moduleProvider, cache),
+		cache:          cache,
 	}
 }
 
@@ -75,12 +77,16 @@ func (b *moduleBuilder) AddModuleForBucket(
 	bucket storage.ReadBucket,
 	options ...AddModuleForBucketOption,
 ) error {
+	if b.buildCalled {
+		return errors.New("Build already called")
+	}
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
 	for _, option := range options {
 		option(addModuleForBucketOptions)
 	}
 	module, err := newModule(
 		b.ctx,
+		b.cache,
 		bucketID,
 		bucket,
 		addModuleForBucketOptions.moduleFullName,
@@ -97,6 +103,9 @@ func (b *moduleBuilder) AddModuleForBucket(
 }
 
 func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
+	if b.buildCalled {
+		return errors.New("Build already called")
+	}
 	moduleFullName := moduleInfo.ModuleFullName()
 	if moduleFullName == nil {
 		return fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
@@ -110,24 +119,19 @@ func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
 }
 
 func (b *moduleBuilder) Build(ctx context.Context) ([]Module, error) {
-	if b.alreadyBuilt {
+	if b.buildCalled {
 		return nil, errors.New("Build already called")
 	}
+	b.buildCalled = true
 
 	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.
 	modules, err := getUniqueModulesWithEarlierPreferred(ctx, append(b.bucketModules, b.moduleInfoModules...))
 	if err != nil {
 		return nil, err
 	}
-
-	for i, module := range modules {
-		allOtherModules := modules[0:i]
-		if i != len(modules)-1 {
-			allOtherModules = append(allOtherModules, modules[i+1:]...)
-		}
-		module.addPotentialDepModules(allOtherModules...)
+	if err := b.cache.SetModules(modules); err != nil {
+		return nil, err
 	}
-
 	return modules, nil
 }
 

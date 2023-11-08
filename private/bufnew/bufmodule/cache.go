@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -31,29 +32,21 @@ type cache struct {
 	// Just making thread-safe to future-proof a bit.
 	// Could have per-map lock but then we need to deal with lock ordering, not worth it for now.
 	lock sync.RWMutex
+	// We do not bother locking around this variable as this is just part of construction.
+	setModulesCalled bool
 }
 
-// It is assumed that getUniqueModulesWithEarlierPreferred has been called on this Module list
-// and that all Modules are unique. It is an error within the cache if any two Modules have
-// overlapping files, or if any two modules have overlapping opaque IDs or overlapping digests.
-func newCache(modules []Module) (*cache, error) {
-	opaqueIDToModule := make(map[string]Module)
-	for _, module := range modules {
-		opaqueID := module.opaqueID()
-		if _, ok := opaqueIDToModule[opaqueID]; ok {
-			// This is a system error, we should have already validated this.
-			return nil, fmt.Errorf("duplicate opaqueID: %q", opaqueID)
-		}
-		opaqueIDToModule[opaqueID] = module
-	}
+func newCache() *cache {
 	return &cache{
-		opaqueIDToModule:  opaqueIDToModule,
 		filePathToImports: make(map[string]*tuple[map[string]struct{}, error]),
 		filePathToModule:  make(map[string]*tuple[Module, error]),
-	}, nil
+	}
 }
 
 func (c *cache) GetModuleForOpaqueID(opaqueID string) (Module, error) {
+	if !c.setModulesCalled {
+		return nil, errors.New("cache.SetModules never called")
+	}
 	// No need for lock: opaqueIDToModule is static.
 	module, ok := c.opaqueIDToModule[opaqueID]
 	if !ok {
@@ -64,6 +57,9 @@ func (c *cache) GetModuleForOpaqueID(opaqueID string) (Module, error) {
 }
 
 func (c *cache) GetModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
+	if !c.setModulesCalled {
+		return nil, errors.New("cache.SetModules never called")
+	}
 	return getDoubleLock(
 		&c.lock,
 		c.filePathToModule,
@@ -75,6 +71,9 @@ func (c *cache) GetModuleForFilePath(ctx context.Context, filePath string) (Modu
 }
 
 func (c *cache) GetImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
+	if !c.setModulesCalled {
+		return nil, errors.New("cache.SetModules never called")
+	}
 	return getDoubleLock(
 		&c.lock,
 		c.filePathToImports,
@@ -83,6 +82,27 @@ func (c *cache) GetImportsForFilePath(ctx context.Context, filePath string) (map
 			return c.getImportsForFilePathUncached(ctx, filePath)
 		},
 	)
+}
+
+// It is assumed that getUniqueModulesWithEarlierPreferred has been called on this Module list
+// and that all Modules are unique. It is an error within the cache if any two Modules have
+// overlapping files, or if any two modules have overlapping opaque IDs or overlapping digests.
+func (c *cache) SetModules(modules []Module) error {
+	if c.setModulesCalled {
+		return errors.New("cache.SetModules already called")
+	}
+	opaqueIDToModule := make(map[string]Module)
+	for _, module := range modules {
+		opaqueID := module.opaqueID()
+		if _, ok := opaqueIDToModule[opaqueID]; ok {
+			// This is a system error, we should have already validated this.
+			return fmt.Errorf("duplicate opaqueID: %q", opaqueID)
+		}
+		opaqueIDToModule[opaqueID] = module
+	}
+	c.opaqueIDToModule = opaqueIDToModule
+	c.setModulesCalled = true
+	return nil
 }
 
 // Assumed to be called within lock

@@ -44,7 +44,7 @@ type ModuleProvider interface {
 // as a type (such as with dependencies) without incurring the lookup and building cost when
 // all we want is ModuleInfo-related properties.
 func NewAPIModuleProvider(clientProvider bufapi.ClientProvider) ModuleProvider {
-	return newLazyModuleProvider(newAPIModuleProvider(clientProvider))
+	return newLazyModuleProvider(newAPIModuleProvider(clientProvider), nil)
 }
 
 // *** PRIVATE ***
@@ -119,14 +119,17 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 
 type lazyModuleProvider struct {
 	delegate ModuleProvider
+	cache    *cache
 }
 
-func newLazyModuleProvider(delegate ModuleProvider) *lazyModuleProvider {
+// cache may be nil.
+func newLazyModuleProvider(delegate ModuleProvider, cache *cache) *lazyModuleProvider {
 	if lazyModuleProvider, ok := delegate.(*lazyModuleProvider); ok {
-		return lazyModuleProvider
+		delegate = lazyModuleProvider.delegate
 	}
 	return &lazyModuleProvider{
 		delegate: delegate,
+		cache:    cache,
 	}
 }
 
@@ -136,6 +139,7 @@ func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleI
 	}
 	return newLazyModule(
 		ctx,
+		l.cache,
 		moduleInfo,
 		func() (Module, error) {
 			// Using ctx on GetModuleForModuleInfo and ignoring the contexts passed to
@@ -150,14 +154,16 @@ func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleI
 type lazyModule struct {
 	ModuleInfo
 
+	cache *cache
+
 	getModuleAndDigest func() (Module, bufcas.Digest, error)
 	getDepModules      func() ([]Module, error)
-
-	potentialDepModules []Module
 }
 
 func newLazyModule(
 	ctx context.Context,
+	// May be nil.
+	cache *cache,
 	// We know this ModuleInfo always has a ModuleFullName via lazyModuleProvider.
 	moduleInfo ModuleInfo,
 	getModuleFunc func() (Module, error),
@@ -191,12 +197,16 @@ func newLazyModule(
 			if err != nil {
 				return nil, err
 			}
-			potentialDepModules, err := module.DepModules(ctx)
-			if err != nil {
-				return nil, err
+			if cache != nil {
+				// Prefer declared dependencies via the cache if they exist, as these are not read from remote.
+				// For example, a Module read may have deps within a Workspace, we want to prefer those deps
+				// If we have a cache, we're saying that all expected deps are within the cache, therefore
+				// we can use it.
+				//
+				// Make sure to pass the lazyModule, not the module! The lazyModule is what will be within the cache.
+				return getActualDepModules(ctx, cache, lazyModule)
 			}
-			// Prefer declared dependencies first, as these are not ready from remote.
-			return getActualDepModules(ctx, lazyModule, append(lazyModule.potentialDepModules, potentialDepModules...))
+			return module.DepModules(ctx)
 		},
 	)
 	return lazyModule
@@ -233,10 +243,6 @@ func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) 
 
 func (m *lazyModule) DepModules(ctx context.Context) ([]Module, error) {
 	return m.getDepModules()
-}
-
-func (m *lazyModule) addPotentialDepModules(depModules ...Module) {
-	m.potentialDepModules = append(m.potentialDepModules, depModules...)
 }
 
 func (m *lazyModule) opaqueID() string {
