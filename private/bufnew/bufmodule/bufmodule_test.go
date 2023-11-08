@@ -44,6 +44,14 @@ func TestBasic(t *testing.T) {
 					`syntax = proto3; package extdep2; import "extdep1.proto";`,
 				),
 			},
+			// Adding in a module that exists remotely but we'll also have in the workspace.
+			//
+			// This one will import from extdep2 instead of the workspace importing from extdep1.
+			"buf.build/bar/module2": map[string][]byte{
+				"module2.proto": []byte(
+					`syntax = proto3; package module2; import "extdep2.proto";`,
+				),
+			},
 		},
 	)
 
@@ -58,6 +66,12 @@ func TestBasic(t *testing.T) {
 	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
 	require.NoError(t, err)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	require.NoError(t, err)
+	moduleInfo, err = testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
+	require.NoError(t, err)
+	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
+	require.NoError(t, err)
+	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleInfo, err = testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
@@ -79,6 +93,8 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	// This module has a name and is part of the workspace.
+	//
+	// This module is also in the BSR, but we'll prefer this one.
 	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
 	err = moduleBuilder.AddModuleForBucket(
@@ -87,7 +103,7 @@ func TestBasic(t *testing.T) {
 			t,
 			map[string][]byte{
 				"module2.proto": []byte(
-					`syntax = proto3; package module1; import "module1.proto"; import "extdep1.proto";`,
+					`syntax = proto3; package module2; import "module1.proto"; import "extdep1.proto";`,
 				),
 			},
 		),
