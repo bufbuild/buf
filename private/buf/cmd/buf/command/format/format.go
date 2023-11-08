@@ -473,7 +473,7 @@ func formatModule(
 		return false, err
 	}
 	// Note that external paths are set properly for the files in this read bucket.
-	formattedReadBucket, err := bufformat.Format(ctx, module)
+	formattedReadBucket, err := bufformat.FormatModule(ctx, module)
 	if err != nil {
 		return false, err
 	}
