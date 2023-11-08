@@ -51,7 +51,7 @@ type Module interface {
 	// within its .proto files will be returned.
 	//
 	// Dependencies with the same ModuleFullName will always have the same commits and digests.
-	DepModules(ctx context.Context) ([]Module, error)
+	DepModules() ([]Module, error)
 
 	opaqueID() string
 	isModule()
@@ -120,7 +120,7 @@ func (m *module) Digest() (bufcas.Digest, error) {
 	return m.getDigest()
 }
 
-func (m *module) DepModules(ctx context.Context) ([]Module, error) {
+func (m *module) DepModules() ([]Module, error) {
 	return m.getDepModules()
 }
 
@@ -149,7 +149,7 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	if err != nil {
 		return nil, err
 	}
-	depModules, err := module.DepModules(ctx)
+	depModules, err := module.DepModules()
 	if err != nil {
 		return nil, err
 	}

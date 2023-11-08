@@ -206,7 +206,7 @@ func newLazyModule(
 				// Make sure to pass the lazyModule, not the module! The lazyModule is what will be within the cache.
 				return getActualDepModules(ctx, cache, lazyModule)
 			}
-			return module.DepModules(ctx)
+			return module.DepModules()
 		},
 	)
 	return lazyModule
@@ -241,7 +241,7 @@ func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) 
 	return module.WalkFileInfos(ctx, f)
 }
 
-func (m *lazyModule) DepModules(ctx context.Context) ([]Module, error) {
+func (m *lazyModule) DepModules() ([]Module, error) {
 	return m.getDepModules()
 }
 

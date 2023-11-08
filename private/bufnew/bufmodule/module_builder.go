@@ -157,6 +157,8 @@ func newAddModuleForBucketOptions() *addModuleForBucketOptions {
 // that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
 //
 // When returned, all modules have unique opaqueIDs and Digests.
+//
+// TODO: validate that modules with the same ModuleFullName have the same commit and digest.
 func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module) ([]Module, error) {
 	alreadySeenOpaqueIDs := make(map[string]struct{})
 	alreadySeenDigestStrings := make(map[string]struct{})
