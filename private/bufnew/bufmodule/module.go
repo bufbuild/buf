@@ -163,6 +163,7 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	}
 
 	// NewDigestForDigests deals with sorting.
+	// TODO: what about digest type?
 	return bufcas.NewDigestForDigests(digests)
 }
 

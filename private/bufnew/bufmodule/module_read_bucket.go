@@ -276,6 +276,7 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 			defer func() {
 				retErr = multierr.Append(retErr, file.Close())
 			}()
+			// TODO: what about digest type?
 			digest, err := bufcas.NewDigestForContent(file)
 			if err != nil {
 				return err
