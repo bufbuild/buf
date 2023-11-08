@@ -169,7 +169,7 @@ func getUniqueModulesWithEarlierPreferred(ctx context.Context, modules []Module)
 	//alreadySeenDigestStrings := make(map[string]struct{})
 	uniqueModules := make([]Module, 0, len(modules))
 	for _, module := range modules {
-		opaqueID := module.opaqueID()
+		opaqueID := module.OpaqueID()
 		if opaqueID == "" {
 			return nil, errors.New("opaqueID was empty which should never happen")
 		}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -33,11 +32,9 @@ type Module interface {
 	// ModuleReadBucket allows for reading of a Module's files.
 	//
 	// A Module consists of .proto files, documentation file(s), and license file(s). All of these
-	// are accessible via the functions on ModuleReadBucket. As such, the FileTypes() function will
-	// return FileTypeProto, FileTypeDoc, FileTypeLicense.
+	// are accessible via the functions on ModuleReadBucket.
 	//
-	// This bucket is not self-contained - it requires the files from dependencies to be so. As such,
-	// IsProtoFilesSelfContained() returns false.
+	// This bucket is not self-contained - it requires the files from dependencies to be so.
 	//
 	// This package currently exposes functionality to walk just the .proto files, and get the singular
 	// documentation and license files, via WalkProtoFileInfos, GetDocFile, and GetLicenseFile.
@@ -47,15 +44,33 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
+	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative
+	// to other Modules it was built with from a ModuleBuilder.
+	//
+	// An OpaqueID can be used to denote expected uniqueness of content; if two Modules
+	// have different IDs, they should be expected to be logically different Modules.
+	//
+	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
+	// It's uniqueness property only applies to the lifetime of the Module, and only within
+	// Modules commonly built from a ModuleBuilder.
+	//
+	// This ID is not stable between different invocations; the same Module built twice
+	// in two separate ModuleBuilder invocations may have different IDs.
+	//
+	// This ID will never be empty.
+	OpaqueID() string
+
 	// DepModules returns the dependency list for this specific module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
 	// within its .proto files will be returned.
 	//
 	// Dependencies with the same ModuleFullName will always have the same commits and digests.
+	//
+	// The order of returned list of Modules will be stable between invocations, but should
+	// not be considered to be sorted in any way.
 	DepModules() ([]Module, error)
 
-	opaqueID() string
 	isModule()
 }
 
@@ -84,8 +99,9 @@ func newModule(
 	moduleFullName ModuleFullName,
 	commitID string,
 ) (*module, error) {
-	if bucketID == "" {
-		return nil, errors.New("bucketID was empty when constructing a new bucket-based Module")
+	if bucketID == "" && moduleFullName == nil {
+		// This is a system error.
+		return nil, errors.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
 	module := &module{
 		cache:          cache,
@@ -123,28 +139,16 @@ func (m *module) Digest() (bufcas.Digest, error) {
 	return m.getDigest()
 }
 
-func (m *module) DepModules() ([]Module, error) {
-	return m.getDepModules()
-}
-
-func (m *module) String() string {
-	var builder strings.Builder
-	if m.moduleFullName != nil {
-		builder.WriteString(m.moduleFullName.String())
-		if m.commitID != "" {
-			builder.WriteString(":")
-			builder.WriteString(m.commitID)
-		}
-	}
-	return builder.String()
-}
-
-func (m *module) opaqueID() string {
+func (m *module) OpaqueID() string {
+	// We know that one of bucketID and moduleFullName are present via construction.
 	if m.moduleFullName != nil {
 		return m.moduleFullName.String()
 	}
-	// We know bucketID is present via construction.
 	return m.bucketID
+}
+
+func (m *module) DepModules() ([]Module, error) {
+	return m.getDepModules()
 }
 
 func (*module) isModuleInfo() {}
@@ -206,11 +210,10 @@ func getActualDepModules(
 		depModules = append(depModules, depModule)
 	}
 	// Sorting by at least Opaque ID to get a consistent return order for a given call.
-	// We should probably sort by digest TODO.
 	sort.Slice(
 		depModules,
 		func(i int, j int) bool {
-			return depModules[i].opaqueID() < depModules[j].opaqueID()
+			return depModules[i].OpaqueID() < depModules[j].OpaqueID()
 		},
 	)
 	return depModules, nil
@@ -225,7 +228,7 @@ func getActualDepModulesRec(
 	// already discovered deps
 	depOpaqueIDToDepModule map[string]Module,
 ) error {
-	opaqueID := module.opaqueID()
+	opaqueID := module.OpaqueID()
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
 		// TODO: detect cycles, this is just making sure we don't recurse
 		return nil
@@ -245,7 +248,7 @@ func getActualDepModulesRec(
 				if err != nil {
 					return err
 				}
-				potentialDepOpaqueID := potentialDepModule.opaqueID()
+				potentialDepOpaqueID := potentialDepModule.OpaqueID()
 				// If this is in the same module, it's not a dep
 				if potentialDepOpaqueID != opaqueID {
 					// No longer just potential, now real dep.

@@ -17,7 +17,6 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
@@ -31,11 +30,6 @@ import (
 // depending on the context. For example, when dealing with non-colocated Modules, we will
 // expect that ModuleFullName and CommitID are present, and this can be validated for.
 type ModuleInfo interface {
-	// String returns "registry/owner/name[:commitID]" if ModuleFullName and/or commitID are present.
-	//
-	// TODO: probably remove, this is mostly for debugging right now
-	fmt.Stringer
-
 	// ModuleFullName returns the full name of the Module.
 	//
 	// May be nil depending on context. For example, when read from lock files, this will
@@ -98,18 +92,6 @@ func (m *moduleInfo) CommitID() string {
 
 func (m *moduleInfo) Digest() (bufcas.Digest, error) {
 	return m.digest, nil
-}
-
-func (m *moduleInfo) String() string {
-	var builder strings.Builder
-	if m.moduleFullName != nil {
-		builder.WriteString(m.moduleFullName.String())
-		if m.commitID != "" {
-			builder.WriteString(":")
-			builder.WriteString(m.commitID)
-		}
-	}
-	return builder.String()
 }
 
 func (*moduleInfo) isModuleInfo() {}

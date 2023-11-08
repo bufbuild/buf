@@ -94,7 +94,7 @@ func (c *cache) SetModules(modules []Module) error {
 	}
 	opaqueIDToModule := make(map[string]Module)
 	for _, module := range modules {
-		opaqueID := module.opaqueID()
+		opaqueID := module.OpaqueID()
 		if _, ok := opaqueIDToModule[opaqueID]; ok {
 			// This is a system error, we should have already validated this.
 			return fmt.Errorf("duplicate opaqueID: %q", opaqueID)

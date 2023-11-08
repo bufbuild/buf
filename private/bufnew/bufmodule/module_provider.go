@@ -250,7 +250,7 @@ func (m *lazyModule) DepModules() ([]Module, error) {
 	return m.getDepModules()
 }
 
-func (m *lazyModule) opaqueID() string {
+func (m *lazyModule) OpaqueID() string {
 	// We know ModuleFullName is present via construction.
 	return m.ModuleFullName().String()
 }
