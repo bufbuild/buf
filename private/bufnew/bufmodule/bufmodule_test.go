@@ -49,7 +49,7 @@ func TestBasic(t *testing.T) {
 
 	moduleBuilder := bufmodule.NewModuleBuilder(ctx, testBSRProvider)
 
-	// Remember, the externalDepModuleProvider is just acting like a BSR; if we actually want to
+	// Remember, the testBSRProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
 	moduleRef, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
 	require.NoError(t, err)
