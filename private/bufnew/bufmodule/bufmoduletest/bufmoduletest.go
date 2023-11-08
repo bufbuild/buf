@@ -20,33 +20,59 @@ import (
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
 type TestProvider interface {
-	ModuleInfoProvider
-	ModuleProvider
+	bufmodule.ModuleInfoProvider
+	bufmodule.ModuleProvider
 }
 
-type TestModuleData struct {
-	ModuleFullNameString string
-	ModuleBucket         storage.ReadBucket
-}
-
-func NewTestProvider(
+func NewTestProviderForPathToData(
 	ctx context.Context,
-	testModuleDatas ...*TestModuleData,
-) (testProvider, error) {
+	moduleFullNameStringToPathToData map[string]map[string][]byte,
+) (TestProvider, error) {
+	moduleFullNameStringToBucket := make(map[string]storage.ReadBucket, len(moduleFullNameStringToPathToData))
+	for moduleFullNameString, pathToData := range moduleFullNameStringToPathToData {
+		bucket, err := storagemem.NewReadBucket(pathToData)
+		if err != nil {
+			return nil, err
+		}
+		moduleFullNameStringToBucket[moduleFullNameString] = bucket
+	}
+	return NewTestProviderForBuckets(ctx, moduleFullNameStringToBucket)
+}
+
+func NewTestProviderForBuckets(
+	ctx context.Context,
+	moduleFullNameStringToBucket map[string]storage.ReadBucket,
+) (TestProvider, error) {
+	testModuleDatas := make([]*testModuleData, len(moduleFullNameStringToBucket))
+	for moduleFullNameString, bucket := range moduleFullNameStringToBucket {
+		testModuleDatas = append(
+			testModuleDatas,
+			&testModuleData{
+				ModuleFullNameString: moduleFullNameString,
+				Bucket:               bucket,
+			},
+		)
+	}
 	return newTestProvider(ctx, testModuleDatas)
 }
 
 // *** PRIVATE ***
+
+type testModuleData struct {
+	ModuleFullNameString string
+	Bucket               storage.ReadBucket
+}
 
 type testProvider struct {
 	moduleFullNameStringToModule map[string]bufmodule.Module
 	digestStringToModule         map[string]bufmodule.Module
 }
 
-func newTestProvider(ctx, testModuleDatas []*TestModuleData) (*testProvider, error) {
+func newTestProvider(ctx context.Context, testModuleDatas []*testModuleData) (*testProvider, error) {
 	moduleBuilder := bufmodule.NewModuleBuilder(ctx, nil)
 	for i, testModuleData := range testModuleDatas {
 		moduleFullName, err := bufmodule.ParseModuleFullName(testModuleData.ModuleFullNameString)
@@ -56,7 +82,7 @@ func newTestProvider(ctx, testModuleDatas []*TestModuleData) (*testProvider, err
 		if err := moduleBuilder.AddModuleForBucket(
 			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory
 			fmt.Sprintf("%d", i),
-			testModuleData.ModuleBucket,
+			testModuleData.Bucket,
 			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
 		); err != nil {
 			return nil, err
@@ -90,7 +116,10 @@ func newTestProvider(ctx, testModuleDatas []*TestModuleData) (*testProvider, err
 	}, nil
 }
 
-func (t *testProvider) GetModuleInfoForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleInfo, error) {
+func (t *testProvider) GetModuleInfoForModuleRef(
+	ctx context.Context,
+	moduleRef bufmodule.ModuleRef,
+) (bufmodule.ModuleInfo, error) {
 	module, ok := t.moduleFullNameStringToModule[moduleRef.ModuleFullName().String()]
 	if !ok {
 		return nil, fmt.Errorf("no test ModuleInfo with name %q", moduleRef.ModuleFullName().String())

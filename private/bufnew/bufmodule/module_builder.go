@@ -25,7 +25,7 @@ import (
 type ModuleBuilder interface {
 	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) error
 	AddModuleForModuleInfo(moduleInfo ModuleInfo) error
-	Build(ctx context.Context) ([]Module, error)
+	Build() ([]Module, error)
 
 	isModuleBuilder()
 }
@@ -123,14 +123,14 @@ func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
 	return nil
 }
 
-func (b *moduleBuilder) Build(ctx context.Context) ([]Module, error) {
+func (b *moduleBuilder) Build() ([]Module, error) {
 	if b.buildCalled {
 		return nil, errors.New("Build already called")
 	}
 	b.buildCalled = true
 
 	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.
-	modules, err := getUniqueModulesWithEarlierPreferred(ctx, append(b.bucketModules, b.moduleInfoModules...))
+	modules, err := getUniqueModulesWithEarlierPreferred(b.ctx, append(b.bucketModules, b.moduleInfoModules...))
 	if err != nil {
 		return nil, err
 	}

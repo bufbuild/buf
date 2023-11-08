@@ -53,13 +53,15 @@ func (a *apiModuleInfoProvider) GetModuleInfoForModuleRef(ctx context.Context, m
 	if err != nil {
 		return nil, err
 	}
+	// Do not call getModuleInfoForProtoCommit, we already have the owner and module names.
+	digest, err := bufcas.ProtoToDigest(protoCommit.Digest)
+	if err != nil {
+		return nil, err
+	}
 	return newModuleInfo(
 		moduleRef.ModuleFullName(),
 		protoCommit.Id,
-		func() (bufcas.Digest, error) {
-			// Do not call getModuleInfoForProtoCommit, we already have the owner and module names.
-			return bufcas.ProtoToDigest(protoCommit.Digest)
-		},
+		digest,
 	)
 }
 
@@ -101,7 +103,7 @@ func (a *apiModuleInfoProvider) getModuleInfoForProtoCommit(ctx context.Context,
 		moduleFullName,
 		protoCommit.Id,
 		digest,
-	), nil
+	)
 }
 
 func (a *apiModuleInfoProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef ModuleRef) (*modulev1beta1.Commit, error) {
