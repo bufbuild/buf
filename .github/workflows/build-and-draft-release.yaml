@@ -12,46 +12,30 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
     steps:
-      - name: Fail manual trigger if input version is empty or starts with 'v'
-        if: ${{ github.event_name == 'workflow_dispatch' && (startsWith(github.event.inputs.version, 'v') || github.event.inputs.version == '') }}
+      - name: Set VERSION variable
+        # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/v`.
         run: |
-          echo "version '${{ github.event.inputs.version }}' is invalid, it must not be empty or start with 'v'"
-          exit 1
-      - name: Set VERSION_WITH_V variable
-        # VERSION_WITH_V is set to v<github.event.inputs.version> if input is set, otherwise it's set to github.head_ref.
-        # '&& ||' is the ternary operator: https://docs.github.com/en/actions/learn-github-actions/expressions#example
-        # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/`.
-        run: |
-          VERSION_WITH_V=${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.head_ref}}
-          echo "VERSION_WITH_V=${VERSION_WITH_V##*/}" >> $GITHUB_ENV
+          VERSION="${{ github.event.inputs.version || github.head_ref}}"
+          echo "VERSION=${VERSION##*/v}" >> $GITHUB_ENV
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v4
+      - name: Set Up Go
+        uses: actions/setup-go@v4
         with:
           go-version: "1.21.x"
-      - name: Create assets
+      - name: Set Up Git Name and Email
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Build Assets and Draft Release
+        run: bash ./make/buf/scripts/draftrelease.bash
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
           RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
-        run: make bufrelease
-      - name: unset keys
+      - name: Unset Keys
+        if: ${{ always() }}
         run: |
           unset RELEASE_MINISIGN_PRIVATE_KEY
           unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
-      - name: Fetch Changelog
-        # This only works with gnu-sed, use gsed if you are on mac
-        # This starts a loop after seeing the first line starting with ## [. For each line in the loop, it is skipped (n)
-        # if it's empty (^$). The loop ends (q) if it sees another line starting with ## [. Otherwise it's printed.
-        run: sed -n '/## \[/{:loop n; /^$/n; /## \[/q; p; b loop}' CHANGELOG.md > ${{env.VERSION_WITH_V}}-CHANGELOG.md
-      # The second ${{env.VERSION_WITH_V}} is the tag see https://cli.github.com/manual/gh_release_create
-      - name: Draft Release
-        run: echo "url=$(gh release create --draft --notes-file ${{env.VERSION_WITH_V}}-CHANGELOG.md --title ${{env.VERSION_WITH_V}} ${{env.VERSION_WITH_V}} ${{github.workspace}}/.build/release/buf/assets/*)" >> $GITHUB_OUTPUT
-        id: draft_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Slack Notification
-        run: |
-          jq --null-input '{ text: "BufCLI Release ${{env.VERSION}} is drafted: ${{ steps.draft_release.outputs.url }}" }' \
-          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ 

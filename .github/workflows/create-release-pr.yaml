@@ -7,45 +7,27 @@ on:
         description: The released version without 'v'. For example, 1.0.0.
 
 env:
-  VERSION: ${{ github.event.inputs.version }}
   APP_ID: 251311
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if input version starts with 'v'
-        if: ${{ env.VERSION == '' || startsWith(env.VERSION, 'v') }}
-        run: |
-          echo "version '${{ env.VERSION}}' is invalid, it must not be empty or start with 'v'"
-          exit 1
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - uses: actions/create-github-app-token@v1
-        id: app_token
+      - name: Get GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
         with:
           app-id: ${{ env.APP_ID }}
           private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-      - name: setup-go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21.x"
-      - name: Update Buf Version
-        run: make updateversion
-      - name: Update Changelog Version
-        run: make releasechangelog
-      - name: Create PR
-        uses: ./.github/actions/create-pr-action
-        id: create_pr
-        with:
-          branch: release/v${{ env.VERSION }}
-          commit_message: Update version to v${{ env.VERSION }}
-          title: Release v${{env.VERSION}}
-          body: |
-            Release prepared for ${{ env.VERSION }}
-            Reminder: Verify the changelog
-          token: ${{ steps.app_token.outputs.token }}
-      - name: Slack Notification
+      - name: Set up Git Name and Email
         run: |
-          jq --null-input '{ text: "BufCLI Release v${{ env.VERSION }} has started: ${{ steps.create_pr.outputs.url }}" }' \
-          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Create Release PR
+        run: bash ./make/buf/scripts/createreleasepr.bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ github.event.inputs.version }}
+          WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}

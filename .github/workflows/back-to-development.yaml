@@ -4,51 +4,27 @@ on:
   release:
     types: [published]
 
+env:
+  APP_ID: 251311
+
 jobs:
   post-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
+      - name: Get GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
         with:
-          fetch-depth: 0
-      - name: Set RELEASED_VERSION_WITH_V variable from bufcli.go
-        # In the echo command, globbing patterns are used in the parameter substitution  not regex patterns
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+      - name: Set up Git Name and Email
         run: |
-          RELEASED_VERSION_WITH_V=`grep -oE "Version.*=.*\"[0-9]\.[0-9]+\.[0-9]+[^\"]*" private/buf/bufcli/bufcli.go`
-          echo "RELEASED_VERSION_WITH_V=v${RELEASED_VERSION_WITH_V##Version*=*\"}" >> $GITHUB_ENV
-      - name: Set NEXT VERSION variable from tag
-        run: |
-          NEXT_VERSION=$(echo ${{ env.RELEASED_VERSION_WITH_V }} | awk -F. -v OFS=. '{$NF += 1 ; print}')
-          echo "NEXT_VERSION=${NEXT_VERSION:1}-dev" >> $GITHUB_ENV
-      - name: Update version
-        run: make updateversion VERSION=${{ env.NEXT_VERSION }}
-      - name: Unrelease changelog
-        run: |
-          sed -i "/^# Changelog/ {
-          N;
-          a\
-          ## [Unreleased]\\
-          \\
-          - No changes yet.\\
-          
-          }" CHANGELOG.md
-          sed -i "/^Initial beta release.$/ {
-          N;
-          a\
-          [Unreleased]: https://github.com/bufbuild/buf/compare/${{ env.RELEASED_VERSION_WITH_V }}...HEAD
-          }" CHANGELOG.md
-      - name: update home brew badge
-        run: make updatehomebrewbadge VERSION=${{ env.RELEASED_VERSION_WITH_V }}
-      - name: Create PR
-        uses: ./.github/actions/create-pr-action
-        with:
-          branch: next/${{ env.NEXT_VERSION }}
-          commit_message: Back to development
-          title: Return to Development
-          body: Release complete for ${{ env.RELEASED_VERSION_WITH_V }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Slack Notification
-        run: |
-          jq --null-input '{ text: "PR back to development: ${{ steps.create_pr.outputs.url }}" }' \
-          | curl -sSL -X POST -H 'Content-Type: application/json' -d @- '${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}'
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Create PR Back to Development
+        run: bash ./make/buf/scripts/gobacktodevelopment.bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
