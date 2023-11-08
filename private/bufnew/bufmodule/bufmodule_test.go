@@ -16,6 +16,8 @@ package bufmodule_test
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -81,10 +83,57 @@ func TestBasic(t *testing.T) {
 	modules, err := moduleBuilder.Build()
 	require.NoError(t, err)
 	require.Equal(t, 4, len(modules))
+
+	module2 := testFindModuleWithName(t, modules, "buf.build/bar/module2")
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep2",
+			// Skipping module1 since it doesn't have a name, TODO
+		},
+		testSortedDepModuleNames(t, module2),
+	)
 }
 
 func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) storage.ReadBucket {
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	require.NoError(t, err)
 	return bucket
+}
+
+// TODO: switch to opaque ID
+func testFindModuleWithName(t *testing.T, modules []bufmodule.Module, moduleFullNameString string) bufmodule.Module {
+	var foundModules []bufmodule.Module
+	for _, module := range modules {
+		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+			if moduleFullName.String() == moduleFullNameString {
+				foundModules = append(foundModules, module)
+			}
+		}
+	}
+	switch len(foundModules) {
+	case 0:
+		require.NoError(t, fmt.Errorf("no module found for name %q", moduleFullNameString))
+		return nil
+	case 1:
+		return foundModules[0]
+	default:
+		require.NoError(t, fmt.Errorf("multiple modules found for name %q", moduleFullNameString))
+		return nil
+	}
+}
+
+// TODO: switch to opaque ID
+func testSortedDepModuleNames(t *testing.T, module bufmodule.Module) []string {
+	depModules, err := module.DepModules()
+	require.NoError(t, err)
+	depModuleFullNameStrings := make([]string, 0, len(depModules))
+	for _, depModule := range depModules {
+		if moduleFullName := depModule.ModuleFullName(); moduleFullName != nil {
+			depModuleFullNameStrings = append(depModuleFullNameStrings, moduleFullName.String())
+		}
+	}
+	sort.Strings(depModuleFullNameStrings)
+	return depModuleFullNameStrings
 }
