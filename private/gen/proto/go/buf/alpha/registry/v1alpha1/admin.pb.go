@@ -453,7 +453,7 @@ type MonthlyUsage struct {
 
 	// The month, between 1 and 12.
 	Month uint32 `protobuf:"varint,1,opt,name=month,proto3" json:"month,omitempty"`
-	// The year, between 2020 to the current year.
+	// The year, between 2020 and the current year.
 	Year uint32 `protobuf:"varint,2,opt,name=year,proto3" json:"year,omitempty"`
 	// The total amount of message types for the month and year.
 	TotalMessageTypes uint32 `protobuf:"varint,3,opt,name=total_message_types,json=totalMessageTypes,proto3" json:"total_message_types,omitempty"`

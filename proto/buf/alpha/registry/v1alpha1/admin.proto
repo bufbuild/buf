@@ -76,7 +76,7 @@ message CollisionSource {
 message MonthlyUsage {
   // The month, between 1 and 12.
   uint32 month = 1;
-  // The year, between 2020 to the current year.
+  // The year, between 2020 and the current year.
   uint32 year = 2;
   // The total amount of message types for the month and year.
   uint32 total_message_types = 3;
