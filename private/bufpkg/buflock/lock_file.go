@@ -100,7 +100,7 @@ func checkDeprecatedDigests(
 ) error {
 	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return fmt.Errorf("failed to read lock file: %w", err)
