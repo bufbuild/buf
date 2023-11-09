@@ -16,7 +16,6 @@ package bufmodule_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -55,7 +54,7 @@ func TestBasic(t *testing.T) {
 		},
 	)
 
-	moduleBuilder := bufmodule.NewModuleBuilder(ctx, testBSRProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, testBSRProvider)
 
 	// Remember, the testBSRProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
@@ -63,23 +62,20 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleInfo, err := testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
-	require.NoError(t, err)
+	moduleSetBuilder.AddModuleForModuleInfo(moduleInfo)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
 	moduleInfo, err = testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
-	require.NoError(t, err)
+	moduleSetBuilder.AddModuleForModuleInfo(moduleInfo)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleInfo, err = testBSRProvider.GetModuleInfoForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	err = moduleBuilder.AddModuleForModuleInfo(moduleInfo)
-	require.NoError(t, err)
+	moduleSetBuilder.AddModuleForModuleInfo(moduleInfo)
 
 	// This module has no name but is part of the workspace.
-	err = moduleBuilder.AddModuleForBucket(
+	moduleSetBuilder.AddModuleForBucket(
 		"path/to/module1",
 		testNewBucketForPathToData(
 			t,
@@ -90,14 +86,13 @@ func TestBasic(t *testing.T) {
 			},
 		),
 	)
-	require.NoError(t, err)
 
 	// This module has a name and is part of the workspace.
 	//
 	// This module is also in the BSR, but we'll prefer this one.
 	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
-	err = moduleBuilder.AddModuleForBucket(
+	moduleSetBuilder.AddModuleForBucket(
 		"path/to/module2",
 		testNewBucketForPathToData(
 			t,
@@ -109,13 +104,13 @@ func TestBasic(t *testing.T) {
 		),
 		bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
 	)
-	require.NoError(t, err)
 
-	modules, err := moduleBuilder.Build()
+	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
-	require.Equal(t, 4, len(modules))
+	require.Equal(t, 4, len(moduleSet.Modules()))
 
-	module2 := testFindModuleWithOpaqueID(t, modules, "buf.build/bar/module2")
+	module2 := moduleSet.GetModuleForOpaqueID("buf.build/bar/module2")
+	require.NotNil(t, module2)
 	require.Equal(
 		t,
 		map[string]bool{
@@ -126,7 +121,8 @@ func TestBasic(t *testing.T) {
 		testGetDepOpaqueIDToDirect(t, module2),
 	)
 
-	extdep2 := testFindModuleWithOpaqueID(t, modules, "buf.build/foo/extdep2")
+	extdep2 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep2")
+	require.NotNil(t, extdep2)
 	require.Equal(
 		t,
 		map[string]bool{
@@ -135,7 +131,7 @@ func TestBasic(t *testing.T) {
 		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
 
-	graph, err := bufmodule.GetModuleOpaqueIDDAG(modules...)
+	graph, err := bufmodule.GetModuleSetOpaqueIDDAG(moduleSet)
 	require.NoError(t, err)
 	testWalkGraphNodes(
 		t,
@@ -195,25 +191,6 @@ func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) stor
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	require.NoError(t, err)
 	return bucket
-}
-
-func testFindModuleWithOpaqueID(t *testing.T, modules []bufmodule.Module, opaqueID string) bufmodule.Module {
-	var foundModules []bufmodule.Module
-	for _, module := range modules {
-		if module.OpaqueID() == opaqueID {
-			foundModules = append(foundModules, module)
-		}
-	}
-	switch len(foundModules) {
-	case 0:
-		require.NoError(t, fmt.Errorf("no module found for opaqueID %q", opaqueID))
-		return nil
-	case 1:
-		return foundModules[0]
-	default:
-		require.NoError(t, fmt.Errorf("multiple modules found for opaqueID %q", opaqueID))
-		return nil
-	}
 }
 
 func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[string]bool {

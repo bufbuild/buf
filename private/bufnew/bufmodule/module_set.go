@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/dag"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
@@ -51,7 +52,41 @@ type ModuleSet interface {
 	isModuleSet()
 }
 
+// GetModuleSetOpaqueIDDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
+func GetModuleSetOpaqueIDDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
+	graph := dag.NewGraph[string]()
+	for _, module := range moduleSet.Modules() {
+		if err := buildModuleOpaqueIDDAGRec(module, graph); err != nil {
+			return nil, err
+		}
+	}
+	return graph, nil
+}
+
 // *** PRIVATE ***
+
+func buildModuleOpaqueIDDAGRec(
+	module Module,
+	graph *dag.Graph[string],
+) error {
+	graph.AddNode(module.OpaqueID())
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return err
+	}
+	for _, moduleDep := range moduleDeps {
+		if moduleDep.IsDirect() {
+			graph.AddNode(moduleDep.OpaqueID())
+			graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
+			if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// moduleSet
 
 type moduleSet struct {
 	modules                      []Module
@@ -83,11 +118,13 @@ func newModuleSet(
 		}
 		opaqueIDToModule[opaqueID] = module
 		bucketID := module.BucketID()
-		if _, ok := bucketIDToModule[bucketID]; ok {
-			// This should never happen.
-			return nil, fmt.Errorf("duplicate BucketID %q when constructing ModuleSet", bucketID)
+		if bucketID != "" {
+			if _, ok := bucketIDToModule[bucketID]; ok {
+				// This should never happen.
+				return nil, fmt.Errorf("duplicate BucketID %q when constructing ModuleSet", bucketID)
+			}
+			bucketIDToModule[bucketID] = module
 		}
-		bucketIDToModule[bucketID] = module
 	}
 	return &moduleSet{
 		modules:                      modules,

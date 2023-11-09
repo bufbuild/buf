@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -90,39 +89,7 @@ type Module interface {
 	isModule()
 }
 
-// GetModuleOpaqueIDDAG gets a DAG of the OpaqueIDs of the given Modules.
-func GetModuleOpaqueIDDAG(modules ...Module) (*dag.Graph[string], error) {
-	graph := dag.NewGraph[string]()
-	for _, module := range modules {
-		if err := buildModuleOpaqueIDDAGRec(module, graph); err != nil {
-			return nil, err
-		}
-	}
-	return graph, nil
-}
-
 // *** PRIVATE ***
-
-func buildModuleOpaqueIDDAGRec(
-	module Module,
-	graph *dag.Graph[string],
-) error {
-	graph.AddNode(module.OpaqueID())
-	moduleDeps, err := module.ModuleDeps()
-	if err != nil {
-		return err
-	}
-	for _, moduleDep := range moduleDeps {
-		if moduleDep.IsDirect() {
-			graph.AddNode(moduleDep.OpaqueID())
-			graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
-			if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
 
 // module
 
