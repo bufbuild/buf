@@ -26,15 +26,20 @@ import (
 	"go.uber.org/multierr"
 )
 
+var (
+	errSetModuleSetAlreadyCalled = errors.New("cache.setModuleSet already called")
+	errSetModuleSetNeverCalled   = errors.New("cache.setModuleSet never called")
+)
+
 type cache struct {
-	opaqueIDToModule  map[string]Module
+	moduleSet         ModuleSet
 	filePathToImports map[string]*internal.Tuple[map[string]struct{}, error]
 	filePathToModule  map[string]*internal.Tuple[Module, error]
 	// Just making thread-safe to future-proof a bit.
 	// Could have per-map lock but then we need to deal with lock ordering, not worth it for now.
 	lock sync.RWMutex
 	// We do not bother locking around this variable as this is just part of construction.
-	setModulesCalled bool
+	setModuleSetCalled bool
 }
 
 func newCache() *cache {
@@ -44,22 +49,9 @@ func newCache() *cache {
 	}
 }
 
-func (c *cache) GetModuleForOpaqueID(opaqueID string) (Module, error) {
-	if !c.setModulesCalled {
-		return nil, errors.New("cache.SetModules never called")
-	}
-	// No need for lock: opaqueIDToModule is static.
-	module, ok := c.opaqueIDToModule[opaqueID]
-	if !ok {
-		// This should never happen given how we use the cache.
-		return nil, fmt.Errorf("no Module for opaqueID: %q", opaqueID)
-	}
-	return module, nil
-}
-
 func (c *cache) GetModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
-	if !c.setModulesCalled {
-		return nil, errors.New("cache.SetModules never called")
+	if !c.setModuleSetCalled {
+		return nil, errSetModuleSetNeverCalled
 	}
 	return internal.GetOrAddToCacheDoubleLock(
 		&c.lock,
@@ -72,8 +64,8 @@ func (c *cache) GetModuleForFilePath(ctx context.Context, filePath string) (Modu
 }
 
 func (c *cache) GetImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
-	if !c.setModulesCalled {
-		return nil, errors.New("cache.SetModules never called")
+	if !c.setModuleSetCalled {
+		return nil, errSetModuleSetNeverCalled
 	}
 	return internal.GetOrAddToCacheDoubleLock(
 		&c.lock,
@@ -85,24 +77,12 @@ func (c *cache) GetImportsForFilePath(ctx context.Context, filePath string) (map
 	)
 }
 
-// It is assumed that getUniqueModulesWithEarlierPreferred has been called on this Module list
-// and that all Modules are unique. It is an error within the cache if any two Modules have
-// overlapping files, or if any two modules have overlapping opaque IDs or overlapping digests.
-func (c *cache) SetModules(modules []Module) error {
-	if c.setModulesCalled {
-		return errors.New("cache.SetModules already called")
+func (c *cache) setModuleSet(moduleSet ModuleSet) error {
+	if c.setModuleSetCalled {
+		return errSetModuleSetAlreadyCalled
 	}
-	opaqueIDToModule := make(map[string]Module)
-	for _, module := range modules {
-		opaqueID := module.OpaqueID()
-		if _, ok := opaqueIDToModule[opaqueID]; ok {
-			// This is a system error, we should have already validated this.
-			return fmt.Errorf("duplicate opaqueID: %q", opaqueID)
-		}
-		opaqueIDToModule[opaqueID] = module
-	}
-	c.opaqueIDToModule = opaqueIDToModule
-	c.setModulesCalled = true
+	c.moduleSet = moduleSet
+	c.setModuleSetCalled = true
 	return nil
 }
 
@@ -110,9 +90,9 @@ func (c *cache) SetModules(modules []Module) error {
 func (c *cache) getModuleForFilePathUncached(ctx context.Context, filePath string) (Module, error) {
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
-	for opaqueID, module := range c.opaqueIDToModule {
+	for _, module := range c.moduleSet.Modules() {
 		if _, err := module.StatFileInfo(ctx, filePath); err == nil {
-			matchingOpaqueIDs[opaqueID] = struct{}{}
+			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
 		}
 	}
 	switch len(matchingOpaqueIDs) {
@@ -123,7 +103,7 @@ func (c *cache) getModuleForFilePathUncached(ctx context.Context, filePath strin
 		var matchingOpaqueID string
 		for matchingOpaqueID = range matchingOpaqueIDs {
 		}
-		return c.opaqueIDToModule[matchingOpaqueID], nil
+		return c.moduleSet.GetModuleForOpaqueID(matchingOpaqueID), nil
 	default:
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.

@@ -68,51 +68,29 @@ type testModuleData struct {
 }
 
 type testProvider struct {
-	moduleFullNameStringToModule map[string]bufmodule.Module
-	digestStringToModule         map[string]bufmodule.Module
+	moduleSet bufmodule.ModuleSet
 }
 
 func newTestProvider(ctx context.Context, testModuleDatas []*testModuleData) (*testProvider, error) {
-	moduleBuilder := bufmodule.NewModuleBuilder(ctx, nil)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, nil)
 	for i, testModuleData := range testModuleDatas {
 		moduleFullName, err := bufmodule.ParseModuleFullName(testModuleData.ModuleFullNameString)
 		if err != nil {
 			return nil, err
 		}
-		if err := moduleBuilder.AddModuleForBucket(
+		moduleSetBuilder.AddModuleForBucket(
 			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory
 			fmt.Sprintf("%d", i),
 			testModuleData.Bucket,
 			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
-		); err != nil {
-			return nil, err
-		}
+		)
 	}
-	modules, err := moduleBuilder.Build()
+	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
-	moduleFullNameStringToModule := make(map[string]bufmodule.Module, len(modules))
-	digestStringToModule := make(map[string]bufmodule.Module, len(modules))
-	for _, module := range modules {
-		moduleFullNameString := module.ModuleFullName().String()
-		if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
-			return nil, fmt.Errorf("duplicate test ModuleFullName: %q", moduleFullNameString)
-		}
-		moduleFullNameStringToModule[moduleFullNameString] = module
-		digest, err := module.Digest()
-		if err != nil {
-			return nil, err
-		}
-		digestString := digest.String()
-		if _, ok := digestStringToModule[digest.String()]; ok {
-			return nil, fmt.Errorf("duplicate test Digest: %q", digestString)
-		}
-		digestStringToModule[digestString] = module
-	}
 	return &testProvider{
-		moduleFullNameStringToModule: moduleFullNameStringToModule,
-		digestStringToModule:         digestStringToModule,
+		moduleSet: moduleSet,
 	}, nil
 }
 
@@ -120,8 +98,8 @@ func (t *testProvider) GetModuleInfoForModuleRef(
 	ctx context.Context,
 	moduleRef bufmodule.ModuleRef,
 ) (bufmodule.ModuleInfo, error) {
-	module, ok := t.moduleFullNameStringToModule[moduleRef.ModuleFullName().String()]
-	if !ok {
+	module := t.moduleSet.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+	if module == nil {
 		return nil, fmt.Errorf("no test ModuleInfo with name %q", moduleRef.ModuleFullName().String())
 	}
 	return module, nil
@@ -133,8 +111,8 @@ func (t *testProvider) GetModuleForModuleInfo(
 ) (bufmodule.Module, error) {
 	moduleFullName := moduleInfo.ModuleFullName()
 	if moduleFullName != nil {
-		module, ok := t.moduleFullNameStringToModule[moduleFullName.String()]
-		if !ok {
+		module := t.moduleSet.GetModuleForModuleFullName(moduleFullName)
+		if module == nil {
 			return nil, fmt.Errorf("no test Module with name %q", moduleFullName.String())
 		}
 		return module, nil
@@ -143,10 +121,12 @@ func (t *testProvider) GetModuleForModuleInfo(
 	if err != nil {
 		return nil, err
 	}
-	digestString := digest.String()
-	module, ok := t.digestStringToModule[digestString]
-	if !ok {
-		return nil, fmt.Errorf("no test Module with Digest %q", digestString)
+	module, err := t.moduleSet.GetModuleForDigest(digest)
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, fmt.Errorf("no test Module with Digest %q", digest.String())
 	}
 	return module, nil
 }

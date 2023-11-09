@@ -17,20 +17,42 @@ package bufmodule
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-type ModuleBuilder interface {
-	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) error
-	AddModuleForModuleInfo(moduleInfo ModuleInfo) error
-	// Build builds the Modules.
-	//
-	// The Modules will be sorted by OpaqueID.
-	Build() ([]Module, error)
+var (
+	errBuildAlreadyCalled = errors.New("ModuleSetBuilder.Build has already been called")
+)
 
-	isModuleBuilder()
+// ModuleSetBuilder builds ModuleSets.
+//
+// It is the effective primary entrypoint for this package.
+type ModuleSetBuilder interface {
+	// AddModuleForBucket adds a new Module for the given Bucket.
+	//
+	// This bucket will only be read for .proto files, license file(s), and documentation file(s).
+	//
+	// The BucketID is required.
+	// If AddModuleForBucketWithModuleFullName is used, the OpaqueID will use this
+	// ModuleFullName, otherwise it will be the BucketID.
+	// Returns the same ModuleSetBuilder.
+	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) ModuleSetBuilder
+	// AddModuleForModuleInfo adds a new Module for the given ModuleInfo.
+	//
+	// The ModuleProvider given to the ModuleSetBuilder at construction time will be used to
+	// retrieve this Module.
+	//
+	// The ModuleInfo must have ModuleFullName present.
+	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
+	// Returns the same ModuleSetBuilder.
+	AddModuleForModuleInfo(moduleInfo ModuleInfo) ModuleSetBuilder
+	// Build builds the Modules into a ModuleSet.
+	//
+	// Any errors from Add* calls will be returned here as well.
+	Build() (ModuleSet, error)
+
+	isModuleSetBuilder()
 }
 
 type AddModuleForBucketOption func(*addModuleForBucketOptions)
@@ -47,15 +69,16 @@ func AddModuleForBucketWithCommitID(commitID string) AddModuleForBucketOption {
 	}
 }
 
-func NewModuleBuilder(ctx context.Context, moduleProvider ModuleProvider) ModuleBuilder {
-	return newModuleBuilder(ctx, moduleProvider)
+// NewModuleSetBuilder returns a new ModuleSetBuilder.
+func NewModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) ModuleSetBuilder {
+	return newModuleSetBuilder(ctx, moduleProvider)
 }
 
 /// *** PRIVATE ***
 
-// moduleBuilder
+// moduleSetBuilder
 
-type moduleBuilder struct {
+type moduleSetBuilder struct {
 	ctx            context.Context
 	moduleProvider ModuleProvider
 
@@ -63,25 +86,27 @@ type moduleBuilder struct {
 	moduleInfoModules []Module
 	cache             *cache
 
+	errs        []error
 	buildCalled bool
 }
 
-func newModuleBuilder(ctx context.Context, moduleProvider ModuleProvider) *moduleBuilder {
+func newModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) *moduleSetBuilder {
 	cache := newCache()
-	return &moduleBuilder{
+	return &moduleSetBuilder{
 		ctx:            ctx,
 		moduleProvider: newLazyModuleProvider(moduleProvider, cache),
 		cache:          cache,
 	}
 }
 
-func (b *moduleBuilder) AddModuleForBucket(
+func (b *moduleSetBuilder) AddModuleForBucket(
 	bucketID string,
 	bucket storage.ReadBucket,
 	options ...AddModuleForBucketOption,
-) error {
+) ModuleSetBuilder {
 	if b.buildCalled {
-		return errors.New("Build already called")
+		b.errs = append(b.errs, errBuildAlreadyCalled)
+		return b
 	}
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
 	for _, option := range options {
@@ -96,39 +121,42 @@ func (b *moduleBuilder) AddModuleForBucket(
 		addModuleForBucketOptions.commitID,
 	)
 	if err != nil {
-		return err
+		b.errs = append(b.errs, err)
+		return b
 	}
 	b.bucketModules = append(
 		b.bucketModules,
 		module,
 	)
-	return nil
+	return b
 }
 
-func (b *moduleBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) error {
+func (b *moduleSetBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) ModuleSetBuilder {
 	if b.buildCalled {
-		return errors.New("Build already called")
+		b.errs = append(b.errs, errBuildAlreadyCalled)
+		return b
 	}
-	moduleFullName := moduleInfo.ModuleFullName()
-	if moduleFullName == nil {
-		return fmt.Errorf("ModuleInfo %v did not have ModuleFullName", moduleInfo)
+	if _, err := getAndValidateModuleFullName(moduleInfo); err != nil {
+		b.errs = append(b.errs, err)
+		return b
 	}
 	if b.moduleProvider == nil {
-		// We should perhaps have a ModuleBuilder without this method at all.
+		// We should perhaps have a ModuleSetBuilder without this method at all.
 		// We do this in bufmoduletest.
-		return errors.New("cannot call AddModuleForModuleInfo with nil ModuleProvider")
+		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleInfo with nil ModuleProvider"))
 	}
 	module, err := b.moduleProvider.GetModuleForModuleInfo(b.ctx, moduleInfo)
 	if err != nil {
-		return err
+		b.errs = append(b.errs, err)
+		return b
 	}
 	b.moduleInfoModules = append(b.moduleInfoModules, module)
-	return nil
+	return b
 }
 
-func (b *moduleBuilder) Build() ([]Module, error) {
+func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if b.buildCalled {
-		return nil, errors.New("Build already called")
+		return nil, errBuildAlreadyCalled
 	}
 	b.buildCalled = true
 
@@ -140,13 +168,20 @@ func (b *moduleBuilder) Build() ([]Module, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := b.cache.SetModules(modules); err != nil {
+	moduleSet, err := newModuleSet(modules)
+	if err != nil {
 		return nil, err
 	}
-	return modules, nil
+	for _, module := range modules {
+		module.setModuleSet(moduleSet)
+	}
+	if err := b.cache.setModuleSet(moduleSet); err != nil {
+		return nil, err
+	}
+	return moduleSet, nil
 }
 
-func (*moduleBuilder) isModuleBuilder() {}
+func (*moduleSetBuilder) isModuleSetBuilder() {}
 
 type addModuleForBucketOptions struct {
 	moduleFullName ModuleFullName

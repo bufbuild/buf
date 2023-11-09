@@ -157,6 +157,8 @@ type lazyModule struct {
 
 	cache *cache
 
+	moduleSet ModuleSet
+
 	getModuleAndDigest func() (Module, bufcas.Digest, error)
 	getModuleDeps      func() ([]ModuleDep, error)
 }
@@ -218,11 +220,12 @@ func newLazyModule(
 }
 
 func (m *lazyModule) Digest() (bufcas.Digest, error) {
-	// This is the non-tamper-proofed version, but does not result in a remote call if you are just
-	// reading digests. Questionable which one we need.
-	//return m.ModuleInfo.Digest()
-	_, digest, err := m.getModuleAndDigest()
-	return digest, err
+	// This does not result in a remote call if you are just reading digests.
+	return m.ModuleInfo.Digest()
+	// TODO: Make sure we don't need to check the remote digest here. We probably do not.
+	// Checking the remote digest is commented out here.
+	//_, digest, err := m.getModuleAndDigest()
+	//return digest, err
 }
 
 func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
@@ -253,9 +256,21 @@ func (m *lazyModule) ModuleDeps() ([]ModuleDep, error) {
 	return m.getModuleDeps()
 }
 
+func (m *lazyModule) ModuleSet() ModuleSet {
+	return m.moduleSet
+}
+
 func (m *lazyModule) OpaqueID() string {
 	// We know ModuleFullName is present via construction.
 	return m.ModuleFullName().String()
+}
+
+func (*lazyModule) BucketID() string {
+	return ""
+}
+
+func (m *lazyModule) setModuleSet(moduleSet ModuleSet) {
+	m.moduleSet = moduleSet
 }
 
 func (*lazyModule) isModuleReadBucket() {}

@@ -45,6 +45,19 @@ type Module interface {
 	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
+	// ModuleDeps returns the dependency list for this specific module.
+	//
+	// This list is pruned - only Modules that this Module actually depends on via import statements
+	// within its .proto files will be returned.
+	//
+	// Dependencies with the same ModuleFullName will always have the same commits and digests.
+	//
+	// The order of returned list of Modules will be stable between invocations, but should
+	// not be considered to be sorted in any way.
+	ModuleDeps() ([]ModuleDep, error)
+
+	// ModuleSet returns the ModuleSet that this Module is contained within.
+	ModuleSet() ModuleSet
 	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative
 	// to other Modules it was built with from a ModuleBuilder.
 	//
@@ -62,19 +75,18 @@ type Module interface {
 	// in two separate ModuleBuilder invocations may have different IDs.
 	//
 	// This ID will never be empty.
+	//
+	// TODO: update comments
+	// This is ModuleFullName -> fall back BucketID, and never empty.
 	OpaqueID() string
+	// May be empty.
+	//
+	// TODO: update comments
+	// Should not be on ModuleInfo as this only relates to objects created from ModuleBuilder,
+	// and ModuleInfos can also be constructed by ModuleInfoProviders.
+	BucketID() string
 
-	// ModuleDeps returns the dependency list for this specific module.
-	//
-	// This list is pruned - only Modules that this Module actually depends on via import statements
-	// within its .proto files will be returned.
-	//
-	// Dependencies with the same ModuleFullName will always have the same commits and digests.
-	//
-	// The order of returned list of Modules will be stable between invocations, but should
-	// not be considered to be sorted in any way.
-	ModuleDeps() ([]ModuleDep, error)
-
+	setModuleSet(ModuleSet)
 	isModule()
 }
 
@@ -121,6 +133,8 @@ type module struct {
 	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
+
+	moduleSet ModuleSet
 
 	getDigest     func() (bufcas.Digest, error)
 	getModuleDeps func() ([]ModuleDep, error)
@@ -175,6 +189,14 @@ func (m *module) Digest() (bufcas.Digest, error) {
 	return m.getDigest()
 }
 
+func (m *module) ModuleDeps() ([]ModuleDep, error) {
+	return m.getModuleDeps()
+}
+
+func (m *module) ModuleSet() ModuleSet {
+	return m.moduleSet
+}
+
 func (m *module) OpaqueID() string {
 	// We know that one of bucketID and moduleFullName are present via construction.
 	//
@@ -185,8 +207,12 @@ func (m *module) OpaqueID() string {
 	return m.bucketID
 }
 
-func (m *module) ModuleDeps() ([]ModuleDep, error) {
-	return m.getModuleDeps()
+func (m *module) BucketID() string {
+	return m.bucketID
+}
+
+func (m *module) setModuleSet(moduleSet ModuleSet) {
+	m.moduleSet = moduleSet
 }
 
 func (*module) isModuleInfo() {}
