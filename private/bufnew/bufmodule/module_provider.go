@@ -218,6 +218,9 @@ func newLazyModule(
 }
 
 func (m *lazyModule) Digest() (bufcas.Digest, error) {
+	// This is the non-tamper-proofed version, but does not result in a remote call if you are just
+	// reading digests. Questionable which one we need.
+	//return m.ModuleInfo.Digest()
 	_, digest, err := m.getModuleAndDigest()
 	return digest, err
 }
