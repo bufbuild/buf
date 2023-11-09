@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -490,6 +491,13 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
+	mappedReadBucket := readBucket
+	if subDirPath != "." {
+		mappedReadBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
+	}
+	if err := buflock.CheckDeprecatedDigests(ctx, m.logger, mappedReadBucket); err != nil {
+		return nil, err
+	}
 	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
 		// The module was already built while we were constructing the workspace.
 		// However, we still need to perform some additional validation based on
@@ -506,10 +514,6 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			}
 		}
 		return newModuleConfig(module, moduleConfig), nil
-	}
-	mappedReadBucket := readBucket
-	if subDirPath != "." {
-		mappedReadBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
 	}
 	moduleConfig, err := bufconfig.ReadConfigOS(
 		ctx,
