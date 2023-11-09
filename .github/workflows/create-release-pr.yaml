@@ -5,27 +5,25 @@ on:
       version:
         type: string
         description: The released version without 'v'. For example, 1.0.0.
-
 env:
   APP_ID: 251311
-
 jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - name: Get GitHub App Token
+      - name: Get GitHub app token
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ env.APP_ID }}
           private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
-      - name: Set up Git Name and Email
+      - name: Set up Git name and email
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-      - name: Create Release PR
+      - name: Create release PR
         run: bash ./make/buf/scripts/createreleasepr.bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

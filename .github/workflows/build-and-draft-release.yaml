@@ -19,22 +19,22 @@ jobs:
           echo "VERSION=${VERSION##*/v}" >> $GITHUB_ENV
       - name: Checkout repository code
         uses: actions/checkout@v4
-      - name: Set Up Go
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21.x"
-      - name: Set Up Git Name and Email
+      - name: Set up Git name and email
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-      - name: Build Assets and Draft Release
+      - name: Build assets and draft release
         run: bash ./make/buf/scripts/draftrelease.bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
           RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
-      - name: Unset Keys
+      - name: Unset keys
         if: ${{ always() }}
         run: |
           unset RELEASE_MINISIGN_PRIVATE_KEY

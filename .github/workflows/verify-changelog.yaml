@@ -7,7 +7,6 @@ on:
     branches:
       - "release/**"
       - "next/**"
-
 jobs:
   verify:
     runs-on: ubuntu-latest
