@@ -83,6 +83,9 @@ const (
 	// AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure is the fully-qualified name of the
 	// AdminService's UpdateReviewFlowGracePeriodPolicy RPC.
 	AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure = "/buf.alpha.registry.v1alpha1.AdminService/UpdateReviewFlowGracePeriodPolicy"
+	// AdminServiceGetClusterUsageProcedure is the fully-qualified name of the AdminService's
+	// GetClusterUsage RPC.
+	AdminServiceGetClusterUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetClusterUsage"
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -115,6 +118,9 @@ type AdminServiceClient interface {
 	GetReviewFlowGracePeriodPolicy(context.Context, *connect.Request[v1alpha1.GetReviewFlowGracePeriodPolicyRequest]) (*connect.Response[v1alpha1.GetReviewFlowGracePeriodPolicyResponse], error)
 	// Update review flow grace period policy for the server.
 	UpdateReviewFlowGracePeriodPolicy(context.Context, *connect.Request[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest]) (*connect.Response[v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse], error)
+	// GetClusterUsage returns the summation of total message, enum and service types usage
+	// for every repository in each organization within a single tenant BSR instance.
+	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -193,6 +199,11 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			baseURL+AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure,
 			opts...,
 		),
+		getClusterUsage: connect.NewClient[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse](
+			httpClient,
+			baseURL+AdminServiceGetClusterUsageProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -210,6 +221,7 @@ type adminServiceClient struct {
 	runServerUniquenessBackfillTask      *connect.Client[v1alpha1.RunServerUniquenessBackfillTaskRequest, v1alpha1.RunServerUniquenessBackfillTaskResponse]
 	getReviewFlowGracePeriodPolicy       *connect.Client[v1alpha1.GetReviewFlowGracePeriodPolicyRequest, v1alpha1.GetReviewFlowGracePeriodPolicyResponse]
 	updateReviewFlowGracePeriodPolicy    *connect.Client[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest, v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse]
+	getClusterUsage                      *connect.Client[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -279,6 +291,11 @@ func (c *adminServiceClient) UpdateReviewFlowGracePeriodPolicy(ctx context.Conte
 	return c.updateReviewFlowGracePeriodPolicy.CallUnary(ctx, req)
 }
 
+// GetClusterUsage calls buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage.
+func (c *adminServiceClient) GetClusterUsage(ctx context.Context, req *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error) {
+	return c.getClusterUsage.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
 type AdminServiceHandler interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
@@ -309,6 +326,9 @@ type AdminServiceHandler interface {
 	GetReviewFlowGracePeriodPolicy(context.Context, *connect.Request[v1alpha1.GetReviewFlowGracePeriodPolicyRequest]) (*connect.Response[v1alpha1.GetReviewFlowGracePeriodPolicyResponse], error)
 	// Update review flow grace period policy for the server.
 	UpdateReviewFlowGracePeriodPolicy(context.Context, *connect.Request[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest]) (*connect.Response[v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse], error)
+	// GetClusterUsage returns the summation of total message, enum and service types usage
+	// for every repository in each organization within a single tenant BSR instance.
+	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -383,6 +403,11 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		svc.UpdateReviewFlowGracePeriodPolicy,
 		opts...,
 	)
+	adminServiceGetClusterUsageHandler := connect.NewUnaryHandler(
+		AdminServiceGetClusterUsageProcedure,
+		svc.GetClusterUsage,
+		opts...,
+	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceForceDeleteUserProcedure:
@@ -409,6 +434,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceGetReviewFlowGracePeriodPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceUpdateReviewFlowGracePeriodPolicyProcedure:
 			adminServiceUpdateReviewFlowGracePeriodPolicyHandler.ServeHTTP(w, r)
+		case AdminServiceGetClusterUsageProcedure:
+			adminServiceGetClusterUsageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -464,4 +491,8 @@ func (UnimplementedAdminServiceHandler) GetReviewFlowGracePeriodPolicy(context.C
 
 func (UnimplementedAdminServiceHandler) UpdateReviewFlowGracePeriodPolicy(context.Context, *connect.Request[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest]) (*connect.Response[v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.UpdateReviewFlowGracePeriodPolicy is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage is not implemented"))
 }
