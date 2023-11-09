@@ -108,6 +108,10 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
+	if bucketID == "" {
+		b.errs = append(b.errs, errors.New("BucketID is required when calling AddModuleForBucket"))
+		return b
+	}
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
 	for _, option := range options {
 		option(addModuleForBucketOptions)
