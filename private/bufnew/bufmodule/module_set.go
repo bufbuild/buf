@@ -32,7 +32,7 @@ type ModuleSet interface {
 	//
 	// Returns nil if there is no Module with the given ModuleFullName.
 	GetModuleForModuleFullName(moduleFullName ModuleFullName) Module
-	// GetModuleForOpaqueID gets the MOdule for the OpaqueID, if it exists.
+	// GetModuleForOpaqueID gets the Module for the OpaqueID, if it exists.
 	//
 	// Returns nil if there is no Module with the given OpaqueID.
 	GetModuleForOpaqueID(opaqueID string) Module

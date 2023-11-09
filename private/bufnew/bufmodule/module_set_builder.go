@@ -45,6 +45,8 @@ type ModuleSetBuilder interface {
 	//
 	// The ModuleInfo must have ModuleFullName present.
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
+	// The dependencies of the Module will *not* be automatically added to the ModuleSet - all dependencies
+	// must be explicitly added.
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleInfo(moduleInfo ModuleInfo) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.

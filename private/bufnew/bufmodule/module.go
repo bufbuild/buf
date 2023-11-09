@@ -55,10 +55,13 @@ type Module interface {
 	// not be considered to be sorted in any way.
 	ModuleDeps() ([]ModuleDep, error)
 
-	// ModuleSet returns the ModuleSet that this Module is contained within.
+	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
+	// constructed from a ModuleSet.
+	//
+	// If the Module was solely retrieved from a ModuleProvider, this will be nil.
 	ModuleSet() ModuleSet
 	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative
-	// to other Modules it was built with from a ModuleBuilder.
+	// to other Modules it was built with from a ModuleSetBuilder.
 	//
 	// An OpaqueID can be used to denote expected uniqueness of content; if two Modules
 	// have different IDs, they should be expected to be logically different Modules.
@@ -68,10 +71,10 @@ type Module interface {
 	//
 	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
-	// Modules commonly built from a ModuleBuilder.
+	// Modules commonly built from a ModuleSetBuilder.
 	//
 	// This ID is not stable between different invocations; the same Module built twice
-	// in two separate ModuleBuilder invocations may have different IDs.
+	// in two separate ModuleSetBuilder invocations may have different IDs.
 	//
 	// This ID will never be empty.
 	//
@@ -81,7 +84,7 @@ type Module interface {
 	// May be empty.
 	//
 	// TODO: update comments
-	// Should not be on ModuleInfo as this only relates to objects created from ModuleBuilder,
+	// Should not be on ModuleInfo as this only relates to objects created from ModuleSetBuilder,
 	// and ModuleInfos can also be constructed by ModuleInfoProviders.
 	BucketID() string
 

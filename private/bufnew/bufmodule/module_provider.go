@@ -39,11 +39,6 @@ type ModuleProvider interface {
 }
 
 // NewAPIModuleProvider returns a new ModuleProvider for the given API client.
-//
-// The Modules returned will be lazily-loaded: All functions except for the ModuleInfo
-// functions will be loaded only when called. This allows us to more widely use the Module
-// as a type (such as with dependencies) without incurring the lookup and building cost when
-// all we want is ModuleInfo-related properties.
 func NewAPIModuleProvider(clientProvider bufapi.ClientProvider) ModuleProvider {
 	return newLazyModuleProvider(newAPIModuleProvider(clientProvider), nil)
 }
