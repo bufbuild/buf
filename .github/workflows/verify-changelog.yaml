@@ -6,11 +6,12 @@ on:
   push:
     branches:
       - "release/**"
+      - "next/**"
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') }}
+    if: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') || startsWith(github.head_ref, 'next/')}}
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
