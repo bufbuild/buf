@@ -17,11 +17,10 @@ package bufapi
 import (
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1beta1/ownerv1beta1connect"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
-// TODO: It'd be great if we could detect if we do immutable get by ID queries, and then have a LRU
-// cache for those entities. Thinking owners.
-
+// ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
 	BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient
 	CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient
@@ -31,4 +30,85 @@ type ClientProvider interface {
 	TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient
 	UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient
 	VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient
+}
+
+// NewClientProvider returns a new ClientProvider.
+func NewClientProvider(clientConfig *connectclient.Config) ClientProvider {
+	return newClientProvider(clientConfig)
+}
+
+// *** PRIVATE ***
+
+type clientProvider struct {
+	clientConfig *connectclient.Config
+}
+
+func newClientProvider(clientConfig *connectclient.Config) *clientProvider {
+	return &clientProvider{
+		clientConfig: clientConfig,
+	}
+}
+
+func (c *clientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewBranchServiceClient,
+	)
+}
+
+func (c *clientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewCommitServiceClient,
+	)
+}
+
+func (c *clientProvider) ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewModuleServiceClient,
+	)
+}
+
+func (c *clientProvider) OrganizationServiceClient(registryHostname string) ownerv1beta1connect.OrganizationServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		ownerv1beta1connect.NewOrganizationServiceClient,
+	)
+}
+
+func (c *clientProvider) OwnerServiceClient(registryHostname string) ownerv1beta1connect.OwnerServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		ownerv1beta1connect.NewOwnerServiceClient,
+	)
+}
+
+func (c *clientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewTagServiceClient,
+	)
+}
+
+func (c *clientProvider) UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		ownerv1beta1connect.NewUserServiceClient,
+	)
+}
+
+func (c *clientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewVCSCommitServiceClient,
+	)
 }
