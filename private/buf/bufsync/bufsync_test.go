@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+package bufsync_test
 
 import (
 	"bytes"
@@ -23,7 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufsync"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/stretchr/testify/require"
@@ -89,3 +92,111 @@ func writeFiles(t *testing.T, directoryPath string, pathToContents map[string]st
 		require.NoError(t, os.WriteFile(filepath.Join(directoryPath, path), []byte(contents), 0600))
 	}
 }
+
+type mockClock struct {
+	now time.Time
+}
+
+func (c *mockClock) Now() time.Time { return c.now }
+
+type mockSyncHandler struct {
+	syncedCommitsSHAs map[string]struct{}
+	commitsPerBranch  map[string][]bufsync.ModuleCommit
+	hashByTag         map[string]git.Hash
+	tagsByHash        map[string][]string
+}
+
+func newMockSyncHandler() *mockSyncHandler {
+	return &mockSyncHandler{
+		syncedCommitsSHAs: make(map[string]struct{}),
+		commitsPerBranch:  make(map[string][]bufsync.ModuleCommit),
+		hashByTag:         make(map[string]git.Hash),
+		tagsByHash:        make(map[string][]string),
+	}
+}
+
+func (c *mockSyncHandler) markSynced(gitHash string) {
+	c.syncedCommitsSHAs[gitHash] = struct{}{}
+}
+
+func (c *mockSyncHandler) HandleReadModuleError(
+	readErr *bufsync.ReadModuleError,
+) bufsync.LookbackDecisionCode {
+	if readErr.Code() == bufsync.ReadModuleErrorCodeUnexpectedName {
+		return bufsync.LookbackDecisionCodeOverride
+	}
+	return bufsync.LookbackDecisionCodeSkip
+}
+
+func (c *mockSyncHandler) InvalidBSRSyncPoint(
+	bufmoduleref.ModuleIdentity,
+	string,
+	git.Hash,
+	bool,
+	error,
+) error {
+	return nil
+}
+
+func (c *mockSyncHandler) BackfillTags(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	alreadySyncedHash git.Hash,
+	author git.Ident,
+	committer git.Ident,
+	tags []string,
+) (string, error) {
+	c.tagsByHash[alreadySyncedHash.Hex()] = tags
+	for _, tag := range tags {
+		c.hashByTag[tag] = alreadySyncedHash
+	}
+	return "some-BSR-commit-name", nil
+}
+
+func (c *mockSyncHandler) GetModuleDefaultBranch(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+) (string, error) {
+	// hardcoded default branch
+	return bufmoduleref.Main, nil
+}
+
+func (c *mockSyncHandler) ResolveSyncPoint(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	branch string,
+) (git.Hash, error) {
+	if branch, ok := c.commitsPerBranch[branch]; !ok || len(branch) == 0 {
+		// no branch or empty branch
+		return nil, nil
+	} else {
+		// everything here is synced; return tip of branch
+		return branch[len(branch)-1].Commit().Hash(), nil
+	}
+}
+
+func (c *mockSyncHandler) SyncModuleCommit(
+	ctx context.Context,
+	commit bufsync.ModuleCommit,
+) error {
+	c.markSynced(commit.Commit().Hash().Hex())
+	// append-only, no backfill; good enough for now!
+	c.commitsPerBranch[commit.Branch()] = append(c.commitsPerBranch[commit.Branch()], commit)
+	return nil
+}
+
+func (c *mockSyncHandler) CheckSyncedGitCommits(
+	ctx context.Context,
+	module bufmoduleref.ModuleIdentity,
+	commitHashes map[string]struct{},
+) (map[string]struct{}, error) {
+	syncedHashes := make(map[string]struct{})
+	for hash := range commitHashes {
+		if _, isSynced := c.syncedCommitsSHAs[hash]; isSynced {
+			syncedHashes[hash] = struct{}{}
+		}
+	}
+	return syncedHashes, nil
+}
+
+var _ bufsync.Handler = (*mockSyncHandler)(nil)

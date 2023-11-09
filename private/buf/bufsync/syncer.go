@@ -34,23 +34,20 @@ import (
 )
 
 const (
-	// lookbackCommitsLimit is the amount of commits that we will look back before the start sync
+	// LookbackCommitsLimit is the amount of commits that we will look back before the start sync
 	// point to backfill old git tags. We might allow customizing this value in the future.
-	lookbackCommitsLimit = 5
-	// lookbackTimeLimit is how old we will look back (git commit timestamps) before the start sync
+	LookbackCommitsLimit = 5
+	// LookbackTimeLimit is how old we will look back (git commit timestamps) before the start sync
 	// point to backfill old git tags. We might allow customizing this value in the future.
-	lookbackTimeLimit = 24 * time.Hour
+	LookbackTimeLimit = 24 * time.Hour
 )
 
 type syncer struct {
-	logger                    *zap.Logger
-	repo                      git.Repository
-	storageGitProvider        storagegit.Provider
-	errorHandler              ErrorHandler
-	syncedGitCommitChecker    SyncedGitCommitChecker
-	moduleDefaultBranchGetter ModuleDefaultBranchGetter
-	syncPointResolver         SyncPointResolver
-	tagsBackfiller            TagsBackfiller
+	logger             *zap.Logger
+	repo               git.Repository
+	storageGitProvider storagegit.Provider
+	handler            Handler
+	clock              Clock
 
 	// flags received on creation
 	remote                               string
@@ -82,16 +79,18 @@ type syncer struct {
 
 func newSyncer(
 	logger *zap.Logger,
+	clock Clock,
 	repo git.Repository,
 	storageGitProvider storagegit.Provider,
-	errorHandler ErrorHandler,
+	handler Handler,
 	options ...SyncerOption,
 ) (Syncer, error) {
 	s := &syncer{
 		logger:                                logger,
+		clock:                                 clock,
 		repo:                                  repo,
 		storageGitProvider:                    storageGitProvider,
-		errorHandler:                          errorHandler,
+		handler:                               handler,
 		modulesDirsToIdentityOverrideForSync:  make(map[string]bufmoduleref.ModuleIdentity),
 		commitsToTags:                         make(map[string][]string),
 		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
@@ -104,19 +103,10 @@ func newSyncer(
 			return nil, err
 		}
 	}
-	if s.moduleDefaultBranchGetter == nil {
-		s.logger.Warn(
-			"no module default branch getter, the default branch validation will be skipped for all modules and branches",
-			zap.String("default_git_branch", s.repo.DefaultBranch()),
-		)
-	}
-	if s.syncedGitCommitChecker == nil {
-		s.logger.Warn("no sync git commit checker, all branches will attempt to sync from the start")
-	}
 	return s, nil
 }
 
-func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
+func (s *syncer) Sync(ctx context.Context) error {
 	if err := s.prepareSync(ctx); err != nil {
 		return fmt.Errorf("sync preparation: %w", err)
 	}
@@ -154,7 +144,7 @@ func (s *syncer) Sync(ctx context.Context, syncFunc SyncFunc) error {
 					zap.String("branch", branch),
 				)
 			}
-			if err := s.syncModuleInBranch(ctx, moduleDir, moduleIdentity, branch, expectedSyncPoint, syncFunc); err != nil {
+			if err := s.syncModuleInBranch(ctx, moduleDir, moduleIdentity, branch, expectedSyncPoint); err != nil {
 				return fmt.Errorf("sync module %s in branch %s: %w", moduleDir, branch, err)
 			}
 		}
@@ -289,33 +279,27 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		return duplicatedIdentitiesErr
 	}
 	// (4) Populate default branches for all module identities (from all branches).
-	if s.moduleDefaultBranchGetter != nil {
-		for _, moduleIdentity := range allModulesIdentitiesForSync {
-			bsrDefaultBranch, err := s.moduleDefaultBranchGetter(ctx, moduleIdentity)
-			if err != nil {
-				if errors.Is(err, ErrModuleDoesNotExist) {
-					s.logger.Warn(
-						"no default branch for module",
-						zap.String("module", moduleIdentity.IdentityString()),
-						zap.Error(err),
-					)
-					continue
-				}
-				return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
+	for _, moduleIdentity := range allModulesIdentitiesForSync {
+		bsrDefaultBranch, err := s.handler.GetModuleDefaultBranch(ctx, moduleIdentity)
+		if err != nil {
+			if errors.Is(err, ErrModuleDoesNotExist) {
+				s.logger.Warn(
+					"no default branch for module",
+					zap.String("module", moduleIdentity.IdentityString()),
+					zap.Error(err),
+				)
+				continue
 			}
-			s.modulesBSRDefaultBranch[moduleIdentity.IdentityString()] = bsrDefaultBranch
+			return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
 		}
+		s.modulesBSRDefaultBranch[moduleIdentity.IdentityString()] = bsrDefaultBranch
 	}
 	return nil
 }
 
 // resolveSyncPoint resolves a sync point for a particular module identity and branch.
 func (s *syncer) resolveSyncPoint(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, branch string) (git.Hash, error) {
-	// If resumption is not enabled, we can bail early.
-	if s.syncPointResolver == nil {
-		return nil, nil
-	}
-	syncPoint, err := s.syncPointResolver(ctx, moduleIdentity, branch)
+	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleIdentity, branch)
 	if err != nil {
 		return nil, fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
 	}
@@ -326,7 +310,7 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, moduleIdentity bufmoduler
 	// Validate that the commit pointed to by the sync point exists in the git repo.
 	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
 		isDefaultBranch := branch == s.repo.DefaultBranch()
-		return nil, s.errorHandler.InvalidBSRSyncPoint(moduleIdentity, branch, syncPoint, isDefaultBranch, err)
+		return nil, s.handler.InvalidBSRSyncPoint(moduleIdentity, branch, syncPoint, isDefaultBranch, err)
 	}
 	return syncPoint, nil
 }
@@ -351,33 +335,31 @@ func (s *syncer) syncModuleInBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
 	expectedSyncPoint string,
-	syncFunc SyncFunc,
 ) error {
 	commitsForSync, err := s.branchSyncableCommits(ctx, moduleDir, moduleIdentity, branch, expectedSyncPoint)
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
 	// first sync tags in old commits
-	if s.tagsBackfiller != nil {
-		var startSyncPoint git.Hash
-		if len(commitsForSync) == 0 {
-			// no commits to sync for this branch, backfill from HEAD
-			headCommit, err := s.repo.HEADCommit(
-				git.HEADCommitWithBranch(branch),
-				git.HEADCommitWithRemote(s.remote),
-			)
-			if err != nil {
-				return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
-			}
-			startSyncPoint = headCommit.Hash()
-		} else {
-			// backfill from the first commit to sync
-			startSyncPoint = commitsForSync[0].commit.Hash()
+	var startSyncPoint git.Hash
+	if len(commitsForSync) == 0 {
+		// no commits to sync for this branch, backfill from HEAD
+		headCommit, err := s.repo.HEADCommit(
+			git.HEADCommitWithBranch(branch),
+			git.HEADCommitWithRemote(s.remote),
+		)
+		if err != nil {
+			return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
 		}
-		if err := s.backfillTags(ctx, moduleDir, moduleIdentity, branch, startSyncPoint, &realClock{}); err != nil {
-			return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
-		}
+		startSyncPoint = headCommit.Hash()
+	} else {
+		// backfill from the first commit to sync
+		startSyncPoint = commitsForSync[0].commit.Hash()
 	}
+	if err := s.backfillTags(ctx, moduleDir, moduleIdentity, branch, startSyncPoint); err != nil {
+		return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
+	}
+	// now sync
 	targetModuleIdentity := moduleIdentity.IdentityString() // all syncable modules in the branch have the same target
 	logger := s.logger.With(
 		zap.String("module directory", branch),
@@ -396,7 +378,7 @@ func (s *syncer) syncModuleInBranch(
 		if builtModule == nil {
 			return fmt.Errorf("syncable commit %s has no built module to sync", commitHash)
 		}
-		if err := syncFunc(
+		if err := s.handler.SyncModuleCommit(
 			ctx,
 			newModuleCommit(
 				branch,
@@ -487,7 +469,7 @@ func (s *syncer) branchSyncableCommits(
 			commitsForSync = append(commitsForSync, &syncableCommit{commit: commit, module: builtModule})
 			return nil
 		}
-		decision := s.errorHandler.HandleReadModuleError(readErr)
+		decision := s.handler.HandleReadModuleError(readErr)
 		switch decision {
 		case LookbackDecisionCodeFail:
 			return fmt.Errorf("read module error: %w", readErr)
@@ -532,9 +514,6 @@ func (s *syncer) branchSyncableCommits(
 
 // isGitCommitSynced checks if a commit hash is already synced to a BSR module.
 func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash string) (bool, error) {
-	if s.syncedGitCommitChecker == nil {
-		return false, nil
-	}
 	modIdentity := moduleIdentity.IdentityString()
 	// check local cache first
 	if syncedModuleCommits, ok := s.modulesIdentitiesToCommitsSyncedCache[modIdentity]; ok {
@@ -543,7 +522,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 		}
 	}
 	// not in the cache, request BSR check
-	syncedModuleCommits, err := s.syncedGitCommitChecker(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
+	syncedModuleCommits, err := s.handler.CheckSyncedGitCommits(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err
 	}
@@ -641,11 +620,10 @@ func (s *syncer) backfillTags(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
 	syncStartHash git.Hash,
-	clock clock,
 ) error {
 	var (
 		lookbackCommitsCount int
-		timeLimit            = clock.Now().Add(-lookbackTimeLimit)
+		timeLimit            = s.clock.Now().Add(-LookbackTimeLimit)
 		stopLoopErr          = errors.New("stop loop")
 		logger               = s.logger.With(
 			zap.String("branch", branch),
@@ -658,7 +636,7 @@ func (s *syncer) backfillTags(
 		lookbackCommitsCount++
 		// For the lookback into older commits to stop, both lookback limits (amount of commits and
 		// timespan) need to be met.
-		if lookbackCommitsCount > lookbackCommitsLimit &&
+		if lookbackCommitsCount > LookbackCommitsLimit &&
 			oldCommit.Committer().Timestamp().Before(timeLimit) {
 			return stopLoopErr
 		}
@@ -672,7 +650,7 @@ func (s *syncer) backfillTags(
 		if _, readErr := s.readModuleAt(
 			ctx, branch, oldCommit, moduleDir,
 			readModuleAtWithExpectedModuleIdentity(moduleIdentity.IdentityString()),
-		); readErr != nil && s.errorHandler.HandleReadModuleError(readErr) != LookbackDecisionCodeOverride {
+		); readErr != nil && s.handler.HandleReadModuleError(readErr) != LookbackDecisionCodeOverride {
 			// read module failed, and the error handler would not have overwritten it
 			return nil
 		}
@@ -682,7 +660,7 @@ func (s *syncer) backfillTags(
 		)
 		// Valid module in this commit to backfill tags. If backfilling the tags fails, we'll
 		// WARN+continue to not block actual pending commits to sync in this run.
-		bsrCommitName, err := s.tagsBackfiller(ctx, moduleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToBackfill)
+		bsrCommitName, err := s.handler.BackfillTags(ctx, moduleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToBackfill)
 		if err != nil {
 			logger.Warn("backfill older tags failed", zap.Error(err))
 			return nil
@@ -725,16 +703,6 @@ type syncableCommit struct {
 	commit git.Commit
 	module *bufmodulebuild.BuiltModule
 }
-
-// clock allows embedding a custom time.Now implementation, so it's easier to test.
-type clock interface {
-	Now() time.Time
-}
-
-// realClock returns the real time.Now.
-type realClock struct{}
-
-func (*realClock) Now() time.Time { return time.Now() }
 
 func syncableCommitsHashes(syncableCommits []*syncableCommit) []string {
 	var hashes []string

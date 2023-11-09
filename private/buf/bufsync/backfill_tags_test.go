@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+package bufsync_test
 
 import (
 	"context"
@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -36,64 +37,45 @@ func TestBackfilltags(t *testing.T) {
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	prepareGitRepoBackfillTags(t, repoDir, moduleIdentityInHEAD)
-	mockBSRChecker := newMockSyncGitChecker()
+	mockHandler := newMockSyncHandler()
 	// prepare the top 5 commits as syncable commits, mark the rest as if they were already synced
 	var (
 		commitCount            int
 		allCommitsHashes       []string
-		startSyncHash          git.Hash
 		fakeNowCommitLimitTime time.Time // to be sent as a fake clock and discard "old" commits
 	)
 	require.NoError(t, repo.ForEachCommit(func(commit git.Commit) error {
 		allCommitsHashes = append(allCommitsHashes, commit.Hash().Hex())
 		commitCount++
-		if commitCount == 5 {
-			startSyncHash = commit.Hash()
-		}
 		if commitCount > 5 {
 			if commitCount == 15 {
 				// have the time limit at the commit 15 looking back
 				fakeNowCommitLimitTime = commit.Committer().Timestamp()
 			}
-			mockBSRChecker.markSynced(commit.Hash().Hex())
+			mockHandler.markSynced(commit.Hash().Hex())
 		}
 		return nil
 	}))
-	mockTagsBackfiller := newMockTagsBackfiller()
-	mockClock := &mockClock{now: fakeNowCommitLimitTime.Add(lookbackTimeLimit)}
 	const moduleDir = "." // module is at the git root repo
-	testSyncer := syncer{
-		repo:                                  repo,
-		storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
-		logger:                                zaptest.NewLogger(t),
-		sortedModulesDirsForSync:              []string{moduleDir},
-		modulesDirsToIdentityOverrideForSync:  map[string]bufmoduleref.ModuleIdentity{moduleDir: nil},
-		syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
-		commitsToTags:                         make(map[string][]string),
-		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
-		modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
-		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-		tagsBackfiller:                        mockTagsBackfiller.backfillFunc(),
-		errorHandler:                          &mockErrorHandler{},
-	}
-	require.NoError(t, testSyncer.prepareSync(context.Background()))
-	require.NoError(t, testSyncer.backfillTags(
-		context.Background(),
-		moduleDir,
-		moduleIdentityInHEAD,
-		defaultBranchName,
-		startSyncHash,
-		mockClock,
-	))
+	syncer, err := bufsync.NewSyncer(
+		zaptest.NewLogger(t),
+		&mockClock{now: fakeNowCommitLimitTime.Add(bufsync.LookbackTimeLimit)},
+		repo,
+		storagegit.NewProvider(repo.Objects()),
+		mockHandler,
+		bufsync.SyncerWithModule(moduleDir, nil),
+	)
+	require.NoError(t, err)
+	require.NoError(t, syncer.Sync(context.Background()))
 	// in total the repo has at least 20 commits, we expect to backfill 11 of them...
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
-	assert.Len(t, mockTagsBackfiller.backfilledCommitsToTags, 11)
+	assert.Len(t, mockHandler.tagsByHash, 11)
 	// as follows:
 	for i, commitHash := range allCommitsHashes {
 		if i < 4 {
 			// the 4 most recent should not be backfilling anything, those are unsynced commits that will
 			// be synced by another func.
-			assert.NotContains(t, mockTagsBackfiller.backfilledCommitsToTags, commitHash)
+			assert.NotContains(t, mockHandler.tagsByHash, commitHash)
 		} else if i < 15 {
 			// Between 5-15 the tags should be backfilled.
 			//
@@ -102,10 +84,10 @@ func TestBackfilltags(t *testing.T) {
 			//
 			// The func it's backfilling more than 5 commits, because it needs to backfill until both
 			// conditions are met, at least 5 commits and at least 24 hours.
-			assert.Contains(t, mockTagsBackfiller.backfilledCommitsToTags, commitHash)
+			assert.Contains(t, mockHandler.tagsByHash, commitHash)
 		} else {
 			// past the #15 the commits are too old, we don't backfill back there
-			assert.NotContains(t, mockTagsBackfiller.backfilledCommitsToTags, commitHash)
+			assert.NotContains(t, mockHandler.tagsByHash, commitHash)
 		}
 	}
 }
@@ -141,25 +123,3 @@ func prepareGitRepoBackfillTags(t *testing.T, repoDir string, moduleIdentity buf
 	time.Sleep(1 * time.Second)
 	doEmptyCommitAndTag(15)
 }
-
-type mockTagsBackfiller struct {
-	backfilledCommitsToTags map[string]struct{}
-}
-
-func newMockTagsBackfiller() mockTagsBackfiller {
-	return mockTagsBackfiller{backfilledCommitsToTags: make(map[string]struct{})}
-}
-
-func (b *mockTagsBackfiller) backfillFunc() TagsBackfiller {
-	return func(_ context.Context, _ bufmoduleref.ModuleIdentity, alreadySyncedHash git.Hash, _, _ git.Ident, _ []string) (string, error) {
-		// we don't really test which tags were backfilled, only which commits had its tags backfilled
-		b.backfilledCommitsToTags[alreadySyncedHash.Hex()] = struct{}{}
-		return "some-BSR-commit-name", nil
-	}
-}
-
-type mockClock struct {
-	now time.Time
-}
-
-func (c *mockClock) Now() time.Time { return c.now }

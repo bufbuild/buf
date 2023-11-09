@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+package bufsync_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
@@ -76,19 +77,20 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
 				}
-				testSyncer := syncer{
-					repo:                                  repo,
-					storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
-					logger:                                zaptest.NewLogger(t),
-					sortedModulesDirsForSync:              moduleDirs,
-					modulesDirsToIdentityOverrideForSync:  tc.modulesOverrides,
-					commitsToTags:                         make(map[string][]string),
-					modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
-					modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
-					modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-					errorHandler:                          &mockErrorHandler{},
+				var opts []bufsync.SyncerOption
+				for moduleDir, identityOverride := range tc.modulesOverrides {
+					opts = append(opts, bufsync.SyncerWithModule(moduleDir, identityOverride))
 				}
-				prepareErr := testSyncer.prepareSync(context.Background())
+				syncer, err := bufsync.NewSyncer(
+					zaptest.NewLogger(t),
+					bufsync.NewRealClock(),
+					repo,
+					storagegit.NewProvider(repo.Objects()),
+					newMockSyncHandler(),
+					opts...,
+				)
+				require.NoError(t, err)
+				prepareErr := syncer.Sync(context.Background())
 				require.Error(t, prepareErr)
 				assert.Contains(t, prepareErr.Error(), repeatedIdentity.IdentityString())
 				assert.Contains(t, prepareErr.Error(), defaultBranchName)
