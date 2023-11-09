@@ -1,94 +1,94 @@
-file:  {
-  name:  "buf.proto"
-  package:  "buf"
-  message_type:  {
-    name:  "Foo"
-    field:  {
-      name:  "one"
-      number:  1
-      label:  LABEL_OPTIONAL
-      type:  TYPE_INT64
-      json_name:  "one"
+file: {
+  name: "buf.proto"
+  package: "buf"
+  message_type: {
+    name: "Foo"
+    field: {
+      name: "one"
+      number: 1
+      label: LABEL_OPTIONAL
+      type: TYPE_INT64
+      json_name: "one"
     }
   }
-  source_code_info:  {
-    location:  {
-      span:  0
-      span:  0
-      span:  6
-      span:  1
+  source_code_info: {
+    location: {
+      span: 0
+      span: 0
+      span: 6
+      span: 1
     }
-    location:  {
-      path:  12
-      span:  0
-      span:  0
-      span:  18
+    location: {
+      path: 12
+      span: 0
+      span: 0
+      span: 18
     }
-    location:  {
-      path:  2
-      span:  2
-      span:  0
-      span:  12
+    location: {
+      path: 2
+      span: 2
+      span: 0
+      span: 12
     }
-    location:  {
-      path:  4
-      path:  0
-      span:  4
-      span:  0
-      span:  6
-      span:  1
+    location: {
+      path: 4
+      path: 0
+      span: 4
+      span: 0
+      span: 6
+      span: 1
     }
-    location:  {
-      path:  4
-      path:  0
-      path:  1
-      span:  4
-      span:  8
-      span:  11
+    location: {
+      path: 4
+      path: 0
+      path: 1
+      span: 4
+      span: 8
+      span: 11
     }
-    location:  {
-      path:  4
-      path:  0
-      path:  2
-      path:  0
-      span:  5
-      span:  2
-      span:  16
+    location: {
+      path: 4
+      path: 0
+      path: 2
+      path: 0
+      span: 5
+      span: 2
+      span: 16
     }
-    location:  {
-      path:  4
-      path:  0
-      path:  2
-      path:  0
-      path:  5
-      span:  5
-      span:  2
-      span:  7
+    location: {
+      path: 4
+      path: 0
+      path: 2
+      path: 0
+      path: 5
+      span: 5
+      span: 2
+      span: 7
     }
-    location:  {
-      path:  4
-      path:  0
-      path:  2
-      path:  0
-      path:  1
-      span:  5
-      span:  8
-      span:  11
+    location: {
+      path: 4
+      path: 0
+      path: 2
+      path: 0
+      path: 1
+      span: 5
+      span: 8
+      span: 11
     }
-    location:  {
-      path:  4
-      path:  0
-      path:  2
-      path:  0
-      path:  3
-      span:  5
-      span:  14
-      span:  15
+    location: {
+      path: 4
+      path: 0
+      path: 2
+      path: 0
+      path: 3
+      span: 5
+      span: 14
+      span: 15
     }
   }
-  syntax:  "proto3"
-  buf_extension:  {
-    is_import:  false
-    is_syntax_unspecified:  false
+  syntax: "proto3"
+  buf_extension: {
+    is_import: false
+    is_syntax_unspecified: false
   }
 }

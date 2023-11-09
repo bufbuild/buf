@@ -16,7 +16,9 @@ package buflock
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -32,7 +34,7 @@ var deprecatedFormatToPrefix = map[string]string{
 func readConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			// If the lock file doesn't exist, just return no dependencies.
 			return &Config{}, nil
 		}

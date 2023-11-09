@@ -190,13 +190,13 @@ func (b *builder) warnInvalidImports(
 				b.logger.Debug("nil_module_in_workspace")
 				continue
 			}
-			targetFiles, err := mod.TargetFileInfos(ctx)
+			targetFileInfos, err := mod.TargetFileInfos(ctx)
 			if err != nil {
 				return fmt.Errorf("workspace module target file infos: %w", err)
 			}
-			for _, file := range targetFiles {
-				if file.ModuleIdentity() != nil {
-					workspaceIdentities[file.ModuleIdentity().IdentityString()] = struct{}{}
+			for _, fileInfo := range targetFileInfos {
+				if fileInfo.ModuleIdentity() != nil {
+					workspaceIdentities[fileInfo.ModuleIdentity().IdentityString()] = struct{}{}
 					break
 				}
 			}
@@ -214,34 +214,34 @@ func (b *builder) warnInvalidImports(
 	expectedDirectDepsFilesToModule := make(map[string]string) // filepath:modIdentity
 	workspaceFilesToModule := make(map[string]string)          // filepath:modIdentity
 	transitiveDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
-	for _, file := range builtImage.Files() {
+	for _, imageFile := range builtImage.Files() {
 		{ // populate allImgFiles
 			modIdentity := "local"
-			if file.ModuleIdentity() != nil {
-				modIdentity = file.ModuleIdentity().IdentityString()
+			if imageFile.ModuleIdentity() != nil {
+				modIdentity = imageFile.ModuleIdentity().IdentityString()
 			}
 			if _, ok := allImgFiles[modIdentity]; !ok {
 				allImgFiles[modIdentity] = make(map[string][]string)
 			}
-			allImgFiles[modIdentity][file.Path()] = file.FileDescriptor().GetDependency()
+			allImgFiles[modIdentity][imageFile.Path()] = imageFile.FileDescriptorProto().GetDependency()
 		}
-		if !file.IsImport() {
-			targetFiles[file.Path()] = struct{}{}
+		if !imageFile.IsImport() {
+			targetFiles[imageFile.Path()] = struct{}{}
 			continue
 		}
-		if file.ModuleIdentity() == nil {
-			workspaceFilesToModule[file.Path()] = "" // local workspace unnamed module
+		if imageFile.ModuleIdentity() == nil {
+			workspaceFilesToModule[imageFile.Path()] = "" // local workspace unnamed module
 			continue
 		}
 		// file is import and comes from a named module. It's either a direct dep, a workspace module,
 		// or a transitive dep.
-		modIdentity := file.ModuleIdentity().IdentityString()
+		modIdentity := imageFile.ModuleIdentity().IdentityString()
 		if _, ok := expectedDirectDepsIdentities[modIdentity]; ok {
-			expectedDirectDepsFilesToModule[file.Path()] = modIdentity
+			expectedDirectDepsFilesToModule[imageFile.Path()] = modIdentity
 		} else if _, ok := workspaceIdentities[modIdentity]; ok {
-			workspaceFilesToModule[file.Path()] = modIdentity
+			workspaceFilesToModule[imageFile.Path()] = modIdentity
 		} else {
-			transitiveDepsFilesToModule[file.Path()] = modIdentity
+			transitiveDepsFilesToModule[imageFile.Path()] = modIdentity
 		}
 	}
 	b.logger.Debug(
@@ -254,12 +254,12 @@ func (b *builder) warnInvalidImports(
 	)
 
 	// validate import statements of target files against dependencies categorization above
-	for _, file := range builtImage.Files() {
-		if file.IsImport() {
+	for _, imageFile := range builtImage.Files() {
+		if imageFile.IsImport() {
 			continue // only check import statements in local files
 		}
 		// .GetDependency() returns an array of file path imports in the file descriptor
-		for _, importFilePath := range file.FileDescriptor().GetDependency() {
+		for _, importFilePath := range imageFile.FileDescriptorProto().GetDependency() {
 			if _, ok := targetFiles[importFilePath]; ok {
 				continue // import comes from local
 			}
@@ -271,7 +271,7 @@ func (b *builder) warnInvalidImports(
 			}
 			warnMsg := fmt.Sprintf(
 				"File %q imports %q, which is not found in your local files or direct dependencies",
-				file.Path(), importFilePath,
+				imageFile.Path(), importFilePath,
 			)
 			if workspaceModule, ok := workspaceFilesToModule[importFilePath]; ok {
 				if workspaceModule == "" {

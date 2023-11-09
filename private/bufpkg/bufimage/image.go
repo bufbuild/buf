@@ -110,7 +110,7 @@ func orderImageFilesRec(
 		return outputImageFiles
 	}
 	alreadySeen[path] = struct{}{}
-	for _, dependency := range inputImageFile.FileDescriptor().GetDependency() {
+	for _, dependency := range inputImageFile.FileDescriptorProto().GetDependency() {
 		dependencyImageFile, ok := pathToImageFile[dependency]
 		if ok {
 			outputImageFiles = orderImageFilesRec(

@@ -1,4 +1,9 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
+# Need to pin until https://github.com/google/cel-go/pull/724 is resolved
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	github.com/google/cel-go@v0.18.1 \
+	github.com/antlr/antlr4/runtime/Go/antlr/v4@v4.0.0-20230512164433-5d1fd1a340c9 \
+	github.com/bufbuild/protocompile@089712432bdc5d54241e66771e884c0e6fbb754f
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -28,6 +33,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+PROTOVALIDATE_VERSION := v0.5.1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -99,7 +105,13 @@ bufgeneratedeps:: \
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-bufgenerateclean:: bufgeneratecleango
+.PHONY: bufgeneratecleanbuflinttestdata
+bufgeneratecleanbuflinttestdata:
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
+
+bufgenerateclean:: \
+	bufgeneratecleango \
+	bufgeneratecleanbuflinttestdata
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
@@ -110,9 +122,14 @@ bufgenerateprotogo:
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
+.PHONY: bufgeneratebuflinttestdata
+bufgeneratebuflinttestdata:
+	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+
 bufgeneratesteps:: \
 	bufgenerateprotogo \
-	bufgenerateprotogoclient
+	bufgenerateprotogoclient \
+	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)

@@ -25,10 +25,10 @@ var _ ImageFile = &imageFile{}
 type imageFile struct {
 	bufmoduleref.FileInfo
 
-	fileDescriptorProto *descriptorpb.FileDescriptorProto
-
-	isSyntaxUnspecified           bool
-	storedUnusedDependencyIndexes []int32
+	fileDescriptorProto     *descriptorpb.FileDescriptorProto
+	isImport                bool
+	isSyntaxUnspecified     bool
+	unusedDependencyIndexes []int32
 }
 
 func newImageFile(
@@ -46,13 +46,28 @@ func newImageFile(
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		fileDescriptor.GetName(),
 		externalPath,
-		isImport,
 		moduleIdentity,
 		commit,
 	)
 	if err != nil {
 		return nil, err
 	}
+	return newImageFileNoValidate(
+		fileDescriptor,
+		fileInfo,
+		isImport,
+		isSyntaxUnspecified,
+		unusedDependencyIndexes,
+	), nil
+}
+
+func newImageFileNoValidate(
+	fileDescriptor protodescriptor.FileDescriptor,
+	fileInfo bufmoduleref.FileInfo,
+	isImport bool,
+	isSyntaxUnspecified bool,
+	unusedDependencyIndexes []int32,
+) *imageFile {
 	// just to normalize in other places between empty and unset
 	if len(unusedDependencyIndexes) == 0 {
 		unusedDependencyIndexes = nil
@@ -61,18 +76,19 @@ func newImageFile(
 		FileInfo: fileInfo,
 		// protodescriptor.FileDescriptorProtoForFileDescriptor is a no-op if fileDescriptor
 		// is already a *descriptorpb.FileDescriptorProto
-		fileDescriptorProto:           protodescriptor.FileDescriptorProtoForFileDescriptor(fileDescriptor),
-		isSyntaxUnspecified:           isSyntaxUnspecified,
-		storedUnusedDependencyIndexes: unusedDependencyIndexes,
-	}, nil
+		fileDescriptorProto:     protodescriptor.FileDescriptorProtoForFileDescriptor(fileDescriptor),
+		isImport:                isImport,
+		isSyntaxUnspecified:     isSyntaxUnspecified,
+		unusedDependencyIndexes: unusedDependencyIndexes,
+	}
 }
 
-func (f *imageFile) Proto() *descriptorpb.FileDescriptorProto {
+func (f *imageFile) FileDescriptorProto() *descriptorpb.FileDescriptorProto {
 	return f.fileDescriptorProto
 }
 
-func (f *imageFile) FileDescriptor() protodescriptor.FileDescriptor {
-	return f.fileDescriptorProto
+func (f *imageFile) IsImport() bool {
+	return f.isImport
 }
 
 func (f *imageFile) IsSyntaxUnspecified() bool {
@@ -80,19 +96,7 @@ func (f *imageFile) IsSyntaxUnspecified() bool {
 }
 
 func (f *imageFile) UnusedDependencyIndexes() []int32 {
-	return f.storedUnusedDependencyIndexes
-}
-
-func (f *imageFile) ImageFileWithIsImport(isImport bool) ImageFile {
-	if f.IsImport() == isImport {
-		return f
-	}
-	return &imageFile{
-		FileInfo:                      f.FileInfo.FileInfoWithIsImport(isImport),
-		fileDescriptorProto:           f.fileDescriptorProto,
-		isSyntaxUnspecified:           f.isSyntaxUnspecified,
-		storedUnusedDependencyIndexes: f.storedUnusedDependencyIndexes,
-	}
+	return f.unusedDependencyIndexes
 }
 
 func (*imageFile) isImageFile() {}

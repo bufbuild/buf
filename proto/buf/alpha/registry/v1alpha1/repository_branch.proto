@@ -34,23 +34,43 @@ message RepositoryBranch {
   // The ID of the user who updated the branch.
   string last_update_user_id = 6;
   // The author name of the most recent associated git commit of the branch. May be an empty string
-  // if the last branch update doesn't have a git commit associated.
+  // if no commit in the branch history contains any associated git commit.
   string last_update_git_author_name = 7;
-  // The git commit hash of the most recent associated git commit of the branch. May be an empty string
-  // if the last branch update doesn't have a git commit associated.
+  // The git commit hash of the most recent associated git commit of the branch. May be an empty
+  // string if no commit in the branch history contains any associated git commit.
   string last_update_git_commit_hash = 8;
 }
 
 // RepositoryBranchService is the Repository branch service.
 service RepositoryBranchService {
-  // ListRepositoryBranchs lists the repository branches associated with a Repository.
+  // GetRepositoryBranch gets a repository branch associated with a Repository by name
+  rpc GetRepositoryBranch(GetRepositoryBranchRequest) returns (GetRepositoryBranchResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListRepositoryBranches lists the repository branches associated with a Repository.
   rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // ListRepositoryBranchesByReference lists the repository branches associated with a Repository,
+  // filtered by a reference.
+  rpc ListRepositoryBranchesByReference(ListRepositoryBranchesByReferenceRequest) returns (ListRepositoryBranchesByReferenceResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
   // GetCurrentDefaultBranch returns the branch that is mapped to the repository's `default_branch` field.
   rpc GetCurrentDefaultBranch(GetCurrentDefaultBranchRequest) returns (GetCurrentDefaultBranchResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
+}
+
+message GetRepositoryBranchRequest {
+  // The ID of the repository for which the branch is requested.
+  string repository_id = 1;
+  // The name of the branch to get.
+  string name = 2;
+}
+
+message GetRepositoryBranchResponse {
+  RepositoryBranch branch = 1;
 }
 
 message ListRepositoryBranchesRequest {
@@ -67,6 +87,27 @@ message ListRepositoryBranchesResponse {
   string next_page_token = 2;
 }
 
+message ListRepositoryBranchesByReferenceRequest {
+  // The ID of the repository whose branches should be listed.
+  string repository_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  // The reference by which to filter the returned branches.
+  oneof reference {
+    // The name of a BSR commit. This will filter the branches to only those that include the commit.
+    string commit_name = 4;
+    // The hash of a VCS commit. This will filter the branches to only those that include the commit
+    // associated with the VCS hash.
+    string vcs_commit_hash = 5;
+  }
+}
+
+message ListRepositoryBranchesByReferenceResponse {
+  repeated RepositoryBranch repository_branches = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
 message GetCurrentDefaultBranchRequest {
   // The ID of the repository whose current default branch is returned.
   string repository_id = 1;

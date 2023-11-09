@@ -16,6 +16,7 @@ package storage
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
@@ -52,7 +53,7 @@ func newMultiReadBucket(
 }
 
 func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
-	_, delegateIndex, err := m.getObjectInfoAndDelegateIndex(ctx, path)
+	_, delegateIndex, err := m.getObjectInfoAndDelegateIndex(ctx, "read", path)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (m *multiReadBucket) Get(ctx context.Context, path string) (ReadObjectClose
 }
 
 func (m *multiReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, error) {
-	objectInfo, _, err := m.getObjectInfoAndDelegateIndex(ctx, path)
+	objectInfo, _, err := m.getObjectInfoAndDelegateIndex(ctx, "stat", path)
 	return objectInfo, err
 }
 
@@ -91,6 +92,7 @@ func (m *multiReadBucket) Walk(ctx context.Context, prefix string, f func(Object
 
 func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 	ctx context.Context,
+	op string,
 	path string,
 ) (ObjectInfo, int, error) {
 	var objectInfos []ObjectInfo
@@ -108,7 +110,7 @@ func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 	}
 	switch len(objectInfos) {
 	case 0:
-		return nil, 0, NewErrNotExist(path)
+		return nil, 0, &fs.PathError{Op: op, Path: path, Err: fs.ErrNotExist}
 	case 1:
 		return objectInfos[0], delegateIndices[0], nil
 	default:
@@ -123,22 +125,22 @@ func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 type nopReadBucket struct{}
 
 func (nopReadBucket) Get(ctx context.Context, path string) (ReadObjectCloser, error) {
-	return nil, nopGetStat(path)
+	path, err := storageutil.ValidatePath(path)
+	if err != nil {
+		return nil, err
+	}
+	return nil, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 }
 
 func (nopReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, error) {
-	return nil, nopGetStat(path)
+	path, err := storageutil.ValidatePath(path)
+	if err != nil {
+		return nil, err
+	}
+	return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 }
 
 func (nopReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
 	_, err := storageutil.ValidatePrefix(prefix)
 	return err
-}
-
-func nopGetStat(path string) error {
-	path, err := storageutil.ValidatePath(path)
-	if err != nil {
-		return err
-	}
-	return NewErrNotExist(path)
 }
