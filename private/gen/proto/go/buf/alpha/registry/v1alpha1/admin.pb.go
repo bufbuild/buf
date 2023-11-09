@@ -451,15 +451,15 @@ type MonthlyUsage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the numerical value of a month
+	// The month, between 1 and 12.
 	Month uint32 `protobuf:"varint,1,opt,name=month,proto3" json:"month,omitempty"`
-	// the value of the year
+	// The year, between 2020 to the current year.
 	Year uint32 `protobuf:"varint,2,opt,name=year,proto3" json:"year,omitempty"`
-	// the total amount of message types for the month and year
+	// The total amount of message types for the month and year.
 	TotalMessageTypes uint32 `protobuf:"varint,3,opt,name=total_message_types,json=totalMessageTypes,proto3" json:"total_message_types,omitempty"`
-	// the total amount of enum types for the month and year
+	// The total amount of enum types for the month and year.
 	TotalEnumTypes uint32 `protobuf:"varint,4,opt,name=total_enum_types,json=totalEnumTypes,proto3" json:"total_enum_types,omitempty"`
-	// the total amount of services types for the month and year
+	// The total amount of services types for the month and year.
 	TotalServiceTypes uint32 `protobuf:"varint,5,opt,name=total_service_types,json=totalServiceTypes,proto3" json:"total_service_types,omitempty"`
 }
 
