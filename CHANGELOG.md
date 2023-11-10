@@ -7,6 +7,8 @@
   added to the `DEFAULT` group - given that protovalidate is net new, this does not represent
   a breaking change.
 - Update `buf beta price` with the latest pricing information.
+- Display a warning when reading a `buf.lock` with dependencies with b1 or b3 digests. b1 and b3
+  digests will be deprecated in a future version. Run `buf mod update` to update dependency digests.
 
 ## [v1.27.2] - 2023-10-27
 
