@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/dag"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
@@ -69,7 +69,10 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) (ModuleR
 // ModuleSetTargetModules is a convenience function that returns the target Modules
 // from a ModuleSet.
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
-	return internal.FilterSlice(moduleSet.Modules(), func(module Module) bool { return module.IsTargetModule() })
+	return slicesextended.Filter(
+		moduleSet.Modules(),
+		func(module Module) bool { return module.IsTargetModule() },
+	)
 }
 
 // ModuleSetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
@@ -77,7 +80,10 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 //
 // Sorted.
 func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
-	return internal.MapSlice(moduleSet.Modules(), func(module Module) string { return module.OpaqueID() })
+	return slicesextended.Map(
+		moduleSet.Modules(),
+		func(module Module) string { return module.OpaqueID() },
+	)
 }
 
 // ModuleSetTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
@@ -85,7 +91,7 @@ func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
 //
 // Sorted.
 func ModuleSetTargetOpaqueIDs(moduleSet ModuleSet) []string {
-	return internal.MapSlice(
+	return slicesextended.Map(
 		ModuleSetTargetModules(moduleSet),
 		func(module Module) string { return module.OpaqueID() },
 	)

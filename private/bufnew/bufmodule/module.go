@@ -20,8 +20,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -136,7 +136,10 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	return internal.FilterSlice(moduleDeps, func(moduleDep ModuleDep) bool { return moduleDep.IsDirect() }), nil
+	return slicesextended.Filter(
+		moduleDeps,
+		func(moduleDep ModuleDep) bool { return moduleDep.IsDirect() },
+	), nil
 }
 
 // *** PRIVATE ***

@@ -23,8 +23,8 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/syncextended"
 )
 
 // ModuleProvider provides Modules.
@@ -172,7 +172,7 @@ func newLazyModule(
 	lazyModule := &lazyModule{
 		ModuleKey:      moduleKey,
 		isTargetModule: isTargetModule,
-		getModuleAndDigest: internal.OnceValues3(
+		getModuleAndDigest: syncextended.OnceValues3(
 			func() (Module, bufcas.Digest, error) {
 				module, err := getModuleFunc()
 				if err != nil {
