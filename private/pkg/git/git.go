@@ -272,7 +272,7 @@ type Repository interface {
 	// remote named `origin`). It can be customized via the `OpenRepositoryWithDefaultBranch` option.
 	DefaultBranch() string
 	// CurrentBranch is the current checked out branch.
-	CurrentBranch() string
+	CurrentBranch(ctx context.Context) (string, error)
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	ForEachBranch(f func(branch string, headHash Hash) error, options ...ForEachBranchOption) error
 	// ForEachCommit ranges over commits in reverse topological order, going backwards in time always

@@ -184,7 +184,10 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		branchesToSync = stringutil.MapToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
-		currentBranch := s.repo.CurrentBranch()
+		currentBranch, err := s.repo.CurrentBranch(ctx)
+		if err != nil {
+			return fmt.Errorf("determine checked out branch")
+		}
 		if _, currentBranchPresent := allBranches[currentBranch]; !currentBranchPresent {
 			return fmt.Errorf("current branch %s is not present %s", currentBranch, remoteErrMsg)
 		}

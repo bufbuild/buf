@@ -35,7 +35,8 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	const defaultBranchName = "main"
 	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repoDir, moduleIdentityInHEAD, defaultBranchName)
+	runner := command.NewRunner()
+	prepareGitRepoSyncWithNoPreviousSyncPoints(t, runner, repoDir, moduleIdentityInHEAD, defaultBranchName)
 	type testCase struct {
 		name            string
 		branch          string
@@ -63,20 +64,20 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			expectedCommits: 1,
 		},
 	}
+	handler := newMockSyncHandler() // use same handler for all test cases
 	for _, withOverride := range []bool{false, true} {
 		for _, tc := range testCases {
 			func(tc testCase) {
 				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
+					// check out the branch to sync
+					runInDir(t, runner, repoDir, "git", "checkout", tc.branch)
 					const moduleDir = "."
-					opts := []bufsync.SyncerOption{
-						bufsync.SyncerWithAllBranches(),
-					}
+					var opts []bufsync.SyncerOption
 					if withOverride {
 						opts = append(opts, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
 					} else {
 						opts = append(opts, bufsync.SyncerWithModule(moduleDir, nil))
 					}
-					handler := newMockSyncHandler()
 					syncer, err := bufsync.NewSyncer(
 						zaptest.NewLogger(t),
 						bufsync.NewRealClock(),
@@ -101,8 +102,13 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 // | o-o----------o-----------------o (master)
 // |   └o-o (foo) └o--------o (bar)
 // |               └o (baz)
-func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, moduleIdentity bufmoduleref.ModuleIdentity, defaultBranchName string) {
-	runner := command.NewRunner()
+func prepareGitRepoSyncWithNoPreviousSyncPoints(
+	t *testing.T,
+	runner command.Runner,
+	repoDir string,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	defaultBranchName string,
+) {
 	var allBranches = []string{defaultBranchName, "foo", "bar", "baz"}
 
 	var commitsCounter int
