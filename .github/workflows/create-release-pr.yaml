@@ -1,5 +1,8 @@
 name: Create Release PR
 on:
+  push:
+    branches:
+      - osun/fix-git-permission
   workflow_dispatch:
     inputs:
       version:
@@ -26,6 +29,6 @@ jobs:
       - name: Create release PR
         run: bash ./make/buf/scripts/createreleasepr.bash
         env:
-          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           VERSION: ${{ github.event.inputs.version }}
           WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
