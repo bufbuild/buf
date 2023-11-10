@@ -10,6 +10,8 @@ on:
         description: The released version without 'v'. For example, 1.0.0.
 env:
   APP_ID: 251311
+  # todo: remove
+  VERSION: 1.28.0
 jobs:
   prepare:
     runs-on: ubuntu-latest
