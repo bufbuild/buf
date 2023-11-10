@@ -15,9 +15,7 @@
 // Package slicesextended provides extra functionality on top of the slices package.
 package slicesextended
 
-import (
-	"slices"
-)
+import "sort"
 
 // Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
 //
@@ -93,7 +91,13 @@ func ToMap[T comparable](s []T) map[T]struct{} {
 // MapToSortedSlice converts the map to a sorted slice.
 func MapToSortedSlice[M ~map[T]struct{}, T Ordered](m M) []T {
 	s := MapToSlice(m)
-	slices.Sort(s)
+	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	sort.Slice(
+		s,
+		func(i int, j int) bool {
+			return s[i] < s[j]
+		},
+	)
 	return s
 }
 
