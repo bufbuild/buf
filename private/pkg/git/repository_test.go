@@ -36,7 +36,7 @@ func TestTags(t *testing.T) {
 		require.NoError(t, err)
 		switch tag {
 		case "release/v1":
-			assert.Equal(t, commit.Message(), "initial commit")
+			assert.Equal(t, commit.Message(), "first commit")
 		case "branch/v1":
 			assert.Equal(t, commit.Message(), "branch1")
 		case "branch/v2":
@@ -72,14 +72,16 @@ func TestCommits(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
-	require.Len(t, commitsByDefault, 3)
+	require.Len(t, commitsByDefault, 4)
 
 	assert.Equal(t, commitsByDefault[0].Message(), "third commit")
 	assert.Contains(t, commitsByDefault[0].Parents(), commitsByDefault[1].Hash())
 	assert.Equal(t, commitsByDefault[1].Message(), "second commit")
 	assert.Contains(t, commitsByDefault[1].Parents(), commitsByDefault[2].Hash())
-	assert.Equal(t, commitsByDefault[2].Message(), "initial commit")
-	assert.Empty(t, commitsByDefault[2].Parents())
+	assert.Equal(t, commitsByDefault[2].Message(), "first commit")
+	assert.Contains(t, commitsByDefault[2].Parents(), commitsByDefault[3].Hash())
+	assert.Equal(t, commitsByDefault[3].Message(), "initial commit")
+	assert.Empty(t, commitsByDefault[3].Parents())
 
 	t.Run("default_behavior", func(t *testing.T) {
 		var commitsFromDefaultBranch []git.Commit
@@ -104,12 +106,14 @@ func TestCommits(t *testing.T) {
 			git.ForEachCommitWithHashStartPoint(commitsByDefault[1].Hash().Hex()),
 		)
 		require.NoError(t, err)
-		require.Len(t, commitsFromSecond, 2)
+		require.Len(t, commitsFromSecond, 3)
 
 		assert.Equal(t, commitsFromSecond[0].Message(), "second commit")
 		assert.Contains(t, commitsFromSecond[0].Parents(), commitsFromSecond[1].Hash())
-		assert.Equal(t, commitsFromSecond[1].Message(), "initial commit")
-		assert.Empty(t, commitsFromSecond[1].Parents())
+		assert.Equal(t, commitsFromSecond[1].Message(), "first commit")
+		assert.Contains(t, commitsFromSecond[1].Parents(), commitsFromSecond[2].Hash())
+		assert.Equal(t, commitsFromSecond[2].Message(), "initial commit")
+		assert.Empty(t, commitsFromSecond[2].Parents())
 	})
 
 	t.Run("branch_starting_point", func(t *testing.T) {
@@ -124,14 +128,16 @@ func TestCommits(t *testing.T) {
 				git.ForEachCommitWithBranchStartPoint(branchName),
 			)
 			require.NoError(t, err)
-			require.Len(t, commitsFromLocalBranch, 3)
+			require.Len(t, commitsFromLocalBranch, 4)
 
 			assert.Equal(t, commitsFromLocalBranch[0].Message(), "local commit on pushed branch")
 			assert.Contains(t, commitsFromLocalBranch[0].Parents(), commitsFromLocalBranch[1].Hash())
 			assert.Equal(t, commitsFromLocalBranch[1].Message(), "branch1")
 			assert.Contains(t, commitsFromLocalBranch[1].Parents(), commitsFromLocalBranch[2].Hash())
-			assert.Equal(t, commitsFromLocalBranch[2].Message(), "initial commit")
-			assert.Empty(t, commitsFromLocalBranch[2].Parents())
+			assert.Equal(t, commitsFromLocalBranch[2].Message(), "first commit")
+			assert.Contains(t, commitsFromLocalBranch[2].Parents(), commitsFromLocalBranch[3].Hash())
+			assert.Equal(t, commitsFromLocalBranch[3].Message(), "initial commit")
+			assert.Empty(t, commitsFromLocalBranch[3].Parents())
 		})
 
 		t.Run("when_remote", func(t *testing.T) {
@@ -147,12 +153,14 @@ func TestCommits(t *testing.T) {
 				),
 			)
 			require.NoError(t, err)
-			require.Len(t, commitsFromRemoteBranch, 2)
+			require.Len(t, commitsFromRemoteBranch, 3)
 
 			assert.Equal(t, commitsFromRemoteBranch[0].Message(), "branch1")
 			assert.Contains(t, commitsFromRemoteBranch[0].Parents(), commitsFromRemoteBranch[1].Hash())
-			assert.Equal(t, commitsFromRemoteBranch[1].Message(), "initial commit")
-			assert.Empty(t, commitsFromRemoteBranch[1].Parents())
+			assert.Equal(t, commitsFromRemoteBranch[1].Message(), "first commit")
+			assert.Contains(t, commitsFromRemoteBranch[1].Parents(), commitsFromRemoteBranch[2].Hash())
+			assert.Equal(t, commitsFromRemoteBranch[2].Message(), "initial commit")
+			assert.Empty(t, commitsFromRemoteBranch[2].Parents())
 		})
 	})
 

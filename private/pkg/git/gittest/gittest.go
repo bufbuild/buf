@@ -17,7 +17,6 @@ package gittest
 import (
 	"bytes"
 	"context"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,9 +33,33 @@ const (
 	DefaultRemote = "origin"
 )
 
-func ScaffoldGitRepository(t *testing.T) git.Repository {
+type Repository interface {
+	git.Repository
+	Commit(ctx context.Context, t *testing.T, msg string, files map[string]string)
+	Checkout(ctx context.Context, t *testing.T, branch string)
+	CheckoutB(ctx context.Context, t *testing.T, branch string)
+	Tag(ctx context.Context, t *testing.T, msg string)
+}
+
+type scaffoldOptions struct {
+	withOnlyInitialCommit bool
+}
+
+type ScaffoldGitRepositoryOption func(*scaffoldOptions)
+
+func ScaffoldGitRepositoryWithOnlyInitialCommit() ScaffoldGitRepositoryOption {
+	return func(opts *scaffoldOptions) {
+		opts.withOnlyInitialCommit = true
+	}
+}
+
+func ScaffoldGitRepository(t *testing.T, opts ...ScaffoldGitRepositoryOption) Repository {
+	var options scaffoldOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
 	runner := command.NewRunner()
-	dir := scaffoldGitRepository(t, runner)
+	dir := scaffoldGitRepository(t, runner, DefaultBranch, options.withOnlyInitialCommit)
 	dotGitPath := filepath.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
@@ -48,7 +71,11 @@ func ScaffoldGitRepository(t *testing.T) git.Repository {
 	t.Cleanup(func() {
 		require.NoError(t, repo.Close())
 	})
-	return repo
+	return newRepository(
+		repo,
+		dir,
+		runner,
+	)
 }
 
 // the resulting Git repo looks like so:
@@ -70,7 +97,7 @@ func ScaffoldGitRepository(t *testing.T) git.Repository {
 //	│   │           └── f.proto
 //	│   └── buf.yaml
 //	└── randomBinary (+x)
-func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
+func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch string, onlyInitialCommit bool) string {
 	dir := t.TempDir()
 
 	// (0) setup local and remote
@@ -85,6 +112,15 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, localDir, "git", "config", "user.email", "testbot@buf.build")
 	runInDir(t, runner, localDir, "git", "remote", "add", DefaultRemote, remoteDir)
 
+	// (1) initial commit and push
+	writeFiles(t, localDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
+	runInDir(t, runner, localDir, "git", "add", ".")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "initial commit")
+	runInDir(t, runner, localDir, "git", "push", "-u", "-f", "origin", defaultBranch)
+	if onlyInitialCommit {
+		return localDir
+	}
+
 	// (1) commit in main branch
 	writeFiles(t, localDir, map[string]string{
 		"randomBinary":                       "some executable",
@@ -96,9 +132,9 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	})
 	runInDir(t, runner, localDir, "chmod", "+x", "randomBinary")
 	runInDir(t, runner, localDir, "git", "add", ".")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "initial commit")
+	runInDir(t, runner, localDir, "git", "commit", "-m", "first commit")
 	runInDir(t, runner, localDir, "git", "tag", "release/v1")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "-u", "-f", "origin", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", defaultBranch)
 
 	// (2) branch off main and begin work
 	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/branch1")
@@ -123,7 +159,7 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", "buftest/branch2")
 
 	// (4) merge first branch
-	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
 	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch1")
 	runInDir(t, runner, localDir, "git", "commit", "-m", "second commit")
 	runInDir(t, runner, localDir, "git", "tag", "v2")
@@ -134,7 +170,7 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, localDir, "git", "repack")
 
 	// (6) merge second branch
-	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
 	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch2")
 	runInDir(t, runner, localDir, "git", "commit", "-m", "third commit")
 	runInDir(t, runner, localDir, "git", "tag", "v3.0")
@@ -149,7 +185,7 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner) string {
 	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "local commit on pushed branch")
 
 	// checkout to default branch
-	runInDir(t, runner, localDir, "git", "checkout", DefaultBranch)
+	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
 
 	return localDir
 }
@@ -164,11 +200,14 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 		command.RunWithStderr(stderr),
 	)
 	if err != nil {
-		t.Logf("run %q", strings.Join(append([]string{cmd}, args...), " "))
-		_, err := io.Copy(os.Stderr, stderr)
-		require.NoError(t, err)
+		require.FailNow(
+			t,
+			"git command failed",
+			"run %q, error %q",
+			strings.Join(append([]string{cmd}, args...), " "),
+			stderr,
+		)
 	}
-	require.NoError(t, err)
 }
 
 func writeFiles(t *testing.T, dir string, files map[string]string) {

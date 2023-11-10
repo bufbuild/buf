@@ -37,6 +37,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		t,
 		bucket,
 		"",
+		"README.md",
 		"proto/acme/grocerystore/v1/c.proto",
 		"proto/acme/grocerystore/v1/d.proto",
 		"proto/acme/grocerystore/v1/g.proto",
@@ -60,6 +61,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		bucket,
 		"",
 		map[string]string{
+			"README.md":                          "This is a scaffold repository.\n",
 			"proto/acme/grocerystore/v1/c.proto": "toysrus",
 			"proto/acme/grocerystore/v1/d.proto": "petsrus",
 			"proto/acme/grocerystore/v1/g.proto": "hamlet",

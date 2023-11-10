@@ -15,85 +15,15 @@
 package bufsync_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-	"testing"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 )
-
-// scaffoldGitRepository returns an initialized git repository with a single commit, and returns the
-// repository and its directory.
-func scaffoldGitRepository(t *testing.T, defaultBranchName string) (git.Repository, string) {
-	runner := command.NewRunner()
-	repoDir := scaffoldGitRepositoryDir(t, runner, defaultBranchName)
-	dotGitPath := path.Join(repoDir, git.DotGitDir)
-	repo, err := git.OpenRepository(
-		context.Background(),
-		dotGitPath,
-		runner,
-		git.OpenRepositoryWithDefaultBranch(defaultBranchName),
-	)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		require.NoError(t, repo.Close())
-	})
-	return repo, repoDir
-}
-
-// scaffoldGitRepositoryDir prepares a git repository with an initial README, and a single commit.
-// It returns the directory where the local git repo is.
-func scaffoldGitRepositoryDir(t *testing.T, runner command.Runner, defaultBranchName string) string {
-	repoDir := t.TempDir()
-
-	// setup repo
-	runInDir(t, runner, repoDir, "git", "init", "--initial-branch", defaultBranchName)
-	runInDir(t, runner, repoDir, "git", "config", "user.name", "Buf TestBot")
-	runInDir(t, runner, repoDir, "git", "config", "user.email", "testbot@buf.build")
-
-	// write and commit a README file
-	writeFiles(t, repoDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "Write README")
-
-	return repoDir
-}
-
-func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args ...string) {
-	stderr := bytes.NewBuffer(nil)
-	err := runner.Run(
-		context.Background(),
-		cmd,
-		command.RunWithArgs(args...),
-		command.RunWithDir(dir),
-		command.RunWithStderr(stderr),
-	)
-	if err != nil {
-		t.Logf("run %q", strings.Join(append([]string{cmd}, args...), " "))
-		_, err := io.Copy(os.Stderr, stderr)
-		require.NoError(t, err)
-	}
-	require.NoError(t, err)
-}
-
-func writeFiles(t *testing.T, directoryPath string, pathToContents map[string]string) {
-	for path, contents := range pathToContents {
-		require.NoError(t, os.MkdirAll(filepath.Join(directoryPath, filepath.Dir(path)), 0700))
-		require.NoError(t, os.WriteFile(filepath.Join(directoryPath, path), []byte(contents), 0600))
-	}
-}
 
 type mockClock struct {
 	now time.Time
