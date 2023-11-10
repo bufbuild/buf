@@ -16,13 +16,13 @@ package internal
 
 import "sync"
 
-// OnceThreeValues returns a function that invokes f only once and returns the values
+// OnceValues3 returns a function that invokes f only once and returns the values
 // returned by f. The returned function may be called concurrently.
 //
 // If f panics, the returned function will panic with the same value on every call.
 //
 // This is copied from sync.OnceValues and extended to for three values.
-func OnceThreeValues[T1, T2, T3 any](f func() (T1, T2, T3)) func() (T1, T2, T3) {
+func OnceValues3[T1, T2, T3 any](f func() (T1, T2, T3)) func() (T1, T2, T3) {
 	var (
 		once  sync.Once
 		valid bool
@@ -48,6 +48,58 @@ func OnceThreeValues[T1, T2, T3 any](f func() (T1, T2, T3)) func() (T1, T2, T3) 
 		}
 		return r1, r2, r3
 	}
+}
+
+// FilterSlice filters the slice to only the values where f returns true.
+func FilterSlice[T any](s []T, f func(T) bool) []T {
+	sf := make([]T, 0, len(s))
+	for _, e := range s {
+		if f(e) {
+			sf = append(sf, e)
+		}
+	}
+	return sf
+}
+
+// FilterSliceError filters the slice to only the values where f returns true.
+//
+// Returns error the first time f returns error.
+func FilterSliceError[T any](s []T, f func(T) (bool, error)) ([]T, error) {
+	sf := make([]T, 0, len(s))
+	for _, e := range s {
+		ok, err := f(e)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			sf = append(sf, e)
+		}
+	}
+	return sf, nil
+}
+
+// MapSlice maps the slice.
+func MapSlice[T1, T2 any](s []T1, f func(T1) T2) []T2 {
+	sm := make([]T2, len(s))
+	for i, e := range s {
+		sm[i] = f(e)
+	}
+	return sm
+}
+
+// MapSliceError maps the slice.
+//
+// Returns error the first time f returns error.
+func MapSliceError[T1, T2 any](s []T1, f func(T1) (T2, error)) ([]T2, error) {
+	sm := make([]T2, len(s))
+	for i, e := range s {
+		em, err := f(e)
+		if err != nil {
+			return nil, err
+		}
+		sm[i] = em
+	}
+	return sm, nil
 }
 
 // GetOrAddToCacheDoubleLock does a double-lock around the cache to get the value for the key,

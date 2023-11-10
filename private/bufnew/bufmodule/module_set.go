@@ -19,28 +19,19 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/dag"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
 type ModuleSet interface {
-	// Modules returns the target Modules in the ModuleSet.
+	// Modules returns the Modules in the ModuleSet.
 	//
-	// Modules are either targets or non-targets.
-	// A target Module is a module that we are directly targeting for operations.
-	// Both targets and non-targets can be retrieved via the Get.* functions.
+	// This will consist of both targets and non-targets.
 	//
 	// These will be sorted by OpaqueID.
-	TargetModules() []Module
-	// Modules returns the non-target Modules in the ModuleSet.
-	//
-	// Modules are either targets or non-targets.
-	// A target Module is a module that we are directly targeting for operations.
-	// Both targets and non-targets can be retrieved via the Get.* functions.
-	//
-	// These will be sorted by OpaqueID.
-	NonTargetModules() []Module
+	Modules() []Module
 
 	// GetModuleForModuleFullName gets the Module for the ModuleFullName, if it exists.
 	//
@@ -75,10 +66,19 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) (ModuleR
 	return nil, errors.New("TODO")
 }
 
+// ModuleSetTargetModules is a convenience function that returns the target Modules
+// from a ModuleSet.
+func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
+	return internal.FilterSlice(moduleSet.Modules(), func(module Module) bool { return module.IsTargetModule() })
+}
+
 // ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
+//
+// This only starts at target Modules. If a Module is not part of a graph
+// with a target Module as a source, it will not be added.
 func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 	graph := dag.NewGraph[string]()
-	for _, module := range moduleSet.TargetModules() {
+	for _, module := range ModuleSetTargetModules(moduleSet) {
 		if err := moduleSetToDAGRec(module, graph); err != nil {
 			return nil, err
 		}
@@ -93,17 +93,14 @@ func moduleSetToDAGRec(
 	graph *dag.Graph[string],
 ) error {
 	graph.AddNode(module.OpaqueID())
-	moduleDeps, err := module.ModuleDeps()
+	directModuleDeps, err := ModuleDirectModuleDeps(module)
 	if err != nil {
 		return err
 	}
-	for _, moduleDep := range moduleDeps {
-		if moduleDep.IsDirect() {
-			graph.AddNode(moduleDep.OpaqueID())
-			graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
-			if err := moduleSetToDAGRec(moduleDep, graph); err != nil {
-				return err
-			}
+	for _, directModuleDep := range directModuleDeps {
+		graph.AddEdge(module.OpaqueID(), directModuleDep.OpaqueID())
+		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -112,8 +109,7 @@ func moduleSetToDAGRec(
 // moduleSet
 
 type moduleSet struct {
-	targetModules                []Module
-	nonTargetModules             []Module
+	modules                      []Module
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
 	bucketIDToModule             map[string]Module
@@ -123,17 +119,12 @@ type moduleSet struct {
 func newModuleSet(
 	moduleSetModules []*moduleSetModule,
 ) (*moduleSet, error) {
-	targetModules := make([]Module, 0, len(moduleSetModules))
-	nonTargetModules := make([]Module, 0, len(moduleSetModules))
+	modules := make([]Module, 0, len(moduleSetModules))
 	moduleFullNameStringToModule := make(map[string]Module, len(moduleSetModules))
 	opaqueIDToModule := make(map[string]Module, len(moduleSetModules))
 	bucketIDToModule := make(map[string]Module, len(moduleSetModules))
 	for _, module := range moduleSetModules {
-		if module.isTarget() {
-			targetModules = append(targetModules, module)
-		} else {
-			nonTargetModules = append(nonTargetModules, module)
-		}
+		modules = append(modules, module)
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
 			if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
@@ -158,8 +149,7 @@ func newModuleSet(
 		}
 	}
 	return &moduleSet{
-		targetModules:                targetModules,
-		nonTargetModules:             nonTargetModules,
+		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
@@ -186,15 +176,9 @@ func newModuleSet(
 	}, nil
 }
 
-func (m *moduleSet) TargetModules() []Module {
-	c := make([]Module, len(m.targetModules))
-	copy(c, m.targetModules)
-	return c
-}
-
-func (m *moduleSet) NonTargetModules() []Module {
-	c := make([]Module, len(m.nonTargetModules))
-	copy(c, m.nonTargetModules)
+func (m *moduleSet) Modules() []Module {
+	c := make([]Module, len(m.modules))
+	copy(c, m.modules)
 	return c
 }
 

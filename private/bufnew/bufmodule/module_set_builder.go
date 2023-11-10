@@ -49,7 +49,7 @@ type ModuleSetBuilder interface {
 	AddModuleForBucket(
 		bucket storage.ReadBucket,
 		bucketID string,
-		isTarget bool,
+		isTargetModule bool,
 		options ...AddModuleForBucketOption,
 	) ModuleSetBuilder
 	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
@@ -62,9 +62,10 @@ type ModuleSetBuilder interface {
 	// The dependencies of the Module will *not* be automatically added to the ModuleSet. All
 	// dependencies must be explicitly added.
 	//
-	// In our current world, IsTarget should almost always be false, so we don't even provide
-	// the option to make a Module from a ModuleKey a Target. This function is used
-	// to add Modules from i.e. a buf.lock file.
+	// In our current world, isTarget should almost always be false for ModuleKeys, so we don
+	// t even provide the option to make a Module from a ModuleKey a target Module. This function
+	// is used to add Modules from i.e. a buf.lock file. We can add isTargetModule in the future
+	// if we need it.
 	//
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleKey(
@@ -92,10 +93,13 @@ func AddModuleForBucketWithCommitID(commitID string) AddModuleForBucketOption {
 	}
 }
 
-func AddModuleForBucketWithTargetPaths(paths []string, excludePaths []string) AddModuleForBucketOption {
+func AddModuleForBucketWithTargetPaths(
+	targetPaths []string,
+	targetExcludePaths []string,
+) AddModuleForBucketOption {
 	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
-		addModuleForBucketOptions.paths = paths
-		addModuleForBucketOptions.excludePaths = excludePaths
+		addModuleForBucketOptions.targetPaths = targetPaths
+		addModuleForBucketOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
@@ -131,7 +135,7 @@ func newModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) *mo
 func (b *moduleSetBuilder) AddModuleForBucket(
 	bucket storage.ReadBucket,
 	bucketID string,
-	isTarget bool,
+	isTargetModule bool,
 	options ...AddModuleForBucketOption,
 ) ModuleSetBuilder {
 	if b.buildCalled {
@@ -153,6 +157,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		bucket,
 		addModuleForBucketOptions.moduleFullName,
 		addModuleForBucketOptions.commitID,
+		isTargetModule,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -162,7 +167,6 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.moduleSetModules,
 		newModuleSetModule(
 			module,
-			isTarget,
 			true,
 		),
 	)
@@ -171,7 +175,6 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 
 func (b *moduleSetBuilder) AddModuleForModuleKey(
 	moduleKey ModuleKey,
-	isTarget bool,
 ) ModuleSetBuilder {
 	if b.buildCalled {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
@@ -187,11 +190,12 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		b.errs = append(b.errs, err)
 		return b
 	}
+	// Always false for Modules added from ModuleKeys.
+	module.setIsTargetModule(false)
 	b.moduleSetModules = append(
 		b.moduleSetModules,
 		newModuleSetModule(
 			module,
-			isTarget,
 			false,
 		),
 	)
@@ -224,8 +228,10 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 func (*moduleSetBuilder) isModuleSetBuilder() {}
 
 type addModuleForBucketOptions struct {
-	moduleFullName ModuleFullName
-	commitID       string
+	moduleFullName     ModuleFullName
+	commitID           string
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
 func newAddModuleForBucketOptions() *addModuleForBucketOptions {
@@ -259,10 +265,10 @@ func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleS
 		func(i int, j int) bool {
 			m1 := moduleSetModules[i]
 			m2 := moduleSetModules[j]
-			if m1.isTarget() && !m2.isTarget() {
+			if m1.IsTargetModule() && !m2.IsTargetModule() {
 				return true
 			}
-			if !m1.isTarget() && m2.isTarget() {
+			if !m1.IsTargetModule() && m2.IsTargetModule() {
 				return false
 			}
 			if m1.isCreatedFromBucket() && !m2.isCreatedFromBucket() {

@@ -71,17 +71,17 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleKey, err := testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
 	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
 
 	// This module has no name but is part of the workspace.
 	moduleSetBuilder.AddModuleForBucket(
@@ -122,17 +122,19 @@ func TestBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/bar/module2",
+			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep2",
 			"path/to/module1",
 		},
-		testGetOpaqueIDs(t, moduleSet.TargetModules()),
+		testGetOpaqueIDs(t, moduleSet.Modules()),
 	)
 	require.Equal(
 		t,
 		[]string{
-			"buf.build/foo/extdep1",
-			"buf.build/foo/extdep2",
+			"buf.build/bar/module2",
+			"path/to/module1",
 		},
-		testGetOpaqueIDs(t, moduleSet.NonTargetModules()),
+		testGetOpaqueIDs(t, bufmodule.ModuleSetTargetModules(moduleSet)),
 	)
 
 	module2 := moduleSet.GetModuleForOpaqueID("buf.build/bar/module2")

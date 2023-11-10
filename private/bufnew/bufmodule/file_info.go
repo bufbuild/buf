@@ -31,13 +31,16 @@ type FileInfo interface {
 	// This denotes if the File is a .proto file, documentation file, or license file.
 	FileType() FileType
 
-	// IsTarget returns true if the File is targeted.
+	// IsTargetFile returns true if the File is targeted.
 	//
 	// Files are either targets or imports.
-	// If the Module is not a targeted Module, this will always be false.
-	// Note that specific files within a target Module can be targeted or imports.
-	IsTarget() bool
+	// If IsTargetModule() is false, this will always be false.
+	//
+	// If specific Files were not targeted but IsTargetModule() is true, all Files in
+	// the Module will have IsTargetFile() set to true.
+	IsTargetFile() bool
 
+	//setIsTargetFile(bool)
 	isFileInfo()
 }
 
@@ -46,19 +49,22 @@ type FileInfo interface {
 type fileInfo struct {
 	storage.ObjectInfo
 
-	module   Module
-	fileType FileType
+	module       Module
+	fileType     FileType
+	isTargetFile bool
 }
 
 func newFileInfo(
 	objectInfo storage.ObjectInfo,
 	module Module,
 	fileType FileType,
+	isTargetFile bool,
 ) *fileInfo {
 	return &fileInfo{
-		ObjectInfo: objectInfo,
-		module:     module,
-		fileType:   fileType,
+		ObjectInfo:   objectInfo,
+		module:       module,
+		fileType:     fileType,
+		isTargetFile: isTargetFile,
 	}
 }
 
@@ -69,5 +75,13 @@ func (f *fileInfo) Module() Module {
 func (f *fileInfo) FileType() FileType {
 	return f.fileType
 }
+
+func (f *fileInfo) IsTargetFile() bool {
+	return f.isTargetFile
+}
+
+//func (f *fileInfo) setIsTargetFile(isTargetFile bool) {
+//f.isTargetFile = isTargetFile
+//}
 
 func (*fileInfo) isFileInfo() {}

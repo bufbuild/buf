@@ -33,7 +33,6 @@ var (
 
 type cache struct {
 	moduleSet         ModuleSet
-	allModules        []Module
 	filePathToImports map[string]*internal.Tuple[map[string]struct{}, error]
 	filePathToModule  map[string]*internal.Tuple[Module, error]
 	// Just making thread-safe to future-proof a bit.
@@ -83,7 +82,6 @@ func (c *cache) setModuleSet(moduleSet ModuleSet) error {
 		return errSetModuleSetAlreadyCalled
 	}
 	c.moduleSet = moduleSet
-	c.allModules = append(c.moduleSet.TargetModules(), c.moduleSet.NonTargetModules()...)
 	c.setModuleSetCalled = true
 	return nil
 }
@@ -92,7 +90,7 @@ func (c *cache) setModuleSet(moduleSet ModuleSet) error {
 func (c *cache) getModuleForFilePathUncached(ctx context.Context, filePath string) (Module, error) {
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
-	for _, module := range c.allModules {
+	for _, module := range c.moduleSet.Modules() {
 		if _, err := module.StatFileInfo(ctx, filePath); err == nil {
 			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
 		}

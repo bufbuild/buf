@@ -32,6 +32,9 @@ import (
 // A Modules returned from a ModuleProvider *must* have ModuleFullName and CommitID.
 type ModuleProvider interface {
 	// GetModuleForModuleKey gets the Module for the ModuleKey.
+	//
+	// Modules returned from ModuleProviders will always have IsTargetModule() set to true.
+	// The ModuleSetBuilder can choose to edit this during building.
 	GetModuleForModuleKey(ctx context.Context, moduleKey ModuleKey) (Module, error)
 }
 
@@ -133,6 +136,8 @@ func (l *lazyModuleProvider) GetModuleForModuleKey(
 		ctx,
 		l.cache,
 		moduleKey,
+		// Always set to true by default.
+		true,
 		func() (Module, error) {
 			// Using ctx on GetModuleForModuleKey and ignoring the contexts passed to
 			// Module functions - arguable both ways for different reasons.
@@ -149,7 +154,8 @@ type lazyModule struct {
 	// Cache may be nil.
 	cache *cache
 
-	moduleSet ModuleSet
+	isTargetModule bool
+	moduleSet      ModuleSet
 
 	getModuleAndDigest func() (Module, bufcas.Digest, error)
 	getModuleDeps      func() ([]ModuleDep, error)
@@ -160,11 +166,13 @@ func newLazyModule(
 	// May be nil.
 	cache *cache,
 	moduleKey ModuleKey,
+	isTargetModule bool,
 	getModuleFunc func() (Module, error),
 ) Module {
 	lazyModule := &lazyModule{
-		ModuleKey: moduleKey,
-		getModuleAndDigest: internal.OnceThreeValues(
+		ModuleKey:      moduleKey,
+		isTargetModule: isTargetModule,
+		getModuleAndDigest: internal.OnceValues3(
 			func() (Module, bufcas.Digest, error) {
 				module, err := getModuleFunc()
 				if err != nil {
@@ -234,12 +242,16 @@ func (m *lazyModule) StatFileInfo(ctx context.Context, path string) (FileInfo, e
 	return module.StatFileInfo(ctx, path)
 }
 
-func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) error {
+func (m *lazyModule) WalkFileInfos(
+	ctx context.Context,
+	f func(FileInfo) error,
+	options ...WalkFileInfosOption,
+) error {
 	module, _, err := m.getModuleAndDigest()
 	if err != nil {
 		return err
 	}
-	return module.WalkFileInfos(ctx, f)
+	return module.WalkFileInfos(ctx, f, options...)
 }
 
 func (m *lazyModule) Digest() (bufcas.Digest, error) {
@@ -255,8 +267,16 @@ func (m *lazyModule) ModuleDeps() ([]ModuleDep, error) {
 	return m.getModuleDeps()
 }
 
+func (m *lazyModule) IsTargetModule() bool {
+	return m.isTargetModule
+}
+
 func (m *lazyModule) ModuleSet() ModuleSet {
 	return m.moduleSet
+}
+
+func (m *lazyModule) setIsTargetModule(isTargetModule bool) {
+	m.isTargetModule = isTargetModule
 }
 
 func (m *lazyModule) setModuleSet(moduleSet ModuleSet) {

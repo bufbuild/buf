@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -53,14 +52,31 @@ type ModuleReadBucket interface {
 	// GetDocFile and GetLicenseFile may change in the future if other paths are accepted for
 	// documentation or licenses, or if we allow multiple documentation or license files to
 	// exist within a Module (currently, only one of each is allowed).
-	WalkFileInfos(ctx context.Context, f func(FileInfo) error) error
-
-	WalkTargetFileInfos(ctx context.Context, f func(FileInfo) error) error
+	WalkFileInfos(ctx context.Context, f func(FileInfo) error, options ...WalkFileInfosOption) error
 
 	isModuleReadBucket()
 }
 
+// WalkFileInfosOption is an option for WalkFileInfos
+type WalkFileInfosOption func(*walkFileInfosOptions)
+
+// WalkFileInfosWithOnlyTargetFiles returns a new WalkFileInfosOption that will result in only
+// FileInfos with IsTargetFile() set to true being walked.
+//
+// Note that no Files from a Module will have IsTargetFile() set to true if
+// Module.IsTargetModule() is false.
+//
+// If specific Files were not targeted but the Module was targeted, all Files will have
+// IsTargetFile() set to true, and this function will return all Files that WalkFileInfos does.
+func WalkFileInfosWithOnlyTargetFiles() WalkFileInfosOption {
+	return func(walkFileInfosOptions *walkFileInfosOptions) {
+		walkFileInfosOptions.onlyTargetFiles = true
+	}
+}
+
 // ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
+//
+// All target and non-target files are added.
 func ModuleReadBucketToStorageReadBucket(bucket ModuleReadBucket) storage.ReadBucket {
 	return newStorageReadBucket(bucket)
 }
@@ -108,8 +124,9 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // moduleReadBucket
 
 type moduleReadBucket struct {
-	delegate storage.ReadBucket
-	module   Module
+	delegate           storage.ReadBucket
+	module             Module
+	pathToIsTargetFile func(Module, string) (bool, error)
 }
 
 // module cannot be assumed to be functional yet.
@@ -130,6 +147,20 @@ func newModuleReadBucket(
 			),
 		),
 		module: module,
+		// We're passing in Module here to future-proof: IsTargetFile needs to be
+		// dynamic on module.IsTargetModule(), and if we change the module field,
+		// we want to make sure the latest copy of Module is accounted for.
+		// We don't currently change the module field, but we have enough set* functions
+		// that this is possible in the future.
+		pathToIsTargetFile: func(module Module, path string) (bool, error) {
+			if module.IsTargetModule() {
+				return true, nil
+			}
+			// TODO: need to implement this
+			// Likely needs to be a filter built from the TargetPaths option
+			// that is passed into newModuleReadBucket
+			return false, nil
+		},
 	}
 }
 
@@ -153,7 +184,15 @@ func (f *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	return f.newFileInfo(objectInfo)
 }
 
-func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) error) error {
+func (f *moduleReadBucket) WalkFileInfos(
+	ctx context.Context,
+	fn func(FileInfo) error,
+	options ...WalkFileInfosOption,
+) error {
+	walkFileInfosOptions := newWalkFileInfosOptions()
+	for _, option := range options {
+		option(walkFileInfosOptions)
+	}
 	return f.delegate.Walk(
 		ctx,
 		"",
@@ -161,6 +200,9 @@ func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) 
 			fileInfo, err := f.newFileInfo(objectInfo)
 			if err != nil {
 				return err
+			}
+			if walkFileInfosOptions.onlyTargetFiles && !fileInfo.IsTargetFile() {
+				return nil
 			}
 			return fn(fileInfo)
 		},
@@ -170,16 +212,17 @@ func (f *moduleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
 func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
-	if b.module == nil {
-		return nil, errors.New("setModuleReadBucketModule never called with a non-nil Module")
-	}
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
 		// A lack of classification is a system error.
 		return nil, err
 	}
-	return newFileInfo(objectInfo, b.module, fileType), nil
+	isTargetFile, err := b.pathToIsTargetFile(b.module, objectInfo.Path())
+	if err != nil {
+		return nil, err
+	}
+	return newFileInfo(objectInfo, b.module, fileType, isTargetFile), nil
 }
 
 // filteredModuleReadBucket
@@ -218,7 +261,11 @@ func (f *filteredModuleReadBucket) StatFileInfo(ctx context.Context, path string
 	return fileInfo, nil
 }
 
-func (f *filteredModuleReadBucket) WalkFileInfos(ctx context.Context, fn func(FileInfo) error) error {
+func (f *filteredModuleReadBucket) WalkFileInfos(
+	ctx context.Context,
+	fn func(FileInfo) error,
+	options ...WalkFileInfosOption,
+) error {
 	return f.delegate.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
@@ -227,6 +274,7 @@ func (f *filteredModuleReadBucket) WalkFileInfos(ctx context.Context, fn func(Fi
 			}
 			return fn(fileInfo)
 		},
+		options...,
 	)
 }
 
@@ -262,6 +310,16 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 			return f(fileInfo)
 		},
 	)
+}
+
+// walkFileInfosOptions
+
+type walkFileInfosOptions struct {
+	onlyTargetFiles bool
+}
+
+func newWalkFileInfosOptions() *walkFileInfosOptions {
+	return &walkFileInfosOptions{}
 }
 
 // utils

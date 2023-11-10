@@ -20,6 +20,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -88,18 +89,30 @@ type Module interface {
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
 
+	// IsTargetModule returns true if the Module is a targeted module.
+	//
+	// Modules are either targets or non-targets.
+	// Modules directly returned from a ModuleProvider will always be marked as targets.
+	// Modules created file ModuleSetBuilders may or may not be marked as targets.
+	//
+	// Files within a targeted Module can be targets or non-targets themselves
+	// (non-target = import).
+	// FileInfos have a function IsTargetFile() to denote if they are targets.
+	// Note that no Files from a Module will have IsTargetFile() set to true if
+	// Module.IsTargetModule() is false.
+	//
+	// If specific Files were not targeted but the Module was targeted, all Files in the Module
+	// will have IsTargetFile() set to true, and this function will return all Files
+	// that WalkFileInfos does.
+	IsTargetModule() bool
+
 	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
 	// constructed from a ModuleSet.
 	//
 	// May be nil. If the Module was solely retrieved from a ModuleProvider, this will be nil.
 	ModuleSet() ModuleSet
 
-	// IsTarget returns true if the Module is a targeted module.
-	//
-	// Modules are either targets or non-targets.
-	// Files within a targeted Module can be targets or non-targets themselves (non-target = import).
-	IsTarget() bool
-
+	setIsTargetModule(bool)
 	setModuleSet(ModuleSet)
 	isModule()
 }
@@ -117,16 +130,13 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	)
 }
 
-func ModuleWithTargetPaths(module Module, paths []string, excludePaths []string) (Module, error) {
-	return nil, errors.New("TODO")
-}
-
-func ModuleAsTarget(module Module) Module {
-	return nil
-}
-
-func ModuleAsNonTarget(module Module) Module {
-	return nil
+// ModuleDirectModuleDeps is a convenience function that returns only the direct dependencies of the Module.
+func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	return internal.FilterSlice(moduleDeps, func(moduleDep ModuleDep) bool { return moduleDep.IsDirect() }), nil
 }
 
 // *** PRIVATE ***
@@ -141,7 +151,8 @@ type module struct {
 	moduleFullName ModuleFullName
 	commitID       string
 
-	moduleSet ModuleSet
+	isTargetModule bool
+	moduleSet      ModuleSet
 
 	getDigest     func() (bufcas.Digest, error)
 	getModuleDeps func() ([]ModuleDep, error)
@@ -155,6 +166,7 @@ func newModule(
 	bucket storage.ReadBucket,
 	moduleFullName ModuleFullName,
 	commitID string,
+	isTargetModule bool,
 ) (*module, error) {
 	if bucketID == "" && moduleFullName == nil {
 		// This is a system error.
@@ -165,6 +177,7 @@ func newModule(
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
+		isTargetModule: isTargetModule,
 	}
 	module.ModuleReadBucket = newModuleReadBucket(
 		ctx,
@@ -184,6 +197,20 @@ func newModule(
 	return module, nil
 }
 
+func (m *module) OpaqueID() string {
+	// We know that one of bucketID and moduleFullName are present via construction.
+	//
+	// Prefer moduleFullName since modules with the same ModuleFullName should have the same OpaqueID.
+	if m.moduleFullName != nil {
+		return m.moduleFullName.String()
+	}
+	return m.bucketID
+}
+
+func (m *module) BucketID() string {
+	return m.bucketID
+}
+
 func (m *module) ModuleFullName() ModuleFullName {
 	return m.moduleFullName
 }
@@ -200,22 +227,16 @@ func (m *module) ModuleDeps() ([]ModuleDep, error) {
 	return m.getModuleDeps()
 }
 
+func (m *module) IsTargetModule() bool {
+	return m.isTargetModule
+}
+
 func (m *module) ModuleSet() ModuleSet {
 	return m.moduleSet
 }
 
-func (m *module) OpaqueID() string {
-	// We know that one of bucketID and moduleFullName are present via construction.
-	//
-	// Prefer moduleFullName since modules with the same ModuleFullName should have the same OpaqueID.
-	if m.moduleFullName != nil {
-		return m.moduleFullName.String()
-	}
-	return m.bucketID
-}
-
-func (m *module) BucketID() string {
-	return m.bucketID
+func (m *module) setIsTargetModule(isTargetModule bool) {
+	m.isTargetModule = isTargetModule
 }
 
 func (m *module) setModuleSet(moduleSet ModuleSet) {
