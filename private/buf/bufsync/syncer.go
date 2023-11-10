@@ -425,7 +425,7 @@ func (s *syncer) branchSyncableCommits(
 		commitHash := commit.Hash().Hex()
 		logger := logger.With(zap.String("commit", commitHash))
 		// check if this commit is already synced
-		isSynced, err := s.isGitCommitSynced(ctx, moduleIdentity, commit.Hash())
+		isSynced, err := s.isGitCommitSynced(ctx, moduleIdentity, commitHash)
 		if err != nil {
 			return fmt.Errorf(
 				"checking if module %s already synced git commit %s: %w",
@@ -516,25 +516,26 @@ func (s *syncer) branchSyncableCommits(
 }
 
 // isGitCommitSynced checks if a commit hash is already synced to a BSR module.
-func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash git.Hash) (bool, error) {
+func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity, commitHash string) (bool, error) {
 	modIdentity := moduleIdentity.IdentityString()
 	// check local cache first
 	if syncedModuleCommits, ok := s.modulesIdentitiesToCommitsSyncedCache[modIdentity]; ok {
-		if _, commitSynced := syncedModuleCommits[commitHash.Hex()]; commitSynced {
+		if _, commitSynced := syncedModuleCommits[commitHash]; commitSynced {
 			return true, nil
 		}
 	}
 	// not in the cache, request BSR check
-	commitSynced, err := s.handler.IsGitCommitSynced(ctx, moduleIdentity, commitHash)
+	syncedModuleCommits, err := s.handler.CheckSyncedGitCommits(ctx, moduleIdentity, map[string]struct{}{commitHash: {}})
 	if err != nil {
 		return false, err
 	}
+	_, commitSynced := syncedModuleCommits[commitHash]
 	if commitSynced {
 		// populate local cache
 		if s.modulesIdentitiesToCommitsSyncedCache[modIdentity] == nil {
 			s.modulesIdentitiesToCommitsSyncedCache[modIdentity] = make(map[string]struct{})
 		}
-		s.modulesIdentitiesToCommitsSyncedCache[modIdentity][commitHash.Hex()] = struct{}{}
+		s.modulesIdentitiesToCommitsSyncedCache[modIdentity][commitHash] = struct{}{}
 	}
 	return commitSynced, nil
 }
