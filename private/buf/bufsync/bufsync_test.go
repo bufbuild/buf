@@ -221,18 +221,13 @@ func (c *mockSyncHandler) SyncModuleCommit(
 	return err
 }
 
-func (c *mockSyncHandler) CheckSyncedGitCommits(
+func (c *mockSyncHandler) IsGitCommitSynced(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
-	commitHashes map[string]struct{},
-) (map[string]struct{}, error) {
-	syncedHashes := make(map[string]struct{})
-	for hash := range commitHashes {
-		if _, isSynced := c.syncedCommitsSHAs[hash]; isSynced {
-			syncedHashes[hash] = struct{}{}
-		}
-	}
-	return syncedHashes, nil
+	hash git.Hash,
+) (bool, error) {
+	_, isSynced := c.syncedCommitsSHAs[hash.Hex()]
+	return isSynced, nil
 }
 
 var _ bufsync.Handler = (*mockSyncHandler)(nil)
