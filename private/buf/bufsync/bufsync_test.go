@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 )
 
 // scaffoldGitRepository returns an initialized git repository with a single commit, and returns the
@@ -155,10 +156,19 @@ func (c *mockSyncHandler) BackfillTags(
 	committer git.Ident,
 	tags []string,
 ) (string, error) {
-	c.tagsByHash[alreadySyncedHash.Hex()] = tags
 	for _, tag := range tags {
+		if previousHash, ok := c.hashByTag[tag]; ok {
+			// clear previous tag
+			c.tagsByHash[previousHash.Hex()] = slices.DeleteFunc(
+				c.tagsByHash[previousHash.Hex()],
+				func(previousTag string) bool {
+					return previousTag == tag
+				},
+			)
+		}
 		c.hashByTag[tag] = alreadySyncedHash
 	}
+	c.tagsByHash[alreadySyncedHash.Hex()] = tags
 	return "some-BSR-commit-name", nil
 }
 
