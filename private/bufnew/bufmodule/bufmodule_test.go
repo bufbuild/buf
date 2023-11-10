@@ -49,6 +49,14 @@ func TestBasic(t *testing.T) {
 					),
 				},
 			},
+			"buf.build/foo/extdep3": {
+				CommitID: "extdep3commit",
+				PathToData: map[string][]byte{
+					"extdep3.proto": []byte(
+						`syntax = proto3; package extdep3;`,
+					),
+				},
+			},
 			// Adding in a module that exists remotely but we'll also have in the workspace.
 			//
 			// This one will import from extdep2 instead of the workspace importing from extdep1.
@@ -73,6 +81,11 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	require.NoError(t, err)
+	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	require.NoError(t, err)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
+	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
 	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
@@ -109,11 +122,18 @@ func TestBasic(t *testing.T) {
 				"module2.proto": []byte(
 					`syntax = proto3; package module2; import "module1.proto"; import "extdep1.proto";`,
 				),
+				// module2 is excluded by path, but imports a Module that is not imported anywhere
+				// else. We want to make sure this path is not targeted, but extdep3 is still
+				// a dependency of the Module.
+				"foo/module2_excluded.proto": []byte(
+					`syntax = proto3; package module2; import "extdep3.proto";`,
+				),
 			},
 		),
 		"path/to/module2",
 		true,
 		bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
+		bufmodule.AddModuleForBucketWithTargetPaths(nil, []string{"foo"}),
 	)
 
 	moduleSet, err := moduleSetBuilder.Build()
@@ -124,6 +144,7 @@ func TestBasic(t *testing.T) {
 			"buf.build/bar/module2",
 			"buf.build/foo/extdep1",
 			"buf.build/foo/extdep2",
+			"buf.build/foo/extdep3",
 			"path/to/module1",
 		},
 		bufmodule.ModuleSetOpaqueIDs(moduleSet),
@@ -144,9 +165,29 @@ func TestBasic(t *testing.T) {
 		map[string]bool{
 			"buf.build/foo/extdep1": true,
 			"buf.build/foo/extdep2": false,
+			"buf.build/foo/extdep3": true,
 			"path/to/module1":       true,
 		},
 		testGetDepOpaqueIDToDirect(t, module2),
+	)
+	module2FileInfos, err := bufmodule.GetFileInfos(ctx, module2)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"foo/module2_excluded.proto",
+			"module2.proto",
+		},
+		bufmodule.FileInfoPaths(module2FileInfos),
+	)
+	module2TargetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module2)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"module2.proto",
+		},
+		bufmodule.FileInfoPaths(module2TargetFileInfos),
 	)
 
 	extdep2 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep2")
@@ -170,6 +211,7 @@ func TestBasic(t *testing.T) {
 				Inbound: []string{},
 				Outbound: []string{
 					"buf.build/foo/extdep1",
+					"buf.build/foo/extdep3",
 					"path/to/module1",
 				},
 			},
@@ -178,6 +220,13 @@ func TestBasic(t *testing.T) {
 				Inbound: []string{
 					"buf.build/bar/module2",
 					"buf.build/foo/extdep2",
+				},
+				Outbound: []string{},
+			},
+			{
+				Key: "buf.build/foo/extdep3",
+				Inbound: []string{
+					"buf.build/bar/module2",
 				},
 				Outbound: []string{},
 			},
@@ -207,6 +256,7 @@ func TestBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep3",
 			"buf.build/foo/extdep2",
 			"path/to/module1",
 			"buf.build/bar/module2",

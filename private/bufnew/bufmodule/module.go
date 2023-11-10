@@ -170,6 +170,8 @@ func newModule(
 	moduleFullName ModuleFullName,
 	commitID string,
 	isTargetModule bool,
+	targetPaths []string,
+	targetExcludePaths []string,
 ) (*module, error) {
 	if bucketID == "" && moduleFullName == nil {
 		// This is a system error.
@@ -186,6 +188,8 @@ func newModule(
 		ctx,
 		bucket,
 		module,
+		targetPaths,
+		targetExcludePaths,
 	)
 	module.getDigest = sync.OnceValues(
 		func() (bufcas.Digest, error) {

@@ -158,6 +158,8 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		addModuleForBucketOptions.moduleFullName,
 		addModuleForBucketOptions.commitID,
 		isTargetModule,
+		addModuleForBucketOptions.targetPaths,
+		addModuleForBucketOptions.targetExcludePaths,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)

@@ -17,9 +17,11 @@ package bufmodule
 import (
 	"context"
 	"io/fs"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -98,6 +100,55 @@ func ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket ModuleReadBucket) Modul
 	return ModuleReadBucketWithOnlyFileTypes(moduleReadBucket, FileTypeProto)
 }
 
+// GetFileInfos is a convenience function that walks the ModuleReadBucket and gets
+// all the FileInfos.
+//
+// Sorted by path.
+func GetFileInfos(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]FileInfo, error) {
+	var fileInfos []FileInfo
+	if err := moduleReadBucket.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			fileInfos = append(fileInfos, fileInfo)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	sort.Slice(
+		fileInfos,
+		func(i int, j int) bool {
+			return fileInfos[i].Path() < fileInfos[j].Path()
+		},
+	)
+	return fileInfos, nil
+}
+
+// GetTargetFileInfos is a convenience function that walks the ModuleReadBucket and gets
+// all the FileInfos where IsTargetFile() is set to true.
+//
+// Sorted by path.
+func GetTargetFileInfos(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]FileInfo, error) {
+	var fileInfos []FileInfo
+	if err := moduleReadBucket.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			fileInfos = append(fileInfos, fileInfo)
+			return nil
+		},
+		WalkFileInfosWithOnlyTargetFiles(),
+	); err != nil {
+		return nil, err
+	}
+	sort.Slice(
+		fileInfos,
+		func(i int, j int) bool {
+			return fileInfos[i].Path() < fileInfos[j].Path()
+		},
+	)
+	return fileInfos, nil
+}
+
 // GetDocFile gets the singular documentation File for the Module, if it exists.
 //
 // When creating a Module from a Bucket, we check the file paths buf.md, README.md, and README.markdown
@@ -124,9 +175,10 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // moduleReadBucket
 
 type moduleReadBucket struct {
-	delegate           storage.ReadBucket
-	module             Module
-	pathToIsTargetFile func(Module, string) (bool, error)
+	delegate             storage.ReadBucket
+	module               Module
+	targetPathMap        map[string]struct{}
+	targetExcludePathMap map[string]struct{}
 }
 
 // module cannot be assumed to be functional yet.
@@ -135,6 +187,8 @@ func newModuleReadBucket(
 	ctx context.Context,
 	delegate storage.ReadBucket,
 	module Module,
+	targetPaths []string,
+	targetExcludePaths []string,
 ) *moduleReadBucket {
 	docFilePath := getDocFilePathForStorageReadBucket(ctx, delegate)
 	return &moduleReadBucket{
@@ -146,21 +200,9 @@ func newModuleReadBucket(
 				storage.MatchPathEqual(docFilePath),
 			),
 		),
-		module: module,
-		// We're passing in Module here to future-proof: IsTargetFile needs to be
-		// dynamic on module.IsTargetModule(), and if we change the module field,
-		// we want to make sure the latest copy of Module is accounted for.
-		// We don't currently change the module field, but we have enough set* functions
-		// that this is possible in the future.
-		pathToIsTargetFile: func(module Module, path string) (bool, error) {
-			if module.IsTargetModule() {
-				return true, nil
-			}
-			// TODO: need to implement this
-			// Likely needs to be a filter built from the TargetPaths option
-			// that is passed into newModuleReadBucket
-			return false, nil
-		},
+		module:               module,
+		targetPathMap:        slicesextended.ToMap(targetPaths),
+		targetExcludePathMap: slicesextended.ToMap(targetExcludePaths),
 	}
 }
 
@@ -193,6 +235,10 @@ func (f *moduleReadBucket) WalkFileInfos(
 	for _, option := range options {
 		option(walkFileInfosOptions)
 	}
+	// TODO: we need to special-case target paths to only walk on target paths
+	// if len(f.targetPathMap) > 0, for performance reasons.
+	//
+	// This may mean we need to change storage.Walk to accept prefixes that are equal to the prefix.
 	return f.delegate.Walk(
 		ctx,
 		"",
@@ -218,11 +264,32 @@ func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo,
 		// A lack of classification is a system error.
 		return nil, err
 	}
-	isTargetFile, err := b.pathToIsTargetFile(b.module, objectInfo.Path())
-	if err != nil {
-		return nil, err
+	return newFileInfo(objectInfo, b.module, fileType, b.getIsTargetedFileForPath(objectInfo.Path())), nil
+}
+
+func (f *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
+	if !f.module.IsTargetModule() {
+		// If the Module is not targeted, the file is automatically not targeted.
+		//
+		// Note we can change IsTargetModule via setIsTargetModule during ModuleSetBuilder building,
+		// so we do not want to cache this value.
+		return false
 	}
-	return newFileInfo(objectInfo, b.module, fileType, isTargetFile), nil
+	switch {
+	case len(f.targetPathMap) == 0 && len(f.targetExcludePathMap) == 0:
+		// If we did not target specific Files, all Files in a targeted Module are targeted.
+		return true
+	case len(f.targetPathMap) == 0 && len(f.targetExcludePathMap) != 0:
+		// We only have exclude paths, no paths.
+		return !normalpath.MapHasEqualOrContainingPath(f.targetExcludePathMap, path, normalpath.Relative)
+	case len(f.targetPathMap) != 0 && len(f.targetExcludePathMap) == 0:
+		// We only have paths, no exclude paths.
+		return normalpath.MapHasEqualOrContainingPath(f.targetPathMap, path, normalpath.Relative)
+	default:
+		// We have both paths and exclude paths.
+		return normalpath.MapHasEqualOrContainingPath(f.targetPathMap, path, normalpath.Relative) &&
+			!normalpath.MapHasEqualOrContainingPath(f.targetExcludePathMap, path, normalpath.Relative)
+	}
 }
 
 // filteredModuleReadBucket

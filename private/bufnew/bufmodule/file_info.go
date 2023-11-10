@@ -14,7 +14,10 @@
 
 package bufmodule
 
-import "github.com/bufbuild/buf/private/pkg/storage"
+import (
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/storage"
+)
 
 // FileInfo is the file info for a Module file.
 //
@@ -42,6 +45,11 @@ type FileInfo interface {
 
 	//setIsTargetFile(bool)
 	isFileInfo()
+}
+
+// FileInfoPaths is a convenience function that returns the paths of the FileInfos.
+func FileInfoPaths(fileInfos []FileInfo) []string {
+	return slicesextended.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() })
 }
 
 // *** PRIVATE ***
