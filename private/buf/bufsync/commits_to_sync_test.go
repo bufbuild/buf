@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+package bufsync_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -37,7 +35,8 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	const defaultBranchName = "main"
 	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repoDir, moduleIdentityInHEAD, defaultBranchName)
+	runner := command.NewRunner()
+	prepareGitRepoSyncWithNoPreviousSyncPoints(t, runner, repoDir, moduleIdentityInHEAD, defaultBranchName)
 	type testCase struct {
 		name            string
 		branch          string
@@ -65,99 +64,35 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			expectedCommits: 1,
 		},
 	}
+	handler := newMockSyncHandler() // use same handler for all test cases
 	for _, withOverride := range []bool{false, true} {
-		mockBSRChecker := newMockSyncGitChecker()
 		for _, tc := range testCases {
 			func(tc testCase) {
 				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
+					// check out the branch to sync
+					runInDir(t, runner, repoDir, "git", "checkout", tc.branch)
 					const moduleDir = "."
-					moduleDirsToIdentityOverride := make(map[string]bufmoduleref.ModuleIdentity)
+					var opts []bufsync.SyncerOption
 					if withOverride {
-						moduleDirsToIdentityOverride[moduleDir] = moduleIdentityOverride
+						opts = append(opts, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
 					} else {
-						moduleDirsToIdentityOverride[moduleDir] = nil
+						opts = append(opts, bufsync.SyncerWithModule(moduleDir, nil))
 					}
-					testSyncer := syncer{
-						repo:                                  repo,
-						storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
-						logger:                                zaptest.NewLogger(t),
-						errorHandler:                          &mockErrorHandler{},
-						modulesDirsToIdentityOverrideForSync:  moduleDirsToIdentityOverride,
-						sortedModulesDirsForSync:              []string{"."},
-						syncAllBranches:                       true,
-						syncedGitCommitChecker:                mockBSRChecker.checkFunc(),
-						commitsToTags:                         make(map[string][]string),
-						modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
-						modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
-						modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-					}
-					require.NoError(t, testSyncer.prepareSync(context.Background()))
-					var moduleIdentity bufmoduleref.ModuleIdentity
-					if withOverride {
-						moduleIdentity = moduleIdentityOverride
-					} else {
-						moduleIdentity = moduleIdentityInHEAD
-					}
-					syncableCommits, err := testSyncer.branchSyncableCommits(
-						context.Background(),
-						moduleDir,
-						moduleIdentity,
-						tc.branch,
-						"", // no expected git sync point
+					syncer, err := bufsync.NewSyncer(
+						zaptest.NewLogger(t),
+						bufsync.NewRealClock(),
+						repo,
+						storagegit.NewProvider(repo.Objects()),
+						handler,
+						opts...,
 					)
 					require.NoError(t, err)
-					require.Len(t, syncableCommits, tc.expectedCommits)
-					for _, syncableCommit := range syncableCommits {
-						assert.NotEmpty(t, syncableCommit.commit.Hash().Hex())
-						mockBSRChecker.markSynced(syncableCommit.commit.Hash().Hex())
-						assert.NotNil(t, syncableCommit.module)
-						// no need to assert syncableCommit.module.ModuleIdentity, it's not renamed because it's
-						// not used when syncing.
-					}
+					require.NoError(t, syncer.Sync(context.Background()))
+					syncedCommits := handler.commitsByBranch[tc.branch]
+					require.Len(t, syncedCommits, tc.expectedCommits)
 				})
 			}(tc)
 		}
-	}
-}
-
-type mockErrorHandler struct{}
-
-func (*mockErrorHandler) HandleReadModuleError(readErr *ReadModuleError) LookbackDecisionCode {
-	if readErr.code == ReadModuleErrorCodeUnexpectedName {
-		return LookbackDecisionCodeOverride
-	}
-	return LookbackDecisionCodeSkip
-}
-
-func (*mockErrorHandler) InvalidBSRSyncPoint(bufmoduleref.ModuleIdentity, string, git.Hash, bool, error) error {
-	return errors.New("unimplemented")
-}
-
-type mockSyncedGitChecker struct {
-	syncedCommitsSHAs map[string]struct{}
-}
-
-func newMockSyncGitChecker() mockSyncedGitChecker {
-	return mockSyncedGitChecker{syncedCommitsSHAs: make(map[string]struct{})}
-}
-
-func (c *mockSyncedGitChecker) markSynced(gitHash string) {
-	c.syncedCommitsSHAs[gitHash] = struct{}{}
-}
-
-func (c *mockSyncedGitChecker) checkFunc() SyncedGitCommitChecker {
-	return func(
-		_ context.Context,
-		_ bufmoduleref.ModuleIdentity,
-		commitHashes map[string]struct{},
-	) (map[string]struct{}, error) {
-		syncedHashes := make(map[string]struct{})
-		for hash := range commitHashes {
-			if _, isSynced := c.syncedCommitsSHAs[hash]; isSynced {
-				syncedHashes[hash] = struct{}{}
-			}
-		}
-		return syncedHashes, nil
 	}
 }
 
@@ -167,8 +102,13 @@ func (c *mockSyncedGitChecker) checkFunc() SyncedGitCommitChecker {
 // | o-o----------o-----------------o (master)
 // |   └o-o (foo) └o--------o (bar)
 // |               └o (baz)
-func prepareGitRepoSyncWithNoPreviousSyncPoints(t *testing.T, repoDir string, moduleIdentity bufmoduleref.ModuleIdentity, defaultBranchName string) {
-	runner := command.NewRunner()
+func prepareGitRepoSyncWithNoPreviousSyncPoints(
+	t *testing.T,
+	runner command.Runner,
+	repoDir string,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	defaultBranchName string,
+) {
 	var allBranches = []string{defaultBranchName, "foo", "bar", "baz"}
 
 	var commitsCounter int

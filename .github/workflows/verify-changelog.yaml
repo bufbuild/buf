@@ -1,0 +1,21 @@
+name: Verify Changelog
+on:
+  pull_request:
+    types:
+      - opened
+  push:
+    branches:
+      - "release/**"
+      - "next/**"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || startsWith(github.head_ref, 'release/') || startsWith(github.head_ref, 'next/')}}
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Check changelog is modified
+        run: bash ./make/buf/scripts/verifychangelog.bash

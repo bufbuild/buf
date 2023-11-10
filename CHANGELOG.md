@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.28.0] - 2023-11-10
+
 - Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
   will now verify that your protovalidate rules are valid. A single rule `PROTOVALIDATE` has been
   added to the `DEFAULT` group - given that protovalidate is net new, this does not represent
   a breaking change.
 - Update `buf beta price` with the latest pricing information.
+- Display a warning when reading a `buf.lock` with dependencies with b1 or b3 digests. b1 and b3
+  digests will be deprecated in a future version. Run `buf mod update` to update dependency digests.
 
 ## [v1.27.2] - 2023-10-27
 
@@ -973,7 +979,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.2...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.0...HEAD
+[v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
 [v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0

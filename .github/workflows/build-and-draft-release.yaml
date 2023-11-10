@@ -1,0 +1,51 @@
+name: Build and Draft Release
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The released version without 'v'. For example, 1.0.0.
+env:
+  APP_ID: 251311
+jobs:
+  draft_release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release')) }}
+    steps:
+      - name: Set VERSION variable
+        # The head ref looks like release/v1.0.0, and we need to trim the string up to the `/v`.
+        run: |
+          VERSION="${{ github.event.inputs.version || github.head_ref}}"
+          echo "VERSION=${VERSION##*/v}" >> $GITHUB_ENV
+      - name: Get GitHub app token
+        uses: actions/create-github-app-token@v1
+        id: app_token
+        with:
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+      - name: Set up Git name and email
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+      - name: Build assets and draft release
+        run: bash ./make/buf/scripts/draftrelease.bash
+        env:
+          GH_TOKEN:  ${{ steps.app_token.outputs.token }}
+          WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
+          RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
+          RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}
+      - name: Unset keys
+        if: ${{ always() }}
+        run: |
+          unset RELEASE_MINISIGN_PRIVATE_KEY
+          unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD

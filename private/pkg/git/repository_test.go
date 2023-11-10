@@ -15,6 +15,7 @@
 package git_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -235,9 +236,11 @@ func TestForEachBranch(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				repo := gittest.ScaffoldGitRepository(t)
-				assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+				currentBranch, err := repo.CurrentBranch(context.Background())
+				require.NoError(t, err)
+				assert.Equal(t, gittest.DefaultBranch, currentBranch)
 				branches := make(map[string]struct{})
-				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
+				err = repo.ForEachBranch(func(branch string, headHash git.Hash) error {
 					require.NotEmpty(t, branch)
 					if _, alreadySeen := branches[branch]; alreadySeen {
 						assert.Fail(t, "duplicate branch", branch)
