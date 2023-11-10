@@ -21,8 +21,8 @@ jobs:
           private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
       - name: Set up Git name and email
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.email "251311+buf-release-bot[bot]@users.noreply.github.com"
+          git config --global user.name "buf-release-bot[bot]"
       - name: Create release PR
         run: bash ./make/buf/scripts/createreleasepr.bash
         env:
