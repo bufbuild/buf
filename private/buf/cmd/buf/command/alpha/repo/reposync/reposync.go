@@ -186,7 +186,7 @@ func sync(
 		return fmt.Errorf("create connect client %w", err)
 	}
 	syncerOptions := []bufsync.SyncerOption{
-		bufsync.SyncerWithRemote(remoteName),
+		bufsync.SyncerWithGitRemote(remoteName),
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())

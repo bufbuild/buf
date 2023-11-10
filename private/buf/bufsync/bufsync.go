@@ -176,10 +176,10 @@ type Handler interface {
 		commitHashes map[string]struct{},
 	) (map[string]struct{}, error)
 
-	// GetModuleDefaultBranch is invoked before syncing, to gather default branch names for all the
+	// GetModuleReleaseBranch is invoked before syncing, to gather release branch names for all the
 	// modules that are about to be synced. If the BSR module does not exist, the implementation should
 	// return `ModuleDoesNotExistErr` error.
-	GetModuleDefaultBranch(
+	GetModuleReleaseBranch(
 		ctx context.Context,
 		module bufmoduleref.ModuleIdentity,
 	) (string, error)
@@ -235,10 +235,10 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithRemote configures a Syncer with a resumption using a SyncPointResolver.
-func SyncerWithRemote(remoteName string) SyncerOption {
+// SyncerWithGitRemote configures a Syncer to sync commits from particular Git remote.
+func SyncerWithGitRemote(gitRemoteName string) SyncerOption {
 	return func(s *syncer) error {
-		s.remote = remoteName
+		s.gitRemoteName = gitRemoteName
 		return nil
 	}
 }

@@ -17,6 +17,7 @@ package bufsync_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path"
@@ -100,23 +101,31 @@ type mockClock struct {
 func (c *mockClock) Now() time.Time { return c.now }
 
 type mockSyncHandler struct {
-	syncedCommitsSHAs map[string]struct{}
-	commitsPerBranch  map[string][]bufsync.ModuleCommit
-	hashByTag         map[string]git.Hash
-	tagsByHash        map[string][]string
+	syncedCommitsSHAs               map[string]struct{}
+	commitsByBranch                 map[string][]bufsync.ModuleCommit
+	hashByTag                       map[string]git.Hash
+	tagsByHash                      map[string][]string
+	manualSyncPointByModuleByBranch map[string]map[string]git.Hash
 }
 
 func newMockSyncHandler() *mockSyncHandler {
 	return &mockSyncHandler{
-		syncedCommitsSHAs: make(map[string]struct{}),
-		commitsPerBranch:  make(map[string][]bufsync.ModuleCommit),
-		hashByTag:         make(map[string]git.Hash),
-		tagsByHash:        make(map[string][]string),
+		syncedCommitsSHAs:               make(map[string]struct{}),
+		commitsByBranch:                 make(map[string][]bufsync.ModuleCommit),
+		hashByTag:                       make(map[string]git.Hash),
+		tagsByHash:                      make(map[string][]string),
+		manualSyncPointByModuleByBranch: make(map[string]map[string]git.Hash),
 	}
 }
 
-func (c *mockSyncHandler) markSynced(gitHash string) {
-	c.syncedCommitsSHAs[gitHash] = struct{}{}
+func (c *mockSyncHandler) setSyncPoint(branch string, hash git.Hash, identity bufmoduleref.ModuleIdentity) {
+	branchSyncpoints, ok := c.manualSyncPointByModuleByBranch[branch]
+	if !ok {
+		branchSyncpoints = make(map[string]git.Hash)
+		c.manualSyncPointByModuleByBranch[branch] = branchSyncpoints
+	}
+	branchSyncpoints[identity.IdentityString()] = hash
+	c.syncedCommitsSHAs[hash.Hex()] = struct{}{}
 }
 
 func (c *mockSyncHandler) HandleReadModuleError(
@@ -129,13 +138,13 @@ func (c *mockSyncHandler) HandleReadModuleError(
 }
 
 func (c *mockSyncHandler) InvalidBSRSyncPoint(
-	bufmoduleref.ModuleIdentity,
-	string,
-	git.Hash,
-	bool,
-	error,
+	identity bufmoduleref.ModuleIdentity,
+	branch string,
+	gitHash git.Hash,
+	isDefaultBranch bool,
+	err error,
 ) error {
-	return nil
+	return errors.New("unimplemented")
 }
 
 func (c *mockSyncHandler) BackfillTags(
@@ -153,7 +162,7 @@ func (c *mockSyncHandler) BackfillTags(
 	return "some-BSR-commit-name", nil
 }
 
-func (c *mockSyncHandler) GetModuleDefaultBranch(
+func (c *mockSyncHandler) GetModuleReleaseBranch(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
 ) (string, error) {
@@ -166,23 +175,40 @@ func (c *mockSyncHandler) ResolveSyncPoint(
 	module bufmoduleref.ModuleIdentity,
 	branch string,
 ) (git.Hash, error) {
-	if branch, ok := c.commitsPerBranch[branch]; !ok || len(branch) == 0 {
-		// no branch or empty branch
-		return nil, nil
-	} else {
+	// if we have commits from SyncModuleCommit, prefer that over
+	// manually set sync point
+	if branch, ok := c.commitsByBranch[branch]; ok && len(branch) > 0 {
 		// everything here is synced; return tip of branch
 		return branch[len(branch)-1].Commit().Hash(), nil
 	}
+	if branch, ok := c.manualSyncPointByModuleByBranch[branch]; ok {
+		if syncPoint, ok := branch[module.IdentityString()]; ok {
+			return syncPoint, nil
+		}
+	}
+	return nil, nil
 }
 
 func (c *mockSyncHandler) SyncModuleCommit(
 	ctx context.Context,
 	commit bufsync.ModuleCommit,
 ) error {
-	c.markSynced(commit.Commit().Hash().Hex())
+	c.setSyncPoint(
+		commit.Branch(),
+		commit.Commit().Hash(),
+		commit.Identity(),
+	)
 	// append-only, no backfill; good enough for now!
-	c.commitsPerBranch[commit.Branch()] = append(c.commitsPerBranch[commit.Branch()], commit)
-	return nil
+	c.commitsByBranch[commit.Branch()] = append(c.commitsByBranch[commit.Branch()], commit)
+	_, err := c.BackfillTags(
+		ctx,
+		commit.Identity(),
+		commit.Commit().Hash(),
+		commit.Commit().Author(),
+		commit.Commit().Committer(),
+		commit.Tags(),
+	)
+	return err
 }
 
 func (c *mockSyncHandler) CheckSyncedGitCommits(

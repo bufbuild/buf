@@ -114,7 +114,7 @@ func (h *syncHandler) CheckSyncedGitCommits(ctx context.Context, module bufmodul
 	return syncedHashes, nil
 }
 
-func (h *syncHandler) GetModuleDefaultBranch(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
+func (h *syncHandler) GetModuleReleaseBranch(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
 	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
 	res, err := service.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
 		FullName: module.Owner() + "/" + module.Repository(),

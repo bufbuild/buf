@@ -90,12 +90,12 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 					opts...,
 				)
 				require.NoError(t, err)
-				prepareErr := syncer.Sync(context.Background())
-				require.Error(t, prepareErr)
-				assert.Contains(t, prepareErr.Error(), repeatedIdentity.IdentityString())
-				assert.Contains(t, prepareErr.Error(), defaultBranchName)
+				err = syncer.Sync(context.Background())
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
+				assert.Contains(t, err.Error(), defaultBranchName)
 				for _, moduleDir := range moduleDirs {
-					assert.Contains(t, prepareErr.Error(), moduleDir)
+					assert.Contains(t, err.Error(), moduleDir)
 				}
 			})
 		}(tc)

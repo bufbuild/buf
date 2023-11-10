@@ -87,7 +87,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 					)
 					require.NoError(t, err)
 					require.NoError(t, syncer.Sync(context.Background()))
-					syncedCommits := handler.commitsPerBranch[tc.branch]
+					syncedCommits := handler.commitsByBranch[tc.branch]
 					require.Len(t, syncedCommits, tc.expectedCommits)
 				})
 			}(tc)

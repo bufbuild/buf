@@ -47,12 +47,18 @@ func TestBackfilltags(t *testing.T) {
 	require.NoError(t, repo.ForEachCommit(func(commit git.Commit) error {
 		allCommitsHashes = append(allCommitsHashes, commit.Hash().Hex())
 		commitCount++
-		if commitCount > 5 {
-			if commitCount == 15 {
-				// have the time limit at the commit 15 looking back
-				fakeNowCommitLimitTime = commit.Committer().Timestamp()
-			}
-			mockHandler.markSynced(commit.Hash().Hex())
+		if commitCount == 6 {
+			// mark this commit as synced; nothing after this needs to be marked because syncer
+			// won't travel past this
+			mockHandler.setSyncPoint(
+				defaultBranchName,
+				commit.Hash(),
+				moduleIdentityInHEAD,
+			)
+		}
+		if commitCount == 15 {
+			// have the time limit at the commit 15 looking back
+			fakeNowCommitLimitTime = commit.Committer().Timestamp()
 		}
 		return nil
 	}))
@@ -67,20 +73,15 @@ func TestBackfilltags(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NoError(t, syncer.Sync(context.Background()))
-	// in total the repo has at least 20 commits, we expect to backfill 11 of them...
+	// in total the repo has at least 20 commits, we expect to backfill 11 of them
+	// and sync the next 4 commits
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
-	assert.Len(t, mockHandler.tagsByHash, 11)
+	assert.Len(t, mockHandler.tagsByHash, 15)
 	// as follows:
 	for i, commitHash := range allCommitsHashes {
-		if i < 4 {
-			// the 4 most recent should not be backfilling anything, those are unsynced commits that will
-			// be synced by another func.
-			assert.NotContains(t, mockHandler.tagsByHash, commitHash)
-		} else if i < 15 {
+		if i < 15 {
+			// Between 0-4, the tags should be synced.
 			// Between 5-15 the tags should be backfilled.
-			//
-			// The commit #5 is the git start sync point, which will also be handled by sync because it's
-			// sometimes already synced and sometimes not. It's handled by both sync and backfill tags.
 			//
 			// The func it's backfilling more than 5 commits, because it needs to backfill until both
 			// conditions are met, at least 5 commits and at least 24 hours.
