@@ -57,25 +57,9 @@ func CommitWithExecutableFile(path string) CommitOption {
 	}
 }
 
-type scaffoldOptions struct {
-	withOnlyInitialCommit bool
-}
-
-type ScaffoldGitRepositoryOption func(*scaffoldOptions)
-
-func ScaffoldGitRepositoryWithOnlyInitialCommit() ScaffoldGitRepositoryOption {
-	return func(opts *scaffoldOptions) {
-		opts.withOnlyInitialCommit = true
-	}
-}
-
-func ScaffoldGitRepository(t *testing.T, opts ...ScaffoldGitRepositoryOption) Repository {
-	var options scaffoldOptions
-	for _, opt := range opts {
-		opt(&options)
-	}
+func ScaffoldGitRepository(t *testing.T) Repository {
 	runner := command.NewRunner()
-	dir := scaffoldGitRepository(t, runner, DefaultBranch, options.withOnlyInitialCommit)
+	dir := scaffoldGitRepository(t, runner, DefaultBranch)
 	dotGitPath := filepath.Join(dir, git.DotGitDir)
 	repo, err := git.OpenRepository(
 		context.Background(),
@@ -95,7 +79,7 @@ func ScaffoldGitRepository(t *testing.T, opts ...ScaffoldGitRepositoryOption) Re
 	return testRepo
 }
 
-func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch string, onlyInitialCommit bool) string {
+func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch string) string {
 	dir := t.TempDir()
 
 	// (0) setup local and remote
