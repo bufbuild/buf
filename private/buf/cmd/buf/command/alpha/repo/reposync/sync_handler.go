@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -88,30 +87,22 @@ func (h *syncHandler) ResolveSyncPoint(ctx context.Context, module bufmoduleref.
 	return hash, nil
 }
 
-func (h *syncHandler) CheckSyncedGitCommits(ctx context.Context, module bufmoduleref.ModuleIdentity, commitHashes map[string]struct{}) (map[string]struct{}, error) {
+func (h *syncHandler) IsGitCommitSynced(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash) (bool, error) {
 	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewLabelServiceClient)
 	res, err := service.GetLabelsInNamespace(ctx, connect.NewRequest(&registryv1alpha1.GetLabelsInNamespaceRequest{
 		RepositoryOwner: module.Owner(),
 		RepositoryName:  module.Repository(),
 		LabelNamespace:  registryv1alpha1.LabelNamespace_LABEL_NAMESPACE_GIT_COMMIT,
-		LabelNames:      stringutil.MapToSlice(commitHashes),
+		LabelNames:      []string{hash.Hex()},
 	}))
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Repo is not created
-			return nil, nil
+			return false, nil
 		}
-		return nil, fmt.Errorf("get labels in namespace: %w", err)
+		return false, fmt.Errorf("get labels in namespace: %w", err)
 	}
-	syncedHashes := make(map[string]struct{})
-	for _, label := range res.Msg.Labels {
-		syncedHash := label.LabelName.Name
-		if _, expected := commitHashes[syncedHash]; !expected {
-			return nil, fmt.Errorf("received unexpected synced hash %q, expected %v", syncedHash, commitHashes)
-		}
-		syncedHashes[syncedHash] = struct{}{}
-	}
-	return syncedHashes, nil
+	return len(res.Msg.Labels) == 1, nil
 }
 
 func (h *syncHandler) GetModuleReleaseBranch(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {

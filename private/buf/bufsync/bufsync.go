@@ -167,14 +167,13 @@ type Handler interface {
 		branch string,
 	) (git.Hash, error)
 
-	// CheckSyncedGitCommits is invoked when syncing branches to know which commits hashes from a set
-	// are already synced inthe BSR. It expects to receive the commit hashes that are synced already. If
-	// an error is returned, sync will abort.
-	CheckSyncedGitCommits(
+	// IsGitCommitSynced is invoked when syncing branches to know if a Git commit is already synced.
+	// If an error is returned, sync will abort.
+	IsGitCommitSynced(
 		ctx context.Context,
 		module bufmoduleref.ModuleIdentity,
-		commitHashes map[string]struct{},
-	) (map[string]struct{}, error)
+		hash git.Hash,
+	) (bool, error)
 
 	// GetModuleReleaseBranch is invoked before syncing, to gather release branch names for all the
 	// modules that are about to be synced. If the BSR module does not exist, the implementation should
