@@ -70,7 +70,7 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				repo := gittest.ScaffoldGitRepository(t, gittest.ScaffoldGitRepositoryWithOnlyInitialCommit())
+				repo := gittest.ScaffoldGitRepository(t)
 				prepareGitRepoMultiModule(t, repo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {

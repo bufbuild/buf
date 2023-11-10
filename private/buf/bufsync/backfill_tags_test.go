@@ -33,7 +33,7 @@ import (
 func TestBackfilltags(t *testing.T) {
 	t.Parallel()
 	const defaultBranchName = "main"
-	repo := gittest.ScaffoldGitRepository(t, gittest.ScaffoldGitRepositoryWithOnlyInitialCommit())
+	repo := gittest.ScaffoldGitRepository(t)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	prepareGitRepoBackfillTags(t, repo, moduleIdentityInHEAD)

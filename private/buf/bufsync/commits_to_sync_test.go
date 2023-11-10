@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/require"
@@ -34,9 +33,8 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
-	repo := gittest.ScaffoldGitRepository(t, gittest.ScaffoldGitRepositoryWithOnlyInitialCommit())
-	runner := command.NewRunner()
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, runner, repo, moduleIdentityInHEAD, gittest.DefaultBranch)
+	repo := gittest.ScaffoldGitRepository(t)
+	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repo, moduleIdentityInHEAD, gittest.DefaultBranch)
 	type testCase struct {
 		name            string
 		branch          string
@@ -104,7 +102,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 // |               └o (baz)
 func prepareGitRepoSyncWithNoPreviousSyncPoints(
 	t *testing.T,
-	runner command.Runner,
 	repo gittest.Repository,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	defaultBranchName string,
