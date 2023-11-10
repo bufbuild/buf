@@ -47,6 +47,6 @@ git switch -C ${BRANCH}
 git add .
 git commit -m "Back to development"
 git push --set-upstream origin --force ${BRANCH} 
-url=$(gh pr create --title "Return to Development" --body "Release complete for v${RELEASED_VERSION}")
+url=$(gh pr create --title "Return to development" --body "Release complete for v${RELEASED_VERSION}")
 
 jq --null-input "{ text: \"PR back to development: ${url}\" }" | curl -sSL -X POST -H 'Content-Type: application/json' -d@- "${WEBHOOK_URL}"
