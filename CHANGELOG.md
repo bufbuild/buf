@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.28.0] - 2023-11-10
 
 - Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
@@ -975,6 +979,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.0...HEAD
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
