@@ -17,7 +17,7 @@ package internal
 import (
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
 // VersionSpec specifies the rules, ids, and categories for a given version.
@@ -39,7 +39,7 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 			categoriesMap[category] = struct{}{}
 		}
 	}
-	categories := stringutil.MapToSlice(categoriesMap)
+	categories := slicesextended.MapToSlice(categoriesMap)
 	sort.Slice(
 		categories,
 		func(i int, j int) bool {
@@ -57,7 +57,7 @@ func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
 	for id := range versionSpec.IDToCategories {
 		m[id] = struct{}{}
 	}
-	return stringutil.MapToSortedSlice(m)
+	return slicesextended.MapToSortedSlice(m)
 }
 
 // AllCategoriesAndIDsForVersionSpec returns all categories and rules for the VersionSpec.
@@ -71,5 +71,5 @@ func AllCategoriesAndIDsForVersionSpec(versionSpec *VersionSpec) []string {
 			m[category] = struct{}{}
 		}
 	}
-	return stringutil.MapToSortedSlice(m)
+	return slicesextended.MapToSortedSlice(m)
 }

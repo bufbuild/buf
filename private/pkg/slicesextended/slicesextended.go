@@ -15,10 +15,17 @@
 // Package slicesextended provides extra functionality on top of the slices package.
 package slicesextended
 
-import (
-	"cmp"
-	"slices"
-)
+import "sort"
+
+// Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
+//
+// TODO: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
+type Ordered interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~float32 | ~float64 |
+		~string
+}
 
 // Filter filters the slice to only the values where f returns true.
 func Filter[T any](s []T, f func(T) bool) []T {
@@ -82,9 +89,15 @@ func ToMap[T comparable](s []T) map[T]struct{} {
 }
 
 // MapToSortedSlice converts the map to a sorted slice.
-func MapToSortedSlice[M ~map[T]struct{}, T cmp.Ordered](m M) []T {
+func MapToSortedSlice[M ~map[T]struct{}, T Ordered](m M) []T {
 	s := MapToSlice(m)
-	slices.Sort(s)
+	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	sort.Slice(
+		s,
+		func(i int, j int) bool {
+			return s[i] < s[j]
+		},
+	)
 	return s
 }
 
@@ -98,7 +111,7 @@ func MapToSlice[T comparable](m map[T]struct{}) []T {
 }
 
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
-func ToUniqueSorted[S ~[]T, T cmp.Ordered](s S) S {
+func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
 	return MapToSortedSlice(ToMap(s))
 }
 
