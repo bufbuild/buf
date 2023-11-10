@@ -18,9 +18,11 @@ if [[ "${VERSION}" == v* ]]; then
 fi
 
 
-make bufrelease
-unset RELEASE_MINISIGN_PRIVATE_KEY
-unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
+# TODO
+# make bufrelease
+# unset RELEASE_MINISIGN_PRIVATE_KEY
+# unset RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD
+echo "text" > text.txt
 
 if [[ "${OSTYPE}" == "linux-gnu"* ]]; then
   SED_BIN=sed
@@ -42,6 +44,7 @@ b loop
 }' CHANGELOG.md)
 
 # The second v${VERSION} is the tag, see https://cli.github.com/manual/gh_release_create
-url=$(gh release create --draft --notes "${release_notes}" --title "v${VERSION}" "v${VERSION}" .build/release/buf/assets/*)
+# url=$(gh release create --draft --notes "${release_notes}" --title "v${VERSION}" "v${VERSION}" .build/release/buf/assets/*)
+url=$(gh release create --draft --notes "${release_notes}" --title "v${VERSION}" "v${VERSION}" text.txt)
 
 jq --null-input "{text:\"BufCLI Release ${VERSION} is complete: ${url}\"}" | curl -sSL -X POST -H 'Content-Type: application/json' -d@- "${WEBHOOK_URL}"
