@@ -18,18 +18,33 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
-	bufmoduleref.FileInfo
+	storage.ObjectInfo
+
+	// ModuleFullName returns the full name of the Module that this ImageFile came from,
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message),
+	// and if the ModuleFullName was known.
+	//
+	// May be nil. Callers should not rely on this value being present.
+	ModuleFullName() bufmodule.ModuleFullName
+	// CommitID returns the BSR ID of the Commit of the Module that this ImageFile came from.
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
+	// if the CommitID was known..
+	//
+	// May be empty. Callers should not rely on this value being present. If
+	// ModuleFullName is nil, this will always be empty.
+	CommitID() string
 
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
@@ -54,11 +69,11 @@ type ImageFile interface {
 //
 // If externalPath is empty, path is used.
 //
-// TODO: moduleIdentity and commit should be options since they are optional.
+// TODO: moduleFullName and commitID should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID string,
 	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
@@ -66,8 +81,8 @@ func NewImageFile(
 ) (ImageFile, error) {
 	return newImageFile(
 		fileDescriptor,
-		moduleIdentity,
-		commit,
+		moduleFullName,
+		commitID,
 		externalPath,
 		isImport,
 		isSyntaxUnspecified,
@@ -87,7 +102,9 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	// No need to validate as ImageFile is already validated.
 	return newImageFileNoValidate(
 		imageFile.FileDescriptorProto(),
-		imageFile,
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
+		imageFile.ExternalPath(),
 		isImport,
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
@@ -101,7 +118,7 @@ type Image interface {
 	// This contains all files, including imports if available.
 	// The returned files are in correct DAG order.
 	//
-	// All files that have the same ModuleIdentity will also have the same commit, or no commit.
+	// All files that have the same ModuleFullName will also have the same commit, or no commit.
 	// This is enforced at construction time.
 	Files() []ImageFile
 	// GetFile gets the file for the root relative file path.
@@ -192,8 +209,8 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
-		var moduleIdentity bufmoduleref.ModuleIdentity
-		var commit string
+		var moduleFullName bufmodule.ModuleFullName
+		var commitID string
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
 			isImport = protoImageFileExtension.GetIsImport()
@@ -201,7 +218,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
 			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
 				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-					moduleIdentity, err = bufmoduleref.NewModuleIdentity(
+					moduleFullName, err = bufmodule.NewModuleFullName(
 						protoModuleName.GetRemote(),
 						protoModuleName.GetOwner(),
 						protoModuleName.GetRepository(),
@@ -210,14 +227,14 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 						return nil, err
 					}
 					// we only want to set this if there is a module name
-					commit = protoModuleInfo.GetCommit()
+					commitID = protoModuleInfo.GetCommit()
 				}
 			}
 		}
 		imageFile, err := NewImageFile(
 			protoImageFile,
-			moduleIdentity,
-			commit,
+			moduleFullName,
+			commitID,
 			protoImageFile.GetName(),
 			isImport,
 			isSyntaxUnspecified,
@@ -499,21 +516,23 @@ func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.Fi
 // If this became part of ImageFile or bufmoduleref.FileInfo, you would get
 // all the ImageDependencies from the ImageFiles, and then sort | uniq them
 // to get the ImageDependencies for an Image. This would remove the requirement
-// of this associated type to have a ModuleIdentity and commit, so in
+// of this associated type to have a ModuleFullName and commit, so in
 // the IsDirect example  below, d.proto would not be "ignored" - it would
 // be an ImageFile like any other, with ImportType DIRECT.
 //
 // Note that if we ever do this, there is validation in newImage that enforces
-// that all ImageFiles with the same ModuleIdentity have the same commit. This
+// that all ImageFiles with the same ModuleFullName have the same commit. This
 // validation will likely have to be moved around.
+//
+// TODO: can likely delete all of this since this information is now on Modules directly.
 type ImageModuleDependency interface {
 	// String() returns remote/owner/repository[:commit].
 	fmt.Stringer
 
 	// Required. Will never be nil.
-	ModuleIdentity() bufmoduleref.ModuleIdentity
+	ModuleFullName() bufmodule.ModuleFullName
 	// Optional. May be empty.
-	Commit() string
+	CommitID() string
 
 	// IsDirect returns true if the dependency is a direct dependency.
 	//
@@ -547,17 +566,17 @@ func ImageModuleDependencies(image Image) []ImageModuleDependency {
 			}
 		}
 	}
-	// We know that all ImageFiles with the same ModuleIdentity
+	// We know that all ImageFiles with the same ModuleFullName
 	// have the same commit or no commit, so using String() will properly identify
 	// unique dependencies.
 	stringToImageModuleDependency := make(map[string]ImageModuleDependency)
 	for _, imageFile := range image.Files() {
 		if imageFile.IsImport() {
-			if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+			if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
 				_, isDirect := importsOfNonImports[imageFile.Path()]
 				imageModuleDependency := newImageModuleDependency(
-					moduleIdentity,
-					imageFile.Commit(),
+					moduleFullName,
+					imageFile.CommitID(),
 					isDirect,
 				)
 				stringToImageModuleDependency[imageModuleDependency.String()] = imageModuleDependency

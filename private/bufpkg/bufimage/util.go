@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -322,8 +322,8 @@ func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
 	)
 }
 
@@ -332,20 +332,20 @@ func fileDescriptorProtoToProtoImageFile(
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	moduleCommit string,
+	moduleFullName bufmodule.ModuleFullName,
+	moduleCommitID string,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
-	if moduleIdentity != nil {
+	if moduleFullName != nil {
 		protoModuleInfo = &imagev1.ModuleInfo{
 			Name: &imagev1.ModuleName{
-				Remote:     proto.String(moduleIdentity.Remote()),
-				Owner:      proto.String(moduleIdentity.Owner()),
-				Repository: proto.String(moduleIdentity.Repository()),
+				Remote:     proto.String(moduleFullName.Registry()),
+				Owner:      proto.String(moduleFullName.Owner()),
+				Repository: proto.String(moduleFullName.Name()),
 			},
 		}
-		if moduleCommit != "" {
-			protoModuleInfo.Commit = proto.String(moduleCommit)
+		if moduleCommitID != "" {
+			protoModuleInfo.Commit = proto.String(moduleCommitID)
 		}
 	}
 	if len(unusedDependencyIndexes) == 0 {
@@ -524,38 +524,38 @@ func imageModuleDependencyCompareTo(a ImageModuleDependency, b ImageModuleDepend
 	if a != nil && b == nil {
 		return 1
 	}
-	aModuleIdentity := a.ModuleIdentity()
-	bModuleIdentity := b.ModuleIdentity()
-	if aModuleIdentity != nil || bModuleIdentity != nil {
-		if aModuleIdentity == nil && bModuleIdentity != nil {
+	aModuleFullName := a.ModuleFullName()
+	bModuleFullName := b.ModuleFullName()
+	if aModuleFullName != nil || bModuleFullName != nil {
+		if aModuleFullName == nil && bModuleFullName != nil {
 			return -1
 		}
-		if aModuleIdentity != nil && bModuleIdentity == nil {
+		if aModuleFullName != nil && bModuleFullName == nil {
 			return 1
 		}
-		if aModuleIdentity.Remote() < bModuleIdentity.Remote() {
+		if aModuleFullName.Registry() < bModuleFullName.Registry() {
 			return -1
 		}
-		if aModuleIdentity.Remote() > bModuleIdentity.Remote() {
+		if aModuleFullName.Registry() > bModuleFullName.Registry() {
 			return 1
 		}
-		if aModuleIdentity.Owner() < bModuleIdentity.Owner() {
+		if aModuleFullName.Owner() < bModuleFullName.Owner() {
 			return -1
 		}
-		if aModuleIdentity.Owner() > bModuleIdentity.Owner() {
+		if aModuleFullName.Owner() > bModuleFullName.Owner() {
 			return 1
 		}
-		if aModuleIdentity.Repository() < bModuleIdentity.Repository() {
+		if aModuleFullName.Name() < bModuleFullName.Name() {
 			return -1
 		}
-		if aModuleIdentity.Repository() > bModuleIdentity.Repository() {
+		if aModuleFullName.Name() > bModuleFullName.Name() {
 			return 1
 		}
 	}
-	if a.Commit() < b.Commit() {
+	if a.CommitID() < b.CommitID() {
 		return -1
 	}
-	if a.Commit() > b.Commit() {
+	if a.CommitID() > b.CommitID() {
 		return 1
 	}
 	if a.IsDirect() && !b.IsDirect() {

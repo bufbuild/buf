@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -141,11 +141,11 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	otherData = protowire.AppendFixed32(otherData, 23456)
 	fileDescriptor.ProtoReflect().SetUnknown(otherData)
 
-	module, err := bufmoduleref.ModuleIdentityForString("buf.build/foo/bar")
+	moduleFullName, err := bufmodule.ParseModuleFullName("buf.build/foo/bar")
 	require.NoError(t, err)
 	imageFile, err := NewImageFile(
 		fileDescriptor,
-		module,
+		moduleFullName,
 		"1234123451235",
 		"foo/bar/baz.proto",
 		false,
@@ -170,12 +170,12 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	// if we go back through an image file, we should strip out the
 	// buf extension unknown bytes but preserve the rest
-	module, err = bufmoduleref.ModuleIdentityForString("buf.build/abc/def")
+	moduleFullName, err = bufmodule.ParseModuleFullName("buf.build/abc/def")
 	require.NoError(t, err)
 	// NB: intentionally different metadata
 	imageFile, err = NewImageFile(
 		fileDescriptor,
-		module,
+		moduleFullName,
 		"987654321",
 		"abc/def/xyz.proto",
 		false,

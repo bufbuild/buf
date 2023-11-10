@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -23,9 +23,10 @@ import (
 var _ ImageFile = &imageFile{}
 
 type imageFile struct {
-	bufmoduleref.FileInfo
-
 	fileDescriptorProto     *descriptorpb.FileDescriptorProto
+	moduleFullName          bufmodule.ModuleFullName
+	commitID                string
+	externalPath            string
 	isImport                bool
 	isSyntaxUnspecified     bool
 	unusedDependencyIndexes []int32
@@ -33,8 +34,8 @@ type imageFile struct {
 
 func newImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID string,
 	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
@@ -43,18 +44,11 @@ func newImageFile(
 	if err := protodescriptor.ValidateFileDescriptor(fileDescriptor); err != nil {
 		return nil, err
 	}
-	fileInfo, err := bufmoduleref.NewFileInfo(
-		fileDescriptor.GetName(),
-		externalPath,
-		moduleIdentity,
-		commit,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return newImageFileNoValidate(
 		fileDescriptor,
-		fileInfo,
+		moduleFullName,
+		commitID,
+		externalPath,
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
@@ -63,7 +57,9 @@ func newImageFile(
 
 func newImageFileNoValidate(
 	fileDescriptor protodescriptor.FileDescriptor,
-	fileInfo bufmoduleref.FileInfo,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID string,
+	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
@@ -73,14 +69,35 @@ func newImageFileNoValidate(
 		unusedDependencyIndexes = nil
 	}
 	return &imageFile{
-		FileInfo: fileInfo,
 		// protodescriptor.FileDescriptorProtoForFileDescriptor is a no-op if fileDescriptor
 		// is already a *descriptorpb.FileDescriptorProto
 		fileDescriptorProto:     protodescriptor.FileDescriptorProtoForFileDescriptor(fileDescriptor),
+		moduleFullName:          moduleFullName,
+		commitID:                commitID,
+		externalPath:            externalPath,
 		isImport:                isImport,
 		isSyntaxUnspecified:     isSyntaxUnspecified,
 		unusedDependencyIndexes: unusedDependencyIndexes,
 	}
+}
+
+func (f *imageFile) Path() string {
+	return f.fileDescriptorProto.GetName()
+}
+
+func (f *imageFile) ExternalPath() string {
+	if f.externalPath == "" {
+		return f.Path()
+	}
+	return f.externalPath
+}
+
+func (f *imageFile) ModuleFullName() bufmodule.ModuleFullName {
+	return f.moduleFullName
+}
+
+func (f *imageFile) CommitID() string {
+	return f.commitID
 }
 
 func (f *imageFile) FileDescriptorProto() *descriptorpb.FileDescriptorProto {

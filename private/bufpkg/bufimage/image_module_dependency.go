@@ -15,35 +15,35 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 )
 
 var _ ImageModuleDependency = &imageModuleDependency{}
 
 type imageModuleDependency struct {
-	moduleIdentity bufmoduleref.ModuleIdentity
-	commit         string
+	moduleFullName bufmodule.ModuleFullName
+	commitID       string
 	isDirect       bool
 }
 
 func newImageModuleDependency(
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID string,
 	isDirect bool,
 ) *imageModuleDependency {
 	return &imageModuleDependency{
-		moduleIdentity: moduleIdentity,
-		commit:         commit,
+		moduleFullName: moduleFullName,
+		commitID:       commitID,
 		isDirect:       isDirect,
 	}
 }
 
-func (i *imageModuleDependency) ModuleIdentity() bufmoduleref.ModuleIdentity {
-	return i.moduleIdentity
+func (i *imageModuleDependency) ModuleFullName() bufmodule.ModuleFullName {
+	return i.moduleFullName
 }
 
-func (i *imageModuleDependency) Commit() string {
-	return i.commit
+func (i *imageModuleDependency) CommitID() string {
+	return i.commitID
 }
 
 func (i *imageModuleDependency) IsDirect() bool {
@@ -51,11 +51,11 @@ func (i *imageModuleDependency) IsDirect() bool {
 }
 
 func (i *imageModuleDependency) String() string {
-	moduleIdentityString := i.moduleIdentity.IdentityString()
-	if i.commit != "" {
-		return moduleIdentityString + ":" + i.commit
+	moduleFullNameString := i.moduleFullName.String()
+	if i.commitID != "" {
+		return moduleFullNameString + ":" + i.commitID
 	}
-	return moduleIdentityString
+	return moduleFullNameString
 }
 
 func (*imageModuleDependency) isImageModuleDependency() {}
