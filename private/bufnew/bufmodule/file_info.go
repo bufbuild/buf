@@ -31,6 +31,13 @@ type FileInfo interface {
 	// This denotes if the File is a .proto file, documentation file, or license file.
 	FileType() FileType
 
+	// IsTarget returns true if the File is targeted.
+	//
+	// Files are either targets or imports.
+	// If the Module is not a targeted Module, this will always be false.
+	// Note that specific files within a target Module can be targeted or imports.
+	IsTarget() bool
+
 	isFileInfo()
 }
 

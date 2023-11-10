@@ -15,6 +15,7 @@
 package bufmodule
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -28,8 +29,7 @@ type ModuleSet interface {
 	//
 	// Modules are either targets or non-targets.
 	// A target Module is a module that we are directly targeting for operations.
-	// All non-target Modules are dependencies of targets. Both targets and non-targets
-	// can be retrieved via the Get.* functions.
+	// Both targets and non-targets can be retrieved via the Get.* functions.
 	//
 	// These will be sorted by OpaqueID.
 	TargetModules() []Module
@@ -37,8 +37,7 @@ type ModuleSet interface {
 	//
 	// Modules are either targets or non-targets.
 	// A target Module is a module that we are directly targeting for operations.
-	// All non-target Modules are dependencies of targets. Both targets and non-targets
-	// can be retrieved via the Get.* functions.
+	// Both targets and non-targets can be retrieved via the Get.* functions.
 	//
 	// These will be sorted by OpaqueID.
 	NonTargetModules() []Module
@@ -67,11 +66,20 @@ type ModuleSet interface {
 	isModuleSet()
 }
 
-// GetModuleSetOpaqueIDDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
-func GetModuleSetOpaqueIDDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles converts the ModuleSet to a
+// ModuleReadBucket that contains all the .proto files of the target and non-target
+// Modules of the ModuleSet.
+//
+// TODO: need to propagate target module somehow
+func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) (ModuleReadBucket, error) {
+	return nil, errors.New("TODO")
+}
+
+// ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
+func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 	graph := dag.NewGraph[string]()
 	for _, module := range moduleSet.TargetModules() {
-		if err := buildModuleOpaqueIDDAGRec(module, graph); err != nil {
+		if err := moduleSetToDAGRec(module, graph); err != nil {
 			return nil, err
 		}
 	}
@@ -80,7 +88,7 @@ func GetModuleSetOpaqueIDDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 
 // *** PRIVATE ***
 
-func buildModuleOpaqueIDDAGRec(
+func moduleSetToDAGRec(
 	module Module,
 	graph *dag.Graph[string],
 ) error {
@@ -93,7 +101,7 @@ func buildModuleOpaqueIDDAGRec(
 		if moduleDep.IsDirect() {
 			graph.AddNode(moduleDep.OpaqueID())
 			graph.AddEdge(module.OpaqueID(), moduleDep.OpaqueID())
-			if err := buildModuleOpaqueIDDAGRec(moduleDep, graph); err != nil {
+			if err := moduleSetToDAGRec(moduleDep, graph); err != nil {
 				return err
 			}
 		}

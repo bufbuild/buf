@@ -107,7 +107,7 @@ func (t *testProvider) GetModuleKeyForModuleRef(
 	if module == nil {
 		return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
 	}
-	return bufmodule.NewModuleKeyForModule(module)
+	return bufmodule.ModuleToModuleKey(module)
 }
 
 func (t *testProvider) GetModuleForModuleKey(

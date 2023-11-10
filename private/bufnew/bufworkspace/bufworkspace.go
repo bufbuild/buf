@@ -23,8 +23,9 @@ import (
 )
 
 type Workspace interface {
-	DirectModules() []WorkspaceModule
-	DeclaredDeps() []bufmodule.ModuleRef
+	TargetWorkspaceModules() []WorkspaceModule
+	NonTargetModules() []bufmodule.Module
+	DeclaredDepModuleRefs() []bufmodule.ModuleRef
 	//GenerateConfigs() []GenerateConfig
 
 	isWorkspace()
@@ -40,13 +41,17 @@ type WorkspaceModule interface {
 // Can read a single buf.yaml v1
 // Can read a buf.work.yaml
 // Can read a buf.yaml v2
-func NewWorkspaceForBucket(ctx context.Context, bucket storage.ReadBucket, options ...WorkspaceOption) (Workspace, error) {
+func NewWorkspaceForBucket(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	options ...WorkspaceOption,
+) (Workspace, error) {
 	return nil, nil
 }
 
 type WorkspaceOption func(*workspaceOptions)
 
-func WorkspaceWithSubDirPaths(subDirPaths []string) WorkspaceOption {
+func WorkspaceWithTargetSubDirPaths(subDirPaths []string) WorkspaceOption {
 	return nil
 }
 

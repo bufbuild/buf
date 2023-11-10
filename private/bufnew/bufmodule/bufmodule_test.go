@@ -157,7 +157,7 @@ func TestBasic(t *testing.T) {
 		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
 
-	graph, err := bufmodule.GetModuleSetOpaqueIDDAG(moduleSet)
+	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
 	require.NoError(t, err)
 	testWalkGraphNodes(
 		t,

@@ -47,24 +47,11 @@ func NewModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
 	digest bufcas.Digest,
-) (*moduleKey, error) {
+) (ModuleKey, error) {
 	return newModuleKeyForKnownDigest(
 		moduleFullName,
 		commitID,
 		digest,
-	)
-}
-
-// NewModuleKey returns a new ModuleKey for the given Module.
-//
-// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
-//
-// Mostly used for testing.
-func NewModuleKeyForModule(module Module) (*moduleKey, error) {
-	return newModuleKeyForLazyDigest(
-		module.ModuleFullName(),
-		module.CommitID(),
-		module.Digest,
 	)
 }
 

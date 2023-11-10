@@ -32,12 +32,10 @@ var (
 //
 // Modules are either targets or non-targets.
 // A target Module is a module that we are directly targeting for operations.
-// All non-target Modules are dependencies of targets. This is validated during building.
-//
-// To determine the Target status, use module.ModuleSet().IsModuleTarget(module.OpaqueID()).
 //
 // Targets would represent modules in a local Workspace, or potentially just the specific
-// Modules within a Workspace that you are targeting.
+// Modules within a Workspace that you are targeting. This would be opposed to Modules
+// solely from a buf.lock.
 type ModuleSetBuilder interface {
 	// AddModuleForBucket adds a new Module for the given Bucket.
 	//
@@ -64,13 +62,13 @@ type ModuleSetBuilder interface {
 	// The dependencies of the Module will *not* be automatically added to the ModuleSet. All
 	// dependencies must be explicitly added.
 	//
-	// In our current world, isTarget should almost always be false. This function is used
+	// In our current world, IsTarget should almost always be false, so we don't even provide
+	// the option to make a Module from a ModuleKey a Target. This function is used
 	// to add Modules from i.e. a buf.lock file.
 	//
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleKey(
 		moduleKey ModuleKey,
-		isTarget bool,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
 	//
@@ -91,6 +89,13 @@ func AddModuleForBucketWithModuleFullName(moduleFullName ModuleFullName) AddModu
 func AddModuleForBucketWithCommitID(commitID string) AddModuleForBucketOption {
 	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
 		addModuleForBucketOptions.commitID = commitID
+	}
+}
+
+func AddModuleForBucketWithTargetPaths(paths []string, excludePaths []string) AddModuleForBucketOption {
+	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
+		addModuleForBucketOptions.paths = paths
+		addModuleForBucketOptions.excludePaths = excludePaths
 	}
 }
 

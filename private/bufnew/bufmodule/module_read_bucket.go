@@ -55,6 +55,8 @@ type ModuleReadBucket interface {
 	// exist within a Module (currently, only one of each is allowed).
 	WalkFileInfos(ctx context.Context, f func(FileInfo) error) error
 
+	WalkTargetFileInfos(ctx context.Context, f func(FileInfo) error) error
+
 	isModuleReadBucket()
 }
 

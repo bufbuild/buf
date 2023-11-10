@@ -94,8 +94,39 @@ type Module interface {
 	// May be nil. If the Module was solely retrieved from a ModuleProvider, this will be nil.
 	ModuleSet() ModuleSet
 
+	// IsTarget returns true if the Module is a targeted module.
+	//
+	// Modules are either targets or non-targets.
+	// Files within a targeted Module can be targets or non-targets themselves (non-target = import).
+	IsTarget() bool
+
 	setModuleSet(ModuleSet)
 	isModule()
+}
+
+// ModuleToModuleKey returns a new ModuleKey for the given Module.
+//
+// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
+//
+// Mostly used for testing.
+func ModuleToModuleKey(module Module) (ModuleKey, error) {
+	return newModuleKeyForLazyDigest(
+		module.ModuleFullName(),
+		module.CommitID(),
+		module.Digest,
+	)
+}
+
+func ModuleWithTargetPaths(module Module, paths []string, excludePaths []string) (Module, error) {
+	return nil, errors.New("TODO")
+}
+
+func ModuleAsTarget(module Module) Module {
+	return nil
+}
+
+func ModuleAsNonTarget(module Module) Module {
+	return nil
 }
 
 // *** PRIVATE ***
