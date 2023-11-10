@@ -19,13 +19,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotocompile"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -45,18 +43,13 @@ const (
 )
 
 type builder struct {
-	logger               *zap.Logger
-	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
-	tracer               trace.Tracer
+	logger *zap.Logger
+	tracer trace.Tracer
 }
 
-func newBuilder(logger *zap.Logger, moduleReader bufmodule.ModuleReader) *builder {
+func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
 		logger: logger.Named(loggerName),
-		moduleFileSetBuilder: bufmodulebuild.NewModuleFileSetBuilder(
-			logger,
-			moduleReader,
-		),
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
@@ -74,8 +67,6 @@ func (b *builder) Build(
 		ctx,
 		module,
 		buildOptions.excludeSourceCodeInfo,
-		buildOptions.expectedDirectDependencies,
-		buildOptions.workspace,
 	)
 }
 
@@ -83,8 +74,6 @@ func (b *builder) build(
 	ctx context.Context,
 	module bufmodule.Module,
 	excludeSourceCodeInfo bool,
-	expectedDirectDeps []bufmoduleref.ModuleReference,
-	workspace bufmodule.Workspace,
 ) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
@@ -95,35 +84,17 @@ func (b *builder) build(
 		}
 	}()
 
-	// TODO: remove this once bufmodule.ModuleFileSet is deleted or no longer inherits from Module
-	// We still need to handle the ModuleFileSet case for buf export, as we actually need the
-	// ModuleFileSet there.
-	moduleFileSet, ok := module.(bufmodule.ModuleFileSet)
-	if !ok {
-		// If we just had a Module, convert it to a ModuleFileSet.
-		var err error
-		moduleFileSet, err = b.moduleFileSetBuilder.Build(
-			ctx,
-			module,
-			bufmodulebuild.WithWorkspace(workspace),
-		)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	parserAccessorHandler := bufmoduleprotocompile.NewParserAccessorHandler(ctx, moduleFileSet)
-	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
+	//  TODO: need to provide a function to go from Module to a ModuleReadBucket with
+	//  all *.proto files,  including deps.
+	parserAccessorHandler := newParserAccessorHandler(ctx, module)
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
 		return nil, nil, errors.New("no input files specified")
 	}
-	paths := make([]string, len(targetFileInfos))
-	for i, targetFileInfo := range targetFileInfos {
-		paths[i] = targetFileInfo.Path()
-	}
+	paths := bufmodule.FileInfoPaths(targetFileInfos)
 
 	buildResult := getBuildResult(
 		ctx,
@@ -154,157 +125,12 @@ func (b *builder) build(
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := b.warnInvalidImports(ctx, image, expectedDirectDeps, workspace); err != nil {
-		b.logger.Error("warn_invalid_imports", zap.Error(err))
-	}
 	return image, nil, nil
-}
-
-// warnInvalidImports checks that all the target image files have valid imports statements that
-// point to files in the local module, in a direct dependency, or in a workspace local unnamed
-// module. It outputs WARN messages otherwise, one per invalid import statement.
-//
-// TODO: Understand this code before doing anything
-// TODO: switch to use bufimage.ImageModuleDependencies
-func (b *builder) warnInvalidImports(
-	ctx context.Context,
-	builtImage bufimage.Image,
-	expectedDirectDeps []bufmoduleref.ModuleReference,
-	localWorkspace bufmodule.Workspace,
-) error {
-	if expectedDirectDeps == nil && localWorkspace == nil {
-		// Bail out early in case the caller didn't send explicitly send direct module dependencies nor
-		// workspace. TODO: We should always send direct deps, so this imports warning can always
-		// happen.
-		return nil
-	}
-	expectedDirectDepsIdentities := make(map[string]struct{}, len(expectedDirectDeps))
-	for _, expectedDirectDep := range expectedDirectDeps {
-		expectedDirectDepsIdentities[expectedDirectDep.IdentityString()] = struct{}{}
-	}
-	workspaceIdentities := make(map[string]struct{})
-	if localWorkspace != nil {
-		wsModules := localWorkspace.GetModules()
-		for _, mod := range wsModules {
-			if mod == nil {
-				b.logger.Debug("nil_module_in_workspace")
-				continue
-			}
-			targetFileInfos, err := mod.TargetFileInfos(ctx)
-			if err != nil {
-				return fmt.Errorf("workspace module target file infos: %w", err)
-			}
-			for _, fileInfo := range targetFileInfos {
-				if fileInfo.ModuleIdentity() != nil {
-					workspaceIdentities[fileInfo.ModuleIdentity().IdentityString()] = struct{}{}
-					break
-				}
-			}
-		}
-	}
-	b.logger.Debug(
-		"module_identities",
-		zap.Any("from_direct_dependencies", expectedDirectDepsIdentities),
-		zap.Any("from_workspace", workspaceIdentities),
-	)
-
-	// categorize image files into direct vs transitive dependencies
-	allImgFiles := make(map[string]map[string][]string)        // for logging purposes only, modIdentity:filepath:imports
-	targetFiles := make(map[string]struct{})                   // filepath
-	expectedDirectDepsFilesToModule := make(map[string]string) // filepath:modIdentity
-	workspaceFilesToModule := make(map[string]string)          // filepath:modIdentity
-	transitiveDepsFilesToModule := make(map[string]string)     // filepath:modIdentity
-	for _, imageFile := range builtImage.Files() {
-		{ // populate allImgFiles
-			modIdentity := "local"
-			if imageFile.ModuleIdentity() != nil {
-				modIdentity = imageFile.ModuleIdentity().IdentityString()
-			}
-			if _, ok := allImgFiles[modIdentity]; !ok {
-				allImgFiles[modIdentity] = make(map[string][]string)
-			}
-			allImgFiles[modIdentity][imageFile.Path()] = imageFile.FileDescriptorProto().GetDependency()
-		}
-		if !imageFile.IsImport() {
-			targetFiles[imageFile.Path()] = struct{}{}
-			continue
-		}
-		if imageFile.ModuleIdentity() == nil {
-			workspaceFilesToModule[imageFile.Path()] = "" // local workspace unnamed module
-			continue
-		}
-		// file is import and comes from a named module. It's either a direct dep, a workspace module,
-		// or a transitive dep.
-		modIdentity := imageFile.ModuleIdentity().IdentityString()
-		if _, ok := expectedDirectDepsIdentities[modIdentity]; ok {
-			expectedDirectDepsFilesToModule[imageFile.Path()] = modIdentity
-		} else if _, ok := workspaceIdentities[modIdentity]; ok {
-			workspaceFilesToModule[imageFile.Path()] = modIdentity
-		} else {
-			transitiveDepsFilesToModule[imageFile.Path()] = modIdentity
-		}
-	}
-	b.logger.Debug(
-		"image_files",
-		zap.Any("all_with_imports", allImgFiles),
-		zap.Any("local_target", targetFiles),
-		zap.Any("from_workspace", workspaceFilesToModule),
-		zap.Any("from_expected_direct_dependencies", expectedDirectDepsFilesToModule),
-		zap.Any("from_transitive_dependencies", transitiveDepsFilesToModule),
-	)
-
-	// validate import statements of target files against dependencies categorization above
-	for _, imageFile := range builtImage.Files() {
-		if imageFile.IsImport() {
-			continue // only check import statements in local files
-		}
-		// .GetDependency() returns an array of file path imports in the file descriptor
-		for _, importFilePath := range imageFile.FileDescriptorProto().GetDependency() {
-			if _, ok := targetFiles[importFilePath]; ok {
-				continue // import comes from local
-			}
-			if _, ok := expectedDirectDepsFilesToModule[importFilePath]; ok {
-				continue // import comes from direct dep
-			}
-			if datawkt.Exists(importFilePath) {
-				continue // wkt files are shipped with protoc, and we ship them in datawkt, so it's always safe to import them
-			}
-			warnMsg := fmt.Sprintf(
-				"File %q imports %q, which is not found in your local files or direct dependencies",
-				imageFile.Path(), importFilePath,
-			)
-			if workspaceModule, ok := workspaceFilesToModule[importFilePath]; ok {
-				if workspaceModule == "" {
-					// If dependency comes from an unnamed module, that is probably a local dependency, and
-					// that module won't be pushed to the BSR. We can skip this warning.
-					continue
-				}
-				// If dependency comes from a named module, we _could_ skip this warning as it _might_
-				// fail when pushing trying to build, but we better keep it in case it is a transitive
-				// dependency too, and both direct and transitive dependencies live in the same workspace.
-				warnMsg += fmt.Sprintf(
-					", but is found in local workspace module %q. Declare dependency %q in the deps key in buf.yaml.",
-					workspaceModule,
-					workspaceModule,
-				)
-			} else if transitiveDepModule, ok := transitiveDepsFilesToModule[importFilePath]; ok {
-				warnMsg += fmt.Sprintf(
-					", but is found in the transitive dependency %q. Declare dependency %q in the deps key in buf.yaml.",
-					transitiveDepModule,
-					transitiveDepModule,
-				)
-			} else {
-				warnMsg += ", or any of your workspace modules or transitive dependencies. Check that external imports are declared as dependencies in the deps key in buf.yaml."
-			}
-			b.logger.Warn(warnMsg)
-		}
-	}
-	return nil
 }
 
 func getBuildResult(
 	ctx context.Context,
-	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
+	parserAccessorHandler *parserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) *buildResult {
@@ -341,7 +167,7 @@ func getBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := bufmoduleprotocompile.GetFileAnnotations(
+			fileAnnotations, err := getFileAnnotations(
 				ctx,
 				parserAccessorHandler,
 				errorsWithPos,
@@ -352,7 +178,7 @@ func getBuildResult(
 			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
 		}
 		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
-			fileAnnotations, err := bufmoduleprotocompile.GetFileAnnotations(
+			fileAnnotations, err := getFileAnnotations(
 				ctx,
 				parserAccessorHandler,
 				[]reporter.ErrorWithPos{errorWithPos},
@@ -459,7 +285,7 @@ func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	sortedFileDescriptors []protoreflect.FileDescriptor,
-	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
+	parserAccessorHandler *parserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	tracer trace.Tracer,
@@ -513,7 +339,7 @@ func getImageFilesRec(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	fileDescriptor protoreflect.FileDescriptor,
-	parserAccessorHandler bufmoduleprotocompile.ParserAccessorHandler,
+	parserAccessorHandler *parserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	alreadySeen map[string]struct{},
@@ -573,8 +399,8 @@ func getImageFilesRec(
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleIdentity(path),
-		parserAccessorHandler.Commit(path),
+		parserAccessorHandler.ModuleFullName(path),
+		parserAccessorHandler.CommitID(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,
@@ -614,6 +440,80 @@ func maybeAddUnusedImport(
 	unusedImportFilenames[errorUnusedImport.UnusedImport()] = struct{}{}
 }
 
+// getFileAnnotations gets the FileAnnotations for the ErrorWithPos errors.
+func getFileAnnotations(
+	ctx context.Context,
+	parserAccessorHandler *parserAccessorHandler,
+	errorsWithPos []reporter.ErrorWithPos,
+) ([]bufanalysis.FileAnnotation, error) {
+	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
+	for _, errorWithPos := range errorsWithPos {
+		fileAnnotation, err := getFileAnnotation(
+			ctx,
+			parserAccessorHandler,
+			errorWithPos,
+		)
+		if err != nil {
+			return nil, err
+		}
+		fileAnnotations = append(fileAnnotations, fileAnnotation)
+	}
+	return fileAnnotations, nil
+}
+
+// getFileAnnotation gets the FileAnnotation for the ErrorWithPos error.
+func getFileAnnotation(
+	ctx context.Context,
+	parserAccessorHandler *parserAccessorHandler,
+	errorWithPos reporter.ErrorWithPos,
+) (bufanalysis.FileAnnotation, error) {
+	var fileInfo bufmoduleref.FileInfo
+	var startLine int
+	var startColumn int
+	var endLine int
+	var endColumn int
+	typeString := "COMPILE"
+	message := "Compile error."
+	// this should never happen
+	// maybe we should error
+	if errorWithPos.Unwrap() != nil {
+		message = errorWithPos.Unwrap().Error()
+	}
+	sourcePos := errorWithPos.GetPosition()
+	if sourcePos.Filename != "" {
+		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
+		if err != nil {
+			return nil, err
+		}
+		fileInfo, err = bufmoduleref.NewFileInfo(
+			path,
+			parserAccessorHandler.ExternalPath(path),
+			nil,
+			"",
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if sourcePos.Line > 0 {
+		startLine = sourcePos.Line
+		endLine = sourcePos.Line
+	}
+	if sourcePos.Col > 0 {
+		startColumn = sourcePos.Col
+		endColumn = sourcePos.Col
+	}
+	return bufanalysis.NewFileAnnotation(
+		fileInfo,
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
+		typeString,
+		message,
+	), nil
+}
+
 type buildResult struct {
 	FileDescriptors                     []protoreflect.FileDescriptor
 	SyntaxUnspecifiedFilenames          map[string]struct{}
@@ -639,9 +539,7 @@ func newBuildResult(
 }
 
 type buildOptions struct {
-	excludeSourceCodeInfo      bool
-	expectedDirectDependencies []bufmoduleref.ModuleReference
-	workspace                  bufmodule.Workspace
+	excludeSourceCodeInfo bool
 }
 
 func newBuildOptions() *buildOptions {

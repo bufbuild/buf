@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmoduleprotocompile
+package bufimagebuild
 
 import (
 	"context"
@@ -22,43 +22,40 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"go.uber.org/multierr"
 )
 
-// TODO: remove when we remove ModuleFileSet
-type moduleFileReader interface {
-	GetModuleFile(context.Context, string) (bufmodule.ModuleFile, error)
-}
-
 type parserAccessorHandler struct {
 	ctx                  context.Context
-	moduleFileReader     moduleFileReader
+	moduleReadBucket     bufmodule.ModuleReadBucket
 	pathToExternalPath   map[string]string
 	nonImportPaths       map[string]struct{}
-	pathToModuleIdentity map[string]bufmoduleref.ModuleIdentity
-	pathToCommit         map[string]string
+	pathToModuleFullName map[string]bufmodule.ModuleFullName
+	pathToCommitID       map[string]string
 	lock                 sync.RWMutex
 }
 
 func newParserAccessorHandler(
 	ctx context.Context,
-	moduleFileReader moduleFileReader,
+	moduleReadBucket bufmodule.ModuleReadBucket,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
 		ctx:                  ctx,
-		moduleFileReader:     moduleFileReader,
+		moduleReadBucket:     moduleReadBucket,
 		pathToExternalPath:   make(map[string]string),
 		nonImportPaths:       make(map[string]struct{}),
-		pathToModuleIdentity: make(map[string]bufmoduleref.ModuleIdentity),
-		pathToCommit:         make(map[string]string),
+		pathToModuleFullName: make(map[string]bufmodule.ModuleFullName),
+		pathToCommitID:       make(map[string]string),
 	}
 }
 
+// Open opens the given path, and tracks the external path and import status.
+//
+// This function can be used as the accessor function for a protocompile.SourceResolver.
 func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error) {
-	moduleFile, moduleErr := p.moduleFileReader.GetModuleFile(p.ctx, path)
+	moduleFile, moduleErr := p.moduleReadBucket.GetFile(p.ctx, path)
 	if moduleErr != nil {
 		if !errors.Is(moduleErr, fs.ErrNotExist) {
 			return nil, moduleErr
@@ -87,14 +84,17 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 	if err := p.addPath(
 		path,
 		moduleFile.ExternalPath(),
-		moduleFile.ModuleIdentity(),
-		moduleFile.Commit(),
+		moduleFile.Module().ModuleFullName(),
+		moduleFile.Module().CommitID(),
 	); err != nil {
 		return nil, err
 	}
 	return moduleFile, nil
 }
 
+// ExternalPath returns the external path for the input path.
+//
+// Returns the input path if the external path is not known.
 func (p *parserAccessorHandler) ExternalPath(path string) string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -104,23 +104,25 @@ func (p *parserAccessorHandler) ExternalPath(path string) string {
 	return path
 }
 
-func (p *parserAccessorHandler) ModuleIdentity(path string) bufmoduleref.ModuleIdentity {
+// ModuleFullName returns nil if not available.
+func (p *parserAccessorHandler) ModuleFullName(path string) bufmodule.ModuleFullName {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathToModuleIdentity[path] // nil is a valid value.
+	return p.pathToModuleFullName[path] // nil is a valid value.
 }
 
-func (p *parserAccessorHandler) Commit(path string) string {
+// CommitID returns empty if not available.
+func (p *parserAccessorHandler) CommitID(path string) string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathToCommit[path] // empty is a valid value.
+	return p.pathToCommitID[path] // empty is a valid value.
 }
 
 func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID string,
 ) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -132,11 +134,11 @@ func (p *parserAccessorHandler) addPath(
 	} else {
 		p.pathToExternalPath[path] = externalPath
 	}
-	if moduleIdentity != nil {
-		p.pathToModuleIdentity[path] = moduleIdentity
+	if moduleFullName != nil {
+		p.pathToModuleFullName[path] = moduleFullName
 	}
-	if commit != "" {
-		p.pathToCommit[path] = commit
+	if commitID != "" {
+		p.pathToCommitID[path] = commitID
 	}
 	return nil
 }
