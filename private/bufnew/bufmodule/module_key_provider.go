@@ -25,27 +25,30 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
-// ModuleInfoProvider provides ModuleInfos for ModuleRefs.
-type ModuleInfoProvider interface {
-	GetModuleInfoForModuleRef(context.Context, ModuleRef) (ModuleInfo, error)
+// ModuleKeyProvider provides ModuleKeys for ModuleRefs.
+type ModuleKeyProvider interface {
+	// GetModuleKeyForModuleRef gets the ModuleKey for the given ModuleRef.
+	//
+	// Resolution of the ModuleRef is done per the ModuleRef documentation.
+	GetModuleKeyForModuleRef(context.Context, ModuleRef) (ModuleKey, error)
 }
 
-// NewAPIModuleInfoProvider returns a new ModuleInfoProvider for the given API clients.
-func NewAPIModuleInfoProvider(clientProvider bufapi.ClientProvider) ModuleInfoProvider {
-	return newAPIModuleInfoProvider(clientProvider)
+// NewAPIModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
+func NewAPIModuleKeyProvider(clientProvider bufapi.ClientProvider) ModuleKeyProvider {
+	return newAPIModuleKeyProvider(clientProvider)
 }
 
-type apiModuleInfoProvider struct {
+type apiModuleKeyProvider struct {
 	clientProvider bufapi.ClientProvider
 }
 
-func newAPIModuleInfoProvider(clientProvider bufapi.ClientProvider) *apiModuleInfoProvider {
-	return &apiModuleInfoProvider{
+func newAPIModuleKeyProvider(clientProvider bufapi.ClientProvider) *apiModuleKeyProvider {
+	return &apiModuleKeyProvider{
 		clientProvider: clientProvider,
 	}
 }
 
-func (a *apiModuleInfoProvider) GetModuleInfoForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleInfo, error) {
+func (a *apiModuleKeyProvider) GetModuleKeyForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleKey, error) {
 	protoCommit, err := a.getProtoCommitForModuleRef(ctx, moduleRef)
 	if err != nil {
 		return nil, err
@@ -53,22 +56,20 @@ func (a *apiModuleInfoProvider) GetModuleInfoForModuleRef(ctx context.Context, m
 	if err != nil {
 		return nil, err
 	}
-	// Do not call getModuleInfoForProtoCommit, we already have the owner and module names.
-	digest, err := bufcas.ProtoToDigest(protoCommit.Digest)
-	if err != nil {
-		return nil, err
-	}
-	return newModuleInfo(
+	return newModuleKeyForLazyDigest(
 		moduleRef.ModuleFullName(),
 		protoCommit.Id,
-		digest,
+		func() (bufcas.Digest, error) {
+			// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
+			return bufcas.ProtoToDigest(protoCommit.Digest)
+		},
 	)
 }
 
 // All of this stuff we may want in some other common place such as bufapi, with interfaces.
 
 // If you have the owner and module names, do not use this! This makes two extra calls to get the owner and module names.
-func (a *apiModuleInfoProvider) getModuleInfoForProtoCommit(ctx context.Context, registryHostname string, protoCommit *modulev1beta1.Commit) (ModuleInfo, error) {
+func (a *apiModuleKeyProvider) getModuleKeyForProtoCommit(ctx context.Context, registryHostname string, protoCommit *modulev1beta1.Commit) (ModuleKey, error) {
 	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
 	if err != nil {
 		return nil, err
@@ -94,19 +95,16 @@ func (a *apiModuleInfoProvider) getModuleInfoForProtoCommit(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	// Do not call getModuleInfoForProtoCommit, we already have the owner and module names.
-	digest, err := bufcas.ProtoToDigest(protoCommit.Digest)
-	if err != nil {
-		return nil, err
-	}
-	return newModuleInfo(
+	return newModuleKeyForLazyDigest(
 		moduleFullName,
 		protoCommit.Id,
-		digest,
+		func() (bufcas.Digest, error) {
+			return bufcas.ProtoToDigest(protoCommit.Digest)
+		},
 	)
 }
 
-func (a *apiModuleInfoProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef ModuleRef) (*modulev1beta1.Commit, error) {
+func (a *apiModuleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef ModuleRef) (*modulev1beta1.Commit, error) {
 	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).ResolveCommits(
 		ctx,
 		connect.NewRequest(
@@ -136,7 +134,7 @@ func (a *apiModuleInfoProvider) getProtoCommitForModuleRef(ctx context.Context, 
 	return response.Msg.Commits[0], nil
 }
 
-func (a *apiModuleInfoProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
+func (a *apiModuleKeyProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
 	response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
 		ctx,
 		connect.NewRequest(
@@ -160,7 +158,7 @@ func (a *apiModuleInfoProvider) getProtoModuleForModuleID(ctx context.Context, r
 	return response.Msg.Modules[0], nil
 }
 
-func (a *apiModuleInfoProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
+func (a *apiModuleKeyProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
 	response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
 		ctx,
 		connect.NewRequest(

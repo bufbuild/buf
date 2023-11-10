@@ -38,17 +38,17 @@ type ModuleSetBuilder interface {
 	// ModuleFullName, otherwise it will be the BucketID.
 	// Returns the same ModuleSetBuilder.
 	AddModuleForBucket(bucketID string, bucket storage.ReadBucket, options ...AddModuleForBucketOption) ModuleSetBuilder
-	// AddModuleForModuleInfo adds a new Module for the given ModuleInfo.
+	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
 	//
 	// The ModuleProvider given to the ModuleSetBuilder at construction time will be used to
 	// retrieve this Module.
 	//
-	// The ModuleInfo must have ModuleFullName present.
+	// The ModuleKey must have ModuleFullName present.
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
 	// The dependencies of the Module will *not* be automatically added to the ModuleSet - all dependencies
 	// must be explicitly added.
 	// Returns the same ModuleSetBuilder.
-	AddModuleForModuleInfo(moduleInfo ModuleInfo) ModuleSetBuilder
+	AddModuleForModuleKey(moduleKey ModuleKey) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
 	//
 	// Any errors from Add* calls will be returned here as well.
@@ -84,9 +84,9 @@ type moduleSetBuilder struct {
 	ctx            context.Context
 	moduleProvider ModuleProvider
 
-	bucketModules     []Module
-	moduleInfoModules []Module
-	cache             *cache
+	bucketModules    []Module
+	moduleKeyModules []Module
+	cache            *cache
 
 	errs        []error
 	buildCalled bool
@@ -137,26 +137,22 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	return b
 }
 
-func (b *moduleSetBuilder) AddModuleForModuleInfo(moduleInfo ModuleInfo) ModuleSetBuilder {
+func (b *moduleSetBuilder) AddModuleForModuleKey(moduleKey ModuleKey) ModuleSetBuilder {
 	if b.buildCalled {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
-		return b
-	}
-	if _, err := getAndValidateModuleFullName(moduleInfo); err != nil {
-		b.errs = append(b.errs, err)
 		return b
 	}
 	if b.moduleProvider == nil {
 		// We should perhaps have a ModuleSetBuilder without this method at all.
 		// We do this in bufmoduletest.
-		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleInfo with nil ModuleProvider"))
+		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleKey with nil ModuleProvider"))
 	}
-	module, err := b.moduleProvider.GetModuleForModuleInfo(b.ctx, moduleInfo)
+	module, err := b.moduleProvider.GetModuleForModuleKey(b.ctx, moduleKey)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.moduleInfoModules = append(b.moduleInfoModules, module)
+	b.moduleKeyModules = append(b.moduleKeyModules, module)
 	return b
 }
 
@@ -166,10 +162,10 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	}
 	b.buildCalled = true
 
-	// prefer Bucket modules over ModuleInfo modules, i.e. local over remote.
+	// prefer Bucket modules over ModuleKey modules, i.e. local over remote.
 	modules, err := getUniqueModulesByOpaqueIDWithEarlierPreferred(
 		b.ctx,
-		append(b.bucketModules, b.moduleInfoModules...),
+		append(b.bucketModules, b.moduleKeyModules...),
 	)
 	if err != nil {
 		return nil, err

@@ -27,15 +27,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
-// ModuleProvider provides Modules for ModuleInfos.
+// ModuleProvider provides Modules.
 //
-// TODO: Add plural method? Will make calls below a lot more efficient in the case
-// of overlapinfog FileNodes.
+// A Modules returned from a ModuleProvider *must* have ModuleFullName and CommitID.
 type ModuleProvider interface {
-	// GetModuleForModuleInfo gets the Module for the given ModuleInfo.
-	//
-	// The ModuleInfo must have a non-nil ModuleFullName.
-	GetModuleForModuleInfo(context.Context, ModuleInfo) (Module, error)
+	// GetModuleForModuleKey gets the Module for the ModuleKey.
+	GetModuleForModuleKey(ctx context.Context, moduleKey ModuleKey) (Module, error)
 }
 
 // NewAPIModuleProvider returns a new ModuleProvider for the given API client.
@@ -57,37 +54,35 @@ func newAPIModuleProvider(clientProvider bufapi.ClientProvider) *apiModuleProvid
 	}
 }
 
-func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
-	moduleFullName, err := getAndValidateModuleFullName(moduleInfo)
-	if err != nil {
-		return nil, err
-	}
-	var resourceRef *modulev1beta1.ResourceRef
-	if commitID := moduleInfo.CommitID(); commitID != "" {
-		resourceRef = &modulev1beta1.ResourceRef{
+func (a *apiModuleProvider) GetModuleForModuleKey(
+	ctx context.Context,
+	moduleKey ModuleKey,
+) (Module, error) {
+	// Note that we could actually just use the Digest. However, we want to force the caller
+	// to provide a CommitID, so that we can document that all Modules returned from a
+	// ModuleProvider will have a CommitID. We also want to prevent callers from having
+	// to invoke moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
+	// If we were to instead have GetModuleForDigest(context.Context, ModuleFullName, bufcas.Digest),
+	// we would never have the CommitID, even in cases where we have it via the ModuleKey.
+	// If we were to provide both GetModuleForModuleKey and GetModuleForDigest, then why would anyone
+	// ever call GetModuleForModuleKey? This forces a single call pattern for now.
+	return a.getModuleForResourceRef(
+		ctx,
+		moduleKey.ModuleFullName().Registry(),
+		&modulev1beta1.ResourceRef{
 			Value: &modulev1beta1.ResourceRef_Id{
-				Id: moduleInfo.CommitID(),
+				Id: moduleKey.CommitID(),
 			},
-		}
-	} else {
-		digest, err := moduleInfo.Digest()
-		if err != nil {
-			return nil, err
-		}
-		resourceRef = &modulev1beta1.ResourceRef{
-			Value: &modulev1beta1.ResourceRef_Name_{
-				Name: &modulev1beta1.ResourceRef_Name{
-					Owner:  moduleFullName.Owner(),
-					Module: moduleFullName.Name(),
-					// TODO: change to digest when PR is merged
-					Child: &modulev1beta1.ResourceRef_Name_Ref{
-						Ref: digest.String(),
-					},
-				},
-			},
-		}
-	}
-	response, err := a.clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommitNodes(
+		},
+	)
+}
+
+func (a *apiModuleProvider) getModuleForResourceRef(
+	ctx context.Context,
+	registryHostname string,
+	resourceRef *modulev1beta1.ResourceRef,
+) (Module, error) {
+	response, err := a.clientProvider.CommitServiceClient(registryHostname).GetCommitNodes(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitNodesRequest{
@@ -115,10 +110,11 @@ func (a *apiModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleIn
 
 type lazyModuleProvider struct {
 	delegate ModuleProvider
-	cache    *cache
+	// Cache may be nil.
+	cache *cache
 }
 
-// cache may be nil.
+// Cache may be nil.
 func newLazyModuleProvider(delegate ModuleProvider, cache *cache) *lazyModuleProvider {
 	if lazyModuleProvider, ok := delegate.(*lazyModuleProvider); ok {
 		delegate = lazyModuleProvider.delegate
@@ -129,18 +125,18 @@ func newLazyModuleProvider(delegate ModuleProvider, cache *cache) *lazyModulePro
 	}
 }
 
-func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleInfo ModuleInfo) (Module, error) {
-	if _, err := getAndValidateModuleFullName(moduleInfo); err != nil {
-		return nil, err
-	}
+func (l *lazyModuleProvider) GetModuleForModuleKey(
+	ctx context.Context,
+	moduleKey ModuleKey,
+) (Module, error) {
 	return newLazyModule(
 		ctx,
 		l.cache,
-		moduleInfo,
+		moduleKey,
 		func() (Module, error) {
-			// Using ctx on GetModuleForModuleInfo and ignoring the contexts passed to
+			// Using ctx on GetModuleForModuleKey and ignoring the contexts passed to
 			// Module functions - arguable both ways for different reasons.
-			return l.delegate.GetModuleForModuleInfo(ctx, moduleInfo)
+			return l.delegate.GetModuleForModuleKey(ctx, moduleKey)
 		},
 	), nil
 }
@@ -148,8 +144,9 @@ func (l *lazyModuleProvider) GetModuleForModuleInfo(ctx context.Context, moduleI
 // lazyModule
 
 type lazyModule struct {
-	ModuleInfo
+	ModuleKey
 
+	// Cache may be nil.
 	cache *cache
 
 	moduleSet ModuleSet
@@ -162,19 +159,18 @@ func newLazyModule(
 	ctx context.Context,
 	// May be nil.
 	cache *cache,
-	// We know this ModuleInfo always has a ModuleFullName via lazyModuleProvider.
-	moduleInfo ModuleInfo,
+	moduleKey ModuleKey,
 	getModuleFunc func() (Module, error),
 ) Module {
 	lazyModule := &lazyModule{
-		ModuleInfo: moduleInfo,
+		ModuleKey: moduleKey,
 		getModuleAndDigest: internal.OnceThreeValues(
 			func() (Module, bufcas.Digest, error) {
 				module, err := getModuleFunc()
 				if err != nil {
 					return nil, nil, err
 				}
-				expectedDigest, err := moduleInfo.Digest()
+				expectedDigest, err := moduleKey.Digest()
 				if err != nil {
 					return nil, nil, err
 				}
@@ -187,7 +183,7 @@ func newLazyModule(
 				}
 				if expectedDigest == nil {
 					// This should never happen.
-					return nil, nil, fmt.Errorf("digest was nil for ModuleInfo %v", moduleInfo)
+					return nil, nil, fmt.Errorf("digest was nil for ModuleKey %v", moduleKey)
 				}
 				return module, actualDigest, nil
 			},
@@ -214,13 +210,12 @@ func newLazyModule(
 	return lazyModule
 }
 
-func (m *lazyModule) Digest() (bufcas.Digest, error) {
-	// This does not result in a remote call if you are just reading digests.
-	return m.ModuleInfo.Digest()
-	// TODO: Make sure we don't need to check the remote digest here. We probably do not.
-	// Checking the remote digest is commented out here.
-	//_, digest, err := m.getModuleAndDigest()
-	//return digest, err
+func (m *lazyModule) OpaqueID() string {
+	return m.ModuleKey.ModuleFullName().String()
+}
+
+func (*lazyModule) BucketID() string {
+	return ""
 }
 
 func (m *lazyModule) GetFile(ctx context.Context, path string) (File, error) {
@@ -247,21 +242,21 @@ func (m *lazyModule) WalkFileInfos(ctx context.Context, f func(FileInfo) error) 
 	return module.WalkFileInfos(ctx, f)
 }
 
+func (m *lazyModule) Digest() (bufcas.Digest, error) {
+	// This does not result in a remote call if you are just reading digests.
+	return m.ModuleKey.Digest()
+	// TODO: Make sure we don't need to check the remote digest here. We probably do not.
+	// Checking the remote digest is commented out here.
+	//_, digest, err := m.getModuleAndDigest()
+	//return digest, err
+}
+
 func (m *lazyModule) ModuleDeps() ([]ModuleDep, error) {
 	return m.getModuleDeps()
 }
 
 func (m *lazyModule) ModuleSet() ModuleSet {
 	return m.moduleSet
-}
-
-func (m *lazyModule) OpaqueID() string {
-	// We know ModuleFullName is present via construction.
-	return m.ModuleFullName().String()
-}
-
-func (*lazyModule) BucketID() string {
-	return ""
 }
 
 func (m *lazyModule) setModuleSet(moduleSet ModuleSet) {

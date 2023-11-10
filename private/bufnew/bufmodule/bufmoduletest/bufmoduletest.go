@@ -16,6 +16,7 @@ package bufmoduletest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -23,67 +24,70 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
+// TestProvider is a ModuleKeyProvider and ModuleProvider for testing.
 type TestProvider interface {
-	bufmodule.ModuleInfoProvider
+	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleProvider
 }
 
-func NewTestProviderForPathToData(
-	ctx context.Context,
-	moduleFullNameStringToPathToData map[string]map[string][]byte,
-) (TestProvider, error) {
-	moduleFullNameStringToBucket := make(map[string]storage.ReadBucket, len(moduleFullNameStringToPathToData))
-	for moduleFullNameString, pathToData := range moduleFullNameStringToPathToData {
-		bucket, err := storagemem.NewReadBucket(pathToData)
-		if err != nil {
-			return nil, err
-		}
-		moduleFullNameStringToBucket[moduleFullNameString] = bucket
-	}
-	return NewTestProviderForBuckets(ctx, moduleFullNameStringToBucket)
+// TestModuleData is the data needed to construct a Module in test.
+type TestModuleData struct {
+	// CommitID can be any string, but it must be unique across all TestModuleDatas.
+	//
+	// If not set, a mock commitID is created.
+	CommitID string
+	// Exactly one of PathToData or Bucket must be set.
+	PathToData map[string][]byte
+	// Exactly one of PathToData or Bucket must be set.
+	Bucket storage.ReadBucket
 }
 
-func NewTestProviderForBuckets(
+func NewTestProvider(
 	ctx context.Context,
-	moduleFullNameStringToBucket map[string]storage.ReadBucket,
+	moduleFullNameStringToTestModuleData map[string]TestModuleData,
 ) (TestProvider, error) {
-	testModuleDatas := make([]*testModuleData, 0, len(moduleFullNameStringToBucket))
-	for moduleFullNameString, bucket := range moduleFullNameStringToBucket {
-		testModuleDatas = append(
-			testModuleDatas,
-			&testModuleData{
-				ModuleFullNameString: moduleFullNameString,
-				Bucket:               bucket,
-			},
-		)
-	}
-	return newTestProvider(ctx, testModuleDatas)
+	return newTestProvider(ctx, moduleFullNameStringToTestModuleData)
 }
 
 // *** PRIVATE ***
-
-type testModuleData struct {
-	ModuleFullNameString string
-	Bucket               storage.ReadBucket
-}
 
 type testProvider struct {
 	moduleSet bufmodule.ModuleSet
 }
 
-func newTestProvider(ctx context.Context, testModuleDatas []*testModuleData) (*testProvider, error) {
+func newTestProvider(
+	ctx context.Context,
+	moduleFullNameStringToTestModuleData map[string]TestModuleData,
+) (*testProvider, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, nil)
-	for i, testModuleData := range testModuleDatas {
-		moduleFullName, err := bufmodule.ParseModuleFullName(testModuleData.ModuleFullNameString)
+	i := 0
+	for moduleFullNameString, testModuleData := range moduleFullNameStringToTestModuleData {
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleFullNameString)
 		if err != nil {
 			return nil, err
+		}
+		if testModuleData.Bucket == nil && len(testModuleData.PathToData) == 0 {
+			return nil, errors.New("one of TestModuleData.Bucket or TestModuleData.PathToData must be set")
+		}
+		if testModuleData.Bucket != nil && len(testModuleData.PathToData) > 0 {
+			return nil, errors.New("only one of TestModuleData.Bucket or TestModuleData.PathToData must be set")
+		}
+		bucket := testModuleData.Bucket
+		if bucket == nil {
+			bucket, err = storagemem.NewReadBucket(testModuleData.PathToData)
+			if err != nil {
+				return nil, err
+			}
 		}
 		moduleSetBuilder.AddModuleForBucket(
 			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory
 			fmt.Sprintf("%d", i),
-			testModuleData.Bucket,
+			bucket,
 			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
+			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
+			bufmodule.AddModuleForBucketWithCommitID(fmt.Sprintf("%d", i)),
 		)
+		i++
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
@@ -94,22 +98,22 @@ func newTestProvider(ctx context.Context, testModuleDatas []*testModuleData) (*t
 	}, nil
 }
 
-func (t *testProvider) GetModuleInfoForModuleRef(
+func (t *testProvider) GetModuleKeyForModuleRef(
 	ctx context.Context,
 	moduleRef bufmodule.ModuleRef,
-) (bufmodule.ModuleInfo, error) {
+) (bufmodule.ModuleKey, error) {
 	module := t.moduleSet.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 	if module == nil {
-		return nil, fmt.Errorf("no test ModuleInfo with name %q", moduleRef.ModuleFullName().String())
+		return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
 	}
-	return module, nil
+	return bufmodule.NewModuleKeyForModule(module)
 }
 
-func (t *testProvider) GetModuleForModuleInfo(
+func (t *testProvider) GetModuleForModuleKey(
 	ctx context.Context,
-	moduleInfo bufmodule.ModuleInfo,
+	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.Module, error) {
-	moduleFullName := moduleInfo.ModuleFullName()
+	moduleFullName := moduleKey.ModuleFullName()
 	if moduleFullName != nil {
 		module := t.moduleSet.GetModuleForModuleFullName(moduleFullName)
 		if module == nil {
@@ -117,7 +121,7 @@ func (t *testProvider) GetModuleForModuleInfo(
 		}
 		return module, nil
 	}
-	digest, err := moduleInfo.Digest()
+	digest, err := moduleKey.Digest()
 	if err != nil {
 		return nil, err
 	}

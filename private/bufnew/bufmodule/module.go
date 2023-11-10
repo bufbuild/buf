@@ -26,67 +26,73 @@ import (
 
 // Module presents a BSR module.
 type Module interface {
-	// ModuleInfo contains a Module's optional ModuleFullName, optional commit ID, and Digest.
-	ModuleInfo
-
 	// ModuleReadBucket allows for reading of a Module's files.
 	//
 	// A Module consists of .proto files, documentation file(s), and license file(s). All of these
 	// are accessible via the functions on ModuleReadBucket.
 	//
 	// This bucket is not self-contained - it requires the files from dependencies to be so.
-	//
-	// This package currently exposes functionality to walk just the .proto files, and get the singular
-	// documentation and license files, via WalkProtoFileInfos, GetDocFile, and GetLicenseFile.
-	//
-	// GetDocFile and GetLicenseFile may change in the future if other paths are accepted for
-	// documentation or licenses, or if we allow multiple documentation or license files to
-	// exist within a Module (currently, only one of each is allowed).
 	ModuleReadBucket
 
-	// ModuleDeps returns the dependency list for this specific module.
-	//
-	// This list is pruned - only Modules that this Module actually depends on via import statements
-	// within its .proto files will be returned.
-	//
-	// Dependencies with the same ModuleFullName will always have the same commits and digests.
-	//
-	// The order of returned list of Modules will be stable between invocations, but should
-	// not be considered to be sorted in any way.
-	ModuleDeps() ([]ModuleDep, error)
-
-	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
-	// constructed from a ModuleSet.
-	//
-	// If the Module was solely retrieved from a ModuleProvider, this will be nil.
-	ModuleSet() ModuleSet
 	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative
 	// to other Modules it was built with from a ModuleSetBuilder.
 	//
+	// Always present, regardless of whether a Module was provided by a ModuleProvider,
+	// or built with a ModuleSetBuilder.
+	//
 	// An OpaqueID can be used to denote expected uniqueness of content; if two Modules
 	// have different IDs, they should be expected to be logically different Modules.
-	//
-	// If two Modules have the same ModuleFullName, they will have the same OpaqueID. This is
-	// useful when differentiating between a remotely-downloaded Module and a Module in a workspace.
 	//
 	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
 	// It's uniqueness property only applies to the lifetime of the Module, and only within
 	// Modules commonly built from a ModuleSetBuilder.
 	//
-	// This ID is not stable between different invocations; the same Module built twice
-	// in two separate ModuleSetBuilder invocations may have different IDs.
+	// If two Modules have the same ModuleFullName, they will have the same OpaqueID.
 	//
-	// This ID will never be empty.
-	//
-	// TODO: update comments
-	// This is ModuleFullName -> fall back BucketID, and never empty.
+	// While this should not be relied upion, this ID is currently equal to the ModuleFullName,
+	// and if the ModuleFullName is not present, then the BucketID.
 	OpaqueID() string
-	// May be empty.
+	// BucketID is an unstructured ID that represents the Bucket that this Module was constructed
+	// with via ModuleSetProvider.
 	//
-	// TODO: update comments
-	// Should not be on ModuleInfo as this only relates to objects created from ModuleSetBuilder,
-	// and ModuleInfos can also be constructed by ModuleInfoProviders.
+	// A BucketID will be unique within a given ModuleSet.
+	//
+	// This ID's structure should not be relied upon, and is not a globally-unique identifier.
+	// It's uniqueness property only applies to the lifetime of the Module, and only within
+	// Modules commonly built from a ModuleSetBuilder.
+	//
+	// May be empty if a Module was not constructed with a Bucket via a ModuleSetProvider.
 	BucketID() string
+	// ModuleFullName returns the full name of the Module.
+	//
+	// May be nil. Callers should not rely on this value being present.
+	//
+	// At least one of ModuleFullName and BucketID will always be present. Use OpaqueID
+	// as an always-present identifier.
+	ModuleFullName() ModuleFullName
+	// CommitID returns the BSR ID of the Commit.
+	//
+	// May be empty. Callers should not rely on this value being present. If
+	// ModuleFullName is nil, this will always be empty.
+	CommitID() string
+	// Digest returns the Module digest.
+	Digest() (bufcas.Digest, error)
+
+	// ModuleDeps returns the dependencies for this specific Module.
+	//
+	// This list is pruned - only Modules that this Module actually depends on via import statements
+	// within its .proto files will be returned.
+	//
+	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
+	//
+	// Sorted by OpaqueID.
+	ModuleDeps() ([]ModuleDep, error)
+
+	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
+	// constructed from a ModuleSet.
+	//
+	// May be nil. If the Module was solely retrieved from a ModuleProvider, this will be nil.
+	ModuleSet() ModuleSet
 
 	setModuleSet(ModuleSet)
 	isModule()

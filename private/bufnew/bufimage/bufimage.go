@@ -22,7 +22,20 @@ import (
 
 type ImageFile interface {
 	storage.ObjectInfo
-	bufmodule.ModuleInfo
+
+	// ModuleFullName returns the full name of the Module that this ImageFile came from,
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message),
+	// and if the ModuleFullName was known.
+	//
+	// May be nil. Callers should not rely on this value being present.
+	ModuleFullName() bufmodule.ModuleFullName
+	// CommitID returns the BSR ID of the Commit of the Module that this ImageFile came from.
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
+	// if the CommitID was known..
+	//
+	// May be empty. Callers should not rely on this value being present. If
+	// ModuleFullName is nil, this will always be empty.
+	CommitID() string
 
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	IsImport() bool
