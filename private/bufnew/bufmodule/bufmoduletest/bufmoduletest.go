@@ -80,9 +80,10 @@ func newTestProvider(
 			}
 		}
 		moduleSetBuilder.AddModuleForBucket(
+			bucket,
 			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory
 			fmt.Sprintf("%d", i),
-			bucket,
+			false,
 			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
 			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
 			bufmodule.AddModuleForBucketWithCommitID(fmt.Sprintf("%d", i)),

@@ -71,21 +71,20 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleKey, err := testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
 	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 
 	// This module has no name but is part of the workspace.
 	moduleSetBuilder.AddModuleForBucket(
-		"path/to/module1",
 		testNewBucketForPathToData(
 			t,
 			map[string][]byte{
@@ -94,6 +93,8 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		),
+		"path/to/module1",
+		true,
 	)
 
 	// This module has a name and is part of the workspace.
@@ -102,7 +103,6 @@ func TestBasic(t *testing.T) {
 	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForBucket(
-		"path/to/module2",
 		testNewBucketForPathToData(
 			t,
 			map[string][]byte{
@@ -111,12 +111,29 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		),
+		"path/to/module2",
+		true,
 		bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
 	)
 
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
-	require.Equal(t, 4, len(moduleSet.Modules()))
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/bar/module2",
+			"path/to/module1",
+		},
+		testGetOpaqueIDs(t, moduleSet.TargetModules()),
+	)
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep2",
+		},
+		testGetOpaqueIDs(t, moduleSet.NonTargetModules()),
+	)
 
 	module2 := moduleSet.GetModuleForOpaqueID("buf.build/bar/module2")
 	require.NotNil(t, module2)
@@ -200,6 +217,14 @@ func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) stor
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	require.NoError(t, err)
 	return bucket
+}
+
+func testGetOpaqueIDs(t *testing.T, modules []bufmodule.Module) []string {
+	opaqueIDs := make([]string, len(modules))
+	for i, module := range modules {
+		opaqueIDs[i] = module.OpaqueID()
+	}
+	return opaqueIDs
 }
 
 func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[string]bool {

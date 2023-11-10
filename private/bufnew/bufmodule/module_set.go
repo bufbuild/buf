@@ -24,10 +24,25 @@ import (
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
 type ModuleSet interface {
-	// Modules returns the Modules in the ModuleSet.
+	// Modules returns the target Modules in the ModuleSet.
+	//
+	// Modules are either targets or non-targets.
+	// A target Module is a module that we are directly targeting for operations.
+	// All non-target Modules are dependencies of targets. Both targets and non-targets
+	// can be retrieved via the Get.* functions.
 	//
 	// These will be sorted by OpaqueID.
-	Modules() []Module
+	TargetModules() []Module
+	// Modules returns the non-target Modules in the ModuleSet.
+	//
+	// Modules are either targets or non-targets.
+	// A target Module is a module that we are directly targeting for operations.
+	// All non-target Modules are dependencies of targets. Both targets and non-targets
+	// can be retrieved via the Get.* functions.
+	//
+	// These will be sorted by OpaqueID.
+	NonTargetModules() []Module
+
 	// GetModuleForModuleFullName gets the Module for the ModuleFullName, if it exists.
 	//
 	// Returns nil if there is no Module with the given ModuleFullName.
@@ -55,7 +70,7 @@ type ModuleSet interface {
 // GetModuleSetOpaqueIDDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
 func GetModuleSetOpaqueIDDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 	graph := dag.NewGraph[string]()
-	for _, module := range moduleSet.Modules() {
+	for _, module := range moduleSet.TargetModules() {
 		if err := buildModuleOpaqueIDDAGRec(module, graph); err != nil {
 			return nil, err
 		}
@@ -89,7 +104,8 @@ func buildModuleOpaqueIDDAGRec(
 // moduleSet
 
 type moduleSet struct {
-	modules                      []Module
+	targetModules                []Module
+	nonTargetModules             []Module
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
 	bucketIDToModule             map[string]Module
@@ -97,12 +113,19 @@ type moduleSet struct {
 }
 
 func newModuleSet(
-	modules []Module,
+	moduleSetModules []*moduleSetModule,
 ) (*moduleSet, error) {
-	moduleFullNameStringToModule := make(map[string]Module, len(modules))
-	opaqueIDToModule := make(map[string]Module, len(modules))
-	bucketIDToModule := make(map[string]Module, len(modules))
-	for _, module := range modules {
+	targetModules := make([]Module, 0, len(moduleSetModules))
+	nonTargetModules := make([]Module, 0, len(moduleSetModules))
+	moduleFullNameStringToModule := make(map[string]Module, len(moduleSetModules))
+	opaqueIDToModule := make(map[string]Module, len(moduleSetModules))
+	bucketIDToModule := make(map[string]Module, len(moduleSetModules))
+	for _, module := range moduleSetModules {
+		if module.isTarget() {
+			targetModules = append(targetModules, module)
+		} else {
+			nonTargetModules = append(nonTargetModules, module)
+		}
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
 			if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
@@ -127,14 +150,15 @@ func newModuleSet(
 		}
 	}
 	return &moduleSet{
-		modules:                      modules,
+		targetModules:                targetModules,
+		nonTargetModules:             nonTargetModules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
 		getDigestStringToModule: sync.OnceValues(
 			func() (map[string]Module, error) {
-				digestStringToModule := make(map[string]Module, len(modules))
-				for _, module := range modules {
+				digestStringToModule := make(map[string]Module, len(moduleSetModules))
+				for _, module := range moduleSetModules {
 					digest, err := module.Digest()
 					if err != nil {
 						return nil, err
@@ -154,9 +178,15 @@ func newModuleSet(
 	}, nil
 }
 
-func (m *moduleSet) Modules() []Module {
-	c := make([]Module, len(m.modules))
-	copy(c, m.modules)
+func (m *moduleSet) TargetModules() []Module {
+	c := make([]Module, len(m.targetModules))
+	copy(c, m.targetModules)
+	return c
+}
+
+func (m *moduleSet) NonTargetModules() []Module {
+	c := make([]Module, len(m.nonTargetModules))
+	copy(c, m.nonTargetModules)
 	return c
 }
 
