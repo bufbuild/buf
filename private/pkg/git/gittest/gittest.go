@@ -17,6 +17,7 @@ package gittest
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -202,9 +203,11 @@ func runInDir(t *testing.T, runner command.Runner, dir string, cmd string, args 
 	if err != nil {
 		require.FailNow(
 			t,
-			"git command failed",
-			"run %q, error %q",
-			strings.Join(append([]string{cmd}, args...), " "),
+			fmt.Sprintf(
+				"git command failed: %q: %s",
+				strings.Join(append([]string{cmd}, args...), " "),
+				err.Error(),
+			),
 			stderr,
 		)
 	}
