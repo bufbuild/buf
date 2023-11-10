@@ -23,8 +23,7 @@ import (
 )
 
 type Workspace interface {
-	TargetWorkspaceModules() []WorkspaceModule
-	NonTargetModules() []bufmodule.Module
+	WorkspaceModules() []WorkspaceModule
 	DeclaredDepModuleRefs() []bufmodule.ModuleRef
 	//GenerateConfigs() []GenerateConfig
 
@@ -34,8 +33,10 @@ type Workspace interface {
 type WorkspaceModule interface {
 	bufmodule.Module
 
+	// Will be default value for Modules that didn't have an associated config,
+	// such as modules read from buf.lock files. These Modules shouldn't be
+	// targeted, which will result in the linter/breaking change detector ignoring them.
 	ModuleConfig() ModuleConfig
-	TargetPaths() []string
 }
 
 // Can read a single buf.yaml v1
