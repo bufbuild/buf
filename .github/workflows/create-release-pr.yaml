@@ -1,5 +1,6 @@
 name: Create Release PR
 on:
+  # todo: remove push
   push:
     branches:
       - osun/fix-git-permission
@@ -26,12 +27,12 @@ jobs:
           token: ${{ steps.app_token.outputs.token }}
       - name: Set up Git name and email
         run: |
-          git config --global user.email "251311+buf-release-bot[bot]@users.noreply.github.com"
-          git config --global user.name "buf-release-bot[bot]"
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
       - name: Create release PR
         run: bash ./make/buf/scripts/createreleasepr.bash
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
           # VERSION: ${{ github.event.inputs.version }}
-          VERSION: 1.28.0
+          VERSION: 1.28.0-test
           WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
