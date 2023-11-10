@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package syncextended provides extra functionality on top of the sync package.
 package syncextended
 
 import "sync"
