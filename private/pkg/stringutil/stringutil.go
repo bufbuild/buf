@@ -16,9 +16,10 @@
 package stringutil
 
 import (
-	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
 // TrimLines splits the output into individual lines and trims the spaces from each line.
@@ -56,95 +57,72 @@ func SplitTrimLinesNoEmpty(output string) []string {
 }
 
 // MapToSortedSlice transforms m to a sorted slice.
+//
+// Deprecated: Use slicesextended.MapToSortedSlice instead.
 func MapToSortedSlice(m map[string]struct{}) []string {
-	s := MapToSlice(m)
-	sort.Strings(s)
-	return s
+	return slicesextended.MapToSortedSlice(m)
 }
 
 // MapToSlice transforms m to a slice.
+//
+// Deprecated: Use slicesextended.MapToSlice instead.
 func MapToSlice(m map[string]struct{}) []string {
-	s := make([]string, 0, len(m))
-	for e := range m {
-		s = append(s, e)
-	}
-	return s
+	return slicesextended.MapToSlice(m)
 }
 
 // SliceToMap transforms s to a map.
+//
+// Deprecated: Use slicesextended.ToMap instead.
 func SliceToMap(s []string) map[string]struct{} {
-	m := make(map[string]struct{}, len(s))
-	for _, e := range s {
-		m[e] = struct{}{}
-	}
-	return m
+	return slicesextended.ToMap(s)
 }
 
 // SliceToUniqueSortedSlice returns a sorted copy of s with no duplicates.
+//
+// Deprecated: Use slicesextended.ToUniqueSorted instead.
 func SliceToUniqueSortedSlice(s []string) []string {
-	return MapToSortedSlice(SliceToMap(s))
+	return slicesextended.ToUniqueSorted(s)
 }
 
 // SliceToUniqueSortedSliceFilterEmptyStrings returns a sorted copy of s with no duplicates and no empty strings.
 //
 // Strings with only spaces are considered empty.
 func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
-	m := SliceToMap(s)
+	m := slicesextended.ToMap(s)
 	for key := range m {
 		if strings.TrimSpace(key) == "" {
 			delete(m, key)
 		}
 	}
-	return MapToSortedSlice(m)
+	return slicesextended.MapToSortedSlice(m)
 }
 
 // SliceToChunks splits s into chunks of the given chunk size.
 //
 // If s is nil or empty, returns empty.
 // If chunkSize is <=0, returns [][]string{s}.
+//
+// Deprecated: use slicesextended.ToChunks instead.
 func SliceToChunks(s []string, chunkSize int) [][]string {
-	var chunks [][]string
-	if len(s) == 0 {
-		return chunks
-	}
-	if chunkSize <= 0 {
-		return [][]string{s}
-	}
-	c := make([]string, len(s))
-	copy(c, s)
-	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
-	for chunkSize < len(c) {
-		c, chunks = c[chunkSize:], append(chunks, c[0:chunkSize:chunkSize])
-	}
-	return append(chunks, c)
+	return slicesextended.ToChunks(s, chunkSize)
 }
 
 // SliceElementsEqual returns true if the two slices have equal elements.
 //
 // Nil and empty slices are treated as equals.
+//
+// Deprecated: use slicesextended.ElementsEqual instead.
 func SliceElementsEqual(one []string, two []string) bool {
-	if len(one) != len(two) {
-		return false
-	}
-	for i, elem := range one {
-		if two[i] != elem {
-			return false
-		}
-	}
-	return true
+	return slicesextended.ElementsEqual(one, two)
 }
 
 // SliceElementsContained returns true if superset contains subset.
 //
 // Nil and empty slices are treated as equals.
+//
+// Deprecated: use slicesextended.ElementsContained instead.
 func SliceElementsContained(superset []string, subset []string) bool {
-	m := SliceToMap(superset)
-	for _, elem := range subset {
-		if _, ok := m[elem]; !ok {
-			return false
-		}
-	}
-	return true
+	return slicesextended.ElementsContained(superset, subset)
 }
 
 // JoinSliceQuoted joins the slice with quotes.
