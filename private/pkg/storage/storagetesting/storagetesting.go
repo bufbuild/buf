@@ -31,11 +31,11 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,7 +111,7 @@ func AssertPathToContent(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(stringutil.SliceToUniqueSortedSlice(paths)))
+	require.Equal(t, len(paths), len(slicesextended.ToUniqueSorted(paths)))
 	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]
@@ -144,7 +144,7 @@ func AssertPaths(
 		},
 	))
 	sort.Strings(paths)
-	assert.Equal(t, stringutil.SliceToUniqueSortedSlice(expectedPaths), paths)
+	assert.Equal(t, slicesextended.ToUniqueSorted(expectedPaths), paths)
 }
 
 // GetExternalPathFunc can be used to get the external path of
