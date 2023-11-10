@@ -88,21 +88,20 @@ func (h *syncHandler) ResolveSyncPoint(ctx context.Context, module bufmoduleref.
 }
 
 func (h *syncHandler) IsGitCommitSynced(ctx context.Context, module bufmoduleref.ModuleIdentity, hash git.Hash) (bool, error) {
-	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewLabelServiceClient)
-	res, err := service.GetLabelsInNamespace(ctx, connect.NewRequest(&registryv1alpha1.GetLabelsInNamespaceRequest{
-		RepositoryOwner: module.Owner(),
-		RepositoryName:  module.Repository(),
-		LabelNamespace:  registryv1alpha1.LabelNamespace_LABEL_NAMESPACE_GIT_COMMIT,
-		LabelNames:      []string{hash.Hex()},
+	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewReferenceServiceClient)
+	res, err := service.GetReferenceByName(ctx, connect.NewRequest(&registryv1alpha1.GetReferenceByNameRequest{
+		Owner:          module.Owner(),
+		RepositoryName: module.Repository(),
+		Name:           hash.Hex(),
 	}))
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Repo is not created
 			return false, nil
 		}
-		return false, fmt.Errorf("get labels in namespace: %w", err)
+		return false, fmt.Errorf("get reference by name: %w", err)
 	}
-	return len(res.Msg.Labels) == 1, nil
+	return res.Msg.Reference.GetVcsCommit() != nil, nil
 }
 
 func (h *syncHandler) GetModuleReleaseBranch(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
