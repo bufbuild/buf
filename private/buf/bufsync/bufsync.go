@@ -151,7 +151,7 @@ type ErrorHandler interface {
 }
 
 // Handler is a handler for Syncer. It controls the way in which Syncer handles errors, provides
-// any information the Syncer needs to Sync commits, and recieves ModuleCommits that should be
+// any information the Syncer needs to Sync commits, and receives ModuleCommits that should be
 // synced.
 type Handler interface {
 	ErrorHandler
