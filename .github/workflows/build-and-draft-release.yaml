@@ -17,8 +17,16 @@ jobs:
         run: |
           VERSION="${{ github.event.inputs.version || github.head_ref}}"
           echo "VERSION=${VERSION##*/v}" >> $GITHUB_ENV
+      - name: Get GitHub app token
+        uses: actions/create-github-app-token@v1
+        id: app_token
+        with:
+          app-id: ${{ env.APP_ID }}
+          private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
       - name: Checkout repository code
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app_token.outputs.token }}
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -30,7 +38,7 @@ jobs:
       - name: Build assets and draft release
         run: bash ./make/buf/scripts/draftrelease.bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN:  ${{ steps.app_token.outputs.token }}
           WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_NOTIFICATION_WEBHOOK }}
           RELEASE_MINISIGN_PRIVATE_KEY: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY}}
           RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD: ${{secrets.RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}}

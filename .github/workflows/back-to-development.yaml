@@ -9,14 +9,16 @@ jobs:
   post-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
       - name: Get GitHub app token
         uses: actions/create-github-app-token@v1
         id: app_token
         with:
           app-id: ${{ env.APP_ID }}
           private-key: ${{ secrets.TOKEN_EXCHANGE_GH_APP_PRIVATE_KEY }}
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app_token.outputs.token }}
       - name: Set up Git name and email
         run: |
           git config user.name "${{ github.actor }}"
