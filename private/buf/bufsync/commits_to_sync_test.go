@@ -70,7 +70,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			func(tc testCase) {
 				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
 					// check out the branch to sync
-					repo.Checkout(context.Background(), t, tc.branch)
+					repo.Checkout(t, tc.branch)
 					const moduleDir = "."
 					var opts []bufsync.SyncerOption
 					if withOverride {
@@ -115,25 +115,25 @@ func prepareGitRepoSyncWithNoPreviousSyncPoints(
 	doEmptyCommits := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
 			commitsCounter++
-			repo.Commit(context.Background(), t, fmt.Sprintf("commit %d", commitsCounter), nil)
+			repo.Commit(t, fmt.Sprintf("commit %d", commitsCounter), nil)
 		}
 	}
 	// write the base module in the root
-	repo.Commit(context.Background(), t, "commit 0", map[string]string{
+	repo.Commit(t, "commit 0", map[string]string{
 		"buf.yaml": fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
 	})
 
 	doEmptyCommits(1)
-	repo.CheckoutB(context.Background(), t, allBranches[1])
+	repo.CheckoutB(t, allBranches[1])
 	doEmptyCommits(2)
-	repo.Checkout(context.Background(), t, defaultBranchName)
+	repo.Checkout(t, defaultBranchName)
 	doEmptyCommits(1)
-	repo.CheckoutB(context.Background(), t, allBranches[2])
+	repo.CheckoutB(t, allBranches[2])
 	doEmptyCommits(1)
-	repo.CheckoutB(context.Background(), t, allBranches[3])
+	repo.CheckoutB(t, allBranches[3])
 	doEmptyCommits(1)
-	repo.Checkout(context.Background(), t, allBranches[2])
+	repo.Checkout(t, allBranches[2])
 	doEmptyCommits(1)
-	repo.Checkout(context.Background(), t, defaultBranchName)
+	repo.Checkout(t, defaultBranchName)
 	doEmptyCommits(1)
 }

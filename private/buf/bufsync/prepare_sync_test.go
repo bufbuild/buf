@@ -108,5 +108,5 @@ func prepareGitRepoMultiModule(t *testing.T, repo gittest.Repository, moduleDirs
 		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())
 		files[moduleDir+"/foo/v1/foo.proto"] = "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n"
 	}
-	repo.Commit(context.Background(), t, "commit", files)
+	repo.Commit(t, "commit", files)
 }

@@ -28,6 +28,7 @@ func TestTags(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
+	writeModuleWithSampleCommits(t, context.Background(), repo)
 	var tags []string
 	err := repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		tags = append(tags, tag)
@@ -66,6 +67,7 @@ func TestCommits(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
+	writeModuleWithSampleCommits(t, context.Background(), repo)
 	var commitsByDefault []git.Commit
 	err := repo.ForEachCommit(func(c git.Commit) error {
 		commitsByDefault = append(commitsByDefault, c) // by default we loop from HEAD at the local default branch
@@ -244,6 +246,7 @@ func TestForEachBranch(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				repo := gittest.ScaffoldGitRepository(t)
+				writeModuleWithSampleCommits(t, context.Background(), repo)
 				currentBranch, err := repo.CurrentBranch(context.Background())
 				require.NoError(t, err)
 				assert.Equal(t, gittest.DefaultBranch, currentBranch)
@@ -280,4 +283,86 @@ func TestForEachBranch(t *testing.T) {
 			})
 		}(tc)
 	}
+}
+
+// the resulting Git repo looks like so:
+//
+//	.
+//	├── proto
+//	│   ├── acme
+//	│   │   ├── grocerystore
+//	│   │   │   └── v1
+//	│   │   │       ├── c.proto
+//	│   │   │       ├── d.proto
+//	│   │   │       ├── g.proto
+//	│   │   │       └── h.proto
+//	│   │   └── petstore
+//	│   │       └── v1
+//	│   │           ├── a.proto
+//	│   │           ├── b.proto
+//	│   │           ├── e.proto
+//	│   │           └── f.proto
+//	│   └── buf.yaml
+//	└── randomBinary (+x)
+func writeModuleWithSampleCommits(t *testing.T, ctx context.Context, repo gittest.Repository) {
+	currentBranch, err := repo.CurrentBranch(ctx)
+	require.NoError(t, err)
+
+	// (1) commit in main branch
+	repo.Commit(t, "first commit", map[string]string{
+		"randomBinary":                       "some executable",
+		"proto/buf.yaml":                     "some buf.yaml",
+		"proto/acme/petstore/v1/a.proto":     "cats",
+		"proto/acme/petstore/v1/b.proto":     "animals",
+		"proto/acme/grocerystore/v1/c.proto": "toysrus",
+		"proto/acme/grocerystore/v1/d.proto": "petsrus",
+	}, gittest.CommitWithExecutableFile("randomBinary"))
+	repo.Tag(t, "release/v1", "")
+	repo.Push(t)
+
+	// (2) branch off main and begin work
+	repo.CheckoutB(t, "buftest/branch1")
+	repo.Commit(t, "branch1", map[string]string{
+		"proto/acme/petstore/v1/e.proto": "loblaws",
+		"proto/acme/petstore/v1/f.proto": "merchant of venice",
+	})
+	repo.Tag(t, "branch/v1", "for testing")
+	repo.Push(t)
+
+	// (3) branch off branch and begin work
+	repo.CheckoutB(t, "buftest/branch2")
+	repo.Commit(t, "branch2", map[string]string{
+		"proto/acme/grocerystore/v1/g.proto": "hamlet",
+		"proto/acme/grocerystore/v1/h.proto": "bethoven",
+	})
+	repo.Tag(t, "branch/v2", "for testing")
+	repo.Push(t)
+
+	// (4) merge first branch
+	repo.Checkout(t, currentBranch)
+	repo.Merge(t, "buftest/branch1")
+	repo.Commit(t, "second commit", nil)
+	repo.Tag(t, "v2", "")
+	repo.Push(t)
+
+	// (5) pack some refs
+	repo.PackRefs(t)
+
+	// (6) merge second branch
+	repo.Checkout(t, currentBranch)
+	repo.Merge(t, "buftest/branch2")
+	repo.Commit(t, "third commit", nil)
+	repo.Tag(t, "v3.0", "")
+	repo.Push(t)
+
+	// commit a local-only branch
+	repo.CheckoutB(t, "buftest/local-only")
+	repo.Commit(t, "local commit on local branch", nil)
+
+	// make a local-only commit on top of a pushed branch
+	repo.Checkout(t, "buftest/branch1")
+	repo.Commit(t, "local commit on pushed branch", nil)
+
+	// checkout to default branch
+	repo.Checkout(t, currentBranch)
 }

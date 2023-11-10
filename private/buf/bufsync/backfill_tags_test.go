@@ -100,12 +100,12 @@ func prepareGitRepoBackfillTags(t *testing.T, repo gittest.Repository, moduleIde
 	doEmptyCommitAndTag := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
 			commitsCounter++
-			repo.Commit(context.Background(), t, fmt.Sprintf("commit %d", commitsCounter), nil)
-			repo.Tag(context.Background(), t, fmt.Sprintf("tag-%d", commitsCounter))
+			repo.Commit(t, fmt.Sprintf("commit %d", commitsCounter), nil)
+			repo.Tag(t, fmt.Sprintf("tag-%d", commitsCounter), "")
 		}
 	}
 	// write the base module in the root
-	repo.Commit(context.Background(), t, "commit 0", map[string]string{
+	repo.Commit(t, "commit 0", map[string]string{
 		"buf.yaml":         fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
 		"foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
 	})

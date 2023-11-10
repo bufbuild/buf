@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/stretchr/testify/require"
 )
 
 type repository struct {
@@ -64,23 +65,46 @@ func (r *repository) HEADCommit(options ...git.HEADCommitOption) (git.Commit, er
 func (r *repository) Objects() git.ObjectReader {
 	return r.inner.Objects()
 }
-func (r *repository) Checkout(ctx context.Context, t *testing.T, branch string) {
+func (r *repository) Checkout(t *testing.T, branch string) {
 	runInDir(t, r.runner, r.repoDir, "git", "checkout", branch)
 }
-func (r *repository) CheckoutB(ctx context.Context, t *testing.T, branch string) {
+func (r *repository) CheckoutB(t *testing.T, branch string) {
 	runInDir(t, r.runner, r.repoDir, "git", "checkout", "-b", branch)
 }
-func (r *repository) Commit(ctx context.Context, t *testing.T, msg string, files map[string]string) {
+func (r *repository) Commit(t *testing.T, msg string, files map[string]string, opts ...CommitOption) {
 	if len(files) == 0 {
 		runInDir(t, r.runner, r.repoDir, "git", "commit", "--allow-empty", "-m", msg)
 		return
 	}
+	var options commitOpts
+	for _, opt := range opts {
+		opt(&options)
+	}
 	writeFiles(t, r.repoDir, files)
+	for _, path := range options.executablePaths {
+		runInDir(t, r.runner, r.repoDir, "chmod", "+x", path)
+	}
 	runInDir(t, r.runner, r.repoDir, "git", "add", ".")
 	runInDir(t, r.runner, r.repoDir, "git", "commit", "-m", msg)
 }
-func (r *repository) Tag(ctx context.Context, t *testing.T, msg string) {
-	runInDir(t, r.runner, r.repoDir, "git", "tag", msg)
+func (r *repository) Tag(t *testing.T, name string, msg string) {
+	if msg != "" {
+		runInDir(t, r.runner, r.repoDir, "git", "tag", "-m", msg, name)
+	} else {
+		runInDir(t, r.runner, r.repoDir, "git", "tag", name)
+	}
+}
+func (r *repository) Push(t *testing.T) {
+	currentBranch, err := r.CurrentBranch(context.Background())
+	require.NoError(t, err)
+	runInDir(t, r.runner, r.repoDir, "git", "push", "--follow-tags", "origin", currentBranch)
+}
+func (r *repository) Merge(t *testing.T, branch string) {
+	runInDir(t, r.runner, r.repoDir, "git", "merge", "--squash", branch)
+}
+func (r *repository) PackRefs(t *testing.T) {
+	runInDir(t, r.runner, r.repoDir, "git", "pack-refs", "--all")
+	runInDir(t, r.runner, r.repoDir, "git", "repack")
 }
 
 var _ Repository = (*repository)(nil)

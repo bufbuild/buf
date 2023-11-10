@@ -36,10 +36,25 @@ const (
 
 type Repository interface {
 	git.Repository
-	Commit(ctx context.Context, t *testing.T, msg string, files map[string]string)
-	Checkout(ctx context.Context, t *testing.T, branch string)
-	CheckoutB(ctx context.Context, t *testing.T, branch string)
-	Tag(ctx context.Context, t *testing.T, msg string)
+	Commit(t *testing.T, msg string, files map[string]string, opts ...CommitOption)
+	Checkout(t *testing.T, branch string)
+	CheckoutB(t *testing.T, branch string)
+	Tag(t *testing.T, name string, msg string)
+	Push(t *testing.T)
+	Merge(t *testing.T, branch string)
+	PackRefs(t *testing.T)
+}
+
+type commitOpts struct {
+	executablePaths []string
+}
+
+type CommitOption func(*commitOpts)
+
+func CommitWithExecutableFile(path string) CommitOption {
+	return func(opts *commitOpts) {
+		opts.executablePaths = append(opts.executablePaths, path)
+	}
 }
 
 type scaffoldOptions struct {
@@ -72,32 +87,14 @@ func ScaffoldGitRepository(t *testing.T, opts ...ScaffoldGitRepositoryOption) Re
 	t.Cleanup(func() {
 		require.NoError(t, repo.Close())
 	})
-	return newRepository(
+	testRepo := newRepository(
 		repo,
 		dir,
 		runner,
 	)
+	return testRepo
 }
 
-// the resulting Git repo looks like so:
-//
-//	.
-//	├── proto
-//	│   ├── acme
-//	│   │   ├── grocerystore
-//	│   │   │   └── v1
-//	│   │   │       ├── c.proto
-//	│   │   │       ├── d.proto
-//	│   │   │       ├── g.proto
-//	│   │   │       └── h.proto
-//	│   │   └── petstore
-//	│   │       └── v1
-//	│   │           ├── a.proto
-//	│   │           ├── b.proto
-//	│   │           ├── e.proto
-//	│   │           └── f.proto
-//	│   └── buf.yaml
-//	└── randomBinary (+x)
 func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch string, onlyInitialCommit bool) string {
 	dir := t.TempDir()
 
@@ -118,75 +115,6 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch st
 	runInDir(t, runner, localDir, "git", "add", ".")
 	runInDir(t, runner, localDir, "git", "commit", "-m", "initial commit")
 	runInDir(t, runner, localDir, "git", "push", "-u", "-f", "origin", defaultBranch)
-	if onlyInitialCommit {
-		return localDir
-	}
-
-	// (1) commit in main branch
-	writeFiles(t, localDir, map[string]string{
-		"randomBinary":                       "some executable",
-		"proto/buf.yaml":                     "some buf.yaml",
-		"proto/acme/petstore/v1/a.proto":     "cats",
-		"proto/acme/petstore/v1/b.proto":     "animals",
-		"proto/acme/grocerystore/v1/c.proto": "toysrus",
-		"proto/acme/grocerystore/v1/d.proto": "petsrus",
-	})
-	runInDir(t, runner, localDir, "chmod", "+x", "randomBinary")
-	runInDir(t, runner, localDir, "git", "add", ".")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "first commit")
-	runInDir(t, runner, localDir, "git", "tag", "release/v1")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", defaultBranch)
-
-	// (2) branch off main and begin work
-	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/branch1")
-	writeFiles(t, localDir, map[string]string{
-		"proto/acme/petstore/v1/e.proto": "loblaws",
-		"proto/acme/petstore/v1/f.proto": "merchant of venice",
-	})
-	runInDir(t, runner, localDir, "git", "add", ".")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "branch1")
-	runInDir(t, runner, localDir, "git", "tag", "-m", "for testing", "branch/v1")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", "buftest/branch1")
-
-	// (3) branch off branch and begin work
-	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/branch2")
-	writeFiles(t, localDir, map[string]string{
-		"proto/acme/grocerystore/v1/g.proto": "hamlet",
-		"proto/acme/grocerystore/v1/h.proto": "bethoven",
-	})
-	runInDir(t, runner, localDir, "git", "add", ".")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "branch2")
-	runInDir(t, runner, localDir, "git", "tag", "-m", "for testing", "branch/v2")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags", "origin", "buftest/branch2")
-
-	// (4) merge first branch
-	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
-	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch1")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "second commit")
-	runInDir(t, runner, localDir, "git", "tag", "v2")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags")
-
-	// (5) pack some refs
-	runInDir(t, runner, localDir, "git", "pack-refs", "--all")
-	runInDir(t, runner, localDir, "git", "repack")
-
-	// (6) merge second branch
-	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
-	runInDir(t, runner, localDir, "git", "merge", "--squash", "buftest/branch2")
-	runInDir(t, runner, localDir, "git", "commit", "-m", "third commit")
-	runInDir(t, runner, localDir, "git", "tag", "v3.0")
-	runInDir(t, runner, localDir, "git", "push", "--follow-tags")
-
-	// commit a local-only branch
-	runInDir(t, runner, localDir, "git", "checkout", "-b", "buftest/local-only")
-	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "local commit on local branch")
-
-	// make a local-only commit on top of a pushed branch
-	runInDir(t, runner, localDir, "git", "checkout", "buftest/branch1")
-	runInDir(t, runner, localDir, "git", "commit", "--allow-empty", "-m", "local commit on pushed branch")
-
-	// checkout to default branch
-	runInDir(t, runner, localDir, "git", "checkout", defaultBranch)
 
 	return localDir
 }
