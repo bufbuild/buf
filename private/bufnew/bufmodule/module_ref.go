@@ -93,7 +93,7 @@ func newModuleRef(
 }
 
 func (m *moduleRef) ModuleFullName() ModuleFullName {
-	return m.ModuleFullName()
+	return m.moduleFullName
 }
 
 func (m *moduleRef) Ref() string {
