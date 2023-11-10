@@ -72,6 +72,25 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 	return internal.FilterSlice(moduleSet.Modules(), func(module Module) bool { return module.IsTargetModule() })
 }
 
+// ModuleSetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// Modules in the ModuleSet.
+//
+// Sorted.
+func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
+	return internal.MapSlice(moduleSet.Modules(), func(module Module) string { return module.OpaqueID() })
+}
+
+// ModuleSetTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// target Modules in the ModuleSet.
+//
+// Sorted.
+func ModuleSetTargetOpaqueIDs(moduleSet ModuleSet) []string {
+	return internal.MapSlice(
+		ModuleSetTargetModules(moduleSet),
+		func(module Module) string { return module.OpaqueID() },
+	)
+}
+
 // ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
 //
 // This only starts at target Modules. If a Module is not part of a graph

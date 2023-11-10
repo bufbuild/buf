@@ -126,7 +126,7 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep2",
 			"path/to/module1",
 		},
-		testGetOpaqueIDs(t, moduleSet.Modules()),
+		bufmodule.ModuleSetOpaqueIDs(moduleSet),
 	)
 	require.Equal(
 		t,
@@ -134,7 +134,7 @@ func TestBasic(t *testing.T) {
 			"buf.build/bar/module2",
 			"path/to/module1",
 		},
-		testGetOpaqueIDs(t, bufmodule.ModuleSetTargetModules(moduleSet)),
+		bufmodule.ModuleSetTargetOpaqueIDs(moduleSet),
 	)
 
 	module2 := moduleSet.GetModuleForOpaqueID("buf.build/bar/module2")
@@ -219,14 +219,6 @@ func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) stor
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	require.NoError(t, err)
 	return bucket
-}
-
-func testGetOpaqueIDs(t *testing.T, modules []bufmodule.Module) []string {
-	opaqueIDs := make([]string, len(modules))
-	for i, module := range modules {
-		opaqueIDs[i] = module.OpaqueID()
-	}
-	return opaqueIDs
 }
 
 func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[string]bool {
