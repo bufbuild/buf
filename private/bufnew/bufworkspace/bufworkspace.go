@@ -64,11 +64,30 @@ type Workspace interface {
 	// in the situations where they need configuration.
 	GetModuleConfigForOpaqueID(opaqueID string) ModuleConfig
 
-	// DeclaredDepModuleRefs returns the declared dependencies of the Workspace as
-	// ModuleRefs.
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
-	DeclaredDepModuleRefs() []bufmodule.ModuleRef
+	//
+	// This may or may not include ModuleRefs that reference Modules within the ModuleSet.
+	// ModuleSets include all dependencies, so in theory, all ModuleRefs should have a Module,
+	// however we may have misconfigured ModuleRefs.
+	//
+	// The ModuleRefs in this list will be unique by ModuleFullName. Resolution of ModuleRefs
+	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
+	// of the buf.yaml files in the Workspace, resolving common ModuleFullNames to a single ModuleRef.
+	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+	// LockedDepModuleKeys returns the locked dependencies of the Workspace as ModuleKeys.
+	//
+	// These come from buf.lock files.
+	//
+	// This may or may not include ModuleKeys that keyerence Modules within the ModuleSet.
+	// ModuleSets include all dependencies, so in theory, all ModuleKeys should have a Module,
+	// however we may have misconfigured ModuleKeys.
+	//
+	// The ModuleKeys in this list will be unique by ModuleFullName. Resolution of ModuleKeys
+	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
+	// of the buf.lock files in the Workspace, resolving common ModuleFullNames to a single ModuleKey.
+	LockedDepModuleKeys() []bufmodule.ModuleKey
 
 	// GenerateConfigs returns the GenerateConfigs for the workspace, if they exist.
 	//
