@@ -83,10 +83,7 @@ func (b *builder) build(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	moduleReadBucket, err := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
-	if err != nil {
-		return nil, nil, err
-	}
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	//  TODO: need to provide a function to go from Module to a ModuleReadBucket with
 	//  all *.proto files,  including deps.
 	parserAccessorHandler := newParserAccessorHandler(ctx, moduleReadBucket)
