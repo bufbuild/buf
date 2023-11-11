@@ -56,7 +56,7 @@ func newBuilder(logger *zap.Logger) *builder {
 
 func (b *builder) Build(
 	ctx context.Context,
-	module bufmodule.Module,
+	moduleSet bufmodule.ModuleSet,
 	options ...BuildOption,
 ) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
@@ -65,14 +65,14 @@ func (b *builder) Build(
 	}
 	return b.build(
 		ctx,
-		module,
+		moduleSet,
 		buildOptions.excludeSourceCodeInfo,
 	)
 }
 
 func (b *builder) build(
 	ctx context.Context,
-	module bufmodule.Module,
+	moduleSet bufmodule.ModuleSet,
 	excludeSourceCodeInfo bool,
 ) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
@@ -83,11 +83,14 @@ func (b *builder) build(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-
+	moduleReadBucket, err := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	if err != nil {
+		return nil, nil, err
+	}
 	//  TODO: need to provide a function to go from Module to a ModuleReadBucket with
 	//  all *.proto files,  including deps.
-	parserAccessorHandler := newParserAccessorHandler(ctx, module)
-	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module)
+	parserAccessorHandler := newParserAccessorHandler(ctx, moduleReadBucket)
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 	if err != nil {
 		return nil, nil, err
 	}

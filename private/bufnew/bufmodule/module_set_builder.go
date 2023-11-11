@@ -50,7 +50,7 @@ type ModuleSetBuilder interface {
 		bucket storage.ReadBucket,
 		bucketID string,
 		isTargetModule bool,
-		options ...AddModuleForBucketOption,
+		options ...BucketOption,
 	) ModuleSetBuilder
 	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
 	//
@@ -67,7 +67,7 @@ type ModuleSetBuilder interface {
 	AddModuleForModuleKey(
 		moduleKey ModuleKey,
 		isTargetModule bool,
-		options ...AddModuleForModuleKeyOption,
+		options ...ModuleKeyOption,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
 	//
@@ -77,45 +77,67 @@ type ModuleSetBuilder interface {
 	isModuleSetBuilder()
 }
 
-type AddModuleForBucketOption func(*addModuleForBucketOptions)
-
-func AddModuleForBucketWithModuleFullName(moduleFullName ModuleFullName) AddModuleForBucketOption {
-	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
-		addModuleForBucketOptions.moduleFullName = moduleFullName
-	}
-}
-
-func AddModuleForBucketWithCommitID(commitID string) AddModuleForBucketOption {
-	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
-		addModuleForBucketOptions.commitID = commitID
-	}
-}
-
-func AddModuleForBucketWithTargetPaths(
-	targetPaths []string,
-	targetExcludePaths []string,
-) AddModuleForBucketOption {
-	return func(addModuleForBucketOptions *addModuleForBucketOptions) {
-		addModuleForBucketOptions.targetPaths = targetPaths
-		addModuleForBucketOptions.targetExcludePaths = targetExcludePaths
-	}
-}
-
-type AddModuleForModuleKeyOption func(*addModuleForModuleKeyOptions)
-
-func AddModuleForModuleKeyWithTargetPaths(
-	targetPaths []string,
-	targetExcludePaths []string,
-) AddModuleForModuleKeyOption {
-	return func(addModuleForModuleKeyOptions *addModuleForModuleKeyOptions) {
-		addModuleForModuleKeyOptions.targetPaths = targetPaths
-		addModuleForModuleKeyOptions.targetExcludePaths = targetExcludePaths
-	}
-}
-
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
 func NewModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) ModuleSetBuilder {
 	return newModuleSetBuilder(ctx, moduleDataProvider)
+}
+
+type BucketOption func(*bucketOptions)
+
+func BucketWithModuleFullName(moduleFullName ModuleFullName) BucketOption {
+	return func(bucketOptions *bucketOptions) {
+		bucketOptions.moduleFullName = moduleFullName
+	}
+}
+
+func BucketWithCommitID(commitID string) BucketOption {
+	return func(bucketOptions *bucketOptions) {
+		bucketOptions.commitID = commitID
+	}
+}
+
+func BucketWithTargetPaths(
+	targetPaths []string,
+	targetExcludePaths []string,
+) BucketOption {
+	return func(bucketOptions *bucketOptions) {
+		bucketOptions.targetPaths = targetPaths
+		bucketOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+type ModuleKeyOption func(*moduleKeyOptions)
+
+func ModuleKeyWithTargetPaths(
+	targetPaths []string,
+	targetExcludePaths []string,
+) ModuleKeyOption {
+	return func(moduleKeyOptions *moduleKeyOptions) {
+		moduleKeyOptions.targetPaths = targetPaths
+		moduleKeyOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+func NewModuleSetForSingleBucket(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	bucketID string,
+	options ...BucketOption,
+) (ModuleSet, error) {
+	moduleSetBuilder := NewModuleSetBuilder(ctx, NopModuleDataProvider)
+	moduleSetBuilder.AddModuleForBucket(bucket, bucketID, true, options...)
+	return moduleSetBuilder.Build()
+}
+
+func NewModuleSetForSingleModuleKey(
+	ctx context.Context,
+	moduleDataProvider ModuleDataProvider,
+	moduleKey ModuleKey,
+	options ...ModuleKeyOption,
+) (ModuleSet, error) {
+	moduleSetBuilder := NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey, true, options...)
+	return moduleSetBuilder.Build()
 }
 
 /// *** PRIVATE ***
@@ -146,7 +168,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	bucket storage.ReadBucket,
 	bucketID string,
 	isTargetModule bool,
-	options ...AddModuleForBucketOption,
+	options ...BucketOption,
 ) ModuleSetBuilder {
 	if b.buildCalled {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
@@ -156,7 +178,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, errors.New("bucketID is required when calling AddModuleForBucket"))
 		return b
 	}
-	addModuleForBucketOptions := newAddModuleForBucketOptions()
+	addModuleForBucketOptions := newBucketOptions()
 	for _, option := range options {
 		option(addModuleForBucketOptions)
 	}
@@ -190,13 +212,13 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 func (b *moduleSetBuilder) AddModuleForModuleKey(
 	moduleKey ModuleKey,
 	isTargetModule bool,
-	options ...AddModuleForModuleKeyOption,
+	options ...ModuleKeyOption,
 ) ModuleSetBuilder {
 	if b.buildCalled {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
-	addModuleForModuleKeyOptions := newAddModuleForModuleKeyOptions()
+	addModuleForModuleKeyOptions := newModuleKeyOptions()
 	for _, option := range options {
 		option(addModuleForModuleKeyOptions)
 	}
@@ -333,22 +355,22 @@ func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleS
 	return uniqueModuleSetModules, nil
 }
 
-type addModuleForBucketOptions struct {
+type bucketOptions struct {
 	moduleFullName     ModuleFullName
 	commitID           string
 	targetPaths        []string
 	targetExcludePaths []string
 }
 
-func newAddModuleForBucketOptions() *addModuleForBucketOptions {
-	return &addModuleForBucketOptions{}
+func newBucketOptions() *bucketOptions {
+	return &bucketOptions{}
 }
 
-type addModuleForModuleKeyOptions struct {
+type moduleKeyOptions struct {
 	targetPaths        []string
 	targetExcludePaths []string
 }
 
-func newAddModuleForModuleKeyOptions() *addModuleForModuleKeyOptions {
-	return &addModuleForModuleKeyOptions{}
+func newModuleKeyOptions() *moduleKeyOptions {
+	return &moduleKeyOptions{}
 }

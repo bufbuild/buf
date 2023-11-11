@@ -39,7 +39,7 @@ type Builder interface {
 	// now have all this information at the module level.
 	Build(
 		ctx context.Context,
-		module bufmodule.Module,
+		moduleSet bufmodule.ModuleSet,
 		options ...BuildOption,
 	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
