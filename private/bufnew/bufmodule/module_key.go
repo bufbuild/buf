@@ -55,14 +55,29 @@ func NewModuleKey(
 	)
 }
 
+// NewModuleKeyForLazyDigest returns a new ModuleKey, assuming we know all the fields of a ModuleKey already.
+//
+// The Digest will be loaded lazily if needed.
+func NewModuleKeyForLazyDigest(
+	moduleFullName ModuleFullName,
+	commitID string,
+	getDigest func() (bufcas.Digest, error),
+) (ModuleKey, error) {
+	return newModuleKeyForLazyDigest(
+		moduleFullName,
+		commitID,
+		getDigest,
+	)
+}
+
 // *** PRIVATE ***
 
 type moduleKey struct {
 	moduleFullName ModuleFullName
 	commitID       string
 
-	digest     bufcas.Digest
-	digestFunc func() (bufcas.Digest, error)
+	digest    bufcas.Digest
+	getDigest func() (bufcas.Digest, error)
 }
 
 func newModuleKeyForKnownDigest(
@@ -76,17 +91,17 @@ func newModuleKeyForKnownDigest(
 func newModuleKeyForLazyDigest(
 	moduleFullName ModuleFullName,
 	commitID string,
-	digestFunc func() (bufcas.Digest, error),
+	getDigest func() (bufcas.Digest, error),
 ) (*moduleKey, error) {
-	return newModuleKey(moduleFullName, commitID, nil, digestFunc)
+	return newModuleKey(moduleFullName, commitID, nil, getDigest)
 }
 
-// Exactly one of digest and digestFunc should be set.
+// Exactly one of digest and getDigest should be set.
 func newModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
 	digest bufcas.Digest,
-	digestFunc func() (bufcas.Digest, error),
+	getDigest func() (bufcas.Digest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
@@ -94,20 +109,20 @@ func newModuleKey(
 	if commitID == "" {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
-	if digest != nil && digestFunc != nil {
-		return nil, errors.New("cannot set both digest and digestFunc when constructing ModuleKey")
+	if digest != nil && getDigest != nil {
+		return nil, errors.New("cannot set both digest and getDigest when constructing ModuleKey")
 	}
-	if digest == nil && digestFunc == nil {
-		return nil, errors.New("nil digest and digestFunc when constructing ModuleKey")
+	if digest == nil && getDigest == nil {
+		return nil, errors.New("nil digest and getDigest when constructing ModuleKey")
 	}
-	if digestFunc != nil {
-		digestFunc = sync.OnceValues(digestFunc)
+	if getDigest != nil {
+		getDigest = sync.OnceValues(getDigest)
 	}
 	return &moduleKey{
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
 		digest:         digest,
-		digestFunc:     digestFunc,
+		getDigest:      getDigest,
 	}, nil
 }
 
@@ -123,7 +138,7 @@ func (m *moduleKey) Digest() (bufcas.Digest, error) {
 	if m.digest != nil {
 		return m.digest, nil
 	}
-	return m.digestFunc()
+	return m.getDigest()
 }
 
 func (*moduleKey) isModuleKey() {}
