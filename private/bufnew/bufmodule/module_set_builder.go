@@ -118,28 +118,6 @@ func ModuleKeyWithTargetPaths(
 	}
 }
 
-func NewModuleSetForSingleBucket(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	bucketID string,
-	options ...BucketOption,
-) (ModuleSet, error) {
-	moduleSetBuilder := NewModuleSetBuilder(ctx, NopModuleDataProvider)
-	moduleSetBuilder.AddModuleForBucket(bucket, bucketID, true, options...)
-	return moduleSetBuilder.Build()
-}
-
-func NewModuleSetForSingleModuleKey(
-	ctx context.Context,
-	moduleDataProvider ModuleDataProvider,
-	moduleKey ModuleKey,
-	options ...ModuleKeyOption,
-) (ModuleSet, error) {
-	moduleSetBuilder := NewModuleSetBuilder(ctx, moduleDataProvider)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, true, options...)
-	return moduleSetBuilder.Build()
-}
-
 /// *** PRIVATE ***
 
 // moduleSetBuilder

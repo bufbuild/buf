@@ -29,6 +29,6 @@ func newInputFile(imageFile bufimage.ImageFile) *inputFile {
 	}
 }
 
-func (i *inputFile) ModuleIdentity() protosource.ModuleIdentity {
-	return i.ImageFile.ModuleIdentity()
+func (i *inputFile) ModuleFullName() protosource.ModuleFullName {
+	return i.ImageFile.ModuleFullName()
 }

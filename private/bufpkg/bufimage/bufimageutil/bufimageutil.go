@@ -43,8 +43,8 @@ var (
 
 // NewInputFiles converts the ImageFiles to InputFiles.
 //
-// Since protosource is a pkg package, it cannot depend on bufmoduleref, which has the
-// definition for bufmoduleref.ModuleIdentity, so we have our own interfaces for this
+// Since protosource is a pkg package, it cannot depend on bufmodule, which has the
+// definition for bufmodule.ModuleFullName, so we have our own interfaces for this
 // in protosource. Given Go's type system, we need to do a conversion here.
 func NewInputFiles(imageFiles []bufimage.ImageFile) []protosource.InputFile {
 	inputFiles := make([]protosource.InputFile, len(imageFiles))

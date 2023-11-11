@@ -23,12 +23,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -299,10 +297,10 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
-		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
-		_, _, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader()).Build(
+		moduleSet := testGetModuleSet(t, filepath.Join("testdata", "optionpanic"))
+		_, _, err := NewBuilder(zap.NewNop()).Build(
 			context.Background(),
-			module,
+			moduleSet,
 		)
 		require.NoError(t, err)
 	})
@@ -333,36 +331,34 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
-	module := testGetModule(t, dirPath)
+	moduleSet := testGetModuleSet(t, dirPath)
 	var options []BuildOption
 	if !includeSourceInfo {
 		options = append(options, WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader()).Build(
+	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
-		module,
+		moduleSet,
 		options...,
 	)
 	require.NoError(t, err)
 	return image, fileAnnotations
 }
 
-func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
+func testGetModuleSet(t *testing.T, dirPath string) bufmodule.ModuleSet {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
-	require.NoError(t, err)
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	moduleSet, err := bufmodule.NewModuleSetForSingleBucket(
 		context.Background(),
 		readWriteBucket,
-		config,
+		dirPath,
 	)
 	require.NoError(t, err)
-	return module
+	return moduleSet
 }
 
 func testGetImageFilePaths(image bufimage.Image) []string {

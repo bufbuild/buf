@@ -169,11 +169,11 @@ type Location interface {
 	LeadingDetachedComments() []string
 }
 
-// ModuleIdentity is a module identity.
-type ModuleIdentity interface {
-	Remote() string
+// ModuleFullName is a module full name.
+type ModuleFullName interface {
+	Registry() string
 	Owner() string
-	Repository() string
+	Name() string
 }
 
 // FileInfo contains Protobuf file info.
@@ -194,18 +194,18 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// ModuleIdentity is the module that this file came from.
+	// ModuleFullName is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleIdentity() ModuleIdentity
-	// Commit is the commit for the module that this file came from.
+	ModuleFullName() ModuleFullName
+	// CommitID is the commit for the module that this file came from.
 	//
-	// This will only be set if ModuleIdentity is set, but may not be set
-	// even if ModuleIdentity is set, that is commit is optional information
+	// This will only be set if ModuleFullName is set, but may not be set
+	// even if ModuleFullName is set, that is commit is optional information
 	// even if we know what module this file came from.
-	Commit() string
+	CommitID() string
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 }

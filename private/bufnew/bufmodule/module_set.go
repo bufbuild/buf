@@ -15,6 +15,7 @@
 package bufmodule
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -22,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
@@ -55,6 +57,28 @@ type ModuleSet interface {
 	GetModuleForDigest(digest bufcas.Digest) (Module, error)
 
 	isModuleSet()
+}
+
+func NewModuleSetForSingleBucket(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	bucketID string,
+	options ...BucketOption,
+) (ModuleSet, error) {
+	moduleSetBuilder := NewModuleSetBuilder(ctx, NopModuleDataProvider)
+	moduleSetBuilder.AddModuleForBucket(bucket, bucketID, true, options...)
+	return moduleSetBuilder.Build()
+}
+
+func NewModuleSetForSingleModuleKey(
+	ctx context.Context,
+	moduleDataProvider ModuleDataProvider,
+	moduleKey ModuleKey,
+	options ...ModuleKeyOption,
+) (ModuleSet, error) {
+	moduleSetBuilder := NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder.AddModuleForModuleKey(moduleKey, true, options...)
+	return moduleSetBuilder.Build()
 }
 
 // ModuleSetToModuleReadBucketWithOnlyProtoFiles converts the ModuleSet to a
