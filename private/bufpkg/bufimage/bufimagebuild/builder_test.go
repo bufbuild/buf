@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/testingextended"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/assert"
@@ -297,8 +296,9 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
-		moduleSet := testGetModuleSet(t, filepath.Join("testdata", "optionpanic"))
-		_, _, err := NewBuilder(zap.NewNop()).Build(
+		moduleSet, err := bufmoduletest.NewModuleSetForDirPath(filepath.Join("testdata", "optionpanic"))
+		require.NoError(t, err)
+		_, _, err = NewBuilder(zap.NewNop()).Build(
 			context.Background(),
 			moduleSet,
 		)
@@ -331,7 +331,8 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
-	moduleSet := testGetModuleSet(t, dirPath)
+	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
+	require.NoError(t, err)
 	var options []BuildOption
 	if !includeSourceInfo {
 		options = append(options, WithExcludeSourceCodeInfo())
@@ -343,22 +344,6 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.I
 	)
 	require.NoError(t, err)
 	return image, fileAnnotations
-}
-
-func testGetModuleSet(t *testing.T, dirPath string) bufmodule.ModuleSet {
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		dirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-	moduleSet, err := bufmodule.NewModuleSetForSingleBucket(
-		context.Background(),
-		readWriteBucket,
-		dirPath,
-	)
-	require.NoError(t, err)
-	return moduleSet
 }
 
 func testGetImageFilePaths(image bufimage.Image) []string {

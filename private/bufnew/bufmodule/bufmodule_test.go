@@ -30,11 +30,9 @@ func TestBasic(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	testBSRProvider, err := bufmoduletest.NewTestProvider(
-		ctx,
-		map[string]bufmoduletest.TestModuleData{
+	bsrProvider, err := bufmoduletest.NewOmniProvider(
+		map[string]bufmoduletest.ModuleData{
 			"buf.build/foo/extdep1": {
-				CommitID: "extdep1commit",
 				PathToData: map[string][]byte{
 					"extdep1.proto": []byte(
 						`syntax = proto3; package extdep1;`,
@@ -42,7 +40,6 @@ func TestBasic(t *testing.T) {
 				},
 			},
 			"buf.build/foo/extdep2": {
-				CommitID: "extdep2commit",
 				PathToData: map[string][]byte{
 					"extdep2.proto": []byte(
 						`syntax = proto3; package extdep2; import "extdep1.proto";`,
@@ -50,7 +47,6 @@ func TestBasic(t *testing.T) {
 				},
 			},
 			"buf.build/foo/extdep3": {
-				CommitID: "extdep3commit",
 				PathToData: map[string][]byte{
 					"extdep3.proto": []byte(
 						`syntax = proto3; package extdep3;`,
@@ -61,7 +57,6 @@ func TestBasic(t *testing.T) {
 			//
 			// This one will import from extdep2 instead of the workspace importing from extdep1.
 			"buf.build/bar/module2": {
-				CommitID: "module2commit",
 				PathToData: map[string][]byte{
 					"module2.proto": []byte(
 						`syntax = proto3; package module2; import "extdep2.proto";`,
@@ -70,29 +65,30 @@ func TestBasic(t *testing.T) {
 			},
 		},
 	)
+	require.NoError(t, err)
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, testBSRProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bsrProvider)
 
-	// Remember, the testBSRProvider is just acting like a BSR; if we actually want to
+	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
 	moduleRef, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
 	require.NoError(t, err)
-	moduleKey, err := testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleKey, err := bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
-	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
-	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
-	moduleKey, err = testBSRProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
 	require.NoError(t, err)
 	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
 

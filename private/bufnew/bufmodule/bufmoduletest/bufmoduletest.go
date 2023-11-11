@@ -23,101 +23,139 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
-// TestProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
-type TestProvider interface {
+// ModuleData is the data needed to construct a Module in test.
+//
+// Exactly one of PathToData, Bucket, DirPath must be set.
+//
+// CommitID is optional, and can be any string, but it must be unique across all ModuleDatas.
+// If CommitID is not set, a mock commitID is created.
+type ModuleData struct {
+	DirPath    string
+	PathToData map[string][]byte
+	Bucket     storage.ReadBucket
+	CommitID   string
+}
+
+// OmniProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
+type OmniProvider interface {
 	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleDataProvider
 	bufmodule.ModuleSet
 }
 
-// TestModuleData is the data needed to construct a Module in test.
-type TestModuleData struct {
-	// Exactly one of PathToData or Bucket must be set.
-	PathToData map[string][]byte
-	// Exactly one of PathToData or Bucket must be set.
-	Bucket storage.ReadBucket
-	// CommitID can be any string, but it must be unique across all TestModuleDatas.
-	//
-	// If not set, a mock commitID is created.
-	CommitID string
+// NewOmniProvider returns a new OmniProvider.
+func NewOmniProvider(
+	moduleFullNameStringToModuleData map[string]ModuleData,
+) (OmniProvider, error) {
+	return newOmniProvider(moduleFullNameStringToModuleData)
 }
 
-// NewTestProvider returns a new TestProvider.
-func NewTestProvider(
-	ctx context.Context,
-	moduleFullNameStringToTestModuleData map[string]TestModuleData,
-) (TestProvider, error) {
-	return newTestProvider(ctx, moduleFullNameStringToTestModuleData)
+// NewModuleSet returns a new ModuleSet.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+func NewModuleSet(
+	moduleDatas ...ModuleData,
+) (bufmodule.ModuleSet, error) {
+	return newModuleSet(moduleDatas)
+}
+
+// NewModuleSetForDirPath returns a new ModuleSet for the directory path.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+func NewModuleSetForDirPath(
+	dirPath string,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			DirPath: dirPath,
+		},
+	)
+}
+
+// NewModuleSetForPathToData returns a new ModuleSet for the path to data map.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+func NewModuleSetForPathToData(
+	pathToData map[string][]byte,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			PathToData: pathToData,
+		},
+	)
+}
+
+// NewModuleSetForBucket returns a new ModuleSet for the Bucket.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+func NewModuleSetForBucket(
+	bucket storage.ReadBucket,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			Bucket: bucket,
+		},
+	)
 }
 
 // *** PRIVATE ***
 
-type testProvider struct {
+type omniProvider struct {
 	bufmodule.ModuleSet
 }
 
-func newTestProvider(
-	ctx context.Context,
-	moduleFullNameStringToTestModuleData map[string]TestModuleData,
-) (*testProvider, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+func newOmniProvider(
+	moduleFullNameStringToModuleData map[string]ModuleData,
+) (*omniProvider, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), bufmodule.NopModuleDataProvider)
 	i := 0
-	for moduleFullNameString, testModuleData := range moduleFullNameStringToTestModuleData {
+	for moduleFullNameString, moduleData := range moduleFullNameStringToModuleData {
 		moduleFullName, err := bufmodule.ParseModuleFullName(moduleFullNameString)
 		if err != nil {
 			return nil, err
 		}
-		if testModuleData.Bucket == nil && len(testModuleData.PathToData) == 0 {
-			return nil, errors.New("one of TestModuleData.Bucket or TestModuleData.PathToData must be set")
+		if err := addModuleDataToModuleSetBuilder(
+			moduleSetBuilder,
+			moduleData,
+			moduleFullName,
+			i,
+		); err != nil {
+			return nil, err
 		}
-		if testModuleData.Bucket != nil && len(testModuleData.PathToData) > 0 {
-			return nil, errors.New("only one of TestModuleData.Bucket or TestModuleData.PathToData must be set")
-		}
-		bucket := testModuleData.Bucket
-		if bucket == nil {
-			bucket, err = storagemem.NewReadBucket(testModuleData.PathToData)
-			if err != nil {
-				return nil, err
-			}
-		}
-		moduleSetBuilder.AddModuleForBucket(
-			bucket,
-			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory.
-			fmt.Sprintf("testProviderBucket-%s-%d", moduleFullNameString, i),
-			false,
-			bufmodule.BucketWithModuleFullName(moduleFullName),
-			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
-			bufmodule.BucketWithCommitID(fmt.Sprintf("testProviderCommit-%s-%d", moduleFullNameString, i)),
-		)
 		i++
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
-	return &testProvider{
+	return &omniProvider{
 		ModuleSet: moduleSet,
 	}, nil
 }
 
-func (t *testProvider) GetModuleKeyForModuleRef(
+func (o *omniProvider) GetModuleKeyForModuleRef(
 	ctx context.Context,
 	moduleRef bufmodule.ModuleRef,
 ) (bufmodule.ModuleKey, error) {
-	module := t.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+	module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 	if module == nil {
 		return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
 	}
 	return bufmodule.ModuleToModuleKey(module)
 }
 
-func (t *testProvider) GetModuleDataForModuleKey(
+func (o *omniProvider) GetModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
-	module := t.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
 	if module == nil {
 		return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
 	}
@@ -139,4 +177,86 @@ func (t *testProvider) GetModuleDataForModuleKey(
 			)
 		},
 	)
+}
+
+func newModuleSet(moduleDatas []ModuleData) (bufmodule.ModuleSet, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), bufmodule.NopModuleDataProvider)
+	i := 0
+	for _, moduleData := range moduleDatas {
+		if err := addModuleDataToModuleSetBuilder(
+			moduleSetBuilder,
+			moduleData,
+			nil,
+			i,
+		); err != nil {
+			return nil, err
+		}
+		i++
+	}
+	return moduleSetBuilder.Build()
+}
+
+func addModuleDataToModuleSetBuilder(
+	moduleSetBuilder bufmodule.ModuleSetBuilder,
+	moduleData ModuleData,
+	moduleFullName bufmodule.ModuleFullName,
+	index int,
+) error {
+	if boolCount(
+		moduleData.DirPath != "",
+		moduleData.PathToData != nil,
+		moduleData.Bucket != nil,
+	) != 1 {
+		return errors.New("exactly one of Bucket, PathToData, DirPath must be set on ModuleData")
+	}
+	var bucket storage.ReadBucket
+	var bucketID string
+	var err error
+	switch {
+	case moduleData.DirPath != "":
+		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+		bucket, err = storageosProvider.NewReadWriteBucket(
+			moduleData.DirPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return err
+		}
+		bucketID = moduleData.DirPath
+	case moduleData.PathToData != nil:
+		bucket, err = storagemem.NewReadBucket(moduleData.PathToData)
+		if err != nil {
+			return err
+		}
+		bucketID = fmt.Sprintf("omniProviderBucket-%d", index)
+	case moduleData.Bucket != nil:
+		bucket = moduleData.Bucket
+		bucketID = fmt.Sprintf("omniProviderBucket-%d", index)
+	default:
+		// Should never get here.
+		return errors.New("boolCount returned 1 but all ModuleData fields were nil")
+	}
+	commitID := moduleData.CommitID
+	if commitID == "" {
+		// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
+		commitID = fmt.Sprintf("omniProviderCommit-%d", index)
+	}
+	moduleSetBuilder.AddModuleForBucket(
+		bucket,
+		bucketID,
+		true,
+		bufmodule.BucketWithModuleFullName(moduleFullName),
+		bufmodule.BucketWithCommitID(commitID),
+	)
+	return nil
+}
+
+func boolCount(bools ...bool) int {
+	count := 0
+	for _, b := range bools {
+		if b {
+			count++
+		}
+	}
+	return count
 }

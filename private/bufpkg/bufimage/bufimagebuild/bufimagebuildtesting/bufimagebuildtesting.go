@@ -21,14 +21,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -90,30 +89,13 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 // fuzzBuild does a builder.Build for a fuzz test.
 func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	module, err := fuzzGetModuleSet(ctx, dirPath)
+	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
 	if err != nil {
 		return nil, nil, err
 	}
 	builder := bufimagebuild.NewBuilder(zap.NewNop())
 	opt := bufimagebuild.WithExcludeSourceCodeInfo()
-	return builder.Build(ctx, module, opt)
-}
-
-// fuzzGetModuleSet gets the bufmodule.ModuleSet for a fuzz test.
-func fuzzGetModuleSet(ctx context.Context, dirPath string) (bufmodule.ModuleSet, error) {
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		dirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleSetForSingleBucket(
-		ctx,
-		readWriteBucket,
-		dirPath,
-	)
+	return builder.Build(ctx, moduleSet, opt)
 }
 
 // txtarParse is a wrapper around txtar.Parse that will turn panics into errors.
