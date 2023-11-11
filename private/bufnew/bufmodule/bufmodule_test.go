@@ -73,26 +73,25 @@ func TestBasic(t *testing.T) {
 
 	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
-	moduleRef, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
+	moduleRefExtdep1, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
 	require.NoError(t, err)
-	moduleKey, err := bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleRefExtdep2, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
-	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep2", "")
+	moduleRefExtdep3, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
-	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
+	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
-	moduleRef, err = bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
+	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
+		ctx,
+		moduleRefExtdep1,
+		moduleRefExtdep2,
+		moduleRefExtdep3,
+		moduleRefModule2,
+	)
 	require.NoError(t, err)
-	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
-	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
-	moduleRef, err = bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
-	require.NoError(t, err)
-	moduleKey, err = bsrProvider.GetModuleKeyForModuleRef(ctx, moduleRef)
-	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
+	for _, moduleKey := range moduleKeys {
+		moduleSetBuilder.AddModuleForModuleKey(moduleKey, false)
+	}
 
 	// This module has no name but is part of the workspace.
 	moduleSetBuilder.AddModuleForBucket(

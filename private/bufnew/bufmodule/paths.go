@@ -38,6 +38,7 @@ var (
 		"README.markdown",
 	}
 
+	// docFilePathMap is a map of all valid documentation file paths.
 	docFilePathMap map[string]struct{}
 )
 
@@ -61,14 +62,4 @@ func getDocFilePathForModuleReadBucket(ctx context.Context, bucket ModuleReadBuc
 		}
 	}
 	return ""
-}
-
-func allDocFilePathsExcept(exceptDocFilePath string) []string {
-	docFilePaths := make([]string, 0, len(orderedDocFilePaths)-1)
-	for _, docFilePath := range orderedDocFilePaths {
-		if docFilePath != exceptDocFilePath {
-			docFilePaths = append(docFilePaths, docFilePath)
-		}
-	}
-	return docFilePaths
 }

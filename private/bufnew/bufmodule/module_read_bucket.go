@@ -80,7 +80,9 @@ func WalkFileInfosWithOnlyTargetFiles() WalkFileInfosOption {
 
 // ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
 //
-// All target and non-target files are added.
+// All target and non-target Files are added.
+//
+// TODO: Add an option to allow only target Files to be added, if we require such a function.
 func ModuleReadBucketToStorageReadBucket(bucket ModuleReadBucket) storage.ReadBucket {
 	return newStorageReadBucket(bucket)
 }

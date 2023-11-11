@@ -59,17 +59,19 @@ type ModuleSet interface {
 	// Returns an error if there was an error when calling Digest() on a Module.
 	GetModuleForDigest(digest bufcas.Digest) (Module, error)
 
-	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet..
+	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet.
 	//
 	// This should only be used by Modules, and only for dependency calculations.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
-	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet..
+	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet.
 	//
 	// This should only be used by Modules, and only for dependency calculations.
 	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
 	isModuleSet()
 }
 
+// NewModuleSetForSingleBucket is a convenience function that constructs a new ModuleSet with
+// a single targeted Module, based on the bucket.
 func NewModuleSetForSingleBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -81,6 +83,8 @@ func NewModuleSetForSingleBucket(
 	return moduleSetBuilder.Build()
 }
 
+// NewModuleSetForSingleBucket is a convenience function that constructs a new ModuleSet with
+// a single targeted Module, based on the ModuleKey.
 func NewModuleSetForSingleModuleKey(
 	ctx context.Context,
 	moduleDataProvider ModuleDataProvider,

@@ -127,43 +127,57 @@ func newOmniProvider(
 	}, nil
 }
 
-func (o *omniProvider) GetModuleKeyForModuleRef(
+func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRef bufmodule.ModuleRef,
-) (bufmodule.ModuleKey, error) {
-	module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
-	if module == nil {
-		return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
+	moduleRefs ...bufmodule.ModuleRef,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	for i, moduleRef := range moduleRefs {
+		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+		if module == nil {
+			return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
+		}
+		moduleKey, err := bufmodule.ModuleToModuleKey(module)
+		return nil, err
+		moduleKeys[i] = moduleKey
 	}
-	return bufmodule.ModuleToModuleKey(module)
+	return moduleKeys, nil
 }
 
-func (o *omniProvider) GetModuleDataForModuleKey(
+func (o *omniProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKey bufmodule.ModuleKey,
-) (bufmodule.ModuleData, error) {
-	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
-	if module == nil {
-		return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
+	moduleKeys ...bufmodule.ModuleKey,
+) ([]bufmodule.ModuleData, error) {
+	moduleDatas := make([]bufmodule.ModuleData, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+		if module == nil {
+			return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
+		}
+		moduleData, err := bufmodule.NewModuleData(
+			moduleKey,
+			func() (storage.ReadBucket, error) {
+				return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
+			},
+			func() ([]bufmodule.ModuleKey, error) {
+				moduleDeps, err := module.ModuleDeps()
+				if err != nil {
+					return nil, err
+				}
+				return slicesextended.MapError(
+					moduleDeps,
+					func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
+						return bufmodule.ModuleToModuleKey(moduleDep)
+					},
+				)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleDatas[i] = moduleData
 	}
-	return bufmodule.NewModuleData(
-		moduleKey,
-		func() (storage.ReadBucket, error) {
-			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
-		},
-		func() ([]bufmodule.ModuleKey, error) {
-			moduleDeps, err := module.ModuleDeps()
-			if err != nil {
-				return nil, err
-			}
-			return slicesextended.MapError(
-				moduleDeps,
-				func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
-					return bufmodule.ModuleToModuleKey(moduleDep)
-				},
-			)
-		},
-	)
+	return moduleDatas, nil
 }
 
 func newModuleSet(moduleDatas []ModuleData, requireName bool) (bufmodule.ModuleSet, error) {
@@ -248,11 +262,5 @@ func addModuleDataToModuleSetBuilder(
 }
 
 func boolCount(bools ...bool) int {
-	count := 0
-	for _, b := range bools {
-		if b {
-			count++
-		}
-	}
-	return count
+	return slicesextended.Count(bools, func(value bool) bool { return value })
 }

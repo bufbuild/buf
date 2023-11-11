@@ -17,6 +17,7 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"sync/atomic"
 
@@ -85,14 +86,20 @@ func NewModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvi
 	return newModuleSetBuilder(ctx, moduleDataProvider)
 }
 
+// BucketOption is an option for AddModuleForBucket.
 type BucketOption func(*bucketOptions)
 
+// BucketWithModuleFullName returns a new BucketOption that adds the given ModuleFullName to the result Module.
+//
+// Use BucketWithModuleFullNameAndCommitID if you'd also like to add a CommitID.
 func BucketWithModuleFullName(moduleFullName ModuleFullName) BucketOption {
 	return func(bucketOptions *bucketOptions) {
 		bucketOptions.moduleFullName = moduleFullName
 	}
 }
 
+// BucketWithModuleFullName returns a new BucketOption that adds the given ModuleFullName and CommitID
+// to the result Module.
 func BucketWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID string) BucketOption {
 	return func(bucketOptions *bucketOptions) {
 		bucketOptions.moduleFullName = moduleFullName
@@ -100,6 +107,11 @@ func BucketWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID
 	}
 }
 
+// BucketWithTargetPaths returns a new BucketOption that specifically targets the given paths, and
+// specifically excludes the given paths.
+//
+// Only valid for a targeted Module. If this option is given to a non-target Module, this will
+// result in an error during Build().
 func BucketWithTargetPaths(
 	targetPaths []string,
 	targetExcludePaths []string,
@@ -110,8 +122,14 @@ func BucketWithTargetPaths(
 	}
 }
 
+// ModuleKeyOption is an option for AddModuleForModuleKey.
 type ModuleKeyOption func(*moduleKeyOptions)
 
+// ModuleKeyWithTargetPaths returns a new ModuleKeyOption that specifically targets the given paths, and
+// specifically excludes the given paths.
+//
+// Only valid for a targeted Module. If this option is given to a non-target Module, this will
+// result in an error during Build().
 func ModuleKeyWithTargetPaths(
 	targetPaths []string,
 	targetExcludePaths []string,
@@ -211,11 +229,16 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForModuleKey"))
 		return b
 	}
-	moduleData, err := b.moduleDataProvider.GetModuleDataForModuleKey(b.ctx, moduleKey)
+	// TODO: we could defer all this work to build, and coalesce ModuleKeys into a single call.
+	moduleDatas, err := b.moduleDataProvider.GetModuleDatasForModuleKeys(b.ctx, moduleKey)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
+	if len(moduleDatas) != 1 {
+		b.errs = append(b.errs, fmt.Errorf("expected 1 ModuleData, got %d", len(moduleDatas)))
+	}
+	moduleData := moduleDatas[0]
 	module, err := newModule(
 		b.ctx,
 		moduleData.Bucket,

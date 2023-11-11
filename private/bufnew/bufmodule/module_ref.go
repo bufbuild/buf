@@ -49,6 +49,7 @@ type ModuleRef interface {
 	isModuleRef()
 }
 
+// NewModuleRef returns a new ModuleRef for the given compoonents.
 func NewModuleRef(
 	registry string,
 	owner string,
@@ -62,6 +63,7 @@ func NewModuleRef(
 	return newModuleRef(moduleFullName, ref)
 }
 
+// ParseModuleRef parses a ModuleRef from a string in the form "registry/owner/name[:ref]".
 func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
 	registry, owner, name, ref, err := parseModuleRefComponents(moduleRefString)
 	if err != nil {
@@ -72,7 +74,7 @@ func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
 
 // *** PRIVATE ***
 
-// TODO: deal with Main
+// TODO: deal with Main, there were special rules for this previously.
 
 type moduleRef struct {
 	moduleFullName ModuleFullName
