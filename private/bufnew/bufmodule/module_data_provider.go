@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
 	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
@@ -224,13 +225,111 @@ func (a *apiModuleDataProvider) getBucketForProtoFileNodes(
 	return bucket, nil
 }
 
+// TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
+// We can do this later if we want to optimize. There's other coalescing we could do inside
+// this function too (single call for one moduleID, single call for one ownerID, get
+// multiple moduleIDs at once, multiple ownerIDs at once, etc). Lots of room for optimization.
 func (a *apiModuleDataProvider) getModuleKeysForProtoCommits(
 	ctx context.Context,
 	registryHostname string,
 	protoCommits []*modulev1beta1.Commit,
 ) ([]ModuleKey, error) {
-	// TODO
-	return nil, errors.New("TODO")
+	moduleKeys := make([]ModuleKey, len(protoCommits))
+	for i, protoCommit := range protoCommits {
+		moduleKey, err := a.getModuleKeyForProtoCommit(ctx, registryHostname, protoCommit)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[i] = moduleKey
+	}
+	return moduleKeys, nil
+}
+
+func (a *apiModuleDataProvider) getModuleKeyForProtoCommit(
+	ctx context.Context,
+	registryHostname string,
+	protoCommit *modulev1beta1.Commit,
+) (ModuleKey, error) {
+	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
+	if err != nil {
+		return nil, err
+	}
+	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
+	if err != nil {
+		return nil, err
+	}
+	var ownerName string
+	switch {
+	case protoOwner.GetUser() != nil:
+		ownerName = protoOwner.GetUser().Name
+	case protoOwner.GetOrganization() != nil:
+		ownerName = protoOwner.GetOrganization().Name
+	default:
+		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
+	}
+	moduleFullName, err := newModuleFullName(
+		registryHostname,
+		ownerName,
+		protoModule.Name,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newModuleKeyForLazyDigest(
+		moduleFullName,
+		protoCommit.Id,
+		func() (bufcas.Digest, error) {
+			return bufcas.ProtoToDigest(protoCommit.Digest)
+		},
+	)
+}
+
+func (a *apiModuleDataProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
+	response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
+		ctx,
+		connect.NewRequest(
+			&modulev1beta1.GetModulesRequest{
+				ModuleRefs: []*modulev1beta1.ModuleRef{
+					{
+						Value: &modulev1beta1.ModuleRef_Id{
+							Id: moduleID,
+						},
+					},
+				},
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Msg.Modules) != 1 {
+		return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
+	}
+	return response.Msg.Modules[0], nil
+}
+
+func (a *apiModuleDataProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
+	response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
+		ctx,
+		connect.NewRequest(
+			&ownerv1beta1.GetOwnersRequest{
+				OwnerRefs: []*ownerv1beta1.OwnerRef{
+					{
+						Value: &ownerv1beta1.OwnerRef_Id{
+							Id: ownerID,
+						},
+					},
+				},
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Msg.Owners) != 1 {
+		return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+	}
+	return response.Msg.Owners[0], nil
 }
 
 // nopModuleDataProvider
