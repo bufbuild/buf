@@ -96,8 +96,7 @@ type Module interface {
 	// Modules directly returned from a ModuleProvider will always be marked as targets.
 	// Modules created file ModuleSetBuilders may or may not be marked as targets.
 	//
-	// Files within a targeted Module can be targets or non-targets themselves
-	// (non-target = import).
+	// Files within a targeted Module can be targets or non-targets themselves (non-target = import).
 	// FileInfos have a function IsTargetFile() to denote if they are targets.
 	// Note that no Files from a Module will have IsTargetFile() set to true if
 	// Module.IsTargetModule() is false.
@@ -110,9 +109,10 @@ type Module interface {
 	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
 	// constructed from a ModuleSet.
 	//
-	// May be nil. If the Module was solely retrieved from a ModuleProvider, this will be nil.
+	// Always present.
 	ModuleSet() ModuleSet
 
+	// Called in ModuleSetBuilder.Build().
 	setModuleSet(ModuleSet)
 	isModule()
 }
@@ -142,21 +142,6 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	), nil
 }
 
-// ModuleToModuleReadBucketWithOnlyProtoFilesIncludingAllDeps converts the Module into a new ModuleReadBucket
-// that not only has the .proto files from the Module, but also has the .proto files from all the Module's dependencies.
-//
-// The input Module must be a targeted Module.
-//
-// All the files from the dependencies will be non-targets; only the files from the input Module will
-// be targets.
-//
-// All the files in the resulting ModuleReadBucket will be .proto files.
-//
-// TODO: is this actually needed? We may want to work just in terms of ModuleSets.
-func ModuleToModuleReadBucketWithOnlyProtoFilesIncludingAllDeps(module Module) (ModuleReadBucket, error) {
-	return nil, errors.New("TODO")
-}
-
 // *** PRIVATE ***
 
 // module
@@ -164,15 +149,14 @@ func ModuleToModuleReadBucketWithOnlyProtoFilesIncludingAllDeps(module Module) (
 type module struct {
 	ModuleReadBucket
 
-	cache          *cache
+	getBucket      func() (storage.ReadBucket, error)
 	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
-
 	isTargetModule bool
-	moduleSet      ModuleSet
 
-	getBucket     func() (storage.ReadBucket, error)
+	moduleSet ModuleSet
+
 	getDigest     func() (bufcas.Digest, error)
 	getModuleDeps func() ([]ModuleDep, error)
 }
@@ -180,7 +164,6 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
-	cache *cache,
 	getBucket func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
@@ -194,7 +177,6 @@ func newModule(
 		return nil, errors.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
 	module := &module{
-		cache:          cache,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -214,7 +196,7 @@ func newModule(
 	)
 	module.getModuleDeps = sync.OnceValues(
 		func() ([]ModuleDep, error) {
-			return getModuleDeps(ctx, module.cache, module)
+			return getModuleDeps(ctx, module)
 		},
 	)
 	return module, nil
@@ -293,7 +275,7 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	}
 
 	// NewDigestForDigests deals with sorting.
-	// TODO: what about digest type?
+	// TODO: what about digest type? We likely need a new B5 type.
 	return bufcas.NewDigestForDigests(digests)
 }
 
@@ -338,13 +320,11 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(
 	ctx context.Context,
-	cache *cache,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
 	if err := getModuleDepsRec(
 		ctx,
-		cache,
 		module,
 		make(map[string]struct{}),
 		depOpaqueIDToModuleDep,
@@ -368,9 +348,7 @@ func getModuleDeps(
 
 func getModuleDepsRec(
 	ctx context.Context,
-	cache *cache,
 	module Module,
-	// to detect circular imports
 	visitedOpaqueIDs map[string]struct{},
 	// already discovered deps
 	depOpaqueIDToModuleDep map[string]ModuleDep,
@@ -382,6 +360,11 @@ func getModuleDepsRec(
 		return nil
 	}
 	visitedOpaqueIDs[opaqueID] = struct{}{}
+	moduleSet := module.ModuleSet()
+	if moduleSet == nil {
+		// This should never happen.
+		return errors.New("moduleSet never set on module")
+	}
 	// Doing this BFS so we add all the direct deps to the map first, then if we
 	// see a dep later, it will still be a direct dep in the map, but will be ignored
 	// on recursive calls.
@@ -389,12 +372,12 @@ func getModuleDepsRec(
 	if err := ModuleReadBucketWithOnlyProtoFiles(module).WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
-			imports, err := cache.GetImportsForFilePath(ctx, fileInfo.Path())
+			imports, err := moduleSet.getImportsForFilePath(ctx, fileInfo.Path())
 			if err != nil {
 				return err
 			}
 			for imp := range imports {
-				potentialModuleDep, err := cache.GetModuleForFilePath(ctx, imp)
+				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
 				if err != nil {
 					return err
 				}
@@ -417,7 +400,6 @@ func getModuleDepsRec(
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
-			cache,
 			newModuleDep,
 			visitedOpaqueIDs,
 			depOpaqueIDToModuleDep,

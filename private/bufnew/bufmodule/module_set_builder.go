@@ -18,7 +18,9 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -91,8 +93,9 @@ func BucketWithModuleFullName(moduleFullName ModuleFullName) BucketOption {
 	}
 }
 
-func BucketWithCommitID(commitID string) BucketOption {
+func BucketWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID string) BucketOption {
 	return func(bucketOptions *bucketOptions) {
+		bucketOptions.moduleFullName = moduleFullName
 		bucketOptions.commitID = commitID
 	}
 }
@@ -127,19 +130,15 @@ type moduleSetBuilder struct {
 	ctx                context.Context
 	moduleDataProvider ModuleDataProvider
 
-	cache *cache
-
 	moduleSetModules []*moduleSetModule
 	errs             []error
-	buildCalled      bool
+	buildCalled      atomic.Bool
 }
 
 func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) *moduleSetBuilder {
-	cache := newCache()
 	return &moduleSetBuilder{
 		ctx:                ctx,
 		moduleDataProvider: moduleDataProvider,
-		cache:              cache,
 	}
 }
 
@@ -149,7 +148,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	isTargetModule bool,
 	options ...BucketOption,
 ) ModuleSetBuilder {
-	if b.buildCalled {
+	if b.buildCalled.Load() {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
@@ -165,9 +164,12 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, errors.New("cannot set commitID without ModuleFullName when calling AddModuleForBucket"))
 		return b
 	}
+	if !isTargetModule && (len(bucketOptions.targetPaths) > 0 || len(bucketOptions.targetExcludePaths) > 0) {
+		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForBucket"))
+		return b
+	}
 	module, err := newModule(
 		b.ctx,
-		b.cache,
 		func() (storage.ReadBucket, error) {
 			return bucket, nil
 		},
@@ -197,13 +199,17 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 	isTargetModule bool,
 	options ...ModuleKeyOption,
 ) ModuleSetBuilder {
-	if b.buildCalled {
+	if b.buildCalled.Load() {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
-	addModuleForModuleKeyOptions := newModuleKeyOptions()
+	moduleKeyOptions := newModuleKeyOptions()
 	for _, option := range options {
-		option(addModuleForModuleKeyOptions)
+		option(moduleKeyOptions)
+	}
+	if !isTargetModule && (len(moduleKeyOptions.targetPaths) > 0 || len(moduleKeyOptions.targetExcludePaths) > 0) {
+		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForModuleKey"))
+		return b
 	}
 	moduleData, err := b.moduleDataProvider.GetModuleDataForModuleKey(b.ctx, moduleKey)
 	if err != nil {
@@ -212,14 +218,13 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 	}
 	module, err := newModule(
 		b.ctx,
-		b.cache,
 		moduleData.Bucket,
 		"",
 		moduleData.ModuleKey().ModuleFullName(),
 		moduleData.ModuleKey().CommitID(),
 		isTargetModule,
-		addModuleForModuleKeyOptions.targetPaths,
-		addModuleForModuleKeyOptions.targetExcludePaths,
+		moduleKeyOptions.targetPaths,
+		moduleKeyOptions.targetExcludePaths,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -239,6 +244,7 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 	}
 	for _, declaredDepModuleKey := range declaredDepModuleKeys {
 		// Not a target module.
+		//
 		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
 		//
 		// We don't need to special-case these - they are lowest priority as they aren't targets and
@@ -250,24 +256,16 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 }
 
 func (b *moduleSetBuilder) Build() (ModuleSet, error) {
-	if b.buildCalled {
+	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled
 	}
-	b.buildCalled = true
 	if len(b.errs) > 0 {
 		return nil, multierr.Combine(b.errs...)
 	}
 	if len(b.moduleSetModules) == 0 {
 		return nil, errors.New("no Modules added to ModuleSetBuilder")
 	}
-	atLeastOneTargeted := false
-	for _, moduleSetModule := range b.moduleSetModules {
-		if moduleSetModule.IsTargetModule() {
-			atLeastOneTargeted = true
-			break
-		}
-	}
-	if !atLeastOneTargeted {
+	if slicesextended.Count(b.moduleSetModules, func(m *moduleSetModule) bool { return m.IsTargetModule() }) < 1 {
 		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
 	}
 	moduleSetModules, err := getUniqueModulesByOpaqueID(b.ctx, b.moduleSetModules)
@@ -280,9 +278,6 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	}
 	for _, moduleSetModule := range moduleSetModules {
 		moduleSetModule.setModuleSet(moduleSet)
-	}
-	if err := b.cache.setModuleSet(moduleSet); err != nil {
-		return nil, err
 	}
 	return moduleSet, nil
 }

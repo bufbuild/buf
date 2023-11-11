@@ -233,8 +233,7 @@ func addModuleDataToModuleSetBuilder(
 			commitID = fmt.Sprintf("omniProviderCommit-%d", index)
 		}
 		bucketOptions = []bufmodule.BucketOption{
-			bufmodule.BucketWithModuleFullName(moduleFullName),
-			bufmodule.BucketWithCommitID(commitID),
+			bufmodule.BucketWithModuleFullNameAndCommitID(moduleFullName, commitID),
 		}
 	} else if requireName {
 		return errors.New("ModuleData.Name was required in this context")

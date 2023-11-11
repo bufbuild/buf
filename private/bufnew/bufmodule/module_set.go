@@ -19,10 +19,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/protocompile/parser/imports"
+	"go.uber.org/multierr"
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
@@ -55,6 +59,14 @@ type ModuleSet interface {
 	// Returns an error if there was an error when calling Digest() on a Module.
 	GetModuleForDigest(digest bufcas.Digest) (Module, error)
 
+	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet..
+	//
+	// This should only be used by Modules, and only for dependency calculations.
+	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
+	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet..
+	//
+	// This should only be used by Modules, and only for dependency calculations.
+	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
 	isModuleSet()
 }
 
@@ -169,6 +181,15 @@ type moduleSet struct {
 	opaqueIDToModule             map[string]Module
 	bucketIDToModule             map[string]Module
 	getDigestStringToModule      func() (map[string]Module, error)
+
+	// filePathToImports is a cache of filePath -> imports, used for calculating dependencies.
+	filePathToImports map[string]*internal.Tuple[map[string]struct{}, error]
+	// filePathToModule is a cache of filePath -> module, used for calculating dependencies.
+	filePathToModule map[string]*internal.Tuple[Module, error]
+	// cacheLock is used to lock access to filePathToImports and filePathToModule.
+	//
+	// We could have a per-map lock but then we need to deal with lock ordering, not worth it for now.
+	cacheLock sync.RWMutex
 }
 
 func newModuleSet(
@@ -228,6 +249,8 @@ func newModuleSet(
 				return digestStringToModule, nil
 			},
 		),
+		filePathToImports: make(map[string]*internal.Tuple[map[string]struct{}, error]),
+		filePathToModule:  make(map[string]*internal.Tuple[Module, error]),
 	}, nil
 }
 
@@ -255,6 +278,92 @@ func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
 		return nil, err
 	}
 	return digestStringToModule[digest.String()], nil
+}
+
+// This should only be used by Modules, and only for dependency calculations.
+func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
+	return internal.GetOrAddToCacheDoubleLock(
+		&m.cacheLock,
+		m.filePathToModule,
+		filePath,
+		func() (Module, error) {
+			return m.getModuleForFilePathUncached(ctx, filePath)
+		},
+	)
+}
+
+// This should only be used by Modules, and only for dependency calculations.
+func (m *moduleSet) getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
+	return internal.GetOrAddToCacheDoubleLock(
+		&m.cacheLock,
+		m.filePathToImports,
+		filePath,
+		func() (map[string]struct{}, error) {
+			return m.getImportsForFilePathUncached(ctx, filePath)
+		},
+	)
+}
+
+// Assumed to be called within cacheLock.
+// Only call from within *moduleSet.
+func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (Module, error) {
+	matchingOpaqueIDs := make(map[string]struct{})
+	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
+	for _, module := range m.Modules() {
+		if _, err := module.StatFileInfo(ctx, filePath); err == nil {
+			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
+		}
+	}
+	switch len(matchingOpaqueIDs) {
+	case 0:
+		// This should likely never happen given how we call the cache.
+		return nil, fmt.Errorf("no Module contains file %q", filePath)
+	case 1:
+		var matchingOpaqueID string
+		for matchingOpaqueID = range matchingOpaqueIDs {
+		}
+		return m.GetModuleForOpaqueID(matchingOpaqueID), nil
+	default:
+		// This actually could happen, and we will want to make this error message as clear as possible.
+		// The addition of opaqueID should give us clearer error messages than we have today.
+		return nil, fmt.Errorf("multiple Modules contained file %q: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
+	}
+}
+
+// Assumed to be called within cacheLock.
+// Only call from within *moduleSet.
+func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath string) (_ map[string]struct{}, retErr error) {
+	// Even when we know the file we want to get the imports for, we want to make sure the file
+	// is not duplicated across multiple modules. By calling getModuleFileFilePathUncached,
+	// we implicitly get this check for now.
+	//
+	// Note this basically kills the idea of only partially-lazily-loading some of the Modules
+	// within a set of []Modules. We could optimize this later, and may want to. This means
+	// that we're going to have to load all the modules within a workspace even if just building
+	// a single module in the workspace, as an example. Luckily, modules within workspaces are
+	// the cheapest to load (ie not remote).
+	module, err := internal.GetOrAddToCache(
+		m.filePathToModule,
+		filePath,
+		func() (Module, error) {
+			return m.getModuleForFilePathUncached(ctx, filePath)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	file, err := module.GetFile(ctx, filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	imports, err := imports.ScanForImports(file)
+	if err != nil {
+		return nil, err
+	}
+	return stringutil.SliceToMap(imports), nil
 }
 
 func (*moduleSet) isModuleSet() {}

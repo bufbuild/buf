@@ -79,6 +79,58 @@ func MapError[T1, T2 any](s []T1, f func(T1) (T2, error)) ([]T2, error) {
 	return sm, nil
 }
 
+// Reduce reduces the slice.
+func Reduce[T1, T2 any](s []T1, f func(T2, T1) T2, initialValue T2) T2 {
+	value := initialValue
+	for _, e := range s {
+		value = f(value, e)
+	}
+	return value
+}
+
+// Reduce reduces the slice.
+//
+// Returns error the first time f returns error.
+func ReduceError[T1, T2 any](s []T1, f func(T2, T1) (T2, error), initialValue T2) (T2, error) {
+	value := initialValue
+	var err error
+	for _, e := range s {
+		value, err = f(value, e)
+		if err != nil {
+			return value, err
+		}
+	}
+	return value, nil
+}
+
+// Count returns the number of elements in s where f returns true.
+func Count[T any](s []T, f func(T) bool) int {
+	count := 0
+	for _, e := range s {
+		if f(e) {
+			count++
+		}
+	}
+	return count
+}
+
+// CountError returns the number of elements in s where f returns true.
+//
+// Returns error the first time f returns error.
+func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
+	count := 0
+	for _, e := range s {
+		ok, err := f(e)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			count++
+		}
+	}
+	return count, nil
+}
+
 // ToMap converts the slice to a map.
 func ToMap[T comparable](s []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(s))
