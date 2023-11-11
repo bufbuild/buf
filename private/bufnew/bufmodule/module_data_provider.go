@@ -26,6 +26,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
+var (
+	// NopModuleDataProvider is a no-op ModuleDataProvider.
+	NopModuleDataProvider = nopModuleDataProvider{}
+)
+
 // ModuleDataProvider provides ModulesDatas.
 type ModuleDataProvider interface {
 	// GetModuleDataForModuleKey gets the ModuleData for the ModuleKey.
@@ -105,6 +110,14 @@ func (a *apiModuleDataProvider) getBucketForProtoFileNodes(ctx context.Context, 
 
 func (a *apiModuleDataProvider) getModuleKeysForProtoCommits(ctx context.Context, protoCommits []*modulev1beta1.Commit) ([]ModuleKey, error) {
 	return nil, errors.New("TODO")
+}
+
+// nopModuleDataProvider
+
+type nopModuleDataProvider struct{}
+
+func (nopModuleDataProvider) GetModuleDataForModuleKey(context.Context, ModuleKey) (ModuleData, error) {
+	return nil, errors.New("nopModuleDataProvider")
 }
 
 //// lazyModuleDataProvider

@@ -196,11 +196,6 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
-	if b.moduleDataProvider == nil {
-		// We should perhaps have a ModuleSetBuilder without this method at all.
-		// We do this in bufmoduletest.
-		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleKey with nil ModuleDataProvider"))
-	}
 	addModuleForModuleKeyOptions := newAddModuleForModuleKeyOptions()
 	for _, option := range options {
 		option(addModuleForModuleKeyOptions)
@@ -254,7 +249,6 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return nil, errBuildAlreadyCalled
 	}
 	b.buildCalled = true
-
 	moduleSetModules, err := getUniqueModulesByOpaqueID(b.ctx, b.moduleSetModules)
 	if err != nil {
 		return nil, err

@@ -20,14 +20,15 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
-// TestProvider is a ModuleKeyProvider and ModuleProvider for testing.
+// TestProvider is a ModuleKeyProvider and ModuleDataProvider for testing.
 type TestProvider interface {
 	bufmodule.ModuleKeyProvider
-	bufmodule.ModuleProvider
+	bufmodule.ModuleDataProvider
 }
 
 // TestModuleData is the data needed to construct a Module in test.
@@ -59,7 +60,7 @@ func newTestProvider(
 	ctx context.Context,
 	moduleFullNameStringToTestModuleData map[string]TestModuleData,
 ) (*testProvider, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, nil)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
 	i := 0
 	for moduleFullNameString, testModuleData := range moduleFullNameStringToTestModuleData {
 		moduleFullName, err := bufmodule.ParseModuleFullName(moduleFullNameString)
@@ -81,12 +82,12 @@ func newTestProvider(
 		}
 		moduleSetBuilder.AddModuleForBucket(
 			bucket,
-			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory
-			fmt.Sprintf("%d", i),
+			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory.
+			fmt.Sprintf("testProviderBucket-%s-%d", moduleFullNameString, i),
 			false,
 			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
 			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
-			bufmodule.AddModuleForBucketWithCommitID(fmt.Sprintf("%d", i)),
+			bufmodule.AddModuleForBucketWithCommitID(fmt.Sprintf("testProviderCommit-%s-%d", moduleFullNameString, i)),
 		)
 		i++
 	}
@@ -110,28 +111,30 @@ func (t *testProvider) GetModuleKeyForModuleRef(
 	return bufmodule.ModuleToModuleKey(module)
 }
 
-func (t *testProvider) GetModuleForModuleKey(
+func (t *testProvider) GetModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
-) (bufmodule.Module, error) {
-	moduleFullName := moduleKey.ModuleFullName()
-	if moduleFullName != nil {
-		module := t.moduleSet.GetModuleForModuleFullName(moduleFullName)
-		if module == nil {
-			return nil, fmt.Errorf("no test Module with name %q", moduleFullName.String())
-		}
-		return module, nil
-	}
-	digest, err := moduleKey.Digest()
-	if err != nil {
-		return nil, err
-	}
-	module, err := t.moduleSet.GetModuleForDigest(digest)
-	if err != nil {
-		return nil, err
-	}
+) (bufmodule.ModuleData, error) {
+	module := t.moduleSet.GetModuleForModuleFullName(moduleKey.ModuleFullName())
 	if module == nil {
-		return nil, fmt.Errorf("no test Module with Digest %q", digest.String())
+		return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
 	}
-	return module, nil
+	return bufmodule.NewModuleData(
+		moduleKey,
+		func() (storage.ReadBucket, error) {
+			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
+		},
+		func() ([]bufmodule.ModuleKey, error) {
+			moduleDeps, err := module.ModuleDeps()
+			if err != nil {
+				return nil, err
+			}
+			return slicesextended.MapError(
+				moduleDeps,
+				func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
+					return bufmodule.ModuleToModuleKey(moduleDep)
+				},
+			)
+		},
+	)
 }
