@@ -25,24 +25,26 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
-// TestProvider is a ModuleKeyProvider and ModuleDataProvider for testing.
+// TestProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
 type TestProvider interface {
 	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleDataProvider
+	bufmodule.ModuleSet
 }
 
 // TestModuleData is the data needed to construct a Module in test.
 type TestModuleData struct {
-	// CommitID can be any string, but it must be unique across all TestModuleDatas.
-	//
-	// If not set, a mock commitID is created.
-	CommitID string
 	// Exactly one of PathToData or Bucket must be set.
 	PathToData map[string][]byte
 	// Exactly one of PathToData or Bucket must be set.
 	Bucket storage.ReadBucket
+	// CommitID can be any string, but it must be unique across all TestModuleDatas.
+	//
+	// If not set, a mock commitID is created.
+	CommitID string
 }
 
+// NewTestProvider returns a new TestProvider.
 func NewTestProvider(
 	ctx context.Context,
 	moduleFullNameStringToTestModuleData map[string]TestModuleData,
@@ -53,7 +55,7 @@ func NewTestProvider(
 // *** PRIVATE ***
 
 type testProvider struct {
-	moduleSet bufmodule.ModuleSet
+	bufmodule.ModuleSet
 }
 
 func newTestProvider(
@@ -85,9 +87,9 @@ func newTestProvider(
 			// Not actually in the spirit of bucketID, this could be non-unique with other buckets in theory.
 			fmt.Sprintf("testProviderBucket-%s-%d", moduleFullNameString, i),
 			false,
-			bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
+			bufmodule.BucketWithModuleFullName(moduleFullName),
 			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
-			bufmodule.AddModuleForBucketWithCommitID(fmt.Sprintf("testProviderCommit-%s-%d", moduleFullNameString, i)),
+			bufmodule.BucketWithCommitID(fmt.Sprintf("testProviderCommit-%s-%d", moduleFullNameString, i)),
 		)
 		i++
 	}
@@ -96,7 +98,7 @@ func newTestProvider(
 		return nil, err
 	}
 	return &testProvider{
-		moduleSet: moduleSet,
+		ModuleSet: moduleSet,
 	}, nil
 }
 
@@ -104,7 +106,7 @@ func (t *testProvider) GetModuleKeyForModuleRef(
 	ctx context.Context,
 	moduleRef bufmodule.ModuleRef,
 ) (bufmodule.ModuleKey, error) {
-	module := t.moduleSet.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+	module := t.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 	if module == nil {
 		return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
 	}
@@ -115,7 +117,7 @@ func (t *testProvider) GetModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
-	module := t.moduleSet.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	module := t.GetModuleForModuleFullName(moduleKey.ModuleFullName())
 	if module == nil {
 		return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
 	}

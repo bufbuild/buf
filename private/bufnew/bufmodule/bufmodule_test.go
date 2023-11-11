@@ -132,8 +132,8 @@ func TestBasic(t *testing.T) {
 		),
 		"path/to/module2",
 		true,
-		bufmodule.AddModuleForBucketWithModuleFullName(moduleFullName),
-		bufmodule.AddModuleForBucketWithTargetPaths(nil, []string{"foo"}),
+		bufmodule.BucketWithModuleFullName(moduleFullName),
+		bufmodule.BucketWithTargetPaths(nil, []string{"foo"}),
 	)
 
 	moduleSet, err := moduleSetBuilder.Build()
