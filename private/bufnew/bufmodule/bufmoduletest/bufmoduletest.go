@@ -138,7 +138,9 @@ func (o *omniProvider) GetModuleKeysForModuleRefs(
 			return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
 		}
 		moduleKey, err := bufmodule.ModuleToModuleKey(module)
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 		moduleKeys[i] = moduleKey
 	}
 	return moduleKeys, nil
