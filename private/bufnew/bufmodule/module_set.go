@@ -44,7 +44,9 @@ type ModuleSet interface {
 	GetModuleForModuleFullName(moduleFullName ModuleFullName) Module
 	// GetModuleForOpaqueID gets the Module for the OpaqueID, if it exists.
 	//
-	// Returns nil if there is no Module with the given OpaqueID.
+	// Returns nil if there is no Module with the given OpaqueID. However, as long
+	// as the OpaqueID came from a Module contained within Modules(), this will always
+	// return a non-nil value.
 	GetModuleForOpaqueID(opaqueID string) Module
 	// GetModuleForBucketID gets the MOdule for the BucketID, if it exists.
 	//
