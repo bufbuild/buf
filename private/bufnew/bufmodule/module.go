@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 // Module presents a BSR module.
@@ -112,7 +113,6 @@ type Module interface {
 	// May be nil. If the Module was solely retrieved from a ModuleProvider, this will be nil.
 	ModuleSet() ModuleSet
 
-	setIsTargetModule(bool)
 	setModuleSet(ModuleSet)
 	isModule()
 }
@@ -142,6 +142,21 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	), nil
 }
 
+// ModuleToModuleReadBucketWithOnlyProtoFilesIncludingAllDeps converts the Module into a new ModuleReadBucket
+// that not only has the .proto files from the Module, but also has the .proto files from all the Module's dependencies.
+//
+// The input Module must be a targeted Module.
+//
+// All the files from the dependencies will be non-targets; only the files from the input Module will
+// be targets.
+//
+// All the files in the resulting ModuleReadBucket will be .proto files.
+//
+// TODO: is this actually needed? We may want to work just in terms of ModuleSets.
+func ModuleToModuleReadBucketWithOnlyProtoFilesIncludingAllDeps(module Module) (ModuleReadBucket, error) {
+	return nil, errors.New("TODO")
+}
+
 // *** PRIVATE ***
 
 // module
@@ -157,6 +172,7 @@ type module struct {
 	isTargetModule bool
 	moduleSet      ModuleSet
 
+	getBucket     func() (storage.ReadBucket, error)
 	getDigest     func() (bufcas.Digest, error)
 	getModuleDeps func() ([]ModuleDep, error)
 }
@@ -165,8 +181,8 @@ type module struct {
 func newModule(
 	ctx context.Context,
 	cache *cache,
+	getBucket func() (storage.ReadBucket, error),
 	bucketID string,
-	bucket storage.ReadBucket,
 	moduleFullName ModuleFullName,
 	commitID string,
 	isTargetModule bool,
@@ -186,7 +202,7 @@ func newModule(
 	}
 	module.ModuleReadBucket = newModuleReadBucket(
 		ctx,
-		bucket,
+		getBucket,
 		module,
 		targetPaths,
 		targetExcludePaths,
@@ -242,10 +258,6 @@ func (m *module) ModuleSet() ModuleSet {
 	return m.moduleSet
 }
 
-func (m *module) setIsTargetModule(isTargetModule bool) {
-	m.isTargetModule = isTargetModule
-}
-
 func (m *module) setModuleSet(moduleSet ModuleSet) {
 	m.moduleSet = moduleSet
 }
@@ -283,6 +295,44 @@ func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
 	// NewDigestForDigests deals with sorting.
 	// TODO: what about digest type?
 	return bufcas.NewDigestForDigests(digests)
+}
+
+func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {
+	var fileNodes []bufcas.FileNode
+	if err := moduleReadBucket.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) (retErr error) {
+			file, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, file.Close())
+			}()
+			// TODO: what about digest type?
+			digest, err := bufcas.NewDigestForContent(file)
+			if err != nil {
+				return err
+			}
+			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
+			if err != nil {
+				return err
+			}
+			fileNodes = append(fileNodes, fileNode)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	manifest, err := bufcas.NewManifest(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	manifestBlob, err := bufcas.ManifestToBlob(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return manifestBlob.Digest(), nil
 }
 
 // getModuleDeps gets the actual dependencies for the Module.

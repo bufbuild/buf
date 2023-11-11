@@ -18,12 +18,11 @@ import (
 	"context"
 	"io/fs"
 	"sort"
+	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -175,7 +174,7 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // moduleReadBucket
 
 type moduleReadBucket struct {
-	delegate             storage.ReadBucket
+	getBucket            func() (storage.ReadBucket, error)
 	module               Module
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
@@ -185,20 +184,29 @@ type moduleReadBucket struct {
 // Do not call any functions on module.
 func newModuleReadBucket(
 	ctx context.Context,
-	delegate storage.ReadBucket,
+	getBucket func() (storage.ReadBucket, error),
 	module Module,
 	targetPaths []string,
 	targetExcludePaths []string,
 ) *moduleReadBucket {
-	docFilePath := getDocFilePathForStorageReadBucket(ctx, delegate)
+
 	return &moduleReadBucket{
-		delegate: storage.MapReadBucket(
-			delegate,
-			storage.MatchOr(
-				storage.MatchPathExt(".proto"),
-				storage.MatchPathEqual(licenseFilePath),
-				storage.MatchPathEqual(docFilePath),
-			),
+		getBucket: sync.OnceValues(
+			func() (storage.ReadBucket, error) {
+				bucket, err := getBucket()
+				if err != nil {
+					return nil, err
+				}
+				docFilePath := getDocFilePathForStorageReadBucket(ctx, bucket)
+				return storage.MapReadBucket(
+					bucket,
+					storage.MatchOr(
+						storage.MatchPathExt(".proto"),
+						storage.MatchPathEqual(licenseFilePath),
+						storage.MatchPathEqual(docFilePath),
+					),
+				), nil
+			},
 		),
 		module:               module,
 		targetPathMap:        slicesextended.ToMap(targetPaths),
@@ -211,7 +219,11 @@ func (f *moduleReadBucket) GetFile(ctx context.Context, path string) (File, erro
 	if err != nil {
 		return nil, err
 	}
-	readObjectCloser, err := f.delegate.Get(ctx, path)
+	bucket, err := f.getBucket()
+	if err != nil {
+		return nil, err
+	}
+	readObjectCloser, err := bucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +231,11 @@ func (f *moduleReadBucket) GetFile(ctx context.Context, path string) (File, erro
 }
 
 func (f *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
-	objectInfo, err := f.delegate.Stat(ctx, path)
+	bucket, err := f.getBucket()
+	if err != nil {
+		return nil, err
+	}
+	objectInfo, err := bucket.Stat(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -235,11 +251,15 @@ func (f *moduleReadBucket) WalkFileInfos(
 	for _, option := range options {
 		option(walkFileInfosOptions)
 	}
+	bucket, err := f.getBucket()
+	if err != nil {
+		return err
+	}
 	// TODO: we need to special-case target paths to only walk on target paths
 	// if len(f.targetPathMap) > 0, for performance reasons.
 	//
 	// This may mean we need to change storage.Walk to accept prefixes that are equal to the prefix.
-	return f.delegate.Walk(
+	return bucket.Walk(
 		ctx,
 		"",
 		func(objectInfo storage.ObjectInfo) error {
@@ -387,44 +407,4 @@ type walkFileInfosOptions struct {
 
 func newWalkFileInfosOptions() *walkFileInfosOptions {
 	return &walkFileInfosOptions{}
-}
-
-// utils
-
-func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {
-	var fileNodes []bufcas.FileNode
-	if err := moduleReadBucket.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) (retErr error) {
-			file, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			// TODO: what about digest type?
-			digest, err := bufcas.NewDigestForContent(file)
-			if err != nil {
-				return err
-			}
-			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
-			if err != nil {
-				return err
-			}
-			fileNodes = append(fileNodes, fileNode)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	manifest, err := bufcas.NewManifest(fileNodes)
-	if err != nil {
-		return nil, err
-	}
-	manifestBlob, err := bufcas.ManifestToBlob(manifest)
-	if err != nil {
-		return nil, err
-	}
-	return manifestBlob.Digest(), nil
 }

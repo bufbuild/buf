@@ -54,22 +54,20 @@ type ModuleSetBuilder interface {
 	) ModuleSetBuilder
 	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
 	//
-	// The ModuleProvider given to the ModuleSetBuilder at construction time will be used to
+	// The ModuleDataProvider given to the ModuleSetBuilder at construction time will be used to
 	// retrieve this Module.
 	//
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
 	//
-	// The dependencies of the Module will *not* be automatically added to the ModuleSet. All
-	// dependencies must be explicitly added.
-	//
-	// In our current world, isTarget should almost always be false for ModuleKeys, so we don
-	// t even provide the option to make a Module from a ModuleKey a target Module. This function
-	// is used to add Modules from i.e. a buf.lock file. We can add isTargetModule in the future
-	// if we need it.
+	// The dependencies of the Module will are automatically added to the ModuleSet.
+	// Note, however, that Modules added with AddModuleForBucket always take precedence,
+	// so if there are local bucked-based dependencies, these will be used.
 	//
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleKey(
 		moduleKey ModuleKey,
+		isTargetModule bool,
+		options ...AddModuleForModuleKeyOption,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
 	//
@@ -103,9 +101,21 @@ func AddModuleForBucketWithTargetPaths(
 	}
 }
 
+type AddModuleForModuleKeyOption func(*addModuleForModuleKeyOptions)
+
+func AddModuleForModuleKeyWithTargetPaths(
+	targetPaths []string,
+	targetExcludePaths []string,
+) AddModuleForModuleKeyOption {
+	return func(addModuleForModuleKeyOptions *addModuleForModuleKeyOptions) {
+		addModuleForModuleKeyOptions.targetPaths = targetPaths
+		addModuleForModuleKeyOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
-func NewModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) ModuleSetBuilder {
-	return newModuleSetBuilder(ctx, moduleProvider)
+func NewModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) ModuleSetBuilder {
+	return newModuleSetBuilder(ctx, moduleDataProvider)
 }
 
 /// *** PRIVATE ***
@@ -113,8 +123,8 @@ func NewModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) Mod
 // moduleSetBuilder
 
 type moduleSetBuilder struct {
-	ctx            context.Context
-	moduleProvider ModuleProvider
+	ctx                context.Context
+	moduleDataProvider ModuleDataProvider
 
 	cache *cache
 
@@ -123,12 +133,12 @@ type moduleSetBuilder struct {
 	buildCalled      bool
 }
 
-func newModuleSetBuilder(ctx context.Context, moduleProvider ModuleProvider) *moduleSetBuilder {
+func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) *moduleSetBuilder {
 	cache := newCache()
 	return &moduleSetBuilder{
-		ctx:            ctx,
-		moduleProvider: newLazyModuleProvider(moduleProvider, cache),
-		cache:          cache,
+		ctx:                ctx,
+		moduleDataProvider: moduleDataProvider,
+		cache:              cache,
 	}
 }
 
@@ -143,7 +153,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		return b
 	}
 	if bucketID == "" {
-		b.errs = append(b.errs, errors.New("BucketID is required when calling AddModuleForBucket"))
+		b.errs = append(b.errs, errors.New("bucketID is required when calling AddModuleForBucket"))
 		return b
 	}
 	addModuleForBucketOptions := newAddModuleForBucketOptions()
@@ -153,8 +163,10 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	module, err := newModule(
 		b.ctx,
 		b.cache,
+		func() (storage.ReadBucket, error) {
+			return bucket, nil
+		},
 		bucketID,
-		bucket,
 		addModuleForBucketOptions.moduleFullName,
 		addModuleForBucketOptions.commitID,
 		isTargetModule,
@@ -177,23 +189,42 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 
 func (b *moduleSetBuilder) AddModuleForModuleKey(
 	moduleKey ModuleKey,
+	isTargetModule bool,
+	options ...AddModuleForModuleKeyOption,
 ) ModuleSetBuilder {
 	if b.buildCalled {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
-	if b.moduleProvider == nil {
+	if b.moduleDataProvider == nil {
 		// We should perhaps have a ModuleSetBuilder without this method at all.
 		// We do this in bufmoduletest.
-		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleKey with nil ModuleProvider"))
+		b.errs = append(b.errs, errors.New("cannot call AddModuleForModuleKey with nil ModuleDataProvider"))
 	}
-	module, err := b.moduleProvider.GetModuleForModuleKey(b.ctx, moduleKey)
+	addModuleForModuleKeyOptions := newAddModuleForModuleKeyOptions()
+	for _, option := range options {
+		option(addModuleForModuleKeyOptions)
+	}
+	moduleData, err := b.moduleDataProvider.GetModuleDataForModuleKey(b.ctx, moduleKey)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b
 	}
-	// Always false for Modules added from ModuleKeys.
-	module.setIsTargetModule(false)
+	module, err := newModule(
+		b.ctx,
+		b.cache,
+		moduleData.Bucket,
+		"",
+		moduleData.ModuleKey().ModuleFullName(),
+		moduleData.ModuleKey().CommitID(),
+		isTargetModule,
+		addModuleForModuleKeyOptions.targetPaths,
+		addModuleForModuleKeyOptions.targetExcludePaths,
+	)
+	if err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
 	b.moduleSetModules = append(
 		b.moduleSetModules,
 		newModuleSetModule(
@@ -201,6 +232,20 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 			false,
 		),
 	)
+	declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
+	if err != nil {
+		b.errs = append(b.errs, err)
+		return b
+	}
+	for _, declaredDepModuleKey := range declaredDepModuleKeys {
+		// Not a target module.
+		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
+		//
+		// We don't need to special-case these - they are lowest priority as they aren't targets and
+		// are added by ModuleKey. If a caller adds one of these ModuleKeys as a target, or adds
+		// an equivalent Module by Bucket, that add will take precedence.
+		b.AddModuleForModuleKey(declaredDepModuleKey, false)
+	}
 	return b
 }
 
@@ -228,17 +273,6 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 }
 
 func (*moduleSetBuilder) isModuleSetBuilder() {}
-
-type addModuleForBucketOptions struct {
-	moduleFullName     ModuleFullName
-	commitID           string
-	targetPaths        []string
-	targetExcludePaths []string
-}
-
-func newAddModuleForBucketOptions() *addModuleForBucketOptions {
-	return &addModuleForBucketOptions{}
-}
 
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the Module list.
 //
@@ -303,4 +337,24 @@ func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleS
 		},
 	)
 	return uniqueModuleSetModules, nil
+}
+
+type addModuleForBucketOptions struct {
+	moduleFullName     ModuleFullName
+	commitID           string
+	targetPaths        []string
+	targetExcludePaths []string
+}
+
+func newAddModuleForBucketOptions() *addModuleForBucketOptions {
+	return &addModuleForBucketOptions{}
+}
+
+type addModuleForModuleKeyOptions struct {
+	targetPaths        []string
+	targetExcludePaths []string
+}
+
+func newAddModuleForModuleKeyOptions() *addModuleForModuleKeyOptions {
+	return &addModuleForModuleKeyOptions{}
 }

@@ -61,7 +61,7 @@ type ModuleSet interface {
 // ModuleReadBucket that contains all the .proto files of the target and non-target
 // Modules of the ModuleSet.
 //
-// TODO: need to propagate target module somehow
+// Targeting information will remaing
 func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) (ModuleReadBucket, error) {
 	return nil, errors.New("TODO")
 }

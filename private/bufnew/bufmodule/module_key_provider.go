@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -57,6 +56,7 @@ func (a *apiModuleKeyProvider) GetModuleKeyForModuleRef(ctx context.Context, mod
 		return nil, err
 	}
 	return newModuleKeyForLazyDigest(
+		// Note we don't have to resolve owner_name and module_name since we already have them.
 		moduleRef.ModuleFullName(),
 		protoCommit.Id,
 		func() (bufcas.Digest, error) {
@@ -69,40 +69,40 @@ func (a *apiModuleKeyProvider) GetModuleKeyForModuleRef(ctx context.Context, mod
 // All of this stuff we may want in some other common place such as bufapi, with interfaces.
 
 // If you have the owner and module names, do not use this! This makes two extra calls to get the owner and module names.
-func (a *apiModuleKeyProvider) getModuleKeyForProtoCommit(ctx context.Context, registryHostname string, protoCommit *modulev1beta1.Commit) (ModuleKey, error) {
-	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
-	if err != nil {
-		return nil, err
-	}
-	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
-	if err != nil {
-		return nil, err
-	}
-	var ownerName string
-	switch {
-	case protoOwner.GetUser() != nil:
-		ownerName = protoOwner.GetUser().Name
-	case protoOwner.GetOrganization() != nil:
-		ownerName = protoOwner.GetOrganization().Name
-	default:
-		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
-	}
-	moduleFullName, err := newModuleFullName(
-		registryHostname,
-		ownerName,
-		protoModule.Name,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return newModuleKeyForLazyDigest(
-		moduleFullName,
-		protoCommit.Id,
-		func() (bufcas.Digest, error) {
-			return bufcas.ProtoToDigest(protoCommit.Digest)
-		},
-	)
-}
+//func (a *apiModuleKeyProvider) getModuleKeyForProtoCommit(ctx context.Context, registryHostname string, protoCommit *modulev1beta1.Commit) (ModuleKey, error) {
+//protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
+//if err != nil {
+//return nil, err
+//}
+//protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
+//if err != nil {
+//return nil, err
+//}
+//var ownerName string
+//switch {
+//case protoOwner.GetUser() != nil:
+//ownerName = protoOwner.GetUser().Name
+//case protoOwner.GetOrganization() != nil:
+//ownerName = protoOwner.GetOrganization().Name
+//default:
+//return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
+//}
+//moduleFullName, err := newModuleFullName(
+//registryHostname,
+//ownerName,
+//protoModule.Name,
+//)
+//if err != nil {
+//return nil, err
+//}
+//return newModuleKeyForLazyDigest(
+//moduleFullName,
+//protoCommit.Id,
+//func() (bufcas.Digest, error) {
+//return bufcas.ProtoToDigest(protoCommit.Digest)
+//},
+//)
+//}
 
 func (a *apiModuleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef ModuleRef) (*modulev1beta1.Commit, error) {
 	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).ResolveCommits(
@@ -134,50 +134,50 @@ func (a *apiModuleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, m
 	return response.Msg.Commits[0], nil
 }
 
-func (a *apiModuleKeyProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
-	response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetModulesRequest{
-				ModuleRefs: []*modulev1beta1.ModuleRef{
-					{
-						Value: &modulev1beta1.ModuleRef_Id{
-							Id: moduleID,
-						},
-					},
-				},
-			},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	if len(response.Msg.Modules) != 1 {
-		return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
-	}
-	return response.Msg.Modules[0], nil
-}
+//func (a *apiModuleKeyProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
+//response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
+//ctx,
+//connect.NewRequest(
+//&modulev1beta1.GetModulesRequest{
+//ModuleRefs: []*modulev1beta1.ModuleRef{
+//{
+//Value: &modulev1beta1.ModuleRef_Id{
+//Id: moduleID,
+//},
+//},
+//},
+//},
+//),
+//)
+//if err != nil {
+//return nil, err
+//}
+//if len(response.Msg.Modules) != 1 {
+//return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
+//}
+//return response.Msg.Modules[0], nil
+//}
 
-func (a *apiModuleKeyProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
-	response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
-		ctx,
-		connect.NewRequest(
-			&ownerv1beta1.GetOwnersRequest{
-				OwnerRefs: []*ownerv1beta1.OwnerRef{
-					{
-						Value: &ownerv1beta1.OwnerRef_Id{
-							Id: ownerID,
-						},
-					},
-				},
-			},
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	if len(response.Msg.Owners) != 1 {
-		return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
-	}
-	return response.Msg.Owners[0], nil
-}
+//func (a *apiModuleKeyProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
+//response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
+//ctx,
+//connect.NewRequest(
+//&ownerv1beta1.GetOwnersRequest{
+//OwnerRefs: []*ownerv1beta1.OwnerRef{
+//{
+//Value: &ownerv1beta1.OwnerRef_Id{
+//Id: ownerID,
+//},
+//},
+//},
+//},
+//),
+//)
+//if err != nil {
+//return nil, err
+//}
+//if len(response.Msg.Owners) != 1 {
+//return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+//}
+//return response.Msg.Owners[0], nil
+//}
