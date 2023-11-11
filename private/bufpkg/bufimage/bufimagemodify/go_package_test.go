@@ -434,7 +434,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 func TestGoPackageWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -544,7 +544,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideGoPackagePrefix := "github.com/foo/bar/private/private/gen/proto/go"
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

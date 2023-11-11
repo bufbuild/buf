@@ -192,17 +192,18 @@ func TestTypesFromMainModule(t *testing.T) {
 
 	ctx := context.Background()
 	moduleSet, err := bufmoduletest.NewOmniProvider(
-		map[string]bufmoduletest.ModuleData{
-			"buf.build/repo/main": {
-				PathToData: map[string][]byte{
-					"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
-				},
+		bufmoduletest.ModuleData{
+			Name: "buf.build/repo/main",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
 			},
-			"buf.build/repo/dep": {
-				PathToData: map[string][]byte{
-					"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
-				},
+		},
+		bufmoduletest.ModuleData{
+			Name: "buf.build/repo/dep",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
 			},
+			NotTargeted: true,
 		},
 	)
 	require.NoError(t, err)
@@ -216,6 +217,11 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
+	dep := moduleSet.GetModuleForOpaqueID("buf.build/repo/dep")
+	require.NotNil(t, dep)
+	bProtoFileInfo, err := dep.StatFileInfo(ctx, "b.proto")
+	require.NoError(t, err)
+	require.False(t, bProtoFileInfo.IsTargetFile())
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)

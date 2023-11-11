@@ -484,7 +484,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -592,7 +592,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 func TestObjcClassPrefixWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "objcoptions", "single")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

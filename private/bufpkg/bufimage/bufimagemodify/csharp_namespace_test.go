@@ -360,7 +360,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 func TestCsharpNamespaceWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -474,7 +474,7 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideCsharpNamespacePrefix := "x.y.z"
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

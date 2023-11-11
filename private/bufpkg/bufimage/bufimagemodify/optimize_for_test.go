@@ -389,7 +389,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 func TestOptimizeForWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -507,7 +507,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideOptimizeFor := descriptorpb.FileOptions_LITE_RUNTIME
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

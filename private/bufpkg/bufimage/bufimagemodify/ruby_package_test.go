@@ -359,7 +359,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 func TestRubyPackageExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "rubyoptions", "single")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -462,7 +462,7 @@ func TestRubyPackageOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "rubyoptions", "single")
 	overrideRubyPackage := "MODULE"
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

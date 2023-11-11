@@ -31,37 +31,39 @@ func TestBasic(t *testing.T) {
 
 	// This represents some external dependencies from the BSR.
 	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		map[string]bufmoduletest.ModuleData{
-			"buf.build/foo/extdep1": {
-				PathToData: map[string][]byte{
-					"extdep1.proto": []byte(
-						`syntax = proto3; package extdep1;`,
-					),
-				},
+		bufmoduletest.ModuleData{
+			Name: "buf.build/foo/extdep1",
+			PathToData: map[string][]byte{
+				"extdep1.proto": []byte(
+					`syntax = proto3; package extdep1;`,
+				),
 			},
-			"buf.build/foo/extdep2": {
-				PathToData: map[string][]byte{
-					"extdep2.proto": []byte(
-						`syntax = proto3; package extdep2; import "extdep1.proto";`,
-					),
-				},
+		},
+		bufmoduletest.ModuleData{
+			Name: "buf.build/foo/extdep2",
+			PathToData: map[string][]byte{
+				"extdep2.proto": []byte(
+					`syntax = proto3; package extdep2; import "extdep1.proto";`,
+				),
 			},
-			"buf.build/foo/extdep3": {
-				PathToData: map[string][]byte{
-					"extdep3.proto": []byte(
-						`syntax = proto3; package extdep3;`,
-					),
-				},
+		},
+		bufmoduletest.ModuleData{
+			Name: "buf.build/foo/extdep3",
+			PathToData: map[string][]byte{
+				"extdep3.proto": []byte(
+					`syntax = proto3; package extdep3;`,
+				),
 			},
-			// Adding in a module that exists remotely but we'll also have in the workspace.
-			//
-			// This one will import from extdep2 instead of the workspace importing from extdep1.
-			"buf.build/bar/module2": {
-				PathToData: map[string][]byte{
-					"module2.proto": []byte(
-						`syntax = proto3; package module2; import "extdep2.proto";`,
-					),
-				},
+		},
+		// Adding in a module that exists remotely but we'll also have in the workspace.
+		//
+		// This one will import from extdep2 instead of the workspace importing from extdep1.
+		bufmoduletest.ModuleData{
+			Name: "buf.build/bar/module2",
+			PathToData: map[string][]byte{
+				"module2.proto": []byte(
+					`syntax = proto3; package module2; import "extdep2.proto";`,
+				),
 			},
 		},
 	)

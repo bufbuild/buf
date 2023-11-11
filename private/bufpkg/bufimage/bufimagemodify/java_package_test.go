@@ -379,7 +379,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 func TestJavaPackageWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "javaemptyoptions")
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -489,7 +489,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "javaemptyoptions")
 	overrideJavaPackagePrefix := "foo.bar"
-	testModuleFullName, err := bufmoduleref.NewModuleFullName(
+	testModuleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,

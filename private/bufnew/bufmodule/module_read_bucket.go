@@ -417,6 +417,7 @@ func (m *multiModuleReadBucket) WalkFileInfos(
 				seenPathToFileInfo[path] = fileInfo
 				return fn(fileInfo)
 			},
+			options...,
 		); err != nil {
 			return err
 		}

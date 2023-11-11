@@ -28,6 +28,9 @@ import (
 
 const (
 	testImportPathPrefix = "github.com/foo/bar/private/gen/proto/go"
+	testRemote           = "buf.test"
+	testRepositoryOwner  = "foo"
+	testRepositoryName   = "bar"
 )
 
 func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
@@ -66,7 +69,12 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 }
 
 func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
+	moduleSet, err := bufmoduletest.NewModuleSet(
+		bufmoduletest.ModuleData{
+			Name:    testRemote + "/" + testRepositoryOwner + "/" + testRepositoryName,
+			DirPath: dirPath,
+		},
+	)
 	require.NoError(t, err)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {

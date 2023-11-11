@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 var (
@@ -253,6 +254,22 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return nil, errBuildAlreadyCalled
 	}
 	b.buildCalled = true
+	if len(b.errs) > 0 {
+		return nil, multierr.Combine(b.errs...)
+	}
+	if len(b.moduleSetModules) == 0 {
+		return nil, errors.New("no Modules added to ModuleSetBuilder")
+	}
+	atLeastOneTargeted := false
+	for _, moduleSetModule := range b.moduleSetModules {
+		if moduleSetModule.IsTargetModule() {
+			atLeastOneTargeted = true
+			break
+		}
+	}
+	if !atLeastOneTargeted {
+		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
+	}
 	moduleSetModules, err := getUniqueModulesByOpaqueID(b.ctx, b.moduleSetModules)
 	if err != nil {
 		return nil, err
