@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -33,10 +33,8 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
-	const defaultBranchName = "main"
-	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
-	runner := command.NewRunner()
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, runner, repoDir, moduleIdentityInHEAD, defaultBranchName)
+	repo := gittest.ScaffoldGitRepository(t)
+	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repo, moduleIdentityInHEAD, gittest.DefaultBranch)
 	type testCase struct {
 		name            string
 		branch          string
@@ -45,7 +43,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:            "when_main",
-			branch:          "main",
+			branch:          gittest.DefaultBranch,
 			expectedCommits: 4, // doesn't include initial scaffolding empty commit
 		},
 		{
@@ -70,7 +68,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			func(tc testCase) {
 				t.Run(fmt.Sprintf("%s/override_%t", tc.name, withOverride), func(t *testing.T) {
 					// check out the branch to sync
-					runInDir(t, runner, repoDir, "git", "checkout", tc.branch)
+					repo.Checkout(t, tc.branch)
 					const moduleDir = "."
 					var opts []bufsync.SyncerOption
 					if withOverride {
@@ -104,43 +102,35 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 // |               └o (baz)
 func prepareGitRepoSyncWithNoPreviousSyncPoints(
 	t *testing.T,
-	runner command.Runner,
-	repoDir string,
+	repo gittest.Repository,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	defaultBranchName string,
 ) {
 	var allBranches = []string{defaultBranchName, "foo", "bar", "baz"}
 
 	var commitsCounter int
-	doEmptyCommit := func(numOfCommits int) {
+	doEmptyCommits := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
 			commitsCounter++
-			runInDir(
-				t, runner, repoDir,
-				"git", "commit", "--allow-empty",
-				"-m", fmt.Sprintf("commit %d", commitsCounter),
-			)
+			repo.Commit(t, fmt.Sprintf("commit %d", commitsCounter), nil)
 		}
 	}
-
 	// write the base module in the root
-	writeFiles(t, repoDir, map[string]string{
+	repo.Commit(t, "commit 0", map[string]string{
 		"buf.yaml": fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
 	})
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "commit 0")
 
-	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", allBranches[1])
-	doEmptyCommit(2)
-	runInDir(t, runner, repoDir, "git", "checkout", defaultBranchName)
-	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", allBranches[2])
-	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", "-b", allBranches[3])
-	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", allBranches[2])
-	doEmptyCommit(1)
-	runInDir(t, runner, repoDir, "git", "checkout", defaultBranchName)
-	doEmptyCommit(1)
+	doEmptyCommits(1)
+	repo.CheckoutB(t, allBranches[1])
+	doEmptyCommits(2)
+	repo.Checkout(t, defaultBranchName)
+	doEmptyCommits(1)
+	repo.CheckoutB(t, allBranches[2])
+	doEmptyCommits(1)
+	repo.CheckoutB(t, allBranches[3])
+	doEmptyCommits(1)
+	repo.Checkout(t, allBranches[2])
+	doEmptyCommits(1)
+	repo.Checkout(t, defaultBranchName)
+	doEmptyCommits(1)
 }
