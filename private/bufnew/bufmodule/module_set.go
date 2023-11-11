@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -85,9 +84,16 @@ func NewModuleSetForSingleModuleKey(
 // ModuleReadBucket that contains all the .proto files of the target and non-target
 // Modules of the ModuleSet.
 //
-// Targeting information will remaing
-func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) (ModuleReadBucket, error) {
-	return nil, errors.New("TODO")
+// Targeting information will remain the same.
+func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleReadBucket {
+	return newMultiModuleReadBucket(
+		slicesextended.Map(
+			moduleSet.Modules(),
+			func(module Module) ModuleReadBucket {
+				return ModuleReadBucketWithOnlyProtoFiles(module)
+			},
+		),
+	)
 }
 
 // ModuleSetTargetModules is a convenience function that returns the target Modules

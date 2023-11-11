@@ -16,8 +16,11 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io/fs"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -214,12 +217,12 @@ func newModuleReadBucket(
 	}
 }
 
-func (f *moduleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
-	fileInfo, err := f.StatFileInfo(ctx, path)
+func (b *moduleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+	fileInfo, err := b.StatFileInfo(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	bucket, err := f.getBucket()
+	bucket, err := b.getBucket()
 	if err != nil {
 		return nil, err
 	}
@@ -230,8 +233,8 @@ func (f *moduleReadBucket) GetFile(ctx context.Context, path string) (File, erro
 	return newFile(fileInfo, readObjectCloser), nil
 }
 
-func (f *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
-	bucket, err := f.getBucket()
+func (b *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	bucket, err := b.getBucket()
 	if err != nil {
 		return nil, err
 	}
@@ -239,10 +242,10 @@ func (f *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	if err != nil {
 		return nil, err
 	}
-	return f.newFileInfo(objectInfo)
+	return b.newFileInfo(objectInfo)
 }
 
-func (f *moduleReadBucket) WalkFileInfos(
+func (b *moduleReadBucket) WalkFileInfos(
 	ctx context.Context,
 	fn func(FileInfo) error,
 	options ...WalkFileInfosOption,
@@ -251,7 +254,7 @@ func (f *moduleReadBucket) WalkFileInfos(
 	for _, option := range options {
 		option(walkFileInfosOptions)
 	}
-	bucket, err := f.getBucket()
+	bucket, err := b.getBucket()
 	if err != nil {
 		return err
 	}
@@ -263,7 +266,7 @@ func (f *moduleReadBucket) WalkFileInfos(
 		ctx,
 		"",
 		func(objectInfo storage.ObjectInfo) error {
-			fileInfo, err := f.newFileInfo(objectInfo)
+			fileInfo, err := b.newFileInfo(objectInfo)
 			if err != nil {
 				return err
 			}
@@ -287,8 +290,8 @@ func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo,
 	return newFileInfo(objectInfo, b.module, fileType, b.getIsTargetedFileForPath(objectInfo.Path())), nil
 }
 
-func (f *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
-	if !f.module.IsTargetModule() {
+func (b *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
+	if !b.module.IsTargetModule() {
 		// If the Module is not targeted, the file is automatically not targeted.
 		//
 		// Note we can change IsTargetModule via setIsTargetModule during ModuleSetBuilder building,
@@ -296,19 +299,19 @@ func (f *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
 		return false
 	}
 	switch {
-	case len(f.targetPathMap) == 0 && len(f.targetExcludePathMap) == 0:
+	case len(b.targetPathMap) == 0 && len(b.targetExcludePathMap) == 0:
 		// If we did not target specific Files, all Files in a targeted Module are targeted.
 		return true
-	case len(f.targetPathMap) == 0 && len(f.targetExcludePathMap) != 0:
+	case len(b.targetPathMap) == 0 && len(b.targetExcludePathMap) != 0:
 		// We only have exclude paths, no paths.
-		return !normalpath.MapHasEqualOrContainingPath(f.targetExcludePathMap, path, normalpath.Relative)
-	case len(f.targetPathMap) != 0 && len(f.targetExcludePathMap) == 0:
+		return !normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative)
+	case len(b.targetPathMap) != 0 && len(b.targetExcludePathMap) == 0:
 		// We only have paths, no exclude paths.
-		return normalpath.MapHasEqualOrContainingPath(f.targetPathMap, path, normalpath.Relative)
+		return normalpath.MapHasEqualOrContainingPath(b.targetPathMap, path, normalpath.Relative)
 	default:
 		// We have both paths and exclude paths.
-		return normalpath.MapHasEqualOrContainingPath(f.targetPathMap, path, normalpath.Relative) &&
-			!normalpath.MapHasEqualOrContainingPath(f.targetExcludePathMap, path, normalpath.Relative)
+		return normalpath.MapHasEqualOrContainingPath(b.targetPathMap, path, normalpath.Relative) &&
+			!normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative)
 	}
 }
 
@@ -367,6 +370,90 @@ func (f *filteredModuleReadBucket) WalkFileInfos(
 
 func (*filteredModuleReadBucket) isModuleReadBucket() {}
 
+// multiModuleReadBucket
+
+type multiModuleReadBucket struct {
+	delegates []ModuleReadBucket
+}
+
+func newMultiModuleReadBucket(
+	delegates []ModuleReadBucket,
+) *multiModuleReadBucket {
+	return &multiModuleReadBucket{
+		delegates: delegates,
+	}
+}
+
+func (m *multiModuleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+	_, delegateIndex, err := m.getFileInfoAndDelegateIndex(ctx, "read", path)
+	if err != nil {
+		return nil, err
+	}
+	return m.delegates[delegateIndex].GetFile(ctx, path)
+}
+
+func (m *multiModuleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	fileInfo, _, err := m.getFileInfoAndDelegateIndex(ctx, "stat", path)
+	return fileInfo, err
+}
+
+func (m *multiModuleReadBucket) WalkFileInfos(
+	ctx context.Context,
+	fn func(FileInfo) error,
+	options ...WalkFileInfosOption,
+) error {
+	seenPathToFileInfo := make(map[string]FileInfo)
+	for _, delegate := range m.delegates {
+		if err := delegate.WalkFileInfos(
+			ctx,
+			func(fileInfo FileInfo) error {
+				path := fileInfo.Path()
+				if existingFileInfo, ok := seenPathToFileInfo[path]; ok {
+					// This does not return all paths that are matching, unlike GetFile and StatFileInfo.
+					// We do not want to continue iterating, as calling WalkFileInfos on the same path
+					// could cause errors downstream as callers expect a single call per path.
+					return newExistsMultipleModulesError(path, existingFileInfo, fileInfo)
+				}
+				seenPathToFileInfo[path] = fileInfo
+				return fn(fileInfo)
+			},
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(
+	ctx context.Context,
+	op string,
+	path string,
+) (FileInfo, int, error) {
+	var fileInfos []FileInfo
+	var delegateIndexes []int
+	for i, delegate := range m.delegates {
+		fileInfo, err := delegate.StatFileInfo(ctx, path)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+			return nil, 0, err
+		}
+		fileInfos = append(fileInfos, fileInfo)
+		delegateIndexes = append(delegateIndexes, i)
+	}
+	switch len(fileInfos) {
+	case 0:
+		return nil, 0, &fs.PathError{Op: op, Path: path, Err: fs.ErrNotExist}
+	case 1:
+		return fileInfos[0], delegateIndexes[0], nil
+	default:
+		return nil, 0, newExistsMultipleModulesError(path, fileInfos...)
+	}
+}
+
+func (*multiModuleReadBucket) isModuleReadBucket() {}
+
 // storageReadBucket
 
 type storageReadBucket struct {
@@ -399,7 +486,21 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 	)
 }
 
-// walkFileInfosOptions
+func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
+	return fmt.Errorf(
+		"%s exists in multiple Modules: %v",
+		path,
+		strings.Join(
+			slicesextended.Map(
+				fileInfos,
+				func(fileInfo FileInfo) string {
+					return fileInfo.Module().OpaqueID()
+				},
+			),
+			",",
+		),
+	)
+}
 
 type walkFileInfosOptions struct {
 	onlyTargetFiles bool
