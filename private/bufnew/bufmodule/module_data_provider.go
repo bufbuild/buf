@@ -24,21 +24,22 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 var (
 	// NopModuleDataProvider is a no-op ModuleDataProvider.
-	NopModuleDataProvider = nopModuleDataProvider{}
+	NopModuleDataProvider ModuleDataProvider = nopModuleDataProvider{}
 )
 
 // ModuleDataProvider provides ModulesDatas.
 type ModuleDataProvider interface {
-	// GetModuleDataForModuleKey gets the ModuleData for the ModuleKey.
+	// GetModuleDataForModuleKey gets the ModuleDatas for the ModuleKeys.
 	//
 	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeys.
 	// If there is an error, no ModuleDatas will be returned.
-	GetModuleDatasForModuleKeys(ctx context.Context, moduleKeys ...ModuleKey) ([]ModuleData, error)
+	GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error)
 }
 
 // NewAPIModuleDataProvider returns a new ModuleDataProvider for the given API client.
@@ -60,7 +61,25 @@ func newAPIModuleDataProvider(clientProvider bufapi.ClientProvider) *apiModuleDa
 	}
 }
 
-func (a *apiModuleDataProvider) GetModuleDataForModuleKey(
+func (a *apiModuleDataProvider) GetModuleDatasForModuleKeys(
+	ctx context.Context,
+	moduleKeys ...ModuleKey,
+) ([]ModuleData, error) {
+	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
+	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
+	// Make sure to respect 250 max.
+	moduleDatas := make([]ModuleData, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		moduleData, err := a.getModuleDataForModuleKey(ctx, moduleKey)
+		if err != nil {
+			return nil, err
+		}
+		moduleDatas[i] = moduleData
+	}
+	return moduleDatas, nil
+}
+
+func (a *apiModuleDataProvider) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey ModuleKey,
 ) (ModuleData, error) {
@@ -103,10 +122,19 @@ func (a *apiModuleDataProvider) GetModuleDataForModuleKey(
 	return NewModuleData(
 		moduleKey,
 		func() (storage.ReadBucket, error) {
-			return a.getBucketForProtoFileNodes(ctx, registryHostname, protoCommitNode.FileNodes)
+			return a.getBucketForProtoFileNodes(
+				ctx,
+				registryHostname,
+				protoCommitNode.Commit.ModuleId,
+				protoCommitNode.FileNodes,
+			)
 		},
 		func() ([]ModuleKey, error) {
-			return a.getModuleKeysForProtoCommits(ctx, registryHostname, protoCommitNode.Deps)
+			return a.getModuleKeysForProtoCommits(
+				ctx,
+				registryHostname,
+				protoCommitNode.Deps,
+			)
 		},
 		// TODO: Is this enough for tamper-proofing? With this, we are just calculating the
 		// digest that we got back from the API, as opposed to re-calculating the digest based
@@ -119,11 +147,43 @@ func (a *apiModuleDataProvider) GetModuleDataForModuleKey(
 	)
 }
 
+// TODO: We could call this for multiple Modules at once and then feed the results out to the individual
+// ModuleDatas that needed them, this is a lot of work though, can do later if we want to optimize.
 func (a *apiModuleDataProvider) getBucketForProtoFileNodes(
 	ctx context.Context,
 	registryHostname string,
+	moduleID string,
 	protoFileNodes []*storagev1beta1.FileNode,
 ) (storage.ReadBucket, error) {
+	fileNodes, err := slicesextended.MapError(
+		protoFileNodes,
+		func(protoFileNode *storage)
+		bufcas.ProtoToFileNode()
+	commitServiceClient := a.clientProvider.CommitServiceClient(registryHostname)
+	protoFileNodeChunks := slicesextended.ToChunks(protoFileNodes, 250)
+	for _, protoFileNodeChunk := range protoFileNodeChunks {
+		response, err := commitServiceClient.GetBlobs(
+			ctx,
+			connect.NewRequest(
+				&modulev1beta1.GetBlobsRequest{
+					Values: []*modulev1beta1.GetBlobsRequest_Value{
+						{
+							ModuleRef: &modulev1beta1.ModuleRef{
+								Value: &modulev1beta1.ModuleRef_Id{
+									Id: moduleID,
+								},
+							},
+							BlobDigests:
+						},
+					},
+				},
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// TODO Read Blobs from CommitService (chunkin
 	return nil, errors.New("TODO")
 }
 
@@ -132,6 +192,7 @@ func (a *apiModuleDataProvider) getModuleKeysForProtoCommits(
 	registryHostname string,
 	protoCommits []*modulev1beta1.Commit,
 ) ([]ModuleKey, error) {
+	// TODO
 	return nil, errors.New("TODO")
 }
 
@@ -139,6 +200,6 @@ func (a *apiModuleDataProvider) getModuleKeysForProtoCommits(
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetModuleDataForModuleKey(context.Context, ModuleKey) (ModuleData, error) {
+func (nopModuleDataProvider) GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error) {
 	return nil, errors.New("nopModuleDataProvider")
 }
