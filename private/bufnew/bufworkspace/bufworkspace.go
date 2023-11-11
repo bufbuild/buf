@@ -56,7 +56,7 @@ func WorkspaceWithTargetSubDirPaths(subDirPaths []string) WorkspaceOption {
 	return nil
 }
 
-func WorkspaceWithProtoFilterPaths(paths []string, excludePaths []string) WorkspaceOption {
+func WorkspaceWithTargetProtoPaths(paths []string, excludePaths []string) WorkspaceOption {
 	return nil
 }
 
@@ -85,7 +85,7 @@ type ModuleConfig interface {
 	// a corresponding Workspace.
 	ModuleFullName() bufmodule.ModuleFullName
 
-	RootToExcludes() map[string][]string
+	//RootToExcludes() map[string][]string
 	LintConfig() LintConfig
 	BreakingConfig() BreakingConfig
 
