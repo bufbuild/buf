@@ -19,10 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -153,8 +153,63 @@ func (r *repository) DefaultBranch() string {
 	return r.defaultBranch
 }
 
-func (r *repository) CurrentBranch(ctx context.Context) (string, error) {
-	return detectCheckedOutBranch(ctx, r.gitDirPath, r.runner)
+func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string, error) {
+	var config checkedOutBranchOpts
+	for _, option := range options {
+		option(&config)
+	}
+	headBytes, err := os.ReadFile(filepath.Join(r.gitDirPath, "HEAD"))
+	if err != nil {
+		return "", fmt.Errorf("read HEAD bytes: %w", err)
+	}
+	headBytes = bytes.TrimSuffix(headBytes, []byte{'\n'})
+	// .git/HEAD could point to a named ref, or could be in a dettached state, ie pointing to a git
+	// hash. Possible values:
+	//
+	// "ref: refs/heads/somelocalbranch"
+	// "ref: refs/remotes/someremote/somebranch"
+	// "somegithash"
+	const refPrefix = "ref: refs/"
+	if strings.HasPrefix(string(headBytes), refPrefix) {
+		refRelDir := strings.TrimPrefix(string(headBytes), refPrefix)
+		if config.remote == "" {
+			// only match local branches
+			const localBranchPrefix = "heads/"
+			if !strings.HasPrefix(refRelDir, localBranchPrefix) {
+				return "", fmt.Errorf("git HEAD %s is not pointing to a local branch", config.remote)
+			}
+			return strings.TrimPrefix(refRelDir, localBranchPrefix), nil
+		}
+		// only match branches from the specific remote
+		remoteBranchPrefix := "remotes/" + config.remote + "/"
+		if !strings.HasPrefix(refRelDir, remoteBranchPrefix) {
+			return "", fmt.Errorf("git HEAD %s is not pointing to branch in remote %s", config.remote, config.remote)
+		}
+		return strings.TrimPrefix(refRelDir, remoteBranchPrefix), nil
+	}
+	// if HEAD is not a named ref, it could be a dettached HEAD, ie a git hash
+	headHash, err := parseHashFromHex(string(headBytes))
+	if err != nil {
+		return "", fmt.Errorf(".git/HEAD is not a named ref nor a git hash: %w", err)
+	}
+	// we can compare that hash with all repo branches' heads
+	var (
+		currentBranch      string
+		foundBranchStopErr = errors.New("found branch, stop looping branches")
+	)
+	if err := r.ForEachBranch(
+		func(branch string, branchHEAD Hash) error {
+			if headHash == branchHEAD {
+				currentBranch = branch
+				return foundBranchStopErr
+			}
+			return nil
+		},
+		ForEachBranchWithRemote(config.remote),
+	); errors.Is(err, foundBranchStopErr) {
+		return currentBranch, nil
+	}
+	return "", errors.New("git HEAD is detached, no matches with any branch")
 }
 
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
@@ -373,43 +428,6 @@ func detectDefaultBranch(gitDirPath string) (string, error) {
 	data = bytes.TrimPrefix(data, defaultBranchRefPrefix)
 	data = bytes.TrimSuffix(data, []byte("\n"))
 	return string(data), nil
-}
-
-func detectCheckedOutBranch(ctx context.Context, gitDirPath string, runner command.Runner) (string, error) {
-	var (
-		stdOutBuffer = bytes.NewBuffer(nil)
-		stdErrBuffer = bytes.NewBuffer(nil)
-	)
-	if err := runner.Run(
-		ctx,
-		"git",
-		command.RunWithArgs(
-			"rev-parse",
-			"--abbrev-ref",
-			"HEAD",
-		),
-		command.RunWithStdout(stdOutBuffer),
-		command.RunWithStderr(stdErrBuffer),
-		command.RunWithDir(gitDirPath), // exec command at the root of the git repo
-	); err != nil {
-		stdErrMsg, err := io.ReadAll(stdErrBuffer)
-		if err != nil {
-			stdErrMsg = []byte(fmt.Sprintf("read stderr: %s", err.Error()))
-		}
-		return "", fmt.Errorf("git rev-parse: %w (%s)", err, string(stdErrMsg))
-	}
-	stdOut, err := io.ReadAll(stdOutBuffer)
-	if err != nil {
-		return "", fmt.Errorf("read current branch: %w", err)
-	}
-	currentBranch := string(bytes.TrimSuffix(stdOut, []byte("\n")))
-	if currentBranch == "" {
-		return "", errors.New("empty current branch")
-	}
-	if currentBranch == "HEAD" {
-		return "", errors.New("no current branch, git HEAD is detached")
-	}
-	return currentBranch, nil
 }
 
 // validateDirPathExists returns a non-nil error if the given dirPath is not a valid directory path.

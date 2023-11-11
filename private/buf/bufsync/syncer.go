@@ -184,7 +184,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		branchesToSync = slicesextended.MapToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
-		currentBranch, err := s.repo.CurrentBranch(ctx)
+		currentBranch, err := s.repo.CheckedOutBranch()
 		if err != nil {
 			return fmt.Errorf("determine checked out branch")
 		}
