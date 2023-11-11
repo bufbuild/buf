@@ -176,14 +176,14 @@ func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string
 			// only match local branches
 			const localBranchPrefix = "heads/"
 			if !strings.HasPrefix(refRelDir, localBranchPrefix) {
-				return "", fmt.Errorf("git HEAD %s is not pointing to a local branch", config.remote)
+				return "", fmt.Errorf("git HEAD %s is not pointing to a local branch", string(headBytes))
 			}
 			return strings.TrimPrefix(refRelDir, localBranchPrefix), nil
 		}
 		// only match branches from the specific remote
 		remoteBranchPrefix := "remotes/" + config.remote + "/"
 		if !strings.HasPrefix(refRelDir, remoteBranchPrefix) {
-			return "", fmt.Errorf("git HEAD %s is not pointing to branch in remote %s", config.remote, config.remote)
+			return "", fmt.Errorf("git HEAD %s is not pointing to branch in remote %s", string(headBytes), config.remote)
 		}
 		return strings.TrimPrefix(refRelDir, remoteBranchPrefix), nil
 	}
