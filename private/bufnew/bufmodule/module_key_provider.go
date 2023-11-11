@@ -32,7 +32,7 @@ type ModuleKeyProvider interface {
 	//
 	// If there is no error, the length of the ModuleKeys returned will match the length of the ModuleRefs.
 	// If there is an error, no ModuleKeys will be returned.
-	GetModuleKeysForModuleRefs(context.Context, ...ModuleRef) (ModuleKey, error)
+	GetModuleKeysForModuleRefs(context.Context, ...ModuleRef) ([]ModuleKey, error)
 }
 
 // NewAPIModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
@@ -50,7 +50,22 @@ func newAPIModuleKeyProvider(clientProvider bufapi.ClientProvider) *apiModuleKey
 	}
 }
 
-func (a *apiModuleKeyProvider) GetModuleKeyForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleKey, error) {
+func (a *apiModuleKeyProvider) GetModuleKeysForModuleRefs(ctx context.Context, moduleRefs ...ModuleRef) ([]ModuleKey, error) {
+	// TODO: Do the work to coalesce ModuleRefs by registry hostname, make calls out to the CommitService
+	// per registry, then get back the resulting data, and order it in the same order as the input ModuleRefs.
+	// Make sure to respect 250 max.
+	moduleKeys := make([]ModuleKey, len(moduleRefs))
+	for i, moduleRef := range moduleRefs {
+		moduleKey, err := a.getModuleKeyForModuleRef(ctx, moduleRef)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[i] = moduleKey
+	}
+	return moduleKeys, nil
+}
+
+func (a *apiModuleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, moduleRef ModuleRef) (ModuleKey, error) {
 	protoCommit, err := a.getProtoCommitForModuleRef(ctx, moduleRef)
 	if err != nil {
 		return nil, err

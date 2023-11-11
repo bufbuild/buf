@@ -34,6 +34,7 @@ type ModuleFullName interface {
 	isModuleFullName()
 }
 
+// NewModuleFullName returns a new ModuleFullName for the given components.
 func NewModuleFullName(
 	registry string,
 	owner string,
@@ -46,6 +47,7 @@ func NewModuleFullName(
 	)
 }
 
+// ParseModuleFullName parses the a ModuleFullName from a string in the form "registry/owner/name".
 func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
 	registry, owner, name, err := parseModuleFullNameComponents(moduleFullNameString)
 	if err != nil {
