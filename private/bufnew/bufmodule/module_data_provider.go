@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
 var (
@@ -155,13 +156,17 @@ func (a *apiModuleDataProvider) getBucketForProtoFileNodes(
 	moduleID string,
 	protoFileNodes []*storagev1beta1.FileNode,
 ) (storage.ReadBucket, error) {
-	fileNodes, err := slicesextended.MapError(
-		protoFileNodes,
-		func(protoFileNode *storage)
-		bufcas.ProtoToFileNode()
 	commitServiceClient := a.clientProvider.CommitServiceClient(registryHostname)
-	protoFileNodeChunks := slicesextended.ToChunks(protoFileNodes, 250)
-	for _, protoFileNodeChunk := range protoFileNodeChunks {
+	// TODO: we could de-dupe this.
+	protoDigests := slicesextended.Map(
+		protoFileNodes,
+		func(protoFileNode *storagev1beta1.FileNode) *storagev1beta1.Digest {
+			return protoFileNode.Digest
+		},
+	)
+	protoDigestChunks := slicesextended.ToChunks(protoDigests, 250)
+	var blobs []bufcas.Blob
+	for _, protoDigestChunk := range protoDigestChunks {
 		response, err := commitServiceClient.GetBlobs(
 			ctx,
 			connect.NewRequest(
@@ -173,7 +178,7 @@ func (a *apiModuleDataProvider) getBucketForProtoFileNodes(
 									Id: moduleID,
 								},
 							},
-							BlobDigests:
+							BlobDigests: protoDigestChunk,
 						},
 					},
 				},
@@ -182,9 +187,41 @@ func (a *apiModuleDataProvider) getBucketForProtoFileNodes(
 		if err != nil {
 			return nil, err
 		}
+		if len(response.Msg.Values) != 1 {
+			return nil, fmt.Errorf("expected 1 GetBlobsResponse.Value, got %d", len(response.Msg.Values))
+		}
+		value := response.Msg.Values[0]
+		if len(value.Blobs) != len(protoDigestChunk) {
+			return nil, fmt.Errorf("expected 1 Blob, got %d", len(value.Blobs))
+		}
+		chunkBlobs, err := bufcas.ProtoToBlobs(value.Blobs)
+		if err != nil {
+			return nil, err
+		}
+		blobs = append(blobs, chunkBlobs...)
 	}
-	// TODO Read Blobs from CommitService (chunkin
-	return nil, errors.New("TODO")
+
+	fileNodes, err := bufcas.ProtoToFileNodes(protoFileNodes)
+	if err != nil {
+		return nil, err
+	}
+	manifest, err := bufcas.NewManifest(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	blobSet, err := bufcas.NewBlobSet(blobs)
+	if err != nil {
+		return nil, err
+	}
+	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
+	if err != nil {
+		return nil, err
+	}
+	bucket := storagemem.NewReadWriteBucket()
+	if err := bufcas.PutFileSetToBucket(ctx, fileSet, bucket); err != nil {
+		return nil, err
+	}
+	return bucket, nil
 }
 
 func (a *apiModuleDataProvider) getModuleKeysForProtoCommits(
