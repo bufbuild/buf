@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -360,7 +360,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 func TestCsharpNamespaceWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -376,7 +376,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		csharpNamespaceModifier := CsharpNamespace(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -400,7 +400,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		csharpNamespaceModifier := CsharpNamespace(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -424,7 +424,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		csharpNamespaceModifier := CsharpNamespace(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -451,7 +451,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		csharpNamespaceModifier := CsharpNamespace(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -474,7 +474,7 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideCsharpNamespacePrefix := "x.y.z"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -491,8 +491,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideCsharpNamespacePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideCsharpNamespacePrefix,
 			},
 			nil,
 		)
@@ -525,8 +525,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideCsharpNamespacePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideCsharpNamespacePrefix,
 			},
 			nil,
 		)
@@ -559,8 +559,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideCsharpNamespacePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideCsharpNamespacePrefix,
 			},
 			map[string]string{"a.proto": "override"},
 		)
@@ -597,8 +597,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideCsharpNamespacePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideCsharpNamespacePrefix,
 			},
 			map[string]string{"a.proto": "override"},
 		)

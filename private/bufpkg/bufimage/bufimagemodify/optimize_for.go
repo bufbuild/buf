@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -34,34 +34,34 @@ func optimizeFor(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultOptimizeFor descriptorpb.FileOptions_OptimizeMode,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]descriptorpb.FileOptions_OptimizeMode,
 ) Modifier {
-	// Convert the bufmoduleref.ModuleIdentity types into
+	// Convert the bufmodule.ModuleFullName types into
 	// strings so that they're comparable.
-	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
-	for _, moduleIdentity := range except {
-		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	exceptModuleFullNameStrings := make(map[string]struct{}, len(except))
+	for _, moduleFullName := range except {
+		exceptModuleFullNameStrings[moduleFullName.String()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(
+	overrideModuleFullNameStrings := make(
 		map[string]descriptorpb.FileOptions_OptimizeMode,
 		len(moduleOverrides),
 	)
-	for moduleIdentity, optimizeFor := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = optimizeFor
+	for moduleFullName, optimizeFor := range moduleOverrides {
+		overrideModuleFullNameStrings[moduleFullName.String()] = optimizeFor
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
-			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+			seenModuleFullNameStrings := make(map[string]struct{}, len(overrideModuleFullNameStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				modifierValue := defaultOptimizeFor
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					moduleIdentityString := moduleIdentity.IdentityString()
-					if optimizeForOverrdie, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+				if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+					moduleFullNameString := moduleFullName.String()
+					if optimizeForOverrdie, ok := overrideModuleFullNameStrings[moduleFullNameString]; ok {
 						modifierValue = optimizeForOverrdie
-						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						seenModuleFullNameStrings[moduleFullNameString] = struct{}{}
 					}
 				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
@@ -73,14 +73,14 @@ func optimizeFor(
 					sweeper,
 					imageFile,
 					modifierValue,
-					exceptModuleIdentityStrings,
+					exceptModuleFullNameStrings,
 				); err != nil {
 					return err
 				}
 			}
-			for moduleIdentityString := range overrideModuleIdentityStrings {
-				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("optimize_for override for %q was unused", moduleIdentityString)
+			for moduleFullNameString := range overrideModuleFullNameStrings {
+				if _, ok := seenModuleFullNameStrings[moduleFullNameString]; !ok {
+					logger.Sugar().Warnf("optimize_for override for %q was unused", moduleFullNameString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -98,7 +98,7 @@ func optimizeForForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	value descriptorpb.FileOptions_OptimizeMode,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.FileDescriptorProto()
 	options := descriptor.GetOptions()
@@ -114,8 +114,8 @@ func optimizeForForFile(
 		// same as the default, don't do anything.
 		return nil
 	}
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+	if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+		if _, ok := exceptModuleFullNameStrings[moduleFullName.String()]; ok {
 			return nil
 		}
 	}

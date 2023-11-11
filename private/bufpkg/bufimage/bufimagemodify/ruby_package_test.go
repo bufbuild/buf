@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -359,7 +359,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 func TestRubyPackageExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "rubyoptions", "single")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -374,7 +374,7 @@ func TestRubyPackageExcept(t *testing.T) {
 		rubyPackageModifier := RubyPackage(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -397,7 +397,7 @@ func TestRubyPackageExcept(t *testing.T) {
 		rubyPackageModifier := RubyPackage(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -419,7 +419,7 @@ func TestRubyPackageExcept(t *testing.T) {
 		rubyPackageModifier := RubyPackage(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"override.proto": "override"},
 		)
@@ -443,7 +443,7 @@ func TestRubyPackageExcept(t *testing.T) {
 		rubyPackageModifier := RubyPackage(
 			zap.NewNop(),
 			sweeper,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"override.proto": "override"},
 		)
@@ -462,7 +462,7 @@ func TestRubyPackageOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "rubyoptions", "single")
 	overrideRubyPackage := "MODULE"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -478,7 +478,7 @@ func TestRubyPackageOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideRubyPackage},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideRubyPackage},
 			nil,
 		)
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -505,7 +505,7 @@ func TestRubyPackageOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideRubyPackage},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideRubyPackage},
 			nil,
 		)
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -532,7 +532,7 @@ func TestRubyPackageOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideRubyPackage},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideRubyPackage},
 			map[string]string{"override.proto": "override"},
 		)
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -563,7 +563,7 @@ func TestRubyPackageOverride(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideRubyPackage},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideRubyPackage},
 			map[string]string{"override.proto": "override"},
 		)
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))

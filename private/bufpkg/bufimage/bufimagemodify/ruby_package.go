@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -36,30 +36,30 @@ var rubyPackagePath = []int32{8, 45}
 func rubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
-	// Convert the bufmoduleref.ModuleIdentity types into
+	// Convert the bufmodule.ModuleFullName types into
 	// strings so that they're comparable.
-	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
-	for _, moduleIdentity := range except {
-		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	exceptModuleFullNameStrings := make(map[string]struct{}, len(except))
+	for _, moduleFullName := range except {
+		exceptModuleFullNameStrings[moduleFullName.String()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, rubyPackage := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = rubyPackage
+	overrideModuleFullNameStrings := make(map[string]string, len(moduleOverrides))
+	for moduleFullName, rubyPackage := range moduleOverrides {
+		overrideModuleFullNameStrings[moduleFullName.String()] = rubyPackage
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
-			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+			seenModuleFullNameStrings := make(map[string]struct{}, len(overrideModuleFullNameStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				rubyPackageValue := rubyPackageValue(imageFile)
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					moduleIdentityString := moduleIdentity.IdentityString()
-					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
-						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+				if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+					moduleFullNameString := moduleFullName.String()
+					if moduleNamespaceOverride, ok := overrideModuleFullNameStrings[moduleFullNameString]; ok {
+						seenModuleFullNameStrings[moduleFullNameString] = struct{}{}
 						rubyPackageValue = moduleNamespaceOverride
 					}
 				}
@@ -72,14 +72,14 @@ func rubyPackage(
 					sweeper,
 					imageFile,
 					rubyPackageValue,
-					exceptModuleIdentityStrings,
+					exceptModuleFullNameStrings,
 				); err != nil {
 					return err
 				}
 			}
-			for moduleIdentityString := range overrideModuleIdentityStrings {
-				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("ruby_package override for %q was unused", moduleIdentityString)
+			for moduleFullNameString := range overrideModuleFullNameStrings {
+				if _, ok := seenModuleFullNameStrings[moduleFullNameString]; !ok {
+					logger.Sugar().Warnf("ruby_package override for %q was unused", moduleFullNameString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -97,7 +97,7 @@ func rubyPackageForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	rubyPackageValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.FileDescriptorProto()
 	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
@@ -105,8 +105,8 @@ func rubyPackageForFile(
 		// value, so this is a no-op.
 		return nil
 	}
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+	if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+		if _, ok := exceptModuleFullNameStrings[moduleFullName.String()]; ok {
 			return nil
 		}
 	}

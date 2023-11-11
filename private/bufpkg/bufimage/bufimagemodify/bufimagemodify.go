@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
@@ -113,8 +113,8 @@ func GoPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	return goPackage(
@@ -164,8 +164,8 @@ func JavaPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultPrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	return javaPackage(
@@ -200,8 +200,8 @@ func OptimizeFor(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultOptimizeFor descriptorpb.FileOptions_OptimizeMode,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]string,
 ) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToOptimizeModeOverrides(overrides)
@@ -241,8 +241,8 @@ func ObjcClassPrefix(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultPrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverride map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverride map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
 	return objcClassPrefix(logger, sweeper, defaultPrefix, except, moduleOverride, overrides)
@@ -253,8 +253,8 @@ func ObjcClassPrefix(
 func CsharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
 	return csharpNamespace(
@@ -293,8 +293,8 @@ func PhpMetadataNamespace(
 func RubyPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
 	return rubyPackage(

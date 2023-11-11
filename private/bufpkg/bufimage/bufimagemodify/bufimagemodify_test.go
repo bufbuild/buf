@@ -18,10 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -72,17 +71,16 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 }
 
 func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	module := testGetModule(t, dirPath)
+	moduleSet := testGetModuleSet(t, dirPath)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {
 		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
 	}
 	image, annotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
 	).Build(
 		context.Background(),
-		module,
+		moduleSet,
 		options...,
 	)
 	require.NoError(t, err)
@@ -90,23 +88,25 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	return image
 }
 
-func testGetModule(t *testing.T, dirPath string) bufmodule.Module {
+func testGetModuleSet(t *testing.T, dirPath string) bufmodule.ModuleSet {
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 	)
 	require.NoError(t, err)
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+	moduleFullName, err := bufmodule.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
 	)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(
+	moduleSet, err := bufmodule.NewModuleSetForSingleBucket(
 		context.Background(),
 		readWriteBucket,
-		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, bufmoduletesting.TestCommit),
+		dirPath,
+		bufmodule.BucketWithModuleFullName(moduleFullName),
+		bufmodule.BucketWithCommitID(bufmoduletesting.TestCommit),
 	)
 	require.NoError(t, err)
-	return module
+	return moduleSet
 }

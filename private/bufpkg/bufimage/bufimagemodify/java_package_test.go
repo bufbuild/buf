@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -379,7 +379,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 func TestJavaPackageWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "javaemptyoptions")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -396,7 +396,7 @@ func TestJavaPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testJavaPackagePrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -422,7 +422,7 @@ func TestJavaPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testJavaPackagePrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -446,7 +446,7 @@ func TestJavaPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testJavaPackagePrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -471,7 +471,7 @@ func TestJavaPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testJavaPackagePrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -489,7 +489,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "javaemptyoptions")
 	overrideJavaPackagePrefix := "foo.bar"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -507,8 +507,8 @@ func TestJavaPackageWithOverride(t *testing.T) {
 			sweeper,
 			testJavaPackagePrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideJavaPackagePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideJavaPackagePrefix,
 			},
 			nil,
 		)
@@ -543,8 +543,8 @@ func TestJavaPackageWithOverride(t *testing.T) {
 			sweeper,
 			testJavaPackagePrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideJavaPackagePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideJavaPackagePrefix,
 			},
 			nil,
 		)
@@ -577,8 +577,8 @@ func TestJavaPackageWithOverride(t *testing.T) {
 			sweeper,
 			testJavaPackagePrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideJavaPackagePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideJavaPackagePrefix,
 			},
 			map[string]string{"a.proto": "override"},
 		)
@@ -610,8 +610,8 @@ func TestJavaPackageWithOverride(t *testing.T) {
 			sweeper,
 			testJavaPackagePrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{
-				testModuleIdentity: overrideJavaPackagePrefix,
+			map[bufmodule.ModuleFullName]string{
+				testModuleFullName: overrideJavaPackagePrefix,
 			},
 			map[string]string{"a.proto": "override"},
 		)

@@ -21,12 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -92,17 +90,17 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 // fuzzBuild does a builder.Build for a fuzz test.
 func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	module, err := fuzzGetModule(ctx, dirPath)
+	module, err := fuzzGetModuleSet(ctx, dirPath)
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(zap.NewNop(), bufmodule.NewNopModuleReader())
+	builder := bufimagebuild.NewBuilder(zap.NewNop())
 	opt := bufimagebuild.WithExcludeSourceCodeInfo()
 	return builder.Build(ctx, module, opt)
 }
 
-// fuzzGetModule gets the bufmodule.Module for a fuzz test.
-func fuzzGetModule(ctx context.Context, dirPath string) (bufmodule.Module, error) {
+// fuzzGetModuleSet gets the bufmodule.ModuleSet for a fuzz test.
+func fuzzGetModuleSet(ctx context.Context, dirPath string) (bufmodule.ModuleSet, error) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
@@ -111,14 +109,10 @@ func fuzzGetModule(ctx context.Context, dirPath string) (bufmodule.Module, error
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
-	if err != nil {
-		return nil, err
-	}
-	return bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+	return bufmodule.NewModuleSetForSingleBucket(
 		ctx,
 		readWriteBucket,
-		config,
+		dirPath,
 	)
 }
 

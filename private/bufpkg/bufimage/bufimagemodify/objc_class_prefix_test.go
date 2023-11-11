@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -484,7 +484,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "objcoptions", "single")
 	defaultClassPrefix := "DEFAULT"
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -500,7 +500,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			defaultClassPrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -525,7 +525,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			defaultClassPrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -549,7 +549,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			defaultClassPrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"override.proto": "override"},
 		)
@@ -574,7 +574,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			defaultClassPrefix,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{"override.proto": "override"},
 		)
@@ -592,7 +592,7 @@ func TestObjcClassPrefixWithExcept(t *testing.T) {
 func TestObjcClassPrefixWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "objcoptions", "single")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -611,7 +611,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			sweeper,
 			defaultClassPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideClassPrefix},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideClassPrefix},
 			nil,
 		)
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
@@ -638,7 +638,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			sweeper,
 			defaultClassPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideClassPrefix},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideClassPrefix},
 			nil,
 		)
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
@@ -665,7 +665,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			sweeper,
 			defaultClassPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideClassPrefix},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideClassPrefix},
 			map[string]string{"override.proto": "override"},
 		)
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
@@ -696,7 +696,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 			sweeper,
 			defaultClassPrefix,
 			nil,
-			map[bufmoduleref.ModuleIdentity]string{testModuleIdentity: overrideClassPrefix},
+			map[bufmodule.ModuleFullName]string{testModuleFullName: overrideClassPrefix},
 			map[string]string{"override.proto": "override"},
 		)
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))

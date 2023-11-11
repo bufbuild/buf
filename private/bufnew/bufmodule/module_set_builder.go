@@ -156,9 +156,13 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, errors.New("bucketID is required when calling AddModuleForBucket"))
 		return b
 	}
-	addModuleForBucketOptions := newBucketOptions()
+	bucketOptions := newBucketOptions()
 	for _, option := range options {
-		option(addModuleForBucketOptions)
+		option(bucketOptions)
+	}
+	if bucketOptions.moduleFullName == nil && bucketOptions.commitID != "" {
+		b.errs = append(b.errs, errors.New("cannot set commitID without ModuleFullName when calling AddModuleForBucket"))
+		return b
 	}
 	module, err := newModule(
 		b.ctx,
@@ -167,11 +171,11 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 			return bucket, nil
 		},
 		bucketID,
-		addModuleForBucketOptions.moduleFullName,
-		addModuleForBucketOptions.commitID,
+		bucketOptions.moduleFullName,
+		bucketOptions.commitID,
 		isTargetModule,
-		addModuleForBucketOptions.targetPaths,
-		addModuleForBucketOptions.targetExcludePaths,
+		bucketOptions.targetPaths,
+		bucketOptions.targetExcludePaths,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)

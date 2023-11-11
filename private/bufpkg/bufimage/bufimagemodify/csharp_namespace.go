@@ -18,8 +18,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -36,30 +36,30 @@ var csharpNamespacePath = []int32{8, 37}
 func csharpNamespace(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
-	// Convert the bufmoduleref.ModuleIdentity types into
+	// Convert the bufmodule.ModuleFullName types into
 	// strings so that they're comparable.
-	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
-	for _, moduleIdentity := range except {
-		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	exceptModuleFullNameStrings := make(map[string]struct{}, len(except))
+	for _, moduleFullName := range except {
+		exceptModuleFullNameStrings[moduleFullName.String()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, csharpNamespace := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = csharpNamespace
+	overrideModuleFullNameStrings := make(map[string]string, len(moduleOverrides))
+	for moduleFullName, csharpNamespace := range moduleOverrides {
+		overrideModuleFullNameStrings[moduleFullName.String()] = csharpNamespace
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
-			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+			seenModuleFullNameStrings := make(map[string]struct{}, len(overrideModuleFullNameStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				csharpNamespaceValue := csharpNamespaceValue(imageFile)
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					moduleIdentityString := moduleIdentity.IdentityString()
-					if moduleNamespaceOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
-						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+				if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+					moduleFullNameString := moduleFullName.String()
+					if moduleNamespaceOverride, ok := overrideModuleFullNameStrings[moduleFullNameString]; ok {
+						seenModuleFullNameStrings[moduleFullNameString] = struct{}{}
 						csharpNamespaceValue = moduleNamespaceOverride
 					}
 				}
@@ -72,14 +72,14 @@ func csharpNamespace(
 					sweeper,
 					imageFile,
 					csharpNamespaceValue,
-					exceptModuleIdentityStrings,
+					exceptModuleFullNameStrings,
 				); err != nil {
 					return err
 				}
 			}
-			for moduleIdentityString := range overrideModuleIdentityStrings {
-				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("csharp_namespace_prefix override for %q was unused", moduleIdentityString)
+			for moduleFullNameString := range overrideModuleFullNameStrings {
+				if _, ok := seenModuleFullNameStrings[moduleFullNameString]; !ok {
+					logger.Sugar().Warnf("csharp_namespace_prefix override for %q was unused", moduleFullNameString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -97,9 +97,9 @@ func csharpNamespaceForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	csharpNamespaceValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) error {
-	if shouldSkipCsharpNamespaceForFile(ctx, imageFile, csharpNamespaceValue, exceptModuleIdentityStrings) {
+	if shouldSkipCsharpNamespaceForFile(ctx, imageFile, csharpNamespaceValue, exceptModuleFullNameStrings) {
 		// This is a well-known type or we could not resolve a non-empty csharp_namespace
 		// value, so this is a no-op.
 		return nil
@@ -119,7 +119,7 @@ func shouldSkipCsharpNamespaceForFile(
 	ctx context.Context,
 	imageFile bufimage.ImageFile,
 	csharpNamespaceValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) bool {
 	if isWellKnownType(ctx, imageFile) || csharpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty csharp_namespace
@@ -127,8 +127,8 @@ func shouldSkipCsharpNamespaceForFile(
 		return true
 	}
 
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+	if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+		if _, ok := exceptModuleFullNameStrings[moduleFullName.String()]; ok {
 			return true
 		}
 	}

@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -41,34 +41,34 @@ func javaPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultPackagePrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	if defaultPackagePrefix == "" {
 		return nil, fmt.Errorf("a non-empty package prefix is required")
 	}
-	// Convert the bufmoduleref.ModuleIdentity types into
+	// Convert the bufmodule.ModuleFullName types into
 	// strings so that they're comparable.
-	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
-	for _, moduleIdentity := range except {
-		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	exceptModuleFullNameStrings := make(map[string]struct{}, len(except))
+	for _, moduleFullName := range except {
+		exceptModuleFullNameStrings[moduleFullName.String()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, javaPackagePrefix := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = javaPackagePrefix
+	overrideModuleFullNameStrings := make(map[string]string, len(moduleOverrides))
+	for moduleFullName, javaPackagePrefix := range moduleOverrides {
+		overrideModuleFullNameStrings[moduleFullName.String()] = javaPackagePrefix
 	}
-	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+	seenModuleFullNameStrings := make(map[string]struct{}, len(overrideModuleFullNameStrings))
 	seenOverrideFiles := make(map[string]struct{}, len(overrides))
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
 				packagePrefix := defaultPackagePrefix
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					moduleIdentityString := moduleIdentity.IdentityString()
-					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+				if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+					moduleFullNameString := moduleFullName.String()
+					if modulePrefixOverride, ok := overrideModuleFullNameStrings[moduleFullNameString]; ok {
 						packagePrefix = modulePrefixOverride
-						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						seenModuleFullNameStrings[moduleFullNameString] = struct{}{}
 					}
 				}
 				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
@@ -81,14 +81,14 @@ func javaPackage(
 					sweeper,
 					imageFile,
 					javaPackageValue,
-					exceptModuleIdentityStrings,
+					exceptModuleFullNameStrings,
 				); err != nil {
 					return err
 				}
 			}
-			for moduleIdentityString := range overrideModuleIdentityStrings {
-				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("java_package_prefix override for %q was unused", moduleIdentityString)
+			for moduleFullNameString := range overrideModuleFullNameStrings {
+				if _, ok := seenModuleFullNameStrings[moduleFullNameString]; !ok {
+					logger.Sugar().Warnf("java_package_prefix override for %q was unused", moduleFullNameString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -106,9 +106,9 @@ func javaPackageForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	javaPackageValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) error {
-	if shouldSkipJavaPackageForFile(ctx, imageFile, javaPackageValue, exceptModuleIdentityStrings) {
+	if shouldSkipJavaPackageForFile(ctx, imageFile, javaPackageValue, exceptModuleFullNameStrings) {
 		return nil
 	}
 	descriptor := imageFile.FileDescriptorProto()
@@ -126,7 +126,7 @@ func shouldSkipJavaPackageForFile(
 	ctx context.Context,
 	imageFile bufimage.ImageFile,
 	javaPackageValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) bool {
 	if isWellKnownType(ctx, imageFile) || javaPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty java_package
@@ -134,8 +134,8 @@ func shouldSkipJavaPackageForFile(
 		return true
 	}
 
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+	if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+		if _, ok := exceptModuleFullNameStrings[moduleFullName.String()]; ok {
 			return true
 		}
 	}

@@ -17,8 +17,8 @@ package bufimagetesting
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/stretchr/testify/assert"
@@ -28,11 +28,11 @@ import (
 
 // NewImageFile returns a new ImageFile for testing.
 //
-// TODO: moduleIdentity and commit should be options.
+// TODO: moduleFullName and commit should be options.
 func NewImageFile(
 	t testing.TB,
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	commit string,
 	externalPath string,
 	isImport bool,
@@ -41,7 +41,7 @@ func NewImageFile(
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptor,
-		moduleIdentity,
+		moduleFullName,
 		commit,
 		externalPath,
 		isImport,
@@ -105,8 +105,8 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.FileDescriptorProto().GetName(),
 				imageFile.FileDescriptorProto().GetDependency()...,
 			),
-			imageFile.ModuleIdentity(),
-			imageFile.Commit(),
+			imageFile.ModuleFullName(),
+			imageFile.CommitID(),
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
 			imageFile.IsSyntaxUnspecified(),

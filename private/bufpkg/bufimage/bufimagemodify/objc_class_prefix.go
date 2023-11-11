@@ -20,7 +20,7 @@ import (
 	"unicode"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -38,47 +38,47 @@ func objcClassPrefix(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultPrefix string,
-	except []bufmoduleref.ModuleIdentity,
-	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
+	except []bufmodule.ModuleFullName,
+	moduleOverrides map[bufmodule.ModuleFullName]string,
 	overrides map[string]string,
 ) Modifier {
-	// Convert the bufmoduleref.ModuleIdentity types into
+	// Convert the bufmodule.ModuleFullName types into
 	// strings so that they're comparable.
-	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
-	for _, moduleIdentity := range except {
-		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	exceptModuleFullNameStrings := make(map[string]struct{}, len(except))
+	for _, moduleFullName := range except {
+		exceptModuleFullNameStrings[moduleFullName.String()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, goPackagePrefix := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
+	overrideModuleFullNameStrings := make(map[string]string, len(moduleOverrides))
+	for moduleFullName, goPackagePrefix := range moduleOverrides {
+		overrideModuleFullNameStrings[moduleFullName.String()] = goPackagePrefix
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
-			seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+			seenModuleFullNameStrings := make(map[string]struct{}, len(overrideModuleFullNameStrings))
 			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				objcClassPrefixValue := objcClassPrefixValue(imageFile)
 				if defaultPrefix != "" {
 					objcClassPrefixValue = defaultPrefix
 				}
-				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					moduleIdentityString := moduleIdentity.IdentityString()
-					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+				if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+					moduleFullNameString := moduleFullName.String()
+					if modulePrefixOverride, ok := overrideModuleFullNameStrings[moduleFullNameString]; ok {
 						objcClassPrefixValue = modulePrefixOverride
-						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+						seenModuleFullNameStrings[moduleFullNameString] = struct{}{}
 					}
 				}
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					objcClassPrefixValue = overrideValue
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := objcClassPrefixForFile(ctx, sweeper, imageFile, objcClassPrefixValue, exceptModuleIdentityStrings); err != nil {
+				if err := objcClassPrefixForFile(ctx, sweeper, imageFile, objcClassPrefixValue, exceptModuleFullNameStrings); err != nil {
 					return err
 				}
 			}
-			for moduleIdentityString := range overrideModuleIdentityStrings {
-				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf("%s override for %q was unused", ObjcClassPrefixID, moduleIdentityString)
+			for moduleFullNameString := range overrideModuleFullNameStrings {
+				if _, ok := seenModuleFullNameStrings[moduleFullNameString]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", ObjcClassPrefixID, moduleFullNameString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -96,7 +96,7 @@ func objcClassPrefixForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	objcClassPrefixValue string,
-	exceptModuleIdentityStrings map[string]struct{},
+	exceptModuleFullNameStrings map[string]struct{},
 ) error {
 	descriptor := imageFile.FileDescriptorProto()
 	if isWellKnownType(ctx, imageFile) || objcClassPrefixValue == "" {
@@ -104,8 +104,8 @@ func objcClassPrefixForFile(
 		// value, so this is a no-op.
 		return nil
 	}
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+	if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+		if _, ok := exceptModuleFullNameStrings[moduleFullName.String()]; ok {
 			return nil
 		}
 	}

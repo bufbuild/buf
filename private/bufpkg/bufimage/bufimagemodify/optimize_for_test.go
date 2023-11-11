@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -389,7 +389,7 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 func TestOptimizeForWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -406,7 +406,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -432,7 +432,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			nil,
 		)
@@ -458,7 +458,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{
 				"a.proto": "LITE_RUNTIME",
@@ -485,7 +485,7 @@ func TestOptimizeForWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
-			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
+			[]bufmodule.ModuleFullName{testModuleFullName},
 			nil,
 			map[string]string{
 				"a.proto": "SPEED",
@@ -507,7 +507,7 @@ func TestOptimizeForWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideOptimizeFor := descriptorpb.FileOptions_LITE_RUNTIME
-	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
+	testModuleFullName, err := bufmoduleref.NewModuleFullName(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -525,8 +525,8 @@ func TestOptimizeForWithOverride(t *testing.T) {
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode{
+				testModuleFullName: overrideOptimizeFor,
 			},
 			nil,
 		)
@@ -561,8 +561,8 @@ func TestOptimizeForWithOverride(t *testing.T) {
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode{
+				testModuleFullName: overrideOptimizeFor,
 			},
 			nil,
 		)
@@ -597,8 +597,8 @@ func TestOptimizeForWithOverride(t *testing.T) {
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode{
+				testModuleFullName: overrideOptimizeFor,
 			},
 			map[string]string{
 				"a.proto": "CODE_SIZE",
@@ -635,8 +635,8 @@ func TestOptimizeForWithOverride(t *testing.T) {
 			sweeper,
 			descriptorpb.FileOptions_CODE_SIZE,
 			nil,
-			map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-				testModuleIdentity: overrideOptimizeFor,
+			map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode{
+				testModuleFullName: overrideOptimizeFor,
 			},
 			map[string]string{
 				"a.proto": "CODE_SIZE",
