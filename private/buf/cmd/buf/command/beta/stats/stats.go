@@ -131,6 +131,7 @@ func run(
 	moduleConfigs := moduleConfigSet.ModuleConfigs()
 	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
+		// TODO: convert to use protostatstorage.NewFileWalker with bufmodule.ModuleReadBucketToStorageReadBucket.
 		stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
 		if err != nil {
 			return err

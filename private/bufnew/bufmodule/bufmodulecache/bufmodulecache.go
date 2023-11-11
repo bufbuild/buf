@@ -12,8 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufmodulecache
 
-package bufmodulestat
+import (
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/storage"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+// NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
+//
+// The given Bucket is used as a cache. This package can choose to use the bucket however it wishes.
+//
+// TODO: Actually implement this. Right now it is just a passthrough.
+func NewModuleDataProvider(
+	delegate bufmodule.ModuleDataProvider,
+	bucket storage.ReadWriteBucket,
+) bufmodule.ModuleDataProvider {
+	return delegate
+}

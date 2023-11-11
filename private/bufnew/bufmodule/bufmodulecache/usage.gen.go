@@ -12,20 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulestat
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/protostat"
-)
+package bufmodulecache
 
-// NewFileWalker returns a new FileWalker for the given Module.
-//
-// This walks all target files from TargetFileInfos.
-//
-// We use TargetFileInfos instead of SourceFileInfos as this means
-// that if someone sets up a filter at a higher level, this will respect it.
-// In most cases, TargetFileInfos is the same as SourceFileInfos.
-func NewFileWalker(module bufmodule.Module) protostat.FileWalker {
-	return newFileWalker(module)
-}
+import _ "github.com/bufbuild/buf/private/usage"
