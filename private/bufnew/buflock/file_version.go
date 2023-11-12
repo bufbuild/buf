@@ -24,16 +24,20 @@ const (
 	FileVersionV1Beta1 FileVersion = iota + 1
 	// FileVersionV1 represents v1 lock files.
 	FileVersionV1
+	// FileVersionV2 represents v2 lock files.
+	FileVersionV2
 )
 
 var (
 	fileVersionToString = map[FileVersion]string{
 		FileVersionV1Beta1: "v1beta1",
 		FileVersionV1:      "v1",
+		FileVersionV2:      "v2",
 	}
 	stringToFileVersion = map[string]FileVersion{
 		"v1beta1": FileVersionV1Beta1,
 		"v1":      FileVersionV1,
+		"v2":      FileVersionV2,
 	}
 )
 

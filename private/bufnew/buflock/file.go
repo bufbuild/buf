@@ -108,6 +108,35 @@ func readFile(reader io.Reader) (File, error) {
 			depModuleKeys[i] = depModuleKey
 		}
 		return newFile(fileVersion, depModuleKeys)
+	case FileVersionV2:
+		var externalFile externalFileV2
+		if err := encoding.UnmarshalYAMLStrict(data, &externalFile); err != nil {
+			return nil, fmt.Errorf("failed to decode lock file as version %v: %w", fileVersion, err)
+		}
+		depModuleKeys := make([]bufmodule.ModuleKey, len(externalFile.Deps))
+		for i, dep := range externalFile.Deps {
+			dep := dep
+			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Module)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode lock file: invalid module name: %w", err)
+			}
+			// TODO: We should be able to remove commit. See comment on externalFileDepV2.
+			if dep.Commit == "" {
+				return nil, errors.New("failed to decode lock file: no commit specified")
+			}
+			depModuleKey, err := bufmodule.NewModuleKey(
+				moduleFullName,
+				dep.Commit,
+				func() (bufcas.Digest, error) {
+					return bufcas.ParseDigest(dep.Digest)
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			depModuleKeys[i] = depModuleKey
+		}
+		return newFile(fileVersion, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
@@ -133,6 +162,31 @@ func writeFile(writer io.Writer, file File) error {
 				Repository: depModuleKey.ModuleFullName().Name(),
 				Commit:     depModuleKey.CommitID(),
 				Digest:     digest.String(),
+			}
+		}
+		// No need to sort - depModuleKeys is already sorted by ModuleFullName
+		data, err := encoding.MarshalYAML(&externalFile)
+		if err != nil {
+			return fmt.Errorf("failed to encode lock file: %w", err)
+		}
+		_, err = writer.Write(append(fileHeader, data...))
+		return err
+	case FileVersionV2:
+		depModuleKeys := file.DepModuleKeys()
+		externalFile := externalFileV2{
+			Version: fileVersion.String(),
+			Deps:    make([]externalFileDepV2, len(depModuleKeys)),
+		}
+		for i, depModuleKey := range depModuleKeys {
+			digest, err := depModuleKey.Digest()
+			if err != nil {
+				return fmt.Errorf("failed to encode lock file: digest error: %w", err)
+			}
+			externalFile.Deps[i] = externalFileDepV2{
+				Module: depModuleKey.ModuleFullName().String(),
+				// TODO: We should be able to remove commit. See comment on externalFileDepV2.
+				Commit: depModuleKey.CommitID(),
+				Digest: digest.String(),
 			}
 		}
 		// No need to sort - depModuleKeys is already sorted by ModuleFullName

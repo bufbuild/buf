@@ -15,6 +15,7 @@
 package buflock
 
 import (
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -50,7 +51,14 @@ type File interface {
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateFileDigests().
 func NewFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (File, error) {
-	return newFile(fileVersion, depModuleKeys)
+	file, err := newFile(fileVersion, depModuleKeys)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(file.FileVersion()); err != nil {
+		return nil, err
+	}
+	return file, nil
 }
 
 // ReadFile reads the File from the io.Reader.
@@ -58,11 +66,21 @@ func NewFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (File
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateFileDigests().
 func ReadFile(reader io.Reader) (File, error) {
-	return readFile(reader)
+	file, err := readFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(file.FileVersion()); err != nil {
+		return nil, err
+	}
+	return file, nil
 }
 
 // WriteFile writes the File to the io.Writer.
 func WriteFile(writer io.Writer, file File) error {
+	if err := checkV2SupportedYet(file.FileVersion()); err != nil {
+		return err
+	}
 	return writeFile(writer, file)
 }
 
@@ -71,6 +89,9 @@ func WriteFile(writer io.Writer, file File) error {
 //
 // TODO: should we just ensure this property when returning from NewFile, ReadFile?
 func ValidateFileDigests(file File) error {
+	if err := checkV2SupportedYet(file.FileVersion()); err != nil {
+		return err
+	}
 	var errs []error
 	for _, depModuleKey := range file.DepModuleKeys() {
 		if _, err := depModuleKey.Digest(); err != nil {
@@ -78,4 +99,12 @@ func ValidateFileDigests(file File) error {
 		}
 	}
 	return multierr.Combine(errs...)
+}
+
+// TODO: Remove when V2 is supported.
+func checkV2SupportedYet(fileVersion FileVersion) error {
+	if fileVersion == FileVersionV2 {
+		return errors.New("buf.lock v2 is not publicly supported yet")
+	}
+	return nil
 }

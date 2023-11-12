@@ -42,6 +42,21 @@ type externalFileDepV1OrV1Beta1 struct {
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
 }
 
+// externalFileV2 represents the v2 buf.lock file.
+type externalFileV2 struct {
+	Version string              `json:"version,omitempty" yaml:"version,omitempty"`
+	Deps    []externalFileDepV2 `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+// externalFileDepV2 represents a single dep within a v2 buf.lock file.
+type externalFileDepV2 struct {
+	Module string `json:"module,omitempty" yaml:"module,omitempty"`
+	// TODO: We should be able to remove this, and should. Doing so will require changes
+	// to the ModuleKeys, however. And they will be significant.
+	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
+}
+
 // externalFileVersion represents just the version component of a buf.lock file.
 type externalFileVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
