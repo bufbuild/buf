@@ -22,8 +22,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,10 +33,10 @@ import (
 func TestBackfilltags(t *testing.T) {
 	t.Parallel()
 	const defaultBranchName = "main"
-	repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
+	repo := gittest.ScaffoldGitRepository(t)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
-	prepareGitRepoBackfillTags(t, repoDir, moduleIdentityInHEAD)
+	prepareGitRepoBackfillTags(t, repo, moduleIdentityInHEAD)
 	mockHandler := newMockSyncHandler()
 	// prepare the top 5 commits as syncable commits, mark the rest as if they were already synced
 	var (
@@ -95,30 +95,20 @@ func TestBackfilltags(t *testing.T) {
 
 // prepareGitRepoBackfillTags adds 20 commits and tags in the default branch, one tag per commit. It
 // waits 1s between commit 5 and 6 to be easily used as the lookback commit limit time.
-func prepareGitRepoBackfillTags(t *testing.T, repoDir string, moduleIdentity bufmoduleref.ModuleIdentity) {
-	runner := command.NewRunner()
+func prepareGitRepoBackfillTags(t *testing.T, repo gittest.Repository, moduleIdentity bufmoduleref.ModuleIdentity) {
 	var commitsCounter int
 	doEmptyCommitAndTag := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
 			commitsCounter++
-			runInDir(
-				t, runner, repoDir,
-				"git", "commit", "--allow-empty",
-				"-m", fmt.Sprintf("commit %d", commitsCounter),
-			)
-			runInDir(
-				t, runner, repoDir,
-				"git", "tag", fmt.Sprintf("tag-%d", commitsCounter),
-			)
+			repo.Commit(t, fmt.Sprintf("commit %d", commitsCounter), nil)
+			repo.Tag(t, fmt.Sprintf("tag-%d", commitsCounter), "")
 		}
 	}
 	// write the base module in the root
-	writeFiles(t, repoDir, map[string]string{
+	repo.Commit(t, "commit 0", map[string]string{
 		"buf.yaml":         fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
 		"foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
 	})
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "commit 0")
 	// commit and tag
 	doEmptyCommitAndTag(5)
 	time.Sleep(1 * time.Second)
