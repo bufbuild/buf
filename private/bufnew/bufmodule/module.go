@@ -138,8 +138,6 @@ type Module interface {
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
 // The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
-//
-// Mostly used for testing.
 func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKeyForLazyDigest(
 		module.ModuleFullName(),
