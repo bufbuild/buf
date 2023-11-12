@@ -12,22 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulecache
+package bufconfig
 
 import (
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/storage"
+	"errors"
+	"io"
 )
 
-// NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
-//
-// The given Bucket is used as a cache. This package can choose to use the bucket however it wishes.
-//
-// TODO: Actually implement this. Right now it is just a passthrough.
-// Use the buflock package to represent dependencies on disk.
-func NewModuleDataProvider(
-	delegate bufmodule.ModuleDataProvider,
-	bucket storage.ReadWriteBucket,
-) bufmodule.ModuleDataProvider {
-	return delegate
+type genOnlyFile struct {
+	generateConfig
+}
+
+func newGenOnlyFile() *genOnlyFile {
+	return &genOnlyFile{}
+}
+
+func (g *genOnlyFile) FileVersion() FileVersion {
+	panic("not implemented") // TODO: Implement
+}
+
+func (*genOnlyFile) isGenOnlyFile() {}
+
+func readGenOnlyFile(reader io.Reader) (GenOnlyFile, error) {
+	return nil, errors.New("TODO")
+}
+
+func writeGenOnlyFile(writer io.Writer, genOnlyFile GenOnlyFile) error {
+	return errors.New("TODO")
 }

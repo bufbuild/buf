@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflock
+package bufconfig
 
 import (
 	"fmt"
@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	// FileVersionV1Beta represents v1beta1 lock files.
+	// FileVersionV1Beta represents v1beta1 configuration or generation files.
 	FileVersionV1Beta1 FileVersion = iota + 1
-	// FileVersionV1 represents v1 lock files.
+	// FileVersionV1 represents v1 configuration or generation files.
 	FileVersionV1
 )
 
@@ -37,12 +37,12 @@ var (
 	}
 )
 
-// FileVersion is the version of a lock file.
+// FileVersion is the version of a configuration or generation file.
 type FileVersion int
 
 // String prints the string representation of the FileVersion.
 //
-// This is used in lock files on disk.
+// This is used in configuration and generation files on disk.
 func (f FileVersion) String() string {
 	s, ok := fileVersionToString[f]
 	if !ok {

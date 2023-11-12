@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -38,7 +39,7 @@ import (
 type Workspace interface {
 	bufmodule.ModuleSet
 
-	// GetModuleConfigForOpaqueID gets the ModuleConfig for the OpaqueID, if the OpaqueID
+	// GetLintConfigForOpaqueID gets the LintConfig for the OpaqueID, if the OpaqueID
 	// represents a Module within the workspace.
 	//
 	// This will be the default value for Modules that didn't have an associated config,
@@ -54,15 +55,31 @@ type Workspace interface {
 	//
 	//   type WorkspaceModule interface {
 	//     bufmodule.Module
-	//     Config() ModuleConfig
+	//     LintConfig() LintConfig
 	//   }
 	//
 	// However, this would mean that Workspace would not inherit ModuleSet, as we'd
 	// want to create GetWorkspaceModule.* functions instead of GetModule.* functions,
 	// and then provide a WorkpaceToModuleSet global function. This seems messier in
-	// practice than having users call GetModuleConfigForOpaqueID(module.OpaqueID())
+	// practice than having users call GetLintConfigForOpaqueID(module.OpaqueID())
 	// in the situations where they need configuration.
-	GetModuleConfigForOpaqueID(opaqueID string) ModuleConfig
+	GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig
+
+	// GetLintConfigForOpaqueID gets the LintConfig for the OpaqueID, if the OpaqueID
+	// represents a Module within the workspace.
+	//
+	// This will be the default value for Modules that didn't have an associated config,
+	// such as Modules read from buf.lock files. These Modules will not be target Modules
+	// in the workspace. This should result in items such as the linter or breaking change
+	// detector ignoring these configs anyways.
+	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
+
+	// GetGenerateConfigs gets the generation configurations associated with the workspace.
+	//
+	// For v2 buf.yamls, these are read directly.
+	// For v1 buf.yamls, these need to be separately read and provided to the Workspace
+	// via WorkspaceWithGenerateConfig.
+	GenerateConfigs() []bufconfig.GenerateConfig
 
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
@@ -127,6 +144,13 @@ func WorkspaceWithTargetPaths(
 	return func(workspaceOptions *workspaceOptions) {
 		workspaceOptions.targetPaths = targetPaths
 		workspaceOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+// WorkspaceWithGenerateConfig returns a new WorkspaceOption that adds the given GenerateConfig.
+func WorkspaceWithGenerateConfig(generateConfig bufconfig.GenerateConfig) WorkspaceOption {
+	return func(workspaceOptions *workspaceOptions) {
+		workspaceOptions.generateConfigs = append(workspaceOptions.generateConfigs, generateConfig)
 	}
 }
 
@@ -213,58 +237,11 @@ func WorkspaceLocalLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKe
 	return localLockedDepModuleKeys
 }
 
-// ModuleConfig is configuration for a specific Module.
-//
-// This only contains the information needed outside of Workspace construction.
-type ModuleConfig interface {
-	Lint() LintConfig
-	Breaking() BreakingConfig
-
-	isModuleConfig()
-}
-
-// CheckConfig is the common interface for the configuration shared by
-// LintConfig and BreakingConfig.
-type CheckConfig interface {
-	UseIDs() []string
-	ExceptIDs() string
-	// Paths are specific to the Module.
-	IgnorePaths() []string
-	// Paths are specific to the Module.
-	IgnoreIDToPaths() map[string][]string
-
-	isCheckConfig()
-}
-
-// LintConfig is lint configuration for a specific Module.
-type LintConfig interface {
-	CheckConfig
-
-	EnumZeroValueSuffix() string
-	RPCAllowSameRequestResponse() bool
-	RPCAllowGoogleProtobufEmptyRequests() bool
-	RPCAllowGoogleProtobufEmptyResponses() bool
-	ServiceSuffix() string
-	AllowCommentIgnores() bool
-
-	isLintConfig()
-}
-
-// BreakingConfig is breaking configuration for a specific Module.
-type BreakingConfig interface {
-	CheckConfig
-
-	IgnoreUnstablePackages() bool
-
-	isBreakingConfig()
-}
-
-//type GenerateConfig interface{}
-
 type workspaceOptions struct {
 	subDirPaths        []string
 	targetPaths        []string
 	targetExcludePaths []string
+	generateConfigs    []bufconfig.GenerateConfig
 }
 
 func newWorkspaceOptions() *workspaceOptions {
