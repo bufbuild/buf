@@ -46,6 +46,11 @@ type ReadBucket interface {
 	// Note that foo/barbaz will not be called for foo/bar, but will
 	// be called for foo/bar/baz.
 	//
+	// Note that a prefix can also be equal to a path in the bucket, in which
+	// case Walk will walk this single file. That is, if file a/b/c.txt is in
+	// the bucket, Walk(ctx, "a/b/c.txt", ...) will result in a single iteration,
+	// calling f on the file "a/b/c.txt".
+	//
 	// All paths given to f are normalized and validated.
 	// If f returns error, Walk will stop short and return this error.
 	// Returns other error on system error.
