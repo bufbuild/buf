@@ -1498,4 +1498,27 @@ func RunTestSuite(
 		)
 		assert.NoError(t, err)
 	})
+
+	t.Run("walk-on-file-path-that-is-not-pure-prefix", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"root/a/b",
+			map[string]string{
+				"root/a/b/1.proto": testProtoContent,
+				"root/a/b/2.proto": testProtoContent,
+				"root/a/b/2.txt":   testTxtContent,
+			},
+		)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"root/a/b/1.proto",
+			map[string]string{
+				"root/a/b/1.proto": testProtoContent,
+			},
+		)
+	})
 }
