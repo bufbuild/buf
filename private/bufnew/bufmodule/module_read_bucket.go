@@ -179,8 +179,12 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 // moduleReadBucket
 
 type moduleReadBucket struct {
-	getBucket            func() (storage.ReadBucket, error)
-	module               Module
+	getBucket func() (storage.ReadBucket, error)
+	module    Module
+	// We have to store a deterministic ordering of targetPaths so that Walk
+	// has the same iteration order every time. We could have a different iteration order,
+	// as storage.ReadBucket.Walk doesn't guarantee any iteration order, but that seems wonky.
+	targetPaths          []string
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
 }
@@ -214,6 +218,7 @@ func newModuleReadBucket(
 			},
 		),
 		module:               module,
+		targetPaths:          targetPaths,
 		targetPathMap:        slicesextended.ToMap(targetPaths),
 		targetExcludePathMap: slicesextended.ToMap(targetExcludePaths),
 	}
@@ -260,24 +265,33 @@ func (b *moduleReadBucket) WalkFileInfos(
 	if err != nil {
 		return err
 	}
-	// TODO: we need to special-case target paths to only walk on target paths
-	// if len(f.targetPathMap) > 0, for performance reasons.
+	walkFunc := func(objectInfo storage.ObjectInfo) error {
+		fileInfo, err := b.newFileInfo(objectInfo)
+		if err != nil {
+			return err
+		}
+		if walkFileInfosOptions.onlyTargetFiles && !fileInfo.IsTargetFile() {
+			return nil
+		}
+		return fn(fileInfo)
+	}
+	// If we have target paths, we do not want to walk to whole bucket.
+	// For example, we do --path path/to/file.proto for googleapis, we don't want to
+	// walk all of googleapis to find the single file.
 	//
-	// This may mean we need to change storage.Walk to accept prefixes that are equal to the prefix.
-	return bucket.Walk(
-		ctx,
-		"",
-		func(objectInfo storage.ObjectInfo) error {
-			fileInfo, err := b.newFileInfo(objectInfo)
-			if err != nil {
+	// Instead, we walk the specific targets.
+	// Note that storage.ReadBucket.Walk allows calling a file path as a prefix.
+	//
+	// Use targetPaths instead of targetPathMap to have a deterministic iteration order at this level.
+	if len(b.targetPaths) > 0 {
+		for _, targetPath := range b.targetPaths {
+			if err := bucket.Walk(ctx, targetPath, walkFunc); err != nil {
 				return err
 			}
-			if walkFileInfosOptions.onlyTargetFiles && !fileInfo.IsTargetFile() {
-				return nil
-			}
-			return fn(fileInfo)
-		},
-	)
+		}
+		return nil
+	}
+	return bucket.Walk(ctx, "", walkFunc)
 }
 
 func (*moduleReadBucket) isModuleReadBucket() {}
