@@ -46,10 +46,14 @@ func newFile(
 			return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
 		},
 	)
-	return &file{
+	file := &file{
 		fileVersion:   fileVersion,
 		depModuleKeys: depModuleKeys,
-	}, nil
+	}
+	if err := validateV1AndV1Beta1DepsHaveCommits(file); err != nil {
+		return nil, err
+	}
+	return file, nil
 }
 
 func (f *file) FileVersion() FileVersion {
@@ -116,17 +120,13 @@ func readFile(reader io.Reader) (File, error) {
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalFile.Deps))
 		for i, dep := range externalFile.Deps {
 			dep := dep
-			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Module)
+			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode lock file: invalid module name: %w", err)
 			}
-			// TODO: We should be able to remove commit. See comment on externalFileDepV2.
-			if dep.Commit == "" {
-				return nil, errors.New("failed to decode lock file: no commit specified")
-			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
-				dep.Commit,
+				"",
 				func() (bufcas.Digest, error) {
 					return bufcas.ParseDigest(dep.Digest)
 				},
@@ -144,6 +144,9 @@ func readFile(reader io.Reader) (File, error) {
 }
 
 func writeFile(writer io.Writer, file File) error {
+	if err := validateV1AndV1Beta1DepsHaveCommits(file); err != nil {
+		return err
+	}
 	switch fileVersion := file.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		depModuleKeys := file.DepModuleKeys()
@@ -183,9 +186,7 @@ func writeFile(writer io.Writer, file File) error {
 				return fmt.Errorf("failed to encode lock file: digest error: %w", err)
 			}
 			externalFile.Deps[i] = externalFileDepV2{
-				Module: depModuleKey.ModuleFullName().String(),
-				// TODO: We should be able to remove commit. See comment on externalFileDepV2.
-				Commit: depModuleKey.CommitID(),
+				Name:   depModuleKey.ModuleFullName().String(),
 				Digest: digest.String(),
 			}
 		}
@@ -212,4 +213,27 @@ func validateNoDuplicateModuleKeysByModuleFullName(moduleKeys []bufmodule.Module
 		moduleFullNameStringMap[moduleFullNameString] = struct{}{}
 	}
 	return nil
+}
+
+func validateV1AndV1Beta1DepsHaveCommits(file File) error {
+	switch fileVersion := file.FileVersion(); fileVersion {
+	case FileVersionV1Beta1, FileVersionV1:
+		for _, depModuleKey := range file.DepModuleKeys() {
+			if depModuleKey.CommitID() == "" {
+				// This is a system error.
+				return fmt.Errorf(
+					"%s lock files require commits, however we did not have a commit for module %q",
+					fileVersion.String(),
+					depModuleKey.ModuleFullName().String(),
+				)
+			}
+		}
+		return nil
+	case FileVersionV2:
+		// We do not need commits in v2.
+		return nil
+	default:
+		// This is a system error since we've already parsed.
+		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }

@@ -137,7 +137,7 @@ type Module interface {
 
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
-// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
+// The given Module must have a ModuleFullName, otherwise this will return error.
 func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),

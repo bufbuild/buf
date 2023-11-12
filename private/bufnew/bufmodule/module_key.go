@@ -33,6 +33,10 @@ type ModuleKey interface {
 	// ModuleFullName returns the full name of the Module.
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
+	//
+	// This may be empty. However, note that there are certain situations (such as writing
+	// v1beta1 or v1 buf.lock files) where this is required. It is up to the caller to verify
+	// this is present in those situations.
 	CommitID() string
 	// Digest returns the Module digest.
 	Digest() (bufcas.Digest, error)
@@ -41,6 +45,9 @@ type ModuleKey interface {
 }
 
 // NewModuleKey returns a new ModuleKey.
+//
+// Note that commit is optional.
+// TODO: change commit into option?
 //
 // The Digest will be loaded lazily if needed. Note this means that NewModuleKey does
 // *not* validate the digest. If you need to validate the digest, call Digest() and evaluate
@@ -73,9 +80,6 @@ func newModuleKey(
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
-	}
-	if commitID == "" {
-		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
 	return &moduleKey{
 		moduleFullName: moduleFullName,

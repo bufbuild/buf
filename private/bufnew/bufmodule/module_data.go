@@ -108,11 +108,15 @@ func newModuleData(
 					return err
 				}
 				if !bufcas.DigestEqual(expectedDigest, moduleData.actualDigest) {
+					moduleString := moduleKey.ModuleFullName().String()
+					if commitID := moduleKey.CommitID(); commitID != "" {
+						moduleString = moduleString + ":" + commitID
+					}
 					return fmt.Errorf(
 						"expected Digest %q, got Digest %q, for Module %q",
 						expectedDigest.String(),
 						moduleData.actualDigest.String(),
-						moduleKey.ModuleFullName().String()+":"+moduleKey.CommitID(),
+						moduleString,
 					)
 				}
 				return nil

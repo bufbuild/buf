@@ -50,10 +50,7 @@ type externalFileV2 struct {
 
 // externalFileDepV2 represents a single dep within a v2 buf.lock file.
 type externalFileDepV2 struct {
-	Module string `json:"module,omitempty" yaml:"module,omitempty"`
-	// TODO: We should be able to remove this, and should. Doing so will require changes
-	// to the ModuleKeys, however. And they will be significant.
-	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
