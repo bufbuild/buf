@@ -17,6 +17,7 @@ package bufmodule
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
@@ -100,17 +101,27 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 	)
 }
 
+// ModuleSetNonTargetModules is a convenience function that returns the non-target Modules
+// from a ModuleSet.
+func ModuleSetNonTargetModules(moduleSet ModuleSet) []Module {
+	return slicesextended.Filter(
+		moduleSet.Modules(),
+		func(module Module) bool { return !module.IsTarget() },
+	)
+}
+
+// ModuleSetLocalModules is a convenience function that returns the local Modules
+// from a ModuleSet.
+func ModuleSetLocalModules(moduleSet ModuleSet) []Module {
+	return slicesextended.Filter(
+		moduleSet.Modules(),
+		func(module Module) bool { return module.IsLocal() },
+	)
+}
+
 // ModuleSetRemoteModules is a convenience function that returns the remote Modules
 // from a ModuleSet.
-//
-// Given that a ModuleSet is self-contained, this represents the remote dependencies
-// of the local modules in the ModuleSet.
-//
-// TODO: No, this isn't true, a remote Module could be a target. You need to go through
-// the ModuleDeps recursively, and choose out those ModuleDeps that themselves are remote.
-// It's a fine distinction, and in most cases (including our current usage) this function
-// as written will happen to work, but going through ModuleDeps is more correct.
-func ModuleSetRemoteModuleDepsOfLocalModules(moduleSet ModuleSet) []Module {
+func ModuleSetRemoteModules(moduleSet ModuleSet) []Module {
 	return slicesextended.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return !module.IsLocal() },
@@ -122,10 +133,7 @@ func ModuleSetRemoteModuleDepsOfLocalModules(moduleSet ModuleSet) []Module {
 //
 // Sorted.
 func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
-	return slicesextended.Map(
-		moduleSet.Modules(),
-		func(module Module) string { return module.OpaqueID() },
-	)
+	return modulesOpaqueIDs(moduleSet.Modules())
 }
 
 // ModuleSetTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
@@ -133,10 +141,31 @@ func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
 //
 // Sorted.
 func ModuleSetTargetOpaqueIDs(moduleSet ModuleSet) []string {
-	return slicesextended.Map(
-		ModuleSetTargetModules(moduleSet),
-		func(module Module) string { return module.OpaqueID() },
-	)
+	return modulesOpaqueIDs(ModuleSetTargetModules(moduleSet))
+}
+
+// ModuleSetNonTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// non-target Modules in the ModuleSet.
+//
+// Sorted.
+func ModuleSetNonTargetOpaqueIDs(moduleSet ModuleSet) []string {
+	return modulesOpaqueIDs(ModuleSetNonTargetModules(moduleSet))
+}
+
+// ModuleSetLocalOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// local Modules in the ModuleSet.
+//
+// Sorted.
+func ModuleSetLocalOpaqueIDs(moduleSet ModuleSet) []string {
+	return modulesOpaqueIDs(ModuleSetLocalModules(moduleSet))
+}
+
+// ModuleSetRemoteOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// remote Modules in the ModuleSet.
+//
+// Sorted.
+func ModuleSetRemoteOpaqueIDs(moduleSet ModuleSet) []string {
+	return modulesOpaqueIDs(ModuleSetRemoteModules(moduleSet))
 }
 
 // ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
@@ -153,25 +182,49 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 	return graph, nil
 }
 
-// *** PRIVATE ***
-
-func moduleSetToDAGRec(
-	module Module,
-	graph *dag.Graph[string],
-) error {
-	graph.AddNode(module.OpaqueID())
-	directModuleDeps, err := ModuleDirectModuleDeps(module)
-	if err != nil {
-		return err
-	}
-	for _, directModuleDep := range directModuleDeps {
-		graph.AddEdge(module.OpaqueID(), directModuleDep.OpaqueID())
-		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
-			return err
+// ModuleSetRemoteDepsOfLocalModules is a convenience function that returns the remote dependencies
+// of the local Modules in the ModuleSet.
+//
+// We don't care about targeting here - we want to know the remote dependencies for
+// purposes such as figuring out what dependencies are unused and can be pruned.
+//
+// Returns Modules instead of ModuleDeps as IsDirect() has no meaning in this context,
+// and there could be multiple parents for a given ModuleDep. Technically, could determine
+// if a Module is a direct dependency of the ModuleSet, but this is not what IsDirect() means currently.
+//
+// Sorted by OpaqueID.
+func ModuleSetRemoteDepsOfLocalModules(moduleSet ModuleSet) ([]Module, error) {
+	visitedOpaqueIDs := make(map[string]struct{})
+	var remoteDeps []Module
+	for _, module := range moduleSet.Modules() {
+		if !module.IsLocal() {
+			continue
+		}
+		moduleDeps, err := module.ModuleDeps()
+		if err != nil {
+			return nil, err
+		}
+		for _, moduleDep := range moduleDeps {
+			iRemoteDeps, err := moduleSetRemoteDepsRec(
+				moduleDep,
+				visitedOpaqueIDs,
+			)
+			if err != nil {
+				return nil, err
+			}
+			remoteDeps = append(remoteDeps, iRemoteDeps...)
 		}
 	}
-	return nil
+	sort.Slice(
+		remoteDeps,
+		func(i int, j int) bool {
+			return remoteDeps[i].OpaqueID() < remoteDeps[j].OpaqueID()
+		},
+	)
+	return remoteDeps, nil
 }
+
+// *** PRIVATE ***
 
 // moduleSet
 
@@ -365,3 +418,65 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 }
 
 func (*moduleSet) isModuleSet() {}
+
+// utils
+
+func moduleSetToDAGRec(
+	module Module,
+	graph *dag.Graph[string],
+) error {
+	graph.AddNode(module.OpaqueID())
+	directModuleDeps, err := ModuleDirectModuleDeps(module)
+	if err != nil {
+		return err
+	}
+	for _, directModuleDep := range directModuleDeps {
+		graph.AddEdge(module.OpaqueID(), directModuleDep.OpaqueID())
+		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func moduleSetRemoteDepsRec(
+	module Module,
+	visitedOpaqueIDs map[string]struct{},
+) ([]Module, error) {
+	if module.IsLocal() {
+		return nil, nil
+	}
+	opaqueID := module.OpaqueID()
+	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
+		return nil, nil
+	}
+	visitedOpaqueIDs[opaqueID] = struct{}{}
+	recModuleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	// Need to make a new slice since for ModuleDep -> Module
+	recDeps := make([]Module, len(recModuleDeps))
+	for i, recModuleDep := range recModuleDeps {
+		recDeps[i] = recModuleDep
+	}
+	for _, recDep := range recDeps {
+		// We deal with local vs remote in the recursive call.
+		iRecDeps, err := moduleSetRemoteDepsRec(
+			recDep,
+			visitedOpaqueIDs,
+		)
+		if err != nil {
+			return nil, err
+		}
+		recDeps = append(recDeps, iRecDeps...)
+	}
+	return recDeps, nil
+}
+
+func modulesOpaqueIDs(modules []Module) []string {
+	return slicesextended.Map(
+		modules,
+		func(module Module) string { return module.OpaqueID() },
+	)
+}

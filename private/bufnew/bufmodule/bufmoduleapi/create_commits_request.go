@@ -25,9 +25,11 @@ import (
 )
 
 // ModuleSetToProtoModuleNodesAndBlobs creates new
-// *modulev1beta.CreateCommitsRequest_ModuleNodes and *storagev1beta1.Blobs for the ModuleSet.
+// *modulev1beta.CreateCommitsRequest_ModuleNodes and *storagev1beta1.Blobs for target Modules
+// in the ModuleSet.
 //
 // This creates ModuleNodes and Blobs for all local targets, as well as their local dependencies.
+// DepNodes are created for all remote dependencies.
 // All Modules in the ModuleSet that will be pushed or are dependencies are required to have ModuleFullNames.
 func ModuleSetToProtoModuleNodesAndBlobs(
 	ctx context.Context,

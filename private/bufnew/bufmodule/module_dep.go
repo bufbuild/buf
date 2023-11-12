@@ -20,7 +20,13 @@ package bufmodule
 type ModuleDep interface {
 	Module
 
-	// IsDirect returns true if the module is a direct dependency.
+	// Parent returns the Module that this ModuleDep is a dependency of.
+	//
+	// Note this is not recursively - this points ot the top-level Module that dependencies
+	// were created for. That is, if a -> b -> c, then a will have ModuleDeps b and c, both
+	// of which have a as a parent.
+	Parent() Module
+	// IsDirect returns true if the Module is a direct dependency of this Module.
 	IsDirect() bool
 
 	isModuleDep()
@@ -31,17 +37,24 @@ type ModuleDep interface {
 type moduleDep struct {
 	Module
 
+	parent   Module
 	isDirect bool
 }
 
 func newModuleDep(
 	module Module,
+	parent Module,
 	isDirect bool,
 ) *moduleDep {
 	return &moduleDep{
 		Module:   module,
+		parent:   parent,
 		isDirect: isDirect,
 	}
+}
+
+func (m *moduleDep) Parent() Module {
+	return m.parent
 }
 
 func (m *moduleDep) IsDirect() bool {
