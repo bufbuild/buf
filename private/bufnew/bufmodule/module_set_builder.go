@@ -36,24 +36,34 @@ var (
 //
 // Modules are either targets or non-targets.
 // A target Module is a module that we are directly targeting for operations.
+// Targets the specific Modules within a Workspace that you are targeting.
 //
-// Targets would represent modules in a local Workspace, or potentially just the specific
-// Modules within a Workspace that you are targeting. This would be opposed to Modules
-// solely from a buf.lock.
+// Modules are also either local or remote.
+//
+// A local Module is one which was built from sources from the "local context", such
+// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest.
+//
+// A remote Module is one which was not contained in the local context, such as
+// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 type ModuleSetBuilder interface {
 	// AddModuleForBucket adds a new Module for the given Bucket.
 	//
 	// The Bucket used to construct the module will only be read for .proto files,
 	// license file(s), and documentation file(s).
 	//
-	// The BucketID is required. If AddModuleForBucketWithModuleFullName is used, the OpaqueID will
+	// The BucketID is required. If BucketWithModuleFullName.* is used, the OpaqueID will
 	// use this ModuleFullName, otherwise the OpaqueID will be the BucketID.
+	//
+	// The dependencies of the Module are unknown, since bufmodule does not parse configuration,
+	// and therefore the dependencies of the Module are *not* automatically added to the ModuleSet.
 	//
 	// Returns the same ModuleSetBuilder.
 	AddModuleForBucket(
 		bucket storage.ReadBucket,
 		bucketID string,
 		isTarget bool,
+		isLocal bool,
 		options ...BucketOption,
 	) ModuleSetBuilder
 	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
@@ -65,12 +75,17 @@ type ModuleSetBuilder interface {
 	//
 	// The dependencies of the Module will are automatically added to the ModuleSet.
 	// Note, however, that Modules added with AddModuleForBucket always take precedence,
-	// so if there are local bucked-based dependencies, these will be used.
+	// so if there are local bucket-based dependencies, these will be used.
+	//
+	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
+	// ModuleProvider for example with a buf build buf.build/foo/bar call, then this
+	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleKey(
 		moduleKey ModuleKey,
 		isTarget bool,
+		isLocal bool,
 		options ...ModuleKeyOption,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
@@ -148,9 +163,9 @@ type moduleSetBuilder struct {
 	ctx                context.Context
 	moduleDataProvider ModuleDataProvider
 
-	moduleSetModules []*moduleSetModule
-	errs             []error
-	buildCalled      atomic.Bool
+	modules     []Module
+	errs        []error
+	buildCalled atomic.Bool
 }
 
 func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) *moduleSetBuilder {
@@ -164,6 +179,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	bucket storage.ReadBucket,
 	bucketID string,
 	isTarget bool,
+	isLocal bool,
 	options ...BucketOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
@@ -195,6 +211,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		bucketOptions.moduleFullName,
 		bucketOptions.commitID,
 		isTarget,
+		isLocal,
 		bucketOptions.targetPaths,
 		bucketOptions.targetExcludePaths,
 	)
@@ -202,12 +219,9 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.moduleSetModules = append(
-		b.moduleSetModules,
-		newModuleSetModule(
-			module,
-			true,
-		),
+	b.modules = append(
+		b.modules,
+		module,
 	)
 	return b
 }
@@ -215,6 +229,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 func (b *moduleSetBuilder) AddModuleForModuleKey(
 	moduleKey ModuleKey,
 	isTarget bool,
+	isLocal bool,
 	options ...ModuleKeyOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
@@ -246,6 +261,7 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		moduleData.ModuleKey().ModuleFullName(),
 		moduleData.ModuleKey().CommitID(),
 		isTarget,
+		isLocal,
 		moduleKeyOptions.targetPaths,
 		moduleKeyOptions.targetExcludePaths,
 	)
@@ -253,12 +269,9 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		b.errs = append(b.errs, err)
 		return b
 	}
-	b.moduleSetModules = append(
-		b.moduleSetModules,
-		newModuleSetModule(
-			module,
-			false,
-		),
+	b.modules = append(
+		b.modules,
+		module,
 	)
 	declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
@@ -266,14 +279,15 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		return b
 	}
 	for _, declaredDepModuleKey := range declaredDepModuleKeys {
-		// Not a target module.
+		// Not a target or local Module.
+		// If this Module is a target or is local, this will be added by the caller.
 		//
 		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
 		//
 		// We don't need to special-case these - they are lowest priority as they aren't targets and
 		// are added by ModuleKey. If a caller adds one of these ModuleKeys as a target, or adds
 		// an equivalent Module by Bucket, that add will take precedence.
-		b.AddModuleForModuleKey(declaredDepModuleKey, false)
+		b.AddModuleForModuleKey(declaredDepModuleKey, false, false)
 	}
 	return b
 }
@@ -285,22 +299,22 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if len(b.errs) > 0 {
 		return nil, multierr.Combine(b.errs...)
 	}
-	if len(b.moduleSetModules) == 0 {
+	if len(b.modules) == 0 {
 		return nil, errors.New("no Modules added to ModuleSetBuilder")
 	}
-	if slicesextended.Count(b.moduleSetModules, func(m *moduleSetModule) bool { return m.IsTarget() }) < 1 {
+	if slicesextended.Count(b.modules, func(m Module) bool { return m.IsTarget() }) < 1 {
 		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
 	}
-	moduleSetModules, err := getUniqueModulesByOpaqueID(b.ctx, b.moduleSetModules)
+	modules, err := getUniqueModulesByOpaqueID(b.ctx, b.modules)
 	if err != nil {
 		return nil, err
 	}
-	moduleSet, err := newModuleSet(moduleSetModules)
+	moduleSet, err := newModuleSet(modules)
 	if err != nil {
 		return nil, err
 	}
-	for _, moduleSetModule := range moduleSetModules {
-		moduleSetModule.setModuleSet(moduleSet)
+	for _, module := range modules {
+		module.setModuleSet(moduleSet)
 	}
 	return moduleSet, nil
 }
@@ -309,7 +323,7 @@ func (*moduleSetBuilder) isModuleSetBuilder() {}
 
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the Module list.
 //
-// Modules that are targets are preferred, followed by Modules built from Buckets.
+// Modules that are targets are preferred, followed by Modules that are local.
 // Otherwise, Modules earlier in the slice are preferred.
 //
 // Duplication determined based opaqueID, that is if a Module has an equal
@@ -323,27 +337,27 @@ func (*moduleSetBuilder) isModuleSetBuilder() {}
 // Note: Modules with the same ModuleFullName will automatically have the same commit and Digest after this,
 // as there will be exactly one Module with a given ModuleFullName, given that an OpaqueID will be equal
 // for Modules with equal ModuleFullNames.
-func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleSetModule) ([]*moduleSetModule, error) {
+func getUniqueModulesByOpaqueID(ctx context.Context, modules []Module) ([]Module, error) {
 	// sort.SliceStable keeps equal elements in their original order, so this does
 	// not affect the "earlier preferred" property.
 	//
 	// However, after this, we can really apply "earlier" preferred to denote "prefer targets over
-	// non-targets, then prefer buckets over ModuleKeys."
+	// non-targets, then prefer local over remote."
 	sort.SliceStable(
-		moduleSetModules,
+		modules,
 		func(i int, j int) bool {
-			m1 := moduleSetModules[i]
-			m2 := moduleSetModules[j]
+			m1 := modules[i]
+			m2 := modules[j]
 			if m1.IsTarget() && !m2.IsTarget() {
 				return true
 			}
 			if !m1.IsTarget() && m2.IsTarget() {
 				return false
 			}
-			if m1.isCreatedFromBucket() && !m2.isCreatedFromBucket() {
+			if m1.IsLocal() && !m2.IsLocal() {
 				return true
 			}
-			// includes if !m1.isCreatedFromBucket() && m2.isCreatedFromBucket()
+			// includes if !m1.IsLocal() && m2.IsLocal()
 			return false
 		},
 	)
@@ -352,24 +366,25 @@ func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleS
 	// we want to add all Modules that we *think* are unique to the cache. If there is a duplicate, it
 	// will be detected via cache usage.
 	alreadySeenOpaqueIDs := make(map[string]struct{})
-	uniqueModuleSetModules := make([]*moduleSetModule, 0, len(moduleSetModules))
-	for _, moduleSetModule := range moduleSetModules {
-		opaqueID := moduleSetModule.OpaqueID()
+	uniqueModules := make([]Module, 0, len(modules))
+	for _, module := range modules {
+		opaqueID := module.OpaqueID()
 		if opaqueID == "" {
 			return nil, errors.New("OpaqueID was empty which should never happen")
 		}
 		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
 			alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-			uniqueModuleSetModules = append(uniqueModuleSetModules, moduleSetModule)
+			uniqueModules = append(uniqueModules, module)
+		} else {
 		}
 	}
 	sort.Slice(
-		uniqueModuleSetModules,
+		uniqueModules,
 		func(i int, j int) bool {
-			return uniqueModuleSetModules[i].OpaqueID() < uniqueModuleSetModules[j].OpaqueID()
+			return uniqueModules[i].OpaqueID() < uniqueModules[j].OpaqueID()
 		},
 	)
-	return uniqueModuleSetModules, nil
+	return uniqueModules, nil
 }
 
 type bucketOptions struct {

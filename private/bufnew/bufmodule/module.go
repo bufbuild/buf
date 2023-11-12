@@ -90,7 +90,7 @@ type Module interface {
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
 
-	// IsTarget returns true if the Module is a targeted module.
+	// IsTarget returns true if the Module is a targeted Module.
 	//
 	// Modules are either targets or non-targets.
 	// Modules directly returned from a ModuleProvider will always be marked as targets.
@@ -105,6 +105,18 @@ type Module interface {
 	// will have FileInfo.IsTargetFile() set to true, and this function will return all Files
 	// that WalkFileInfos does.
 	IsTarget() bool
+
+	// IsLocal return true if the Module is a local Module.
+	//
+	// Modules are either local or remote.
+	//
+	// A local Module is one which was built from sources from the "local context", such
+	// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest.
+	//
+	// A remote Module is one which was not contained in the local context, such as
+	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
+	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
+	IsLocal() bool
 
 	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
 	// constructed from a ModuleSet.
@@ -154,6 +166,7 @@ type module struct {
 	moduleFullName ModuleFullName
 	commitID       string
 	isTarget       bool
+	isLocal        bool
 
 	moduleSet ModuleSet
 
@@ -169,6 +182,7 @@ func newModule(
 	moduleFullName ModuleFullName,
 	commitID string,
 	isTarget bool,
+	isLocal bool,
 	targetPaths []string,
 	targetExcludePaths []string,
 ) (*module, error) {
@@ -181,6 +195,7 @@ func newModule(
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
 		isTarget:       isTarget,
+		isLocal:        isLocal,
 	}
 	module.ModuleReadBucket = newModuleReadBucket(
 		ctx,
@@ -234,6 +249,10 @@ func (m *module) ModuleDeps() ([]ModuleDep, error) {
 
 func (m *module) IsTarget() bool {
 	return m.isTarget
+}
+
+func (m *module) IsLocal() bool {
+	return m.isLocal
 }
 
 func (m *module) ModuleSet() ModuleSet {
@@ -369,9 +388,12 @@ func getModuleDepsRec(
 	// see a dep later, it will still be a direct dep in the map, but will be ignored
 	// on recursive calls.
 	var newModuleDeps []ModuleDep
-	if err := ModuleReadBucketWithOnlyProtoFiles(module).WalkFileInfos(
+	if err := module.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
+			if fileInfo.FileType() != FileTypeProto {
+				return nil
+			}
 			imports, err := moduleSet.getImportsForFilePath(ctx, fileInfo.Path())
 			if err != nil {
 				return err

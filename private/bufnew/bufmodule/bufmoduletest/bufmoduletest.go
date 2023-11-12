@@ -41,6 +41,7 @@ type ModuleData struct {
 	PathToData  map[string][]byte
 	Bucket      storage.ReadBucket
 	NotTargeted bool
+	NotLocal    bool
 }
 
 // OmniProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
@@ -258,6 +259,7 @@ func addModuleDataToModuleSetBuilder(
 		bucket,
 		bucketID,
 		!moduleData.NotTargeted,
+		!moduleData.NotLocal,
 		bucketOptions...,
 	)
 	return nil

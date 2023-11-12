@@ -505,7 +505,7 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 
 func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 	return fmt.Errorf(
-		"%s exists in multiple Modules: %v",
+		"%s exists in multiple modules: %v",
 		path,
 		strings.Join(
 			slicesextended.Map(
@@ -514,7 +514,7 @@ func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 					return fileInfo.Module().OpaqueID()
 				},
 			),
-			",",
+			", ",
 		),
 	)
 }

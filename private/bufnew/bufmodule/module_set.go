@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
@@ -70,32 +69,6 @@ type ModuleSet interface {
 	// This should only be used by Modules, and only for dependency calculations.
 	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
 	isModuleSet()
-}
-
-// NewModuleSetForSingleBucket is a convenience function that constructs a new ModuleSet with
-// a single targeted Module, based on the bucket.
-func NewModuleSetForSingleBucket(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	bucketID string,
-	options ...BucketOption,
-) (ModuleSet, error) {
-	moduleSetBuilder := NewModuleSetBuilder(ctx, NopModuleDataProvider)
-	moduleSetBuilder.AddModuleForBucket(bucket, bucketID, true, options...)
-	return moduleSetBuilder.Build()
-}
-
-// NewModuleSetForSingleBucket is a convenience function that constructs a new ModuleSet with
-// a single targeted Module, based on the ModuleKey.
-func NewModuleSetForSingleModuleKey(
-	ctx context.Context,
-	moduleDataProvider ModuleDataProvider,
-	moduleKey ModuleKey,
-	options ...ModuleKeyOption,
-) (ModuleSet, error) {
-	moduleSetBuilder := NewModuleSetBuilder(ctx, moduleDataProvider)
-	moduleSetBuilder.AddModuleForModuleKey(moduleKey, true, options...)
-	return moduleSetBuilder.Build()
 }
 
 // ModuleSetToModuleReadBucketWithOnlyProtoFiles converts the ModuleSet to a
@@ -199,14 +172,12 @@ type moduleSet struct {
 }
 
 func newModuleSet(
-	moduleSetModules []*moduleSetModule,
+	modules []Module,
 ) (*moduleSet, error) {
-	modules := make([]Module, 0, len(moduleSetModules))
-	moduleFullNameStringToModule := make(map[string]Module, len(moduleSetModules))
-	opaqueIDToModule := make(map[string]Module, len(moduleSetModules))
-	bucketIDToModule := make(map[string]Module, len(moduleSetModules))
-	for _, module := range moduleSetModules {
-		modules = append(modules, module)
+	moduleFullNameStringToModule := make(map[string]Module, len(modules))
+	opaqueIDToModule := make(map[string]Module, len(modules))
+	bucketIDToModule := make(map[string]Module, len(modules))
+	for _, module := range modules {
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
 			if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
@@ -237,8 +208,8 @@ func newModuleSet(
 		bucketIDToModule:             bucketIDToModule,
 		getDigestStringToModule: sync.OnceValues(
 			func() (map[string]Module, error) {
-				digestStringToModule := make(map[string]Module, len(moduleSetModules))
-				for _, module := range moduleSetModules {
+				digestStringToModule := make(map[string]Module, len(modules))
+				for _, module := range modules {
 					digest, err := module.Digest()
 					if err != nil {
 						return nil, err
