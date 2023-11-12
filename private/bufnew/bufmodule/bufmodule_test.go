@@ -90,11 +90,11 @@ func TestBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 	for _, moduleKey := range moduleKeys {
-		moduleSetBuilder.AddModuleForModuleKey(moduleKey, false, false)
+		moduleSetBuilder.AddRemoteModule(moduleKey, false)
 	}
 
 	// This module has no name but is part of the workspace.
-	moduleSetBuilder.AddModuleForBucket(
+	moduleSetBuilder.AddLocalModule(
 		testNewBucketForPathToData(
 			t,
 			map[string][]byte{
@@ -105,7 +105,6 @@ func TestBasic(t *testing.T) {
 		),
 		"path/to/module1",
 		true,
-		false,
 	)
 
 	// This module has a name and is part of the workspace.
@@ -113,7 +112,7 @@ func TestBasic(t *testing.T) {
 	// This module is also in the BSR, but we'll prefer this one.
 	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
-	moduleSetBuilder.AddModuleForBucket(
+	moduleSetBuilder.AddLocalModule(
 		testNewBucketForPathToData(
 			t,
 			map[string][]byte{
@@ -130,9 +129,8 @@ func TestBasic(t *testing.T) {
 		),
 		"path/to/module2",
 		true,
-		true,
-		bufmodule.BucketWithModuleFullName(moduleFullName),
-		bufmodule.BucketWithTargetPaths(nil, []string{"foo"}),
+		bufmodule.LocalModuleWithModuleFullName(moduleFullName),
+		bufmodule.LocalModuleWithTargetPaths(nil, []string{"foo"}),
 	)
 
 	moduleSet, err := moduleSetBuilder.Build()

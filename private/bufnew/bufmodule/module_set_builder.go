@@ -41,32 +41,34 @@ var (
 // Modules are also either local or remote.
 //
 // A local Module is one which was built from sources from the "local context", such
-// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest.
+// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+// Modules are important for understanding what Modules to push, and what modules to
+// check declared dependencies for unused dependencies.
 //
 // A remote Module is one which was not contained in the local context, such as
 // dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
-// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
+// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode. A module
+// retrieved from a ModuleDataProvider via a ModuleKey is always remote.
 type ModuleSetBuilder interface {
-	// AddModuleForBucket adds a new Module for the given Bucket.
+	// AddLocalModule adds a new local Module for the given Bucket.
 	//
 	// The Bucket used to construct the module will only be read for .proto files,
 	// license file(s), and documentation file(s).
 	//
-	// The BucketID is required. If BucketWithModuleFullName.* is used, the OpaqueID will
+	// The BucketID is required. If LocalModuleWithModuleFullName.* is used, the OpaqueID will
 	// use this ModuleFullName, otherwise the OpaqueID will be the BucketID.
 	//
 	// The dependencies of the Module are unknown, since bufmodule does not parse configuration,
 	// and therefore the dependencies of the Module are *not* automatically added to the ModuleSet.
 	//
 	// Returns the same ModuleSetBuilder.
-	AddModuleForBucket(
+	AddLocalModule(
 		bucket storage.ReadBucket,
 		bucketID string,
 		isTarget bool,
-		isLocal bool,
-		options ...BucketOption,
+		options ...LocalModuleOption,
 	) ModuleSetBuilder
-	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
+	// AddRemoteModule adds a new remote Module for the given ModuleKey.
 	//
 	// The ModuleDataProvider given to the ModuleSetBuilder at construction time will be used to
 	// retrieve this Module.
@@ -74,7 +76,7 @@ type ModuleSetBuilder interface {
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
 	//
 	// The dependencies of the Module will are automatically added to the ModuleSet.
-	// Note, however, that Modules added with AddModuleForBucket always take precedence,
+	// Note, however, that Modules added with AddLocalModule always take precedence,
 	// so if there are local bucket-based dependencies, these will be used.
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
@@ -82,11 +84,10 @@ type ModuleSetBuilder interface {
 	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
-	AddModuleForModuleKey(
+	AddRemoteModule(
 		moduleKey ModuleKey,
 		isTarget bool,
-		isLocal bool,
-		options ...ModuleKeyOption,
+		options ...RemoteModuleOption,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
 	//
@@ -101,57 +102,57 @@ func NewModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvi
 	return newModuleSetBuilder(ctx, moduleDataProvider)
 }
 
-// BucketOption is an option for AddModuleForBucket.
-type BucketOption func(*bucketOptions)
+// LocalModuleOption is an option for AddLocalModule.
+type LocalModuleOption func(*localModuleOptions)
 
-// BucketWithModuleFullName returns a new BucketOption that adds the given ModuleFullName to the result Module.
+// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName to the result Module.
 //
-// Use BucketWithModuleFullNameAndCommitID if you'd also like to add a CommitID.
-func BucketWithModuleFullName(moduleFullName ModuleFullName) BucketOption {
-	return func(bucketOptions *bucketOptions) {
-		bucketOptions.moduleFullName = moduleFullName
+// Use LocalModuleWithModuleFullNameAndCommitID if you'd also like to add a CommitID.
+func LocalModuleWithModuleFullName(moduleFullName ModuleFullName) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.moduleFullName = moduleFullName
 	}
 }
 
-// BucketWithModuleFullName returns a new BucketOption that adds the given ModuleFullName and CommitID
+// LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName and CommitID
 // to the result Module.
-func BucketWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID string) BucketOption {
-	return func(bucketOptions *bucketOptions) {
-		bucketOptions.moduleFullName = moduleFullName
-		bucketOptions.commitID = commitID
+func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID string) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.moduleFullName = moduleFullName
+		localModuleOptions.commitID = commitID
 	}
 }
 
-// BucketWithTargetPaths returns a new BucketOption that specifically targets the given paths, and
+// LocalModuleWithTargetPaths returns a new LocalModuleOption that specifically targets the given paths, and
 // specifically excludes the given paths.
 //
 // Only valid for a targeted Module. If this option is given to a non-target Module, this will
 // result in an error during Build().
-func BucketWithTargetPaths(
+func LocalModuleWithTargetPaths(
 	targetPaths []string,
 	targetExcludePaths []string,
-) BucketOption {
-	return func(bucketOptions *bucketOptions) {
-		bucketOptions.targetPaths = targetPaths
-		bucketOptions.targetExcludePaths = targetExcludePaths
+) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.targetPaths = targetPaths
+		localModuleOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
-// ModuleKeyOption is an option for AddModuleForModuleKey.
-type ModuleKeyOption func(*moduleKeyOptions)
+// RemoteModuleOption is an option for AddRemoteModule.
+type RemoteModuleOption func(*remoteModuleOptions)
 
-// ModuleKeyWithTargetPaths returns a new ModuleKeyOption that specifically targets the given paths, and
+// RemoteModuleWithTargetPaths returns a new RemoteModuleOption that specifically targets the given paths, and
 // specifically excludes the given paths.
 //
 // Only valid for a targeted Module. If this option is given to a non-target Module, this will
 // result in an error during Build().
-func ModuleKeyWithTargetPaths(
+func RemoteModuleWithTargetPaths(
 	targetPaths []string,
 	targetExcludePaths []string,
-) ModuleKeyOption {
-	return func(moduleKeyOptions *moduleKeyOptions) {
-		moduleKeyOptions.targetPaths = targetPaths
-		moduleKeyOptions.targetExcludePaths = targetExcludePaths
+) RemoteModuleOption {
+	return func(remoteModuleOptions *remoteModuleOptions) {
+		remoteModuleOptions.targetPaths = targetPaths
+		remoteModuleOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
@@ -175,31 +176,30 @@ func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvi
 	}
 }
 
-func (b *moduleSetBuilder) AddModuleForBucket(
+func (b *moduleSetBuilder) AddLocalModule(
 	bucket storage.ReadBucket,
 	bucketID string,
 	isTarget bool,
-	isLocal bool,
-	options ...BucketOption,
+	options ...LocalModuleOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
 	if bucketID == "" {
-		b.errs = append(b.errs, errors.New("bucketID is required when calling AddModuleForBucket"))
+		b.errs = append(b.errs, errors.New("bucketID is required when calling AddLocalModule"))
 		return b
 	}
-	bucketOptions := newBucketOptions()
+	localModuleOptions := newLocalModuleOptions()
 	for _, option := range options {
-		option(bucketOptions)
+		option(localModuleOptions)
 	}
-	if bucketOptions.moduleFullName == nil && bucketOptions.commitID != "" {
-		b.errs = append(b.errs, errors.New("cannot set commitID without ModuleFullName when calling AddModuleForBucket"))
+	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != "" {
+		b.errs = append(b.errs, errors.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
 		return b
 	}
-	if !isTarget && (len(bucketOptions.targetPaths) > 0 || len(bucketOptions.targetExcludePaths) > 0) {
-		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForBucket"))
+	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
+		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddLocalModule"))
 		return b
 	}
 	module, err := newModule(
@@ -208,12 +208,12 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 			return bucket, nil
 		},
 		bucketID,
-		bucketOptions.moduleFullName,
-		bucketOptions.commitID,
+		localModuleOptions.moduleFullName,
+		localModuleOptions.commitID,
 		isTarget,
-		isLocal,
-		bucketOptions.targetPaths,
-		bucketOptions.targetExcludePaths,
+		true,
+		localModuleOptions.targetPaths,
+		localModuleOptions.targetExcludePaths,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -226,22 +226,21 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 	return b
 }
 
-func (b *moduleSetBuilder) AddModuleForModuleKey(
+func (b *moduleSetBuilder) AddRemoteModule(
 	moduleKey ModuleKey,
 	isTarget bool,
-	isLocal bool,
-	options ...ModuleKeyOption,
+	options ...RemoteModuleOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
 		b.errs = append(b.errs, errBuildAlreadyCalled)
 		return b
 	}
-	moduleKeyOptions := newModuleKeyOptions()
+	remoteModuleOptions := newRemoteModuleOptions()
 	for _, option := range options {
-		option(moduleKeyOptions)
+		option(remoteModuleOptions)
 	}
-	if !isTarget && (len(moduleKeyOptions.targetPaths) > 0 || len(moduleKeyOptions.targetExcludePaths) > 0) {
-		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForModuleKey"))
+	if !isTarget && (len(remoteModuleOptions.targetPaths) > 0 || len(remoteModuleOptions.targetExcludePaths) > 0) {
+		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddRemoteModule"))
 		return b
 	}
 	// TODO: we could defer all this work to build, and coalesce ModuleKeys into a single call.
@@ -261,9 +260,9 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		moduleData.ModuleKey().ModuleFullName(),
 		moduleData.ModuleKey().CommitID(),
 		isTarget,
-		isLocal,
-		moduleKeyOptions.targetPaths,
-		moduleKeyOptions.targetExcludePaths,
+		false,
+		remoteModuleOptions.targetPaths,
+		remoteModuleOptions.targetExcludePaths,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -279,15 +278,15 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		return b
 	}
 	for _, declaredDepModuleKey := range declaredDepModuleKeys {
-		// Not a target or local Module.
-		// If this Module is a target or is local, this will be added by the caller.
+		// Not a target Module.
+		// If this Module is a target, this will be added by the caller.
 		//
 		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
 		//
 		// We don't need to special-case these - they are lowest priority as they aren't targets and
-		// are added by ModuleKey. If a caller adds one of these ModuleKeys as a target, or adds
-		// an equivalent Module by Bucket, that add will take precedence.
-		b.AddModuleForModuleKey(declaredDepModuleKey, false, false)
+		// are remote. If a caller adds one of these ModuleKeys as a target, or adds
+		// an equivalent Module by as a local Module by Bucket, that add will take precedence.
+		b.AddRemoteModule(declaredDepModuleKey, false)
 	}
 	return b
 }
@@ -387,22 +386,22 @@ func getUniqueModulesByOpaqueID(ctx context.Context, modules []Module) ([]Module
 	return uniqueModules, nil
 }
 
-type bucketOptions struct {
+type localModuleOptions struct {
 	moduleFullName     ModuleFullName
 	commitID           string
 	targetPaths        []string
 	targetExcludePaths []string
 }
 
-func newBucketOptions() *bucketOptions {
-	return &bucketOptions{}
+func newLocalModuleOptions() *localModuleOptions {
+	return &localModuleOptions{}
 }
 
-type moduleKeyOptions struct {
+type remoteModuleOptions struct {
 	targetPaths        []string
 	targetExcludePaths []string
 }
 
-func newModuleKeyOptions() *moduleKeyOptions {
-	return &moduleKeyOptions{}
+func newRemoteModuleOptions() *remoteModuleOptions {
+	return &remoteModuleOptions{}
 }

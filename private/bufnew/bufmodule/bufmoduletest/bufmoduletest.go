@@ -41,7 +41,6 @@ type ModuleData struct {
 	PathToData  map[string][]byte
 	Bucket      storage.ReadBucket
 	NotTargeted bool
-	NotLocal    bool
 }
 
 // OmniProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
@@ -238,7 +237,7 @@ func addModuleDataToModuleSetBuilder(
 		// Should never get here.
 		return errors.New("boolCount returned 1 but all ModuleData fields were nil")
 	}
-	var bucketOptions []bufmodule.BucketOption
+	var localModuleOptions []bufmodule.LocalModuleOption
 	if moduleData.Name != "" {
 		moduleFullName, err := bufmodule.ParseModuleFullName(moduleData.Name)
 		if err != nil {
@@ -249,18 +248,17 @@ func addModuleDataToModuleSetBuilder(
 			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
 			commitID = fmt.Sprintf("omniProviderCommit-%d", index)
 		}
-		bucketOptions = []bufmodule.BucketOption{
-			bufmodule.BucketWithModuleFullNameAndCommitID(moduleFullName, commitID),
+		localModuleOptions = []bufmodule.LocalModuleOption{
+			bufmodule.LocalModuleWithModuleFullNameAndCommitID(moduleFullName, commitID),
 		}
 	} else if requireName {
 		return errors.New("ModuleData.Name was required in this context")
 	}
-	moduleSetBuilder.AddModuleForBucket(
+	moduleSetBuilder.AddLocalModule(
 		bucket,
 		bucketID,
 		!moduleData.NotTargeted,
-		!moduleData.NotLocal,
-		bucketOptions...,
+		localModuleOptions...,
 	)
 	return nil
 }

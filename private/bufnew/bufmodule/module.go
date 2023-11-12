@@ -111,7 +111,9 @@ type Module interface {
 	// Modules are either local or remote.
 	//
 	// A local Module is one which was built from sources from the "local context", such
-	// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest.
+	// a Workspace containing Modules, or a ModuleNode in a CreateCommiteRequest. Local
+	// Modules are important for understanding what Modules to push, and what modules to
+	// check declared dependencies for unused dependencies.
 	//
 	// A remote Module is one which was not contained in the local context, such as
 	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
