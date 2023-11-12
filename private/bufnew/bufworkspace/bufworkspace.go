@@ -68,10 +68,6 @@ type Workspace interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// This may or may not include ModuleRefs that reference Modules within the ModuleSet.
-	// ModuleSets include all dependencies, so in theory, all ModuleRefs should have a Module,
-	// however we may have misconfigured ModuleRefs.
-	//
 	// The ModuleRefs in this list will be unique by ModuleFullName. Resolution of ModuleRefs
 	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
 	// of the buf.yaml files in the Workspace, resolving common ModuleFullNames to a single ModuleRef.
@@ -79,14 +75,6 @@ type Workspace interface {
 	// LockedDepModuleKeys returns the locked dependencies of the Workspace as ModuleKeys.
 	//
 	// These come from buf.lock files.
-	//
-	// This may or may not include ModuleKeys that reference Modules within the ModuleSet, and
-	// in most cases wil have a corresponding Module in the ModuleSet ModuleSets should include
-	// all dependencies, so in theory, all ModuleKeys should have a Module, however we may have
-	// missing ModuleKeys in our buf.lock file.
-	//
-	// Conversely, and more commonly, we may have extra ModuleKeys in our buf.lock file, that
-	// is
 	//
 	// The ModuleKeys in this list will be unique by ModuleFullName. Resolution of ModuleKeys
 	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union

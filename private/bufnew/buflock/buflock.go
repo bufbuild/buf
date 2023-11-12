@@ -25,6 +25,11 @@ import (
 	"go.uber.org/multierr"
 )
 
+const (
+	// DefaultFileName is the default file name you should use for buf.lock Files.
+	DefaultFileName = "buf.lock"
+)
+
 // File represents a buf.lock file.
 type File interface {
 	// FileVersion returns the file version of the buf.lock file.
