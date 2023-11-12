@@ -79,6 +79,7 @@ type Module interface {
 	// ModuleFullName is nil, this will always be empty.
 	// However, this is always present for remote Modules.
 	CommitID() string
+
 	// Digest returns the Module digest.
 	Digest() (bufcas.Digest, error)
 
@@ -124,8 +125,7 @@ type Module interface {
 	// Remote Modules will always have ModuleFullNames and CommitIDs.
 	IsLocal() bool
 
-	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
-	// constructed from a ModuleSet.
+	// ModuleSet returns the ModuleSet that this Module is contained within.
 	//
 	// Always present.
 	ModuleSet() ModuleSet

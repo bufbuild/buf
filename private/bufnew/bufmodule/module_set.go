@@ -29,10 +29,14 @@ import (
 )
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
+//
+// A ModuleSet is expected to be self-contained, that is Modules only import
+// from other Modules in this ModuleSet.
 type ModuleSet interface {
 	// Modules returns the Modules in the ModuleSet.
 	//
 	// This will consist of both targets and non-targets.
+	// All dependencies of all Modules will be in this list, that is this list is self-contained.
 	//
 	// These will be sorted by OpaqueID.
 	Modules() []Module
@@ -93,6 +97,23 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 	return slicesextended.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsTarget() },
+	)
+}
+
+// ModuleSetRemoteModules is a convenience function that returns the remote Modules
+// from a ModuleSet.
+//
+// Given that a ModuleSet is self-contained, this represents the remote dependencies
+// of the local modules in the ModuleSet.
+//
+// TODO: No, this isn't true, a remote Module could be a target. You need to go through
+// the ModuleDeps recursively, and choose out those ModuleDeps that themselves are remote.
+// It's a fine distinction, and in most cases (including our current usage) this function
+// as written will happen to work, but going through ModuleDeps is more correct.
+func ModuleSetRemoteModuleDepsOfLocalModules(moduleSet ModuleSet) []Module {
+	return slicesextended.Filter(
+		moduleSet.Modules(),
+		func(module Module) bool { return !module.IsLocal() },
 	)
 }
 
