@@ -30,6 +30,10 @@ type ModuleDataProvider interface {
 	//
 	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeys.
 	// If there is an error, no ModuleDatas will be returned.
+	//
+	// If the input ModuleKey had a CommitID set, this the returned ModuleData will also have a CommitID
+	// set. This is important for i.e. v1beta1 and v1 buf.lock files, where we want to make sure we keep
+	// the reference to the CommitID, even if we did not have it stored in our cache.
 	GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error)
 }
 

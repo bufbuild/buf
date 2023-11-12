@@ -25,6 +25,9 @@ import (
 //
 // TODO: Actually implement this. Right now it is just a passthrough.
 // Use the buflock package to represent dependencies on disk.
+//
+// Note that you need to be careful to propagate back the CommitID if it is set on an input ModuleKey.
+// See the API ModuleDataProvider for how we do this.
 func NewModuleDataProvider(
 	delegate bufmodule.ModuleDataProvider,
 	bucket storage.ReadWriteBucket,

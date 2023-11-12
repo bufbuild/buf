@@ -73,7 +73,7 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 
 	commitID := moduleKey.CommitID()
 	var resourceRef *modulev1beta1.ResourceRef
-	// This is preparing for a world where CommitID is optional.
+	// CommitID is optional.
 	if commitID == "" {
 		// Naming differently to make sure we differentiate between this and the
 		// retrieved digest below.
@@ -97,6 +97,8 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 			},
 		}
 	} else {
+		// Note that we could actually just use the Digest. We don't wnat to have to invoke
+		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
 		resourceRef = &modulev1beta1.ResourceRef{
 			Value: &modulev1beta1.ResourceRef_Id{
 				Id: commitID,
@@ -104,14 +106,6 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		}
 	}
 
-	// Note that we could actually just use the Digest. However, we want to force the caller
-	// to provide a CommitID, so that we can document that all Modules returned from a
-	// ModuleDataProvider will have a CommitID. We also want to prevent callers from having
-	// to invoke moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
-	// If we were to instead have GetModuleDataForDigest(context.Context, ModuleFullName, bufcas.Digest),
-	// we would never have the CommitID, even in cases where we have it via the ModuleKey.
-	// If we were to provide both GetModuleDataForModuleKey and GetModuleForDigest, then why would anyone
-	// ever call GetModuleDataForModuleKey? This forces a single call pattern for now.
 	response, err := a.clientProvider.CommitServiceClient(registryHostname).GetCommitNodes(
 		ctx,
 		connect.NewRequest(
@@ -136,9 +130,10 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		return nil, err
 	}
 
-	// This is preparing for a world where CommitID is optional.
+	// CommitID is optional.
 	if commitID == "" {
 		// If we did not have a commitID, make a new ModuleKey with the retrieved commitID.
+		// All remote Modules must have a commitID.
 		moduleKey, err = bufmodule.NewModuleKey(
 			moduleKey.ModuleFullName(),
 			protoCommitNode.Commit.Id,

@@ -29,6 +29,8 @@ import (
 // A ModuleData generally represents the data on a Module read from the BSR API or a cache.
 type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
+	//
+	// A ModuleKey from a ModuleData may not have a CommitID set.
 	ModuleKey() ModuleKey
 	// Bucket returns a Bucket of the Module's files.
 	//
