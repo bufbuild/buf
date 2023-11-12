@@ -20,6 +20,9 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 )
 
+// TODO: need to handle bufmigrate, that likely moves into this package and the buflock package.
+// TODO: need to handle buf mod init --doc
+
 const (
 	// DefaultConfigFileName is the default file name you should use for buf.yaml Files.
 	DefaultConfigFileName = "buf.yaml"
@@ -120,6 +123,10 @@ type ModuleConfig interface {
 	//
 	// If this was not set, this will be set to the default breaking configuration.
 	BreakingConfig() BreakingConfig
+
+	// TODO: RootToExcludes
+	// TODO: DependencyModuleReferences: how do these fit in? We likely add them here,
+	// and do not have ModuleConfigs at the bufworkspace level.
 
 	isModuleConfig()
 }
