@@ -90,21 +90,21 @@ type Module interface {
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
 
-	// IsTargetModule returns true if the Module is a targeted module.
+	// IsTarget returns true if the Module is a targeted module.
 	//
 	// Modules are either targets or non-targets.
 	// Modules directly returned from a ModuleProvider will always be marked as targets.
 	// Modules created file ModuleSetBuilders may or may not be marked as targets.
 	//
 	// Files within a targeted Module can be targets or non-targets themselves (non-target = import).
-	// FileInfos have a function IsTargetFile() to denote if they are targets.
+	// FileInfos have a function FileInfo.IsTargetFile() to denote if they are targets.
 	// Note that no Files from a Module will have IsTargetFile() set to true if
-	// Module.IsTargetModule() is false.
+	// IsTarget() is false.
 	//
 	// If specific Files were not targeted but the Module was targeted, all Files in the Module
-	// will have IsTargetFile() set to true, and this function will return all Files
+	// will have FileInfo.IsTargetFile() set to true, and this function will return all Files
 	// that WalkFileInfos does.
-	IsTargetModule() bool
+	IsTarget() bool
 
 	// ModuleSet returns the ModuleSet that this Module is contained within, if it was
 	// constructed from a ModuleSet.
@@ -153,7 +153,7 @@ type module struct {
 	bucketID       string
 	moduleFullName ModuleFullName
 	commitID       string
-	isTargetModule bool
+	isTarget       bool
 
 	moduleSet ModuleSet
 
@@ -168,7 +168,7 @@ func newModule(
 	bucketID string,
 	moduleFullName ModuleFullName,
 	commitID string,
-	isTargetModule bool,
+	isTarget bool,
 	targetPaths []string,
 	targetExcludePaths []string,
 ) (*module, error) {
@@ -180,7 +180,7 @@ func newModule(
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
-		isTargetModule: isTargetModule,
+		isTarget:       isTarget,
 	}
 	module.ModuleReadBucket = newModuleReadBucket(
 		ctx,
@@ -232,8 +232,8 @@ func (m *module) ModuleDeps() ([]ModuleDep, error) {
 	return m.getModuleDeps()
 }
 
-func (m *module) IsTargetModule() bool {
-	return m.isTargetModule
+func (m *module) IsTarget() bool {
+	return m.isTarget
 }
 
 func (m *module) ModuleSet() ModuleSet {

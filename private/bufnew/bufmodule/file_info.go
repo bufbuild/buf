@@ -37,13 +37,12 @@ type FileInfo interface {
 	// IsTargetFile returns true if the File is targeted.
 	//
 	// Files are either targets or imports.
-	// If IsTargetModule() is false, this will always be false.
+	// If Module.IsTarget() is false, this will always be false.
 	//
-	// If specific Files were not targeted but IsTargetModule() is true, all Files in
+	// If specific Files were not targeted but Module.IsTarget() is true, all Files in
 	// the Module will have IsTargetFile() set to true.
 	IsTargetFile() bool
 
-	//setIsTargetFile(bool)
 	isFileInfo()
 }
 

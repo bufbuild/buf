@@ -53,7 +53,7 @@ type ModuleSetBuilder interface {
 	AddModuleForBucket(
 		bucket storage.ReadBucket,
 		bucketID string,
-		isTargetModule bool,
+		isTarget bool,
 		options ...BucketOption,
 	) ModuleSetBuilder
 	// AddModuleForModuleKey adds a new Module for the given ModuleKey.
@@ -70,7 +70,7 @@ type ModuleSetBuilder interface {
 	// Returns the same ModuleSetBuilder.
 	AddModuleForModuleKey(
 		moduleKey ModuleKey,
-		isTargetModule bool,
+		isTarget bool,
 		options ...ModuleKeyOption,
 	) ModuleSetBuilder
 	// Build builds the Modules into a ModuleSet.
@@ -163,7 +163,7 @@ func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvi
 func (b *moduleSetBuilder) AddModuleForBucket(
 	bucket storage.ReadBucket,
 	bucketID string,
-	isTargetModule bool,
+	isTarget bool,
 	options ...BucketOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
@@ -182,7 +182,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		b.errs = append(b.errs, errors.New("cannot set commitID without ModuleFullName when calling AddModuleForBucket"))
 		return b
 	}
-	if !isTargetModule && (len(bucketOptions.targetPaths) > 0 || len(bucketOptions.targetExcludePaths) > 0) {
+	if !isTarget && (len(bucketOptions.targetPaths) > 0 || len(bucketOptions.targetExcludePaths) > 0) {
 		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForBucket"))
 		return b
 	}
@@ -194,7 +194,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 		bucketID,
 		bucketOptions.moduleFullName,
 		bucketOptions.commitID,
-		isTargetModule,
+		isTarget,
 		bucketOptions.targetPaths,
 		bucketOptions.targetExcludePaths,
 	)
@@ -214,7 +214,7 @@ func (b *moduleSetBuilder) AddModuleForBucket(
 
 func (b *moduleSetBuilder) AddModuleForModuleKey(
 	moduleKey ModuleKey,
-	isTargetModule bool,
+	isTarget bool,
 	options ...ModuleKeyOption,
 ) ModuleSetBuilder {
 	if b.buildCalled.Load() {
@@ -225,7 +225,7 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 	for _, option := range options {
 		option(moduleKeyOptions)
 	}
-	if !isTargetModule && (len(moduleKeyOptions.targetPaths) > 0 || len(moduleKeyOptions.targetExcludePaths) > 0) {
+	if !isTarget && (len(moduleKeyOptions.targetPaths) > 0 || len(moduleKeyOptions.targetExcludePaths) > 0) {
 		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddModuleForModuleKey"))
 		return b
 	}
@@ -245,7 +245,7 @@ func (b *moduleSetBuilder) AddModuleForModuleKey(
 		"",
 		moduleData.ModuleKey().ModuleFullName(),
 		moduleData.ModuleKey().CommitID(),
-		isTargetModule,
+		isTarget,
 		moduleKeyOptions.targetPaths,
 		moduleKeyOptions.targetExcludePaths,
 	)
@@ -288,7 +288,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if len(b.moduleSetModules) == 0 {
 		return nil, errors.New("no Modules added to ModuleSetBuilder")
 	}
-	if slicesextended.Count(b.moduleSetModules, func(m *moduleSetModule) bool { return m.IsTargetModule() }) < 1 {
+	if slicesextended.Count(b.moduleSetModules, func(m *moduleSetModule) bool { return m.IsTarget() }) < 1 {
 		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
 	}
 	moduleSetModules, err := getUniqueModulesByOpaqueID(b.ctx, b.moduleSetModules)
@@ -334,10 +334,10 @@ func getUniqueModulesByOpaqueID(ctx context.Context, moduleSetModules []*moduleS
 		func(i int, j int) bool {
 			m1 := moduleSetModules[i]
 			m2 := moduleSetModules[j]
-			if m1.IsTargetModule() && !m2.IsTargetModule() {
+			if m1.IsTarget() && !m2.IsTarget() {
 				return true
 			}
-			if !m1.IsTargetModule() && m2.IsTargetModule() {
+			if !m1.IsTarget() && m2.IsTarget() {
 				return false
 			}
 			if m1.isCreatedFromBucket() && !m2.isCreatedFromBucket() {

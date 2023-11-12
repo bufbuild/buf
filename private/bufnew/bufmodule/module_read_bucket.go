@@ -65,13 +65,13 @@ type ModuleReadBucket interface {
 type WalkFileInfosOption func(*walkFileInfosOptions)
 
 // WalkFileInfosWithOnlyTargetFiles returns a new WalkFileInfosOption that will result in only
-// FileInfos with IsTargetFile() set to true being walked.
+// FileInfos with FileInfo.IsTargetFile() set to true being walked.
 //
-// Note that no Files from a Module will have IsTargetFile() set to true if
-// Module.IsTargetModule() is false.
+// Note that no Files from a Module will have FileInfo.IsTargetFile() set to true if
+// Module.IsTarget() is false.
 //
 // If specific Files were not targeted but the Module was targeted, all Files will have
-// IsTargetFile() set to true, and this function will return all Files that WalkFileInfos does.
+// FileInfo.IsTargetFile() set to true, and this function will return all Files that WalkFileInfos does.
 func WalkFileInfosWithOnlyTargetFiles() WalkFileInfosOption {
 	return func(walkFileInfosOptions *walkFileInfosOptions) {
 		walkFileInfosOptions.onlyTargetFiles = true
@@ -307,10 +307,10 @@ func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo,
 }
 
 func (b *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
-	if !b.module.IsTargetModule() {
+	if !b.module.IsTarget() {
 		// If the Module is not targeted, the file is automatically not targeted.
 		//
-		// Note we can change IsTargetModule via setIsTargetModule during ModuleSetBuilder building,
+		// Note we can change IsTarget via setIsTarget during ModuleSetBuilder building,
 		// so we do not want to cache this value.
 		return false
 	}

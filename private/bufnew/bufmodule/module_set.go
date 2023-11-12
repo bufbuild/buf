@@ -119,7 +119,7 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 	return slicesextended.Filter(
 		moduleSet.Modules(),
-		func(module Module) bool { return module.IsTargetModule() },
+		func(module Module) bool { return module.IsTarget() },
 	)
 }
 
