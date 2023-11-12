@@ -35,9 +35,10 @@ type File interface {
 	FileVersion() FileVersion
 	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
 	//
-	// Note that ModuleKeys may not have CommitIDs.
+	// Note that ModuleKeys may not have CommitIDs with FileVersionV2.
 	// CommitIDs are required for v1beta1 and v1 buf.lock files. Their existence will be verified
-	// when calling NewFile or WriteFile for FileVersionV1Beta1 or FileVersionV1.
+	// when calling NewFile or WriteFile for FileVersionV1Beta1 or FileVersionV1, and therefor
+	// if FileVersion() is FileVersionV1Beta1 or FileVersionV1, all ModuleKeys will have CommitIDs.
 	//
 	// All ModuleKeys will have unique ModuleFullNames.
 	// ModuleKeys are sorted by ModuleFullName.
