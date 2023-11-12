@@ -48,7 +48,10 @@ type FileNode interface {
 // The path is validated to be normalized and non-empty.
 // The digest is validated to be non-nil.
 func NewFileNode(path string, digest Digest) (FileNode, error) {
-	return newFileNode(path, digest)
+	if err := validateFileNodeParameters(path, digest); err != nil {
+		return nil, err
+	}
+	return newFileNode(path, digest), nil
 }
 
 // ParseFileNode parses the FileNode from its string representation.
@@ -59,13 +62,29 @@ func NewFileNode(path string, digest Digest) (FileNode, error) {
 func ParseFileNode(s string) (FileNode, error) {
 	split := strings.Split(s, "  ")
 	if len(split) != 2 {
-		return nil, fmt.Errorf("unknown FileNode encoding: %q", s)
+		return nil, &ParseError{
+			typeString: "file node",
+			input:      s,
+			err:        errors.New(`must in the form "digest[SP][SP]path"`),
+		}
 	}
 	digest, err := ParseDigest(split[0])
 	if err != nil {
-		return nil, err
+		return nil, &ParseError{
+			typeString: "file node",
+			input:      s,
+			err:        err,
+		}
 	}
-	return NewFileNode(split[1], digest)
+	path := split[1]
+	if err := validateFileNodeParameters(path, digest); err != nil {
+		return nil, &ParseError{
+			typeString: "file node",
+			input:      s,
+			err:        err,
+		}
+	}
+	return newFileNode(path, digest), nil
 }
 
 // *** PRIVATE ***
@@ -75,24 +94,12 @@ type fileNode struct {
 	digest Digest
 }
 
-func newFileNode(path string, digest Digest) (*fileNode, error) {
-	if path == "" {
-		return nil, errors.New("path was empty when constructing a FileNode")
-	}
-	normalizedPath, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return nil, fmt.Errorf("path %q was not valid when constructing a FileNode: %w", path, err)
-	}
-	if path != normalizedPath {
-		return nil, fmt.Errorf("path %q was not equal to normalized path %q when constructing a FileNode", path, normalizedPath)
-	}
-	if digest == nil {
-		return nil, errors.New("nil Digest when constructing a FileNode")
-	}
+// validation should occur outside of this function.
+func newFileNode(path string, digest Digest) *fileNode {
 	return &fileNode{
 		path:   path,
 		digest: digest,
-	}, nil
+	}
 }
 
 func (f *fileNode) Path() string {
@@ -108,3 +115,20 @@ func (f *fileNode) String() string {
 }
 
 func (*fileNode) isFileNode() {}
+
+func validateFileNodeParameters(path string, digest Digest) error {
+	if path == "" {
+		return errors.New("path was empty")
+	}
+	normalizedPath, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return fmt.Errorf("path %q was not valid: %w", path, err)
+	}
+	if path != normalizedPath {
+		return fmt.Errorf("path %q was not equal to normalized path %q", path, normalizedPath)
+	}
+	if digest == nil {
+		return errors.New("no digest specified")
+	}
+	return nil
+}
