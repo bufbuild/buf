@@ -70,6 +70,40 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
 	registryHostname := moduleKey.ModuleFullName().Registry()
+
+	commitID := moduleKey.CommitID()
+	var resourceRef *modulev1beta1.ResourceRef
+	// This is preparing for a world where CommitID is optional.
+	if commitID == "" {
+		// Naming differently to make sure we differentiate between this and the
+		// retrieved digest below.
+		moduleKeyDigest, err := moduleKey.Digest()
+		if err != nil {
+			return nil, err
+		}
+		protoModuleKeyDigest, err := bufcas.DigestToProto(moduleKeyDigest)
+		if err != nil {
+			return nil, err
+		}
+		resourceRef = &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Name_{
+				Name: &modulev1beta1.ResourceRef_Name{
+					Owner:  moduleKey.ModuleFullName().Owner(),
+					Module: moduleKey.ModuleFullName().Name(),
+					Child: &modulev1beta1.ResourceRef_Name_Digest{
+						Digest: protoModuleKeyDigest,
+					},
+				},
+			},
+		}
+	} else {
+		resourceRef = &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Id{
+				Id: commitID,
+			},
+		}
+	}
+
 	// Note that we could actually just use the Digest. However, we want to force the caller
 	// to provide a CommitID, so that we can document that all Modules returned from a
 	// ModuleDataProvider will have a CommitID. We also want to prevent callers from having
@@ -84,11 +118,7 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 			&modulev1beta1.GetCommitNodesRequest{
 				Values: []*modulev1beta1.GetCommitNodesRequest_Value{
 					{
-						ResourceRef: &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: moduleKey.CommitID(),
-							},
-						},
+						ResourceRef: resourceRef,
 					},
 				},
 			},
@@ -104,6 +134,18 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	digest, err := bufcas.ProtoToDigest(protoCommitNode.Commit.Digest)
 	if err != nil {
 		return nil, err
+	}
+
+	// This is preparing for a world where CommitID is optional.
+	if commitID == "" {
+		// If we did not have a commitID, make a new ModuleKey with the retrieved commitID.
+		moduleKey, err = bufmodule.NewModuleKey(
+			moduleKey.ModuleFullName(),
+			protoCommitNode.Commit.Id,
+			// *** Use the Digest from the moduleKey, NOT from the protoCommitNode. ***
+			// We use this for tamper-proofing, see comment below.
+			moduleKey.Digest,
+		)
 	}
 	return bufmodule.NewModuleData(
 		moduleKey,
