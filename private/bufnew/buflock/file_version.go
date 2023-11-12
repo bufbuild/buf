@@ -52,3 +52,10 @@ func ParseFileVersion(s string) (FileVersion, error) {
 	}
 	return c, nil
 }
+
+func validateFileVersionExists(fileVersion FileVersion) error {
+	if _, ok := fileVersionToString[fileVersion]; !ok {
+		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	return nil
+}

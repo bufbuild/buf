@@ -27,7 +27,12 @@ type File interface {
 	//
 	// To migrate a file between versions, use ReadFile -> FileWithVersion -> WriteFile.
 	FileVersion() FileVersion
-	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file
+	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
+	//
+	// No deduplication is performed here, either at read or write.
+	// TODO: evaluate this.
+	// ModuleKeys may not be sorted.
+	// TODO: evaluate this.
 	DepModuleKeys() []bufmodule.ModuleKey
 
 	isFile()
