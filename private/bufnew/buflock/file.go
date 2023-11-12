@@ -14,7 +14,13 @@
 
 package buflock
 
-import "github.com/bufbuild/buf/private/bufnew/bufmodule"
+import (
+	"fmt"
+	"sort"
+
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
+)
 
 type file struct {
 	fileVersion   FileVersion
@@ -25,9 +31,17 @@ func newFile(
 	fileVersion FileVersion,
 	depModuleKeys []bufmodule.ModuleKey,
 ) (*file, error) {
-	if err := validateFileVersionExists(fileVersion); err != nil {
+	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
 		return nil, err
 	}
+	// To make sure we aren't editing input.
+	depModuleKeys = slicesextended.Copy(depModuleKeys)
+	sort.Slice(
+		depModuleKeys,
+		func(i int, j int) bool {
+			return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
+		},
+	)
 	return &file{
 		fileVersion:   fileVersion,
 		depModuleKeys: depModuleKeys,
@@ -43,3 +57,15 @@ func (f *file) DepModuleKeys() []bufmodule.ModuleKey {
 }
 
 func (*file) isFile() {}
+
+func validateNoDuplicateModuleKeysByModuleFullName(moduleKeys []bufmodule.ModuleKey) error {
+	moduleFullNameStringMap := make(map[string]struct{})
+	for _, moduleKey := range moduleKeys {
+		moduleFullNameString := moduleKey.ModuleFullName().String()
+		if _, ok := moduleFullNameStringMap[moduleFullNameString]; ok {
+			return fmt.Errorf("duplicate module %q attempted to be added to lock file", moduleFullNameString)
+		}
+		moduleFullNameStringMap[moduleFullNameString] = struct{}{}
+	}
+	return nil
+}

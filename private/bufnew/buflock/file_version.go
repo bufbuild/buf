@@ -45,17 +45,21 @@ func (c FileVersion) String() string {
 	return s
 }
 
-func ParseFileVersion(s string) (FileVersion, error) {
+func parseFileVersion(s string) (FileVersion, error) {
+	// Default to v1beta1 for legacy reasons.
+	if s == "" {
+		return FileVersionV1Beta1, nil
+	}
 	c, ok := stringToFileVersion[s]
 	if !ok {
-		return 0, fmt.Errorf("unknown FileVersion: %q", s)
+		return 0, fmt.Errorf("unknown lock file version: %q", s)
 	}
 	return c, nil
 }
 
 func validateFileVersionExists(fileVersion FileVersion) error {
 	if _, ok := fileVersionToString[fileVersion]; !ok {
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return fmt.Errorf("unknown lock file version: %v", fileVersion)
 	}
 	return nil
 }

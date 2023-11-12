@@ -139,7 +139,7 @@ type Module interface {
 //
 // The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
 func ModuleToModuleKey(module Module) (ModuleKey, error) {
-	return newModuleKeyForLazyDigest(
+	return newModuleKey(
 		module.ModuleFullName(),
 		module.CommitID(),
 		module.Digest,

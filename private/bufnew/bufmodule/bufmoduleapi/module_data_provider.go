@@ -259,7 +259,7 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleKeyForLazyDigest(
+	return bufmodule.NewModuleKey(
 		moduleFullName,
 		protoCommit.Id,
 		func() (bufcas.Digest, error) {

@@ -65,7 +65,7 @@ func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, module
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleKeyForLazyDigest(
+	return bufmodule.NewModuleKey(
 		// Note we don't have to resolve owner_name and module_name since we already have them.
 		moduleRef.ModuleFullName(),
 		protoCommit.Id,
