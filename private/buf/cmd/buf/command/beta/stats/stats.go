@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestat"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -132,11 +131,12 @@ func run(
 	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
 	for i, moduleConfig := range moduleConfigs {
 		// TODO: convert to use protostatstorage.NewFileWalker with bufmodule.ModuleReadBucketToStorageReadBucket.
-		stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
-		if err != nil {
-			return err
-		}
-		statsSlice[i] = stats
+		//stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
+		//if err != nil {
+		//return err
+		//}
+		//statsSlice[i] = stats
+		statsSlice[i] = nil
 	}
 	return bufprint.NewStatsPrinter(container.Stdout()).
 		PrintStats(ctx, format, protostat.MergeStats(statsSlice...))
