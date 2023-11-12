@@ -166,7 +166,10 @@ func ProtoToDigest(protoDigest *storagev1beta1.Digest, options ...ProtoOption) (
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
 	}
-	return newDigest(digestType, protoDigest.Value)
+	if err := validateDigestParameters(digestType, protoDigest.Value); err != nil {
+		return nil, err
+	}
+	return newDigest(digestType, protoDigest.Value), nil
 }
 
 // ProtoToDigests converts the given proto Digests to Digests.
@@ -285,7 +288,9 @@ func ManifestToProtoBlob(manifest Manifest, options ...ProtoOption) (*storagev1b
 // ProtoBlobToManifest converts the given proto Blob representing the string representation of a
 // Manifest into a Manifest.
 //
-// The proto Blob is assumed to be non-nil
+// The proto Blob is assumed to be non-nil.
+//
+// This function returns ParseErrors as it is effectively parsing the Manifest.
 func ProtoBlobToManifest(protoBlob *storagev1beta1.Blob, options ...ProtoOption) (Manifest, error) {
 	// Rely on validation in ProtoToBlob.
 	blob, err := ProtoToBlob(protoBlob, options...)
