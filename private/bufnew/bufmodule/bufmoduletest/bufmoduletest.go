@@ -51,6 +51,8 @@ type OmniProvider interface {
 }
 
 // NewOmniProvider returns a new OmniProvider.
+//
+// Note the ModuleDatas must be self-contained, that is they only import from each other.
 func NewOmniProvider(
 	moduleDatas ...ModuleData,
 ) (OmniProvider, error) {
@@ -61,6 +63,8 @@ func NewOmniProvider(
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
 // and when ModuleFullNames do not matter.
+//
+// Note the ModuleDatas must be self-contained, that is they only import from each other.
 func NewModuleSet(
 	moduleDatas ...ModuleData,
 ) (bufmodule.ModuleSet, error) {
@@ -71,6 +75,8 @@ func NewModuleSet(
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
 // and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
 func NewModuleSetForDirPath(
 	dirPath string,
 ) (bufmodule.ModuleSet, error) {
@@ -85,6 +91,8 @@ func NewModuleSetForDirPath(
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
 // and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
 func NewModuleSetForPathToData(
 	pathToData map[string][]byte,
 ) (bufmodule.ModuleSet, error) {
@@ -99,6 +107,8 @@ func NewModuleSetForPathToData(
 //
 // This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
 // and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
 func NewModuleSetForBucket(
 	bucket storage.ReadBucket,
 ) (bufmodule.ModuleSet, error) {
