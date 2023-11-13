@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,9 +70,8 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				const defaultBranchName = "main"
-				repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
-				prepareGitRepoMultiModule(t, repoDir, tc.modulesIdentitiesInHEAD)
+				repo := gittest.ScaffoldGitRepository(t)
+				prepareGitRepoMultiModule(t, repo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
@@ -93,7 +92,7 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 				err = syncer.Sync(context.Background())
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
-				assert.Contains(t, err.Error(), defaultBranchName)
+				assert.Contains(t, err.Error(), gittest.DefaultBranch)
 				for _, moduleDir := range moduleDirs {
 					assert.Contains(t, err.Error(), moduleDir)
 				}
@@ -103,14 +102,11 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 }
 
 // prepareGitRepoMultiModule commits valid modules to the passed directories and module identities.
-func prepareGitRepoMultiModule(t *testing.T, repoDir string, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
-	runner := command.NewRunner()
+func prepareGitRepoMultiModule(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
+	files := make(map[string]string)
 	for moduleDir, moduleIdentity := range moduleDirsToIdentities {
-		writeFiles(t, repoDir, map[string]string{
-			moduleDir + "/buf.yaml":         fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
-			moduleDir + "/foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
-		})
+		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())
+		files[moduleDir+"/foo/v1/foo.proto"] = "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n"
 	}
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "commit")
+	repo.Commit(t, "commit", files)
 }

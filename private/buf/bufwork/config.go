@@ -19,7 +19,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
 func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, error) {
@@ -49,7 +49,7 @@ func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, 
 	}
 	// It's very important that we sort the directories here so that the
 	// constructed modules and/or images are in a deterministic order.
-	directories := stringutil.MapToSlice(directorySet)
+	directories := slicesextended.MapToSlice(directorySet)
 	sort.Slice(directories, func(i int, j int) bool {
 		return directories[i] < directories[j]
 	})

@@ -26,9 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -176,7 +176,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	var branchesToSync []string
 	if s.syncAllBranches {
 		// sync all branches
-		branchesToSync = stringutil.MapToSlice(allBranches)
+		branchesToSync = slicesextended.MapToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
 		currentBranch, err := s.repo.CurrentBranch(ctx)

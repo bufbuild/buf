@@ -31,11 +31,11 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,7 +111,7 @@ func AssertPathToContent(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(stringutil.SliceToUniqueSortedSlice(paths)))
+	require.Equal(t, len(paths), len(slicesextended.ToUniqueSorted(paths)))
 	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]
@@ -144,7 +144,7 @@ func AssertPaths(
 		},
 	))
 	sort.Strings(paths)
-	assert.Equal(t, stringutil.SliceToUniqueSortedSlice(expectedPaths), paths)
+	assert.Equal(t, slicesextended.ToUniqueSorted(expectedPaths), paths)
 }
 
 // GetExternalPathFunc can be used to get the external path of
@@ -1497,5 +1497,28 @@ func RunTestSuite(
 			storagearchive.WithMaxFileSizeUntarOption(limit),
 		)
 		assert.NoError(t, err)
+	})
+
+	t.Run("walk-on-file-path-that-is-not-pure-prefix", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"root/a/b",
+			map[string]string{
+				"root/a/b/1.proto": testProtoContent,
+				"root/a/b/2.proto": testProtoContent,
+				"root/a/b/2.txt":   testTxtContent,
+			},
+		)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"root/a/b/1.proto",
+			map[string]string{
+				"root/a/b/1.proto": testProtoContent,
+			},
+		)
 	})
 }
