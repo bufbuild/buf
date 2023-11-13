@@ -35,7 +35,7 @@ type Resolver interface {
 // If the input slice is empty, this returns nil
 // The given FileDescriptors must be self-contained, that is they must contain all imports.
 // This can NOT be guaranteed for FileDescriptorSets given over the wire, and can only be guaranteed from builds.
-func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+func NewResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	return newResolver(fileDescriptors...)
 }
 
@@ -44,7 +44,7 @@ func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, e
 //
 // If there is an error when constructing the resolver, it will be returned by all
 // method calls of the returned resolver.
-func NewLazyResolver(fileDescriptors ...protodescriptor.FileDescriptor) Resolver {
+func NewLazyResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) Resolver {
 	return &lazyResolver{fn: func() (Resolver, error) {
 		return newResolver(fileDescriptors...)
 	}}

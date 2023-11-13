@@ -943,7 +943,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptors(image)...)
+		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return err
 		}
