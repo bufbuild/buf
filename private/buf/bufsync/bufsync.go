@@ -31,26 +31,6 @@ import (
 // ErrModuleDoesNotExist is an error returned when looking for a BSR module.
 var ErrModuleDoesNotExist = errors.New("BSR module does not exist")
 
-const (
-	// LookbackDecisionCodeSkip instructs the syncer to skip the commit that threw the read module
-	// error, and keep looking back.
-	LookbackDecisionCodeSkip = iota + 1
-	// LookbackDecisionCodeOverride instructs the syncer to use the read module and override its
-	// identity with the target module identity for that directory, read either from the branch's HEAD
-	// commit, or the passed module identity override in the command.
-	LookbackDecisionCodeOverride
-	// LookbackDecisionCodeStop instructs the syncer to stop looking back when finding the read module
-	// error, and use the previous commit (if any) as the start sync point.
-	LookbackDecisionCodeStop
-	// LookbackDecisionCodeFail instructs the syncer to fail the lookback process for the branch,
-	// effectively failing the sync process.
-	LookbackDecisionCodeFail
-)
-
-// LookbackDecisionCode is the decision made by the ErrorHandler when finding a commit that throws
-// an error reading a module.
-type LookbackDecisionCode int
-
 // ErrorHandler handles errors reported by the Syncer before or during the sync process.
 type ErrorHandler interface {
 	// InvalidBSRSyncPoint is invoked by Syncer upon encountering a module's branch sync point that is
