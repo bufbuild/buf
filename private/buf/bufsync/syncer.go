@@ -232,6 +232,15 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 					)
 					continue
 				}
+				if builtModule == nil {
+					s.logger.Debug(
+						"no module on HEAD, skipping branch",
+						zap.String("branch", branch),
+						zap.String("moduleDir", moduleDir),
+					)
+					// no module on branch
+					continue
+				}
 				targetModuleIdentity = builtModule.ModuleIdentity()
 			} else {
 				// disregard module name in HEAD, use the identity override
