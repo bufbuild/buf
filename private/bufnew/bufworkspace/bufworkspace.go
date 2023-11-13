@@ -167,7 +167,7 @@ func WorkspaceWithGenerateConfig(generateConfig bufconfig.GenerateConfig) Worksp
 // in both v1 and v2 buf.yamls.
 //
 // A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
-func WorkspaceUnusedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
+func WorkspaceUnreferencedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
 	var unreferencedConfiguredDepModuleRefs []bufmodule.ModuleRef
 	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
 		// Workspaces are self-contained and have all dependencies, therefore
@@ -179,7 +179,7 @@ func WorkspaceUnusedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.Mod
 	return unreferencedConfiguredDepModuleRefs
 }
 
-// WorkspaceUnusedConfiguredDepModuleRefs returns those configured dependency ModuleRefs that
+// WorkspaceLocalConfiguredDepModuleRefs returns those configured dependency ModuleRefs that
 // reference local Modules in the workspace. In theory, these can be pruned from v2 buf.yamls.
 //
 // These are present in v1 buf.yaml, but they are not used by buf anymore. A note
@@ -220,7 +220,7 @@ func WorkspaceUnreferencedLockedDepModuleKeys(workspace Workspace) []bufmodule.M
 	return unreferencedLockedDepModuleKeys
 }
 
-// WorkspaceUnusedLockedDepModuleKeys returns those locked dependency ModuleKeys that
+// WorkspaceLocalLockedDepModuleKeys returns those locked dependency ModuleKeys that
 // reference local Modules in the workspace. In theory, these can be pruned from the buf.lock
 // in v2 buf.yamls.
 //
