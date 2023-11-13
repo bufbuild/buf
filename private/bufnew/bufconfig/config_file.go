@@ -19,6 +19,63 @@ import (
 	"io"
 )
 
+const (
+	// DefaultConfigFileName is the default file name you should use for buf.yaml Files.
+	DefaultConfigFileName = "buf.yaml"
+)
+
+var (
+	// AllConfigFileNames are all file names we have ever used for configuration files.
+	//
+	// Originally we thought we were going to move to buf.mod, and had this around for
+	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
+	// we released with it, however.
+	AllConfigFileNames = []string{
+		DefaultConfigFileName,
+		"buf.mod",
+	}
+)
+
+// ConfigFile represents a buf.yaml file.
+type ConfigFile interface {
+	// FileVersion returns the version of the buf.yaml file this was read from.
+	FileVersion() FileVersion
+
+	// ModuleConfigs returns the ModuleConfigs for the File.
+	//
+	// For v1 buf.yaml, this will only have a single ModuleConfig.
+	// For buf.gen.yaml, this will be empty.
+	ModuleConfigs() []ModuleConfig
+	// GenerateConfigs returns the GenerateConfigs for the File.
+	//
+	// For v1 buf.yaml, this will be empty.
+	GenerateConfigs() []GenerateConfig
+
+	isConfigFile()
+}
+
+// ReadConfigFile reads the ConfigFile from the io.Reader.
+func ReadConfigFile(reader io.Reader) (ConfigFile, error) {
+	configFile, err := readConfigFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(configFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return configFile, nil
+}
+
+// WriteConfigFile writes the ConfigFile to the io.Writer.
+func WriteConfigFile(writer io.Writer, configFile ConfigFile) error {
+	if err := checkV2SupportedYet(configFile.FileVersion()); err != nil {
+		return err
+	}
+	return writeConfigFile(writer, configFile)
+}
+
+// *** PRIVATE ***
+
 type configFile struct{}
 
 func newConfigFile() *configFile {

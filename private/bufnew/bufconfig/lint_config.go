@@ -14,6 +14,22 @@
 
 package bufconfig
 
+// LintConfig is lint configuration for a specific Module.
+type LintConfig interface {
+	CheckConfig
+
+	EnumZeroValueSuffix() string
+	RPCAllowSameRequestResponse() bool
+	RPCAllowGoogleProtobufEmptyRequests() bool
+	RPCAllowGoogleProtobufEmptyResponses() bool
+	ServiceSuffix() string
+	AllowCommentIgnores() bool
+
+	isLintConfig()
+}
+
+// *** PRIVATE ***
+
 type lintConfig struct {
 	checkConfig
 }

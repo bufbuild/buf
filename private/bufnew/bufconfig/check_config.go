@@ -14,6 +14,21 @@
 
 package bufconfig
 
+// CheckConfig is the common interface for the configuration shared by
+// LintConfig and BreakingConfig.
+type CheckConfig interface {
+	UseIDs() []string
+	ExceptIDs() string
+	// Paths are specific to the Module.
+	IgnorePaths() []string
+	// Paths are specific to the Module.
+	IgnoreIDToPaths() map[string][]string
+
+	isCheckConfig()
+}
+
+// *** PRIVATE ***
+
 type checkConfig struct{}
 
 func newCheckConfig() checkConfig {

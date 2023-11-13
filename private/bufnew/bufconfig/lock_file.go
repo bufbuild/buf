@@ -24,7 +24,96 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"go.uber.org/multierr"
 )
+
+const (
+	// DefaultLockFileName is the default file name you should use for buf.lock Files.
+	DefaultLockFileName = "buf.lock"
+)
+
+// LockFile represents a buf.lock file.
+type LockFile interface {
+	// FileVersion returns the file version of the buf.lock file.
+	//
+	// To migrate a file between versions, use ReadLockFile ->
+	// NewLockFile(newFileVersion, file.DepModuleKeys()) ->
+	// WriteLockFile.
+	FileVersion() FileVersion
+	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
+	//
+	// Note that ModuleKeys may not have CommitIDs with FileVersionV2.
+	// CommitIDs are required for v1beta1 and v1 buf.lock files. Their existence will be verified
+	// when calling NewFile or WriteFile for FileVersionV1Beta1 or FileVersionV1, and therefor
+	// if FileVersion() is FileVersionV1Beta1 or FileVersionV1, all ModuleKeys will have CommitIDs.
+	//
+	// All ModuleKeys will have unique ModuleFullNames.
+	// ModuleKeys are sorted by ModuleFullName.
+	//
+	// TODO: We need to add DigestTypes for all the deprecated digests. We then can handle
+	// the fact that they're deprecated outside of this package. Another option is to add a
+	// buflock.DeprecatedDigestTypeError to return from Digest(), and then handle that downstream.
+	DepModuleKeys() []bufmodule.ModuleKey
+
+	isLockFile()
+}
+
+// NewLockFile returns a new LockFile.
+//
+// Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
+// ValidateLockFileDigests().
+func NewLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (LockFile, error) {
+	lockFile, err := newLockFile(fileVersion, depModuleKeys)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return lockFile, nil
+}
+
+// ReadLockFile reads the File from the io.Reader.
+//
+// Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
+// ValidateFileDigests().
+func ReadLockFile(reader io.Reader) (LockFile, error) {
+	lockFile, err := readLockFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return lockFile, nil
+}
+
+// WriteLockFile writes the LockFile to the io.Writer.
+func WriteLockFile(writer io.Writer, lockFile LockFile) error {
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return err
+	}
+	return writeLockFile(writer, lockFile)
+}
+
+// ValidateLockFileDigests validates that all Digests on the ModuleKeys are valid, by calling
+// each Digest() function.
+//
+// TODO: should we just ensure this property when returning from NewFile, ReadFile?
+func ValidateLockFileDigests(lockFile lockFile) error {
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return err
+	}
+	var errs []error
+	for _, depModuleKey := range lockFile.DepModuleKeys() {
+		if _, err := depModuleKey.Digest(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return multierr.Combine(errs...)
+}
+
+// *** PRIVATE ***
 
 type lockFile struct {
 	fileVersion   FileVersion
@@ -56,12 +145,12 @@ func newLockFile(
 	return lockFile, nil
 }
 
-func (f *lockFile) FileVersion() FileVersion {
-	return f.fileVersion
+func (l *lockFile) FileVersion() FileVersion {
+	return l.fileVersion
 }
 
-func (f *lockFile) DepModuleKeys() []bufmodule.ModuleKey {
-	return f.depModuleKeys
+func (l *lockFile) DepModuleKeys() []bufmodule.ModuleKey {
+	return l.depModuleKeys
 }
 
 func (*lockFile) isLockFile() {}

@@ -14,6 +14,15 @@
 
 package bufconfig
 
+// GenerateConfig is a generation configuration.
+//
+// TODO
+type GenerateConfig interface {
+	isGenerateConfig()
+}
+
+// *** PRIVATE ***
+
 type generateConfig struct{}
 
 func newGenerateConfig() *generateConfig {

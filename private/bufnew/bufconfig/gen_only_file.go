@@ -19,6 +19,49 @@ import (
 	"io"
 )
 
+const (
+	// DefaultGenOnlyFileName is the default file name you should use for buf.gen.yaml Files.
+	//
+	// This is not included in AllFileNames.
+	//
+	// For v2, generation configuration is merged into buf.yaml.
+	DefaultGenOnlyFileName = "buf.gen.yaml"
+)
+
+// GenOnlyFile represents a buf.gen.yaml file.
+//
+// For v2, generation configuration has been merged into Files.
+type GenOnlyFile interface {
+	GenerateConfig
+
+	// FileVersion returns the version of the buf.gen.yaml file this was read from.
+	FileVersion() FileVersion
+
+	isGenOnlyFile()
+}
+
+// ReadGenOnlyFile reads the GenOnlyFile from the io.Reader.
+func ReadGenOnlyFile(reader io.Reader) (GenOnlyFile, error) {
+	genOnlyFile, err := readGenOnlyFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(genOnlyFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return genOnlyFile, nil
+}
+
+// WriteGenOnlyFile writes the GenOnlyFile to the io.Writer.
+func WriteGenOnlyFile(writer io.Writer, genOnlyFile GenOnlyFile) error {
+	if err := checkV2SupportedYet(genOnlyFile.FileVersion()); err != nil {
+		return err
+	}
+	return writeGenOnlyFile(writer, genOnlyFile)
+}
+
+// *** PRIVATE ***
+
 type genOnlyFile struct {
 	generateConfig
 }

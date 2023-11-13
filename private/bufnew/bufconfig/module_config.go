@@ -16,6 +16,43 @@ package bufconfig
 
 import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
+// ModuleConfig is configuration for a specific Module.
+//
+// ModuleConfigs do not expose BucketID or OpaqueID, however RootPath is effectively BucketID,
+// and ModuleFullName -> fallback to RootPath effectively is OpaqueID. Given that it is up to
+// the user of this package to decide what to do with these fields, we do not name RootPath as
+// BucketID, and we do not expose OpaqueID.
+type ModuleConfig interface {
+	// RootPath returns the root path of the Module, if set.
+	//
+	// For v1 buf.yamls, this is always empty.
+	//
+	// If not empty, this will be used as the BucketID within Workspaces. For v1, it is up
+	// to the Workspace constructor to come up with a BucketID (likely the directory name
+	// within buf.work.yaml).
+	RootPath() string
+	// ModuleFullName returns the ModuleFullName for the Module, if available.
+	//
+	// This may be nil.
+	ModuleFullName() bufmodule.ModuleFullName
+	// LintConfig returns the lint configuration.
+	//
+	// If this was not set, this will be set to the default lint configuration.
+	LintConfig() LintConfig
+	// BreakingConfig returns the breaking configuration.
+	//
+	// If this was not set, this will be set to the default breaking configuration.
+	BreakingConfig() BreakingConfig
+
+	// TODO: RootToExcludes
+	// TODO: DependencyModuleReferences: how do these fit in? We likely add them here,
+	// and do not have ModuleConfigs at the bufworkspace level.
+
+	isModuleConfig()
+}
+
+// *** PRIVATE ***
+
 type moduleConfig struct{}
 
 func newModuleConfig() *moduleConfig {

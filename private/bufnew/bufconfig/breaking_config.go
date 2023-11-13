@@ -14,6 +14,17 @@
 
 package bufconfig
 
+// BreakingConfig is breaking configuration for a specific Module.
+type BreakingConfig interface {
+	CheckConfig
+
+	IgnoreUnstablePackages() bool
+
+	isBreakingConfig()
+}
+
+// *** PRIVATE ***
+
 type breakingConfig struct {
 	checkConfig
 }
