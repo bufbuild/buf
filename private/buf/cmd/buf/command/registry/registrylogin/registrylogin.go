@@ -157,6 +157,10 @@ func inner(
 			return err
 		}
 	}
+	netrcFilePath, err := netrc.GetFilePath(container)
+	if err != nil {
+		return err
+	}
 	var token string
 	if flags.TokenStdin {
 		data, err := io.ReadAll(container.Stdin())
@@ -165,6 +169,17 @@ func inner(
 		}
 		token = string(data)
 	} else {
+		// Check if we already have a valid token for this remote and username.
+		if machine, err := netrc.GetMachineForName(container, remote); machine != nil && err == nil {
+			currentToken := machine.Password()
+			if err := isValidToken(ctx, container, remote, username, currentToken); err == nil {
+				alreadyLoggedInMessage := "Valid credentials found in %s.\n"
+				if _, err := fmt.Fprintf(container.Stdout(), alreadyLoggedInMessage, netrcFilePath); err != nil {
+					return err
+				}
+				return nil
+			}
+		}
 		var err error
 		token, err = bufcli.PromptUserForPassword(container, "Token: ")
 		if err != nil {
@@ -181,6 +196,40 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
+	if err := isValidToken(ctx, container, remote, username, token); err != nil {
+		return err
+	}
+	if err := netrc.PutMachines(
+		container,
+		netrc.NewMachine(
+			remote,
+			username,
+			token,
+		),
+	); err != nil {
+		return err
+	}
+	if _, err := netrc.DeleteMachineForName(container, "go."+remote); err != nil {
+		return err
+	}
+	loggedInMessage := "Credentials saved to %s.\n"
+	// Unless we did not prompt at all, print a newline first
+	if flags.Username == "" || !flags.TokenStdin {
+		loggedInMessage = "\n" + loggedInMessage
+	}
+	if _, err := fmt.Fprintf(container.Stdout(), loggedInMessage, netrcFilePath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func isValidToken(
+	ctx context.Context,
+	container appflag.Container,
+	remote string,
+	username string,
+	token string,
+) error {
 	clientConfig, err := bufcli.NewConnectClientConfigWithToken(container, token)
 	if err != nil {
 		return err
@@ -201,31 +250,6 @@ func inner(
 	}
 	if user.Username != username {
 		return errors.New("the username associated with the provided token does not match the provided username")
-	}
-	if err := netrc.PutMachines(
-		container,
-		netrc.NewMachine(
-			remote,
-			username,
-			token,
-		),
-	); err != nil {
-		return err
-	}
-	if _, err := netrc.DeleteMachineForName(container, "go."+remote); err != nil {
-		return err
-	}
-	netrcFilePath, err := netrc.GetFilePath(container)
-	if err != nil {
-		return err
-	}
-	loggedInMessage := fmt.Sprintf("Credentials saved to %s.\n", netrcFilePath)
-	// Unless we did not prompt at all, print a newline first
-	if flags.Username == "" || !flags.TokenStdin {
-		loggedInMessage = "\n" + loggedInMessage
-	}
-	if _, err := container.Stdout().Write([]byte(loggedInMessage)); err != nil {
-		return err
 	}
 	return nil
 }
