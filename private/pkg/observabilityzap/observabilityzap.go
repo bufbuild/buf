@@ -24,12 +24,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TracerProviderCloser is used to wrap a trace.TracerProvider with an io.Closer to use on shutdown.
-type TracerProviderCloser interface {
-	trace.TracerProvider
-	io.Closer
-}
-
 // Start creates a Zap logging exporter for Opentelemetry traces and returns
 // the exporter. The exporter implements io.Closer for clean-up.
 func Start(logger *zap.Logger) (trace.TracerProvider, io.Closer) {
