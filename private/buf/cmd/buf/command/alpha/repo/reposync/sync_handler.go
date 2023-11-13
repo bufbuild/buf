@@ -42,6 +42,8 @@ type syncHandler struct {
 	repo                            git.Repository
 	createWithVisibility            string
 	modulesDirsWithIdentityOverride map[string]struct{}
+
+	moduleIdentityToDefaultBranchCache map[string]string
 }
 
 func newSyncHandler(
@@ -53,12 +55,13 @@ func newSyncHandler(
 	modulesDirsWithIdentityOverride map[string]struct{},
 ) bufsync.Handler {
 	return &syncHandler{
-		logger:                          logger,
-		clientConfig:                    clientConfig,
-		container:                       container,
-		repo:                            repo,
-		createWithVisibility:            createWithVisibility,
-		modulesDirsWithIdentityOverride: modulesDirsWithIdentityOverride,
+		logger:                             logger,
+		clientConfig:                       clientConfig,
+		container:                          container,
+		repo:                               repo,
+		createWithVisibility:               createWithVisibility,
+		modulesDirsWithIdentityOverride:    modulesDirsWithIdentityOverride,
+		moduleIdentityToDefaultBranchCache: make(map[string]string),
 	}
 }
 
@@ -102,21 +105,6 @@ func (h *syncHandler) IsGitCommitSynced(ctx context.Context, module bufmoduleref
 		return false, fmt.Errorf("get reference by name: %w", err)
 	}
 	return res.Msg.Reference.GetVcsCommit() != nil, nil
-}
-
-func (h *syncHandler) GetModuleReleaseBranch(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
-	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
-	res, err := service.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-		FullName: module.Owner() + "/" + module.Repository(),
-	}))
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Repo is not created
-			return "", bufsync.ErrModuleDoesNotExist
-		}
-		return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
-	}
-	return res.Msg.Repository.DefaultBranch, nil
 }
 
 func (h *syncHandler) BackfillTags(
@@ -243,6 +231,35 @@ func (h *syncHandler) InvalidBSRSyncPoint(
 		"invalid sync point %q for branch %q in module %q: %w",
 		syncPoint.Hex(), branch, module.IdentityString(), err,
 	)
+}
+
+func (h *syncHandler) IsProtectedBranch(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	branch string,
+) (bool, error) {
+	// If the branch is the Git default branch, protect it.
+	if branch == h.repo.DefaultBranch() {
+		return true, nil
+	}
+	// Otherwise the only other protected branch is the Repository's default (release) branch.
+	identityString := moduleIdentity.IdentityString()
+	if _, ok := h.moduleIdentityToDefaultBranchCache[identityString]; !ok {
+		service := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+		res, err := service.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo not created, no branch is protected because no branches exist. We cache this
+				// because it shouldn't change during the lifetime of sync.
+				h.moduleIdentityToDefaultBranchCache[identityString] = ""
+			}
+			return false, fmt.Errorf("load repository %q: %w", identityString, err)
+		}
+		h.moduleIdentityToDefaultBranchCache[identityString] = res.Msg.Repository.DefaultBranch
+	}
+	return branch == h.moduleIdentityToDefaultBranchCache[identityString], nil
 }
 
 func (h *syncHandler) pushOrCreate(

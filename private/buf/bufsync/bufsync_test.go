@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"golang.org/x/exp/slices"
 )
 
@@ -102,14 +103,6 @@ func (c *mockSyncHandler) BackfillTags(
 	return "some-BSR-commit-name", nil
 }
 
-func (c *mockSyncHandler) GetModuleReleaseBranch(
-	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-) (string, error) {
-	// hardcoded default branch
-	return bufmoduleref.Main, nil
-}
-
 func (c *mockSyncHandler) ResolveSyncPoint(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
@@ -158,6 +151,14 @@ func (c *mockSyncHandler) IsGitCommitSynced(
 ) (bool, error) {
 	_, isSynced := c.syncedCommitsSHAs[hash.Hex()]
 	return isSynced, nil
+}
+
+func (c *mockSyncHandler) IsProtectedBranch(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	branch string,
+) (bool, error) {
+	return branch == gittest.DefaultBranch || branch == bufmoduleref.Main, nil
 }
 
 var _ bufsync.Handler = (*mockSyncHandler)(nil)
