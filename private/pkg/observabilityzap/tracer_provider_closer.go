@@ -19,16 +19,11 @@ import (
 	"io"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel/trace/embedded"
 )
 
-var _ trace.TracerProvider = &tracerProviderCloser{}
 var _ io.Closer = &tracerProviderCloser{}
 
 type tracerProviderCloser struct {
-	// https://pkg.go.dev/go.opentelemetry.io/otel/trace#hdr-API_Implementations
-	embedded.TracerProvider
 	tracerProvider *sdktrace.TracerProvider
 }
 
@@ -36,10 +31,6 @@ func newTracerProviderCloser(tracerProvider *sdktrace.TracerProvider) *tracerPro
 	return &tracerProviderCloser{
 		tracerProvider: tracerProvider,
 	}
-}
-
-func (t *tracerProviderCloser) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
-	return t.tracerProvider.Tracer(name, opts...)
 }
 
 func (t *tracerProviderCloser) Close() error {

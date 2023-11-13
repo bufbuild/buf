@@ -32,14 +32,14 @@ type TracerProviderCloser interface {
 
 // Start creates a Zap logging exporter for Opentelemetry traces and returns
 // the exporter. The exporter implements io.Closer for clean-up.
-func Start(logger *zap.Logger) TracerProviderCloser {
+func Start(logger *zap.Logger) (trace.TracerProvider, io.Closer) {
 	exporter := newZapExporter(logger)
 	tracerProviderOptions := []sdktrace.TracerProviderOption{
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithSpanProcessor(sdktrace.NewBatchSpanProcessor(exporter)),
 	}
-	tracerProvider := newTracerProviderCloser(sdktrace.NewTracerProvider(tracerProviderOptions...))
+	tracerProvider := sdktrace.NewTracerProvider(tracerProviderOptions...)
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
-	return tracerProvider
+	return tracerProvider, newTracerProviderCloser(tracerProvider)
 }
