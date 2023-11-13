@@ -226,7 +226,6 @@ func sync(
 			container,
 			repo,
 			createWithVisibility,
-			modulesDirsWithOverrides,
 		),
 		syncerOptions...,
 	)

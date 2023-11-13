@@ -36,12 +36,11 @@ import (
 )
 
 type syncHandler struct {
-	logger                          *zap.Logger
-	clientConfig                    *connectclient.Config
-	container                       appflag.Container
-	repo                            git.Repository
-	createWithVisibility            string
-	modulesDirsWithIdentityOverride map[string]struct{}
+	logger               *zap.Logger
+	clientConfig         *connectclient.Config
+	container            appflag.Container
+	repo                 git.Repository
+	createWithVisibility string
 
 	moduleIdentityToDefaultBranchCache map[string]string
 }
@@ -52,7 +51,6 @@ func newSyncHandler(
 	container appflag.Container,
 	repo git.Repository,
 	createWithVisibility string,
-	modulesDirsWithIdentityOverride map[string]struct{},
 ) bufsync.Handler {
 	return &syncHandler{
 		logger:                             logger,
@@ -60,7 +58,6 @@ func newSyncHandler(
 		container:                          container,
 		repo:                               repo,
 		createWithVisibility:               createWithVisibility,
-		modulesDirsWithIdentityOverride:    modulesDirsWithIdentityOverride,
 		moduleIdentityToDefaultBranchCache: make(map[string]string),
 	}
 }
@@ -171,27 +168,6 @@ func (h *syncHandler) SyncModuleCommit(ctx context.Context, moduleCommit bufsync
 		)),
 	)
 	return err
-}
-
-func (h *syncHandler) HandleReadModuleError(err *bufsync.ReadModuleError) bufsync.LookbackDecisionCode {
-	switch err.Code() {
-	case bufsync.ReadModuleErrorCodeModuleNotFound,
-		bufsync.ReadModuleErrorCodeInvalidModuleConfig,
-		bufsync.ReadModuleErrorCodeBuildModule:
-		// if the module cannot be found, has an invalid config, or cannot build, we can just skip the
-		// commit.
-		return bufsync.LookbackDecisionCodeSkip
-	case bufsync.ReadModuleErrorCodeUnnamedModule,
-		bufsync.ReadModuleErrorCodeUnexpectedName:
-		// if the module has an unexpected or no name, we should override the module identity only if it
-		// was passed explicitly as an identity override, otherwise skip the commit.
-		if _, hasExplicitOverride := h.modulesDirsWithIdentityOverride[err.ModuleDir()]; hasExplicitOverride {
-			return bufsync.LookbackDecisionCodeOverride
-		}
-		return bufsync.LookbackDecisionCodeSkip
-	}
-	// any unhandled scenarios? just fail the sync
-	return bufsync.LookbackDecisionCodeFail
 }
 
 func (h *syncHandler) InvalidBSRSyncPoint(
