@@ -15,13 +15,17 @@
 package bufconfig
 
 import (
+	"errors"
 	"io"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"go.uber.org/multierr"
 )
 
-// TODO: need to handle bufmigrate, that likely moves into this package and the buflock package.
+// TODO: need to handle bufmigrate, that likely moves into this package.
 // TODO: need to handle buf mod init --doc
+// TODO: All migration code between v1beta1, v1, v2 should live within this package, so that
+// we can expose less public types.
 
 const (
 	// DefaultConfigFileName is the default file name you should use for buf.yaml Files.
@@ -32,6 +36,8 @@ const (
 	//
 	// For v2, generation configuration is merged into buf.yaml.
 	DefaultGenOnlyFileName = "buf.gen.yaml"
+	// DefaultLockFileName is the default file name you should use for buf.lock Files.
+	DefaultLockFileName = "buf.lock"
 )
 
 var (
@@ -66,11 +72,21 @@ type ConfigFile interface {
 
 // ReadConfigFile reads the ConfigFile from the io.Reader.
 func ReadConfigFile(reader io.Reader) (ConfigFile, error) {
-	return readConfigFile(reader)
+	configFile, err := readConfigFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(configFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return configFile, nil
 }
 
 // WriteConfigFile writes the ConfigFile to the io.Writer.
 func WriteConfigFile(writer io.Writer, configFile ConfigFile) error {
+	if err := checkV2SupportedYet(configFile.FileVersion()); err != nil {
+		return err
+	}
 	return writeConfigFile(writer, configFile)
 }
 
@@ -88,12 +104,103 @@ type GenOnlyFile interface {
 
 // ReadGenOnlyFile reads the GenOnlyFile from the io.Reader.
 func ReadGenOnlyFile(reader io.Reader) (GenOnlyFile, error) {
-	return readGenOnlyFile(reader)
+	genOnlyFile, err := readGenOnlyFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(genOnlyFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return genOnlyFile, nil
 }
 
 // WriteGenOnlyFile writes the GenOnlyFile to the io.Writer.
 func WriteGenOnlyFile(writer io.Writer, genOnlyFile GenOnlyFile) error {
+	if err := checkV2SupportedYet(genOnlyFile.FileVersion()); err != nil {
+		return err
+	}
 	return writeGenOnlyFile(writer, genOnlyFile)
+}
+
+// LockFile represents a buf.lock file.
+type LockFile interface {
+	// FileVersion returns the file version of the buf.lock file.
+	//
+	// To migrate a file between versions, use ReadLockFile ->
+	// NewLockFile(newFileVersion, file.DepModuleKeys()) ->
+	// WriteLockFile.
+	FileVersion() FileVersion
+	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
+	//
+	// Note that ModuleKeys may not have CommitIDs with FileVersionV2.
+	// CommitIDs are required for v1beta1 and v1 buf.lock files. Their existence will be verified
+	// when calling NewFile or WriteFile for FileVersionV1Beta1 or FileVersionV1, and therefor
+	// if FileVersion() is FileVersionV1Beta1 or FileVersionV1, all ModuleKeys will have CommitIDs.
+	//
+	// All ModuleKeys will have unique ModuleFullNames.
+	// ModuleKeys are sorted by ModuleFullName.
+	//
+	// TODO: We need to add DigestTypes for all the deprecated digests. We then can handle
+	// the fact that they're deprecated outside of this package. Another option is to add a
+	// buflock.DeprecatedDigestTypeError to return from Digest(), and then handle that downstream.
+	DepModuleKeys() []bufmodule.ModuleKey
+
+	isLockFile()
+}
+
+// NewLockFile returns a new LockFile.
+//
+// Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
+// ValidateLockFileDigests().
+func NewLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (LockFile, error) {
+	lockFile, err := newLockFile(fileVersion, depModuleKeys)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return lockFile, nil
+}
+
+// ReadLockFile reads the File from the io.Reader.
+//
+// Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
+// ValidateFileDigests().
+func ReadLockFile(reader io.Reader) (LockFile, error) {
+	lockFile, err := readLockFile(reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return lockFile, nil
+}
+
+// WriteLockFile writes the LockFile to the io.Writer.
+func WriteLockFile(writer io.Writer, lockFile LockFile) error {
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return err
+	}
+	return writeLockFile(writer, lockFile)
+}
+
+// ValidateLockFileDigests validates that all Digests on the ModuleKeys are valid, by calling
+// each Digest() function.
+//
+// TODO: should we just ensure this property when returning from NewFile, ReadFile?
+func ValidateLockFileDigests(lockFile lockFile) error {
+	if err := checkV2SupportedYet(lockFile.FileVersion()); err != nil {
+		return err
+	}
+	var errs []error
+	for _, depModuleKey := range lockFile.DepModuleKeys() {
+		if _, err := depModuleKey.Digest(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return multierr.Combine(errs...)
 }
 
 // ModuleConfig is configuration for a specific Module.
@@ -172,4 +279,12 @@ type BreakingConfig interface {
 // TODO
 type GenerateConfig interface {
 	isGenerateConfig()
+}
+
+// TODO: Remove when V2 is supported.
+func checkV2SupportedYet(fileVersion FileVersion) error {
+	if fileVersion == FileVersionV2 {
+		return errors.New("v2 is not publicly supported yet")
+	}
+	return nil
 }

@@ -20,29 +20,33 @@ import (
 )
 
 const (
-	// FileVersionV1Beta represents v1beta1 configuration or generation files.
+	// FileVersionV1Beta represents v1beta1 files.
 	FileVersionV1Beta1 FileVersion = iota + 1
-	// FileVersionV1 represents v1 configuration or generation files.
+	// FileVersionV1 represents v1 files.
 	FileVersionV1
+	// FileVersionV2 represents v2 files.
+	FileVersionV2
 )
 
 var (
 	fileVersionToString = map[FileVersion]string{
 		FileVersionV1Beta1: "v1beta1",
 		FileVersionV1:      "v1",
+		FileVersionV2:      "v2",
 	}
 	stringToFileVersion = map[string]FileVersion{
 		"v1beta1": FileVersionV1Beta1,
 		"v1":      FileVersionV1,
+		"v2":      FileVersionV2,
 	}
 )
 
-// FileVersion is the version of a configuration or generation file.
+// FileVersion is the version of a file.
 type FileVersion int
 
 // String prints the string representation of the FileVersion.
 //
-// This is used in configuration and generation files on disk.
+// This is used in buf.yaml, buf.gen.yaml, buf.work.yaml, and buf.lock files on disk.
 func (f FileVersion) String() string {
 	s, ok := fileVersionToString[f]
 	if !ok {
@@ -58,14 +62,14 @@ func parseFileVersion(s string) (FileVersion, error) {
 	}
 	c, ok := stringToFileVersion[s]
 	if !ok {
-		return 0, fmt.Errorf("unknown lock file version: %q", s)
+		return 0, fmt.Errorf("unknown file version: %q", s)
 	}
 	return c, nil
 }
 
 func validateFileVersionExists(fileVersion FileVersion) error {
 	if _, ok := fileVersionToString[fileVersion]; !ok {
-		return fmt.Errorf("unknown lock file version: %v", fileVersion)
+		return fmt.Errorf("unknown file version: %v", fileVersion)
 	}
 	return nil
 }

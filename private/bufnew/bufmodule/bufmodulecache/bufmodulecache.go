@@ -24,7 +24,7 @@ import (
 // The given Bucket is used as a cache. This package can choose to use the bucket however it wishes.
 //
 // TODO: Actually implement this. Right now it is just a passthrough.
-// Use the buflock package to represent dependencies on disk.
+// Use the bufconfig.LockFile package and functions to represent dependencies on disk.
 //
 // Note that you need to be careful to propagate back the CommitID if it is set on an input ModuleKey.
 // See the API ModuleDataProvider for how we do this.

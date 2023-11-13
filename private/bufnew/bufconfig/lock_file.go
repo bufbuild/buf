@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflock
+package bufconfig
 
 import (
 	"errors"
@@ -26,15 +26,15 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
-type file struct {
+type lockFile struct {
 	fileVersion   FileVersion
 	depModuleKeys []bufmodule.ModuleKey
 }
 
-func newFile(
+func newLockFile(
 	fileVersion FileVersion,
 	depModuleKeys []bufmodule.ModuleKey,
-) (*file, error) {
+) (*lockFile, error) {
 	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
 		return nil, err
 	}
@@ -46,27 +46,27 @@ func newFile(
 			return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
 		},
 	)
-	file := &file{
+	lockFile := &lockFile{
 		fileVersion:   fileVersion,
 		depModuleKeys: depModuleKeys,
 	}
-	if err := validateV1AndV1Beta1DepsHaveCommits(file); err != nil {
+	if err := validateV1AndV1Beta1DepsHaveCommits(lockFile); err != nil {
 		return nil, err
 	}
-	return file, nil
+	return lockFile, nil
 }
 
-func (f *file) FileVersion() FileVersion {
+func (f *lockFile) FileVersion() FileVersion {
 	return f.fileVersion
 }
 
-func (f *file) DepModuleKeys() []bufmodule.ModuleKey {
+func (f *lockFile) DepModuleKeys() []bufmodule.ModuleKey {
 	return f.depModuleKeys
 }
 
-func (*file) isFile() {}
+func (*lockFile) isLockFile() {}
 
-func readFile(reader io.Reader) (File, error) {
+func readLockFile(reader io.Reader) (LockFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -81,12 +81,12 @@ func readFile(reader io.Reader) (File, error) {
 	}
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		var externalFile externalFileV1OrV1Beta1
-		if err := encoding.UnmarshalYAMLStrict(data, &externalFile); err != nil {
+		var externalLockFile externalLockFileV1OrV1Beta1
+		if err := encoding.UnmarshalYAMLStrict(data, &externalLockFile); err != nil {
 			return nil, fmt.Errorf("failed to decode lock file as version %v: %w", fileVersion, err)
 		}
-		depModuleKeys := make([]bufmodule.ModuleKey, len(externalFile.Deps))
-		for i, dep := range externalFile.Deps {
+		depModuleKeys := make([]bufmodule.ModuleKey, len(externalLockFile.Deps))
+		for i, dep := range externalLockFile.Deps {
 			dep := dep
 			moduleFullName, err := bufmodule.NewModuleFullName(
 				dep.Remote,
@@ -111,14 +111,14 @@ func readFile(reader io.Reader) (File, error) {
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newFile(fileVersion, depModuleKeys)
+		return newLockFile(fileVersion, depModuleKeys)
 	case FileVersionV2:
-		var externalFile externalFileV2
-		if err := encoding.UnmarshalYAMLStrict(data, &externalFile); err != nil {
+		var externalLockFile externalLockFileV2
+		if err := encoding.UnmarshalYAMLStrict(data, &externalLockFile); err != nil {
 			return nil, fmt.Errorf("failed to decode lock file as version %v: %w", fileVersion, err)
 		}
-		depModuleKeys := make([]bufmodule.ModuleKey, len(externalFile.Deps))
-		for i, dep := range externalFile.Deps {
+		depModuleKeys := make([]bufmodule.ModuleKey, len(externalLockFile.Deps))
+		for i, dep := range externalLockFile.Deps {
 			dep := dep
 			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
 			if err != nil {
@@ -136,30 +136,30 @@ func readFile(reader io.Reader) (File, error) {
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newFile(fileVersion, depModuleKeys)
+		return newLockFile(fileVersion, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 }
 
-func writeFile(writer io.Writer, file File) error {
-	if err := validateV1AndV1Beta1DepsHaveCommits(file); err != nil {
+func writeLockFile(writer io.Writer, lockFile LockFile) error {
+	if err := validateV1AndV1Beta1DepsHaveCommits(lockFile); err != nil {
 		return err
 	}
-	switch fileVersion := file.FileVersion(); fileVersion {
+	switch fileVersion := lockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		depModuleKeys := file.DepModuleKeys()
-		externalFile := externalFileV1OrV1Beta1{
+		depModuleKeys := lockFile.DepModuleKeys()
+		externalLockFile := externalLockFileV1OrV1Beta1{
 			Version: fileVersion.String(),
-			Deps:    make([]externalFileDepV1OrV1Beta1, len(depModuleKeys)),
+			Deps:    make([]externalLockFileDepV1OrV1Beta1, len(depModuleKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
 			digest, err := depModuleKey.Digest()
 			if err != nil {
 				return fmt.Errorf("failed to encode lock file: digest error: %w", err)
 			}
-			externalFile.Deps[i] = externalFileDepV1OrV1Beta1{
+			externalLockFile.Deps[i] = externalLockFileDepV1OrV1Beta1{
 				Remote:     depModuleKey.ModuleFullName().Registry(),
 				Owner:      depModuleKey.ModuleFullName().Owner(),
 				Repository: depModuleKey.ModuleFullName().Name(),
@@ -168,34 +168,34 @@ func writeFile(writer io.Writer, file File) error {
 			}
 		}
 		// No need to sort - depModuleKeys is already sorted by ModuleFullName
-		data, err := encoding.MarshalYAML(&externalFile)
+		data, err := encoding.MarshalYAML(&externalLockFile)
 		if err != nil {
 			return fmt.Errorf("failed to encode lock file: %w", err)
 		}
-		_, err = writer.Write(append(fileHeader, data...))
+		_, err = writer.Write(append(lockFileHeader, data...))
 		return err
 	case FileVersionV2:
-		depModuleKeys := file.DepModuleKeys()
-		externalFile := externalFileV2{
+		depModuleKeys := lockFile.DepModuleKeys()
+		externalLockFile := externalLockFileV2{
 			Version: fileVersion.String(),
-			Deps:    make([]externalFileDepV2, len(depModuleKeys)),
+			Deps:    make([]externalLockFileDepV2, len(depModuleKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
 			digest, err := depModuleKey.Digest()
 			if err != nil {
 				return fmt.Errorf("failed to encode lock file: digest error: %w", err)
 			}
-			externalFile.Deps[i] = externalFileDepV2{
+			externalLockFile.Deps[i] = externalLockFileDepV2{
 				Name:   depModuleKey.ModuleFullName().String(),
 				Digest: digest.String(),
 			}
 		}
 		// No need to sort - depModuleKeys is already sorted by ModuleFullName
-		data, err := encoding.MarshalYAML(&externalFile)
+		data, err := encoding.MarshalYAML(&externalLockFile)
 		if err != nil {
 			return fmt.Errorf("failed to encode lock file: %w", err)
 		}
-		_, err = writer.Write(append(fileHeader, data...))
+		_, err = writer.Write(append(lockFileHeader, data...))
 		return err
 	default:
 		// This is a system error since we've already parsed.
@@ -215,10 +215,10 @@ func validateNoDuplicateModuleKeysByModuleFullName(moduleKeys []bufmodule.Module
 	return nil
 }
 
-func validateV1AndV1Beta1DepsHaveCommits(file File) error {
-	switch fileVersion := file.FileVersion(); fileVersion {
+func validateV1AndV1Beta1DepsHaveCommits(lockFile LockFile) error {
+	switch fileVersion := lockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		for _, depModuleKey := range file.DepModuleKeys() {
+		for _, depModuleKey := range lockFile.DepModuleKeys() {
 			if depModuleKey.CommitID() == "" {
 				// This is a system error.
 				return fmt.Errorf(

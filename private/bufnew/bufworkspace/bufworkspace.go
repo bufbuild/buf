@@ -110,6 +110,14 @@ type Workspace interface {
 //
 // All parsing of configuration files is done behind the scenes here.
 // This function can read a single v1 buf.yaml, a v1 buf.work.yaml, or a v2 buf.yaml.
+//
+// TODO: we might just want to pass a Bucket for the root OS directory, i.e. "/", along
+// with a path, for any DirRef or ProtoFileRef. For git and archives, we'll pass a Bucket
+// representing the root of the git repostory or archive, along with a path. Then, we let
+// this function deal with all the finding of files. The one hiccup here is dealing with
+// external paths - we want to have the same behavior as we've had with external paths.
+// But removing all the SubDirPath, RootRelativePath (if possible), TerminalFileProvider
+// stuff by massively simplifying this might be a win.
 func NewWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
