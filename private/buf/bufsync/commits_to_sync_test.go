@@ -62,7 +62,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			expectedCommits: 1,
 		},
 	}
-	handler := newMockSyncHandler() // use same handler for all test cases
+	handler := newTestSyncHandler() // use same handler for all test cases
 	for _, withOverride := range []bool{false, true} {
 		for _, tc := range testCases {
 			func(tc testCase) {
@@ -86,7 +86,11 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 					)
 					require.NoError(t, err)
 					require.NoError(t, syncer.Sync(context.Background()))
-					syncedCommits := handler.commitsByBranch[tc.branch]
+					identity := moduleIdentityInHEAD
+					if withOverride {
+						identity = moduleIdentityOverride
+					}
+					syncedCommits := handler.getRepoBranch(identity, tc.branch).commits
 					require.Len(t, syncedCommits, tc.expectedCommits)
 				})
 			}(tc)

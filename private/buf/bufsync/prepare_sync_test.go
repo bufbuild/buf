@@ -85,7 +85,7 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 					bufsync.NewRealClock(),
 					repo,
 					storagegit.NewProvider(repo.Objects()),
-					newMockSyncHandler(),
+					newTestSyncHandler(),
 					opts...,
 				)
 				require.NoError(t, err)

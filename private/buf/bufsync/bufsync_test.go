@@ -32,35 +32,62 @@ type mockClock struct {
 
 func (c *mockClock) Now() time.Time { return c.now }
 
-type mockSyncHandler struct {
-	syncedCommitsSHAs               map[string]struct{}
-	commitsByBranch                 map[string][]bufsync.ModuleCommit
-	hashByTag                       map[string]git.Hash
-	tagsByHash                      map[string][]string
-	manualSyncPointByModuleByBranch map[string]map[string]git.Hash
+type testRepo struct {
+	syncedGitHashes map[string]struct{}
+	branches        map[string]*testBranch
+	tagsByName      map[string]git.Hash
+	tagsForHash     map[string][]string
 }
 
-func newMockSyncHandler() *mockSyncHandler {
-	return &mockSyncHandler{
-		syncedCommitsSHAs:               make(map[string]struct{}),
-		commitsByBranch:                 make(map[string][]bufsync.ModuleCommit),
-		hashByTag:                       make(map[string]git.Hash),
-		tagsByHash:                      make(map[string][]string),
-		manualSyncPointByModuleByBranch: make(map[string]map[string]git.Hash),
+type testBranch struct {
+	manualSyncPoint git.Hash
+	commits         []*testCommit
+}
+
+type testCommit struct {
+	hash     git.Hash
+	fromSync bufsync.ModuleCommit
+}
+
+type testSyncHandler struct {
+	repos map[string]*testRepo
+}
+
+func newTestSyncHandler() *testSyncHandler {
+	return &testSyncHandler{
+		repos: make(map[string]*testRepo),
 	}
 }
 
-func (c *mockSyncHandler) setSyncPoint(branch string, hash git.Hash, identity bufmoduleref.ModuleIdentity) {
-	branchSyncpoints, ok := c.manualSyncPointByModuleByBranch[branch]
-	if !ok {
-		branchSyncpoints = make(map[string]git.Hash)
-		c.manualSyncPointByModuleByBranch[branch] = branchSyncpoints
+func (c *testSyncHandler) getRepo(identity bufmoduleref.ModuleIdentity) *testRepo {
+	fullName := identity.IdentityString()
+	if _, ok := c.repos[fullName]; !ok {
+		c.repos[fullName] = &testRepo{
+			syncedGitHashes: make(map[string]struct{}),
+			branches:        make(map[string]*testBranch),
+			tagsByName:      make(map[string]git.Hash),
+			tagsForHash:     make(map[string][]string),
+		}
 	}
-	branchSyncpoints[identity.IdentityString()] = hash
-	c.syncedCommitsSHAs[hash.Hex()] = struct{}{}
+	return c.repos[fullName]
 }
 
-func (c *mockSyncHandler) HandleReadModuleError(
+func (c *testSyncHandler) getRepoBranch(identity bufmoduleref.ModuleIdentity, branch string) *testBranch {
+	repo := c.getRepo(identity)
+	if _, ok := repo.branches[branch]; !ok {
+		repo.branches[branch] = &testBranch{}
+	}
+	return repo.branches[branch]
+}
+
+func (c *testSyncHandler) setSyncPoint(branchName string, hash git.Hash, identity bufmoduleref.ModuleIdentity) {
+	repo := c.getRepo(identity)
+	repo.syncedGitHashes[hash.Hex()] = struct{}{}
+	branch := c.getRepoBranch(identity, branchName)
+	branch.manualSyncPoint = hash
+}
+
+func (c *testSyncHandler) HandleReadModuleError(
 	readErr *bufsync.ReadModuleError,
 ) bufsync.LookbackDecisionCode {
 	if readErr.Code() == bufsync.ReadModuleErrorCodeUnexpectedName {
@@ -69,7 +96,7 @@ func (c *mockSyncHandler) HandleReadModuleError(
 	return bufsync.LookbackDecisionCodeSkip
 }
 
-func (c *mockSyncHandler) InvalidBSRSyncPoint(
+func (c *testSyncHandler) InvalidBSRSyncPoint(
 	identity bufmoduleref.ModuleIdentity,
 	branch string,
 	gitHash git.Hash,
@@ -79,7 +106,7 @@ func (c *mockSyncHandler) InvalidBSRSyncPoint(
 	return errors.New("unimplemented")
 }
 
-func (c *mockSyncHandler) BackfillTags(
+func (c *testSyncHandler) BackfillTags(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
 	alreadySyncedHash git.Hash,
@@ -87,42 +114,48 @@ func (c *mockSyncHandler) BackfillTags(
 	committer git.Ident,
 	tags []string,
 ) (string, error) {
+	repo := c.getRepo(module)
 	for _, tag := range tags {
-		if previousHash, ok := c.hashByTag[tag]; ok {
+		if previousHash, ok := repo.tagsByName[tag]; ok {
 			// clear previous tag
-			c.tagsByHash[previousHash.Hex()] = slices.DeleteFunc(
-				c.tagsByHash[previousHash.Hex()],
+			repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
+				repo.tagsForHash[previousHash.Hex()],
 				func(previousTag string) bool {
 					return previousTag == tag
 				},
 			)
 		}
-		c.hashByTag[tag] = alreadySyncedHash
+		repo.tagsByName[tag] = alreadySyncedHash
 	}
-	c.tagsByHash[alreadySyncedHash.Hex()] = tags
+	repo.tagsForHash[alreadySyncedHash.Hex()] = tags
 	return "some-BSR-commit-name", nil
 }
 
-func (c *mockSyncHandler) ResolveSyncPoint(
+func (c *testSyncHandler) ResolveSyncPoint(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
-	branch string,
+	branchName string,
 ) (git.Hash, error) {
+	branch := c.getRepoBranch(module, branchName)
 	// if we have commits from SyncModuleCommit, prefer that over
 	// manually set sync point
-	if branch, ok := c.commitsByBranch[branch]; ok && len(branch) > 0 {
-		// everything here is synced; return tip of branch
-		return branch[len(branch)-1].Commit().Hash(), nil
-	}
-	if branch, ok := c.manualSyncPointByModuleByBranch[branch]; ok {
-		if syncPoint, ok := branch[module.IdentityString()]; ok {
-			return syncPoint, nil
+	if len(branch.commits) > 0 {
+		for i := len(branch.commits) - 1; i >= 0; i-- {
+			commit := branch.commits[i]
+			if commit.fromSync != nil {
+				// the latest synced commit
+				return commit.hash, nil
+			}
 		}
+		return nil, nil
+	}
+	if branch.manualSyncPoint != nil {
+		return branch.manualSyncPoint, nil
 	}
 	return nil, nil
 }
 
-func (c *mockSyncHandler) SyncModuleCommit(
+func (c *testSyncHandler) SyncModuleCommit(
 	ctx context.Context,
 	commit bufsync.ModuleCommit,
 ) error {
@@ -131,8 +164,12 @@ func (c *mockSyncHandler) SyncModuleCommit(
 		commit.Commit().Hash(),
 		commit.Identity(),
 	)
+	branch := c.getRepoBranch(commit.Identity(), commit.Branch())
 	// append-only, no backfill; good enough for now!
-	c.commitsByBranch[commit.Branch()] = append(c.commitsByBranch[commit.Branch()], commit)
+	branch.commits = append(branch.commits, &testCommit{
+		hash:     commit.Commit().Hash(),
+		fromSync: commit,
+	})
 	_, err := c.BackfillTags(
 		ctx,
 		commit.Identity(),
@@ -144,16 +181,17 @@ func (c *mockSyncHandler) SyncModuleCommit(
 	return err
 }
 
-func (c *mockSyncHandler) IsGitCommitSynced(
+func (c *testSyncHandler) IsGitCommitSynced(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
 	hash git.Hash,
 ) (bool, error) {
-	_, isSynced := c.syncedCommitsSHAs[hash.Hex()]
+	repo := c.getRepo(module)
+	_, isSynced := repo.syncedGitHashes[hash.Hex()]
 	return isSynced, nil
 }
 
-func (c *mockSyncHandler) IsProtectedBranch(
+func (c *testSyncHandler) IsProtectedBranch(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
@@ -161,4 +199,4 @@ func (c *mockSyncHandler) IsProtectedBranch(
 	return branch == gittest.DefaultBranch || branch == bufmoduleref.Main, nil
 }
 
-var _ bufsync.Handler = (*mockSyncHandler)(nil)
+var _ bufsync.Handler = (*testSyncHandler)(nil)
