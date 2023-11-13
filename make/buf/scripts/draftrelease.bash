@@ -44,4 +44,4 @@ b loop
 # The second v${VERSION} is the tag, see https://cli.github.com/manual/gh_release_create
 url=$(gh release create --draft --notes "${release_notes}" --title "v${VERSION}" "v${VERSION}" .build/release/buf/assets/*)
 
-jq --null-input "{text:\"BufCLI Release ${VERSION} is complete: ${url}\"}" | curl -sSL -X POST -H 'Content-Type: application/json' -d@- "${WEBHOOK_URL}"
+jq --null-input "{text:\"BufCLI Release ${VERSION} has been drafted: ${url}\"}" | curl -sSL -X POST -H 'Content-Type: application/json' -d@- "${WEBHOOK_URL}"
