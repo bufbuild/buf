@@ -37,7 +37,7 @@ func TestBackfilltags(t *testing.T) {
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	prepareGitRepoBackfillTags(t, repo, moduleIdentityInHEAD)
-	mockHandler := newMockSyncHandler()
+	mockHandler := newTestSyncHandler()
 	// prepare the top 5 commits as syncable commits, mark the rest as if they were already synced
 	var (
 		commitCount            int
@@ -76,7 +76,8 @@ func TestBackfilltags(t *testing.T) {
 	// in total the repo has at least 20 commits, we expect to backfill 11 of them
 	// and sync the next 4 commits
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
-	assert.Len(t, mockHandler.tagsByHash, 15)
+	tagsForHash := mockHandler.getRepo(moduleIdentityInHEAD).tagsForHash
+	assert.Len(t, tagsForHash, 15)
 	// as follows:
 	for i, commitHash := range allCommitsHashes {
 		if i < 15 {
@@ -85,10 +86,10 @@ func TestBackfilltags(t *testing.T) {
 			//
 			// The func it's backfilling more than 5 commits, because it needs to backfill until both
 			// conditions are met, at least 5 commits and at least 24 hours.
-			assert.Contains(t, mockHandler.tagsByHash, commitHash)
+			assert.Contains(t, tagsForHash, commitHash)
 		} else {
 			// past the #15 the commits are too old, we don't backfill back there
-			assert.NotContains(t, mockHandler.tagsByHash, commitHash)
+			assert.NotContains(t, tagsForHash, commitHash)
 		}
 	}
 }
