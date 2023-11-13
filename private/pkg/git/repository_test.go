@@ -15,6 +15,7 @@
 package git_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -27,6 +28,7 @@ func TestTags(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
+	writeModuleWithSampleCommits(t, context.Background(), repo)
 	var tags []string
 	err := repo.ForEachTag(func(tag string, commitHash git.Hash) error {
 		tags = append(tags, tag)
@@ -35,7 +37,7 @@ func TestTags(t *testing.T) {
 		require.NoError(t, err)
 		switch tag {
 		case "release/v1":
-			assert.Equal(t, commit.Message(), "initial commit")
+			assert.Equal(t, commit.Message(), "first commit")
 		case "branch/v1":
 			assert.Equal(t, commit.Message(), "branch1")
 		case "branch/v2":
@@ -65,20 +67,23 @@ func TestCommits(t *testing.T) {
 	t.Parallel()
 
 	repo := gittest.ScaffoldGitRepository(t)
+	writeModuleWithSampleCommits(t, context.Background(), repo)
 	var commitsByDefault []git.Commit
 	err := repo.ForEachCommit(func(c git.Commit) error {
 		commitsByDefault = append(commitsByDefault, c) // by default we loop from HEAD at the local default branch
 		return nil
 	})
 	require.NoError(t, err)
-	require.Len(t, commitsByDefault, 3)
+	require.Len(t, commitsByDefault, 4)
 
 	assert.Equal(t, commitsByDefault[0].Message(), "third commit")
 	assert.Contains(t, commitsByDefault[0].Parents(), commitsByDefault[1].Hash())
 	assert.Equal(t, commitsByDefault[1].Message(), "second commit")
 	assert.Contains(t, commitsByDefault[1].Parents(), commitsByDefault[2].Hash())
-	assert.Equal(t, commitsByDefault[2].Message(), "initial commit")
-	assert.Empty(t, commitsByDefault[2].Parents())
+	assert.Equal(t, commitsByDefault[2].Message(), "first commit")
+	assert.Contains(t, commitsByDefault[2].Parents(), commitsByDefault[3].Hash())
+	assert.Equal(t, commitsByDefault[3].Message(), "initial commit")
+	assert.Empty(t, commitsByDefault[3].Parents())
 
 	t.Run("default_behavior", func(t *testing.T) {
 		var commitsFromDefaultBranch []git.Commit
@@ -103,12 +108,14 @@ func TestCommits(t *testing.T) {
 			git.ForEachCommitWithHashStartPoint(commitsByDefault[1].Hash().Hex()),
 		)
 		require.NoError(t, err)
-		require.Len(t, commitsFromSecond, 2)
+		require.Len(t, commitsFromSecond, 3)
 
 		assert.Equal(t, commitsFromSecond[0].Message(), "second commit")
 		assert.Contains(t, commitsFromSecond[0].Parents(), commitsFromSecond[1].Hash())
-		assert.Equal(t, commitsFromSecond[1].Message(), "initial commit")
-		assert.Empty(t, commitsFromSecond[1].Parents())
+		assert.Equal(t, commitsFromSecond[1].Message(), "first commit")
+		assert.Contains(t, commitsFromSecond[1].Parents(), commitsFromSecond[2].Hash())
+		assert.Equal(t, commitsFromSecond[2].Message(), "initial commit")
+		assert.Empty(t, commitsFromSecond[2].Parents())
 	})
 
 	t.Run("branch_starting_point", func(t *testing.T) {
@@ -123,14 +130,16 @@ func TestCommits(t *testing.T) {
 				git.ForEachCommitWithBranchStartPoint(branchName),
 			)
 			require.NoError(t, err)
-			require.Len(t, commitsFromLocalBranch, 3)
+			require.Len(t, commitsFromLocalBranch, 4)
 
 			assert.Equal(t, commitsFromLocalBranch[0].Message(), "local commit on pushed branch")
 			assert.Contains(t, commitsFromLocalBranch[0].Parents(), commitsFromLocalBranch[1].Hash())
 			assert.Equal(t, commitsFromLocalBranch[1].Message(), "branch1")
 			assert.Contains(t, commitsFromLocalBranch[1].Parents(), commitsFromLocalBranch[2].Hash())
-			assert.Equal(t, commitsFromLocalBranch[2].Message(), "initial commit")
-			assert.Empty(t, commitsFromLocalBranch[2].Parents())
+			assert.Equal(t, commitsFromLocalBranch[2].Message(), "first commit")
+			assert.Contains(t, commitsFromLocalBranch[2].Parents(), commitsFromLocalBranch[3].Hash())
+			assert.Equal(t, commitsFromLocalBranch[3].Message(), "initial commit")
+			assert.Empty(t, commitsFromLocalBranch[3].Parents())
 		})
 
 		t.Run("when_remote", func(t *testing.T) {
@@ -146,12 +155,14 @@ func TestCommits(t *testing.T) {
 				),
 			)
 			require.NoError(t, err)
-			require.Len(t, commitsFromRemoteBranch, 2)
+			require.Len(t, commitsFromRemoteBranch, 3)
 
 			assert.Equal(t, commitsFromRemoteBranch[0].Message(), "branch1")
 			assert.Contains(t, commitsFromRemoteBranch[0].Parents(), commitsFromRemoteBranch[1].Hash())
-			assert.Equal(t, commitsFromRemoteBranch[1].Message(), "initial commit")
-			assert.Empty(t, commitsFromRemoteBranch[1].Parents())
+			assert.Equal(t, commitsFromRemoteBranch[1].Message(), "first commit")
+			assert.Contains(t, commitsFromRemoteBranch[1].Parents(), commitsFromRemoteBranch[2].Hash())
+			assert.Equal(t, commitsFromRemoteBranch[2].Message(), "initial commit")
+			assert.Empty(t, commitsFromRemoteBranch[2].Parents())
 		})
 	})
 
@@ -235,9 +246,12 @@ func TestForEachBranch(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				repo := gittest.ScaffoldGitRepository(t)
-				assert.Equal(t, gittest.DefaultBranch, repo.CurrentBranch())
+				writeModuleWithSampleCommits(t, context.Background(), repo)
+				currentBranch, err := repo.CurrentBranch(context.Background())
+				require.NoError(t, err)
+				assert.Equal(t, gittest.DefaultBranch, currentBranch)
 				branches := make(map[string]struct{})
-				err := repo.ForEachBranch(func(branch string, headHash git.Hash) error {
+				err = repo.ForEachBranch(func(branch string, headHash git.Hash) error {
 					require.NotEmpty(t, branch)
 					if _, alreadySeen := branches[branch]; alreadySeen {
 						assert.Fail(t, "duplicate branch", branch)
@@ -269,4 +283,86 @@ func TestForEachBranch(t *testing.T) {
 			})
 		}(tc)
 	}
+}
+
+// the resulting Git repo looks like so:
+//
+//	.
+//	├── proto
+//	│   ├── acme
+//	│   │   ├── grocerystore
+//	│   │   │   └── v1
+//	│   │   │       ├── c.proto
+//	│   │   │       ├── d.proto
+//	│   │   │       ├── g.proto
+//	│   │   │       └── h.proto
+//	│   │   └── petstore
+//	│   │       └── v1
+//	│   │           ├── a.proto
+//	│   │           ├── b.proto
+//	│   │           ├── e.proto
+//	│   │           └── f.proto
+//	│   └── buf.yaml
+//	└── randomBinary (+x)
+func writeModuleWithSampleCommits(t *testing.T, ctx context.Context, repo gittest.Repository) {
+	currentBranch, err := repo.CurrentBranch(ctx)
+	require.NoError(t, err)
+
+	// (1) commit in main branch
+	repo.Commit(t, "first commit", map[string]string{
+		"randomBinary":                       "some executable",
+		"proto/buf.yaml":                     "some buf.yaml",
+		"proto/acme/petstore/v1/a.proto":     "cats",
+		"proto/acme/petstore/v1/b.proto":     "animals",
+		"proto/acme/grocerystore/v1/c.proto": "toysrus",
+		"proto/acme/grocerystore/v1/d.proto": "petsrus",
+	}, gittest.CommitWithExecutableFile("randomBinary"))
+	repo.Tag(t, "release/v1", "")
+	repo.Push(t)
+
+	// (2) branch off main and begin work
+	repo.CheckoutB(t, "buftest/branch1")
+	repo.Commit(t, "branch1", map[string]string{
+		"proto/acme/petstore/v1/e.proto": "loblaws",
+		"proto/acme/petstore/v1/f.proto": "merchant of venice",
+	})
+	repo.Tag(t, "branch/v1", "for testing")
+	repo.Push(t)
+
+	// (3) branch off branch and begin work
+	repo.CheckoutB(t, "buftest/branch2")
+	repo.Commit(t, "branch2", map[string]string{
+		"proto/acme/grocerystore/v1/g.proto": "hamlet",
+		"proto/acme/grocerystore/v1/h.proto": "bethoven",
+	})
+	repo.Tag(t, "branch/v2", "for testing")
+	repo.Push(t)
+
+	// (4) merge first branch
+	repo.Checkout(t, currentBranch)
+	repo.Merge(t, "buftest/branch1")
+	repo.Commit(t, "second commit", nil)
+	repo.Tag(t, "v2", "")
+	repo.Push(t)
+
+	// (5) pack some refs
+	repo.PackRefs(t)
+
+	// (6) merge second branch
+	repo.Checkout(t, currentBranch)
+	repo.Merge(t, "buftest/branch2")
+	repo.Commit(t, "third commit", nil)
+	repo.Tag(t, "v3.0", "")
+	repo.Push(t)
+
+	// commit a local-only branch
+	repo.CheckoutB(t, "buftest/local-only")
+	repo.Commit(t, "local commit on local branch", nil)
+
+	// make a local-only commit on top of a pushed branch
+	repo.Checkout(t, "buftest/branch1")
+	repo.Commit(t, "local commit on pushed branch", nil)
+
+	// checkout to default branch
+	repo.Checkout(t, currentBranch)
 }

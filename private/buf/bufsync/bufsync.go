@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -149,27 +150,83 @@ type ErrorHandler interface {
 	) error
 }
 
-// Syncer syncs a modules in a git.Repository.
+// Handler is a handler for Syncer. It controls the way in which Syncer handles errors, provides
+// any information the Syncer needs to Sync commits, and receives ModuleCommits that should be
+// synced.
+type Handler interface {
+	ErrorHandler
+
+	// SyncModuleCommit is invoked to process a sync point. If an error is returned, sync will abort.
+	SyncModuleCommit(ctx context.Context, commit ModuleCommit) error
+
+	// ResolveSyncPoint is invoked to resolve a syncpoint for a particular module at a particular branch.
+	// If no syncpoint is found, this function returns nil. If an error is returned, sync will abort.
+	ResolveSyncPoint(
+		ctx context.Context,
+		module bufmoduleref.ModuleIdentity,
+		branch string,
+	) (git.Hash, error)
+
+	// IsGitCommitSynced is invoked when syncing branches to know if a Git commit is already synced.
+	// If an error is returned, sync will abort.
+	IsGitCommitSynced(
+		ctx context.Context,
+		module bufmoduleref.ModuleIdentity,
+		hash git.Hash,
+	) (bool, error)
+
+	// IsProtectedBranch is invoked when syncing branches to know if a branch's history is protected
+	// and must not diverge since the last sync. If an error is returned, sync will abort.
+	IsProtectedBranch(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branch string,
+	) (bool, error)
+
+	// BackfillTags is invoked when a commit with valid modules is found within a lookback threshold
+	// past the start sync point for such module. The Syncer assumes that the "old" commit is already
+	// synced, so it will attempt to backfill existing tags using that git hash, in case they were
+	// recently created or moved there.
+	//
+	// A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
+	// process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
+	// time the sync command runs, this backfiller would pick such tag and backfill it to the correct
+	// BSR commit.
+	//
+	// It's expected to return the BSR commit name to which the tags were backfilled.
+	BackfillTags(
+		ctx context.Context,
+		module bufmoduleref.ModuleIdentity,
+		alreadySyncedHash git.Hash,
+		author git.Ident,
+		committer git.Ident,
+		tags []string,
+	) (string, error)
+}
+
+// Syncer syncs modules in a git.Repository.
 type Syncer interface {
-	// Sync syncs the repository using the provided SyncFunc. It processes commits in reverse
-	// topological order, loads any configured named modules, extracts any Git metadata for that
-	// commit, and invokes SyncFunc with a ModuleCommit.
-	Sync(context.Context, SyncFunc) error
+	// Sync syncs the repository. It processes commits in reverse topological order, loads any
+	// configured named modules, extracts any Git metadata for that commit, and invokes
+	// Handler#SyncModuleCommit with a ModuleCommit.
+	Sync(context.Context) error
 }
 
 // NewSyncer creates a new Syncer.
 func NewSyncer(
 	logger *zap.Logger,
+	clock Clock,
 	repo git.Repository,
 	storageGitProvider storagegit.Provider,
-	errorHandler ErrorHandler,
+	handler Handler,
 	options ...SyncerOption,
 ) (Syncer, error) {
 	return newSyncer(
 		logger,
+		clock,
 		repo,
 		storageGitProvider,
-		errorHandler,
+		handler,
 		options...,
 	)
 }
@@ -177,10 +234,10 @@ func NewSyncer(
 // SyncerOption configures the creation of a new Syncer.
 type SyncerOption func(*syncer) error
 
-// SyncerWithRemote configures a Syncer with a resumption using a SyncPointResolver.
-func SyncerWithRemote(remoteName string) SyncerOption {
+// SyncerWithGitRemote configures a Syncer to sync commits from particular Git remote.
+func SyncerWithGitRemote(gitRemoteName string) SyncerOption {
 	return func(s *syncer) error {
-		s.remote = remoteName
+		s.gitRemoteName = gitRemoteName
 		return nil
 	}
 }
@@ -208,43 +265,6 @@ func SyncerWithModule(moduleDir string, identityOverride bufmoduleref.ModuleIden
 	}
 }
 
-// SyncerWithResumption configures a Syncer with a resumption using a SyncPointResolver.
-func SyncerWithResumption(resolver SyncPointResolver) SyncerOption {
-	return func(s *syncer) error {
-		s.syncPointResolver = resolver
-		return nil
-	}
-}
-
-// SyncerWithGitCommitChecker configures a git commit checker, to know if a module has a given git
-// hash alrady synced in a BSR instance.
-func SyncerWithGitCommitChecker(checker SyncedGitCommitChecker) SyncerOption {
-	return func(s *syncer) error {
-		s.syncedGitCommitChecker = checker
-		return nil
-	}
-}
-
-// SyncerWithModuleDefaultBranchGetter configures a getter for modules' default branch, to protect
-// those branches syncs in cases like a Git history rewrite. If this option is not passed, the
-// syncer treats the BSR default branch as any other branch.
-func SyncerWithModuleDefaultBranchGetter(getter ModuleDefaultBranchGetter) SyncerOption {
-	return func(s *syncer) error {
-		s.moduleDefaultBranchGetter = getter
-		return nil
-	}
-}
-
-// SyncerWithTagsBackfiller configures a tags backfiller for older, already synced commits. If this
-// option is not passed, the syncer won't try to sync older tags past each module's start sync
-// points on all branches.
-func SyncerWithTagsBackfiller(backfiller TagsBackfiller) SyncerOption {
-	return func(s *syncer) error {
-		s.tagsBackfiller = backfiller
-		return nil
-	}
-}
-
 // SyncerWithAllBranches sets the syncer to sync all branches. Be default the syncer only processes
 // commits in the current checked out branch.
 func SyncerWithAllBranches() SyncerOption {
@@ -253,56 +273,6 @@ func SyncerWithAllBranches() SyncerOption {
 		return nil
 	}
 }
-
-// SyncFunc is invoked by Syncer to process a sync point. If an error is returned,
-// sync will abort.
-type SyncFunc func(ctx context.Context, commit ModuleCommit) error
-
-// SyncPointResolver is invoked by Syncer to resolve a syncpoint for a particular module
-// at a particular branch. If no syncpoint is found, this function returns nil. If an error
-// is returned, sync will abort.
-type SyncPointResolver func(
-	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-	branch string,
-) (git.Hash, error)
-
-// SyncedGitCommitChecker is invoked when syncing branches to know which commits hashes from a set
-// are already synced inthe BSR. It expects to receive the commit hashes that are synced already. If
-// an error is returned, sync will abort.
-type SyncedGitCommitChecker func(
-	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-	commitHashes map[string]struct{},
-) (map[string]struct{}, error)
-
-// ModuleDefaultBranchGetter is invoked before syncing, to gather default branch names for all the
-// modules that are about to be synced. If the BSR module does not exist, the implementation should
-// return `ModuleDoesNotExistErr` error.
-type ModuleDefaultBranchGetter func(
-	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-) (string, error)
-
-// TagsBackfiller is invoked when a commit with valid modules is found within a lookback threshold
-// past the start sync point for such module. The Syncer assumes that the "old" commit is already
-// synced, so it will attempt to backfill existing tags using that git hash, in case they were
-// recently created or moved there.
-//
-// A common scenario is SemVer releases: a commit is pushed to the default Git branch, the sync
-// process triggers and completes, and some minutes later that commit is tagged "v1.2.3". The next
-// time the sync command runs, this backfiller would pick such tag and backfill it to the correct
-// BSR commit.
-//
-// It's expected to return the BSR commit name to which the tags were backfilled.
-type TagsBackfiller func(
-	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-	alreadySyncedHash git.Hash,
-	author git.Ident,
-	committer git.Ident,
-	tags []string,
-) (string, error)
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
@@ -319,4 +289,15 @@ type ModuleCommit interface {
 	Identity() bufmoduleref.ModuleIdentity
 	// Bucket is the bucket for the module.
 	Bucket() storage.ReadBucket
+}
+
+// Clock provides the current time.
+type Clock interface {
+	// Now provides the current time.
+	Now() time.Time
+}
+
+// NewRealClock returns a Clock that returns the current time using time#Now().
+func NewRealClock() Clock {
+	return newClock()
 }

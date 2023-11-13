@@ -35,10 +35,10 @@ type openRepositoryOpts struct {
 }
 
 type repository struct {
-	gitDirPath       string
-	defaultBranch    string
-	checkedOutBranch string
-	objectReader     *objectReader
+	gitDirPath    string
+	defaultBranch string
+	objectReader  *objectReader
+	runner        command.Runner
 
 	// packedOnce controls the fields below related to reading the `packed-refs` file
 	packedOnce      sync.Once
@@ -77,15 +77,11 @@ func openGitRepository(
 			return nil, fmt.Errorf("automatically determine default branch: %w", err)
 		}
 	}
-	checkedOutBranch, err := detectCheckedOutBranch(ctx, gitDirPath, runner)
-	if err != nil {
-		return nil, fmt.Errorf("automatically determine checked out branch: %w", err)
-	}
 	return &repository{
-		gitDirPath:       gitDirPath,
-		defaultBranch:    opts.defaultBranch,
-		checkedOutBranch: checkedOutBranch,
-		objectReader:     reader,
+		gitDirPath:    gitDirPath,
+		defaultBranch: opts.defaultBranch,
+		objectReader:  reader,
+		runner:        runner,
 	}, nil
 }
 
@@ -157,8 +153,8 @@ func (r *repository) DefaultBranch() string {
 	return r.defaultBranch
 }
 
-func (r *repository) CurrentBranch() string {
-	return r.checkedOutBranch
+func (r *repository) CurrentBranch(ctx context.Context) (string, error) {
+	return detectCheckedOutBranch(ctx, r.gitDirPath, r.runner)
 }
 
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {

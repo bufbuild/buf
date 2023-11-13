@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+package bufsync_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -69,31 +70,31 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				const defaultBranchName = "main"
-				repo, repoDir := scaffoldGitRepository(t, defaultBranchName)
-				prepareGitRepoMultiModule(t, repoDir, tc.modulesIdentitiesInHEAD)
+				repo := gittest.ScaffoldGitRepository(t)
+				prepareGitRepoMultiModule(t, repo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
 				}
-				testSyncer := syncer{
-					repo:                                  repo,
-					storageGitProvider:                    storagegit.NewProvider(repo.Objects()),
-					logger:                                zaptest.NewLogger(t),
-					sortedModulesDirsForSync:              moduleDirs,
-					modulesDirsToIdentityOverrideForSync:  tc.modulesOverrides,
-					commitsToTags:                         make(map[string][]string),
-					modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
-					modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
-					modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-					errorHandler:                          &mockErrorHandler{},
+				var opts []bufsync.SyncerOption
+				for moduleDir, identityOverride := range tc.modulesOverrides {
+					opts = append(opts, bufsync.SyncerWithModule(moduleDir, identityOverride))
 				}
-				prepareErr := testSyncer.prepareSync(context.Background())
-				require.Error(t, prepareErr)
-				assert.Contains(t, prepareErr.Error(), repeatedIdentity.IdentityString())
-				assert.Contains(t, prepareErr.Error(), defaultBranchName)
+				syncer, err := bufsync.NewSyncer(
+					zaptest.NewLogger(t),
+					bufsync.NewRealClock(),
+					repo,
+					storagegit.NewProvider(repo.Objects()),
+					newTestSyncHandler(),
+					opts...,
+				)
+				require.NoError(t, err)
+				err = syncer.Sync(context.Background())
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
+				assert.Contains(t, err.Error(), gittest.DefaultBranch)
 				for _, moduleDir := range moduleDirs {
-					assert.Contains(t, prepareErr.Error(), moduleDir)
+					assert.Contains(t, err.Error(), moduleDir)
 				}
 			})
 		}(tc)
@@ -101,14 +102,11 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 }
 
 // prepareGitRepoMultiModule commits valid modules to the passed directories and module identities.
-func prepareGitRepoMultiModule(t *testing.T, repoDir string, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
-	runner := command.NewRunner()
+func prepareGitRepoMultiModule(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
+	files := make(map[string]string)
 	for moduleDir, moduleIdentity := range moduleDirsToIdentities {
-		writeFiles(t, repoDir, map[string]string{
-			moduleDir + "/buf.yaml":         fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
-			moduleDir + "/foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
-		})
+		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())
+		files[moduleDir+"/foo/v1/foo.proto"] = "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n"
 	}
-	runInDir(t, runner, repoDir, "git", "add", ".")
-	runInDir(t, runner, repoDir, "git", "commit", "-m", "commit")
+	repo.Commit(t, "commit", files)
 }

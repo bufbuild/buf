@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -66,10 +67,16 @@ func (d DigestType) String() string {
 // ParseDigestType parses a DigestType from its string representation.
 //
 // This reverses DigestType.String().
+//
+// Returns an error of type *ParseError if thie string could not be parsed.
 func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
-		return 0, fmt.Errorf("unknown DigestType: %q", s)
+		return 0, &ParseError{
+			typeString: "digest type",
+			input:      s,
+			err:        fmt.Errorf("unknown type: %q", s),
+		}
 	}
 	return d, nil
 }
@@ -121,10 +128,27 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 			// happened if your computer ended up here.
 			return nil, err
 		}
-		return newDigest(DigestTypeShake256, value)
+		if err := validateDigestParameters(DigestTypeShake256, value); err != nil {
+			return nil, err
+		}
+		return newDigest(DigestTypeShake256, value), nil
 	default:
+		// This is a system error.
 		return nil, fmt.Errorf("unknown DigestType: %v", digestOptions.digestType)
 	}
+}
+
+// NewDigestForDigests returns a new Digest for the given Digests.
+//
+// Digests are sorted by string value, and then concatenated with newlines. The resulting
+// content is then turned into a Digest.
+func NewDigestForDigests(digests []Digest, options ...DigestOption) (Digest, error) {
+	digestStrings := make([]string, len(digests))
+	for i, digest := range digests {
+		digestStrings[i] = digest.String()
+	}
+	sort.Strings(digestStrings)
+	return NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")), options...)
 }
 
 // DigestOption is an option for a new Digest.
@@ -147,21 +171,41 @@ func DigestWithDigestType(digestType DigestType) DigestOption {
 // This reverses Digest.String().
 func ParseDigest(s string) (Digest, error) {
 	if s == "" {
+		// This should be considered a system error.
 		return nil, errors.New("empty string passed to ParseDigest")
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
-		return nil, fmt.Errorf("invalid Digest string: %q", s)
+		return nil, &ParseError{
+			typeString: "digest",
+			input:      s,
+			err:        errors.New(`must in the form "digest_type:digest_hex_value"`),
+		}
 	}
 	digestType, err := ParseDigestType(digestTypeString)
 	if err != nil {
-		return nil, err
+		return nil, &ParseError{
+			typeString: "digest",
+			input:      s,
+			err:        err,
+		}
 	}
 	value, err := hex.DecodeString(hexValue)
 	if err != nil {
-		return nil, err
+		return nil, &ParseError{
+			typeString: "digest",
+			input:      s,
+			err:        errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
+		}
 	}
-	return newDigest(digestType, value)
+	if err := validateDigestParameters(digestType, value); err != nil {
+		return nil, &ParseError{
+			typeString: "digest",
+			input:      s,
+			err:        err,
+		}
+	}
+	return newDigest(digestType, value), nil
 }
 
 // DigestEqual returns true if the given Digests are considered equal.
@@ -192,19 +236,12 @@ type digest struct {
 	stringValue string
 }
 
-func newDigest(digestType DigestType, value []byte) (*digest, error) {
-	switch digestType {
-	case DigestTypeShake256:
-		if len(value) != shake256Length {
-			return nil, fmt.Errorf("invalid %s Digest value: expected %d bytes, got %d", digestType.String(), shake256Length, len(value))
-		}
-		return &digest{
-			digestType:  digestType,
-			value:       value,
-			stringValue: digestType.String() + ":" + hex.EncodeToString(value),
-		}, nil
-	default:
-		return nil, fmt.Errorf("unknown DigestType: %v", digestType)
+// validation should occur outside of this function.
+func newDigest(digestType DigestType, value []byte) *digest {
+	return &digest{
+		digestType:  digestType,
+		value:       value,
+		stringValue: digestType.String() + ":" + hex.EncodeToString(value),
 	}
 }
 
@@ -228,4 +265,23 @@ type digestOptions struct {
 
 func newDigestOptions() *digestOptions {
 	return &digestOptions{}
+}
+
+func validateDigestParameters(digestType DigestType, value []byte) error {
+	switch digestType {
+	case DigestTypeShake256:
+		if len(value) != shake256Length {
+			return fmt.Errorf(
+				`invalid %s digest value: expected %d bytes, got %d`,
+				digestType.String(),
+				shake256Length,
+				len(value),
+			)
+		}
+	default:
+		// This is really always a system error, but little harm in including it here, even
+		// though it'll get converted into a ParseError in parse.
+		return fmt.Errorf(`unknown digest type: %q`, digestType.String())
+	}
+	return nil
 }

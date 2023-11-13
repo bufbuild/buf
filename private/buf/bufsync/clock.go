@@ -12,27 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observabilityzap
+package bufsync
 
-import (
-	"context"
-	"io"
+import "time"
 
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-)
+type clock struct{}
 
-var _ io.Closer = &tracerProviderCloser{}
-
-type tracerProviderCloser struct {
-	tracerProvider *sdktrace.TracerProvider
+func newClock() *clock {
+	return &clock{}
 }
 
-func newTracerProviderCloser(tracerProvider *sdktrace.TracerProvider) *tracerProviderCloser {
-	return &tracerProviderCloser{
-		tracerProvider: tracerProvider,
-	}
-}
-
-func (t *tracerProviderCloser) Close() error {
-	return t.tracerProvider.Shutdown(context.Background())
+func (*clock) Now() time.Time {
+	return time.Now()
 }

@@ -3,7 +3,7 @@ GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/google/cel-go@v0.18.1 \
 	github.com/antlr/antlr4/runtime/Go/antlr/v4@v4.0.0-20230512164433-5d1fd1a340c9 \
-	github.com/bufbuild/protocompile@089712432bdc5d54241e66771e884c0e6fbb754f
+	github.com/bufbuild/protocompile@146b831231f7f7c1a19b09065875b9778d3d5d25
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -135,13 +135,6 @@ bufgeneratesteps:: \
 bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.21-bullseye bash make/buf/scripts/release.bash
 
-# We have to manually set the Homebrew version on the Homebrew badge as there
-# is no badge on shields.io for Homebrew packages outside of homebrew-core
-
-.PHONY: updatehomebrewbadge
-updatehomebrewbadge:
-	$(SED_I) "s/badge\/homebrew-v.*-blue/badge\/homebrew-v$(shell bash make/buf/scripts/homebrewversion.bash)-blue/g" README.md
-
 .PHONY: updateversion
 updateversion:
 ifndef VERSION
@@ -149,6 +142,14 @@ ifndef VERSION
 endif
 	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
+
+.PHONY: releasechangelog
+releasechangelog:
+ifndef VERSION
+	$(error "VERSION must be set")
+endif
+	$(SED_I) 's/## \[Unreleased\]/## \[v$(VERSION)\] - $(shell date '+%Y-%m-%d')/' CHANGELOG.md
+	$(SED_I) -E '/^\[Unreleased\]: .*HEAD$$/s/(Unreleased|HEAD)/v$(VERSION)/g' CHANGELOG.md
 
 .PHONY: updategoversion
 updategoversion: installgit-ls-files-unstaged

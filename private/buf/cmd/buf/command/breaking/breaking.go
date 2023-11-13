@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -304,5 +305,5 @@ func getExternalPathsForImages(imageConfigs []bufwire.ImageConfig, excludeImport
 			externalPaths[imageFile.ExternalPath()] = struct{}{}
 		}
 	}
-	return stringutil.MapToSlice(externalPaths), nil
+	return slicesextended.MapToSlice(externalPaths), nil
 }
