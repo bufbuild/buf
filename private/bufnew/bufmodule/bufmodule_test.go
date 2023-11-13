@@ -69,8 +69,13 @@ func TestBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// This is the ModuleSetBuilder that will build the modules that we are going to test.
+	// This is replicating how a workspace would be built from remote dependencies and
+	// local sources.
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bsrProvider)
 
+	// First, we add the remote dependences (adding order doesn't matter).
+	//
 	// Remember, the bsrProvider is just acting like a BSR; if we actually want to
 	// say dependencies are part of our workspace, we need to add them! We do so now.
 	moduleRefExtdep1, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep1", "")
@@ -93,6 +98,8 @@ func TestBasic(t *testing.T) {
 		moduleSetBuilder.AddRemoteModule(moduleKey, false)
 	}
 
+	// Next, we add the local sources.
+
 	// This module has no name but is part of the workspace.
 	moduleSetBuilder.AddLocalModule(
 		testNewBucketForPathToData(
@@ -109,7 +116,8 @@ func TestBasic(t *testing.T) {
 
 	// This module has a name and is part of the workspace.
 	//
-	// This module is also in the BSR, but we'll prefer this one.
+	// This module is also in the BSR, but we'll prefer the local sources when
+	// we do ModuleSetBuilder.Build().
 	moduleFullName, err := bufmodule.NewModuleFullName("buf.build", "bar", "module2")
 	require.NoError(t, err)
 	moduleSetBuilder.AddLocalModule(
@@ -130,9 +138,13 @@ func TestBasic(t *testing.T) {
 		"path/to/module2",
 		true,
 		bufmodule.LocalModuleWithModuleFullName(moduleFullName),
+		// We're going to exclude the files in the foo directory from targeting,
+		// ie foo/module2_excluded.proto. This file will still be in the module,
+		// but will not be marked as a target.
 		bufmodule.LocalModuleWithTargetPaths(nil, []string{"foo"}),
 	)
 
+	// Build our module set!
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
 	require.Equal(
@@ -157,6 +169,8 @@ func TestBasic(t *testing.T) {
 
 	module2 := moduleSet.GetModuleForOpaqueID("buf.build/bar/module2")
 	require.NotNil(t, module2)
+	// module2 depends on all these modules transitively. extdep1,
+	// extdep3, and module1 are direct.
 	require.Equal(
 		t,
 		map[string]bool{
@@ -169,6 +183,7 @@ func TestBasic(t *testing.T) {
 	)
 	module2FileInfos, err := bufmodule.GetFileInfos(ctx, module2)
 	require.NoError(t, err)
+	// These are the files in the in the module.
 	require.Equal(
 		t,
 		[]string{
@@ -179,6 +194,7 @@ func TestBasic(t *testing.T) {
 	)
 	module2TargetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module2)
 	require.NoError(t, err)
+	// These are the target files. We excluded foo, so we only have module2.proto.
 	require.Equal(
 		t,
 		[]string{
@@ -197,6 +213,8 @@ func TestBasic(t *testing.T) {
 		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
 
+	// This is a graph of OpaqueIDs. This tests that we have the full dependency tree
+	// that we expect.
 	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
 	require.NoError(t, err)
 	testWalkGraphNodes(
