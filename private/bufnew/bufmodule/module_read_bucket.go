@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -187,6 +188,9 @@ type moduleReadBucket struct {
 	targetPaths          []string
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
+
+	pathToFileInfo map[string]*internal.Tuple[FileInfo, error]
+	cacheLock      sync.RWMutex
 }
 
 // module cannot be assumed to be functional yet.
@@ -221,6 +225,7 @@ func newModuleReadBucket(
 		targetPaths:          targetPaths,
 		targetPathMap:        slicesextended.ToMap(targetPaths),
 		targetExcludePathMap: slicesextended.ToMap(targetExcludePaths),
+		pathToFileInfo:       make(map[string]*internal.Tuple[FileInfo, error]),
 	}
 }
 
@@ -249,7 +254,7 @@ func (b *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	if err != nil {
 		return nil, err
 	}
-	return b.newFileInfo(objectInfo)
+	return b.getFileInfo(objectInfo)
 }
 
 func (b *moduleReadBucket) WalkFileInfos(
@@ -265,16 +270,32 @@ func (b *moduleReadBucket) WalkFileInfos(
 	if err != nil {
 		return err
 	}
-	walkFunc := func(objectInfo storage.ObjectInfo) error {
-		fileInfo, err := b.newFileInfo(objectInfo)
+
+	if !walkFileInfosOptions.onlyTargetFiles {
+		return bucket.Walk(
+			ctx,
+			"",
+			func(objectInfo storage.ObjectInfo) error {
+				fileInfo, err := b.getFileInfo(objectInfo)
+				if err != nil {
+					return err
+				}
+				return fn(fileInfo)
+			},
+		)
+	}
+
+	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
+		fileInfo, err := b.getFileInfo(objectInfo)
 		if err != nil {
 			return err
 		}
-		if walkFileInfosOptions.onlyTargetFiles && !fileInfo.IsTargetFile() {
+		if !fileInfo.IsTargetFile() {
 			return nil
 		}
 		return fn(fileInfo)
 	}
+
 	// If we have target paths, we do not want to walk to whole bucket.
 	// For example, we do --path path/to/file.proto for googleapis, we don't want to
 	// walk all of googleapis to find the single file.
@@ -285,18 +306,32 @@ func (b *moduleReadBucket) WalkFileInfos(
 	// Use targetPaths instead of targetPathMap to have a deterministic iteration order at this level.
 	if len(b.targetPaths) > 0 {
 		for _, targetPath := range b.targetPaths {
-			if err := bucket.Walk(ctx, targetPath, walkFunc); err != nil {
+			// Still need to determine IsTargetFile as a file could be excluded with excludeTargetPaths.
+			if err := bucket.Walk(ctx, targetPath, targetFileWalkFunc); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return bucket.Walk(ctx, "", walkFunc)
+	return bucket.Walk(ctx, "", targetFileWalkFunc)
 }
 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
-func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+func (b *moduleReadBucket) getFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+	return internal.GetOrAddToCacheDoubleLock(
+		&b.cacheLock,
+		b.pathToFileInfo,
+		objectInfo.Path(),
+		func() (FileInfo, error) {
+			return b.getFileInfoUncached(objectInfo)
+		},
+	)
+}
+
+// storage.ObjectInfos are cacheable by path, per their documentation, so we can always
+// cache an objectInfo by path.
+func (b *moduleReadBucket) getFileInfoUncached(objectInfo storage.ObjectInfo) (FileInfo, error) {
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
