@@ -8,6 +8,8 @@
   be consulted to resolve an element. This can be useful when the result of an RPC
   contains extensions or values in `google.protobuf.Any` messages that are not defined
   in the same schema that defines the RPC service.
+- Fix issue where `buf lint` incorrectly reports error when `(buf.validate.field).required`
+  is set for an optional field in proto3.
 
 ## [v1.28.0] - 2023-11-10
 
