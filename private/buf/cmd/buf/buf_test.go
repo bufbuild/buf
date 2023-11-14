@@ -932,6 +932,31 @@ func TestLsFilesImage1(t *testing.T) {
 	)
 }
 
+func TestLsFilesImage1_Yaml(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-#format=yaml",
+		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"-#format=yaml",
+	)
+}
+
 func TestLsFilesImage2(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
