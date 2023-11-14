@@ -209,7 +209,7 @@ func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string
 			return nil
 		},
 		ForEachBranchWithRemote(config.remote),
-	); err != nil && !errors.Is(err, ErrStopForEach) {
+	); err != nil {
 		return "", fmt.Errorf("for each branch: %w", err)
 	}
 	if currentBranch == "" {

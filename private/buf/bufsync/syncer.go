@@ -472,7 +472,7 @@ func (s *syncer) branchSyncableCommits(
 			branch,
 			git.ForEachCommitWithBranchStartPointWithRemote(s.gitRemoteName),
 		),
-	); err != nil && !errors.Is(err, git.ErrStopForEach) {
+	); err != nil {
 		return nil, err
 	}
 	// if we have no commits to sync we can bail early
@@ -645,7 +645,7 @@ func (s *syncer) backfillTags(
 	if err := s.repo.ForEachCommit(
 		forEachOldCommitFunc,
 		git.ForEachCommitWithHashStartPoint(syncStartHash.Hex()),
-	); err != nil && !errors.Is(err, git.ErrStopForEach) {
+	); err != nil {
 		return fmt.Errorf("looking back past the start sync point: %w", err)
 	}
 	return nil
