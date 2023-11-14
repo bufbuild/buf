@@ -20,20 +20,24 @@ import (
 )
 
 type jsonUnmarshaler struct {
-	resolver Resolver
+	resolver        Resolver
+	disallowUnknown bool
 }
 
-func newJSONUnmarshaler(resolver Resolver) Unmarshaler {
-	return &jsonUnmarshaler{
+func newJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
+	jsonUnmarshaler := &jsonUnmarshaler{
 		resolver: resolver,
 	}
+	for _, option := range options {
+		option(jsonUnmarshaler)
+	}
+	return jsonUnmarshaler
 }
 
 func (m *jsonUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 	options := protojson.UnmarshalOptions{
-		Resolver: m.resolver,
-		// TODO: make this an option
-		DiscardUnknown: true,
+		Resolver:       m.resolver,
+		DiscardUnknown: !m.disallowUnknown,
 	}
 	return options.Unmarshal(data, message)
 }

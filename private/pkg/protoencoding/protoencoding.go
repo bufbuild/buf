@@ -117,8 +117,18 @@ func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 // NewJSONUnmarshaler returns a new Unmarshaler for json.
 //
 // resolver can be nil if unknown and are only needed for extensions.
-func NewJSONUnmarshaler(resolver Resolver) Unmarshaler {
-	return newJSONUnmarshaler(resolver)
+func NewJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
+	return newJSONUnmarshaler(resolver, options...)
+}
+
+// JSONUnmarshalerOption is an option for a new JSONUnmarshaler.
+type JSONUnmarshalerOption func(*jsonUnmarshaler)
+
+// JSONUnmarshalerWithDisallowUnknown says to disallow unrecognized fields.
+func JSONUnmarshalerWithDisallowUnknown() JSONUnmarshalerOption {
+	return func(jsonUnmarshaler *jsonUnmarshaler) {
+		jsonUnmarshaler.disallowUnknown = true
+	}
 }
 
 // NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.
