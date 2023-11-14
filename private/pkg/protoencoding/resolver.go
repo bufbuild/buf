@@ -157,3 +157,110 @@ func (l *lazyResolver) FindMessageByURL(url string) (protoreflect.MessageType, e
 	}
 	return l.resolver.FindMessageByURL(url)
 }
+
+type combinedResolver []Resolver
+
+func (c combinedResolver) FindFileByPath(s string) (protoreflect.FileDescriptor, error) {
+	var lastErr error
+	for _, res := range c {
+		file, err := res.FindFileByPath(s)
+		if err == nil {
+			return file, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+	var lastErr error
+	for _, res := range c {
+		desc, err := res.FindDescriptorByName(name)
+		if err == nil {
+			return desc, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	var lastErr error
+	for _, res := range c {
+		extension, err := res.FindExtensionByName(field)
+		if err == nil {
+			return extension, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	var lastErr error
+	for _, res := range c {
+		extension, err := res.FindExtensionByNumber(message, field)
+		if err == nil {
+			return extension, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+	var lastErr error
+	for _, res := range c {
+		msg, err := res.FindMessageByName(message)
+		if err == nil {
+			return msg, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	var lastErr error
+	for _, res := range c {
+		msg, err := res.FindMessageByURL(url)
+		if err == nil {
+			return msg, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
+
+func (c combinedResolver) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+	var lastErr error
+	for _, res := range c {
+		msg, err := res.FindEnumByName(enum)
+		if err == nil {
+			return msg, nil
+		}
+		lastErr = err
+	}
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, protoregistry.NotFound
+}
