@@ -113,10 +113,10 @@ func NewYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshal
 // YAMLMarshalerOption is an option for a new YAMLMarshaler.
 type YAMLMarshalerOption func(*yamlMarshaler)
 
-// YAMLMarshalerWithIndent says to use an indent of two spaces.
-func YAMLMarshalerWithIndent() YAMLMarshalerOption {
+// YAMLMarshalerWithIndent says to use an indent of the given number spaces.
+func YAMLMarshalerWithIndent(indent int) YAMLMarshalerOption {
 	return func(yamlMarshaler *yamlMarshaler) {
-		yamlMarshaler.indent = "  "
+		yamlMarshaler.indent = indent
 	}
 }
 

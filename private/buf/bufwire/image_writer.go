@@ -133,7 +133,9 @@ func (i *imageWriter) imageMarshal(
 		if err != nil {
 			return nil, err
 		}
-		return protoencoding.NewYAMLMarshaler(resolver).Marshal(message)
+		return protoencoding.NewYAMLMarshaler(
+			resolver,
+			protoencoding.YAMLMarshalerWithIndent(2)).Marshal(message)
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
