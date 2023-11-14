@@ -197,7 +197,7 @@ exit code that is the gRPC code, shifted three bits to the left.
 
 type flags struct {
 	// Flags for defining input schema
-	Schema []string
+	Schemas []string
 
 	// Flags for server reflection
 	Reflect         bool
@@ -245,7 +245,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	f.flagSet = flagSet
 
 	flagSet.StringSliceVar(
-		&f.Schema,
+		&f.Schemas,
 		schemaFlagName,
 		nil,
 		fmt.Sprintf(
@@ -508,15 +508,15 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
 
-	if len(f.Schema) > 0 && f.Reflect && !f.flagSet.Changed(reflectFlagName) {
+	if len(f.Schemas) > 0 && f.Reflect && !f.flagSet.Changed(reflectFlagName) {
 		// Reflect just has default value; unset it since we're going to use --schema instead
 		f.Reflect = false
 	}
-	if !f.Reflect && len(f.Schema) == 0 {
+	if !f.Reflect && len(f.Schemas) == 0 {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
 	}
 	var schemaIsStdin bool
-	for _, schema := range f.Schema {
+	for _, schema := range f.Schemas {
 		isStdin := strings.HasPrefix(schema, "-")
 		if isStdin && schemaIsStdin {
 			// more than one schema argument wants to use stdin
@@ -876,7 +876,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		}
 	}
 
-	resolvers := make([]protoencoding.Resolver, 0, len(f.Schema)+1)
+	resolvers := make([]protoencoding.Resolver, 0, len(f.Schemas)+1)
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -906,7 +906,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
-	for _, schema := range f.Schema {
+	for _, schema := range f.Schemas {
 		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, schema)
 		if err != nil {
 			return err
