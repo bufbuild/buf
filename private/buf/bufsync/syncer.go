@@ -613,6 +613,11 @@ func (s *syncer) backfillTags(
 				// no override for this module
 				return nil
 			}
+		} else if builtModule.ModuleIdentity().IdentityString() != moduleIdentity.IdentityString() {
+			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
+				logger.Debug("module name doesn't match HEAD, no override, skipping commit")
+				return nil
+			}
 		}
 		logger := logger.With(
 			zap.String("commit", oldCommit.Hash().Hex()),
