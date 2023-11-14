@@ -126,7 +126,7 @@ func (i *imageWriter) imageMarshal(
 		return protoencoding.NewTxtpbMarshaler(resolver).Marshal(message)
 	case buffetch.ImageEncodingYAML:
 		resolver, err := protoencoding.NewResolver(
-			bufimage.ImageToFileDescriptors(
+			bufimage.ImageToFileDescriptorProtos(
 				image,
 			)...,
 		)
