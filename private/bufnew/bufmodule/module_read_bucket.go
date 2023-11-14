@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -188,9 +187,6 @@ type moduleReadBucket struct {
 	targetPaths          []string
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
-
-	pathToFileInfo map[string]*internal.Tuple[FileInfo, error]
-	cacheLock      sync.RWMutex
 }
 
 // module cannot be assumed to be functional yet.
@@ -225,7 +221,6 @@ func newModuleReadBucket(
 		targetPaths:          targetPaths,
 		targetPathMap:        slicesextended.ToMap(targetPaths),
 		targetExcludePathMap: slicesextended.ToMap(targetExcludePaths),
-		pathToFileInfo:       make(map[string]*internal.Tuple[FileInfo, error]),
 	}
 }
 
@@ -254,7 +249,7 @@ func (b *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	if err != nil {
 		return nil, err
 	}
-	return b.getFileInfo(objectInfo)
+	return b.newFileInfo(objectInfo)
 }
 
 func (b *moduleReadBucket) WalkFileInfos(
@@ -276,7 +271,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 			ctx,
 			"",
 			func(objectInfo storage.ObjectInfo) error {
-				fileInfo, err := b.getFileInfo(objectInfo)
+				fileInfo, err := b.newFileInfo(objectInfo)
 				if err != nil {
 					return err
 				}
@@ -286,7 +281,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
-		fileInfo, err := b.getFileInfo(objectInfo)
+		fileInfo, err := b.newFileInfo(objectInfo)
 		if err != nil {
 			return err
 		}
@@ -318,20 +313,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
-func (b *moduleReadBucket) getFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
-	return internal.GetOrAddToCacheDoubleLock(
-		&b.cacheLock,
-		b.pathToFileInfo,
-		objectInfo.Path(),
-		func() (FileInfo, error) {
-			return b.getFileInfoUncached(objectInfo)
-		},
-	)
-}
-
-// storage.ObjectInfos are cacheable by path, per their documentation, so we can always
-// cache an objectInfo by path.
-func (b *moduleReadBucket) getFileInfoUncached(objectInfo storage.ObjectInfo) (FileInfo, error) {
+func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
