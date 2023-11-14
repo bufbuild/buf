@@ -50,6 +50,13 @@ func NewLazyResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) Res
 	}}
 }
 
+// CombineResolvers returns a resolver that uses all of the given resolvers. It
+// will use the first resolver, and if it returns an error, the second will be
+// tried, and so on.
+func CombineResolvers(resolvers ...Resolver) Resolver {
+	return combinedResolver(resolvers)
+}
+
 // Marshaler marshals Messages.
 type Marshaler interface {
 	Marshal(message proto.Message) ([]byte, error)

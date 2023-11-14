@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- The `buf curl` command has been updated to support the use of multiple schemas.
+  This allows users to specify multiple `--schema` flags and/or to use both `--schema`
+  and `--reflect` flags at the same time. The result is that additional sources can
+  be consulted to resolve an element. This can be useful when the result of an RPC
+  contains extensions or values in `google.protobuf.Any` messages that are not defined
+  in the same schema that defines the RPC service.
 
 ## [v1.28.0] - 2023-11-10
 
