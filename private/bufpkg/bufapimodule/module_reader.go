@@ -17,13 +17,14 @@ package bufapimodule
 import (
 	"context"
 	"errors"
+	"io/fs"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type moduleReader struct {
@@ -64,16 +65,14 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if resp.Manifest == nil {
 		return nil, errors.New("expected non-nil manifest")
 	}
-	// use manifest and blobs
-	moduleManifest, err := bufmanifest.NewManifestFromProto(ctx, resp.Manifest)
+	fileSet, err := bufcas.ProtoManifestBlobAndBlobsToFileSet(
+		bufcasalpha.AlphaToBlob(resp.Manifest),
+		bufcasalpha.AlphaToBlobs(resp.Blobs),
+	)
 	if err != nil {
 		return nil, err
 	}
-	blobSet, err := bufmanifest.NewBlobSetFromProto(ctx, resp.Blobs)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleForManifestAndBlobSet(ctx, moduleManifest, blobSet, identityAndCommitOpt)
+	return bufmodule.NewModuleForFileSet(ctx, fileSet, identityAndCommitOpt)
 }
 
 func (m *moduleReader) downloadManifestAndBlobs(
@@ -92,7 +91,7 @@ func (m *moduleReader) downloadManifestAndBlobs(
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Required by ModuleReader interface spec
-			return nil, storage.NewErrNotExist(modulePin.String())
+			return nil, &fs.PathError{Op: "read", Path: modulePin.String(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}

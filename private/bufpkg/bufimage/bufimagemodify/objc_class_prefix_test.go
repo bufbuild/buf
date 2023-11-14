@@ -75,7 +75,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		require.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 	})
 
@@ -92,7 +92,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		require.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 	})
 }
@@ -116,7 +116,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
@@ -136,7 +136,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
@@ -158,7 +158,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -182,7 +182,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -220,7 +220,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
@@ -241,7 +241,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
@@ -264,7 +264,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -289,7 +289,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -319,7 +319,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetObjcClassPrefix())
 				assert.NotEqual(t, modifiedObjcClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
@@ -345,7 +345,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetObjcClassPrefix())
 				assert.NotEqual(t, modifiedObjcClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
@@ -384,7 +384,7 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
@@ -411,7 +411,7 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, defaultClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
@@ -438,7 +438,7 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -469,7 +469,7 @@ func TestObjcClassPrefixWithDefault(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -621,7 +621,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
@@ -648,7 +648,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, overrideClassPrefix, descriptor.GetOptions().GetObjcClassPrefix())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
@@ -675,7 +675,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue
@@ -706,7 +706,7 @@ func TestObjcClassPrefixWithOverride(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetObjcClassPrefix())
 				continue

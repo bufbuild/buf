@@ -345,7 +345,7 @@ no limit if this flag is not present`,
 		"",
 		fmt.Sprintf(`Path to a PEM-encoded X509 private key file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s or -%s flag must also be
-present to provide tha certificate and public key that corresponds to the given
+present to provide the certificate and public key that corresponds to the given
 private key`,
 			certFlagName, certFlagShortName,
 		),
@@ -357,7 +357,7 @@ private key`,
 		"",
 		fmt.Sprintf(`Path to a PEM-encoded X509 certificate file, for using client certificates with TLS. This
 option is only valid when the URL uses the https scheme. A --%s flag must also be
-present to provide tha private key that corresponds to the given certificate`,
+present to provide the private key that corresponds to the given certificate`,
 			keyFlagName,
 		),
 	)
@@ -814,11 +814,11 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 	if err != nil {
 		return err
 	}
+	userAgent := f.UserAgent
+	if userAgent == "" {
+		userAgent = bufcurl.DefaultUserAgent(f.Protocol, bufcli.Version)
+	}
 	if len(requestHeaders.Values("user-agent")) == 0 {
-		userAgent := f.UserAgent
-		if userAgent == "" {
-			userAgent = bufcurl.DefaultUserAgent(f.Protocol, bufcli.Version)
-		}
 		requestHeaders.Set("user-agent", userAgent)
 	}
 	var basicCreds *string
@@ -885,6 +885,9 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 				reflectHeaders.Set("authorization", creds)
 			}
 		}
+		if len(reflectHeaders.Values("user-agent")) == 0 {
+			reflectHeaders.Set("user-agent", userAgent)
+		}
 		reflectProtocol, err := bufcurl.ParseReflectProtocol(f.ReflectProtocol)
 		if err != nil {
 			return err
@@ -940,7 +943,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptors(image)...)
+		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return err
 		}

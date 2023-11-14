@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -25,10 +26,8 @@ import (
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemanifest"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
@@ -43,8 +42,8 @@ type module struct {
 	license                    string
 	breakingConfig             *bufbreakingconfig.Config
 	lintConfig                 *buflintconfig.Config
-	manifest                   *manifest.Manifest
-	blobSet                    *manifest.BlobSet
+	fileSet                    bufcas.FileSet
+	workspaceDirectory         string
 }
 
 func newModuleForProto(
@@ -198,27 +197,24 @@ func newModuleForBucket(
 	)
 }
 
-func newModuleForManifestAndBlobSet(
+func newModuleForFileSet(
 	ctx context.Context,
-	moduleManifest *manifest.Manifest,
-	blobSet *manifest.BlobSet,
+	fileSet bufcas.FileSet,
 	options ...ModuleOption,
 ) (*module, error) {
-	bucket, err := storagemanifest.NewReadBucket(
-		moduleManifest,
-		blobSet,
-		storagemanifest.ReadBucketWithAllManifestBlobs(),
-		storagemanifest.ReadBucketWithNoExtraBlobs(),
-	)
-	if err != nil {
+	bucket := storagemem.NewReadWriteBucket()
+	if err := bufcas.PutFileSetToBucket(
+		ctx,
+		fileSet,
+		bucket,
+	); err != nil {
 		return nil, err
 	}
 	module, err := newModuleForBucket(ctx, bucket, options...)
 	if err != nil {
 		return nil, err
 	}
-	module.manifest = moduleManifest
-	module.blobSet = blobSet
+	module.fileSet = fileSet
 	return module, nil
 }
 
@@ -280,7 +276,6 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, 
 		fileInfo, err := bufmoduleref.NewFileInfo(
 			objectInfo.Path(),
 			objectInfo.ExternalPath(),
-			false,
 			m.moduleIdentity,
 			m.commit,
 		)
@@ -308,7 +303,6 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		readObjectCloser.Path(),
 		readObjectCloser.ExternalPath(),
-		false,
 		m.moduleIdentity,
 		m.commit,
 	)
@@ -348,12 +342,8 @@ func (m *module) LintConfig() *buflintconfig.Config {
 	return m.lintConfig
 }
 
-func (m *module) Manifest() *manifest.Manifest {
-	return m.manifest
-}
-
-func (m *module) BlobSet() *manifest.BlobSet {
-	return m.blobSet
+func (m *module) FileSet() bufcas.FileSet {
+	return m.fileSet
 }
 
 func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
@@ -362,6 +352,10 @@ func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
 
 func (m *module) Commit() string {
 	return m.commit
+}
+
+func (m *module) WorkspaceDirectory() string {
+	return m.workspaceDirectory
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {

@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -134,7 +135,7 @@ func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue
 	// ie if you now have FOO=2, BAR=2, you need to have had FOO=2, BAR=2 previously
 	// FOO=2, BAR=2, BAZ=2 now would pass
 	// FOO=2, BAR=2, BAZ=2 previously would fail
-	if !stringutil.SliceElementsContained(names, previousNames) {
+	if !slicesextended.ElementsContained(names, previousNames) {
 		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
 		namesString := stringutil.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""
@@ -226,7 +227,7 @@ func checkFieldSameCType(add addFunc, corpus *corpus, previousField protosource.
 	if previousField.CType() != field.CType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.CType().String(), field.CType().String())
+		add(field, nil, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.CType().String(), field.CType().String())
 	}
 	return nil
 }
@@ -238,7 +239,7 @@ func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField protosour
 	if previousField.JSONName() != field.JSONName() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()), `Field %q with name %q on message %q changed option "json_name" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSONName(), field.JSONName())
+		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()), `Field %q with name %q on message %q changed option "json_name" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.JSONName(), field.JSONName())
 	}
 	return nil
 }
@@ -250,7 +251,7 @@ func checkFieldSameJSType(add addFunc, corpus *corpus, previousField protosource
 	if previousField.JSType() != field.JSType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "jstype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSType().String(), field.JSType().String())
+		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "jstype" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.JSType().String(), field.JSType().String())
 	}
 	return nil
 }
@@ -263,7 +264,7 @@ func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		// TODO: specific label location
-		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
+		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.ParentMessage().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
 	}
 	return nil
 }
@@ -275,7 +276,7 @@ func checkFieldSameName(add addFunc, corpus *corpus, previousField protosource.F
 	if previousField.Name() != field.Name() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, field.NameLocation(), `Field %q on message %q changed name from %q to %q.`, numberString, field.Message().Name(), previousField.Name(), field.Name())
+		add(field, nil, field.NameLocation(), `Field %q on message %q changed name from %q to %q.`, numberString, field.ParentMessage().Name(), previousField.Name(), field.Name())
 	}
 	return nil
 }
@@ -295,7 +296,7 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.
 		if previousOneof.Name() != oneof.Name() {
 			// otherwise prints as hex
 			numberString := strconv.FormatInt(int64(field.Number()), 10)
-			add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.Message().Name(), previousOneof.Name(), oneof.Name())
+			add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.ParentMessage().Name(), previousOneof.Name(), oneof.Name())
 		}
 		return nil
 	}
@@ -308,7 +309,7 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.
 	}
 	// otherwise prints as hex
 	numberString := strconv.FormatInt(int64(field.Number()), 10)
-	add(field, nil, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.Message().Name(), previous, current)
+	add(field, nil, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.ParentMessage().Name(), previous, current)
 	return nil
 }
 
@@ -493,7 +494,7 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 		fieldLocation,
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
-		field.Message().Name(),
+		field.ParentMessage().Name(),
 		protodescriptor.FieldDescriptorProtoTypePrettyString(previousField.Type()),
 		protodescriptor.FieldDescriptorProtoTypePrettyString(field.Type()),
 		combinedExtraMessage,
@@ -509,7 +510,7 @@ func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField protosou
 		field.TypeNameLocation(),
 		`Field %q on message %q changed type from %q to %q.`,
 		numberString,
-		field.Message().Name(),
+		field.ParentMessage().Name(),
 		strings.TrimPrefix(previousField.TypeName(), "."),
 		strings.TrimPrefix(field.TypeName(), "."),
 	)

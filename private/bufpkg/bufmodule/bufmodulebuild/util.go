@@ -113,7 +113,8 @@ type buildOptions struct {
 	pathsAllowNotExist bool
 	// Paths that will be excluded from the module build process. This is handled in conjunction
 	// with `paths`.
-	excludePaths []string
+	excludePaths       []string
+	workspaceDirectory string
 }
 
 type buildModuleFileSetOptions struct {

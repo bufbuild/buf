@@ -35,6 +35,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_NPM = 2;
   PLUGIN_REGISTRY_TYPE_MAVEN = 3;
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
+  PLUGIN_REGISTRY_TYPE_PYTHON = 5;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -71,6 +72,16 @@ enum SwiftPlatformType {
   SWIFT_PLATFORM_TYPE_IOS = 2;
   SWIFT_PLATFORM_TYPE_WATCHOS = 3;
   SWIFT_PLATFORM_TYPE_TVOS = 4;
+}
+
+// PythonPackageType is used to specify the package type for a Python Generated SDK.
+enum PythonPackageType {
+  PYTHON_PACKAGE_TYPE_UNSPECIFIED = 0;
+  // Regular Python package, containing Python runtime code (`.py` files).
+  PYTHON_PACKAGE_TYPE_RUNTIME = 1;
+  // Stub-only package, containing only `.pyi` files.
+  // Ref: https://peps.python.org/pep-0561/#stub-only-packages
+  PYTHON_PACKAGE_TYPE_STUB_ONLY = 2;
 }
 
 // GoConfig is the configuration for a Go plugin.
@@ -194,6 +205,24 @@ message SwiftConfig {
   repeated RuntimeLibrary runtime_libraries = 1;
 }
 
+message PythonConfig {
+  message RuntimeLibrary {
+    // dependency_specification is a PEP 508 Dependency Specification.
+    // Ref: https://peps.python.org/pep-0508/
+    string dependency_specification = 1;
+  }
+  repeated RuntimeLibrary runtime_libraries = 1;
+  // requires_python is a PEP 440 Version Specifier that specifies the value of
+  // the `Requires-Python` field in a metadata file.
+  //
+  // Ref:
+  // - https://packaging.python.org/en/latest/specifications/core-metadata/#requires-python
+  // - https://peps.python.org/pep-0440/
+  string requires_python = 2;
+  // package_type is the PythonPackageType that this plugin generates.
+  PythonPackageType package_type = 3;
+}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
@@ -201,9 +230,10 @@ message RegistryConfig {
     NPMConfig npm_config = 2;
     MavenConfig maven_config = 3;
     SwiftConfig swift_config = 4;
+    PythonConfig python_config = 5;
   }
   // Reserved for future remote registry types.
-  reserved 5 to 9;
+  reserved 6 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;
@@ -264,6 +294,8 @@ message CuratedPlugin {
   bool deprecated = 19;
   // Optionally specify a message to be displayed when the plugin is deprecated.
   string deprecation_message = 20;
+  // The URL leading to the integration guide of the plugin, if available.
+  string integration_guide_url = 21;
 }
 
 // PluginCurationService manages curated plugins.
@@ -381,6 +413,8 @@ message CreateCuratedPluginRequest {
   string license_url = 16;
   // Visibility indicates whether the plugin is public or private.
   CuratedPluginVisibility visibility = 17;
+  // The URL leading to the integration guide of the plugin, if available.
+  string integration_guide_url = 18;
 }
 
 message CreateCuratedPluginResponse {

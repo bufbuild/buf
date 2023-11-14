@@ -19,10 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -35,10 +35,10 @@ type openRepositoryOpts struct {
 }
 
 type repository struct {
-	gitDirPath       string
-	defaultBranch    string
-	checkedOutBranch string
-	objectReader     *objectReader
+	gitDirPath    string
+	defaultBranch string
+	objectReader  *objectReader
+	runner        command.Runner
 
 	// packedOnce controls the fields below related to reading the `packed-refs` file
 	packedOnce      sync.Once
@@ -77,15 +77,11 @@ func openGitRepository(
 			return nil, fmt.Errorf("automatically determine default branch: %w", err)
 		}
 	}
-	checkedOutBranch, err := detectCheckedOutBranch(ctx, gitDirPath, runner)
-	if err != nil {
-		return nil, fmt.Errorf("automatically determine checked out branch: %w", err)
-	}
 	return &repository{
-		gitDirPath:       gitDirPath,
-		defaultBranch:    opts.defaultBranch,
-		checkedOutBranch: checkedOutBranch,
-		objectReader:     reader,
+		gitDirPath:    gitDirPath,
+		defaultBranch: opts.defaultBranch,
+		objectReader:  reader,
+		runner:        runner,
 	}, nil
 }
 
@@ -134,6 +130,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 		unpackedBranches[branchName] = struct{}{}
 		return f(branchName, hash)
 	}); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if errors.Is(err, ErrStopForEach) {
+			return nil
+		}
 		return err
 	}
 	// Read packed branch refs that haven't been seen yet.
@@ -145,6 +144,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 		for branchName, hash := range remotePackedBranches {
 			if _, seen := unpackedBranches[branchName]; !seen {
 				if err := f(branchName, hash); err != nil {
+					if errors.Is(err, ErrStopForEach) {
+						return nil
+					}
 					return err
 				}
 			}
@@ -157,8 +159,63 @@ func (r *repository) DefaultBranch() string {
 	return r.defaultBranch
 }
 
-func (r *repository) CurrentBranch() string {
-	return r.checkedOutBranch
+func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string, error) {
+	var config checkedOutBranchOpts
+	for _, option := range options {
+		option(&config)
+	}
+	headBytes, err := os.ReadFile(filepath.Join(r.gitDirPath, "HEAD"))
+	if err != nil {
+		return "", fmt.Errorf("read HEAD bytes: %w", err)
+	}
+	headBytes = bytes.TrimSuffix(headBytes, []byte{'\n'})
+	// .git/HEAD could point to a named ref, or could be in a dettached state, ie pointing to a git
+	// hash. Possible values:
+	//
+	// "ref: refs/heads/somelocalbranch"
+	// "ref: refs/remotes/someremote/somebranch"
+	// "somegithash"
+	const refPrefix = "ref: refs/"
+	if strings.HasPrefix(string(headBytes), refPrefix) {
+		refRelDir := strings.TrimPrefix(string(headBytes), refPrefix)
+		if config.remote == "" {
+			// only match local branches
+			const localBranchPrefix = "heads/"
+			if !strings.HasPrefix(refRelDir, localBranchPrefix) {
+				return "", fmt.Errorf("git HEAD %s is not pointing to a local branch", string(headBytes))
+			}
+			return strings.TrimPrefix(refRelDir, localBranchPrefix), nil
+		}
+		// only match branches from the specific remote
+		remoteBranchPrefix := "remotes/" + config.remote + "/"
+		if !strings.HasPrefix(refRelDir, remoteBranchPrefix) {
+			return "", fmt.Errorf("git HEAD %s is not pointing to branch in remote %s", string(headBytes), config.remote)
+		}
+		return strings.TrimPrefix(refRelDir, remoteBranchPrefix), nil
+	}
+	// if HEAD is not a named ref, it could be a dettached HEAD, ie a git hash
+	headHash, err := parseHashFromHex(string(headBytes))
+	if err != nil {
+		return "", fmt.Errorf(".git/HEAD is not a named ref nor a git hash: %w", err)
+	}
+	// we can compare that hash with all repo branches' heads
+	var currentBranch string
+	if err := r.ForEachBranch(
+		func(branch string, branchHEAD Hash) error {
+			if headHash == branchHEAD {
+				currentBranch = branch
+				return ErrStopForEach
+			}
+			return nil
+		},
+		ForEachBranchWithRemote(config.remote),
+	); err != nil {
+		return "", fmt.Errorf("for each branch: %w", err)
+	}
+	if currentBranch == "" {
+		return "", errors.New("git HEAD is detached, no matches with any branch")
+	}
+	return currentBranch, nil
 }
 
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
@@ -172,6 +229,9 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 	}
 	for {
 		if err := f(currentCommit); err != nil {
+			if errors.Is(err, ErrStopForEach) {
+				return nil
+			}
 			return err
 		}
 		if len(currentCommit.Parents()) == 0 {
@@ -241,6 +301,9 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 			tagName,
 		)
 	}); err != nil {
+		if errors.Is(err, ErrStopForEach) {
+			return nil
+		}
 		return err
 	}
 	// Read packed tag refs that haven't been seen yet.
@@ -250,6 +313,9 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	for tagName, commit := range r.packedTags {
 		if _, found := seen[tagName]; !found {
 			if err := f(tagName, commit); err != nil {
+				if errors.Is(err, ErrStopForEach) {
+					return nil
+				}
 				return err
 			}
 		}
@@ -377,43 +443,6 @@ func detectDefaultBranch(gitDirPath string) (string, error) {
 	data = bytes.TrimPrefix(data, defaultBranchRefPrefix)
 	data = bytes.TrimSuffix(data, []byte("\n"))
 	return string(data), nil
-}
-
-func detectCheckedOutBranch(ctx context.Context, gitDirPath string, runner command.Runner) (string, error) {
-	var (
-		stdOutBuffer = bytes.NewBuffer(nil)
-		stdErrBuffer = bytes.NewBuffer(nil)
-	)
-	if err := runner.Run(
-		ctx,
-		"git",
-		command.RunWithArgs(
-			"rev-parse",
-			"--abbrev-ref",
-			"HEAD",
-		),
-		command.RunWithStdout(stdOutBuffer),
-		command.RunWithStderr(stdErrBuffer),
-		command.RunWithDir(gitDirPath), // exec command at the root of the git repo
-	); err != nil {
-		stdErrMsg, err := io.ReadAll(stdErrBuffer)
-		if err != nil {
-			stdErrMsg = []byte(fmt.Sprintf("read stderr: %s", err.Error()))
-		}
-		return "", fmt.Errorf("git rev-parse: %w (%s)", err, string(stdErrMsg))
-	}
-	stdOut, err := io.ReadAll(stdOutBuffer)
-	if err != nil {
-		return "", fmt.Errorf("read current branch: %w", err)
-	}
-	currentBranch := string(bytes.TrimSuffix(stdOut, []byte("\n")))
-	if currentBranch == "" {
-		return "", errors.New("empty current branch")
-	}
-	if currentBranch == "HEAD" {
-		return "", errors.New("no current branch, git HEAD is detached")
-	}
-	return currentBranch, nil
 }
 
 // validateDirPathExists returns a non-nil error if the given dirPath is not a valid directory path.

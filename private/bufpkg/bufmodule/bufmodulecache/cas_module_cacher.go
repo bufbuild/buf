@@ -15,15 +15,18 @@
 package bufmodulecache
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -46,41 +49,43 @@ func (c *casModuleCacher) GetModule(
 	modulePin bufmoduleref.ModulePin,
 ) (_ bufmodule.Module, retErr error) {
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
-	manifestDigestStr := modulePin.Digest()
-	if manifestDigestStr == "" {
+	digestString := modulePin.Digest()
+	if digestString == "" {
 		// Attempt to look up manifest digest from commit
 		commitPath := normalpath.Join(moduleBasedir, commitsDir, modulePin.Commit())
-		manifestDigestBytes, err := c.loadPath(ctx, commitPath)
+		digestBytes, err := storage.ReadPath(ctx, c.bucket, commitPath)
 		if err != nil {
 			return nil, err
 		}
-		manifestDigestStr = string(manifestDigestBytes)
+		digestString = string(digestBytes)
 	}
-	manifestDigest, err := manifest.NewDigestFromString(manifestDigestStr)
+	digest, err := bufcas.ParseDigest(digestString)
 	if err != nil {
 		return nil, err
 	}
-	manifestFromCache, err := c.readManifest(ctx, moduleBasedir, *manifestDigest)
+	manifest, err := c.readManifest(ctx, moduleBasedir, digest)
 	if err != nil {
 		return nil, err
 	}
-	digests := manifestFromCache.Digests()
-	blobs := make([]manifest.Blob, len(digests))
-	for i, digest := range digests {
-		blob, err := c.readBlob(ctx, moduleBasedir, digest)
+	blobs := make([]bufcas.Blob, 0, len(manifest.FileNodes()))
+	for _, fileNode := range manifest.FileNodes() {
+		blob, err := c.readBlob(ctx, moduleBasedir, fileNode.Digest())
 		if err != nil {
 			return nil, err
 		}
-		blobs[i] = blob
+		blobs = append(blobs, blob)
 	}
-	blobSet, err := manifest.NewBlobSet(ctx, blobs)
+	blobSet, err := bufcas.NewBlobSet(blobs)
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForManifestAndBlobSet(
+	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleForFileSet(
 		ctx,
-		manifestFromCache,
-		blobSet,
+		fileSet,
 		bufmodule.ModuleWithModuleIdentityAndCommit(
 			modulePin,
 			modulePin.Commit(),
@@ -93,36 +98,28 @@ func (c *casModuleCacher) PutModule(
 	modulePin bufmoduleref.ModulePin,
 	module bufmodule.Module,
 ) (retErr error) {
-	moduleManifest := module.Manifest()
-	if moduleManifest == nil {
-		return fmt.Errorf("manifest must be non-nil")
+	fileSet := module.FileSet()
+	if fileSet == nil {
+		return fmt.Errorf("FileSet must be non-nil")
 	}
-	manifestBlob, err := moduleManifest.Blob()
+	manifest := fileSet.Manifest()
+	// TODO: what about empty modules? Need to handle empty Manifests in bufcas
+	manifestBlob, err := bufcas.ManifestToBlob(manifest)
 	if err != nil {
 		return err
 	}
 	manifestDigest := manifestBlob.Digest()
-	if manifestDigest == nil {
-		return errors.New("empty manifest digest")
-	}
 	if modulePinDigestEncoded := modulePin.Digest(); modulePinDigestEncoded != "" {
-		modulePinDigest, err := manifest.NewDigestFromString(modulePinDigestEncoded)
+		modulePinDigest, err := bufcas.ParseDigest(modulePinDigestEncoded)
 		if err != nil {
 			return fmt.Errorf("invalid module pin digest %q: %w", modulePinDigestEncoded, err)
 		}
-		if !manifestDigest.Equal(*modulePinDigest) {
+		if !bufcas.DigestEqual(manifestDigest, modulePinDigest) {
 			return fmt.Errorf("manifest digest mismatch: pin=%q, module=%q", modulePinDigest.String(), manifestDigest.String())
 		}
 	}
 	moduleBasedir := normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository())
-	// Write blobs
-	for _, digest := range moduleManifest.Digests() {
-		blobDigestStr := digest.String()
-		blob, found := module.BlobSet().BlobFor(blobDigestStr)
-		if !found {
-			paths, _ := moduleManifest.PathsFor(blobDigestStr)
-			return fmt.Errorf("blob not found for digest=%q (paths=%v)", blobDigestStr, paths)
-		}
+	for _, blob := range fileSet.BlobSet().Blobs() {
 		if err := c.writeBlob(ctx, moduleBasedir, blob); err != nil {
 			return err
 		}
@@ -142,15 +139,18 @@ func (c *casModuleCacher) PutModule(
 func (c *casModuleCacher) readBlob(
 	ctx context.Context,
 	moduleBasedir string,
-	digest manifest.Digest,
-) (_ manifest.Blob, retErr error) {
-	hexDigest := digest.Hex()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
-	contents, err := c.loadPath(ctx, blobPath)
+	digest bufcas.Digest,
+) (_ bufcas.Blob, retErr error) {
+	digestHex := hex.EncodeToString(digest.Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
+	readObjectCloser, err := c.bucket.Get(ctx, blobPath)
 	if err != nil {
 		return nil, err
 	}
-	blob, err := manifest.NewMemoryBlob(digest, contents, manifest.MemoryBlobWithDigestValidation())
+	defer func() {
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
+	}()
+	blob, err := bufcas.NewBlobForContent(readObjectCloser, bufcas.BlobWithKnownDigest(digest))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create blob from path %s: %w", blobPath, err)
 	}
@@ -160,80 +160,60 @@ func (c *casModuleCacher) readBlob(
 func (c *casModuleCacher) validateBlob(
 	ctx context.Context,
 	moduleBasedir string,
-	digest *manifest.Digest,
-) (bool, error) {
-	hexDigest := digest.Hex()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
-	f, err := c.bucket.Get(ctx, blobPath)
+	digest bufcas.Digest,
+) (_ bool, retErr error) {
+	digestHex := hex.EncodeToString(digest.Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
+	readObjectCloser, err := c.bucket.Get(ctx, blobPath)
 	if err != nil {
 		return false, err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
-			c.logger.Debug("err closing blob", zap.Error(err))
-		}
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	digester, err := manifest.NewDigester(digest.Type())
+	cacheDigest, err := bufcas.NewDigestForContent(readObjectCloser, bufcas.DigestWithDigestType(digest.Type()))
 	if err != nil {
 		return false, err
 	}
-	cacheDigest, err := digester.Digest(f)
-	if err != nil {
-		return false, err
-	}
-	return digest.Equal(*cacheDigest), nil
+	return bufcas.DigestEqual(digest, cacheDigest), nil
 }
 
 func (c *casModuleCacher) readManifest(
 	ctx context.Context,
 	moduleBasedir string,
-	manifestDigest manifest.Digest,
-) (_ *manifest.Manifest, retErr error) {
-	blob, err := c.readBlob(ctx, moduleBasedir, manifestDigest)
+	digest bufcas.Digest,
+) (_ bufcas.Manifest, retErr error) {
+	blob, err := c.readBlob(ctx, moduleBasedir, digest)
 	if err != nil {
 		return nil, err
 	}
-	f, err := blob.Open(ctx)
+	manifest, err := bufcas.BlobToManifest(blob)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, f.Close())
-	}()
-	moduleManifest, err := manifest.NewFromReader(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read manifest %s: %w", manifestDigest.String(), err)
-	}
-	return moduleManifest, nil
+	return manifest, nil
 }
 
 func (c *casModuleCacher) writeBlob(
 	ctx context.Context,
 	moduleBasedir string,
-	blob manifest.Blob,
+	blob bufcas.Blob,
 ) (retErr error) {
 	// Avoid unnecessary write if the blob is already written to disk
 	valid, err := c.validateBlob(ctx, moduleBasedir, blob.Digest())
 	if err == nil && valid {
 		return nil
 	}
-	if !storage.IsNotExist(err) {
+	if !errors.Is(err, fs.ErrNotExist) {
 		c.logger.Debug(
 			"repairing cache entry",
 			zap.String("basedir", moduleBasedir),
 			zap.String("digest", blob.Digest().String()),
 		)
 	}
-	contents, err := blob.Open(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, contents.Close())
-	}()
-	hexDigest := blob.Digest().Hex()
-	blobPath := normalpath.Join(moduleBasedir, blobsDir, hexDigest[:2], hexDigest[2:])
-	return c.atomicWrite(ctx, contents, blobPath)
+	digestHex := hex.EncodeToString(blob.Digest().Value())
+	blobPath := normalpath.Join(moduleBasedir, blobsDir, digestHex[:2], digestHex[2:])
+	return c.atomicWrite(ctx, bytes.NewReader(blob.Content()), blobPath)
 }
 
 func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, path string) (retErr error) {
@@ -248,18 +228,4 @@ func (c *casModuleCacher) atomicWrite(ctx context.Context, contents io.Reader, p
 		return err
 	}
 	return nil
-}
-
-func (c *casModuleCacher) loadPath(
-	ctx context.Context,
-	path string,
-) (_ []byte, retErr error) {
-	f, err := c.bucket.Get(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, f.Close())
-	}()
-	return io.ReadAll(f)
 }

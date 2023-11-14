@@ -118,6 +118,10 @@ issues:
       # netrc/internal is a library largely copied in from an external repository with attribution.
       # We try to make minimal edits.
       path: private/pkg/netrc/internal/internal.go
+      # we actually want to use this init to create a protovalidate.Validator
+    - linters:
+        - gochecknoinits
+      path: private/bufpkg/bufcas/proto.go
       # we actually want to use this init in testing
     - linters:
         - gochecknoinits

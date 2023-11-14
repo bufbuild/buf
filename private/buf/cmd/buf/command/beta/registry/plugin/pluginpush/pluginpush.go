@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"strings"
@@ -355,6 +356,7 @@ func createCuratedPluginRequest(
 		SpdxLicenseId:        pluginConfig.SPDXLicenseID,
 		LicenseUrl:           pluginConfig.LicenseURL,
 		Visibility:           visibility,
+		IntegrationGuideUrl:  pluginConfig.IntegrationGuideURL,
 	}, nil
 }
 
@@ -475,7 +477,7 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 
 func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {
 	image, err := bucket.Get(ctx, bufplugindocker.ImagePath)
-	if storage.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, fmt.Errorf("unable to find a %s plugin image: %w", bufplugindocker.ImagePath, err)
 	}
 	return image, nil

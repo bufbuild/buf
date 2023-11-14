@@ -71,7 +71,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 		require.NoError(t, err)
 		module, err := bufmodule.NewModuleForBucket(ctx, moduleBucket)
 		require.NoError(t, err)
-		readBucket, err := Format(ctx, module)
+		readBucket, err := FormatModule(ctx, module)
 		require.NoError(t, err)
 		require.NoError(
 			t,

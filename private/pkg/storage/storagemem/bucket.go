@@ -17,6 +17,7 @@ package storagemem
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"sort"
 	"sync"
 
@@ -105,7 +106,7 @@ func (b *bucket) Delete(ctx context.Context, path string) error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if _, ok := b.pathToImmutableObject[path]; !ok {
-		return storage.NewErrNotExist(path)
+		return &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 	}
 	// Note that if there is an existing reader for an object of the same path,
 	// that reader will continue to read the original file, but we accept this
@@ -153,7 +154,7 @@ func (b *bucket) readLockAndGetImmutableObject(ctx context.Context, path string)
 		// the issue is here: we don't know the external path for memory buckets
 		// because we store external paths individually, so if we do not have
 		// an object, we do not have an external path
-		return nil, storage.NewErrNotExist(path)
+		return nil, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 	}
 	return immutableObject, nil
 }

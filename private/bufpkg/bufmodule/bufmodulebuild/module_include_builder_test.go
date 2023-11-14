@@ -37,18 +37,18 @@ func TestIncludeGetFileInfos1(t *testing.T) {
 		[]string{
 			"proto",
 		},
-		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", nil, ""),
 	)
 }
 
@@ -189,7 +189,6 @@ func fileInfosToAbs(t *testing.T, fileInfos []bufmoduleref.FileInfo) []bufmodule
 			t,
 			fileInfo.Path(),
 			absExternalPath,
-			fileInfo.IsImport(),
 			nil,
 			"",
 		)

@@ -1,4 +1,6 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	github.com/bufbuild/protocompile@146b831231f7f7c1a19b09065875b9778d3d5d25
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -28,6 +30,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+PROTOVALIDATE_VERSION := v0.5.1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -99,7 +102,13 @@ bufgeneratedeps:: \
 bufgeneratecleango:
 	rm -rf private/gen/proto
 
-bufgenerateclean:: bufgeneratecleango
+.PHONY: bufgeneratecleanbuflinttestdata
+bufgeneratecleanbuflinttestdata:
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
+
+bufgenerateclean:: \
+	bufgeneratecleango \
+	bufgeneratecleanbuflinttestdata
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
@@ -110,20 +119,18 @@ bufgenerateprotogo:
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
+.PHONY: bufgeneratebuflinttestdata
+bufgeneratebuflinttestdata:
+	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+
 bufgeneratesteps:: \
 	bufgenerateprotogo \
-	bufgenerateprotogoclient
+	bufgenerateprotogoclient \
+	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.21-bullseye bash make/buf/scripts/release.bash
-
-# We have to manually set the Homebrew version on the Homebrew badge as there
-# is no badge on shields.io for Homebrew packages outside of homebrew-core
-
-.PHONY: updatehomebrewbadge
-updatehomebrewbadge:
-	$(SED_I) "s/badge\/homebrew-v.*-blue/badge\/homebrew-v$(shell bash make/buf/scripts/homebrewversion.bash)-blue/g" README.md
 
 .PHONY: updateversion
 updateversion:
@@ -133,6 +140,14 @@ endif
 	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
 
+.PHONY: releasechangelog
+releasechangelog:
+ifndef VERSION
+	$(error "VERSION must be set")
+endif
+	$(SED_I) 's/## \[Unreleased\]/## \[v$(VERSION)\] - $(shell date '+%Y-%m-%d')/' CHANGELOG.md
+	$(SED_I) -E '/^\[Unreleased\]: .*HEAD$$/s/(Unreleased|HEAD)/v$(VERSION)/g' CHANGELOG.md
+
 .PHONY: updategoversion
 updategoversion: installgit-ls-files-unstaged
 ifndef GOVERSION
@@ -141,7 +156,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-bullseye
-	docker pull golang:$(GOVERSION)-alpine3.17
+	docker pull golang:$(GOVERSION)-alpine3.18
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

@@ -79,7 +79,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		// Overwritten with "foo" in the namespace
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
 	})
 
@@ -97,7 +97,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		require.NoError(t, err)
 		// Overwritten with "foo" in the namespace
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
 	})
 }
@@ -121,7 +121,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
@@ -141,7 +141,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
@@ -163,7 +163,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			// Overwritten with "bar" in the namespace
 			assert.Equal(t, "bar", descriptor.GetOptions().GetCsharpNamespace())
 		}
@@ -184,7 +184,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			// Overwritten with "bar" in the namespace
 			assert.Equal(t, "bar", descriptor.GetOptions().GetCsharpNamespace())
 		}
@@ -218,7 +218,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
@@ -239,7 +239,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
@@ -262,7 +262,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
 				continue
@@ -287,7 +287,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
 				continue
@@ -317,7 +317,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
 				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
@@ -343,7 +343,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
 				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
@@ -436,7 +436,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "", descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
@@ -463,7 +463,7 @@ func TestCsharpNamespaceWithExcept(t *testing.T) {
 		)
 		require.NoError(t, err)
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "", descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
@@ -506,7 +506,7 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				strings.ReplaceAll(normalpath.Dir(overrideCsharpNamespacePrefix+"/"+imageFile.Path()), "/", "."),
 				descriptor.GetOptions().GetCsharpNamespace(),
@@ -540,7 +540,7 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t,
 				strings.ReplaceAll(normalpath.Dir(overrideCsharpNamespacePrefix+"/"+imageFile.Path()), "/", "."),
 				descriptor.GetOptions().GetCsharpNamespace(),
@@ -574,8 +574,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Proto().Name != nil && *imageFile.Proto().Name == "a.proto" {
+			descriptor := imageFile.FileDescriptorProto()
+			if imageFile.FileDescriptorProto().Name != nil && *imageFile.FileDescriptorProto().Name == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetCsharpNamespace())
 				continue
 			}
@@ -612,8 +612,8 @@ func TestCsharpNamespaceWithOverride(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Proto().Name != nil && *imageFile.Proto().Name == "a.proto" {
+			descriptor := imageFile.FileDescriptorProto()
+			if imageFile.FileDescriptorProto().Name != nil && *imageFile.FileDescriptorProto().Name == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetCsharpNamespace())
 				continue
 			}

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 var _ ModuleFileSet = &moduleFileSet{}
@@ -69,14 +68,9 @@ func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]bufmoduleref.FileIn
 		if err := bufmoduleref.ValidateModuleFilePath(moduleObjectInfo.Path()); err != nil {
 			return err
 		}
-		isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), moduleObjectInfo.Path())
-		if err != nil {
-			return err
-		}
 		fileInfo, err := bufmoduleref.NewFileInfo(
 			moduleObjectInfo.Path(),
 			moduleObjectInfo.ExternalPath(),
-			!isNotImport,
 			moduleObjectInfo.ModuleIdentity(),
 			moduleObjectInfo.Commit(),
 		)
@@ -100,10 +94,6 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	if err != nil {
 		return nil, err
 	}
-	isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), path)
-	if err != nil {
-		return nil, err
-	}
 	moduleObjectInfo, err := m.allModuleReadBucket.StatModuleFile(ctx, path)
 	if err != nil {
 		return nil, err
@@ -111,7 +101,6 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	fileInfo, err := bufmoduleref.NewFileInfo(
 		readObjectCloser.Path(),
 		readObjectCloser.ExternalPath(),
-		!isNotImport,
 		moduleObjectInfo.ModuleIdentity(),
 		moduleObjectInfo.Commit(),
 	)

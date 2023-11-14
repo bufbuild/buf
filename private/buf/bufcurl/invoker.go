@@ -290,6 +290,11 @@ func (inv *invoker) handleResponse(data []byte, msg *dynamicpb.Message) error {
 			protoencoding.JSONMarshalerWithEmitUnpopulated(),
 		)
 	}
+	unrecognized := countUnrecognized(msg.ProtoReflect())
+	if unrecognized > 0 {
+		inv.printer.Printf("Response message (%s) contained %d bytes of unrecognized fields.",
+			msg.ProtoReflect().Descriptor().FullName(), unrecognized)
+	}
 	outputBytes, err := protoencoding.NewJSONMarshaler(inv.res, jsonMarshalerOptions...).Marshal(msg)
 	if err != nil {
 		return err
@@ -437,6 +442,37 @@ func (s *streamMessageProvider) next(msg proto.Message) error {
 		}
 		return fmt.Errorf("%s at offset %d: %w", s.name, s.dec.InputOffset(), err)
 	}
-	proto.Reset(msg)
-	return protoencoding.NewJSONUnmarshaler(s.res).Unmarshal(jsonData, msg)
+	return protoencoding.NewJSONUnmarshaler(
+		s.res, protoencoding.JSONUnmarshalerWithDisallowUnknown(),
+	).Unmarshal(jsonData, msg)
+}
+
+func countUnrecognized(msg protoreflect.Message) int {
+	var count int
+	msg.Range(func(field protoreflect.FieldDescriptor, val protoreflect.Value) bool {
+		switch {
+		case field.IsMap() && isMessageKind(field.MapValue().Kind()):
+			// Note: Technically, each message entry could have had unrecognized field
+			// bytes, but they are discarded by the runtime. So we can only look at
+			// unrecognized fields in message values inside the map.
+			mapVal := val.Map()
+			mapVal.Range(func(_ protoreflect.MapKey, v protoreflect.Value) bool {
+				count += countUnrecognized(v.Message())
+				return true
+			})
+		case field.IsList() && isMessageKind(field.Kind()):
+			listVal := val.List()
+			for i, length := 0, listVal.Len(); i < length; i++ {
+				count += countUnrecognized(listVal.Get(i).Message())
+			}
+		case isMessageKind(field.Kind()):
+			count += countUnrecognized(val.Message())
+		}
+		return true
+	})
+	return count + len(msg.GetUnknown())
+}
+
+func isMessageKind(k protoreflect.Kind) bool {
+	return k == protoreflect.MessageKind || k == protoreflect.GroupKind
 }

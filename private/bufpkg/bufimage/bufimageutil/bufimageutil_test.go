@@ -45,6 +45,7 @@ import (
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
 // SWITCH THIS TO TRUE, TURN OFF PARALLEL TESTING, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
+// go test -parallel 1 ./privage/pkg/bufimage/bufimageutil
 const shouldUpdateExpectations = false
 
 func TestOptions(t *testing.T) {
@@ -281,7 +282,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
 	// way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
 	require.NoError(t, err)
 	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
@@ -339,13 +340,13 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 	require.NoError(t, err)
 
 	imageFile := filteredImage.GetFile("test.proto")
-	sourceCodeInfo := imageFile.FileDescriptor().GetSourceCodeInfo()
+	sourceCodeInfo := imageFile.FileDescriptorProto().GetSourceCodeInfo()
 	actual, err := protoencoding.NewJSONMarshaler(nil, protoencoding.JSONMarshalerWithIndent()).Marshal(sourceCodeInfo)
 	require.NoError(t, err)
 
 	checkExpectation(t, ctx, actual, bucket, expectedFile)
 
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
 	require.NoError(t, err)
 	file, err := resolver.FindFileByPath("test.proto")
 	require.NoError(t, err)
@@ -354,13 +355,13 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 
 func imageIsDependencyOrdered(image bufimage.Image) bool {
 	seen := make(map[string]struct{})
-	for _, file := range image.Files() {
-		for _, importName := range file.Proto().Dependency {
+	for _, imageFile := range image.Files() {
+		for _, importName := range imageFile.FileDescriptorProto().Dependency {
 			if _, ok := seen[importName]; !ok {
 				return false
 			}
 		}
-		seen[file.Path()] = struct{}{}
+		seen[imageFile.Path()] = struct{}{}
 	}
 	return true
 }
@@ -478,8 +479,8 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimagebuild.BuildOption) {
 				// filtering is destructive, so we have to make a copy
 				b.StopTimer()
 				imageFiles := make([]bufimage.ImageFile, len(benchmarkCase.image.Files()))
-				for j, file := range benchmarkCase.image.Files() {
-					clone, ok := proto.Clone(file.Proto()).(*descriptorpb.FileDescriptorProto)
+				for j, imageFile := range benchmarkCase.image.Files() {
+					clone, ok := proto.Clone(imageFile.FileDescriptorProto()).(*descriptorpb.FileDescriptorProto)
 					require.True(b, ok)
 					var err error
 					imageFiles[j], err = bufimage.NewImageFile(clone, nil, "", "", false, false, nil)

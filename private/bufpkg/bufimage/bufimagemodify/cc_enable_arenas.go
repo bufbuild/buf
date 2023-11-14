@@ -65,7 +65,7 @@ func ccEnableArenasForFile(
 	imageFile bufimage.ImageFile,
 	value bool,
 ) error {
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	options := descriptor.GetOptions()
 	switch {
 	case isWellKnownType(ctx, imageFile):

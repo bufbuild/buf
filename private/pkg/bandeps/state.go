@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -172,7 +172,7 @@ func (s *state) packagesForPackageExpressionUncached(
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
-	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil
+	return slicesextended.ToMap(getNonEmptyLines(string(data))), nil
 }
 
 func (s *state) depsForPackage(
@@ -234,7 +234,7 @@ func (s *state) depsForPackageUncached(
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
-	return stringutil.SliceToMap(getNonEmptyLines(string(data))), nil
+	return slicesextended.ToMap(getNonEmptyLines(string(data))), nil
 }
 
 type packagesResult struct {

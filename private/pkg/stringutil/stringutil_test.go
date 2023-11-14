@@ -222,19 +222,6 @@ func TestSliceToHumanStringOrQuoted(t *testing.T) {
 	assert.Equal(t, `"a", "b", or "c"`, SliceToHumanStringOrQuoted([]string{"a", "b", "c"}))
 }
 
-func TestSliceToUniqueSortedSlice(t *testing.T) {
-	t.Parallel()
-	assert.Equal(t, []string{}, SliceToUniqueSortedSlice(nil))
-	assert.Equal(t, []string{}, SliceToUniqueSortedSlice([]string{}))
-	assert.Equal(t, []string{"Are", "bats", "cats"}, SliceToUniqueSortedSlice([]string{"bats", "Are", "cats"}))
-	assert.Equal(t, []string{"Are", "are", "bats", "cats"}, SliceToUniqueSortedSlice([]string{"bats", "Are", "cats", "are"}))
-	assert.Equal(t, []string{"Are", "Bats", "bats", "cats"}, SliceToUniqueSortedSlice([]string{"bats", "Are", "cats", "Are", "Bats"}))
-	assert.Equal(t, []string{"", "Are", "Bats", "bats", "cats"}, SliceToUniqueSortedSlice([]string{"bats", "Are", "cats", "", "Are", "Bats", ""}))
-	assert.Equal(t, []string{"", "  ", "Are", "Bats", "bats", "cats"}, SliceToUniqueSortedSlice([]string{"bats", "Are", "cats", "", "Are", "Bats", "", "  "}))
-	assert.Equal(t, []string{""}, SliceToUniqueSortedSlice([]string{"", ""}))
-	assert.Equal(t, []string{""}, SliceToUniqueSortedSlice([]string{""}))
-}
-
 func TestSliceToUniqueSortedSliceFilterEmptyStrings(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, []string{}, SliceToUniqueSortedSliceFilterEmptyStrings(nil))
@@ -245,73 +232,6 @@ func TestSliceToUniqueSortedSliceFilterEmptyStrings(t *testing.T) {
 	assert.Equal(t, []string{"Are", "Bats", "bats", "cats"}, SliceToUniqueSortedSliceFilterEmptyStrings([]string{"bats", "Are", "cats", "", "Are", "Bats", ""}))
 	assert.Equal(t, []string{}, SliceToUniqueSortedSliceFilterEmptyStrings([]string{"", "", "  "}))
 	assert.Equal(t, []string{}, SliceToUniqueSortedSliceFilterEmptyStrings([]string{""}))
-}
-
-func TestSliceElementsContained(t *testing.T) {
-	t.Parallel()
-	assert.True(t, SliceElementsContained(nil, nil))
-	assert.True(t, SliceElementsContained([]string{}, []string{}))
-	assert.True(t, SliceElementsContained(nil, []string{}))
-	assert.True(t, SliceElementsContained([]string{}, nil))
-	assert.True(t, SliceElementsContained([]string{"one"}, []string{"one"}))
-	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"one"}))
-	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"two"}))
-	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"one", "two"}))
-	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"two", "one"}))
-	assert.False(t, SliceElementsContained([]string{"one", "two"}, []string{"three"}))
-	assert.False(t, SliceElementsContained([]string{}, []string{"three"}))
-	assert.False(t, SliceElementsContained([]string{"one"}, []string{"one", "two"}))
-	assert.False(t, SliceElementsContained([]string{"two"}, []string{"one", "two"}))
-}
-
-func TestSliceToChunks(t *testing.T) {
-	t.Parallel()
-	testSliceToChunks(
-		t,
-		[]string{"are"},
-		1,
-		[]string{"are"},
-	)
-	testSliceToChunks(
-		t,
-		[]string{"are", "bats", "cats", "do", "eagle"},
-		1,
-		[]string{"are"},
-		[]string{"bats"},
-		[]string{"cats"},
-		[]string{"do"},
-		[]string{"eagle"},
-	)
-	testSliceToChunks(
-		t,
-		[]string{"are", "bats", "cats", "do", "eagle"},
-		2,
-		[]string{"are", "bats"},
-		[]string{"cats", "do"},
-		[]string{"eagle"},
-	)
-	testSliceToChunks(
-		t,
-		[]string{"are", "bats", "cats", "do", "eagle"},
-		3,
-		[]string{"are", "bats", "cats"},
-		[]string{"do", "eagle"},
-	)
-	testSliceToChunks(
-		t,
-		[]string{"are", "bats", "cats", "do", "eagle"},
-		6,
-		[]string{"are", "bats", "cats", "do", "eagle"},
-	)
-	testSliceToChunks(
-		t,
-		nil,
-		0,
-	)
-}
-
-func testSliceToChunks(t *testing.T, input []string, chunkSize int, expected ...[]string) {
-	assert.Equal(t, expected, SliceToChunks(input, chunkSize))
 }
 
 func TestAlphanumeric(t *testing.T) {

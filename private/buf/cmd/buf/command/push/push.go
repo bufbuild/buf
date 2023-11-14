@@ -22,7 +22,9 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmanifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
+	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -31,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -41,6 +42,7 @@ const (
 	tagFlagName              = "tag"
 	tagFlagShortName         = "t"
 	draftFlagName            = "draft"
+	branchFlagName           = "branch"
 	errorFormatFlagName      = "error-format"
 	disableSymlinksFlagName  = "disable-symlinks"
 	createFlagName           = "create"
@@ -72,6 +74,7 @@ func NewCommand(
 
 type flags struct {
 	Tags             []string
+	Branch           string
 	Draft            string
 	ErrorFormat      string
 	DisableSymlinks  bool
@@ -106,9 +109,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		draftFlagName,
 		"",
 		fmt.Sprintf(
-			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s)",
+			"Make the pushed commit a draft with the specified name. Cannot be used together with --%s (-%s) or --%s",
 			tagFlagName,
 			tagFlagShortName,
+			branchFlagName,
+		),
+	)
+	flagSet.StringVar(
+		&f.Branch,
+		branchFlagName,
+		"",
+		fmt.Sprintf(
+			"Push a commit to a branch with the specified name. Cannot be used together with --%s (-%s) or --%s",
+			tagFlagName,
+			tagFlagShortName,
+			draftFlagName,
 		),
 	)
 	flagSet.StringVar(
@@ -146,8 +161,16 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
+	if flags.Draft != "" && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+	}
 	if len(flags.Tags) > 0 && flags.Draft != "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+	}
+	// For now, we are restricting branch behavior to be exactly the same as drafts, and thus
+	// cannot be used in conjunction with tags.
+	if len(flags.Tags) > 0 && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
 	}
 	if flags.CreateVisibility != "" {
 		if !flags.Create {
@@ -178,6 +201,9 @@ func run(
 		source,
 	)
 	if err != nil {
+		return err
+	}
+	if err := buflock.CheckDeprecatedDigests(ctx, container.Logger(), sourceBucket); err != nil {
 		return err
 	}
 	moduleIdentity := sourceConfig.ModuleIdentity
@@ -249,23 +275,28 @@ func push(
 	flags *flags,
 ) (*registryv1alpha1.LocalModulePin, error) {
 	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
-	m, blobSet, err := manifest.NewFromBucket(ctx, builtModule.Bucket)
+	fileSet, err := bufcas.NewFileSetForBucket(ctx, builtModule.Bucket)
 	if err != nil {
 		return nil, err
 	}
-	bucketManifest, blobs, err := bufmanifest.ToProtoManifestAndBlobs(ctx, m, blobSet)
+	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
 	if err != nil {
 		return nil, err
+	}
+	draftOrBranchName := flags.Draft
+	if draftOrBranchName == "" {
+		// If draft is not set, then we we set the draft name to branch.
+		draftOrBranchName = flags.Branch
 	}
 	resp, err := service.PushManifestAndBlobs(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
 			Owner:      moduleIdentity.Owner(),
 			Repository: moduleIdentity.Repository(),
-			Manifest:   bucketManifest,
-			Blobs:      blobs,
+			Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
+			Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
 			Tags:       flags.Tags,
-			DraftName:  flags.Draft,
+			DraftName:  draftOrBranchName,
 		}),
 	)
 	if err != nil {

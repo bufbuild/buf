@@ -35,8 +35,6 @@ type ParserAccessorHandler interface {
 	//
 	// Returns the input path if the external path is not known.
 	ExternalPath(path string) string
-	// IsImport returns true if the path is an import.
-	IsImport(path string) bool
 	// ModuleIdentity returns nil if not available.
 	ModuleIdentity(path string) bufmoduleref.ModuleIdentity
 	// Commit returns empty if not available.
@@ -98,7 +96,6 @@ func GetFileAnnotation(
 		fileInfo, err = bufmoduleref.NewFileInfo(
 			path,
 			parserAccessorHandler.ExternalPath(path),
-			parserAccessorHandler.IsImport(path),
 			nil,
 			"",
 		)

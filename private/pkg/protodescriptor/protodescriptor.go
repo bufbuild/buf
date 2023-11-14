@@ -42,21 +42,7 @@ type FileDescriptor interface {
 	GetOptions() *descriptorpb.FileOptions
 	GetSourceCodeInfo() *descriptorpb.SourceCodeInfo
 	GetSyntax() string
-	GetEdition() string
-}
-
-// FileDescriptorsForFileDescriptorProtos is a convenience function since Go does not have generics.
-func FileDescriptorsForFileDescriptorProtos(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) []FileDescriptor {
-	fileDescriptors := make([]FileDescriptor, len(fileDescriptorProtos))
-	for i, fileDescriptorProto := range fileDescriptorProtos {
-		fileDescriptors[i] = fileDescriptorProto
-	}
-	return fileDescriptors
-}
-
-// FileDescriptorsForFileDescriptorSet is a convenience function since Go does not have generics.
-func FileDescriptorsForFileDescriptorSet(fileDescriptorSet *descriptorpb.FileDescriptorSet) []FileDescriptor {
-	return FileDescriptorsForFileDescriptorProtos(fileDescriptorSet.File...)
+	GetEdition() descriptorpb.Edition
 }
 
 // FileDescriptorProtoForFileDescriptor creates a new *descriptorpb.FileDescriptorProto for the fileDescriptor.
@@ -93,8 +79,8 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 	if syntax := fileDescriptor.GetSyntax(); syntax != "" {
 		fileDescriptorProto.Syntax = proto.String(syntax)
 	}
-	if edition := fileDescriptor.GetEdition(); edition != "" {
-		fileDescriptorProto.Edition = proto.String(edition)
+	if edition := fileDescriptor.GetEdition(); edition != descriptorpb.Edition_EDITION_UNKNOWN {
+		fileDescriptorProto.Edition = &edition
 	}
 	fileDescriptorProto.ProtoReflect().SetUnknown(fileDescriptor.ProtoReflect().GetUnknown())
 	return fileDescriptorProto
@@ -106,7 +92,12 @@ func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descri
 // object that is a FileDescriptor, and then passed to this function, the return value will not be equal
 // if name, package, or syntax are set but empty. Instead, the return value will have these values unset.
 // For our/most purposes, this is fine.
-func FileDescriptorProtosForFileDescriptors(fileDescriptors ...FileDescriptor) []*descriptorpb.FileDescriptorProto {
+func FileDescriptorProtosForFileDescriptors[F FileDescriptor](fileDescriptors ...F) []*descriptorpb.FileDescriptorProto {
+	fileDescriptorsAny := any(fileDescriptors) // must assign to interface var to do type assertion below
+	if fileDescriptorProtos, ok := fileDescriptorsAny.([]*descriptorpb.FileDescriptorProto); ok {
+		return fileDescriptorProtos
+	}
+
 	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(fileDescriptors))
 	for i, fileDescriptor := range fileDescriptors {
 		fileDescriptorProtos[i] = FileDescriptorProtoForFileDescriptor(fileDescriptor)
@@ -120,7 +111,7 @@ func FileDescriptorProtosForFileDescriptors(fileDescriptors ...FileDescriptor) [
 // object that is a FileDescriptor, and then passed to this function, the return value will not be equal
 // if name, package, or syntax are set but empty. Instead, the return value will have these values unset.
 // For our/most purposes, this is fine.
-func FileDescriptorSetForFileDescriptors(fileDescriptors ...FileDescriptor) *descriptorpb.FileDescriptorSet {
+func FileDescriptorSetForFileDescriptors[F FileDescriptor](fileDescriptors ...F) *descriptorpb.FileDescriptorSet {
 	return &descriptorpb.FileDescriptorSet{
 		File: FileDescriptorProtosForFileDescriptors(fileDescriptors...),
 	}

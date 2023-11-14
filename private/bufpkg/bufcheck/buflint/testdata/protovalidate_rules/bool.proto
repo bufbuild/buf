@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package a;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/wrappers.proto";
+
+message BoolTest {
+  // valid
+  bool no_protovalidate_option = 1;
+  // valid
+  bool other_option = 2 [deprecated = true];
+  // valid
+  bool valid_const = 3 [(buf.validate.field).bool.const = true];
+  // valid
+  google.protobuf.BoolValue valid_wrapper = 7 [(buf.validate.field).bool.const = false];
+  // int32 rules on a BoolValue field
+  google.protobuf.BoolValue mismatch_wrapper = 8 [(buf.validate.field).int32.lt = 1];
+  string string_mismatch = 9 [(buf.validate.field).bool.const = true];
+  google.protobuf.Int32Value wrong_wrapper = 10 [(buf.validate.field).bool.const = true];
+}

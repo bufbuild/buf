@@ -72,24 +72,26 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 		}
 	}
 	return &Config{
-		Name:            pluginIdentity,
-		PluginVersion:   pluginVersion,
-		Dependencies:    dependencies,
-		Registry:        registryConfig,
-		SourceURL:       externalConfig.SourceURL,
-		Description:     externalConfig.Description,
-		OutputLanguages: externalConfig.OutputLanguages,
-		SPDXLicenseID:   spdxLicenseID,
-		LicenseURL:      externalConfig.LicenseURL,
+		Name:                pluginIdentity,
+		PluginVersion:       pluginVersion,
+		Dependencies:        dependencies,
+		Registry:            registryConfig,
+		SourceURL:           externalConfig.SourceURL,
+		Description:         externalConfig.Description,
+		OutputLanguages:     externalConfig.OutputLanguages,
+		SPDXLicenseID:       spdxLicenseID,
+		LicenseURL:          externalConfig.LicenseURL,
+		IntegrationGuideURL: externalConfig.IntegrationGuideURL,
 	}, nil
 }
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty    = externalRegistryConfig.Go == nil
-		isNPMEmpty   = externalRegistryConfig.NPM == nil
-		isMavenEmpty = externalRegistryConfig.Maven == nil
-		isSwiftEmpty = externalRegistryConfig.Swift == nil
+		isGoEmpty     = externalRegistryConfig.Go == nil
+		isNPMEmpty    = externalRegistryConfig.NPM == nil
+		isMavenEmpty  = externalRegistryConfig.Maven == nil
+		isSwiftEmpty  = externalRegistryConfig.Swift == nil
+		isPythonEmpty = externalRegistryConfig.Python == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -97,6 +99,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isNPMEmpty,
 		isMavenEmpty,
 		isSwiftEmpty,
+		isPythonEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -147,6 +150,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Swift:   swiftRegistryConfig,
+			Options: options,
+		}, nil
+	case !isPythonEmpty:
+		pythonRegistryConfig, err := newPythonRegistryConfig(externalRegistryConfig.Python)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Python:  pythonRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -319,6 +331,29 @@ func swiftExternalDependencyToDependencyConfig(externalDep ExternalSwiftRegistry
 			TVOS:    externalDep.Platforms.TVOS,
 			WatchOS: externalDep.Platforms.WatchOS,
 		},
+	}, nil
+}
+
+func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistryConfig) (*PythonRegistryConfig, error) {
+	if externalPythonRegistryConfig == nil {
+		return nil, nil
+	}
+	var dependencySpecifications []string
+	for _, externalDependencySpecification := range externalPythonRegistryConfig.Deps {
+		if externalDependencySpecification == "" {
+			return nil, fmt.Errorf("python registry config cannot have an empty dependency specification")
+		}
+		dependencySpecifications = append(dependencySpecifications, externalDependencySpecification)
+	}
+	switch externalPythonRegistryConfig.PackageType {
+	case "runtime", "stub-only":
+	default:
+		return nil, errors.New(`python registry config package_type must be one of: "runtime" or "stub-only"`)
+	}
+	return &PythonRegistryConfig{
+		Deps:           dependencySpecifications,
+		RequiresPython: externalPythonRegistryConfig.RequiresPython,
+		PackageType:    externalPythonRegistryConfig.PackageType,
 	}, nil
 }
 

@@ -16,16 +16,25 @@ package buflock
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
+
+var deprecatedFormatToPrefix = map[string]string{
+	"b1": "b1-",
+	"b3": "b3-",
+}
 
 func readConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			// If the lock file doesn't exist, just return no dependencies.
 			return &Config{}, nil
 		}
@@ -80,6 +89,43 @@ func writeConfig(ctx context.Context, writeBucket storage.WriteBucket, config *C
 		append([]byte(Header), configBytes...),
 	); err != nil {
 		return fmt.Errorf("failed to write lock file: %w", err)
+	}
+	return nil
+}
+
+func checkDeprecatedDigests(
+	ctx context.Context,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+) error {
+	configBytes, err := storage.ReadPath(ctx, readBucket, ExternalConfigFilePath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return fmt.Errorf("failed to read lock file: %w", err)
+	}
+	var configVersion ExternalConfigVersion
+	if err := encoding.UnmarshalYAMLNonStrict(configBytes, &configVersion); err != nil {
+		return fmt.Errorf("failed to decode lock file as YAML: %w", err)
+	}
+	if configVersion.Version != V1Version {
+		return nil
+	}
+	var externalConfig ExternalConfigV1
+	if err := encoding.UnmarshalYAMLStrict(configBytes, &externalConfig); err != nil {
+		return fmt.Errorf("failed to unmarshal lock file at %s: %w", V1Version, err)
+	}
+	for _, dep := range externalConfig.Deps {
+		for deprecatedFormat, prefix := range deprecatedFormatToPrefix {
+			if strings.HasPrefix(dep.Digest, prefix) {
+				logger.Sugar().Warnf(
+					`found %s digest in buf.yaml, which will no longer be supported in a future version. Run "buf mod update" to update the lock file.`,
+					deprecatedFormat,
+				)
+				return nil
+			}
+		}
 	}
 	return nil
 }

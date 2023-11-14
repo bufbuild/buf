@@ -65,8 +65,9 @@ func TestGetConfigForBucket(t *testing.T) {
 					"separate_package": "true",
 				},
 			},
-			SPDXLicenseID: "Apache-2.0",
-			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			SPDXLicenseID:       "Apache-2.0",
+			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
 		},
 		pluginConfig,
 	)
@@ -105,8 +106,9 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 					"separate_package": "true",
 				},
 			},
-			SPDXLicenseID: "Apache-2.0",
-			LicenseURL:    "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			SPDXLicenseID:       "Apache-2.0",
+			LicenseURL:          "https://github.com/grpc/grpc-go/blob/master/LICENSE",
+			IntegrationGuideURL: "https://grpc.io/docs/languages/go/quickstart",
 		},
 		pluginConfig,
 	)
@@ -290,6 +292,37 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 			},
 			SPDXLicenseID: "Apache-2.0",
 			LicenseURL:    "https://github.com/connectrpc/connect-swift/blob/0.8.0/LICENSE",
+		},
+		pluginConfig,
+	)
+}
+
+func TestParsePluginConfigPythonYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "python", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/nipunn1313-mypy")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v3.5.0",
+			SourceURL:       "https://github.com/nipunn1313/mypy-protobuf",
+			Description:     "Generate mypy stub files from Protobuf definitions.",
+			SPDXLicenseID:   "Apache-2.0",
+			LicenseURL:      "https://github.com/nipunn1313/mypy-protobuf/blob/v3.5.0/LICENSE",
+			OutputLanguages: []string{"python"},
+			Registry: &RegistryConfig{
+				Python: &PythonRegistryConfig{
+					PackageType:    "stub-only",
+					RequiresPython: ">=3.8",
+					Deps: []string{
+						"protobuf>=4.23.4",
+						"types-protobuf>=4.23.0.2",
+					},
+				},
+			},
 		},
 		pluginConfig,
 	)

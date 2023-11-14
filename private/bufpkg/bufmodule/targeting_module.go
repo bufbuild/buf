@@ -18,11 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 type targetingModule struct {
@@ -55,7 +56,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			bufmoduleref.SortFileInfos(fileInfos)
 		}
 	}()
-	excludePathMap := stringutil.SliceToMap(m.excludePaths)
+	excludePathMap := slicesextended.ToMap(m.excludePaths)
 	// We start by ensuring that no paths have been duplicated between target and exclude pathes.
 	for _, targetPath := range m.targetPaths {
 		if _, ok := excludePathMap[targetPath]; ok {
@@ -88,7 +89,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			} else {
 				objectInfo, err := sourceReadBucket.Stat(ctx, targetPath)
 				if err != nil {
-					if !storage.IsNotExist(err) {
+					if !errors.Is(err, fs.ErrNotExist) {
 						return nil, err
 					}
 					// we do not have a file, so even though this path ends
@@ -104,7 +105,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 						fileInfo, err := bufmoduleref.NewFileInfo(
 							objectInfo.Path(),
 							objectInfo.ExternalPath(),
-							false,
 							m.Module.ModuleIdentity(),
 							m.Module.Commit(),
 						)
@@ -150,7 +150,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	}
 	// We have potential directory paths, do the expensive operation to
 	// make a map of the directory paths.
-	potentialDirPathMap := stringutil.SliceToMap(potentialDirPaths)
+	potentialDirPathMap := slicesextended.ToMap(potentialDirPaths)
 	// The map of paths within potentialDirPath that matches a file.
 	// This needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every targetPath input.
@@ -196,7 +196,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 				fileInfo, err := bufmoduleref.NewFileInfo(
 					objectInfo.Path(),
 					objectInfo.ExternalPath(),
-					false,
 					m.Module.ModuleIdentity(),
 					m.Module.Commit(),
 				)

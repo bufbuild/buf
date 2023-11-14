@@ -78,16 +78,20 @@ type Config struct {
 	SPDXLicenseID string
 	// LicenseURL specifies where the plugin's license can be found.
 	LicenseURL string
+	// IntegrationGuideURL is an optional attribute used to specify where
+	// the plugin integration guide can be found.
+	IntegrationGuideURL string
 }
 
 // RegistryConfig is the configuration for the registry of a plugin.
 //
 // Only one field will be set.
 type RegistryConfig struct {
-	Go    *GoRegistryConfig
-	NPM   *NPMRegistryConfig
-	Maven *MavenRegistryConfig
-	Swift *SwiftRegistryConfig
+	Go     *GoRegistryConfig
+	NPM    *NPMRegistryConfig
+	Maven  *MavenRegistryConfig
+	Swift  *SwiftRegistryConfig
+	Python *PythonRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -227,6 +231,16 @@ type SwiftRegistryDependencyPlatformConfig struct {
 	WatchOS string
 }
 
+// PythonRegistryConfig is the registry configuration for a Python plugin.
+type PythonRegistryConfig struct {
+	// Deps are the dependency specifications for the generated SDK.
+	Deps []string
+	// RequiresPython is the `Requires-Python` for the generated SDK.
+	RequiresPython string
+	// PackageType is the package type for the generated SDK.
+	PackageType string
+}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -330,16 +344,17 @@ func OptionsSliceToPluginOptions(options []string) map[string]string {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version         string                 `json:"version,omitempty" yaml:"version,omitempty"`
-	Name            string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	PluginVersion   string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
-	SourceURL       string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
-	Description     string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Deps            []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
-	OutputLanguages []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
-	Registry        ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
-	SPDXLicenseID   string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
-	LicenseURL      string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
+	Version             string                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name                string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion       string                 `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	SourceURL           string                 `json:"source_url,omitempty" yaml:"source_url,omitempty"`
+	Description         string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Deps                []ExternalDependency   `json:"deps,omitempty" yaml:"deps,omitempty"`
+	OutputLanguages     []string               `json:"output_languages,omitempty" yaml:"output_languages,omitempty"`
+	Registry            ExternalRegistryConfig `json:"registry,omitempty" yaml:"registry,omitempty"`
+	SPDXLicenseID       string                 `json:"spdx_license_id,omitempty" yaml:"spdx_license_id,omitempty"`
+	LicenseURL          string                 `json:"license_url,omitempty" yaml:"license_url,omitempty"`
+	IntegrationGuideURL string                 `json:"integration_guide_url,omitempty" yaml:"integration_guide_url,omitempty"`
 }
 
 // ExternalDependency represents a dependency on another plugin.
@@ -351,11 +366,12 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go    *ExternalGoRegistryConfig    `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM   *ExternalNPMRegistryConfig   `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Maven *ExternalMavenRegistryConfig `json:"maven,omitempty" yaml:"maven,omitempty"`
-	Swift *ExternalSwiftRegistryConfig `json:"swift,omitempty" yaml:"swift,omitempty"`
-	Opts  []string                     `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go     *ExternalGoRegistryConfig     `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM    *ExternalNPMRegistryConfig    `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Maven  *ExternalMavenRegistryConfig  `json:"maven,omitempty" yaml:"maven,omitempty"`
+	Swift  *ExternalSwiftRegistryConfig  `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
+	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -461,6 +477,16 @@ type ExternalSwiftRegistryDependencyPlatformConfig struct {
 	TVOS string `json:"tvos,omitempty" yaml:"tvos,omitempty"`
 	// WatchOS specifies the version of the watchOS platform.
 	WatchOS string `json:"watchos,omitempty" yaml:"watchos,omitempty"`
+}
+
+type ExternalPythonRegistryConfig struct {
+	// Deps are dependency specifications for the generated SDK.
+	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
+	// RequiresPython specifies the `Requires-Python` of the generated metadata file.
+	RequiresPython string `json:"requires_python,omitempty" yaml:"requires_python,omitempty"`
+	// PackageType is the type of package generated.
+	// Must be one of "runtime" or "stub-only".
+	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
 }
 
 type externalConfigVersion struct {

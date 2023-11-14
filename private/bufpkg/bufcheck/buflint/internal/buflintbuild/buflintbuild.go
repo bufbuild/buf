@@ -247,6 +247,12 @@ var (
 		`the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1`,
 		newAdapter(buflintcheck.CheckPackageVersionSuffix),
 	)
+	// ProtovalidateRuleBuilder is a rule builder.
+	ProtovalidateRuleBuilder = internal.NewNopRuleBuilder(
+		"PROTOVALIDATE",
+		"protovalidate rules are valid and all CEL expressions compile",
+		newAdapter(buflintcheck.CheckProtovalidate),
+	)
 	// RPCNoClientStreamingRuleBuilder is a rule builder.
 	RPCNoClientStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_NO_CLIENT_STREAMING",

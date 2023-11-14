@@ -468,8 +468,8 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			// not reported for imports, only for non-imports.
 			var newImageFiles []bufimage.ImageFile
 			for _, imageFile := range image.Files() {
-				if imageFile.FileDescriptor().GetPackage() == "b" {
-					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+				if imageFile.FileDescriptorProto().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, bufimage.ImageFileWithIsImport(imageFile, true))
 				} else {
 					require.False(t, imageFile.IsImport())
 					newImageFiles = append(newImageFiles, imageFile)
@@ -479,6 +479,7 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			require.NoError(t, err)
 			return newImage
 		},
+		"",
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -552,6 +553,134 @@ func TestRunPackageVersionSuffix(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "foo_bar_v2beta0.proto", 3, 1, 3, 25, "PACKAGE_VERSION_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "foo_bar_vv1beta1.proto", 3, 1, 3, 26, "PACKAGE_VERSION_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "v1.proto", 3, 1, 3, 12, "PACKAGE_VERSION_SUFFIX"),
+	)
+}
+
+func TestRunProtovalidateRules(t *testing.T) {
+	t.Parallel()
+	testLintWithValidate(
+		t,
+		"protovalidate_rules",
+		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 18, 51, 18, 84, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 19, 31, 19, 69, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 20, 50, 20, 88, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 21, 5, 21, 48, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 26, 5, 26, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "bytes.proto", 31, 5, 31, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 10, 37, 14, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 17, 5, 21, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 29, 5, 33, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 35, 39, 39, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 60, 3, 64, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 76, 5, 80, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 88, 5, 92, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 106, 5, 110, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_field.proto", 116, 5, 120, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 22, 3, 26, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 28, 3, 32, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 34, 3, 38, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 40, 3, 44, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 46, 3, 50, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 52, 3, 56, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 58, 3, 62, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 58, 3, 62, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 64, 3, 68, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 70, 3, 74, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 76, 3, 80, 5, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "cel_message.proto", 82, 5, 86, 7, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 57, 5, 60, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 61, 5, 64, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 68, 5, 71, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 72, 5, 75, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 79, 5, 82, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 83, 5, 86, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 90, 5, 93, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 94, 5, 97, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 105, 5, 108, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 122, 5, 125, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "duration.proto", 127, 5, 130, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "enum.proto", 28, 5, 28, 40, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 25, 7, 25, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 30, 7, 30, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 40, 5, 40, 41, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "extension.proto", 45, 5, 45, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "field.proto", 18, 5, 18, 41, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "field.proto", 19, 5, 19, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 24, 38, 24, 76, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 27, 5, 27, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 29, 5, 29, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 34, 5, 34, 53, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 39, 5, 39, 55, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 44, 5, 44, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 46, 5, 46, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 50, 5, 50, 57, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 25, 5, 25, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 28, 5, 28, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 32, 5, 32, 42, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 35, 5, 35, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 39, 5, 39, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 42, 5, 42, 42, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 45, 48, 48, 4, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 56, 5, 56, 39, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 65, 5, 65, 41, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 74, 5, 74, 40, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 83, 5, 83, 41, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 92, 5, 92, 39, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 101, 5, 101, 38, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 134, 5, 134, 56, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 139, 5, 139, 50, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "number.proto", 142, 5, 142, 52, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "oneof.proto", 13, 7, 13, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "oneof.proto", 19, 7, 19, 43, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 25, 5, 25, 48, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 27, 5, 27, 48, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 45, 5, 45, 48, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 49, 28, 49, 71, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 51, 38, 51, 92, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 31, 5, 31, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 36, 5, 36, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 41, 5, 41, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 45, 5, 45, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 47, 5, 47, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 51, 5, 51, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 53, 5, 53, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 58, 5, 58, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 63, 5, 63, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 67, 5, 67, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 69, 5, 69, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 73, 5, 73, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 75, 5, 75, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 79, 5, 79, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 81, 5, 81, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 85, 5, 85, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 87, 5, 87, 44, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 92, 5, 92, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 97, 5, 97, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 102, 5, 102, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 107, 5, 107, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 112, 5, 112, 49, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 117, 5, 117, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 122, 5, 122, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 130, 5, 130, 46, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 133, 5, 133, 45, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "string.proto", 142, 5, 142, 47, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 57, 5, 60, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 61, 5, 64, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 68, 5, 71, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 72, 5, 75, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 79, 5, 82, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 83, 5, 86, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 90, 5, 93, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 94, 5, 97, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 105, 5, 108, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 124, 5, 127, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 129, 5, 132, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 142, 5, 145, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 150, 5, 153, 6, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 157, 5, 160, 6, "PROTOVALIDATE"),
 	)
 }
 
@@ -896,6 +1025,7 @@ func TestCommentIgnoresOn(t *testing.T) {
 			config.Lint.AllowCommentIgnores = true
 		},
 		nil,
+		"",
 	)
 }
 
@@ -949,6 +1079,7 @@ func TestCommentIgnoresCascadeOn(t *testing.T) {
 			config.Lint.AllowCommentIgnores = true
 		},
 		nil,
+		"",
 	)
 }
 
@@ -962,6 +1093,24 @@ func testLint(
 		relDirPath,
 		nil,
 		nil,
+		"",
+		expectedFileAnnotations...,
+	)
+}
+
+func testLintWithValidate(
+	t *testing.T,
+	relDirPath string,
+	expectedFileAnnotations ...bufanalysis.FileAnnotation,
+) {
+	testLintWithModifiers(
+		t,
+		relDirPath,
+		func(config *bufconfig.Config) {
+			config.Lint.IgnoreRootPaths = []string{"buf/validate"}
+		},
+		nil,
+		"deps/protovalidate",
 		expectedFileAnnotations...,
 	)
 }
@@ -971,6 +1120,7 @@ func testLintWithModifiers(
 	relDirPath string,
 	configModifier func(*bufconfig.Config),
 	imageModifier func(bufimage.Image) bufimage.Image,
+	dependencyPathPrefix string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -991,12 +1141,28 @@ func testLintWithModifiers(
 		configModifier(config)
 	}
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
+	var module *bufmodulebuild.BuiltModule
+	if dependencyPathPrefix != "" {
+		dependencyReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			filepath.Join("testdata", dependencyPathPrefix),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		require.NoError(t, err)
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			storage.MultiReadBucket(dependencyReadWriteBucket, readWriteBucket),
+			config.Build,
+		)
+		require.NoError(t, err)
+	} else {
+		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+			context.Background(),
+			readWriteBucket,
+			config.Build,
+		)
+		require.NoError(t, err)
+	}
+
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(
 		zap.NewNop(),
 		bufmodule.NewNopModuleReader(),

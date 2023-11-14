@@ -23,8 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -45,7 +44,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludeFileOrDirPaths); err != nil {
 		return nil, err
 	}
-	excludeFileOrDirPathMap := stringutil.SliceToMap(excludeFileOrDirPaths)
+	excludeFileOrDirPathMap := slicesextended.ToMap(excludeFileOrDirPaths)
 	// These are the files that fileOrDirPaths actually reference and will
 	// result in the non-imports in our resulting Image. The Image will also include
 	// the ImageFiles that the nonImportImageFiles import
@@ -133,7 +132,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	// make a map of the directory paths
 	// note that we do not make this a map to begin with as maps are unordered,
 	// and we want to make sure we iterate over the paths in a deterministic order
-	potentialDirPathMap := stringutil.SliceToMap(potentialDirPaths)
+	potentialDirPathMap := slicesextended.ToMap(potentialDirPaths)
 
 	// map of all paths based on the imageFiles
 	// the map of paths within potentialDirPath that matches a file in image.Files()
@@ -253,7 +252,7 @@ func addFileWithImports(
 	seenPaths[path] = struct{}{}
 
 	// then, add imports first, for proper ordering
-	for _, importPath := range imageFile.FileDescriptor().GetDependency() {
+	for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
 		if importFile := image.GetFile(importPath); importFile != nil {
 			accumulator = addFileWithImports(
 				accumulator,
@@ -270,7 +269,7 @@ func addFileWithImports(
 	_, isNotImport := nonImportPaths[path]
 	accumulator = append(
 		accumulator,
-		imageFile.ImageFileWithIsImport(!isNotImport),
+		ImageFileWithIsImport(imageFile, !isNotImport),
 	)
 	return accumulator
 }
@@ -292,33 +291,17 @@ func checkExcludePathsExistInImage(image Image, excludeFileOrDirPaths []string) 
 	return nil
 }
 
-func protoImageFilesToFileDescriptors(protoImageFiles []*imagev1.ImageFile) []protodescriptor.FileDescriptor {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, len(protoImageFiles))
-	for i, protoImageFile := range protoImageFiles {
-		fileDescriptors[i] = protoImageFile
-	}
-	return fileDescriptors
-}
-
-func imageFilesToFileDescriptors(imageFiles []ImageFile) []protodescriptor.FileDescriptor {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		fileDescriptors[i] = imageFile.FileDescriptor()
-	}
-	return fileDescriptors
-}
-
 func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.FileDescriptorProto {
 	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(imageFiles))
 	for i, imageFile := range imageFiles {
-		fileDescriptorProtos[i] = imageFile.Proto()
+		fileDescriptorProtos[i] = imageFile.FileDescriptorProto()
 	}
 	return fileDescriptorProtos
 }
 
 func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
 	return fileDescriptorProtoToProtoImageFile(
-		imageFile.Proto(),
+		imageFile.FileDescriptorProto(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
@@ -441,7 +424,7 @@ func imageToCodeGeneratorRequest(
 		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
-		request.ProtoFile[i] = imageFile.Proto()
+		request.ProtoFile[i] = imageFile.FileDescriptorProto()
 		if isFileToGenerate(
 			imageFile,
 			alreadyUsedPaths,

@@ -105,6 +105,9 @@ func testBuildWorkspace(ctx context.Context, workspacePath string) (bufmodule.Wo
 			bufmodulebuild.WithModuleIdentity(
 				moduleConfig.ModuleIdentity,
 			),
+			bufmodulebuild.WithWorkspaceDirectory(
+				directory,
+			),
 		)
 		if err != nil {
 			return nil, err

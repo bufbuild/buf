@@ -66,7 +66,7 @@ func phpMetadataNamespaceForFile(
 	imageFile bufimage.ImageFile,
 	phpMetadataNamespaceValue string,
 ) error {
-	descriptor := imageFile.Proto()
+	descriptor := imageFile.FileDescriptorProto()
 	if isWellKnownType(ctx, imageFile) || phpMetadataNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty php_metadata_namespace
 		// value, so this is a no-op.

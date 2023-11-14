@@ -24,10 +24,12 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintvalidate"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
@@ -115,13 +117,13 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []protosource.
 		if _, ok := pkgMap[""]; ok {
 			delete(pkgMap, "")
 			if len(pkgMap) > 1 {
-				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
 			} else {
 				// Join works with only one element as well by adding no comma
-				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
 			}
 		} else {
-			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range files {
 			add(file, file.PackageLocation(), nil, "%s detected within directory %q.", messagePrefix, dirPath)
@@ -266,7 +268,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
-	message := field.Message()
+	message := field.ParentMessage()
 	if message == nil {
 		// just a sanity check
 		return errors.New("field.Message() was nil")
@@ -284,7 +286,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
@@ -306,7 +308,7 @@ func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
 			[]protosource.Location{
-				field.Message().Location(),
+				field.ParentMessage().Location(),
 			},
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
@@ -524,7 +526,7 @@ func checkPackageSameDirectory(add addFunc, pkg string, files []protosource.File
 		dirMap[normalpath.Dir(file.Path())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
-		dirs := stringutil.MapToSortedSlice(dirMap)
+		dirs := slicesextended.MapToSortedSlice(dirMap)
 		for _, file := range files {
 			add(file, file.PackageLocation(), nil, "Multiple directories %q contain files with package %q.", strings.Join(dirs, ","), pkg)
 		}
@@ -601,7 +603,7 @@ func checkPackageSameOptionValue(
 	if len(optionValueMap) > 1 {
 		_, noOptionValue := optionValueMap[""]
 		delete(optionValueMap, "")
-		optionValues := stringutil.MapToSortedSlice(optionValueMap)
+		optionValues := slicesextended.MapToSortedSlice(optionValueMap)
 		for _, file := range files {
 			if noOptionValue {
 				add(file, getOptionLocation(file), nil, "Files in package %q have both values %q and no value for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
@@ -625,6 +627,13 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 		add(file, file.PackageLocation(), nil, `Package name %q should be suffixed with a correctly formed version, such as %q.`, pkg, pkg+".v1")
 	}
 	return nil
+}
+
+// CheckProtovalidate is a check function.
+var CheckProtovalidate = newFilesWithImportsCheckFunc(checkProtovalidate)
+
+func checkProtovalidate(add addFunc, files []protosource.File) error {
+	return buflintvalidate.Check(add, files)
 }
 
 // CheckRPCNoClientStreaming is a check function.

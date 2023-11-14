@@ -2,9 +2,34 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.28.0] - 2023-11-10
+
+- Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
+  will now verify that your protovalidate rules are valid. A single rule `PROTOVALIDATE` has been
+  added to the `DEFAULT` group - given that protovalidate is net new, this does not represent
+  a breaking change.
 - Update `buf beta price` with the latest pricing information.
+- Display a warning when reading a `buf.lock` with dependencies with b1 or b3 digests. b1 and b3
+  digests will be deprecated in a future version. Run `buf mod update` to update dependency digests.
+
+## [v1.27.2] - 2023-10-27
+
+- Fix issue where `buf build` and other commands may fail when handling certain
+  archives created on macOS that contain files with extended attributes.
+
+## [v1.27.1] - 2023-10-16
+
+- Fix issue in v1.27.0 where `--path` did not work with workspaces under certain scenarios.
+
+## [v1.27.0] - 2023-10-04
+
 - Fix issue where `buf generate --exclude-path` was not properly excluding paths
   for remote modules.
+- Fix issue where `buf curl` had a user agent that did not properly place the
+  extension as a suffix.
+- Update `buf beta price` with the latest pricing information.
 
 ## [v1.26.1] - 2023-08-09
 
@@ -954,7 +979,11 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.26.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.0...HEAD
+[v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
+[v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
+[v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
+[v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0
 [v1.26.1]: https://github.com/bufbuild/buf/compare/v1.26.0...v1.26.1
 [v1.26.0]: https://github.com/bufbuild/buf/compare/v1.25.1...v1.26.0
 [v1.25.1]: https://github.com/bufbuild/buf/compare/v1.25.0...v1.25.1

@@ -18,12 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/manifest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
@@ -51,8 +52,6 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
-	// IsImport returns true if this file is an import.
-	IsImport() bool
 	// ModuleIdentity is the module that this file came from.
 	//
 	// Note this *can* be nil if we did not build from a named module.
@@ -65,8 +64,6 @@ type FileInfo interface {
 	// even if ModuleIdentity is set, that is commit is optional information
 	// even if we know what module this file came from.
 	Commit() string
-	// FileInfoWithIsImport returns this FileInfo with the given IsImport value.
-	FileInfoWithIsImport(isImport bool) FileInfo
 
 	isFileInfo()
 }
@@ -78,14 +75,12 @@ type FileInfo interface {
 func NewFileInfo(
 	path string,
 	externalPath string,
-	isImport bool,
 	moduleIdentity ModuleIdentity,
 	commit string,
 ) (FileInfo, error) {
 	return newFileInfo(
 		path,
 		externalPath,
-		isImport,
 		moduleIdentity,
 		commit,
 	)
@@ -374,7 +369,7 @@ func ValidateModulePinsConsistentDigests(
 ) error {
 	currentConfig, err := buflock.ReadConfig(ctx, bucket)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return err
@@ -390,7 +385,7 @@ func ValidateModulePinsConsistentDigests(
 		}
 		// Ignore dependencies with an invalid digest.
 		// We want to replace these with a valid digest.
-		if _, err := manifest.NewDigestFromString(dep.Digest); err != nil {
+		if _, err := bufcas.ParseDigest(dep.Digest); err != nil {
 			continue
 		}
 		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)

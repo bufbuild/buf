@@ -16,6 +16,8 @@ package bufmodulebuild
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
@@ -141,6 +143,9 @@ func (b *moduleBucketBuilder) buildForBucket(
 		bufmodule.ModuleWithModuleIdentity(
 			buildOptions.moduleIdentity, // This may be nil
 		),
+		bufmodule.ModuleWithWorkspaceDirectory(
+			buildOptions.workspaceDirectory,
+		),
 	)
 	if err != nil {
 		return nil, err
@@ -170,7 +175,7 @@ func getFileReadBucket(
 ) (storage.ReadBucket, error) {
 	fileData, err := storage.ReadPath(ctx, readBucket, filePath)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, err

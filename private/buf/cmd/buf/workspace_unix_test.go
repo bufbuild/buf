@@ -32,7 +32,7 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		``,
-		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:c.proto: does not exist`),
+		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:read c.proto: file does not exist`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "symlink"),
 	)
@@ -85,5 +85,60 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		`Failure: directory "/home/buf" listed in testdata/workspace/fail/absolute/buf.work.yaml is invalid: /home/buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute"),
+	)
+}
+
+// TODO: Move this back to workspace_test.go. after resolving the issue where git
+// clone failed with "unable to create file filename too long" on Windows CI.
+// Workflow run: https://github.com/bufbuild/buf/actions/runs/6510804063/job/17685247791.
+// Potential fix: https://stackoverflow.com/questions/22575662/filename-too-long-in-git-for-windows.
+func TestWorkspaceGit(t *testing.T) {
+	// Directory paths specified as a git reference within a workspace.
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+		"--path",
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto`),
+		"ls-files",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
+		"lint",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
+		"lint",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
+		"--path",
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
 }

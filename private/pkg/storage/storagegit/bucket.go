@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -53,7 +54,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
 		if errors.Is(err, git.ErrTreeNodeNotFound) {
-			return nil, storage.NewErrNotExist(path)
+			return nil, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 		}, nil
 	case git.ModeSymlink:
 		if !b.symlinks {
-			return nil, storage.NewErrNotExist(path)
+			return nil, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 		}
 		// Symlinks are stored as blobs that reference the target path as a relative
 		// path. We can follow this symlink trivially.
@@ -88,7 +89,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 		}
 		return b.Get(ctx, path)
 	default:
-		return nil, storage.NewErrNotExist(path)
+		return nil, &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 	}
 }
 
@@ -96,7 +97,7 @@ func (b *bucket) Stat(_ context.Context, path string) (storage.ObjectInfo, error
 	node, err := b.root.Descendant(path, b.objectReader)
 	if err != nil {
 		if errors.Is(err, git.ErrTreeNodeNotFound) {
-			return nil, storage.NewErrNotExist(path)
+			return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
@@ -105,11 +106,11 @@ func (b *bucket) Stat(_ context.Context, path string) (storage.ObjectInfo, error
 		return b.newObjectInfo(path), nil
 	case git.ModeSymlink:
 		if !b.symlinks {
-			return nil, storage.NewErrNotExist(path)
+			return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 		}
 		return b.newObjectInfo(path), nil
 	default:
-		return nil, storage.NewErrNotExist(path)
+		return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
 	}
 }
 
@@ -137,7 +138,7 @@ func (b *bucket) walk(
 		node, err := parent.Descendant(prefix, b.objectReader)
 		if err != nil {
 			if errors.Is(err, git.ErrTreeNodeNotFound) {
-				return storage.NewErrNotExist(prefix)
+				return &fs.PathError{Op: "stat", Path: prefix, Err: fs.ErrNotExist}
 			}
 			return err
 		}

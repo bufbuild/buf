@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 const (
@@ -57,6 +58,16 @@ func ReadConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, er
 // WriteConfig writes the lock file to the WriteBucket at ExternalConfigFilePath.
 func WriteConfig(ctx context.Context, writeBucket storage.WriteBucket, config *Config) error {
 	return writeConfig(ctx, writeBucket, config)
+}
+
+// CheckDeprecatedDigests prints a warning if a lock file exists at ExternalConfigFilePath
+// and has deprecated digest formats.
+func CheckDeprecatedDigests(
+	ctx context.Context,
+	logger *zap.Logger,
+	readBucket storage.ReadBucket,
+) error {
+	return checkDeprecatedDigests(ctx, logger, readBucket)
 }
 
 // ExternalConfigV1 represents the v1 lock file.

@@ -232,8 +232,8 @@ func NewRootCommand(name string) *appcmd.Command {
 						},
 					},
 					{
-						Use:   "package",
-						Short: "Manage remote packages",
+						Use:   "sdk",
+						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
 							goversion.NewCommand("go-version", builder),
 							mavenversion.NewCommand("maven-version", builder),

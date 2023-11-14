@@ -29,7 +29,7 @@ func TestLicenseSymlink(t *testing.T) {
 		t,
 		"testdata/6",
 		"Test Module License", // expecting the same license with testdata/5 as it symlink to the license there
-		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/6/proto/1.proto", false, nil, ""),
-		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/6/proto/a/2.proto", false, nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/1.proto", "testdata/6/proto/1.proto", nil, ""),
+		bufmoduletesting.NewFileInfo(t, "proto/a/2.proto", "testdata/6/proto/a/2.proto", nil, ""),
 	)
 }

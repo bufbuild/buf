@@ -18,19 +18,17 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/manifest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewModulePin(t *testing.T) {
 	t.Parallel()
-	digester, err := manifest.NewDigester(manifest.DigestTypeShake256)
-	require.NoError(t, err)
-	nullDigest, err := digester.Digest(&bytes.Buffer{})
+	nilDigest, err := bufcas.NewDigestForContent(bytes.NewBuffer(nil))
 	require.NoError(t, err)
 	testNewModulePin(t, "no digest", "", true)
-	testNewModulePin(t, "nominal digest", nullDigest.String(), false)
+	testNewModulePin(t, "nominal digest", nilDigest.String(), false)
 }
 
 func testNewModulePin(
