@@ -206,13 +206,13 @@ func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string
 			return nil
 		},
 		ForEachBranchWithRemote(config.remote),
-	); err != nil {
-		if errors.Is(err, foundBranchStopErr) {
-			return currentBranch, nil
-		}
+	); err != nil && !errors.Is(err, foundBranchStopErr) {
 		return "", fmt.Errorf("for each branch: %w", err)
 	}
-	return "", errors.New("git HEAD is detached, no matches with any branch")
+	if currentBranch == "" {
+		return "", errors.New("git HEAD is detached, no matches with any branch")
+	}
+	return currentBranch, nil
 }
 
 func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommitOption) error {
