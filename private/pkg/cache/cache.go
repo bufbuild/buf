@@ -37,6 +37,8 @@ type Cache[K comparable, V any] struct {
 // NewCache returns a new cache with the given uncached get function.
 //
 // This constructor must be used to construct Caches.
+//
+// If getFuncs call other getFuncs for other Caches, lock ordering must be preserved.
 func NewCache[K comparable, V any](getFunc func(context.Context, K) (V, error)) *Cache[K, V] {
 	return &Cache[K, V]{
 		getFunc: getFunc,
