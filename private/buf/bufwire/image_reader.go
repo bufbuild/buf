@@ -179,11 +179,7 @@ func (i *imageReader) bootstrapResolver(
 	}
 	span.End()
 	_, newResolverSpan := i.tracer.Start(ctx, "new_resolver")
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ProtoImageToFileDescriptors(
-			firstProtoImage,
-		)...,
-	)
+	resolver, err := protoencoding.NewResolver(firstProtoImage.File...)
 	if err != nil {
 		newResolverSpan.RecordError(err)
 		newResolverSpan.SetStatus(codes.Error, err.Error())

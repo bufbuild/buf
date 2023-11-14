@@ -35,7 +35,7 @@ type Resolver interface {
 // If the input slice is empty, this returns nil
 // The given FileDescriptors must be self-contained, that is they must contain all imports.
 // This can NOT be guaranteed for FileDescriptorSets given over the wire, and can only be guaranteed from builds.
-func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+func NewResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	return newResolver(fileDescriptors...)
 }
 
@@ -44,7 +44,7 @@ func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, e
 //
 // If there is an error when constructing the resolver, it will be returned by all
 // method calls of the returned resolver.
-func NewLazyResolver(fileDescriptors ...protodescriptor.FileDescriptor) Resolver {
+func NewLazyResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) Resolver {
 	return &lazyResolver{fn: func() (Resolver, error) {
 		return newResolver(fileDescriptors...)
 	}}
@@ -117,8 +117,18 @@ func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 // NewJSONUnmarshaler returns a new Unmarshaler for json.
 //
 // resolver can be nil if unknown and are only needed for extensions.
-func NewJSONUnmarshaler(resolver Resolver) Unmarshaler {
-	return newJSONUnmarshaler(resolver)
+func NewJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
+	return newJSONUnmarshaler(resolver, options...)
+}
+
+// JSONUnmarshalerOption is an option for a new JSONUnmarshaler.
+type JSONUnmarshalerOption func(*jsonUnmarshaler)
+
+// JSONUnmarshalerWithDisallowUnknown says to disallow unrecognized fields.
+func JSONUnmarshalerWithDisallowUnknown() JSONUnmarshalerOption {
+	return func(jsonUnmarshaler *jsonUnmarshaler) {
+		jsonUnmarshaler.disallowUnknown = true
+	}
 }
 
 // NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.

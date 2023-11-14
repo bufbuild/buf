@@ -109,9 +109,7 @@ func (i *imageWriter) imageMarshal(
 	case buffetch.ImageEncodingJSON:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
-			bufimage.ImageToFileDescriptors(
-				image,
-			)...,
+			bufimage.ImageToFileDescriptorProtos(image)...,
 		)
 		if err != nil {
 			return nil, err
@@ -120,9 +118,7 @@ func (i *imageWriter) imageMarshal(
 	case buffetch.ImageEncodingTxtpb:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
-			bufimage.ImageToFileDescriptors(
-				image,
-			)...,
+			bufimage.ImageToFileDescriptorProtos(image)...,
 		)
 		if err != nil {
 			return nil, err

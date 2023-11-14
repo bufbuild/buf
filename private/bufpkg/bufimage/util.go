@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
@@ -290,22 +289,6 @@ func checkExcludePathsExistInImage(image Image, excludeFileOrDirPaths []string) 
 		}
 	}
 	return nil
-}
-
-func protoImageFilesToFileDescriptors(protoImageFiles []*imagev1.ImageFile) []protodescriptor.FileDescriptor {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, len(protoImageFiles))
-	for i, protoImageFile := range protoImageFiles {
-		fileDescriptors[i] = protoImageFile
-	}
-	return fileDescriptors
-}
-
-func imageFilesToFileDescriptors(imageFiles []ImageFile) []protodescriptor.FileDescriptor {
-	fileDescriptors := make([]protodescriptor.FileDescriptor, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		fileDescriptors[i] = imageFile.FileDescriptorProto()
-	}
-	return fileDescriptors
 }
 
 func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.FileDescriptorProto {

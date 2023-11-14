@@ -1,8 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-# Need to pin until https://github.com/google/cel-go/pull/724 is resolved
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/google/cel-go@v0.18.1 \
-	github.com/antlr/antlr4/runtime/Go/antlr/v4@v4.0.0-20230512164433-5d1fd1a340c9 \
 	github.com/bufbuild/protocompile@146b831231f7f7c1a19b09065875b9778d3d5d25
 GO_BINS := $(GO_BINS) \
 	cmd/buf \

@@ -184,7 +184,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		branchesToSync = slicesextended.MapToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
-		currentBranch, err := s.repo.CurrentBranch(ctx)
+		currentBranch, err := s.repo.CheckedOutBranch()
 		if err != nil {
 			return fmt.Errorf("determine checked out branch")
 		}
@@ -413,7 +413,6 @@ func (s *syncer) branchSyncableCommits(
 		zap.String("expected sync point", expectedSyncPoint),
 	)
 	var commitsForSync []*syncableCommit
-	stopLoopErr := errors.New("stop loop")
 	eachCommitFunc := func(commit git.Commit) error {
 		commitHash := commit.Hash().Hex()
 		logger := logger.With(zap.String("commit", commitHash))
@@ -449,7 +448,7 @@ func (s *syncer) branchSyncableCommits(
 				// we reached the expected sync point for this branch, it's ok to stop
 				logger.Debug("expected sync point reached, stop looking back in branch")
 			}
-			return stopLoopErr
+			return git.ErrStopForEach
 		}
 		// git commit is not synced, attempt to read the module in the commit:moduleDir
 		builtModule, err := s.readModuleAt(ctx, commit, moduleDir)
@@ -482,7 +481,7 @@ func (s *syncer) branchSyncableCommits(
 			branch,
 			git.ForEachCommitWithBranchStartPointWithRemote(s.gitRemoteName),
 		),
-	); err != nil && !errors.Is(err, stopLoopErr) {
+	); err != nil {
 		return nil, err
 	}
 	// if we have no commits to sync we can bail early
@@ -572,7 +571,6 @@ func (s *syncer) backfillTags(
 	var (
 		lookbackCommitsCount int
 		timeLimit            = s.clock.Now().Add(-LookbackTimeLimit)
-		stopLoopErr          = errors.New("stop loop")
 		logger               = s.logger.With(
 			zap.String("branch", branch),
 			zap.String("module directory", moduleDir),
@@ -586,7 +584,7 @@ func (s *syncer) backfillTags(
 		// timespan) need to be met.
 		if lookbackCommitsCount > LookbackCommitsLimit &&
 			oldCommit.Committer().Timestamp().Before(timeLimit) {
-			return stopLoopErr
+			return git.ErrStopForEach
 		}
 		// Is there any tag in this commit to backfill?
 		tagsToBackfill := s.commitsToTags[oldCommit.Hash().Hex()]
@@ -627,7 +625,7 @@ func (s *syncer) backfillTags(
 	if err := s.repo.ForEachCommit(
 		forEachOldCommitFunc,
 		git.ForEachCommitWithHashStartPoint(syncStartHash.Hex()),
-	); err != nil && !errors.Is(err, stopLoopErr) {
+	); err != nil {
 		return fmt.Errorf("looking back past the start sync point: %w", err)
 	}
 	return nil

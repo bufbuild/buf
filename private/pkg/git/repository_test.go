@@ -247,7 +247,7 @@ func TestForEachBranch(t *testing.T) {
 				t.Parallel()
 				repo := gittest.ScaffoldGitRepository(t)
 				writeModuleWithSampleCommits(t, context.Background(), repo)
-				currentBranch, err := repo.CurrentBranch(context.Background())
+				currentBranch, err := repo.CheckedOutBranch()
 				require.NoError(t, err)
 				assert.Equal(t, gittest.DefaultBranch, currentBranch)
 				branches := make(map[string]struct{})
@@ -305,7 +305,7 @@ func TestForEachBranch(t *testing.T) {
 //	│   └── buf.yaml
 //	└── randomBinary (+x)
 func writeModuleWithSampleCommits(t *testing.T, ctx context.Context, repo gittest.Repository) {
-	currentBranch, err := repo.CurrentBranch(ctx)
+	currentBranch, err := repo.CheckedOutBranch()
 	require.NoError(t, err)
 
 	// (1) commit in main branch
