@@ -469,6 +469,12 @@ func (s *syncer) branchSyncableCommits(
 				return nil
 			}
 		}
+		if builtModule.ModuleIdentity().IdentityString() != targetModuleIdentity {
+			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
+				logger.Debug("module name doesn't match HEAD, no override, skipping commit")
+				return nil
+			}
+		}
 		commitsForSync = append(commitsForSync, &syncableCommit{
 			commit: commit,
 			module: builtModule,
