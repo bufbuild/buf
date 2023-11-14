@@ -15,7 +15,6 @@
 package gittest
 
 import (
-	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -44,8 +43,8 @@ func newRepository(
 func (r *repository) Close() error {
 	return r.inner.Close()
 }
-func (r *repository) CurrentBranch(ctx context.Context) (string, error) {
-	return r.inner.CurrentBranch(ctx)
+func (r *repository) CheckedOutBranch(options ...git.CheckedOutBranchOption) (string, error) {
+	return r.inner.CheckedOutBranch(options...)
 }
 func (r *repository) DefaultBranch() string {
 	return r.inner.DefaultBranch()
@@ -95,7 +94,7 @@ func (r *repository) Tag(t *testing.T, name string, msg string) {
 	}
 }
 func (r *repository) Push(t *testing.T) {
-	currentBranch, err := r.CurrentBranch(context.Background())
+	currentBranch, err := r.CheckedOutBranch()
 	require.NoError(t, err)
 	runInDir(t, r.runner, r.repoDir, "git", "push", "--follow-tags", "origin", currentBranch)
 }

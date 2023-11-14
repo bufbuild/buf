@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -128,11 +127,11 @@ func (b *builder) run(
 	}
 
 	if b.tracing {
-		closer := observabilityzap.Start(logger)
+		tracerProvider, closer := observabilityzap.Start(logger)
 		defer func() {
 			retErr = multierr.Append(retErr, closer.Close())
 		}()
-		_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "command")
+		_, span := tracerProvider.Tracer("bufbuild/buf").Start(ctx, "command")
 		defer span.End()
 	}
 	if !b.profile {

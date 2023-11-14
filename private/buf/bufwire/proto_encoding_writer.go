@@ -52,9 +52,7 @@ func (p *protoEncodingWriter) PutMessage(
 ) (retErr error) {
 	// Currently, this support binpb and JSON format.
 	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptors(
-			image,
-		)...,
+		bufimage.ImageToFileDescriptorProtos(image)...,
 	)
 	if err != nil {
 		return err

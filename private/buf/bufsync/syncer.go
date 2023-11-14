@@ -71,10 +71,6 @@ type syncer struct {
 	// cache "unsynced" git commits, because during the sync process we will be syncing new git
 	// commits, which then will be added also to this cache. (moduleIdentity:commits)
 	modulesIdentitiesToCommitsSyncedCache map[string]map[string]struct{}
-	// modulesBSRReleaseBranch holds the branch name that's set as release branch in the BSR. This
-	// branch tracks "the main|prod BSR commits", which requires some additional protection like not
-	// allowing Git history rewrites. (moduleIdentity:branch)
-	modulesBSRReleaseBranch map[string]string
 }
 
 func newSyncer(
@@ -96,7 +92,6 @@ func newSyncer(
 		modulesDirsToBranchesToIdentities:     make(map[string]map[string]bufmoduleref.ModuleIdentity),
 		modulesToBranchesExpectedSyncPoints:   make(map[string]map[string]string),
 		modulesIdentitiesToCommitsSyncedCache: make(map[string]map[string]struct{}),
-		modulesBSRReleaseBranch:               make(map[string]string),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -184,7 +179,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 		branchesToSync = slicesextended.MapToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
-		currentBranch, err := s.repo.CurrentBranch(ctx)
+		currentBranch, err := s.repo.CheckedOutBranch()
 		if err != nil {
 			return fmt.Errorf("determine checked out branch")
 		}
@@ -280,22 +275,6 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	}
 	if duplicatedIdentitiesErr != nil {
 		return duplicatedIdentitiesErr
-	}
-	// (4) Populate default branches for all module identities (from all branches).
-	for _, moduleIdentity := range allModulesIdentitiesForSync {
-		bsrReleaseBranch, err := s.handler.GetModuleReleaseBranch(ctx, moduleIdentity)
-		if err != nil {
-			if errors.Is(err, ErrModuleDoesNotExist) {
-				s.logger.Warn(
-					"no default branch for module",
-					zap.String("module", moduleIdentity.IdentityString()),
-					zap.Error(err),
-				)
-				continue
-			}
-			return fmt.Errorf("get default branch for BSR module %s: %w", moduleIdentity.IdentityString(), err)
-		}
-		s.modulesBSRReleaseBranch[moduleIdentity.IdentityString()] = bsrReleaseBranch
 	}
 	return nil
 }
@@ -420,7 +399,6 @@ func (s *syncer) branchSyncableCommits(
 		zap.String("expected sync point", expectedSyncPoint),
 	)
 	var commitsForSync []*syncableCommit
-	stopLoopErr := errors.New("stop loop")
 	eachCommitFunc := func(commit git.Commit) error {
 		commitHash := commit.Hash().Hex()
 		logger := logger.With(zap.String("commit", commitHash))
@@ -438,30 +416,25 @@ func (s *syncer) branchSyncableCommits(
 				logger.Debug("git commit already synced, stop looking back in branch")
 			} else if commitHash != expectedSyncPoint {
 				// we expected a different sync point for this branch, it's ok to stop as long as it's not a
-				// default branch
-				switch branch {
-				case s.modulesBSRReleaseBranch[targetModuleIdentity]:
-					return fmt.Errorf(
-						"BSR default branch protection: "+
-							"found synced git commit %s for branch %s, but expected sync point was %s, "+
-							"did you rebase or reset this branch?",
-						commitHash, branch, expectedSyncPoint,
-					)
-				case s.repo.DefaultBranch():
-					return fmt.Errorf(
-						"Git default branch protection: "+
-							"found synced git commit %s for branch %s, but expected sync point was %s, "+
-							"did you rebase or reset this branch?",
-						commitHash, branch, expectedSyncPoint,
-					)
-				default:
-					logger.Warn("unexpected sync point reached, stop looking back in branch")
+				// protected branch
+				isProtectedBranch, err := s.handler.IsProtectedBranch(ctx, moduleIdentity, branch)
+				if err != nil {
+					return fmt.Errorf("check if branch %q is protected for module %q: %w", branch, moduleIdentity, err)
 				}
+				if isProtectedBranch {
+					return fmt.Errorf(
+						"branch protection: "+
+							"found synced git commit %s for branch %s, but expected sync point was %s, "+
+							"did you rebase or reset this branch?",
+						commitHash, branch, expectedSyncPoint,
+					)
+				}
+				logger.Warn("unexpected sync point reached, stop looking back in branch")
 			} else {
 				// we reached the expected sync point for this branch, it's ok to stop
 				logger.Debug("expected sync point reached, stop looking back in branch")
 			}
-			return stopLoopErr
+			return git.ErrStopForEach
 		}
 		// git commit is not synced, attempt to read the module in the commit:moduleDir
 		builtModule, readErr := s.readModuleAt(
@@ -481,7 +454,7 @@ func (s *syncer) branchSyncableCommits(
 			return nil
 		case LookbackDecisionCodeStop:
 			logger.Debug("read module at commit failed, stop looking back in branch", zap.Error(readErr))
-			return stopLoopErr
+			return git.ErrStopForEach
 		case LookbackDecisionCodeOverride:
 			logger.Debug("read module at commit failed, overriding module identity in commit", zap.Error(readErr))
 			if builtModule == nil {
@@ -499,7 +472,7 @@ func (s *syncer) branchSyncableCommits(
 			branch,
 			git.ForEachCommitWithBranchStartPointWithRemote(s.gitRemoteName),
 		),
-	); err != nil && !errors.Is(err, stopLoopErr) {
+	); err != nil {
 		return nil, err
 	}
 	// if we have no commits to sync we can bail early
@@ -626,7 +599,6 @@ func (s *syncer) backfillTags(
 	var (
 		lookbackCommitsCount int
 		timeLimit            = s.clock.Now().Add(-LookbackTimeLimit)
-		stopLoopErr          = errors.New("stop loop")
 		logger               = s.logger.With(
 			zap.String("branch", branch),
 			zap.String("module directory", moduleDir),
@@ -640,7 +612,7 @@ func (s *syncer) backfillTags(
 		// timespan) need to be met.
 		if lookbackCommitsCount > LookbackCommitsLimit &&
 			oldCommit.Committer().Timestamp().Before(timeLimit) {
-			return stopLoopErr
+			return git.ErrStopForEach
 		}
 		// Is there any tag in this commit to backfill?
 		tagsToBackfill := s.commitsToTags[oldCommit.Hash().Hex()]
@@ -673,7 +645,7 @@ func (s *syncer) backfillTags(
 	if err := s.repo.ForEachCommit(
 		forEachOldCommitFunc,
 		git.ForEachCommitWithHashStartPoint(syncStartHash.Hex()),
-	); err != nil && !errors.Is(err, stopLoopErr) {
+	); err != nil {
 		return fmt.Errorf("looking back past the start sync point: %w", err)
 	}
 	return nil

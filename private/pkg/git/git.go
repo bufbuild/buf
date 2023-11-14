@@ -54,6 +54,9 @@ var (
 	// ErrTreeNodeNotFound is an error found in the error chain when
 	// ObjectReader is unable to find the target object.
 	ErrObjectNotFound = errors.New("object not found")
+	// ErrStopForEach is provided for callers to use it when they want to gracefully stop a ForEach*
+	// function. It is not returned as an error by any function.
+	ErrStopForEach = errors.New("stop for each loop")
 )
 
 // ObjectMode is how to interpret a tree node's object. See the Mode* constants
@@ -271,8 +274,8 @@ type Repository interface {
 	// `.git/refs/remotes/origin/HEAD` (assuming the default branch has been already pushed to a
 	// remote named `origin`). It can be customized via the `OpenRepositoryWithDefaultBranch` option.
 	DefaultBranch() string
-	// CurrentBranch is the current checked out branch.
-	CurrentBranch(ctx context.Context) (string, error)
+	// CheckedOutBranch returns the current checked out branch.
+	CheckedOutBranch(options ...CheckedOutBranchOption) (string, error)
 	// ForEachBranch ranges over branches in the repository in an undefined order.
 	ForEachBranch(f func(branch string, headHash Hash) error, options ...ForEachBranchOption) error
 	// ForEachCommit ranges over commits in reverse topological order, going backwards in time always
@@ -294,6 +297,17 @@ type Repository interface {
 	Objects() ObjectReader
 	// Close closes the repository.
 	Close() error
+}
+
+// CheckedOutBranchOption are options that can be passed to CheckedOutBranch.
+type CheckedOutBranchOption func(*checkedOutBranchOpts)
+
+// CheckedOutBranchWithRemote sets the function to only loop over branches present in the passed
+// remote at their respective HEADs.
+func CheckedOutBranchWithRemote(remoteName string) CheckedOutBranchOption {
+	return func(opts *checkedOutBranchOpts) {
+		opts.remote = remoteName
+	}
 }
 
 // ForEachBranchOption are options that can be passed to ForEachBranch.
@@ -382,6 +396,10 @@ func OpenRepositoryWithDefaultBranch(name string) OpenRepositoryOption {
 		r.defaultBranch = name
 		return nil
 	}
+}
+
+type checkedOutBranchOpts struct {
+	remote string
 }
 
 type forEachBranchOpts struct {

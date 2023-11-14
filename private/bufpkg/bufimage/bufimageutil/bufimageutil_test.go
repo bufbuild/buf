@@ -273,7 +273,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
 	// way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
 	require.NoError(t, err)
 	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
@@ -337,7 +337,7 @@ func runSourceCodeInfoTest(t *testing.T, typename string, expectedFile string, o
 
 	checkExpectation(t, ctx, actual, bucket, expectedFile)
 
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptors(filteredImage)...)
+	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
 	require.NoError(t, err)
 	file, err := resolver.FindFileByPath("test.proto")
 	require.NoError(t, err)
