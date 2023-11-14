@@ -175,13 +175,13 @@ type Handler interface {
 		hash git.Hash,
 	) (bool, error)
 
-	// GetModuleReleaseBranch is invoked before syncing, to gather release branch names for all the
-	// modules that are about to be synced. If the BSR module does not exist, the implementation should
-	// return `ModuleDoesNotExistErr` error.
-	GetModuleReleaseBranch(
+	// IsProtectedBranch is invoked when syncing branches to know if a branch's history is protected
+	// and must not diverge since the last sync. If an error is returned, sync will abort.
+	IsProtectedBranch(
 		ctx context.Context,
-		module bufmoduleref.ModuleIdentity,
-	) (string, error)
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branch string,
+	) (bool, error)
 
 	// BackfillTags is invoked when a commit with valid modules is found within a lookback threshold
 	// past the start sync point for such module. The Syncer assumes that the "old" commit is already

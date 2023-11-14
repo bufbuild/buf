@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-func newResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}

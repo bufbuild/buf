@@ -57,29 +57,52 @@ type Manifest interface {
 // FileNodes are deduplicated upon construction, however if two FileNodes
 // with the same path have different Digests, an error is returned.
 func NewManifest(fileNodes []FileNode) (Manifest, error) {
-	return newManifest(fileNodes)
+	pathToFileNode, err := getAndValidateManifestPathToFileNode(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	return newManifest(pathToFileNode), nil
 }
 
 // ParseManifest parses a Manifest from its string representation.
 //
 // This reverses Manifest.String().
 func ParseManifest(s string) (Manifest, error) {
-	if len(s) == 0 {
-		return NewManifest(nil)
-	}
 	var fileNodes []FileNode
-	if s[len(s)-1] != '\n' {
-		return nil, errors.New("string for Manifest did not end with newline")
-	}
-	s = s[:len(s)-1]
-	for i, line := range strings.Split(s, "\n") {
-		fileNode, err := ParseFileNode(line)
-		if err != nil {
-			return nil, fmt.Errorf("invalid Manifest at line %d: %w", i, err)
+	original := s
+	if len(s) > 0 {
+		if s[len(s)-1] != '\n' {
+			return nil, &ParseError{
+				typeString: "manifest",
+				input:      original,
+				err:        errors.New("did not end with newline"),
+			}
 		}
-		fileNodes = append(fileNodes, fileNode)
+		s = s[:len(s)-1]
+		for i, line := range strings.Split(s, "\n") {
+			fileNode, err := ParseFileNode(line)
+			if err != nil {
+				return nil, &ParseError{
+					typeString: "manifest",
+					input:      original,
+					err:        fmt.Errorf("line %d: %w", i, err),
+				}
+			}
+			fileNodes = append(fileNodes, fileNode)
+		}
 	}
-	return NewManifest(fileNodes)
+	// Even if len(s) == 0, we still go through this flow.
+	// Just making sure that in the future, we still count an empty manifest as valid.
+	// Validation occurs within getAndValidateManifestPathToFileNode, so we pass nil to that.
+	pathToFileNode, err := getAndValidateManifestPathToFileNode(fileNodes)
+	if err != nil {
+		return nil, &ParseError{
+			typeString: "manifest",
+			input:      original,
+			err:        err,
+		}
+	}
+	return newManifest(pathToFileNode), nil
 }
 
 // ManifestToBlob converts the string representation of the given Manifest into a Blob.
@@ -91,7 +114,9 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
-// The Blob is assumed to be non-nil
+// # The Blob is assumed to be non-nil
+//
+// This function returns ParseErrors since this is effectively parsing the blob.
 func BlobToManifest(blob Blob) (Manifest, error) {
 	return ParseManifest(string(blob.Content()))
 }
@@ -103,19 +128,8 @@ type manifest struct {
 	sortedUniqueFileNodes []FileNode
 }
 
-func newManifest(fileNodes []FileNode) (*manifest, error) {
-	pathToFileNode := make(map[string]FileNode)
-	for _, fileNode := range fileNodes {
-		if existingFileNode, ok := pathToFileNode[fileNode.Path()]; ok {
-			errorMessage := fmt.Sprintf("path %q was duplicated when creating a Manifest", fileNode.Path())
-			if !DigestEqual(existingFileNode.Digest(), fileNode.Digest()) {
-				errorMessage += " and the two path entries had different Digests"
-			}
-			return nil, errors.New(errorMessage)
-		} else {
-			pathToFileNode[fileNode.Path()] = fileNode
-		}
-	}
+// use getAndValidateManifestPathToFileNode to create pathToFileNode.
+func newManifest(pathToFileNode map[string]FileNode) *manifest {
 	// Just cache ahead of time for now.
 	sortedUniqueFileNodes := make([]FileNode, 0, len(pathToFileNode))
 	for _, fileNode := range pathToFileNode {
@@ -130,7 +144,7 @@ func newManifest(fileNodes []FileNode) (*manifest, error) {
 	return &manifest{
 		pathToFileNode:        pathToFileNode,
 		sortedUniqueFileNodes: sortedUniqueFileNodes,
-	}, nil
+	}
 }
 
 func (m *manifest) FileNodes() []FileNode {
@@ -155,3 +169,24 @@ func (m *manifest) String() string {
 }
 
 func (*manifest) isManifest() {}
+
+// serves as parameter validation as well.
+func getAndValidateManifestPathToFileNode(fileNodes []FileNode) (map[string]FileNode, error) {
+	pathToFileNode := make(map[string]FileNode)
+	for _, fileNode := range fileNodes {
+		if existingFileNode, ok := pathToFileNode[fileNode.Path()]; ok {
+			errorMessage := fmt.Sprintf("path %q was duplicated when creating a manifest", fileNode.Path())
+			if !DigestEqual(existingFileNode.Digest(), fileNode.Digest()) {
+				errorMessage += fmt.Sprintf(
+					" and the two path entries had different digests: %q, %q",
+					existingFileNode.Digest().String(),
+					fileNode.Digest().String(),
+				)
+			}
+			return nil, errors.New(errorMessage)
+		} else {
+			pathToFileNode[fileNode.Path()] = fileNode
+		}
+	}
+	return pathToFileNode, nil
+}
