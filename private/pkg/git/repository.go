@@ -130,6 +130,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 		unpackedBranches[branchName] = struct{}{}
 		return f(branchName, hash)
 	}); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if errors.Is(err, ErrStopForEach) {
+			return nil
+		}
 		return err
 	}
 	// Read packed branch refs that haven't been seen yet.
@@ -141,6 +144,9 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 		for branchName, hash := range remotePackedBranches {
 			if _, seen := unpackedBranches[branchName]; !seen {
 				if err := f(branchName, hash); err != nil {
+					if errors.Is(err, ErrStopForEach) {
+						return nil
+					}
 					return err
 				}
 			}
@@ -223,6 +229,9 @@ func (r *repository) ForEachCommit(f func(Commit) error, options ...ForEachCommi
 	}
 	for {
 		if err := f(currentCommit); err != nil {
+			if errors.Is(err, ErrStopForEach) {
+				return nil
+			}
 			return err
 		}
 		if len(currentCommit.Parents()) == 0 {
@@ -292,6 +301,9 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 			tagName,
 		)
 	}); err != nil {
+		if errors.Is(err, ErrStopForEach) {
+			return nil
+		}
 		return err
 	}
 	// Read packed tag refs that haven't been seen yet.
@@ -301,6 +313,9 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	for tagName, commit := range r.packedTags {
 		if _, found := seen[tagName]; !found {
 			if err := f(tagName, commit); err != nil {
+				if errors.Is(err, ErrStopForEach) {
+					return nil
+				}
 				return err
 			}
 		}
