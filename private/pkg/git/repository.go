@@ -193,20 +193,17 @@ func (r *repository) CheckedOutBranch(options ...CheckedOutBranchOption) (string
 		return "", fmt.Errorf(".git/HEAD is not a named ref nor a git hash: %w", err)
 	}
 	// we can compare that hash with all repo branches' heads
-	var (
-		currentBranch      string
-		foundBranchStopErr = errors.New("found branch, stop looping branches")
-	)
+	var currentBranch string
 	if err := r.ForEachBranch(
 		func(branch string, branchHEAD Hash) error {
 			if headHash == branchHEAD {
 				currentBranch = branch
-				return foundBranchStopErr
+				return ErrStopForEach
 			}
 			return nil
 		},
 		ForEachBranchWithRemote(config.remote),
-	); err != nil && !errors.Is(err, foundBranchStopErr) {
+	); err != nil && !errors.Is(err, ErrStopForEach) {
 		return "", fmt.Errorf("for each branch: %w", err)
 	}
 	if currentBranch == "" {

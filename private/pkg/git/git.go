@@ -54,6 +54,9 @@ var (
 	// ErrTreeNodeNotFound is an error found in the error chain when
 	// ObjectReader is unable to find the target object.
 	ErrObjectNotFound = errors.New("object not found")
+	// ErrStopForEach is provided for callers to use it as a sentinel error to stop ForEach*
+	// functions. It is not returned as an error by any function.
+	ErrStopForEach = errors.New("stop for each loop")
 )
 
 // ObjectMode is how to interpret a tree node's object. See the Mode* constants
