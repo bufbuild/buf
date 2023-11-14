@@ -542,9 +542,10 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	delegateReader := bufapimodule.NewModuleReader(
+		container.Logger(),
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+		bufapimodule.NewRepositoryServiceClientFactory(clientConfig),
 	)
-	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var moduleReader bufmodule.ModuleReader
 	casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
@@ -556,7 +557,6 @@ func newModuleReaderAndCreateCacheDirs(
 		container.VerbosePrinter(),
 		casModuleBucket,
 		delegateReader,
-		repositoryClientFactory,
 	)
 	return moduleReader, nil
 }
