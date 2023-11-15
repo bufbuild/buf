@@ -235,13 +235,13 @@ type moduleSet struct {
 	bucketIDToModule             map[string]Module
 	getDigestStringToModule      func() (map[string]Module, error)
 
-	// filePathToImports is a cache of filePath -> imports, used for calculating dependencies.
-	filePathToImportsCache *cache.Cache[string, map[string]struct{}]
 	// filePathToModule is a cache of filePath -> module, used for calculating dependencies.
 	//
 	// If you are calling both the imports and module caches, you must call the imports cache first,
 	// i.e. lock ordering.
-	filePathToModuleCache *cache.Cache[string, Module]
+	filePathToModuleCache cache.Cache[string, Module]
+	// filePathToImports is a cache of filePath -> imports, used for calculating dependencies.
+	filePathToImportsCache cache.Cache[string, map[string]struct{}]
 }
 
 func newModuleSet(
@@ -274,7 +274,7 @@ func newModuleSet(
 			bucketIDToModule[bucketID] = module
 		}
 	}
-	moduleSet := &moduleSet{
+	return &moduleSet{
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
@@ -299,18 +299,7 @@ func newModuleSet(
 				return digestStringToModule, nil
 			},
 		),
-	}
-	moduleSet.filePathToImportsCache = cache.NewCache(
-		func(ctx context.Context, filePath string) (map[string]struct{}, error) {
-			return moduleSet.getImportsForFilePathUncached(ctx, filePath)
-		},
-	)
-	moduleSet.filePathToModuleCache = cache.NewCache(
-		func(ctx context.Context, filePath string) (Module, error) {
-			return moduleSet.getModuleForFilePathUncached(ctx, filePath)
-		},
-	)
-	return moduleSet, nil
+	}, nil
 }
 
 func (m *moduleSet) Modules() []Module {
@@ -341,12 +330,22 @@ func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
 
 // This should only be used by Modules, and only for dependency calculations.
 func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
-	return m.filePathToModuleCache.GetOrAdd(ctx, filePath)
+	return m.filePathToModuleCache.GetOrAdd(
+		filePath,
+		func() (Module, error) {
+			return m.getModuleForFilePathUncached(ctx, filePath)
+		},
+	)
 }
 
 // This should only be used by Modules, and only for dependency calculations.
 func (m *moduleSet) getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
-	return m.filePathToImportsCache.GetOrAdd(ctx, filePath)
+	return m.filePathToImportsCache.GetOrAdd(
+		filePath,
+		func() (map[string]struct{}, error) {
+			return m.getImportsForFilePathUncached(ctx, filePath)
+		},
+	)
 }
 
 // Assumed to be called within cacheLock.
@@ -379,7 +378,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 // Only call from within *moduleSet.
 func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath string) (_ map[string]struct{}, retErr error) {
 	// Even when we know the file we want to get the imports for, we want to make sure the file
-	// is not duplicated across multiple modules. By calling getModuleForFilePathUncached,
+	// is not duplicated across multiple modules. By calling getModuleForFilePath,
 	// we implicitly get this check for now.
 	//
 	// Note this basically kills the idea of only partially-lazily-loading some of the Modules
@@ -387,7 +386,7 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 	// that we're going to have to load all the modules within a workspace even if just building
 	// a single module in the workspace, as an example. Luckily, modules within workspaces are
 	// the cheapest to load (ie not remote).
-	module, err := m.filePathToModuleCache.GetOrAdd(ctx, filePath)
+	module, err := m.getModuleForFilePath(ctx, filePath)
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -187,6 +188,8 @@ type moduleReadBucket struct {
 	targetPaths          []string
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
+
+	pathToFileInfoCache cache.Cache[string, FileInfo]
 }
 
 // module cannot be assumed to be functional yet.
@@ -249,7 +252,7 @@ func (b *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	if err != nil {
 		return nil, err
 	}
-	return b.newFileInfo(objectInfo)
+	return b.getFileInfo(objectInfo)
 }
 
 func (b *moduleReadBucket) WalkFileInfos(
@@ -271,7 +274,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 			ctx,
 			"",
 			func(objectInfo storage.ObjectInfo) error {
-				fileInfo, err := b.newFileInfo(objectInfo)
+				fileInfo, err := b.getFileInfo(objectInfo)
 				if err != nil {
 					return err
 				}
@@ -281,7 +284,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
-		fileInfo, err := b.newFileInfo(objectInfo)
+		fileInfo, err := b.getFileInfo(objectInfo)
 		if err != nil {
 			return err
 		}
@@ -313,7 +316,19 @@ func (b *moduleReadBucket) WalkFileInfos(
 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
-func (b *moduleReadBucket) newFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+func (b *moduleReadBucket) getFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+	return b.pathToFileInfoCache.GetOrAdd(
+		// We know that storage.ObjectInfo will always have the same values for the same
+		// ObjectInfo returned from a common bucket, this is documented. Therefore, we
+		// can cache based on just the path.
+		objectInfo.Path(),
+		func() (FileInfo, error) {
+			return b.getFileInfoUncached(objectInfo)
+		},
+	)
+}
+
+func (b *moduleReadBucket) getFileInfoUncached(objectInfo storage.ObjectInfo) (FileInfo, error) {
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
