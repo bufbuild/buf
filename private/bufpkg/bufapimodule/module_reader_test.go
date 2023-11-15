@@ -121,9 +121,6 @@ func testDownload(
 		moduleReader := newModuleReader(
 			zap.NewNop(),
 			mock.factory,
-			func(string) registryv1alpha1connect.RepositoryServiceClient {
-				return &nopRepositoryServiceClient{}
-			},
 			moduleReaderOpts...,
 		)
 		ctx := context.Background()
