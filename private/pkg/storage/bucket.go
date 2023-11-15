@@ -81,6 +81,8 @@ type PutOptions interface {
 	//
 	// This is a suggestion, implementations may choose to ignore this option.
 	SuggestedChunkSize() int
+
+	isPutOptions()
 }
 
 // NewPutOptions returns a new PutOptions.
@@ -102,9 +104,9 @@ type PutOption func(*putOptions)
 // Some implementations of Put allow multi-part upload, and allow customizing the
 // chunk size of each part upload, or even disabling multi-part upload.
 //
-// This is a suggestion, implementations may choose to ignore this option.
+// # Setting a suggestedChunkSize of 0 says to suggest disable chunking
 //
-// Setting a suggestedChunkSize of 0 says to suggest disable chunking
+// This is a suggestion, implementations may choose to ignore this option.
 func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
 	return func(putOptions *putOptions) {
 		putOptions.suggestedChunkSize = &suggestedChunkSize
@@ -312,3 +314,5 @@ func (p *putOptions) SuggestedChunkSize() int {
 	}
 	return *p.suggestedChunkSize
 }
+
+func (*putOptions) isPutOptions() {}
