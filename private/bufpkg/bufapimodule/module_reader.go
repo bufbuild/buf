@@ -79,7 +79,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		return nil, err
 	}
 	if logger, repositoryClientFactory := m.logger, m.repositoryClientFactory; logger != nil && repositoryClientFactory != nil {
-		if err := warnIfDeprecated(ctx, m.repositoryClientFactory, modulePin, m.logger); err != nil {
+		if err := warnIfDeprecated(ctx, repositoryClientFactory, modulePin, logger); err != nil {
 			return nil, err
 		}
 	}
