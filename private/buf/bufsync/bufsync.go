@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -26,54 +27,70 @@ import (
 	"go.uber.org/zap"
 )
 
-// ErrorHandler handles errors reported by the Syncer before or during the sync process.
-type ErrorHandler interface {
-	// InvalidBSRSyncPoint is invoked by Syncer upon encountering a module's branch sync point that is
-	// invalid locally. A typical example is either a sync point that points to a commit that cannot
-	// be found anymore, or the commit itself has been corrupted.
-	//
-	// Returning an error will abort sync.
-	InvalidBSRSyncPoint(
-		module bufmoduleref.ModuleIdentity,
-		branch string,
-		syncPoint git.Hash,
-		isGitDefaultBranch bool,
-		err error,
-	) error
-}
-
 // Handler is a handler for Syncer. It controls the way in which Syncer handles errors, provides
 // any information the Syncer needs to Sync commits, and receives ModuleCommits that should be
 // synced.
 type Handler interface {
-	ErrorHandler
-
 	// SyncModuleCommit is invoked to sync a commit. If an error is returned, sync will abort.
 	//
 	// Syncer guarantees that either the commit's parent is synced, or none of the commit's ancestors
 	// are synced. A commit may be synced _more than once_, in the case where some metadata about the
 	// commit has changed (e.g., branch).
-	SyncModuleCommit(ctx context.Context, commit ModuleCommit) error
+	SyncModuleCommit(
+		ctx context.Context,
+		moduleCommit ModuleCommit,
+	) error
 
 	// SyncModuleTags is invoked to sync a set of tagged commits. If an error is returned, sync will abort.
 	//
 	// Syncer guarantees that this is the complete set of tags for a module identity, and that commits in
 	// this set are synced.
-	SyncModuleTags(ctx context.Context, module bufmoduleref.ModuleIdentity, commitTags map[git.Hash][]string) error
+	SyncModuleTags(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		commitTags map[git.Hash][]string,
+	) error
 
 	// ResolveSyncPoint is invoked to resolve a syncpoint for a particular module at a particular branch.
 	// If no syncpoint is found, this function returns nil. If an error is returned, sync will abort.
 	ResolveSyncPoint(
 		ctx context.Context,
-		module bufmoduleref.ModuleIdentity,
-		branch string,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branchName string,
 	) (git.Hash, error)
+
+	// GetBranchHead is invoked by Syncer to resolve the latest commit on a branch. If an error is returned,
+	// sync will abort.
+	//
+	// If a branch does not exist or is empty, implementations must return (nil, nil).
+	GetBranchHead(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branchName string,
+	) (*registryv1alpha1.RepositoryCommit, error)
+
+	// IsBranchSynced is invoked by Syncer to determine if a particular branch for a module is synced. If
+	// an error is returned, sync will abort.
+	IsBranchSynced(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branchName string,
+	) (bool, error)
 
 	// IsGitCommitSynced is invoked when syncing branches to know if a Git commit is already synced.
 	// If an error is returned, sync will abort.
 	IsGitCommitSynced(
 		ctx context.Context,
-		module bufmoduleref.ModuleIdentity,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		hash git.Hash,
+	) (bool, error)
+
+	// IsGitCommitSyncedToBranch is invoked when syncing branches to know if a Git commit is already synced
+	// to a particular branch. If an error is returned, sync will abort.
+	IsGitCommitSyncedToBranch(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branchName string,
 		hash git.Hash,
 	) (bool, error)
 
@@ -82,7 +99,7 @@ type Handler interface {
 	IsProtectedBranch(
 		ctx context.Context,
 		moduleIdentity bufmoduleref.ModuleIdentity,
-		branch string,
+		branchName string,
 	) (bool, error)
 }
 

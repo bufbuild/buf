@@ -49,17 +49,17 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 		{
 			name:            "when_foo",
 			branch:          "foo",
-			expectedCommits: 2,
+			expectedCommits: 3, // +1 for the branch fork point, which is synced again
 		},
 		{
 			name:            "when_bar",
 			branch:          "bar",
-			expectedCommits: 2,
+			expectedCommits: 3, // +1 for the branch fork point, which is synced again
 		},
 		{
 			name:            "when_baz",
 			branch:          "baz",
-			expectedCommits: 1,
+			expectedCommits: 2, // +1 for the branch fork point, which is synced again
 		},
 	}
 	handler := newTestSyncHandler() // use same handler for all test cases
