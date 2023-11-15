@@ -24,6 +24,7 @@ import (
 
 type DownloadServiceClientFactory func(address string) registryv1alpha1connect.DownloadServiceClient
 type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1connect.RepositoryCommitServiceClient
+type RepositoryServiceClientFactory func(address string) registryv1alpha1connect.RepositoryServiceClient
 
 func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) DownloadServiceClientFactory {
 	return func(address string) registryv1alpha1connect.DownloadServiceClient {
@@ -37,13 +38,23 @@ func NewRepositoryCommitServiceClientFactory(clientConfig *connectclient.Config)
 	}
 }
 
+func NewRepositoryServiceClientFactory(clientConfig *connectclient.Config) RepositoryServiceClientFactory {
+	return func(address string) registryv1alpha1connect.RepositoryServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
+	}
+}
+
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
+	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
+	repositoryClientFactory RepositoryServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
+		logger,
 		downloadClientFactory,
+		repositoryClientFactory,
 		opts...,
 	)
 }

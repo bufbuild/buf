@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestDownload(t *testing.T) {
@@ -117,7 +118,14 @@ func testDownload(
 	t.Run(desc, func(t *testing.T) {
 		t.Parallel()
 		var moduleReaderOpts []ModuleReaderOption
-		moduleReader := newModuleReader(mock.factory, moduleReaderOpts...)
+		moduleReader := newModuleReader(
+			zap.NewNop(),
+			mock.factory,
+			func(string) registryv1alpha1connect.RepositoryServiceClient {
+				return &nopRepositoryServiceClient{}
+			},
+			moduleReaderOpts...,
+		)
 		ctx := context.Background()
 		pin, err := bufmoduleref.NewModulePin(
 			"remote",
@@ -240,5 +248,20 @@ func (m *mockDownloadService) DownloadManifestAndBlobs(
 	return connect.NewResponse(&registryv1alpha1.DownloadManifestAndBlobsResponse{
 		Manifest: m.manifestBlob,
 		Blobs:    m.blobs,
+	}), nil
+}
+
+type nopRepositoryServiceClient struct {
+	registryv1alpha1connect.UnimplementedRepositoryServiceHandler
+}
+
+var _ registryv1alpha1connect.RepositoryServiceClient = (*nopRepositoryServiceClient)(nil)
+
+func (t *nopRepositoryServiceClient) GetRepositoryByFullName(
+	_ context.Context,
+	_ *connect.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
+) (*connect.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
+	return connect.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
+		Repository: &registryv1alpha1.Repository{},
 	}), nil
 }
