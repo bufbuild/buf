@@ -59,8 +59,27 @@ type ReadBucket interface {
 
 // PutOptions are the possible options that can be passed to a Put operation.
 type PutOptions interface {
+	// Atomic ensures that the Put fully writes the file before making it
+	// available to readers. This happens by default for some implementations,
+	// while others may need to perform a sequence of operations to ensure
+	// atomic writes.
+	//
+	// The Put operation is complete and the path will be readable once the
+	// returned WriteObjectCloser is written and closed (without an error).
+	// Any errors will cause the Put to be skipped (no path will be created).
 	Atomic() bool
+	// SuggestedDisableChunking says to suggest disable chunking entirely.
+	//
+	// If SuggestedChunkSize() > 0, this will always be false.
+	//
+	// This is a suggestion, implementations may choose to ignore this option.
 	SuggestedDisableChunking() bool
+	// SuggestedChunkSize sets the given size in bytes as a suggested chunk
+	// size to use by the Bucket implementation for this Put call.
+	// Some implementations of Put allow multi-part upload, and allow customizing the
+	// chunk size of each part upload, or even disabling multi-part upload.
+	//
+	// This is a suggestion, implementations may choose to ignore this option.
 	SuggestedChunkSize() int
 }
 
@@ -83,7 +102,7 @@ type PutOption func(*putOptions)
 // Some implementations of Put allow multi-part upload, and allow customizing the
 // chunk size of each part upload, or even disabling multi-part upload.
 //
-// This is a suggested chunk size, implementations may choose to ignore this option.
+// This is a suggestion, implementations may choose to ignore this option.
 //
 // Setting a suggestedChunkSize of 0 says to suggest disable chunking
 func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
@@ -284,7 +303,7 @@ func (p *putOptions) Atomic() bool {
 }
 
 func (p *putOptions) SuggestedDisableChunking() bool {
-	return p.suggestedChunkSize == nil
+	return p.suggestedChunkSize != nil && *p.suggestedChunkSize == 0
 }
 
 func (p *putOptions) SuggestedChunkSize() int {
