@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -30,73 +29,61 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-func TestBackfilltags(t *testing.T) {
+func TestPutTags(t *testing.T) {
 	t.Parallel()
-	const defaultBranchName = "main"
 	repo := gittest.ScaffoldGitRepository(t)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
-	prepareGitRepoBackfillTags(t, repo, moduleIdentityInHEAD)
-	mockHandler := newTestSyncHandler()
+	prepareGitRepoWithTags(t, repo, moduleIdentityInHEAD)
+	testHandler := newTestSyncHandler()
 	// prepare the top 5 commits as syncable commits, mark the rest as if they were already synced
 	var (
-		commitCount            int
-		allCommitsHashes       []string
-		fakeNowCommitLimitTime time.Time // to be sent as a fake clock and discard "old" commits
+		previousHeadIndex = 6
+		commitCount       int
+		allCommitsHashes  []string
 	)
 	require.NoError(t, repo.ForEachCommit(func(commit git.Commit) error {
 		allCommitsHashes = append(allCommitsHashes, commit.Hash().Hex())
-		commitCount++
-		if commitCount == 6 {
+		if commitCount == previousHeadIndex {
 			// mark this commit as synced; nothing after this needs to be marked because syncer
 			// won't travel past this
-			mockHandler.setSyncPoint(
-				defaultBranchName,
+			testHandler.setSyncPoint(
+				repo.DefaultBranch(),
 				commit.Hash(),
 				moduleIdentityInHEAD,
 			)
 		}
-		if commitCount == 15 {
-			// have the time limit at the commit 15 looking back
-			fakeNowCommitLimitTime = commit.Committer().Timestamp()
-		}
+		commitCount++
 		return nil
 	}))
-	const moduleDir = "." // module is at the git root repo
 	syncer, err := bufsync.NewSyncer(
 		zaptest.NewLogger(t),
-		&mockClock{now: fakeNowCommitLimitTime.Add(bufsync.LookbackTimeLimit)},
 		repo,
 		storagegit.NewProvider(repo.Objects()),
-		mockHandler,
-		bufsync.SyncerWithModule(moduleDir, nil),
+		testHandler,
+		bufsync.SyncerWithModule(".", nil),
 	)
 	require.NoError(t, err)
 	require.NoError(t, syncer.Sync(context.Background()))
-	// in total the repo has at least 20 commits, we expect to backfill 11 of them
-	// and sync the next 4 commits
+	// In total the repo has at least 20 commits; we manually marked index 6 as the synced point,
+	// so we expect to sync commits where index < 6. At the end, we should have 6+1 commits synced.
+	// For those 6+1 commits, we expect their tags to be put. All other tags are not put because
+	// they point to unsynced commits.
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
-	tagsForHash := mockHandler.getRepo(moduleIdentityInHEAD).tagsForHash
-	assert.Len(t, tagsForHash, 15)
+	tagsForHash := testHandler.getRepo(moduleIdentityInHEAD).tagsForHash
+	assert.Len(t, tagsForHash, previousHeadIndex+1)
 	// as follows:
 	for i, commitHash := range allCommitsHashes {
-		if i < 15 {
-			// Between 0-4, the tags should be synced.
-			// Between 5-15 the tags should be backfilled.
-			//
-			// The func it's backfilling more than 5 commits, because it needs to backfill until both
-			// conditions are met, at least 5 commits and at least 24 hours.
+		if i < previousHeadIndex+1 {
 			assert.Contains(t, tagsForHash, commitHash)
 		} else {
-			// past the #15 the commits are too old, we don't backfill back there
 			assert.NotContains(t, tagsForHash, commitHash)
 		}
 	}
 }
 
-// prepareGitRepoBackfillTags adds 20 commits and tags in the default branch, one tag per commit. It
-// waits 1s between commit 5 and 6 to be easily used as the lookback commit limit time.
-func prepareGitRepoBackfillTags(t *testing.T, repo gittest.Repository, moduleIdentity bufmoduleref.ModuleIdentity) {
+// prepareGitRepoWithTags adds 20 commits and tags in the default branch, one tag per commit.
+func prepareGitRepoWithTags(t *testing.T, repo gittest.Repository, moduleIdentity bufmoduleref.ModuleIdentity) {
 	var commitsCounter int
 	doEmptyCommitAndTag := func(numOfCommits int) {
 		for i := 0; i < numOfCommits; i++ {
@@ -111,7 +98,5 @@ func prepareGitRepoBackfillTags(t *testing.T, repo gittest.Repository, moduleIde
 		"foo/v1/foo.proto": "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n",
 	})
 	// commit and tag
-	doEmptyCommitAndTag(5)
-	time.Sleep(1 * time.Second)
-	doEmptyCommitAndTag(15)
+	doEmptyCommitAndTag(20)
 }

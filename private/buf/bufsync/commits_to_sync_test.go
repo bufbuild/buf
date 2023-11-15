@@ -78,7 +78,6 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 					}
 					syncer, err := bufsync.NewSyncer(
 						zaptest.NewLogger(t),
-						bufsync.NewRealClock(),
 						repo,
 						storagegit.NewProvider(repo.Objects()),
 						handler,

@@ -104,39 +104,64 @@ func (h *syncHandler) IsGitCommitSynced(ctx context.Context, module bufmoduleref
 	return res.Msg.Reference.GetVcsCommit() != nil, nil
 }
 
-func (h *syncHandler) BackfillTags(
+func (h *syncHandler) SyncModuleTags(
 	ctx context.Context,
-	module bufmoduleref.ModuleIdentity,
-	alreadySyncedHash git.Hash,
-	author git.Ident,
-	committer git.Ident,
-	tags []string,
-) (string, error) {
-	service := connectclient.Make(h.clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
-	res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
-		Owner:      module.Owner(),
-		Repository: module.Repository(),
-		Hash:       alreadySyncedHash.Hex(),
-		Author: &registryv1alpha1.GitIdentity{
-			Name:  author.Name(),
-			Email: author.Email(),
-			Time:  timestamppb.New(author.Timestamp()),
-		},
-		Committer: &registryv1alpha1.GitIdentity{
-			Name:  committer.Name(),
-			Email: committer.Email(),
-			Time:  timestamppb.New(committer.Timestamp()),
-		},
-		Tags: tags,
-	}))
-	if err != nil {
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	commitTags map[git.Hash][]string,
+) error {
+	repoService := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	var repositoryID string
+	if repoRes, err := repoService.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+		FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+	})); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Repo is not created
-			return "", bufsync.ErrModuleDoesNotExist
+			return fmt.Errorf("repository for module %q does not exist", moduleIdentity.IdentityString())
 		}
-		return "", fmt.Errorf("attach git tags to module %q: %w", module.IdentityString(), err)
+		return fmt.Errorf("get repository for module identity: %w", err)
+	} else {
+		repositoryID = repoRes.Msg.Repository.Id
 	}
-	return res.Msg.GetBsrCommitName(), nil
+	referenceService := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewReferenceServiceClient)
+	tagService := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryTagServiceClient)
+	for commit, tags := range commitTags {
+		commitRes, err := referenceService.GetReferenceByName(ctx, connect.NewRequest(&registryv1alpha1.GetReferenceByNameRequest{
+			Owner:          moduleIdentity.Owner(),
+			RepositoryName: moduleIdentity.Repository(),
+			Name:           commit.Hex(),
+		}))
+		if err != nil {
+			return fmt.Errorf("get reference by name %q: %w", commit, err)
+		}
+		if commitRes.Msg.Reference.GetVcsCommit() == nil {
+			return fmt.Errorf("git commit %q not synced to module %q", commit, moduleIdentity.IdentityString())
+		}
+		for _, tag := range tags {
+			tagExists, err := h.bsrTagExists(ctx, tagService, repositoryID, tag)
+			if err != nil {
+				return fmt.Errorf("determine if tag %q exists: %w", tag, err)
+			}
+			if !tagExists {
+				_, err := tagService.CreateRepositoryTag(ctx, connect.NewRequest(&registryv1alpha1.CreateRepositoryTagRequest{
+					RepositoryId: repositoryID,
+					Name:         tag,
+					CommitName:   commitRes.Msg.Reference.GetVcsCommit().CommitName,
+				}))
+				if err != nil {
+					return fmt.Errorf("create new tag %q on module %q: %w", tag, moduleIdentity.IdentityString(), err)
+				}
+			} else {
+				_, err := tagService.UpdateRepositoryTag(ctx, connect.NewRequest(&registryv1alpha1.UpdateRepositoryTagRequest{
+					RepositoryId: repositoryID,
+					Name:         tag,
+					CommitName:   &commitRes.Msg.Reference.GetVcsCommit().CommitName,
+				}))
+				if err != nil {
+					return fmt.Errorf("update existing tag %q on module %q: %w", tag, moduleIdentity.IdentityString(), err)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (h *syncHandler) SyncModuleCommit(ctx context.Context, moduleCommit bufsync.ModuleCommit) error {
@@ -236,6 +261,25 @@ func (h *syncHandler) IsProtectedBranch(
 		h.moduleIdentityToDefaultBranchCache[identityString] = res.Msg.Repository.DefaultBranch
 	}
 	return branch == h.moduleIdentityToDefaultBranchCache[identityString], nil
+}
+
+func (h *syncHandler) bsrTagExists(
+	ctx context.Context,
+	client registryv1alpha1connect.RepositoryTagServiceClient,
+	repositoryID string,
+	tagName string,
+) (bool, error) {
+	_, err := client.GetRepositoryTag(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryTagRequest{
+		RepositoryId: repositoryID,
+		Name:         tagName,
+	}))
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (h *syncHandler) pushOrCreate(
