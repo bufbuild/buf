@@ -468,8 +468,7 @@ func (s *syncer) branchSyncableCommits(
 				logger.Debug("unnamed module, no override, skipping commit")
 				return nil
 			}
-		}
-		if builtModule.ModuleIdentity().IdentityString() != targetModuleIdentity {
+		} else if builtModule.ModuleIdentity().IdentityString() != targetModuleIdentity {
 			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
 				logger.Debug("module name doesn't match HEAD, no override, skipping commit")
 				return nil
@@ -528,7 +527,7 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 }
 
 // readModule returns a module that has a name and builds correctly given a commit and a module
-// directory. If the module builds, it might be returned alongside a non-nil error.
+// directory.
 func (s *syncer) readModuleAt(
 	ctx context.Context,
 	commit git.Commit,
@@ -610,12 +609,12 @@ func (s *syncer) backfillTags(
 			return nil
 		} else if builtModule.ModuleIdentity() == nil {
 			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
-				// no override for this module
+				logger.Debug("unnamed module, no override, skipping tagged commit")
 				return nil
 			}
 		} else if builtModule.ModuleIdentity().IdentityString() != moduleIdentity.IdentityString() {
 			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
-				logger.Debug("module name doesn't match HEAD, no override, skipping commit")
+				logger.Debug("module name doesn't match HEAD, no override, skipping tagged commit")
 				return nil
 			}
 		}
