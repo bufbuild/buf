@@ -82,7 +82,6 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 				}
 				syncer, err := bufsync.NewSyncer(
 					zaptest.NewLogger(t),
-					bufsync.NewRealClock(),
 					repo,
 					storagegit.NewProvider(repo.Objects()),
 					newTestSyncHandler(),

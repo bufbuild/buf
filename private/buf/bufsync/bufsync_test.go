@@ -17,7 +17,6 @@ package bufsync_test
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -25,12 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"golang.org/x/exp/slices"
 )
-
-type mockClock struct {
-	now time.Time
-}
-
-func (c *mockClock) Now() time.Time { return c.now }
 
 type testRepo struct {
 	syncedGitHashes map[string]struct{}
@@ -97,29 +90,28 @@ func (c *testSyncHandler) InvalidBSRSyncPoint(
 	return errors.New("unimplemented")
 }
 
-func (c *testSyncHandler) BackfillTags(
+func (c *testSyncHandler) SyncModuleTags(
 	ctx context.Context,
 	module bufmoduleref.ModuleIdentity,
-	alreadySyncedHash git.Hash,
-	author git.Ident,
-	committer git.Ident,
-	tags []string,
-) (string, error) {
+	commitTags map[git.Hash][]string,
+) error {
 	repo := c.getRepo(module)
-	for _, tag := range tags {
-		if previousHash, ok := repo.tagsByName[tag]; ok {
-			// clear previous tag
-			repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
-				repo.tagsForHash[previousHash.Hex()],
-				func(previousTag string) bool {
-					return previousTag == tag
-				},
-			)
+	for commit, tags := range commitTags {
+		for _, tag := range tags {
+			if previousHash, ok := repo.tagsByName[tag]; ok {
+				// clear previous tag
+				repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
+					repo.tagsForHash[previousHash.Hex()],
+					func(previousTag string) bool {
+						return previousTag == tag
+					},
+				)
+			}
+			repo.tagsByName[tag] = commit
 		}
-		repo.tagsByName[tag] = alreadySyncedHash
+		repo.tagsForHash[commit.Hex()] = tags
 	}
-	repo.tagsForHash[alreadySyncedHash.Hex()] = tags
-	return "some-BSR-commit-name", nil
+	return nil
 }
 
 func (c *testSyncHandler) ResolveSyncPoint(
@@ -161,13 +153,12 @@ func (c *testSyncHandler) SyncModuleCommit(
 		hash:     commit.Commit().Hash(),
 		fromSync: commit,
 	})
-	_, err := c.BackfillTags(
+	err := c.SyncModuleTags(
 		ctx,
 		commit.Identity(),
-		commit.Commit().Hash(),
-		commit.Commit().Author(),
-		commit.Commit().Committer(),
-		commit.Tags(),
+		map[git.Hash][]string{
+			commit.Commit().Hash(): commit.Tags(),
+		},
 	)
 	return err
 }

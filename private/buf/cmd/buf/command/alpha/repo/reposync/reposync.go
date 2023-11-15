@@ -217,7 +217,6 @@ func sync(
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
-		bufsync.NewRealClock(),
 		repo,
 		storageProvider,
 		newSyncHandler(
