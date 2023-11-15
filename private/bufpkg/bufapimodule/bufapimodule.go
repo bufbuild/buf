@@ -46,10 +46,12 @@ func NewRepositoryServiceClientFactory(clientConfig *connectclient.Config) Repos
 
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
+	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
+		logger,
 		downloadClientFactory,
 		opts...,
 	)
@@ -61,11 +63,9 @@ type ModuleReaderOption func(reader *moduleReader)
 // ModuleReaderWithDeprecationWarning makes the module reader print a warning
 // when reading a deprecated module.
 func ModuleReaderWithDeprecationWarning(
-	logger *zap.Logger,
 	repositoryClientFactory RepositoryServiceClientFactory,
 ) ModuleReaderOption {
 	return func(reader *moduleReader) {
-		reader.logger = logger
 		reader.repositoryClientFactory = repositoryClientFactory
 	}
 }

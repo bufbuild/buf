@@ -30,7 +30,6 @@ import (
 )
 
 type moduleReader struct {
-	// logger may be nil
 	logger                *zap.Logger
 	downloadClientFactory DownloadServiceClientFactory
 	// repositoryClientFactory may be nil
@@ -38,10 +37,12 @@ type moduleReader struct {
 }
 
 func newModuleReader(
+	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) *moduleReader {
 	reader := &moduleReader{
+		logger:                logger,
 		downloadClientFactory: downloadClientFactory,
 	}
 	for _, opt := range opts {

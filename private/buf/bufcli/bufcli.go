@@ -542,9 +542,9 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	delegateReader := bufapimodule.NewModuleReader(
+		container.Logger(),
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
 		bufapimodule.ModuleReaderWithDeprecationWarning(
-			container.Logger(),
 			bufapimodule.NewRepositoryServiceClientFactory(clientConfig),
 		),
 	)
