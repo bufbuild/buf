@@ -87,15 +87,6 @@ func (c *testSyncHandler) setSyncPoint(branchName string, hash git.Hash, identit
 	branch.manualSyncPoint = hash
 }
 
-func (c *testSyncHandler) HandleReadModuleError(
-	readErr *bufsync.ReadModuleError,
-) bufsync.LookbackDecisionCode {
-	if readErr.Code() == bufsync.ReadModuleErrorCodeUnexpectedName {
-		return bufsync.LookbackDecisionCodeOverride
-	}
-	return bufsync.LookbackDecisionCodeSkip
-}
-
 func (c *testSyncHandler) InvalidBSRSyncPoint(
 	identity bufmoduleref.ModuleIdentity,
 	branch string,
