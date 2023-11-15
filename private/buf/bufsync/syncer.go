@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -33,13 +32,9 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// LookbackCommitsLimit is the amount of commits that we will look back before the start sync
-	// point to backfill old git tags. We might allow customizing this value in the future.
-	LookbackCommitsLimit = 5
-	// LookbackTimeLimit is how old we will look back (git commit timestamps) before the start sync
-	// point to backfill old git tags. We might allow customizing this value in the future.
-	LookbackTimeLimit = 24 * time.Hour
+var (
+	errReadModuleInvalidModule       = errors.New("invalid module")
+	errReadModuleInvalidModuleConfig = errors.New("invalid module config")
 )
 
 type syncer struct {
@@ -47,7 +42,6 @@ type syncer struct {
 	repo               git.Repository
 	storageGitProvider storagegit.Provider
 	handler            Handler
-	clock              Clock
 
 	// flags received on creation
 	gitRemoteName                        string
@@ -75,7 +69,6 @@ type syncer struct {
 
 func newSyncer(
 	logger *zap.Logger,
-	clock Clock,
 	repo git.Repository,
 	storageGitProvider storagegit.Provider,
 	handler Handler,
@@ -83,7 +76,6 @@ func newSyncer(
 ) (Syncer, error) {
 	s := &syncer{
 		logger:                                logger,
-		clock:                                 clock,
 		repo:                                  repo,
 		storageGitProvider:                    storageGitProvider,
 		handler:                               handler,
@@ -143,6 +135,9 @@ func (s *syncer) Sync(ctx context.Context) error {
 				return fmt.Errorf("sync module %s in branch %s: %w", moduleDir, branch, err)
 			}
 		}
+	}
+	if err := s.syncTags(ctx); err != nil {
+		return fmt.Errorf("sync tags: %w", err)
 	}
 	return nil
 }
@@ -218,13 +213,22 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 			var targetModuleIdentity bufmoduleref.ModuleIdentity
 			if identityOverride == nil {
 				// no identity override, read from HEAD
-				builtModule, readErr := s.readModuleAt(ctx, branch, headCommit, moduleDir)
+				builtModule, readErr := s.readModuleAt(ctx, headCommit, moduleDir)
 				if readErr != nil {
 					// any error reading module in HEAD, skip syncing that module in that branch
 					s.logger.Warn(
 						"read module from HEAD failed, module won't be synced for this branch",
 						zap.Error(readErr),
 					)
+					continue
+				}
+				if builtModule == nil {
+					s.logger.Debug(
+						"no module on HEAD, skipping branch",
+						zap.String("branch", branch),
+						zap.String("moduleDir", moduleDir),
+					)
+					// no module on branch
 					continue
 				}
 				targetModuleIdentity = builtModule.ModuleIdentity()
@@ -322,33 +326,12 @@ func (s *syncer) syncModuleInBranch(
 	if err != nil {
 		return fmt.Errorf("finding commits to sync: %w", err)
 	}
-	// first sync tags in old commits
-	var startSyncPoint git.Hash
-	if len(commitsForSync) == 0 {
-		// no commits to sync for this branch, backfill from HEAD
-		headCommit, err := s.repo.HEADCommit(
-			git.HEADCommitWithBranch(branch),
-			git.HEADCommitWithRemote(s.gitRemoteName),
-		)
-		if err != nil {
-			return fmt.Errorf("read HEAD commit for branch %s: %w", branch, err)
-		}
-		startSyncPoint = headCommit.Hash()
-	} else {
-		// backfill from the first commit to sync
-		startSyncPoint = commitsForSync[0].commit.Hash()
-	}
-	if err := s.backfillTags(ctx, moduleDir, moduleIdentity, branch, startSyncPoint); err != nil {
-		return fmt.Errorf("sync looking back for branch %s: %w", branch, err)
-	}
-	// now sync
 	targetModuleIdentity := moduleIdentity.IdentityString() // all syncable modules in the branch have the same target
 	logger := s.logger.With(
 		zap.String("module directory", branch),
 		zap.String("module identity", targetModuleIdentity),
 		zap.String("branch", branch),
 	)
-	// then sync the new commits
 	if len(commitsForSync) == 0 {
 		logger.Debug("no commits to sync for module in branch")
 		return nil
@@ -437,34 +420,34 @@ func (s *syncer) branchSyncableCommits(
 			return git.ErrStopForEach
 		}
 		// git commit is not synced, attempt to read the module in the commit:moduleDir
-		builtModule, readErr := s.readModuleAt(
-			ctx, branch, commit, moduleDir,
-			readModuleAtWithExpectedModuleIdentity(targetModuleIdentity),
-		)
-		if readErr == nil {
-			commitsForSync = append(commitsForSync, &syncableCommit{commit: commit, module: builtModule})
-			return nil
-		}
-		decision := s.handler.HandleReadModuleError(readErr)
-		switch decision {
-		case LookbackDecisionCodeFail:
-			return fmt.Errorf("read module error: %w", readErr)
-		case LookbackDecisionCodeSkip:
-			logger.Debug("read module at commit failed, skipping commit", zap.Error(readErr))
-			return nil
-		case LookbackDecisionCodeStop:
-			logger.Debug("read module at commit failed, stop looking back in branch", zap.Error(readErr))
-			return git.ErrStopForEach
-		case LookbackDecisionCodeOverride:
-			logger.Debug("read module at commit failed, overriding module identity in commit", zap.Error(readErr))
-			if builtModule == nil {
-				return fmt.Errorf("cannot override commit, no built module: %w", readErr)
+		builtModule, err := s.readModuleAt(ctx, commit, moduleDir)
+		if err != nil {
+			if errors.Is(err, errReadModuleInvalidModule) || errors.Is(err, errReadModuleInvalidModuleConfig) {
+				logger.Debug("read module at commit failed, skipping commit", zap.Error(err))
+				return nil
 			}
-			// no need to rename the module, the module identity for this built module won't be used
-			commitsForSync = append(commitsForSync, &syncableCommit{commit: commit, module: builtModule})
+			return err
+		}
+		if builtModule == nil {
+			logger.Debug("module not found, skipping commit")
 			return nil
 		}
-		return fmt.Errorf("unexpected decision code %d for read module error %w", decision, readErr)
+		if builtModule.ModuleIdentity() == nil {
+			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
+				logger.Debug("unnamed module, no override, skipping commit")
+				return nil
+			}
+		} else if builtModule.ModuleIdentity().IdentityString() != targetModuleIdentity {
+			if _, hasOverride := s.modulesDirsToIdentityOverrideForSync[moduleDir]; !hasOverride {
+				logger.Debug("module name doesn't match HEAD, no override, skipping commit")
+				return nil
+			}
+		}
+		commitsForSync = append(commitsForSync, &syncableCommit{
+			commit: commit,
+			module: builtModule,
+		})
+		return nil
 	}
 	if err := s.repo.ForEachCommit(
 		eachCommitFunc,
@@ -512,49 +495,30 @@ func (s *syncer) isGitCommitSynced(ctx context.Context, moduleIdentity bufmodule
 	return commitSynced, nil
 }
 
-// readModuleAt returns a module that has a name and builds correctly given a commit and a module
-// directory, or a read module error. If the module builds, it might be returned alongside a not-nil
-// error.
+// readModule returns a module that has a name and builds correctly given a commit and a module
+// directory.
 func (s *syncer) readModuleAt(
 	ctx context.Context,
-	branch string,
 	commit git.Commit,
 	moduleDir string,
-	opts ...readModuleAtOption,
-) (*bufmodulebuild.BuiltModule, *ReadModuleError) {
-	var readOpts readModuleOpts
-	for _, opt := range opts {
-		opt(&readOpts)
-	}
-	// in case there is an error reading this module, it will have the same branch, commit, and module
-	// dir that we can fill upfront. The actual `err` and `code` (if any) is populated in case-by-case
-	// basis before returning.
-	readModuleErr := &ReadModuleError{
-		branch:    branch,
-		commit:    commit.Hash().Hex(),
-		moduleDir: moduleDir,
-	}
+) (*bufmodulebuild.BuiltModule, error) {
 	commitBucket, err := s.storageGitProvider.NewReadBucket(commit.Tree(), storagegit.ReadBucketWithSymlinksIfSupported())
 	if err != nil {
-		readModuleErr.err = fmt.Errorf("new read bucket: %w", err)
-		return nil, readModuleErr
+		return nil, fmt.Errorf("new read bucket: %w", err)
 	}
 	moduleBucket := storage.MapReadBucket(commitBucket, storage.MapOnPrefix(moduleDir))
 	foundModule, err := bufconfig.ExistingConfigFilePath(ctx, moduleBucket)
 	if err != nil {
-		readModuleErr.err = fmt.Errorf("looking for an existing config file path: %w", err)
-		return nil, readModuleErr
+		return nil, fmt.Errorf("looking for an existing config file path: %w", err)
 	}
 	if foundModule == "" {
-		readModuleErr.code = ReadModuleErrorCodeModuleNotFound
-		readModuleErr.err = errors.New("module not found")
-		return nil, readModuleErr
+		// No module at this commit.
+		return nil, nil
 	}
 	sourceConfig, err := bufconfig.GetConfigForBucket(ctx, moduleBucket)
 	if err != nil {
-		readModuleErr.code = ReadModuleErrorCodeInvalidModuleConfig
-		readModuleErr.err = fmt.Errorf("invalid module config: %w", err)
-		return nil, readModuleErr
+		// Invalid config.
+		return nil, fmt.Errorf("%w: %s", errReadModuleInvalidModuleConfig, err)
 	}
 	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
@@ -563,102 +527,52 @@ func (s *syncer) readModuleAt(
 		bufmodulebuild.WithModuleIdentity(sourceConfig.ModuleIdentity),
 	)
 	if err != nil {
-		readModuleErr.code = ReadModuleErrorCodeBuildModule
-		readModuleErr.err = fmt.Errorf("build module: %w", err)
-		return nil, readModuleErr
-	}
-	// module builds, unnamed and unexpectedName errors can be returned alongside the built module.
-	if sourceConfig.ModuleIdentity == nil {
-		readModuleErr.code = ReadModuleErrorCodeUnnamedModule
-		readModuleErr.err = errors.New("found module does not have a name")
-		return builtModule, readModuleErr
-	}
-	if readOpts.expectedModuleIdentity != "" {
-		if sourceConfig.ModuleIdentity.IdentityString() != readOpts.expectedModuleIdentity {
-			readModuleErr.code = ReadModuleErrorCodeUnexpectedName
-			readModuleErr.err = fmt.Errorf(
-				"read module has an unexpected module identity %s, expected %s",
-				sourceConfig.ModuleIdentity.IdentityString(), readOpts.expectedModuleIdentity,
-			)
-			return builtModule, readModuleErr
-		}
+		return nil, fmt.Errorf("%w: %s", errReadModuleInvalidModule, err)
 	}
 	return builtModule, nil
 }
 
-// backfillTags takes syncable commits for a branch already calculated, and looks back for each
-// module a given amount of commits or timestamps, syncing tags in case they were created or moved
-// after those commits were synced.
-func (s *syncer) backfillTags(
-	ctx context.Context,
-	moduleDir string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	branch string,
-	syncStartHash git.Hash,
-) error {
-	var (
-		lookbackCommitsCount int
-		timeLimit            = s.clock.Now().Add(-LookbackTimeLimit)
-		logger               = s.logger.With(
-			zap.String("branch", branch),
-			zap.String("module directory", moduleDir),
-			zap.String("module identity", moduleIdentity.IdentityString()),
-			zap.String("start point", syncStartHash.Hex()),
-		)
-	)
-	forEachOldCommitFunc := func(oldCommit git.Commit) error {
-		lookbackCommitsCount++
-		// For the lookback into older commits to stop, both lookback limits (amount of commits and
-		// timespan) need to be met.
-		if lookbackCommitsCount > LookbackCommitsLimit &&
-			oldCommit.Committer().Timestamp().Before(timeLimit) {
-			return git.ErrStopForEach
+// syncTags syncs all tag commits, including tags for commits that were just
+// synced. This should be run _at the end_ of syncing.
+func (s *syncer) syncTags(ctx context.Context) error {
+	uniqueModuleIdentities := make(map[string]bufmoduleref.ModuleIdentity)
+	for _, branchIdentities := range s.modulesDirsToBranchesToIdentities {
+		for _, identity := range branchIdentities {
+			uniqueModuleIdentities[identity.IdentityString()] = identity
 		}
-		// Is there any tag in this commit to backfill?
-		tagsToBackfill := s.commitsToTags[oldCommit.Hash().Hex()]
-		if len(tagsToBackfill) == 0 {
-			return nil
-		}
-		// For each older commit we travel, we need to make sure it's a valid module with the expected
-		// module identity, or that the error handler would have chosen to override it.
-		if _, readErr := s.readModuleAt(
-			ctx, branch, oldCommit, moduleDir,
-			readModuleAtWithExpectedModuleIdentity(moduleIdentity.IdentityString()),
-		); readErr != nil && s.handler.HandleReadModuleError(readErr) != LookbackDecisionCodeOverride {
-			// read module failed, and the error handler would not have overwritten it
-			return nil
-		}
-		logger := logger.With(
-			zap.String("commit", oldCommit.Hash().Hex()),
-			zap.Strings("tags", tagsToBackfill),
-		)
-		// Valid module in this commit to backfill tags. If backfilling the tags fails, we'll
-		// WARN+continue to not block actual pending commits to sync in this run.
-		bsrCommitName, err := s.handler.BackfillTags(ctx, moduleIdentity, oldCommit.Hash(), oldCommit.Author(), oldCommit.Committer(), tagsToBackfill)
-		if err != nil {
-			logger.Warn("backfill older tags failed", zap.Error(err))
-			return nil
-		}
-		logger.Debug("older tags backfilled", zap.String("BSR commit", bsrCommitName))
-		return nil
 	}
-	if err := s.repo.ForEachCommit(
-		forEachOldCommitFunc,
-		git.ForEachCommitWithHashStartPoint(syncStartHash.Hex()),
-	); err != nil {
-		return fmt.Errorf("looking back past the start sync point: %w", err)
+	// We sync tagged commits to all possible module identities.
+	for _, moduleIdentity := range uniqueModuleIdentities {
+		allTags := make(map[git.Hash][]string)
+		for commitHashString, tags := range s.commitsToTags {
+			commitHash, err := git.NewHashFromHex(commitHashString)
+			if err != nil {
+				return fmt.Errorf("invalid commit hash %q for tags %q: %w", commitHashString, tags, err)
+			}
+			if synced, err := s.isGitCommitSynced(ctx, moduleIdentity, commitHash); err != nil {
+				return fmt.Errorf("check if tagged commit %q is synced: %w", commitHash, err)
+			} else if !synced {
+				s.logger.Debug(
+					"commit referenced by tags is not synced, skipping tags",
+					zap.String("module identity", moduleIdentity.IdentityString()),
+					zap.String("commit", commitHashString),
+					zap.Strings("tags", tags),
+				)
+				continue
+			}
+			allTags[commitHash] = tags
+		}
+		err := s.handler.SyncModuleTags(ctx, moduleIdentity, allTags)
+		if err != nil {
+			return fmt.Errorf("put tags %q for module identity %q: %w", allTags, moduleIdentity, err)
+		}
+		s.logger.Debug(
+			"tags put",
+			zap.String("module identity", moduleIdentity.IdentityString()),
+			zap.Any("tags", allTags),
+		)
 	}
 	return nil
-}
-
-type readModuleOpts struct {
-	expectedModuleIdentity string
-}
-
-type readModuleAtOption func(*readModuleOpts)
-
-func readModuleAtWithExpectedModuleIdentity(moduleIdentity string) readModuleAtOption {
-	return func(opts *readModuleOpts) { opts.expectedModuleIdentity = moduleIdentity }
 }
 
 // printSyncPreparation prints information gathered at the sync preparation step.

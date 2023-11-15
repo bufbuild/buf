@@ -22,4 +22,7 @@ message OneofTest {
   }
   // required is OK for non-oneof fields
   string f4 = 4 [(buf.validate.field).required = true];
+  // optional in proto3 is a synthetic oneof, we should not report error.
+  optional string f5 = 5 [(buf.validate.field).required = true];
+  optional google.protobuf.Duration f6 = 6 [(buf.validate.field).required = true];
 }

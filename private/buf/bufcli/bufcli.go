@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.28.1-dev"
+	Version = "1.28.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -542,9 +542,10 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	delegateReader := bufapimodule.NewModuleReader(
+		container.Logger(),
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+		bufapimodule.NewRepositoryServiceClientFactory(clientConfig),
 	)
-	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var moduleReader bufmodule.ModuleReader
 	casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
@@ -556,7 +557,6 @@ func newModuleReaderAndCreateCacheDirs(
 		container.VerbosePrinter(),
 		casModuleBucket,
 		delegateReader,
-		repositoryClientFactory,
 	)
 	return moduleReader, nil
 }
