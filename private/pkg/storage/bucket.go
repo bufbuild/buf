@@ -104,11 +104,15 @@ type PutOption func(*putOptions)
 // Some implementations of Put allow multi-part upload, and allow customizing the
 // chunk size of each part upload, or even disabling multi-part upload.
 //
-// # Setting a suggestedChunkSize of 0 says to suggest disable chunking
+// Setting a suggestedChunkSize of 0 says to suggest disable chunking
+// Negative values will be ignored.
 //
 // This is a suggestion, implementations may choose to ignore this option.
 func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
 	return func(putOptions *putOptions) {
+		if suggestedChunkSize < 0 {
+			return
+		}
 		putOptions.suggestedChunkSize = &suggestedChunkSize
 	}
 }
