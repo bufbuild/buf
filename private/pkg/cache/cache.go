@@ -22,53 +22,53 @@ import (
 //
 // It uses double-locking to get values.
 type Cache[K comparable, V any] struct {
-	store map[K]*tuple[V, error]
+	store map[K]*result[V]
 	lock  sync.RWMutex
 }
 
 // GetOrAdd gets the value for the key, or calls getUncached to get a new value,
 // and then caches the value.
 //
-// If getUnached calls another Cache, the order of GetOrAdd calls between caches
+// If getUncached calls another Cache, the order of GetOrAdd calls between caches
 // must be preserved for lock ordering.
 func (c *Cache[K, V]) GetOrAdd(key K, getUncached func() (V, error)) (V, error) {
 	c.lock.RLock()
-	var tuple *tuple[V, error]
+	var result *result[V]
 	var ok bool
 	if c.store != nil {
-		tuple, ok = c.store[key]
+		result, ok = c.store[key]
 	}
 	c.lock.RUnlock()
 	if ok {
-		return tuple.V1, tuple.V2
+		return result.value, result.err
 	}
 	c.lock.Lock()
-	value, err := c.getOrAdd(key, getUncached)
+	value, err := c.getOrAddInsideWriteLock(key, getUncached)
 	c.lock.Unlock()
 	return value, err
 }
 
-func (c *Cache[K, V]) getOrAdd(key K, getUncached func() (V, error)) (V, error) {
+func (c *Cache[K, V]) getOrAddInsideWriteLock(key K, getUncached func() (V, error)) (V, error) {
 	if c.store == nil {
-		c.store = make(map[K]*tuple[V, error])
+		c.store = make(map[K]*result[V])
 	}
-	tuple, ok := c.store[key]
+	result, ok := c.store[key]
 	if ok {
-		return tuple.V1, tuple.V2
+		return result.value, result.err
 	}
 	value, err := getUncached()
-	c.store[key] = newTuple(value, err)
+	c.store[key] = newResult(value, err)
 	return value, err
 }
 
-type tuple[T1, T2 any] struct {
-	V1 T1
-	V2 T2
+type result[V any] struct {
+	value V
+	err   error
 }
 
-func newTuple[T1, T2 any](v1 T1, v2 T2) *tuple[T1, T2] {
-	return &tuple[T1, T2]{
-		V1: v1,
-		V2: v2,
+func newResult[V any](value V, err error) *result[V] {
+	return &result[V]{
+		value: value,
+		err:   err,
 	}
 }
