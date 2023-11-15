@@ -178,7 +178,9 @@ func checkConstraintsForField(
 	if fieldDescriptor.IsExtension() {
 		checkConstraintsForExtension(adder, fieldConstraints)
 	}
-	if fieldDescriptor.ContainingOneof() != nil && fieldConstraints.GetRequired() {
+	if fieldDescriptor.ContainingOneof() != nil &&
+		!protodesc.ToFieldDescriptorProto(fieldDescriptor).GetProto3Optional() &&
+		fieldConstraints.GetRequired() {
 		adder.addForPathf(
 			[]int32{requiredFieldNumber},
 			"Field %q has %s but is in a oneof (%s). Oneof fields must not have %s.",
