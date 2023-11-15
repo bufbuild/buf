@@ -30,21 +30,19 @@ import (
 )
 
 type moduleReader struct {
-	logger                  *zap.Logger
-	downloadClientFactory   DownloadServiceClientFactory
+	// logger may be nil
+	logger                *zap.Logger
+	downloadClientFactory DownloadServiceClientFactory
+	// repositoryClientFactory may be nil
 	repositoryClientFactory RepositoryServiceClientFactory
 }
 
 func newModuleReader(
-	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
-	repositoryClientFactory RepositoryServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) *moduleReader {
 	reader := &moduleReader{
-		logger:                  logger,
-		downloadClientFactory:   downloadClientFactory,
-		repositoryClientFactory: repositoryClientFactory,
+		downloadClientFactory: downloadClientFactory,
 	}
 	for _, opt := range opts {
 		opt(reader)
@@ -80,8 +78,10 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if err != nil {
 		return nil, err
 	}
-	if err := warnIfDeprecated(ctx, m.repositoryClientFactory, modulePin, m.logger); err != nil {
-		return nil, err
+	if logger, repositoryClientFactory := m.logger, m.repositoryClientFactory; logger != nil && repositoryClientFactory != nil {
+		if err := warnIfDeprecated(ctx, m.repositoryClientFactory, modulePin, m.logger); err != nil {
+			return nil, err
+		}
 	}
 	return bufmodule.NewModuleForFileSet(ctx, fileSet, identityAndCommitOpt)
 }

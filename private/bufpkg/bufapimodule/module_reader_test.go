@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestDownload(t *testing.T) {
@@ -119,11 +118,7 @@ func testDownload(
 		t.Parallel()
 		var moduleReaderOpts []ModuleReaderOption
 		moduleReader := newModuleReader(
-			zap.NewNop(),
 			mock.factory,
-			func(string) registryv1alpha1connect.RepositoryServiceClient {
-				return &nopRepositoryServiceClient{}
-			},
 			moduleReaderOpts...,
 		)
 		ctx := context.Background()
