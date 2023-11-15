@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.28.1] - 2023-11-15
 
 - The `buf curl` command has been updated to support the use of multiple schemas.
@@ -986,6 +990,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.1...HEAD
 [v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
