@@ -58,7 +58,12 @@ func NewModuleReader(
 // ModuleReaderOption allows configuration of a module reader.
 type ModuleReaderOption func(reader *moduleReader)
 
-func ModuleReaderWithDeprecationWarning(logger *zap.Logger, repositoryClientFactory RepositoryServiceClientFactory) ModuleReaderOption {
+// ModuleReaderWithDeprecationWarning makes the module reader print a warning
+// when reading a deprecated module.
+func ModuleReaderWithDeprecationWarning(
+	logger *zap.Logger,
+	repositoryClientFactory RepositoryServiceClientFactory,
+) ModuleReaderOption {
 	return func(reader *moduleReader) {
 		reader.logger = logger
 		reader.repositoryClientFactory = repositoryClientFactory
