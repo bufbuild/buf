@@ -115,8 +115,7 @@ func (h *syncHandler) SyncModuleTags(
 		FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
 	})); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Repo is not created
-			return nil
+			return fmt.Errorf("repository for module %q does not exist", moduleIdentity.IdentityString())
 		}
 		return fmt.Errorf("get repository for module identity: %w", err)
 	} else {
