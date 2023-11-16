@@ -64,20 +64,26 @@ func TestPutTags(t *testing.T) {
 		bufsync.SyncerWithModule(".", nil),
 	)
 	require.NoError(t, err)
+	plan, err := syncer.Plan(context.Background())
+	require.NoError(t, err)
 	require.NoError(t, syncer.Sync(context.Background()))
+	require.Len(t, plan.ModuleTagsToSync(), 1)
+	moduleTags := plan.ModuleTagsToSync()[0]
 	// In total the repo has at least 20 commits; we manually marked index 6 as the synced point,
 	// so we expect to sync commits where index < 6. At the end, we should have 6+1 commits synced.
 	// For those 6+1 commits, we expect their tags to be put. All other tags are not put because
 	// they point to unsynced commits.
 	assert.GreaterOrEqual(t, len(allCommitsHashes), 20)
-	tagsForHash := testHandler.getRepo(moduleIdentityInHEAD).tagsForHash
-	assert.Len(t, tagsForHash, previousHeadIndex+1)
-	// as follows:
+	require.Len(t, moduleTags.TaggedCommitsToSync(), previousHeadIndex+1)
+	var syncedCommits []string
+	for _, taggedCommit := range moduleTags.TaggedCommitsToSync() {
+		syncedCommits = append(syncedCommits, taggedCommit.Commit().Hash().Hex())
+	}
 	for i, commitHash := range allCommitsHashes {
 		if i < previousHeadIndex+1 {
-			assert.Contains(t, tagsForHash, commitHash)
+			assert.Contains(t, syncedCommits, commitHash)
 		} else {
-			assert.NotContains(t, tagsForHash, commitHash)
+			assert.NotContains(t, syncedCommits, commitHash)
 		}
 	}
 }

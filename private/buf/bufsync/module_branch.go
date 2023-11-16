@@ -19,27 +19,27 @@ import (
 )
 
 type moduleBranch struct {
-	name           string
-	moduleDir      string
-	moduleIdentity bufmoduleref.ModuleIdentity
-	commitsToSync  []ModuleCommit
+	name                 string
+	moduleDir            string
+	targetModuleIdentity bufmoduleref.ModuleIdentity
+	commitsToSync        []ModuleBranchCommit
 }
 
 func newModuleBranch(
 	name string,
 	dir string,
-	identity bufmoduleref.ModuleIdentity,
-	commits []ModuleCommit,
+	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	commitsToSync []ModuleBranchCommit,
 ) *moduleBranch {
 	return &moduleBranch{
-		name:           name,
-		moduleDir:      dir,
-		moduleIdentity: identity,
-		commitsToSync:  commits,
+		name:                 name,
+		moduleDir:            dir,
+		targetModuleIdentity: targetModuleIdentity,
+		commitsToSync:        commitsToSync,
 	}
 }
 
-func (b *moduleBranch) Name() string {
+func (b *moduleBranch) BranchName() string {
 	return b.name
 }
 
@@ -47,11 +47,11 @@ func (b *moduleBranch) Directory() string {
 	return b.moduleDir
 }
 
-func (b *moduleBranch) ModuleIdentity() bufmoduleref.ModuleIdentity {
-	return b.moduleIdentity
+func (b *moduleBranch) TargetModuleIdentity() bufmoduleref.ModuleIdentity {
+	return b.targetModuleIdentity
 }
 
-func (b *moduleBranch) CommitsToSync() []ModuleCommit {
+func (b *moduleBranch) CommitsToSync() []ModuleBranchCommit {
 	return b.commitsToSync
 }
 

@@ -15,51 +15,40 @@
 package bufsync
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"context"
+
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type moduleBranchCommit struct {
-	moduleCommit ModuleCommit
-	branch       string
-	bucket       storage.ReadBucket
+	commit    git.Commit
+	tags      []string
+	getBucket func(ctx context.Context) (storage.ReadBucket, error)
 }
 
 func newModuleBranchCommit(
-	moduleCommit ModuleCommit,
-	branch string,
-	bucket storage.ReadBucket,
-) ModuleBranchCommit {
+	commit git.Commit,
+	tags []string,
+	getBucket func(ctx context.Context) (storage.ReadBucket, error),
+) *moduleBranchCommit {
 	return &moduleBranchCommit{
-		moduleCommit: moduleCommit,
-		branch:       branch,
-		bucket:       bucket,
+		commit:    commit,
+		tags:      tags,
+		getBucket: getBucket,
 	}
 }
 
 func (m *moduleBranchCommit) Commit() git.Commit {
-	return m.moduleCommit.Commit()
+	return m.commit
 }
 
 func (m *moduleBranchCommit) Tags() []string {
-	return m.moduleCommit.Tags()
+	return m.tags
 }
 
-func (m *moduleBranchCommit) Directory() string {
-	return m.moduleCommit.Directory()
-}
-
-func (m *moduleBranchCommit) ModuleIdentity() bufmoduleref.ModuleIdentity {
-	return m.moduleCommit.ModuleIdentity()
-}
-
-func (m *moduleBranchCommit) Branch() string {
-	return m.branch
-}
-
-func (m *moduleBranchCommit) Bucket() storage.ReadBucket {
-	return m.bucket
+func (m *moduleBranchCommit) Bucket(ctx context.Context) (storage.ReadBucket, error) {
+	return m.getBucket(ctx)
 }
 
 var _ ModuleBranchCommit = (*moduleBranchCommit)(nil)

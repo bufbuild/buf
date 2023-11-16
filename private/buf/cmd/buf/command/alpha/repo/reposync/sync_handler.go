@@ -147,7 +147,7 @@ func (h *syncHandler) IsGitCommitSyncedToBranch(
 
 func (h *syncHandler) SyncModuleTaggedCommits(
 	ctx context.Context,
-	taggedCommits []bufsync.ModuleCommit,
+	taggedCommits []bufsync.ModuleBranchCommit,
 ) error {
 	for _, commit := range taggedCommits {
 		repositoryID, err := h.getRepositoryID(ctx, commit.ModuleIdentity())
@@ -193,6 +193,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 					return fmt.Errorf("create new tag %q on module %q: %w", tag, commit.ModuleIdentity().IdentityString(), err)
 				}
 			} else {
+				// TODO: don't do this unless we need to
 				_, err := tagService.UpdateRepositoryTag(ctx, connect.NewRequest(&registryv1alpha1.UpdateRepositoryTagRequest{
 					RepositoryId: repositoryID,
 					Name:         tag,
@@ -207,7 +208,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 	return nil
 }
 
-func (h *syncHandler) SyncModuleBranchCommit(ctx context.Context, moduleCommit bufsync.ModuleBranchCommit) error {
+func (h *syncHandler) SyncModuleBranchCommit(ctx context.Context, moduleCommit bufsync.SyncableBranchCommit) error {
 	syncPoint, err := h.pushOrCreate(
 		ctx,
 		moduleCommit.Commit(),

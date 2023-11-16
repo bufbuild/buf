@@ -15,45 +15,30 @@
 package bufsync
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
 )
 
-type moduleCommit struct {
-	commit         git.Commit
-	tags           []string
-	directory      string
-	moduleIdentity bufmoduleref.ModuleIdentity
+type taggedCommit struct {
+	commit git.Commit
+	tags   []string
 }
 
-func newModuleCommit(
+func newTaggedCommit(
 	commit git.Commit,
 	tags []string,
-	directory string,
-	identity bufmoduleref.ModuleIdentity,
-) ModuleCommit {
-	return &moduleCommit{
-		commit:         commit,
-		tags:           tags,
-		directory:      directory,
-		moduleIdentity: identity,
+) *taggedCommit {
+	return &taggedCommit{
+		commit: commit,
+		tags:   tags,
 	}
 }
 
-func (m *moduleCommit) Commit() git.Commit {
+func (m *taggedCommit) Commit() git.Commit {
 	return m.commit
 }
 
-func (m *moduleCommit) Tags() []string {
+func (m *taggedCommit) Tags() []string {
 	return m.tags
 }
 
-func (m *moduleCommit) Directory() string {
-	return m.directory
-}
-
-func (m *moduleCommit) ModuleIdentity() bufmoduleref.ModuleIdentity {
-	return m.moduleIdentity
-}
-
-var _ ModuleCommit = (*moduleCommit)(nil)
+var _ TaggedCommit = (*taggedCommit)(nil)

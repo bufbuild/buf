@@ -32,23 +32,24 @@ import (
 //
 // Handler implementations should be safe to use across multiple Syncer#Sync invocations.
 type Handler interface {
-	// SyncModuleCommit is invoked to sync a commit. If an error is returned, sync will abort.
+	// SyncModuleBranch is invoked to sync a set of commits on a branch. If an error is returned, sync
+	// will abort.
 	//
-	// Syncer guarantees that either the commit's parent is synced, or none of the commit's ancestors
-	// are synced. A commit may be synced _more than once_, in the case where some metadata about the
-	// commit has changed (e.g., branch).
-	SyncModuleBranchCommit(
+	// Syncer guarantees that for all commits, either the commit's parent is synced, or none of the
+	// commit's ancestors are synced. A commit may be synced _more than once_, in the case where some
+	// metadata about the commit has changed (e.g., branch).
+	SyncModuleBranch(
 		ctx context.Context,
-		moduleCommit ModuleBranchCommit,
+		moduleBranch ModuleBranch,
 	) error
 
 	// SyncModuleTags is invoked to sync a set of tagged commits. If an error is returned, sync will abort.
 	//
 	// Syncer guarantees that this is the complete set of tags for a module identity, and that commits in
 	// this set are synced.
-	SyncModuleTaggedCommits(
+	SyncModuleTags(
 		ctx context.Context,
-		taggedCommits []ModuleCommit,
+		moduleTags ModuleTags,
 	) error
 
 	// ResolveSyncPoint is invoked to resolve a syncpoint for a particular module at a particular branch.
@@ -175,51 +176,53 @@ func SyncerWithAllBranches() SyncerOption {
 	}
 }
 
-// ModuleCommit is a module at a particular commit.
-type ModuleCommit interface {
+// ModuleBranchCommit is a commit on a branch with a module that will be synced.
+type ModuleBranchCommit interface {
 	// Commit is the commit that the module is sourced from.
 	Commit() git.Commit
 	// Tags are the git tags associated with Commit.
 	Tags() []string
-	// Directory is the directory relative to the root of the git repository that this module is
-	// sourced from.
-	Directory() string
-	// ModuleIdentity is the identity of the module.
-	ModuleIdentity() bufmoduleref.ModuleIdentity
-}
-
-// ModuleBranchCommit is a module at a particular commit.
-type ModuleBranchCommit interface {
-	ModuleCommit
-	// Branch is the git branch that this module is sourced from.
-	Branch() string
 	// Bucket is the bucket for the module.
-	Bucket() storage.ReadBucket
+	Bucket(ctx context.Context) (storage.ReadBucket, error)
 }
 
 // ModuleBranch is a branch that contains a module at a particular directory,
 // along with a set of commits to sync for the branch to the module's module identity.
 type ModuleBranch interface {
-	// Name is the name of git branch that this module is sourced from.
-	Name() string
+	// BranchName is the name of git branch that this module is sourced from.
+	BranchName() string
 	// Directory is the directory relative to the root of the git repository that this module is
 	// sourced from.
 	Directory() string
 	// ModuleIdentity is the identity of the module located in Directory, or an override if one
-	// was specified for Directory.
-	ModuleIdentity() bufmoduleref.ModuleIdentity
+	// was specified for Directory. This does not necessarily match the identity in each commit
+	// in source, but overrides their identity.
+	TargetModuleIdentity() bufmoduleref.ModuleIdentity
 	// CommitsToSync is the set of commits that will be synced, in the order in which they will
 	// be synced.
-	//
-	// All commits in CommitsToSync have the same ModuleIdentity as this ModuleBranch.
-	CommitsToSync() []ModuleCommit
+	CommitsToSync() []ModuleBranchCommit
+}
+
+type ModuleTags interface {
+	// ModuleIdentity is the identity of the module located in Directory, or an override if one
+	// was specified for Directory. This does not necessarily match the identity in each commit
+	// in source, but overrides their identity.
+	TargetModuleIdentity() bufmoduleref.ModuleIdentity
+	TaggedCommitsToSync() []TaggedCommit
+}
+
+type TaggedCommit interface {
+	// Commit is the git commit that is tagged with Tags.
+	Commit() git.Commit
+	// Tags are the git tags associated with Commit.
+	Tags() []string
 }
 
 type ExecutionPlan interface {
 	// ModuleBranchesToSync is the set of module branches that Syncer will sync.
 	ModuleBranchesToSync() []ModuleBranch
 	// TaggedCommitsToSync
-	TaggedCommitsToSync() []ModuleCommit
+	ModuleTagsToSync() []ModuleTags
 	// Nop returns true if there is nothing to sync.
 	Nop() bool
 	// Log logs the plan to the logger

@@ -40,7 +40,7 @@ type testBranch struct {
 type testCommit struct {
 	hash                 git.Hash
 	fromRepositoryCommit *registryv1alpha1.RepositoryCommit
-	fromSync             bufsync.ModuleCommit
+	fromSync             bufsync.ModuleBranchCommit
 }
 
 type testSyncHandler struct {
@@ -66,40 +66,44 @@ func (c *testSyncHandler) getRepo(identity bufmoduleref.ModuleIdentity) *testRep
 	return c.repos[fullName]
 }
 
-func (c *testSyncHandler) getRepoBranch(moduleIdentity bufmoduleref.ModuleIdentity, branchName string) *testBranch {
+func (c *testSyncHandler) getRepoBranch(moduleIdentity bufmoduleref.ModuleIdentity, branchName string) (*testRepo, *testBranch) {
 	repo := c.getRepo(moduleIdentity)
 	if _, ok := repo.branches[branchName]; !ok {
 		repo.branches[branchName] = &testBranch{}
 	}
-	return repo.branches[branchName]
+	return repo, repo.branches[branchName]
 }
 
 func (c *testSyncHandler) setSyncPoint(branchName string, hash git.Hash, moduleIdentity bufmoduleref.ModuleIdentity) {
-	repo := c.getRepo(moduleIdentity)
+	repo, branch := c.getRepoBranch(moduleIdentity, branchName)
 	repo.syncedGitHashes[hash.Hex()] = struct{}{}
-	branch := c.getRepoBranch(moduleIdentity, branchName)
 	branch.manualSyncPoint = hash
 }
 
-func (c *testSyncHandler) SyncModuleTaggedCommits(
-	ctx context.Context,
-	taggedCommits []bufsync.ModuleCommit,
-) error {
-	for _, commit := range taggedCommits {
-		repo := c.getRepo(commit.ModuleIdentity())
-		for _, tag := range commit.Tags() {
-			if previousHash, ok := repo.tagsByName[tag]; ok {
-				// clear previous tag
-				repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
-					repo.tagsForHash[previousHash.Hex()],
-					func(previousTag string) bool {
-						return previousTag == tag
-					},
-				)
-			}
-			repo.tagsByName[tag] = commit.Commit().Hash()
+func (c *testSyncHandler) putTags(repo *testRepo, commitHash git.Hash, tags []string) {
+	for _, tag := range tags {
+		if previousHash, ok := repo.tagsByName[tag]; ok {
+			// clear previous tag
+			repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
+				repo.tagsForHash[previousHash.Hex()],
+				func(previousTag string) bool {
+					return previousTag == tag
+				},
+			)
 		}
-		repo.tagsForHash[commit.Commit().Hash().Hex()] = commit.Tags()
+		repo.tagsByName[tag] = commitHash
+	}
+	repo.tagsForHash[commitHash.Hex()] = tags
+
+}
+
+func (c *testSyncHandler) SyncModuleTags(
+	ctx context.Context,
+	moduleTags bufsync.ModuleTags,
+) error {
+	for _, commit := range moduleTags.TaggedCommitsToSync() {
+		repo := c.getRepo(moduleTags.TargetModuleIdentity())
+		c.putTags(repo, commit.Commit().Hash(), commit.Tags())
 	}
 	return nil
 }
@@ -109,7 +113,7 @@ func (c *testSyncHandler) ResolveSyncPoint(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (git.Hash, error) {
-	branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleIdentity, branchName)
 	// if we have commits from SyncModuleCommit, prefer that over
 	// manually set sync point
 	if len(branch.commits) > 0 {
@@ -128,23 +132,21 @@ func (c *testSyncHandler) ResolveSyncPoint(
 	return nil, nil
 }
 
-func (c *testSyncHandler) SyncModuleBranchCommit(
+func (c *testSyncHandler) SyncModuleBranch(
 	ctx context.Context,
-	commit bufsync.ModuleBranchCommit,
+	moduleBranch bufsync.ModuleBranch,
 ) error {
-	c.setSyncPoint(
-		commit.Branch(),
-		commit.Commit().Hash(),
-		commit.ModuleIdentity(),
-	)
-	branch := c.getRepoBranch(commit.ModuleIdentity(), commit.Branch())
-	// append-only, no backfill; good enough for now!
-	branch.commits = append(branch.commits, &testCommit{
-		hash:     commit.Commit().Hash(),
-		fromSync: commit,
-	})
-	err := c.SyncModuleTaggedCommits(ctx, []bufsync.ModuleCommit{commit})
-	return err
+	repo, branch := c.getRepoBranch(moduleBranch.TargetModuleIdentity(), moduleBranch.BranchName())
+	branch.manualSyncPoint = nil // clear manual sync point
+	for _, commit := range moduleBranch.CommitsToSync() {
+		repo.syncedGitHashes[commit.Commit().Hash().Hex()] = struct{}{}
+		branch.commits = append(branch.commits, &testCommit{
+			hash:     commit.Commit().Hash(),
+			fromSync: commit,
+		})
+		c.putTags(repo, commit.Commit().Hash(), commit.Tags())
+	}
+	return nil
 }
 
 func (c *testSyncHandler) IsGitCommitSynced(
@@ -170,7 +172,7 @@ func (c *testSyncHandler) GetBranchHead(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (*registryv1alpha1.RepositoryCommit, error) {
-	branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleIdentity, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
 		if commit.fromRepositoryCommit != nil {
@@ -186,7 +188,7 @@ func (c *testSyncHandler) IsBranchSynced(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleIdentity, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
 		if commit.fromSync != nil {
@@ -202,10 +204,10 @@ func (c *testSyncHandler) IsGitCommitSyncedToBranch(
 	branchName string,
 	hash git.Hash,
 ) (bool, error) {
-	branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleIdentity, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
-		if commit.fromSync != nil {
+		if commit.fromSync != nil && commit.fromSync.Commit().Hash().String() == hash.String() {
 			return true, nil
 		}
 	}

@@ -168,20 +168,20 @@ func (c *cachedHandler) ResolveSyncPoint(
 	return c.delegate.ResolveSyncPoint(ctx, moduleIdentity, branchName)
 }
 
-func (c *cachedHandler) SyncModuleBranchCommit(
+func (c *cachedHandler) SyncModuleBranch(
 	ctx context.Context,
-	moduleCommit ModuleBranchCommit,
+	moduleBranch ModuleBranch,
 ) error {
 	// Write operation: nothing to cache.
-	return c.delegate.SyncModuleBranchCommit(ctx, moduleCommit)
+	return c.delegate.SyncModuleBranch(ctx, moduleBranch)
 }
 
-func (c *cachedHandler) SyncModuleTaggedCommits(
+func (c *cachedHandler) SyncModuleTags(
 	ctx context.Context,
-	taggedCommits []ModuleCommit,
+	moduleTags ModuleTags,
 ) error {
 	// Write operation: nothing to cache.
-	return c.delegate.SyncModuleTaggedCommits(ctx, taggedCommits)
+	return c.delegate.SyncModuleTags(ctx, moduleTags)
 }
 
 var _ Handler = (*cachedHandler)(nil)

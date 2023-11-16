@@ -21,33 +21,34 @@ import (
 
 type executionPlan struct {
 	moduleBranchesToSync []ModuleBranch
-	taggedCommitsToSync  []ModuleCommit
+	moduleTagsToSync     []ModuleTags
 }
 
 func newExecutionPlan(
 	moduleBranchesToSync []ModuleBranch,
-	taggedCommitsToSync []ModuleCommit,
+	moduleTagsToSync []ModuleTags,
 ) *executionPlan {
 	sortedBranchesToSync := make([]ModuleBranch, len(moduleBranchesToSync))
 	copy(sortedBranchesToSync, moduleBranchesToSync)
 	slices.SortFunc(sortedBranchesToSync, func(a, b ModuleBranch) int {
+		// TODO: this needs to be original order of moduleDirs
 		if a.Directory() > b.Directory() {
 			return 1
 		}
 		if a.Directory() < b.Directory() {
 			return -1
 		}
-		if a.Name() > b.Name() {
+		if a.BranchName() > b.BranchName() {
 			return 1
 		}
-		if a.Name() < b.Name() {
+		if a.BranchName() < b.BranchName() {
 			return -1
 		}
 		return 0
 	})
 	return &executionPlan{
 		moduleBranchesToSync: sortedBranchesToSync,
-		taggedCommitsToSync:  taggedCommitsToSync,
+		moduleTagsToSync:     moduleTagsToSync,
 	}
 }
 
@@ -55,12 +56,12 @@ func (p *executionPlan) ModuleBranchesToSync() []ModuleBranch {
 	return p.moduleBranchesToSync
 }
 
-func (p *executionPlan) TaggedCommitsToSync() []ModuleCommit {
-	return p.taggedCommitsToSync
+func (p *executionPlan) ModuleTagsToSync() []ModuleTags {
+	return p.moduleTagsToSync
 }
 
 func (p *executionPlan) Nop() bool {
-	return len(p.moduleBranchesToSync) == 0 && len(p.taggedCommitsToSync) == 0
+	return len(p.moduleBranchesToSync) == 0 && len(p.moduleTagsToSync) == 0
 }
 
 func (p *executionPlan) log(logger *zap.Logger) {
@@ -73,20 +74,22 @@ func (p *executionPlan) log(logger *zap.Logger) {
 			commitSHAs = append(commitSHAs, commit.Commit().Hash().Hex())
 		}
 		logger.Debug(
-			"branch plan for module",
-			zap.String("branch", branch.Name()),
+			"sync plan for module branch",
+			zap.String("branch", branch.BranchName()),
 			zap.String("moduleDir", branch.Directory()),
-			zap.String("moduleIdentity", branch.ModuleIdentity().IdentityString()),
+			zap.String("moduleIdentity", branch.TargetModuleIdentity().IdentityString()),
 			zap.Strings("commitsToSync", commitSHAs),
 		)
 	}
-	for _, commitTags := range p.TaggedCommitsToSync() {
-		logger.Debug(
-			"tag plan for module",
-			zap.Stringer("commit", commitTags.Commit()),
-			zap.String("moduleIdentity", commitTags.ModuleIdentity().IdentityString()),
-			zap.Strings("tagsToSync", commitTags.Tags()),
-		)
+	for _, moduleTags := range p.ModuleTagsToSync() {
+		for _, commitTags := range moduleTags.TaggedCommitsToSync() {
+			logger.Debug(
+				"sync plan for tags for module commit",
+				zap.Stringer("commit", commitTags.Commit()),
+				zap.String("moduleIdentity", moduleTags.TargetModuleIdentity().IdentityString()),
+				zap.Strings("tagsToSync", commitTags.Tags()),
+			)
+		}
 	}
 }
 
