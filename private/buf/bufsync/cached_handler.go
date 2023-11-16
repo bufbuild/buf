@@ -60,8 +60,8 @@ func (c *cachedHandler) GetBranchHead(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (*registryv1alpha1.RepositoryCommit, error) {
-	// This cannot be cached as it may change during the lifetime of Sync
-	// or across Sync runs.
+	// This cannot be cached as it may change during the lifetime of Sync or across
+	// Sync runs.
 	return c.delegate.GetBranchHead(ctx, moduleIdentity, branchName)
 }
 
@@ -70,8 +70,8 @@ func (c *cachedHandler) IsBranchSynced(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	// Only synced branches can be cached, as non-synced branches may
-	// become synced during the lifetime of Sync or across Sync runs.
+	// Only synced branches can be cached, as non-synced branches may become synced
+	// during the lifetime of Sync or across Sync runs.
 	cacheKey := isBranchSyncedCacheKey{
 		moduleIdentityString: moduleIdentity.IdentityString(),
 		branchName:           branchName,
@@ -91,8 +91,8 @@ func (c *cachedHandler) IsGitCommitSynced(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	hash git.Hash,
 ) (bool, error) {
-	// Only synced commits can be cached, as non-synced commits may
-	// become synced during the lifetime of Sync or across Sync runs.
+	// Only synced commits can be cached, as non-synced commits may become synced during
+	// the lifetime of Sync or across Sync runs.
 	// Note: we want this to overlap with IsGitCommitSyncedToBranch, hence the foreach
 	for cached := range c.isGitCommitSynedCache {
 		if cached.moduleIdentityString == moduleIdentity.IdentityString() && cached.gitHash == hash.Hex() {
@@ -143,7 +143,7 @@ func (c *cachedHandler) IsProtectedBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	// All branch protection status can be synced, as this does not change
+	// All branch protection status can be cached, as this is _extremely_ unlikely to change
 	// during the lifetime of Sync or across Sync runs.
 	cacheKey := isProtectedBranchCacheKey{
 		moduleIdentityString: moduleIdentity.IdentityString(),
@@ -164,8 +164,7 @@ func (c *cachedHandler) ResolveSyncPoint(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (git.Hash, error) {
-	// This cannot be cached as it may change during the lifetime of Sync
-	// or across Sync runs.
+	// This cannot be cached as it may change during the lifetime of Sync or across Sync runs.
 	return c.delegate.ResolveSyncPoint(ctx, moduleIdentity, branchName)
 }
 
