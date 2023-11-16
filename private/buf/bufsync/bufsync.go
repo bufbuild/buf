@@ -27,28 +27,28 @@ import (
 	"go.uber.org/zap"
 )
 
-// Handler is a handler for Syncer. It controls the way in which Syncer handles errors, provides
-// any information the Syncer needs to Sync commits, and receives ModuleCommits that should be
-// synced.
+// Handler is a handler for Syncer. It provides any information the Syncer needs to Sync commits,
+// and receives ModuleCommits and ModuleBranchCommits that should be synced.
+//
+// Handler implementations should be safe to use across multiple Syncer#Sync invocations.
 type Handler interface {
 	// SyncModuleCommit is invoked to sync a commit. If an error is returned, sync will abort.
 	//
 	// Syncer guarantees that either the commit's parent is synced, or none of the commit's ancestors
 	// are synced. A commit may be synced _more than once_, in the case where some metadata about the
 	// commit has changed (e.g., branch).
-	SyncModuleCommit(
+	SyncModuleBranchCommit(
 		ctx context.Context,
-		moduleCommit ModuleCommit,
+		moduleCommit ModuleBranchCommit,
 	) error
 
 	// SyncModuleTags is invoked to sync a set of tagged commits. If an error is returned, sync will abort.
 	//
 	// Syncer guarantees that this is the complete set of tags for a module identity, and that commits in
 	// this set are synced.
-	SyncModuleTags(
+	SyncModuleTaggedCommits(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
-		commitTags map[git.Hash][]string,
+		taggedCommits []ModuleCommit,
 	) error
 
 	// ResolveSyncPoint is invoked to resolve a syncpoint for a particular module at a particular branch.
@@ -105,6 +105,10 @@ type Handler interface {
 
 // Syncer syncs modules in a git.Repository.
 type Syncer interface {
+	// Plan generates the ExecutionPlan that Syncer will follow when syncing the Repository.
+	//
+	// It not necessary to invoke Plan before Sync.
+	Plan(context.Context) (ExecutionPlan, error)
 	// Sync syncs the repository. It processes commits in reverse topological order, loads any
 	// configured named modules, extracts any Git metadata for that commit, and invokes
 	// Handler#SyncModuleCommit with a ModuleCommit.
@@ -173,8 +177,6 @@ func SyncerWithAllBranches() SyncerOption {
 
 // ModuleCommit is a module at a particular commit.
 type ModuleCommit interface {
-	// Branch is the git branch that this module is sourced from.
-	Branch() string
 	// Commit is the commit that the module is sourced from.
 	Commit() git.Commit
 	// Tags are the git tags associated with Commit.
@@ -182,8 +184,44 @@ type ModuleCommit interface {
 	// Directory is the directory relative to the root of the git repository that this module is
 	// sourced from.
 	Directory() string
-	// Identity is the identity of the module.
-	Identity() bufmoduleref.ModuleIdentity
+	// ModuleIdentity is the identity of the module.
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+}
+
+// ModuleBranchCommit is a module at a particular commit.
+type ModuleBranchCommit interface {
+	ModuleCommit
+	// Branch is the git branch that this module is sourced from.
+	Branch() string
 	// Bucket is the bucket for the module.
 	Bucket() storage.ReadBucket
+}
+
+// ModuleBranch is a branch that contains a module at a particular directory,
+// along with a set of commits to sync for the branch to the module's module identity.
+type ModuleBranch interface {
+	// Name is the name of git branch that this module is sourced from.
+	Name() string
+	// Directory is the directory relative to the root of the git repository that this module is
+	// sourced from.
+	Directory() string
+	// ModuleIdentity is the identity of the module located in Directory, or an override if one
+	// was specified for Directory.
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+	// CommitsToSync is the set of commits that will be synced, in the order in which they will
+	// be synced.
+	//
+	// All commits in CommitsToSync have the same ModuleIdentity as this ModuleBranch.
+	CommitsToSync() []ModuleCommit
+}
+
+type ExecutionPlan interface {
+	// ModuleBranchesToSync is the set of module branches that Syncer will sync.
+	ModuleBranchesToSync() []ModuleBranch
+	// TaggedCommitsToSync
+	TaggedCommitsToSync() []ModuleCommit
+	// Nop returns true if there is nothing to sync.
+	Nop() bool
+	// Log logs the plan to the logger
+	log(logger *zap.Logger)
 }

@@ -18,30 +18,41 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 )
 
-// syncableBranch is a branch that has a module on it at a particular dir along with it's
-// commits that should be synced
-type syncableBranch struct {
-	// The name of the branch.
-	name string
-	// The identity of the module to use when syncing from this branch. This is either the
-	// identity override, or the module identity at HEAD of the branch.
+type moduleBranch struct {
+	name           string
+	moduleDir      string
 	moduleIdentity bufmoduleref.ModuleIdentity
-	// The dir where the module is found in the branch.
-	moduleDir string
-	// The commits to sync for this branch, ordered in the order in which they should be synced.
-	commitsToSync []*syncableCommit
+	commitsToSync  []ModuleCommit
 }
 
-func newSyncableBranch(
+func newModuleBranch(
 	name string,
 	dir string,
 	identity bufmoduleref.ModuleIdentity,
-	commits []*syncableCommit,
-) *syncableBranch {
-	return &syncableBranch{
+	commits []ModuleCommit,
+) *moduleBranch {
+	return &moduleBranch{
 		name:           name,
 		moduleDir:      dir,
 		moduleIdentity: identity,
 		commitsToSync:  commits,
 	}
 }
+
+func (b *moduleBranch) Name() string {
+	return b.name
+}
+
+func (b *moduleBranch) Directory() string {
+	return b.moduleDir
+}
+
+func (b *moduleBranch) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return b.moduleIdentity
+}
+
+func (b *moduleBranch) CommitsToSync() []ModuleCommit {
+	return b.commitsToSync
+}
+
+var _ ModuleBranch = (*moduleBranch)(nil)

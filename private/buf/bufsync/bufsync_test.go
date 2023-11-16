@@ -81,14 +81,13 @@ func (c *testSyncHandler) setSyncPoint(branchName string, hash git.Hash, moduleI
 	branch.manualSyncPoint = hash
 }
 
-func (c *testSyncHandler) SyncModuleTags(
+func (c *testSyncHandler) SyncModuleTaggedCommits(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commitTags map[git.Hash][]string,
+	taggedCommits []bufsync.ModuleCommit,
 ) error {
-	repo := c.getRepo(moduleIdentity)
-	for commit, tags := range commitTags {
-		for _, tag := range tags {
+	for _, commit := range taggedCommits {
+		repo := c.getRepo(commit.ModuleIdentity())
+		for _, tag := range commit.Tags() {
 			if previousHash, ok := repo.tagsByName[tag]; ok {
 				// clear previous tag
 				repo.tagsForHash[previousHash.Hex()] = slices.DeleteFunc(
@@ -98,9 +97,9 @@ func (c *testSyncHandler) SyncModuleTags(
 					},
 				)
 			}
-			repo.tagsByName[tag] = commit
+			repo.tagsByName[tag] = commit.Commit().Hash()
 		}
-		repo.tagsForHash[commit.Hex()] = tags
+		repo.tagsForHash[commit.Commit().Hash().Hex()] = commit.Tags()
 	}
 	return nil
 }
@@ -129,28 +128,22 @@ func (c *testSyncHandler) ResolveSyncPoint(
 	return nil, nil
 }
 
-func (c *testSyncHandler) SyncModuleCommit(
+func (c *testSyncHandler) SyncModuleBranchCommit(
 	ctx context.Context,
-	commit bufsync.ModuleCommit,
+	commit bufsync.ModuleBranchCommit,
 ) error {
 	c.setSyncPoint(
 		commit.Branch(),
 		commit.Commit().Hash(),
-		commit.Identity(),
+		commit.ModuleIdentity(),
 	)
-	branch := c.getRepoBranch(commit.Identity(), commit.Branch())
+	branch := c.getRepoBranch(commit.ModuleIdentity(), commit.Branch())
 	// append-only, no backfill; good enough for now!
 	branch.commits = append(branch.commits, &testCommit{
 		hash:     commit.Commit().Hash(),
 		fromSync: commit,
 	})
-	err := c.SyncModuleTags(
-		ctx,
-		commit.Identity(),
-		map[git.Hash][]string{
-			commit.Commit().Hash(): commit.Tags(),
-		},
-	)
+	err := c.SyncModuleTaggedCommits(ctx, []bufsync.ModuleCommit{commit})
 	return err
 }
 

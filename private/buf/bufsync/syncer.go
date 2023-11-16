@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"go.uber.org/multierr"
@@ -62,7 +61,7 @@ func newSyncer(
 		logger:                               logger,
 		repo:                                 repo,
 		storageGitProvider:                   storageGitProvider,
-		handler:                              handler,
+		handler:                              newCachedHandler(handler),
 		modulesDirsToIdentityOverrideForSync: make(map[string]bufmoduleref.ModuleIdentity),
 	}
 	for _, opt := range options {
@@ -74,24 +73,32 @@ func newSyncer(
 }
 
 func (s *syncer) Sync(ctx context.Context) error {
-	plan, err := s.makeExecutionPlan(ctx)
+	plan, err := s.Plan(ctx)
 	if err != nil {
 		return fmt.Errorf("sync preparation: %w", err)
 	}
-	s.logPlan(plan)
-	if !plan.hasAnythingToSync() {
+	plan.log(s.logger)
+	if plan.Nop() {
 		s.logger.Warn("nothing to sync")
 		return nil
 	}
-	for _, syncableBranch := range plan.branchesToSync {
-		if err := s.syncSyncableBranch(ctx, syncableBranch); err != nil {
-			return fmt.Errorf("sync branch %q for module dir %q: %w", syncableBranch.name, syncableBranch.moduleDir, err)
+	for _, syncableBranch := range plan.ModuleBranchesToSync() {
+		if err := s.syncModuleBranch(ctx, syncableBranch); err != nil {
+			return fmt.Errorf("sync branch %q for module dir %q: %w", syncableBranch.Name(), syncableBranch.Directory(), err)
 		}
 	}
-	if err := s.syncTags(ctx, plan.tagsToSync); err != nil {
+	if err := s.syncTags(ctx, plan.TaggedCommitsToSync()); err != nil {
 		return fmt.Errorf("sync tags: %w", err)
 	}
 	return nil
+}
+
+func (s *syncer) Plan(ctx context.Context) (ExecutionPlan, error) {
+	branchesToSync, tagsToSync, err := s.determineEverythingToSync(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("determine branches to sync: %w", err)
+	}
+	return newExecutionPlan(branchesToSync, tagsToSync), nil
 }
 
 // resolveSyncPoint resolves a sync point for a particular module identity and protected branch.
@@ -130,56 +137,53 @@ func (s *syncer) resolveSyncPoint(ctx context.Context, moduleIdentity bufmoduler
 }
 
 // syncModuleInBranch syncs a module directory in a branch.
-func (s *syncer) syncSyncableBranch(ctx context.Context, syncableBranch *syncableBranch) error {
+func (s *syncer) syncModuleBranch(ctx context.Context, moduleBranch ModuleBranch) error {
 	logger := s.logger.With(
-		zap.String("module directory", syncableBranch.moduleDir),
-		zap.String("module identity", syncableBranch.moduleIdentity.IdentityString()),
-		zap.String("branch", syncableBranch.name),
+		zap.String("module directory", moduleBranch.Directory()),
+		zap.String("module identity", moduleBranch.ModuleIdentity().IdentityString()),
+		zap.String("branch", moduleBranch.Name()),
 	)
-	for i, commitToSync := range syncableBranch.commitsToSync {
-		module, err := s.readModuleAt(ctx, commitToSync.commit, syncableBranch.moduleDir)
+	for i, commitToSync := range moduleBranch.CommitsToSync() {
+		module, err := s.readModuleAt(ctx, commitToSync.Commit(), commitToSync.Directory())
 		if err != nil {
 			if errors.Is(err, errReadModuleInvalidModule) || errors.Is(err, errReadModuleInvalidModuleConfig) {
 				// If this is not the last commit to sync, i.e., the HEAD of the branch, we log a warning only.
-				if i != len(syncableBranch.commitsToSync)-1 {
+				if i != len(moduleBranch.CommitsToSync())-1 {
 					logger.Debug(
 						"module read failed",
-						zap.Stringer("commit", commitToSync.commit.Hash()),
+						zap.Stringer("commit", commitToSync.Commit().Hash()),
 						zap.Error(err),
 					)
 				}
 			}
 			return fmt.Errorf(
 				"module %q read failed @ HEAD on branch %q: %w",
-				syncableBranch.moduleIdentity.IdentityString(),
-				syncableBranch.name,
+				moduleBranch.ModuleIdentity().IdentityString(),
+				moduleBranch.Name(),
 				err,
 			)
 		}
 		if module == nil {
 			logger.Debug(
 				"no module, skipping commit",
-				zap.Stringer("commit", commitToSync.commit.Hash()),
+				zap.Stringer("commit", commitToSync.Commit().Hash()),
 				zap.Error(err),
 			)
 			continue
 		}
-		if err := s.handler.SyncModuleCommit(
+		if err := s.handler.SyncModuleBranchCommit(
 			ctx,
-			newModuleCommit(
-				syncableBranch.name,
-				commitToSync.commit,
-				commitToSync.tags,
-				syncableBranch.moduleDir,
-				syncableBranch.moduleIdentity,
+			newModuleBranchCommit(
+				commitToSync,
+				moduleBranch.Name(),
 				module.Bucket,
 			),
 		); err != nil {
 			return fmt.Errorf(
 				"sync module %s:%s in commit %s: %w",
-				syncableBranch.moduleDir,
-				syncableBranch.moduleIdentity,
-				commitToSync.commit.Hash(),
+				moduleBranch.Directory(),
+				moduleBranch.ModuleIdentity(),
+				commitToSync.Commit().Hash(),
 				err,
 			)
 		}
@@ -189,11 +193,7 @@ func (s *syncer) syncSyncableBranch(ctx context.Context, syncableBranch *syncabl
 
 // readModule returns a module that has a name and builds correctly given a commit and a module
 // directory.
-func (s *syncer) readModuleAt(
-	ctx context.Context,
-	commit git.Commit,
-	moduleDir string,
-) (*bufmodulebuild.BuiltModule, error) {
+func (s *syncer) readModuleAt(ctx context.Context, commit git.Commit, moduleDir string) (*bufmodulebuild.BuiltModule, error) {
 	commitBucket, err := s.storageGitProvider.NewReadBucket(commit.Tree(), storagegit.ReadBucketWithSymlinksIfSupported())
 	if err != nil {
 		return nil, fmt.Errorf("new read bucket: %w", err)
@@ -225,48 +225,34 @@ func (s *syncer) readModuleAt(
 }
 
 // syncTags syncs all tag commits for commits that are sycned. This should be run _at the end_ of syncing.
-func (s *syncer) syncTags(ctx context.Context, commitTags []*syncableCommitTags) error {
-	commitTagsToSyncPerModuleIdentity := make(map[bufmoduleref.ModuleIdentity]map[git.Hash][]string)
-	for _, commit := range commitTags {
-		if synced, err := s.handler.IsGitCommitSynced(ctx, commit.moduleIdentity, commit.commit); err != nil {
-			return fmt.Errorf("check if tagged commit %q is synced: %w", commit.commit, err)
+func (s *syncer) syncTags(ctx context.Context, taggedCommits []ModuleCommit) error {
+	var syncedTaggedCommits []ModuleCommit
+	for _, commit := range taggedCommits {
+		if synced, err := s.handler.IsGitCommitSynced(ctx, commit.ModuleIdentity(), commit.Commit().Hash()); err != nil {
+			return fmt.Errorf("check if tagged commit %q is synced: %w", commit.Commit().Hash(), err)
 		} else if !synced {
 			s.logger.Debug(
 				"commit referenced by tags is not synced, skipping tags",
-				zap.String("module identity", commit.moduleIdentity.IdentityString()),
-				zap.Stringer("commit", commit.commit),
-				zap.Strings("tags", commit.tagsToSync),
+				zap.String("module identity", commit.ModuleIdentity().IdentityString()),
+				zap.Stringer("commit", commit.Commit().Hash()),
+				zap.Strings("tags", commit.Tags()),
 			)
 			continue
 		}
-		if _, ok := commitTagsToSyncPerModuleIdentity[commit.moduleIdentity]; !ok {
-			commitTagsToSyncPerModuleIdentity[commit.moduleIdentity] = make(map[git.Hash][]string)
-		}
-		commitTagsToSyncPerModuleIdentity[commit.moduleIdentity][commit.commit] = commit.tagsToSync
+		syncedTaggedCommits = append(syncedTaggedCommits, commit)
 	}
-	for moduleIdentity, commitTagsToSync := range commitTagsToSyncPerModuleIdentity {
-		err := s.handler.SyncModuleTags(ctx, moduleIdentity, commitTagsToSync)
-		if err != nil {
-			return fmt.Errorf("put tags %q for module identity %q: %w", commitTagsToSync, moduleIdentity, err)
-		}
-		s.logger.Debug(
-			"tags put",
-			zap.String("module identity", moduleIdentity.IdentityString()),
-			zap.Any("tags", commitTagsToSync),
-		)
+	err := s.handler.SyncModuleTaggedCommits(ctx, syncedTaggedCommits)
+	if err != nil {
+		return err
 	}
+	s.logger.Debug(
+		"tags put",
+		zap.Any("tags", syncedTaggedCommits),
+	)
 	return nil
 }
 
-func (s *syncer) makeExecutionPlan(ctx context.Context) (*executionPlan, error) {
-	branchesToSync, tagsToSync, err := s.determineEverythingToSync(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("determine branches to sync: %w", err)
-	}
-	return newExecutionPlan(branchesToSync, tagsToSync), nil
-}
-
-func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBranch, []*syncableCommitTags, error) {
+func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch, []ModuleCommit, error) {
 	var branchesToSync []string
 	if s.syncAllBranches {
 		if err := s.repo.ForEachBranch(func(branch string, _ git.Hash) error {
@@ -290,8 +276,8 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBran
 		return nil, nil, err
 	}
 	var (
-		syncableBranches      []*syncableBranch
-		tagsPerModuleIdentity = make(map[bufmoduleref.ModuleIdentity]map[git.Hash]map[string]struct{})
+		moduleBranches      []ModuleBranch
+		taggedModuleCommits []ModuleCommit
 	)
 	for _, branch := range branchesToSync {
 		headCommit, err := s.repo.HEADCommit(
@@ -325,7 +311,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBran
 				moduleDirsForModuleIdentity[targetModuleIdentity.IdentityString()],
 				moduleDir,
 			)
-			commitsToSync, err := s.determineCommitsAndTagsToSyncForModuleBranch(
+			commitsToSync, err := s.determineCommitsToSyncForModuleBranch(
 				ctx,
 				moduleDir,
 				targetModuleIdentity,
@@ -334,8 +320,8 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBran
 			if err != nil {
 				return nil, nil, err
 			}
-			var synableCommits []*syncableCommit
-			// determineCommitsAndTagsToSyncForModuleBranch returns commits in the order in which
+			var synableCommits []ModuleCommit
+			// determineCommitsToSyncForModuleBranch returns commits in the order in which
 			// the branch is iterated:
 			// 		HEAD -> parent1 -> .. -> parentN
 			// syncableBranch expects commits in the order in which they should be synced:
@@ -346,32 +332,35 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBran
 				if err != nil {
 					return nil, nil, fmt.Errorf("read commit %q: %w", commitsToSync[i], err)
 				}
-				synableCommits = append(synableCommits, newSyncableCommit(
+				synableCommits = append(synableCommits, newModuleCommit(
 					commit,
 					allTags[commit.Hash()],
+					moduleDir,
+					targetModuleIdentity,
 				))
 			}
-			syncableBranches = append(syncableBranches, newSyncableBranch(
+			moduleBranches = append(moduleBranches, newModuleBranch(
 				branch,
 				moduleDir,
 				targetModuleIdentity,
 				synableCommits,
 			))
-			// Next, collect all tags on this module branch and add them to the correct module.
+			// Next, collect all tags on this module branch.
 			taggedCommitsOnBranch, err := s.determineTaggedCommitsOnBranch(ctx, branch, allTags)
 			if err != nil {
 				return nil, nil, fmt.Errorf("determine tagged commits on branch: %w", err)
 			}
-			if _, ok := tagsPerModuleIdentity[targetModuleIdentity]; !ok {
-				tagsPerModuleIdentity[targetModuleIdentity] = make(map[git.Hash]map[string]struct{})
-			}
-			for commit, tags := range taggedCommitsOnBranch {
-				if _, ok := tagsPerModuleIdentity[targetModuleIdentity][commit]; !ok {
-					tagsPerModuleIdentity[targetModuleIdentity][commit] = make(map[string]struct{})
+			for commitHash, tags := range taggedCommitsOnBranch {
+				commit, err := s.repo.Objects().Commit(commitHash)
+				if err != nil {
+					return nil, nil, fmt.Errorf("read commit %q: %w", commitHash, err)
 				}
-				for _, tag := range tags {
-					tagsPerModuleIdentity[targetModuleIdentity][commit][tag] = struct{}{}
-				}
+				taggedModuleCommits = append(taggedModuleCommits, newModuleCommit(
+					commit,
+					tags,
+					moduleDir,
+					targetModuleIdentity,
+				))
 			}
 		}
 		var duplicatedIdentitiesErr error
@@ -387,17 +376,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]*syncableBran
 			return nil, nil, duplicatedIdentitiesErr
 		}
 	}
-	var syncableCommitTags []*syncableCommitTags
-	for moduleIdentity, commits := range tagsPerModuleIdentity {
-		for commit, tags := range commits {
-			syncableCommitTags = append(syncableCommitTags, newSyncableCommitTags(
-				moduleIdentity,
-				commit,
-				slicesextended.MapToSlice(tags),
-			))
-		}
-	}
-	return syncableBranches, syncableCommitTags, nil
+	return moduleBranches, taggedModuleCommits, nil
 }
 
 func (s *syncer) determineTaggedCommitsOnBranch(
@@ -421,7 +400,7 @@ func (s *syncer) determineTaggedCommitsOnBranch(
 	return taggedCommitsOnBranch, nil
 }
 
-func (s *syncer) determineCommitsAndTagsToSyncForModuleBranch(
+func (s *syncer) determineCommitsToSyncForModuleBranch(
 	ctx context.Context,
 	moduleDir string,
 	moduleIdentity bufmoduleref.ModuleIdentity,
@@ -613,31 +592,4 @@ func (s *syncer) branchContainsCommit(branch string, hash git.Hash) (bool, error
 		git.ForEachCommitWithBranchStartPoint(branch, git.ForEachCommitWithBranchStartPointWithRemote(s.gitRemoteName)),
 	)
 	return found, err
-}
-
-func (s *syncer) logPlan(plan *executionPlan) {
-	if !s.logger.Level().Enabled(zap.DebugLevel) {
-		return
-	}
-	for _, branch := range plan.branchesToSync {
-		var commitSHAs []string
-		for _, commit := range branch.commitsToSync {
-			commitSHAs = append(commitSHAs, commit.commit.Hash().Hex())
-		}
-		s.logger.Debug(
-			"branch plan for module",
-			zap.String("branch", branch.name),
-			zap.String("moduleDir", branch.moduleDir),
-			zap.String("moduleIdentity", branch.moduleIdentity.IdentityString()),
-			zap.Strings("commitsToSync", commitSHAs),
-		)
-	}
-	for _, commitTags := range plan.tagsToSync {
-		s.logger.Debug(
-			"tag plan for module",
-			zap.Stringer("commit", commitTags.commit),
-			zap.String("moduleIdentity", commitTags.moduleIdentity.IdentityString()),
-			zap.Strings("tagsToSync", commitTags.tagsToSync),
-		)
-	}
 }

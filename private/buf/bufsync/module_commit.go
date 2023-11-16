@@ -17,38 +17,27 @@ package bufsync
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type moduleCommit struct {
-	branch    string
-	commit    git.Commit
-	tags      []string
-	directory string
-	identity  bufmoduleref.ModuleIdentity
-	bucket    storage.ReadBucket
+	commit         git.Commit
+	tags           []string
+	directory      string
+	moduleIdentity bufmoduleref.ModuleIdentity
 }
 
 func newModuleCommit(
-	branch string,
 	commit git.Commit,
 	tags []string,
 	directory string,
 	identity bufmoduleref.ModuleIdentity,
-	bucket storage.ReadBucket,
 ) ModuleCommit {
 	return &moduleCommit{
-		branch:    branch,
-		commit:    commit,
-		tags:      tags,
-		directory: directory,
-		identity:  identity,
-		bucket:    bucket,
+		commit:         commit,
+		tags:           tags,
+		directory:      directory,
+		moduleIdentity: identity,
 	}
-}
-
-func (m *moduleCommit) Branch() string {
-	return m.branch
 }
 
 func (m *moduleCommit) Commit() git.Commit {
@@ -63,10 +52,8 @@ func (m *moduleCommit) Directory() string {
 	return m.directory
 }
 
-func (m *moduleCommit) Identity() bufmoduleref.ModuleIdentity {
-	return m.identity
+func (m *moduleCommit) ModuleIdentity() bufmoduleref.ModuleIdentity {
+	return m.moduleIdentity
 }
 
-func (m *moduleCommit) Bucket() storage.ReadBucket {
-	return m.bucket
-}
+var _ ModuleCommit = (*moduleCommit)(nil)
