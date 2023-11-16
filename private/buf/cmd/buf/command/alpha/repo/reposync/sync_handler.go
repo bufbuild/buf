@@ -311,7 +311,7 @@ func (h *syncHandler) IsBranchSynced(
 ) (bool, error) {
 	repositoryID, err := h.getRepositoryID(ctx, moduleIdentity)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	service := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryBranchServiceClient)
 	branchRes, err := service.GetRepositoryBranch(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryBranchRequest{
