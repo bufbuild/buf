@@ -449,6 +449,12 @@ func (s *syncer) determineCommitsAndTagsToSyncForModuleBranch(
 	if protected, err := s.handler.IsProtectedBranch(ctx, moduleIdentity, branch); err != nil {
 		return nil, err
 	} else if !protected {
+		if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
+			return nil, err
+		} else if !isSynced {
+			// Don't both looking for any synced commits, there are non. Proceed straight to content-matching.
+			return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
+		}
 		latestVcsCommitInRemote, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
 			return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
 		})
@@ -458,13 +464,7 @@ func (s *syncer) determineCommitsAndTagsToSyncForModuleBranch(
 		if latestVcsCommitInRemote != nil {
 			return walkedCommits, nil
 		}
-		if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
-			return nil, err
-		} else if !isSynced {
-			return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
-		} else {
-			s.logger.Warn("expected to find resume point for synced branch %q in the BSR, but didn't find one; onboarding branch again", zap.String("branch", branch))
-		}
+		s.logger.Warn("expected to find resume point for synced branch %q in the BSR, but didn't find one; onboarding branch again", zap.String("branch", branch))
 	}
 	if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
 		return nil, err
