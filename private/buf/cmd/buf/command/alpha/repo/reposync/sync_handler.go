@@ -145,20 +145,20 @@ func (h *syncHandler) IsGitCommitSyncedToBranch(
 	return false, nil
 }
 
-func (h *syncHandler) SyncModuleTaggedCommits(
+func (h *syncHandler) SyncModuleTags(
 	ctx context.Context,
-	taggedCommits []bufsync.ModuleBranchCommit,
+	moduleTags bufsync.ModuleTags,
 ) error {
-	for _, commit := range taggedCommits {
-		repositoryID, err := h.getRepositoryID(ctx, commit.ModuleIdentity())
+	for _, commit := range moduleTags.TaggedCommitsToSync() {
+		repositoryID, err := h.getRepositoryID(ctx, moduleTags.TargetModuleIdentity())
 		if err != nil {
 			return err
 		}
-		referenceService := connectclient.Make(h.clientConfig, commit.ModuleIdentity().Remote(), registryv1alpha1connect.NewReferenceServiceClient)
-		tagService := connectclient.Make(h.clientConfig, commit.ModuleIdentity().Remote(), registryv1alpha1connect.NewRepositoryTagServiceClient)
+		referenceService := connectclient.Make(h.clientConfig, moduleTags.TargetModuleIdentity().Remote(), registryv1alpha1connect.NewReferenceServiceClient)
+		tagService := connectclient.Make(h.clientConfig, moduleTags.TargetModuleIdentity().Remote(), registryv1alpha1connect.NewRepositoryTagServiceClient)
 		commitRes, err := referenceService.GetReferenceByName(ctx, connect.NewRequest(&registryv1alpha1.GetReferenceByNameRequest{
-			Owner:          commit.ModuleIdentity().Owner(),
-			RepositoryName: commit.ModuleIdentity().Repository(),
+			Owner:          moduleTags.TargetModuleIdentity().Owner(),
+			RepositoryName: moduleTags.TargetModuleIdentity().Repository(),
 			Name:           commit.Commit().Hash().Hex(),
 		}))
 		if err != nil {
@@ -166,7 +166,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 				return fmt.Errorf(
 					"git commit %q is not known to module %q",
 					commit.Commit().Hash(),
-					commit.ModuleIdentity().IdentityString(),
+					moduleTags.TargetModuleIdentity().IdentityString(),
 				)
 			}
 			return fmt.Errorf("get reference by name %q: %w", commit.Commit().Hash(), err)
@@ -175,7 +175,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 			return fmt.Errorf(
 				"git commit %q is not synced to module %q",
 				commit.Commit().Hash(),
-				commit.ModuleIdentity().IdentityString(),
+				moduleTags.TargetModuleIdentity().IdentityString(),
 			)
 		}
 		for _, tag := range commit.Tags() {
@@ -190,7 +190,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 					CommitName:   commitRes.Msg.Reference.GetVcsCommit().CommitName,
 				}))
 				if err != nil {
-					return fmt.Errorf("create new tag %q on module %q: %w", tag, commit.ModuleIdentity().IdentityString(), err)
+					return fmt.Errorf("create new tag %q on module %q: %w", tag, moduleTags.TargetModuleIdentity().IdentityString(), err)
 				}
 			} else {
 				// TODO: don't do this unless we need to
@@ -200,7 +200,7 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 					CommitName:   &commitRes.Msg.Reference.GetVcsCommit().CommitName,
 				}))
 				if err != nil {
-					return fmt.Errorf("update existing tag %q on module %q: %w", tag, commit.ModuleIdentity().IdentityString(), err)
+					return fmt.Errorf("update existing tag %q on module %q: %w", tag, moduleTags.TargetModuleIdentity().IdentityString(), err)
 				}
 			}
 		}
@@ -208,35 +208,44 @@ func (h *syncHandler) SyncModuleTaggedCommits(
 	return nil
 }
 
-func (h *syncHandler) SyncModuleBranchCommit(ctx context.Context, moduleCommit bufsync.SyncableBranchCommit) error {
-	syncPoint, err := h.pushOrCreate(
-		ctx,
-		moduleCommit.Commit(),
-		moduleCommit.Branch(),
-		moduleCommit.Tags(),
-		moduleCommit.ModuleIdentity(),
-		moduleCommit.Bucket(),
-	)
-	if err != nil {
-		// We failed to push. We fail hard on this because the error may be recoverable
-		// (i.e., the BSR may be down) and we should re-attempt this commit.
-		return fmt.Errorf(
-			"failed to push or create %s at %s: %w",
-			moduleCommit.ModuleIdentity().IdentityString(),
-			moduleCommit.Commit().Hash(),
-			err,
+func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync.ModuleBranch) error {
+	for _, moduleCommit := range moduleBranch.CommitsToSync() {
+		bucket, err := moduleCommit.Bucket(ctx)
+		if err != nil {
+			return fmt.Errorf("read bucket for commit %q: %w", moduleCommit.Commit().Hash(), err)
+		}
+		syncPoint, err := h.pushOrCreate(
+			ctx,
+			moduleCommit.Commit(),
+			moduleBranch.BranchName(),
+			moduleCommit.Tags(),
+			moduleBranch.TargetModuleIdentity(),
+			bucket,
 		)
+		if err != nil {
+			// We failed to push. We fail hard on this because the error may be recoverable
+			// (i.e., the BSR may be down) and we should re-attempt this commit.
+			return fmt.Errorf(
+				"failed to push or create %s at %s: %w",
+				moduleBranch.TargetModuleIdentity().IdentityString(),
+				moduleCommit.Commit().Hash(),
+				err,
+			)
+		}
+		_, err = h.container.Stderr().Write([]byte(
+			// from local                                        -> to remote
+			// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
+			fmt.Sprintf(
+				"%s:%s:%s -> %s:%s\n",
+				moduleBranch.Directory(), moduleBranch.BranchName(), moduleCommit.Commit().Hash().Hex(),
+				moduleBranch.TargetModuleIdentity().IdentityString(), syncPoint.BsrCommitName,
+			)),
+		)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = h.container.Stderr().Write([]byte(
-		// from local                                        -> to remote
-		// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
-		fmt.Sprintf(
-			"%s:%s:%s -> %s:%s\n",
-			moduleCommit.Directory(), moduleCommit.Branch(), moduleCommit.Commit().Hash().Hex(),
-			moduleCommit.ModuleIdentity().IdentityString(), syncPoint.BsrCommitName,
-		)),
-	)
-	return err
+	return nil
 }
 
 func (h *syncHandler) IsProtectedBranch(
