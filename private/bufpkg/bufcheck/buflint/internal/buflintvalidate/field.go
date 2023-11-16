@@ -517,19 +517,6 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 				*stringRules.NotContains,
 			)
 		}
-		if stringRules.NotContains != nil && strings.Contains(*stringRules.NotContains, substring) {
-			adder.addForPathf(
-				[]int32{stringRulesFieldNumber, substringFieldNumber},
-				"Field %q has a %s (%q) containing its %s (%q). It is impossible for a string to contain %q without containing %q.",
-				adder.fieldName(),
-				adder.getFieldRuleName(stringRulesFieldNumber, notContainsFieldNumberInStringRules),
-				*stringRules.NotContains,
-				substringField.name,
-				substring,
-				substring,
-				*stringRules.NotContains,
-			)
-		}
 	}
 	if stringRules.Pattern != nil {
 		if _, err := regexp.Compile(*stringRules.Pattern); err != nil {
