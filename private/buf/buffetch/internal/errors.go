@@ -186,3 +186,27 @@ func NewWriteLocalDisabledError() error {
 func NewWriteStdioDisabledError() error {
 	return NewWriteDisabledError("stdout")
 }
+
+func newValueEmptyError() error {
+	return errors.New("required")
+}
+
+func newValueMultipleHashtagsError(value string) error {
+	return fmt.Errorf("%q has multiple #s which is invalid", value)
+}
+
+func newValueStartsWithHashtagError(value string) error {
+	return fmt.Errorf("%q starts with # which is invalid", value)
+}
+
+func newValueEndsWithHashtagError(value string) error {
+	return fmt.Errorf("%q ends with # which is invalid", value)
+}
+
+func newOptionsInvalidError(s string) error {
+	return fmt.Errorf("invalid options: %q", s)
+}
+
+func newOptionsDuplicateKeyError(key string) error {
+	return fmt.Errorf("duplicate options key: %q", key)
+}
