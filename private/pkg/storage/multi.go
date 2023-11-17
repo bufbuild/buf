@@ -21,14 +21,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
-// MultiReadBucket takes the union of the ReadBuckets.
+// MultiReadBucket takes the union of logically-unique ReadBuckets.
+//
+// This expects and validates that no paths overlap between the ReadBuckets.
 //
 // If no readBuckets are given, this returns a no-op ReadBucket.
 // If one readBucket is given, this returns the original ReadBucket.
 // Otherwise, this returns a ReadBucket that will get from all buckets.
-//
-// This expects and validates that no paths overlap between the ReadBuckets.
-// This assumes that buckets are logically unique.
 func MultiReadBucket(readBuckets ...ReadBucket) ReadBucket {
 	switch len(readBuckets) {
 	case 0:
@@ -36,19 +35,43 @@ func MultiReadBucket(readBuckets ...ReadBucket) ReadBucket {
 	case 1:
 		return readBuckets[0]
 	default:
-		return newMultiReadBucket(readBuckets)
+		return newMultiReadBucket(readBuckets, false)
+	}
+}
+
+// OverlayReadBucket takes the union of the ReadBuckets, overlaying earlier
+// ReadBuckets on top of the other.
+//
+// If two ReadBuckets have the same path, the first ReadBucket with the
+// given path will be used.
+//
+// If no readBuckets are given, this returns a no-op ReadBucket.
+// If one readBucket is given, this returns the original ReadBucket.
+// Otherwise, this returns a ReadBucket that will get from all buckets in
+// the order they are given.
+func OverlayReadBucket(readBuckets ...ReadBucket) ReadBucket {
+	switch len(readBuckets) {
+	case 0:
+		return nopReadBucket{}
+	case 1:
+		return readBuckets[0]
+	default:
+		return newMultiReadBucket(readBuckets, true)
 	}
 }
 
 type multiReadBucket struct {
 	delegates []ReadBucket
+	overlay   bool
 }
 
 func newMultiReadBucket(
 	delegates []ReadBucket,
+	overlay bool,
 ) *multiReadBucket {
 	return &multiReadBucket{
 		delegates: delegates,
+		overlay:   overlay,
 	}
 }
 
@@ -75,6 +98,10 @@ func (m *multiReadBucket) Walk(ctx context.Context, prefix string, f func(Object
 				path := objectInfo.Path()
 				externalPath := objectInfo.ExternalPath()
 				if existingExternalPath, ok := seenPathToExternalPath[path]; ok {
+					// If overlay, we can just return - we've already walked this path.
+					if m.overlay {
+						return nil
+					}
 					// this does not return all paths that are matching, unlike Get and Stat
 					// we do not want to continue iterating, as calling Walk on the same path could cause errors downstream
 					// as callers expect a single call per path.
@@ -104,6 +131,11 @@ func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 				continue
 			}
 			return nil, 0, err
+		}
+		// If overlay, we can stop here - we've found the path and will select
+		// the first Bucket that matches this path.
+		if m.overlay {
+			return objectInfo, i, nil
 		}
 		objectInfos = append(objectInfos, objectInfo)
 		delegateIndices = append(delegateIndices, i)
