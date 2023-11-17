@@ -9,15 +9,17 @@ jobs:
       DOWNLOAD_CACHE: 'd:\downloadcache'
     runs-on: windows-latest
     steps:
+      - shell: pwsh
+        run: |
+          echo "GOPATH=D:/a/_temp/go/work" >> $env:GITHUB_ENV
+          echo "GOCACHE=D:/a/_temp/go/cache" >> $env:GITHUB_ENV
       - name: checkout
         uses: actions/checkout@v4
       - name: go-cache
         uses: actions/cache@v3
         with:
-          path: |
-            ~\AppData\Local\go-build
-            ~\go\pkg\mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          path: D:/a/_temp/go
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-v2
           restore-keys: |
             ${{ runner.os }}-go-
       - name: setup-go
