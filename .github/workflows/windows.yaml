@@ -21,9 +21,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: setup-go
-        uses: actions/setup-go@v4 # this contains a fix for Windows file extraction
+        uses: actions/setup-go@v4
         with:
           go-version: '1.21.x'
+          # This runs very slowly and inconsistently on Windows for undetermined reasons.
+          # We manually cache in the GitHub Actions _temp directory instead.
           cache: false
       - name: windows-cache
         uses: actions/cache@v3
