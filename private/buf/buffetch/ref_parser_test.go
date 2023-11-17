@@ -662,10 +662,23 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		internal.NewOptionsInvalidKeysError("use_something_else"),
 		"path/to/file.yaml#use_something_else=true",
 	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatJSON,
+			"path/to/file.json",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+			map[string]string{
+				"use_proto_names": "true",
+			},
+		),
+		"path/to/file.json#use_proto_names=true",
+	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidKeysError("use_proto_names"),
-		"path/to/file.json#use_proto_names=true",
+		internal.NewOptionsInvalidKeysError("use_something_else"),
+		"path/to/file.json#use_something_else=true",
 	)
 	testGetParsedRefSuccess(
 		t,

@@ -51,7 +51,11 @@ func newRefParser(logger *zap.Logger) *refParser {
 			internal.WithRawRefProcessor(processRawRef),
 			internal.WithSingleFormat(formatBin),
 			internal.WithSingleFormat(formatBinpb),
-			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
+				formatJSON,
+				internal.WithSingleCustomOptionKey(useProtoNamesKey),
+				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
+			),
 			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatYAML,
@@ -105,7 +109,11 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 			internal.WithRawRefProcessor(newProcessRawRefMessage(messageRefParserOptions.defaultMessageEncoding)),
 			internal.WithSingleFormat(formatBin),
 			internal.WithSingleFormat(formatBinpb),
-			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
+				formatJSON,
+				internal.WithSingleCustomOptionKey(useProtoNamesKey),
+				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
+			),
 			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatYAML,

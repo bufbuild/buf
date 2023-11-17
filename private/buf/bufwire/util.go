@@ -24,7 +24,7 @@ func newJSONMarshaler(
 	messageRef buffetch.MessageRef,
 ) protoencoding.Marshaler {
 	jsonMarshalerOptions := []protoencoding.JSONMarshalerOption{
-		protoencoding.JSONMarshalerWithIndent(),
+		//protoencoding.JSONMarshalerWithIndent(),
 	}
 	if messageRef.UseProtoNames() {
 		jsonMarshalerOptions = append(
