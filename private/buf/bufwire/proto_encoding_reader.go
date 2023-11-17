@@ -19,9 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
-	"github.com/bufbuild/buf/private/buf/bufconvert"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -34,16 +33,19 @@ import (
 )
 
 type protoEncodingReader struct {
-	logger *zap.Logger
+	logger      *zap.Logger
+	fetchReader buffetch.MessageReader
 }
 
 var _ ProtoEncodingReader = &protoEncodingReader{}
 
 func newProtoEncodingReader(
 	logger *zap.Logger,
+	fetchReader buffetch.MessageReader,
 ) *protoEncodingReader {
 	return &protoEncodingReader{
-		logger: logger,
+		logger:      logger,
+		fetchReader: fetchReader,
 	}
 }
 
@@ -52,7 +54,7 @@ func (p *protoEncodingReader) GetMessage(
 	container app.EnvStdinContainer,
 	image bufimage.Image,
 	typeName string,
-	messageRef bufconvert.MessageEncodingRef,
+	messageRef buffetch.MessageRef,
 ) (_ proto.Message, retErr error) {
 	ctx, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "get_message")
 	defer span.End()
@@ -71,22 +73,23 @@ func (p *protoEncodingReader) GetMessage(
 	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBinpb:
+	case buffetch.MessageEncodingBinpb:
 		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
-	case bufconvert.MessageEncodingJSON:
+	case buffetch.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
-	case bufconvert.MessageEncodingTxtpb:
+	case buffetch.MessageEncodingTxtpb:
 		unmarshaler = protoencoding.NewTxtpbUnmarshaler(resolver)
+	case buffetch.MessageEncodingYAML:
+		unmarshaler = protoencoding.NewYAMLUnmarshaler(
+			resolver,
+			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
+		)
 	default:
 		return nil, errors.New("unknown message encoding type")
 	}
-	readCloser := io.NopCloser(container.Stdin())
-	if messageRef.Path() != "-" {
-		var err error
-		readCloser, err = os.Open(messageRef.Path())
-		if err != nil {
-			return nil, err
-		}
+	readCloser, err := p.fetchReader.GetMessageFile(ctx, container, messageRef)
+	if err != nil {
+		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())

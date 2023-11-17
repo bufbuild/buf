@@ -475,6 +475,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.bin",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.bin",
 	)
@@ -485,6 +486,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.bin.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.bin.gz",
 	)
@@ -495,6 +497,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.binpb",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.binpb",
 	)
@@ -505,6 +508,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.binpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.binpb.gz",
 	)
@@ -515,6 +519,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.json",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.json",
 	)
@@ -525,6 +530,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.json.gz",
 	)
@@ -535,6 +541,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.json.gz#compression=none",
 	)
@@ -545,6 +552,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.json.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.json.gz#compression=gzip",
 	)
@@ -555,6 +563,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.txtpb",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.txtpb",
 	)
@@ -565,6 +574,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.txtpb.gz",
 	)
@@ -575,6 +585,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/file.txtpb.gz#compression=none",
 	)
@@ -585,8 +596,89 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.txtpb.gz",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/file.txtpb.gz#compression=gzip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+			nil,
+		),
+		"path/to/file.yaml",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+			nil,
+		),
+		"path/to/file.yaml.gz",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+			nil,
+		),
+		"path/to/file.yaml.gz#compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml.gz",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
+			nil,
+		),
+		"path/to/file.yaml.gz#compression=gzip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"path/to/file.yaml",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+			map[string]string{
+				"use_proto_names": "true",
+			},
+		),
+		"path/to/file.yaml#use_proto_names=true",
+	)
+	testGetParsedRefError(
+		t,
+		internal.NewOptionsInvalidKeysError("use_something_else"),
+		"path/to/file.yaml#use_something_else=true",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatJSON,
+			"path/to/file.json",
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
+			map[string]string{
+				"use_proto_names": "true",
+			},
+		),
+		"path/to/file.json#use_proto_names=true",
+	)
+	testGetParsedRefError(
+		t,
+		internal.NewOptionsInvalidKeysError("use_something_else"),
+		"path/to/file.json#use_something_else=true",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -595,6 +687,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"-",
 	)
@@ -605,6 +698,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"-#format=json",
 	)
@@ -615,8 +709,20 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"",
 			internal.FileSchemeStdio,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"-#format=txtpb",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatYAML,
+			"",
+			internal.FileSchemeStdio,
+			internal.CompressionTypeNone,
+			nil,
+		),
+		"-#format=yaml",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -625,6 +731,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"",
 			internal.FileSchemeNull,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		app.DevNullFilePath,
 	)
@@ -635,6 +742,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/dir#format=bin",
 	)
@@ -645,6 +753,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/dir#format=bin,compression=none",
 	)
@@ -655,6 +764,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/dir#format=bin,compression=gzip",
 	)
@@ -665,6 +775,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/dir#format=binpb",
 	)
@@ -675,6 +786,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"path/to/dir#format=binpb,compression=none",
 	)
@@ -685,6 +797,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/dir",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeGzip,
+			nil,
 		),
 		"path/to/dir#format=binpb,compression=gzip",
 	)
@@ -929,6 +1042,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
+			nil,
 		),
 		"path/to/file#format=bin,compression=zstd",
 	)
@@ -939,6 +1053,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.bin.zst",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
+			nil,
 		),
 		"path/to/file.bin.zst",
 	)
@@ -949,6 +1064,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
+			nil,
 		),
 		"path/to/file#format=binpb,compression=zstd",
 	)
@@ -959,6 +1075,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"path/to/file.binpb.zst",
 			internal.FileSchemeLocal,
 			internal.CompressionTypeZstd,
+			nil,
 		),
 		"path/to/file.binpb.zst",
 	)
@@ -997,6 +1114,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"github.com/path/to/file.bin",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://github.com/path/to/file.bin",
 	)
@@ -1007,6 +1125,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"github.com/path/to/file.ext",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://github.com/path/to/file.ext#format=bin",
 	)
@@ -1017,6 +1136,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar#format=bin",
 	)
@@ -1027,6 +1147,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"github.com/path/to/file.binpb",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://github.com/path/to/file.binpb",
 	)
@@ -1037,6 +1158,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"github.com/path/to/file.ext",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://github.com/path/to/file.ext#format=binpb",
 	)
@@ -1047,6 +1169,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar",
 			internal.FileSchemeHTTPS,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar#format=binpb",
 	)
@@ -1121,7 +1244,7 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidKeyError("foo"),
+		internal.NewOptionsInvalidKeysError("foo"),
 		"path/to/foo.tar.gz#foo=bar",
 	)
 	testGetParsedRefError(

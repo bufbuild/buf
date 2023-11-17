@@ -78,7 +78,7 @@ func (i *imageConfigReader) GetImageConfigs(
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
 	switch t := ref.(type) {
-	case buffetch.ImageRef:
+	case buffetch.MessageRef:
 		env, err := i.getImageImageConfig(
 			ctx,
 			container,
@@ -193,7 +193,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 func (i *imageConfigReader) getImageImageConfig(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	imageRef buffetch.ImageRef,
+	messageRef buffetch.MessageRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
@@ -203,7 +203,7 @@ func (i *imageConfigReader) getImageImageConfig(
 	image, err := i.imageReader.GetImage(
 		ctx,
 		container,
-		imageRef,
+		messageRef,
 		externalDirOrFilePaths,
 		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,

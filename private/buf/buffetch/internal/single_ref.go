@@ -36,12 +36,14 @@ type singleRef struct {
 	path            string
 	fileScheme      FileScheme
 	compressionType CompressionType
+	customOptions   map[string]string
 }
 
 func newSingleRef(
 	format string,
 	path string,
 	compressionType CompressionType,
+	customOptions map[string]string,
 ) (*singleRef, error) {
 	if path == "" {
 		return nil, NewNoPathError()
@@ -55,6 +57,7 @@ func newSingleRef(
 			"",
 			FileSchemeStdio,
 			compressionType,
+			customOptions,
 		), nil
 	}
 	if app.IsDevStdin(path) {
@@ -63,6 +66,7 @@ func newSingleRef(
 			"",
 			FileSchemeStdin,
 			compressionType,
+			customOptions,
 		), nil
 	}
 	if app.IsDevStdout(path) {
@@ -71,6 +75,7 @@ func newSingleRef(
 			"",
 			FileSchemeStdout,
 			compressionType,
+			customOptions,
 		), nil
 	}
 	if app.IsDevNull(path) {
@@ -79,6 +84,7 @@ func newSingleRef(
 			"",
 			FileSchemeNull,
 			compressionType,
+			customOptions,
 		), nil
 	}
 	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
@@ -95,6 +101,7 @@ func newSingleRef(
 				path,
 				fileScheme,
 				compressionType,
+				customOptions,
 			), nil
 		}
 	}
@@ -106,6 +113,7 @@ func newSingleRef(
 		normalpath.Normalize(path),
 		FileSchemeLocal,
 		compressionType,
+		customOptions,
 	), nil
 }
 
@@ -114,12 +122,17 @@ func newDirectSingleRef(
 	path string,
 	fileScheme FileScheme,
 	compressionType CompressionType,
+	customOptions map[string]string,
 ) *singleRef {
+	if customOptions == nil {
+		customOptions = make(map[string]string)
+	}
 	return &singleRef{
 		format:          format,
 		path:            path,
 		fileScheme:      fileScheme,
 		compressionType: compressionType,
+		customOptions:   customOptions,
 	}
 }
 
@@ -137,6 +150,11 @@ func (r *singleRef) FileScheme() FileScheme {
 
 func (r *singleRef) CompressionType() CompressionType {
 	return r.compressionType
+}
+
+func (r *singleRef) CustomOptionValue(key string) (string, bool) {
+	value, ok := r.customOptions[key]
+	return value, ok
 }
 
 func (*singleRef) ref()       {}

@@ -200,10 +200,10 @@ func (r *fakeModuleFetcher) GetModule(
 	)
 }
 
-func (r *fakeModuleFetcher) GetImageFile(
+func (r *fakeModuleFetcher) GetMessageFile(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	imageRef buffetch.ImageRef,
+	messageRef buffetch.MessageRef,
 ) (io.ReadCloser, error) {
 	return nil, nil
 }
