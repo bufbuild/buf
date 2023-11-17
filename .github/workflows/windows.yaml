@@ -7,12 +7,10 @@ jobs:
   test:
     env:
       DOWNLOAD_CACHE: 'd:\downloadcache'
+      GOPATH: 'd:\a\_temp\go\work'
+      GOCACHE: 'd:\a\_temp\go\cache'
     runs-on: windows-latest
     steps:
-      - shell: pwsh
-        run: |
-          echo "GOPATH=D:/a/_temp/go/work" >> $env:GITHUB_ENV
-          echo "GOCACHE=D:/a/_temp/go/cache" >> $env:GITHUB_ENV
       - name: checkout
         uses: actions/checkout@v4
       - name: go-cache
