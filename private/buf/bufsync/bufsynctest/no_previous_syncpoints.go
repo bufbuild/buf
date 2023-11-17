@@ -1,34 +1,17 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package bufsync_test
+package bufsynctest
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
-func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
-	t.Parallel()
+func testNoPreviousSyncPoints(t *testing.T, handler TestHandler, run runFunc) {
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
@@ -51,18 +34,7 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 			branch:          "foo",
 			expectedCommits: 3, // +1 for the branch fork point, which is synced again
 		},
-		{
-			name:            "when_bar",
-			branch:          "bar",
-			expectedCommits: 3, // +1 for the branch fork point, which is synced again
-		},
-		{
-			name:            "when_baz",
-			branch:          "baz",
-			expectedCommits: 2, // +1 for the branch fork point, which is synced again
-		},
 	}
-	handler := newTestSyncHandler() // use same handler for all test cases
 	for _, withOverride := range []bool{false, true} {
 		for _, tc := range testCases {
 			func(tc testCase) {
@@ -76,21 +48,18 @@ func TestCommitsToSyncWithNoPreviousSyncPoints(t *testing.T) {
 					} else {
 						opts = append(opts, bufsync.SyncerWithModule(moduleDir, nil))
 					}
-					syncer, err := bufsync.NewSyncer(
-						zaptest.NewLogger(t),
-						repo,
-						storagegit.NewProvider(repo.Objects()),
-						handler,
-						opts...,
-					)
+					plan, err := run(t, repo, opts...)
 					require.NoError(t, err)
-					require.NoError(t, syncer.Sync(context.Background()))
 					identity := moduleIdentityInHEAD
 					if withOverride {
 						identity = moduleIdentityOverride
 					}
-					_, branch := handler.getRepoBranch(identity, tc.branch)
-					require.Len(t, branch.commits, tc.expectedCommits)
+					assert.False(t, plan.Nop())
+					require.Len(t, plan.ModuleBranchesToSync(), 1)
+					branch := plan.ModuleBranchesToSync()[0]
+					assert.Equal(t, tc.branch, branch.BranchName())
+					assert.Equal(t, identity, branch.TargetModuleIdentity())
+					assert.Len(t, branch.CommitsToSync(), tc.expectedCommits)
 				})
 			}(tc)
 		}

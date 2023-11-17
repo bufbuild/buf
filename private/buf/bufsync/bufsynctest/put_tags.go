@@ -1,18 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package bufsync_test
+package bufsynctest
 
 import (
 	"context"
@@ -23,19 +9,15 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
-func TestPutTags(t *testing.T) {
-	t.Parallel()
+func testPutTags(t *testing.T, handler TestHandler, run runFunc) {
 	repo := gittest.ScaffoldGitRepository(t)
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	prepareGitRepoWithTags(t, repo, moduleIdentityInHEAD)
-	testHandler := newTestSyncHandler()
 	// prepare the top 5 commits as syncable commits, mark the rest as if they were already synced
 	var (
 		previousHeadIndex = 6
@@ -47,26 +29,19 @@ func TestPutTags(t *testing.T) {
 		if commitCount == previousHeadIndex {
 			// mark this commit as synced; nothing after this needs to be marked because syncer
 			// won't travel past this
-			testHandler.setSyncPoint(
+			handler.SetSyncPoint(
+				context.Background(),
+				t,
+				moduleIdentityInHEAD,
 				repo.DefaultBranch(),
 				commit.Hash(),
-				moduleIdentityInHEAD,
 			)
 		}
 		commitCount++
 		return nil
 	}))
-	syncer, err := bufsync.NewSyncer(
-		zaptest.NewLogger(t),
-		repo,
-		storagegit.NewProvider(repo.Objects()),
-		testHandler,
-		bufsync.SyncerWithModule(".", nil),
-	)
+	plan, err := run(t, repo, bufsync.SyncerWithModule(".", nil))
 	require.NoError(t, err)
-	plan, err := syncer.Plan(context.Background())
-	require.NoError(t, err)
-	require.NoError(t, syncer.Sync(context.Background()))
 	require.Len(t, plan.ModuleTagsToSync(), 1)
 	moduleTags := plan.ModuleTagsToSync()[0]
 	// In total the repo has at least 20 commits; we manually marked index 6 as the synced point,
