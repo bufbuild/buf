@@ -57,7 +57,7 @@ func RunTestSuite(t *testing.T, handlerProvider func() TestHandler) {
 	})
 }
 
-// runFunc runs Plan and Sync on the provided Repository with the provided options, returning any error that occured along the way.
+// runFunc runs Plan and Sync on the provided Repository with the provided options, returning any error that occurred along the way.
 // If Plan errors, Sync is not invoked.
 type runFunc func(t *testing.T, repo git.Repository, options ...bufsync.SyncerOption) (bufsync.ExecutionPlan, error)
 

@@ -28,6 +28,7 @@ import (
 )
 
 func TestSyncer(t *testing.T) {
+	t.Parallel()
 	bufsynctest.RunTestSuite(t, func() bufsynctest.TestHandler {
 		return newTestSyncHandler()
 	})
