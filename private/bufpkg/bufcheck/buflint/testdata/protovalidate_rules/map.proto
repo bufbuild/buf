@@ -49,4 +49,8 @@ message MapTest {
     (buf.validate.field).map.min_pairs = 1,
     (buf.validate.field).map.values.string.pattern = "["
   ];
+  int32 not_a_map = 14 [
+    (buf.validate.field).map.values.int32.lt = 10,
+    (buf.validate.field).map.values.int32.gt = 1
+  ];
 }

@@ -378,6 +378,7 @@ func checkMapRules(
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(mapRulesFieldNumber),
 		)
+		return nil
 	}
 	if mapRules.MinPairs != nil && mapRules.MaxPairs != nil && *mapRules.MinPairs > *mapRules.MaxPairs {
 		baseAdder.addForPathf(
