@@ -53,7 +53,11 @@ func newRefParser(logger *zap.Logger) *refParser {
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(formatTxtpb),
-			internal.WithSingleFormat(formatYAML),
+			internal.WithSingleFormat(
+				formatYAML,
+				internal.WithSingleCustomOptionKey(useProtoNamesKey),
+				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
+			),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -99,7 +103,11 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
 			internal.WithSingleFormat(formatTxtpb),
-			internal.WithSingleFormat(formatYAML),
+			internal.WithSingleFormat(
+				formatYAML,
+				internal.WithSingleCustomOptionKey(useProtoNamesKey),
+				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
+			),
 			internal.WithSingleFormat(
 				formatBingz,
 				internal.WithSingleDefaultCompressionType(
@@ -208,7 +216,7 @@ func (a *refParser) GetRef(
 		if err != nil {
 			return nil, err
 		}
-		return newImageRef(t, imageEncoding), nil
+		return newImageRef(t, imageEncoding)
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
@@ -282,7 +290,7 @@ func (a *refParser) GetImageRef(
 	if err != nil {
 		return nil, err
 	}
-	return newImageRef(parsedSingleRef, imageEncoding), nil
+	return newImageRef(parsedSingleRef, imageEncoding)
 }
 
 func (a *refParser) GetSourceRef(

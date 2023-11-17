@@ -44,5 +44,5 @@ func (w *writer) PutImageFile(
 	container app.EnvStdoutContainer,
 	imageRef ImageRef,
 ) (io.WriteCloser, error) {
-	return w.internalWriter.PutFile(ctx, container, imageRef.internalFileRef())
+	return w.internalWriter.PutFile(ctx, container, imageRef.internalSingleRef())
 }

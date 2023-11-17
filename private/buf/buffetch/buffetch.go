@@ -38,6 +38,9 @@ const (
 	ImageEncodingTxtpb
 	// ImageEncodingYAML is the YAML image encoding.
 	ImageEncodingYAML
+
+	useProtoNamesKey  = "use_proto_names"
+	useEnumNumbersKey = "use_enum_numbers"
 )
 
 var (
@@ -103,8 +106,12 @@ type Ref interface {
 type ImageRef interface {
 	Ref
 	ImageEncoding() ImageEncoding
+	// UseProtoNames only applies for ImageEncodingYAML at this time.
+	UseProtoNames() bool
+	// UseEnumNumbers only applies for ImageEncodingYAML at this time.
+	UseEnumNumbers() bool
 	IsNull() bool
-	internalFileRef() internal.FileRef
+	internalSingleRef() internal.SingleRef
 }
 
 // SourceOrModuleRef is a source bucket or module reference.

@@ -23,6 +23,7 @@ type yamlMarshaler struct {
 	resolver        Resolver
 	indent          int
 	useProtoNames   bool
+	useEnumNumbers  bool
 	emitUnpopulated bool
 }
 
@@ -44,6 +45,7 @@ func (m *yamlMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		Indent:          m.indent,
 		Resolver:        m.resolver,
 		UseProtoNames:   m.useProtoNames,
+		UseEnumNumbers:  m.useEnumNumbers,
 		EmitUnpopulated: m.emitUnpopulated,
 	}
 	data, err := options.Marshal(message)

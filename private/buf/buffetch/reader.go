@@ -132,7 +132,7 @@ func (a *reader) GetImageFile(
 	container app.EnvStdinContainer,
 	imageRef ImageRef,
 ) (io.ReadCloser, error) {
-	return a.internalReader.GetFile(ctx, container, imageRef.internalFileRef())
+	return a.internalReader.GetFile(ctx, container, imageRef.internalSingleRef())
 }
 
 func (a *reader) GetSourceBucket(

@@ -78,9 +78,17 @@ func NewNoPathError() error {
 	return errors.New("value has no path once processed")
 }
 
-// NewOptionsInvalidKeyError is a fetch error.
-func NewOptionsInvalidKeyError(key string) error {
-	return fmt.Errorf("invalid options key: %q", key)
+// NewOptionsInvalidKeysError is a fetch error.
+func NewOptionsInvalidKeysError(keys ...string) error {
+	if len(keys) == 1 {
+		return fmt.Errorf("invalid key: %q", keys[0])
+	}
+	return fmt.Errorf("invalid keys: \"%v\"", strings.Join(keys, ", "))
+}
+
+// NewOptionsInvalidValueForKeyError is a fetch error.
+func NewOptionsInvalidValueForKeyError(key string, value string) error {
+	return fmt.Errorf("invalid value %q for key: %q", value, key)
 }
 
 // NewOptionsInvalidForFormatError is a fetch error.

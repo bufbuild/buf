@@ -134,6 +134,13 @@ func YAMLMarshalerWithUseProtoNames() YAMLMarshalerOption {
 	}
 }
 
+// YAMLMarshalerWithUseEnumNumbers says to use an use enum numbers.
+func YAMLMarshalerWithUseEnumNumbers() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.useEnumNumbers = true
+	}
+}
+
 // YAMLMarshalerWithEmitUnpopulated says to emit unpopulated values
 func YAMLMarshalerWithEmitUnpopulated() YAMLMarshalerOption {
 	return func(yamlMarshaler *yamlMarshaler) {

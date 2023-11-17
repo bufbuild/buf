@@ -112,12 +112,13 @@ type BucketRef interface {
 // SingleRef is a non-archive file reference.
 type SingleRef interface {
 	FileRef
+	CustomOptionValue(key string) (string, bool)
 	singleRef()
 }
 
 // NewSingleRef returns a new SingleRef.
 func NewSingleRef(path string, compressionType CompressionType) (SingleRef, error) {
-	return newSingleRef("", path, compressionType)
+	return newSingleRef("", path, compressionType, nil)
 }
 
 // ArchiveRef is an archive reference.
@@ -252,12 +253,14 @@ func NewDirectParsedSingleRef(
 	path string,
 	fileScheme FileScheme,
 	compressionType CompressionType,
+	customOptions map[string]string,
 ) ParsedSingleRef {
 	return newDirectSingleRef(
 		format,
 		path,
 		fileScheme,
 		compressionType,
+		customOptions,
 	)
 }
 
@@ -531,6 +534,10 @@ type RawRef struct {
 	// in the image for the ProtoFileRef.
 	// This defaults to false.
 	IncludePackageFiles bool
+	// Any unrecognized options. Some formats may allow custom options, and those
+	// formats should check for  those custom options in this map. If a format
+	// does not allow an option, an error will be returned.
+	UnrecognizedOptions map[string]string
 }
 
 // RefParserOption is an RefParser option.
@@ -655,6 +662,13 @@ type SingleFormatOption func(*singleFormatInfo)
 func WithSingleDefaultCompressionType(defaultCompressionType CompressionType) SingleFormatOption {
 	return func(singleFormatInfo *singleFormatInfo) {
 		singleFormatInfo.defaultCompressionType = defaultCompressionType
+	}
+}
+
+// WithSingleCustomOptionKey adds a custom option key that is recognized..
+func WithSingleCustomOptionKey(key string) SingleFormatOption {
+	return func(singleFormatInfo *singleFormatInfo) {
+		singleFormatInfo.customOptionKeys[key] = struct{}{}
 	}
 }
 

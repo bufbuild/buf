@@ -22,18 +22,30 @@ import (
 var _ ImageRef = &imageRef{}
 
 type imageRef struct {
-	fileRef       internal.FileRef
-	imageEncoding ImageEncoding
+	singleRef      internal.SingleRef
+	useProtoNames  bool
+	useEnumNumbers bool
+	imageEncoding  ImageEncoding
 }
 
 func newImageRef(
-	fileRef internal.FileRef,
+	singleRef internal.SingleRef,
 	imageEncoding ImageEncoding,
-) *imageRef {
-	return &imageRef{
-		fileRef:       fileRef,
-		imageEncoding: imageEncoding,
+) (*imageRef, error) {
+	useProtoNames, err := getTrueOrFalseForSingleRef(singleRef, useProtoNamesKey)
+	if err != nil {
+		return nil, err
 	}
+	useEnumNumbers, err := getTrueOrFalseForSingleRef(singleRef, useEnumNumbersKey)
+	if err != nil {
+		return nil, err
+	}
+	return &imageRef{
+		singleRef:      singleRef,
+		useProtoNames:  useProtoNames,
+		useEnumNumbers: useEnumNumbers,
+		imageEncoding:  imageEncoding,
+	}, nil
 }
 
 func (r *imageRef) PathForExternalPath(externalPath string) (string, error) {
@@ -44,14 +56,37 @@ func (r *imageRef) ImageEncoding() ImageEncoding {
 	return r.imageEncoding
 }
 
+func (r *imageRef) UseProtoNames() bool {
+	return r.useProtoNames
+}
+
+func (r *imageRef) UseEnumNumbers() bool {
+	return r.useEnumNumbers
+}
+
 func (r *imageRef) IsNull() bool {
-	return r.fileRef.FileScheme() == internal.FileSchemeNull
+	return r.singleRef.FileScheme() == internal.FileSchemeNull
 }
 
 func (r *imageRef) internalRef() internal.Ref {
-	return r.fileRef
+	return r.singleRef
 }
 
-func (r *imageRef) internalFileRef() internal.FileRef {
-	return r.fileRef
+func (r *imageRef) internalSingleRef() internal.SingleRef {
+	return r.singleRef
+}
+
+func getTrueOrFalseForSingleRef(singleRef internal.SingleRef, key string) (bool, error) {
+	value, ok := singleRef.CustomOptionValue(key)
+	if !ok {
+		return false, nil
+	}
+	switch value {
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	default:
+		return false, internal.NewOptionsInvalidValueForKeyError(key, value)
+	}
 }
