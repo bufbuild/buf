@@ -38,13 +38,13 @@ const (
 
 type imageReader struct {
 	logger      *zap.Logger
-	fetchReader buffetch.ImageReader
+	fetchReader buffetch.MessageReader
 	tracer      trace.Tracer
 }
 
 func newImageReader(
 	logger *zap.Logger,
-	fetchReader buffetch.ImageReader,
+	fetchReader buffetch.MessageReader,
 ) *imageReader {
 	return &imageReader{
 		logger:      logger.Named(loggerName),
@@ -56,7 +56,7 @@ func newImageReader(
 func (i *imageReader) GetImage(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	imageRef buffetch.ImageRef,
+	messageRef buffetch.MessageRef,
 	externalDirOrFilePaths []string,
 	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
@@ -70,7 +70,7 @@ func (i *imageReader) GetImage(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
+	readCloser, err := i.fetchReader.GetMessageFile(ctx, container, messageRef)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func (i *imageReader) GetImage(
 	}
 	protoImage := &imagev1.Image{}
 	var imageFromProtoOptions []bufimage.NewImageForProtoOption
-	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
+	switch messageEncoding := messageRef.MessageEncoding(); messageEncoding {
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
-	case buffetch.ImageEncodingBin:
+	case buffetch.MessageEncodingBin:
 		_, span := i.tracer.Start(ctx, "wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
 			span.RecordError(err)
@@ -96,7 +96,7 @@ func (i *imageReader) GetImage(
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
-	case buffetch.ImageEncodingJSON:
+	case buffetch.MessageEncodingJSON:
 		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
@@ -111,7 +111,7 @@ func (i *imageReader) GetImage(
 		jsonUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
-	case buffetch.ImageEncodingTxtpb:
+	case buffetch.MessageEncodingTxtpb:
 		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewTxtpbUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
@@ -126,7 +126,7 @@ func (i *imageReader) GetImage(
 		txtpbUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
-	case buffetch.ImageEncodingYAML:
+	case buffetch.MessageEncodingYAML:
 		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewYAMLUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
@@ -142,7 +142,7 @@ func (i *imageReader) GetImage(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
-		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
+		return nil, fmt.Errorf("unknown message encoding: %v", messageEncoding)
 	}
 	if excludeSourceCodeInfo {
 		for _, fileDescriptorProto := range protoImage.File {
@@ -158,7 +158,7 @@ func (i *imageReader) GetImage(
 	}
 	imagePaths := make([]string, len(externalDirOrFilePaths))
 	for i, externalDirOrFilePath := range externalDirOrFilePaths {
-		imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
+		imagePath, err := messageRef.PathForExternalPath(externalDirOrFilePath)
 		if err != nil {
 			return nil, err
 		}
@@ -166,7 +166,7 @@ func (i *imageReader) GetImage(
 	}
 	excludePaths := make([]string, len(externalExcludeDirOrFilePaths))
 	for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
-		excludePath, err := imageRef.PathForExternalPath(excludeDirOrFilePath)
+		excludePath, err := messageRef.PathForExternalPath(excludeDirOrFilePath)
 		if err != nil {
 			return nil, err
 		}

@@ -94,7 +94,7 @@ func handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	againstImageRef, err := buffetch.NewImageRefParser(logger).GetImageRef(ctx, externalConfig.AgainstInput)
+	againstMessageRef, err := buffetch.NewMessageRefParser(logger).GetMessageRef(ctx, externalConfig.AgainstInput)
 	if err != nil {
 		return fmt.Errorf("against_input: %v", err)
 	}
@@ -104,7 +104,7 @@ func handle(
 	againstImage, err := imageReader.GetImage(
 		ctx,
 		newContainer(container),
-		againstImageRef,
+		againstMessageRef,
 		files, // limit to the input files if specified
 		nil,   // exclude paths are not supported on this plugin
 		true,  // allow files in the against input to not exist

@@ -161,7 +161,7 @@ type ImageReader interface {
 	GetImage(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		imageRef buffetch.ImageRef,
+		messageRef buffetch.MessageRef,
 		externalDirOrFilePaths []string,
 		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
@@ -172,7 +172,7 @@ type ImageReader interface {
 // NewImageReader returns a new ImageReader.
 func NewImageReader(
 	logger *zap.Logger,
-	fetchReader buffetch.ImageReader,
+	fetchReader buffetch.MessageReader,
 ) ImageReader {
 	return newImageReader(
 		logger,
@@ -189,7 +189,7 @@ type ImageWriter interface {
 	PutImage(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
-		imageRef buffetch.ImageRef,
+		messageRef buffetch.MessageRef,
 		image bufimage.Image,
 		asFileDescriptorSet bool,
 		excludeImports bool,

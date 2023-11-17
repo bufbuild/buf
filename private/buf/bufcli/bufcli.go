@@ -487,7 +487,7 @@ func NewWireImageReader(
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		newFetchImageReader(logger, storageosProvider, runner),
+		newFetchMessageReader(logger, storageosProvider, runner),
 	)
 }
 
@@ -1010,14 +1010,14 @@ func newFetchSourceReader(
 	)
 }
 
-// newFetchImageReader creates a new buffetch.ImageReader with the default HTTP client
+// newFetchMessageReader creates a new buffetch.MessageReader with the default HTTP client
 // and git cloner.
-func newFetchImageReader(
+func newFetchMessageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-) buffetch.ImageReader {
-	return buffetch.NewImageReader(
+) buffetch.MessageReader {
+	return buffetch.NewMessageReader(
 		logger,
 		storageosProvider,
 		defaultHTTPClient,
