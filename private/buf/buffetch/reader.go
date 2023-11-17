@@ -64,7 +64,7 @@ func newReader(
 	}
 }
 
-func newImageReader(
+func newMessageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
@@ -127,12 +127,12 @@ func newModuleFetcher(
 	}
 }
 
-func (a *reader) GetImageFile(
+func (a *reader) GetMessageFile(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	imageRef ImageRef,
+	messageRef MessageRef,
 ) (io.ReadCloser, error) {
-	return a.internalReader.GetFile(ctx, container, imageRef.internalSingleRef())
+	return a.internalReader.GetFile(ctx, container, messageRef.internalSingleRef())
 }
 
 func (a *reader) GetSourceBucket(

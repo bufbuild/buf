@@ -93,12 +93,12 @@ func newRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newImageRefParser(logger *zap.Logger) *refParser {
+func newMessageRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
 		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
-			internal.WithRawRefProcessor(processRawRefImage),
+			internal.WithRawRefProcessor(processRawRefMessage),
 			internal.WithSingleFormat(formatBin),
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
@@ -212,11 +212,11 @@ func (a *refParser) GetRef(
 	}
 	switch t := parsedRef.(type) {
 	case internal.ParsedSingleRef:
-		imageEncoding, err := parseImageEncoding(t.Format())
+		messageEncoding, err := parseMessageEncoding(t.Format())
 		if err != nil {
 			return nil, err
 		}
-		return newImageRef(t, imageEncoding)
+		return newMessageRef(t, messageEncoding)
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
@@ -266,11 +266,11 @@ func (a *refParser) GetSourceOrModuleRef(
 	}
 }
 
-func (a *refParser) GetImageRef(
+func (a *refParser) GetMessageRef(
 	ctx context.Context,
 	value string,
-) (_ ImageRef, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_image_ref")
+) (_ MessageRef, retErr error) {
+	ctx, span := a.tracer.Start(ctx, "get_message_ref")
 	defer span.End()
 	defer func() {
 		if retErr != nil {
@@ -278,19 +278,19 @@ func (a *refParser) GetImageRef(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	parsedRef, err := a.getParsedRef(ctx, value, imageFormats)
+	parsedRef, err := a.getParsedRef(ctx, value, messageFormats)
 	if err != nil {
 		return nil, err
 	}
 	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
 	if !ok {
-		return nil, fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
+		return nil, fmt.Errorf("invalid ParsedRef type for message: %T", parsedRef)
 	}
-	imageEncoding, err := parseImageEncoding(parsedSingleRef.Format())
+	messageEncoding, err := parseMessageEncoding(parsedSingleRef.Format())
 	if err != nil {
 		return nil, err
 	}
-	return newImageRef(parsedSingleRef, imageEncoding)
+	return newMessageRef(parsedSingleRef, messageEncoding)
 }
 
 func (a *refParser) GetSourceRef(
@@ -532,7 +532,7 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 	return nil
 }
 
-func processRawRefImage(rawRef *internal.RawRef) error {
+func processRawRefMessage(rawRef *internal.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
@@ -590,18 +590,18 @@ func processRawRefModule(rawRef *internal.RawRef) error {
 	return nil
 }
 
-func parseImageEncoding(format string) (ImageEncoding, error) {
+func parseMessageEncoding(format string) (MessageEncoding, error) {
 	switch format {
 	case formatBin, formatBinpb, formatBingz:
-		return ImageEncodingBin, nil
+		return MessageEncodingBin, nil
 	case formatJSON, formatJSONGZ:
-		return ImageEncodingJSON, nil
+		return MessageEncodingJSON, nil
 	case formatTxtpb:
-		return ImageEncodingTxtpb, nil
+		return MessageEncodingTxtpb, nil
 	case formatYAML:
-		return ImageEncodingYAML, nil
+		return MessageEncodingYAML, nil
 	default:
-		return 0, fmt.Errorf("invalid format for image: %q", format)
+		return 0, fmt.Errorf("invalid format for message: %q", format)
 	}
 }
 

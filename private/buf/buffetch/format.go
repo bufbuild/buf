@@ -48,7 +48,7 @@ const (
 
 var (
 	// sorted
-	imageFormats = []string{
+	messageFormats = []string{
 		formatBin,
 		formatBinpb,
 		formatBingz,
@@ -58,7 +58,7 @@ var (
 		formatYAML,
 	}
 	// sorted
-	imageFormatsNotDeprecated = []string{
+	messageFormatsNotDeprecated = []string{
 		formatBinpb,
 		formatJSON,
 		formatTxtpb,

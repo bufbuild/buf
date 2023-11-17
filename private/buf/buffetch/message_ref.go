@@ -19,19 +19,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
-var _ ImageRef = &imageRef{}
+var _ MessageRef = &messageRef{}
 
-type imageRef struct {
+type messageRef struct {
 	singleRef      internal.SingleRef
 	useProtoNames  bool
 	useEnumNumbers bool
-	imageEncoding  ImageEncoding
+	messageEncoding  MessageEncoding
 }
 
-func newImageRef(
+func newMessageRef(
 	singleRef internal.SingleRef,
-	imageEncoding ImageEncoding,
-) (*imageRef, error) {
+	messageEncoding MessageEncoding,
+) (*messageRef, error) {
 	useProtoNames, err := getTrueOrFalseForSingleRef(singleRef, useProtoNamesKey)
 	if err != nil {
 		return nil, err
@@ -40,39 +40,39 @@ func newImageRef(
 	if err != nil {
 		return nil, err
 	}
-	return &imageRef{
+	return &messageRef{
 		singleRef:      singleRef,
 		useProtoNames:  useProtoNames,
 		useEnumNumbers: useEnumNumbers,
-		imageEncoding:  imageEncoding,
+		messageEncoding:  messageEncoding,
 	}, nil
 }
 
-func (r *imageRef) PathForExternalPath(externalPath string) (string, error) {
+func (r *messageRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(externalPath)
 }
 
-func (r *imageRef) ImageEncoding() ImageEncoding {
-	return r.imageEncoding
+func (r *messageRef) MessageEncoding() MessageEncoding {
+	return r.messageEncoding
 }
 
-func (r *imageRef) UseProtoNames() bool {
+func (r *messageRef) UseProtoNames() bool {
 	return r.useProtoNames
 }
 
-func (r *imageRef) UseEnumNumbers() bool {
+func (r *messageRef) UseEnumNumbers() bool {
 	return r.useEnumNumbers
 }
 
-func (r *imageRef) IsNull() bool {
+func (r *messageRef) IsNull() bool {
 	return r.singleRef.FileScheme() == internal.FileSchemeNull
 }
 
-func (r *imageRef) internalRef() internal.Ref {
+func (r *messageRef) internalRef() internal.Ref {
 	return r.singleRef
 }
 
-func (r *imageRef) internalSingleRef() internal.SingleRef {
+func (r *messageRef) internalSingleRef() internal.SingleRef {
 	return r.singleRef
 }
 

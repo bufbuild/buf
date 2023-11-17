@@ -531,7 +531,7 @@ type RawRef struct {
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.
 	// Sets whether or not to include the files in the rest of the package
-	// in the image for the ProtoFileRef.
+	// in the message for the ProtoFileRef.
 	// This defaults to false.
 	IncludePackageFiles bool
 	// Any unrecognized options. Some formats may allow custom options, and those

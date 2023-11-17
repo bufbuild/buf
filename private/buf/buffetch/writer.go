@@ -39,10 +39,10 @@ func newWriter(
 	}
 }
 
-func (w *writer) PutImageFile(
+func (w *writer) PutMessageFile(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
-	imageRef ImageRef,
+	messageRef MessageRef,
 ) (io.WriteCloser, error) {
-	return w.internalWriter.PutFile(ctx, container, imageRef.internalSingleRef())
+	return w.internalWriter.PutFile(ctx, container, messageRef.internalSingleRef())
 }
