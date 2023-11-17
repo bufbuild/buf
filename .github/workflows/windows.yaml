@@ -7,10 +7,11 @@ jobs:
   test:
     env:
       DOWNLOAD_CACHE: 'd:\downloadcache'
-      # Improve performance by using GHA _temp directory.
-      # %USERPROFILE% seems to be really slow, especially for cache restores.
-      GOCACHE: 'd:\a\_temp\go\cache'
-      GOMODCACHE: 'd:\a\_temp\go\modcache'
+      # Improve performance by using D: drive.
+      # C: seems to be really slow, especially for cache restores.
+      GOPATH: 'd:\go\path'
+      GOCACHE: 'd:\go\cache'
+      GOMODCACHE: 'd:\go\modcache'
     runs-on: windows-latest
     steps:
       - name: checkout
