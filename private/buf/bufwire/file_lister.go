@@ -171,7 +171,7 @@ func (e *fileLister) listFilesWithoutImports(
 			}
 		}
 		return fileInfos, nil, nil
-	case buffetch.ImageRef:
+	case buffetch.MessageRef:
 		// if we have an image, list the files in the image
 		image, err := e.imageReader.GetImage(
 			ctx,

@@ -169,6 +169,7 @@ func RunTestSuite(
 	fiveDirPath := filepath.Join(storagetestingDirPath, "testdata", "five")
 	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_success")
 	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_loop")
+	overlayDirPath := filepath.Join(storagetestingDirPath, "testdata", "overlay")
 	defaultProvider := storageos.NewProvider()
 	runner := command.NewRunner()
 
@@ -1518,6 +1519,22 @@ func RunTestSuite(
 			"root/a/b/1.proto",
 			map[string]string{
 				"root/a/b/1.proto": testProtoContent,
+			},
+		)
+	})
+
+	t.Run("overlay", func(t *testing.T) {
+		aReadBucket, _ := newReadBucket(t, filepath.Join(overlayDirPath, "a"), defaultProvider)
+		bReadBucket, _ := newReadBucket(t, filepath.Join(overlayDirPath, "b"), defaultProvider)
+		readBucket := storage.OverlayReadBucket(aReadBucket, bReadBucket)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"",
+			map[string]string{
+				"1": "one\n",
+				"2": "two-a\n",
+				"3": "three\n",
 			},
 		)
 	})

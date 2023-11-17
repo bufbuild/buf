@@ -57,80 +57,6 @@ type ReadBucket interface {
 	Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error
 }
 
-// PutOptions are the possible options that can be passed to a Put operation.
-type PutOptions interface {
-	// Atomic ensures that the Put fully writes the file before making it
-	// available to readers. This happens by default for some implementations,
-	// while others may need to perform a sequence of operations to ensure
-	// atomic writes.
-	//
-	// The Put operation is complete and the path will be readable once the
-	// returned WriteObjectCloser is written and closed (without an error).
-	// Any errors will cause the Put to be skipped (no path will be created).
-	Atomic() bool
-	// SuggestedDisableChunking says to suggest disable chunking entirely.
-	//
-	// If SuggestedChunkSize() > 0, this will always be false.
-	//
-	// This is a suggestion, implementations may choose to ignore this option.
-	SuggestedDisableChunking() bool
-	// SuggestedChunkSize sets the given size in bytes as a suggested chunk
-	// size to use by the Bucket implementation for this Put call.
-	// Some implementations of Put allow multi-part upload, and allow customizing the
-	// chunk size of each part upload, or even disabling multi-part upload.
-	//
-	// This is a suggestion, implementations may choose to ignore this option.
-	SuggestedChunkSize() int
-
-	isPutOptions()
-}
-
-// NewPutOptions returns a new PutOptions.
-//
-// This is used by Bucket implementations.
-func NewPutOptions(options []PutOption) PutOptions {
-	putOptions := newPutOptions()
-	for _, option := range options {
-		option(putOptions)
-	}
-	return putOptions
-}
-
-// PutOption is an option passed when putting an object in a bucket.
-type PutOption func(*putOptions)
-
-// PutWithSuggestedChunkSize sets the given size in bytes as a suggested chunk
-// size to use by the Bucket implementation for this Put call.
-// Some implementations of Put allow multi-part upload, and allow customizing the
-// chunk size of each part upload, or even disabling multi-part upload.
-//
-// Setting a suggestedChunkSize of 0 says to suggest disable chunking
-// Negative values will be ignored.
-//
-// This is a suggestion, implementations may choose to ignore this option.
-func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
-	return func(putOptions *putOptions) {
-		if suggestedChunkSize < 0 {
-			return
-		}
-		putOptions.suggestedChunkSize = &suggestedChunkSize
-	}
-}
-
-// PutWithAtomic ensures that the Put fully writes the file before making it
-// available to readers. This happens by default for some implementations,
-// while others may need to perform a sequence of operations to ensure
-// atomic writes.
-//
-// The Put operation is complete and the path will be readable once the
-// returned WriteObjectCloser is written and closed (without an error).
-// Any errors will cause the Put to be skipped (no path will be created).
-func PutWithAtomic() PutOption {
-	return func(putOptions *putOptions) {
-		putOptions.atomic = true
-	}
-}
-
 // WriteBucket is a write-only bucket.
 type WriteBucket interface {
 	// Put returns a WriteObjectCloser to write to the path.
@@ -272,6 +198,80 @@ type WriteObject interface {
 type WriteObjectCloser interface {
 	WriteObject
 	io.Closer
+}
+
+// PutOptions are the possible options that can be passed to a Put operation.
+type PutOptions interface {
+	// Atomic ensures that the Put fully writes the file before making it
+	// available to readers. This happens by default for some implementations,
+	// while others may need to perform a sequence of operations to ensure
+	// atomic writes.
+	//
+	// The Put operation is complete and the path will be readable once the
+	// returned WriteObjectCloser is written and closed (without an error).
+	// Any errors will cause the Put to be skipped (no path will be created).
+	Atomic() bool
+	// SuggestedDisableChunking says to suggest disable chunking entirely.
+	//
+	// If SuggestedChunkSize() > 0, this will always be false.
+	//
+	// This is a suggestion, implementations may choose to ignore this option.
+	SuggestedDisableChunking() bool
+	// SuggestedChunkSize sets the given size in bytes as a suggested chunk
+	// size to use by the Bucket implementation for this Put call.
+	// Some implementations of Put allow multi-part upload, and allow customizing the
+	// chunk size of each part upload, or even disabling multi-part upload.
+	//
+	// This is a suggestion, implementations may choose to ignore this option.
+	SuggestedChunkSize() int
+
+	isPutOptions()
+}
+
+// NewPutOptions returns a new PutOptions.
+//
+// This is used by Bucket implementations.
+func NewPutOptions(options []PutOption) PutOptions {
+	putOptions := newPutOptions()
+	for _, option := range options {
+		option(putOptions)
+	}
+	return putOptions
+}
+
+// PutOption is an option passed when putting an object in a bucket.
+type PutOption func(*putOptions)
+
+// PutWithSuggestedChunkSize sets the given size in bytes as a suggested chunk
+// size to use by the Bucket implementation for this Put call.
+// Some implementations of Put allow multi-part upload, and allow customizing the
+// chunk size of each part upload, or even disabling multi-part upload.
+//
+// Setting a suggestedChunkSize of 0 says to suggest disable chunking
+// Negative values will be ignored.
+//
+// This is a suggestion, implementations may choose to ignore this option.
+func PutWithSuggestedChunkSize(suggestedChunkSize int) PutOption {
+	return func(putOptions *putOptions) {
+		if suggestedChunkSize < 0 {
+			return
+		}
+		putOptions.suggestedChunkSize = &suggestedChunkSize
+	}
+}
+
+// PutWithAtomic ensures that the Put fully writes the file before making it
+// available to readers. This happens by default for some implementations,
+// while others may need to perform a sequence of operations to ensure
+// atomic writes.
+//
+// The Put operation is complete and the path will be readable once the
+// returned WriteObjectCloser is written and closed (without an error).
+// Any errors will cause the Put to be skipped (no path will be created).
+func PutWithAtomic() PutOption {
+	return func(putOptions *putOptions) {
+		putOptions.atomic = true
+	}
 }
 
 type nopReadBucketCloser struct {

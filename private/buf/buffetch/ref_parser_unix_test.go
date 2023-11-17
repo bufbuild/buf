@@ -33,6 +33,7 @@ func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
 			"",
 			internal.FileSchemeStdin,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		app.DevStdinFilePath,
 	)
@@ -43,6 +44,7 @@ func TestGetParsedRefSuccess_UnixOnly(t *testing.T) {
 			"",
 			internal.FileSchemeStdout,
 			internal.CompressionTypeNone,
+			nil,
 		),
 		app.DevStdoutFilePath,
 	)

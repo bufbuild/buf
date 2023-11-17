@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufref
+package internal
 
 import (
 	"testing"
@@ -81,7 +81,7 @@ func testGetRawPathAndOptionsError(
 ) {
 	t.Run(value, func(t *testing.T) {
 		t.Parallel()
-		_, _, err := GetRawPathAndOptions(value)
+		_, _, err := getRawPathAndOptions(value)
 		assert.EqualError(t, err, expectedErr.Error())
 	})
 }

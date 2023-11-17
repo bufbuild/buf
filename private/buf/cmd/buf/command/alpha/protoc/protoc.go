@@ -239,13 +239,13 @@ func run(
 	if env.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
-	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, env.Output)
+	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, env.Output)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
 	return bufcli.NewWireImageWriter(container.Logger()).PutImage(ctx,
 		container,
-		imageRef,
+		messageRef,
 		image,
 		true,
 		!env.IncludeImports,

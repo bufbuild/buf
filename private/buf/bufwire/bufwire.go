@@ -20,7 +20,6 @@ package bufwire
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -161,7 +160,7 @@ type ImageReader interface {
 	GetImage(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		imageRef buffetch.ImageRef,
+		messageRef buffetch.MessageRef,
 		externalDirOrFilePaths []string,
 		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
@@ -172,7 +171,7 @@ type ImageReader interface {
 // NewImageReader returns a new ImageReader.
 func NewImageReader(
 	logger *zap.Logger,
-	fetchReader buffetch.ImageReader,
+	fetchReader buffetch.MessageReader,
 ) ImageReader {
 	return newImageReader(
 		logger,
@@ -189,7 +188,7 @@ type ImageWriter interface {
 	PutImage(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
-		imageRef buffetch.ImageRef,
+		messageRef buffetch.MessageRef,
 		image bufimage.Image,
 		asFileDescriptorSet bool,
 		excludeImports bool,
@@ -210,23 +209,23 @@ func NewImageWriter(
 // ProtoEncodingReader is a reader that reads a protobuf message in different encoding.
 type ProtoEncodingReader interface {
 	// GetMessage reads the message by the messageRef.
-	//
-	// Currently, this support bin and JSON format.
 	GetMessage(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		image bufimage.Image,
 		typeName string,
-		messageRef bufconvert.MessageEncodingRef,
+		messageRef buffetch.MessageRef,
 	) (proto.Message, error)
 }
 
 // NewProtoEncodingReader returns a new ProtoEncodingReader.
 func NewProtoEncodingReader(
 	logger *zap.Logger,
+	fetchReader buffetch.MessageReader,
 ) ProtoEncodingReader {
 	return newProtoEncodingReader(
 		logger,
+		fetchReader,
 	)
 }
 
@@ -241,15 +240,17 @@ type ProtoEncodingWriter interface {
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
-		messageRef bufconvert.MessageEncodingRef,
+		messageRef buffetch.MessageRef,
 	) error
 }
 
 // NewProtoEncodingWriter returns a new ProtoEncodingWriter.
 func NewProtoEncodingWriter(
 	logger *zap.Logger,
+	fetchWriter buffetch.Writer,
 ) ProtoEncodingWriter {
 	return newProtoEncodingWriter(
 		logger,
+		fetchWriter,
 	)
 }
