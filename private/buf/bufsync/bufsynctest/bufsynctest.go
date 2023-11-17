@@ -39,10 +39,6 @@ type TestHandler interface {
 	)
 }
 
-// runFunc runs Plan and Sync on the provided Repository with the provided options, returning any error that occured along the way.
-// If Plan errors, Sync is not invoked.
-type runFunc func(t *testing.T, repo git.Repository, options ...bufsync.SyncerOption) (bufsync.ExecutionPlan, error)
-
 func RunTestSuite(t *testing.T, handlerProvider func() TestHandler) {
 	t.Run("no_previous_sync_points", func(t *testing.T) {
 		t.Parallel()
@@ -60,6 +56,10 @@ func RunTestSuite(t *testing.T, handlerProvider func() TestHandler) {
 		testDuplicateIdentities(t, handler, makeRunFunc(handler))
 	})
 }
+
+// runFunc runs Plan and Sync on the provided Repository with the provided options, returning any error that occured along the way.
+// If Plan errors, Sync is not invoked.
+type runFunc func(t *testing.T, repo git.Repository, options ...bufsync.SyncerOption) (bufsync.ExecutionPlan, error)
 
 func makeRunFunc(handler bufsync.Handler) runFunc {
 	return func(t *testing.T, repo git.Repository, options ...bufsync.SyncerOption) (bufsync.ExecutionPlan, error) {
