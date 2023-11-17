@@ -48,7 +48,16 @@ func testNoPreviousSyncPoints(t *testing.T, handler TestHandler, run runFunc) {
 			branch:          "foo",
 			expectedCommits: 3, // +1 for the branch fork point, which is synced again
 		},
-	}
+		{
+			name:            "when_bar",
+			branch:          "bar",
+			expectedCommits: 3, // +1 for the branch fork point, which is synced again
+		},
+		{
+			name:            "when_baz",
+			branch:          "baz",
+			expectedCommits: 2, // +1 for the branch fork point, which is synced again
+		}}
 	for _, withOverride := range []bool{false, true} {
 		for _, tc := range testCases {
 			func(tc testCase) {
