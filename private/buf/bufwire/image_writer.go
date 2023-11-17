@@ -104,7 +104,7 @@ func (i *imageWriter) imageMarshal(
 		}
 	}()
 	switch messageEncoding {
-	case buffetch.MessageEncodingBin:
+	case buffetch.MessageEncodingBinpb:
 		return protoencoding.NewWireMarshaler().Marshal(message)
 	case buffetch.MessageEncodingJSON:
 		// TODO: verify that image is complete

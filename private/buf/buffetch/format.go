@@ -150,4 +150,11 @@ var (
 		formatJSONGZ: formatJSON,
 		formatTargz:  formatTar,
 	}
+
+	messageEncodingToFormat = map[MessageEncoding]string{
+		MessageEncodingBinpb: formatBinpb,
+		MessageEncodingJSON:  formatJSON,
+		MessageEncodingTxtpb: formatTxtpb,
+		MessageEncodingYAML:  formatYAML,
+	}
 )

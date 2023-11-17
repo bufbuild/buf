@@ -87,7 +87,7 @@ func (i *imageReader) GetImage(
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
-	case buffetch.MessageEncodingBin:
+	case buffetch.MessageEncodingBinpb:
 		_, span := i.tracer.Start(ctx, "wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
 			span.RecordError(err)

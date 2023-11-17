@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	// MessageEncodingBin is the binary message encoding.
-	MessageEncodingBin MessageEncoding = iota + 1
+	// MessageEncodingBinpb is the binary message encoding.
+	MessageEncodingBinpb MessageEncoding = iota + 1
 	// MessageEncodingJSON is the JSON message encoding.
 	MessageEncodingJSON
 	// MessageEncodingTxtpb is the text protobuf message encoding.
@@ -185,10 +185,20 @@ func NewRefParser(logger *zap.Logger) RefParser {
 }
 
 // NewMessageRefParser returns a new RefParser for messages only.
+func NewMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) MessageRefParser {
+	return newMessageRefParser(logger, options...)
+}
+
+// MessageRefParserOption is an option for a new MessageRefParser.
+type MessageRefParserOption func(*messageRefParserOptions)
+
+// MessageRefParserWithDefaultMessageEncoding says to use the default MessageEncoding.
 //
-// This defaults to binary.
-func NewMessageRefParser(logger *zap.Logger) MessageRefParser {
-	return newMessageRefParser(logger)
+// The default default is MessageEncodingBinpb.
+func MessageRefParserWithDefaultMessageEncoding(defaultMessageEncoding MessageEncoding) MessageRefParserOption {
+	return func(messageRefParserOptions *messageRefParserOptions) {
+		messageRefParserOptions.defaultMessageEncoding = defaultMessageEncoding
+	}
 }
 
 // NewSourceRefParser returns a new RefParser for sources only.

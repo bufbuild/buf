@@ -48,7 +48,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 		tracer: otel.GetTracerProvider().Tracer(tracerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
-			internal.WithRawRefProcessor(newRawRefProcessor()),
+			internal.WithRawRefProcessor(processRawRef),
 			internal.WithSingleFormat(formatBin),
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
@@ -93,12 +93,16 @@ func newRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newMessageRefParser(logger *zap.Logger) *refParser {
+func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) *refParser {
+	messageRefParserOptions := newMessageRefParserOptions()
+	for _, option := range options {
+		option(messageRefParserOptions)
+	}
 	return &refParser{
 		logger: logger.Named(loggerName),
 		fetchRefParser: internal.NewRefParser(
 			logger,
-			internal.WithRawRefProcessor(processRawRefMessage),
+			internal.WithRawRefProcessor(newProcessRawRefMessage(messageRefParserOptions.defaultMessageEncoding)),
 			internal.WithSingleFormat(formatBin),
 			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(formatJSON),
@@ -369,15 +373,29 @@ func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	}
 }
 
-func newRawRefProcessor() func(*internal.RawRef) error {
-	return func(rawRef *internal.RawRef) error {
-		// if format option is not set and path is "-", default to bin
-		var format string
-		var compressionType internal.CompressionType
-		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
+func processRawRef(rawRef *internal.RawRef) error {
+	// if format option is not set and path is "-", default to bin
+	var format string
+	var compressionType internal.CompressionType
+	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
+		format = formatBinpb
+	} else {
+		switch filepath.Ext(rawRef.Path) {
+		case ".bin", ".binpb":
 			format = formatBinpb
-		} else {
-			switch filepath.Ext(rawRef.Path) {
+		case ".json":
+			format = formatJSON
+		case ".tar":
+			format = formatTar
+		case ".txtpb":
+			format = formatTxtpb
+		case ".yaml":
+			format = formatYAML
+		case ".zip":
+			format = formatZip
+		case ".gz":
+			compressionType = internal.CompressionTypeGzip
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin", ".binpb":
 				format = formatBinpb
 			case ".json":
@@ -388,68 +406,52 @@ func newRawRefProcessor() func(*internal.RawRef) error {
 				format = formatTxtpb
 			case ".yaml":
 				format = formatYAML
-			case ".zip":
-				format = formatZip
-			case ".gz":
-				compressionType = internal.CompressionTypeGzip
-				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin", ".binpb":
-					format = formatBinpb
-				case ".json":
-					format = formatJSON
-				case ".tar":
-					format = formatTar
-				case ".txtpb":
-					format = formatTxtpb
-				case ".yaml":
-					format = formatYAML
-				default:
-					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
-				}
-			case ".zst":
-				compressionType = internal.CompressionTypeZstd
-				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-				case ".bin", ".binpb":
-					format = formatBinpb
-				case ".json":
-					format = formatJSON
-				case ".tar":
-					format = formatTar
-				case ".txtpb":
-					format = formatTxtpb
-				case ".yaml":
-					format = formatYAML
-				default:
-					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
-				}
-			case ".tgz":
-				format = formatTar
-				compressionType = internal.CompressionTypeGzip
-			case ".git":
-				format = formatGit
-				// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
-				// it falls through to the `default` case.
-			case ".proto":
-				fileInfo, err := os.Stat(rawRef.Path)
-				if err != nil && !os.IsNotExist(err) {
-					return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
-				}
-				if fileInfo != nil && fileInfo.IsDir() {
-					return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
-				}
-				format = formatProtoFile
 			default:
-				var err error
-				format, err = assumeModuleOrDir(rawRef.Path)
-				if err != nil {
-					return err
-				}
+				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+			}
+		case ".zst":
+			compressionType = internal.CompressionTypeZstd
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin", ".binpb":
+				format = formatBinpb
+			case ".json":
+				format = formatJSON
+			case ".tar":
+				format = formatTar
+			case ".txtpb":
+				format = formatTxtpb
+			case ".yaml":
+				format = formatYAML
+			default:
+				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+			}
+		case ".tgz":
+			format = formatTar
+			compressionType = internal.CompressionTypeGzip
+		case ".git":
+			format = formatGit
+			// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
+			// it falls through to the `default` case.
+		case ".proto":
+			fileInfo, err := os.Stat(rawRef.Path)
+			if err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+			}
+			if fileInfo != nil && fileInfo.IsDir() {
+				return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
+			}
+			format = formatProtoFile
+		default:
+			var err error
+			format, err = assumeModuleOrDir(rawRef.Path)
+			if err != nil {
+				return err
 			}
 		}
-		rawRef.Format = format
-		rawRef.CompressionType = compressionType
-		return nil
 	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
 }
 
 func processRawRefSource(rawRef *internal.RawRef) error {
@@ -532,57 +534,64 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 	return nil
 }
 
-func processRawRefMessage(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
-	var format string
-	var compressionType internal.CompressionType
-	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-		format = formatBinpb
-	} else {
-		switch filepath.Ext(rawRef.Path) {
-		case ".bin", ".binpb":
-			format = formatBinpb
-		case ".json":
-			format = formatJSON
-		case ".txtpb":
-			format = formatTxtpb
-		case ".yaml":
-			format = formatYAML
-		case ".gz":
-			compressionType = internal.CompressionTypeGzip
-			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin", ".binpb":
-				format = formatBinpb
-			case ".json":
-				format = formatJSON
-			case ".txtpb":
-				format = formatTxtpb
-			case ".yaml":
-				format = formatYAML
-			default:
-				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
-			}
-		case ".zst":
-			compressionType = internal.CompressionTypeZstd
-			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin", ".binpb":
-				format = formatBinpb
-			case ".json":
-				format = formatJSON
-			case ".txtpb":
-				format = formatTxtpb
-			case ".yaml":
-				format = formatYAML
-			default:
-				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
-			}
-		default:
-			format = formatBinpb
+func newProcessRawRefMessage(defaultMessageEncoding MessageEncoding) func(*internal.RawRef) error {
+	return func(rawRef *internal.RawRef) error {
+		defaultFormat, ok := messageEncodingToFormat[defaultMessageEncoding]
+		if !ok {
+			// This is a system error.
+			return fmt.Errorf("unknown MessageEncoding: %v", defaultMessageEncoding)
 		}
+		// if format option is not set and path is "-", default to bin
+		var format string
+		var compressionType internal.CompressionType
+		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
+			format = defaultFormat
+		} else {
+			switch filepath.Ext(rawRef.Path) {
+			case ".bin", ".binpb":
+				format = formatBinpb
+			case ".json":
+				format = formatJSON
+			case ".txtpb":
+				format = formatTxtpb
+			case ".yaml":
+				format = formatYAML
+			case ".gz":
+				compressionType = internal.CompressionTypeGzip
+				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+				case ".bin", ".binpb":
+					format = formatBinpb
+				case ".json":
+					format = formatJSON
+				case ".txtpb":
+					format = formatTxtpb
+				case ".yaml":
+					format = formatYAML
+				default:
+					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+				}
+			case ".zst":
+				compressionType = internal.CompressionTypeZstd
+				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+				case ".bin", ".binpb":
+					format = formatBinpb
+				case ".json":
+					format = formatJSON
+				case ".txtpb":
+					format = formatTxtpb
+				case ".yaml":
+					format = formatYAML
+				default:
+					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+				}
+			default:
+				format = defaultFormat
+			}
+		}
+		rawRef.Format = format
+		rawRef.CompressionType = compressionType
+		return nil
 	}
-	rawRef.Format = format
-	rawRef.CompressionType = compressionType
-	return nil
 }
 
 func processRawRefModule(rawRef *internal.RawRef) error {
@@ -593,7 +602,7 @@ func processRawRefModule(rawRef *internal.RawRef) error {
 func parseMessageEncoding(format string) (MessageEncoding, error) {
 	switch format {
 	case formatBin, formatBinpb, formatBingz:
-		return MessageEncodingBin, nil
+		return MessageEncodingBinpb, nil
 	case formatJSON, formatJSONGZ:
 		return MessageEncodingJSON, nil
 	case formatTxtpb:
@@ -624,4 +633,14 @@ func assumeModuleOrDir(path string) (string, error) {
 	}
 	// cannot be parsed into a module, assume dir for here
 	return formatDir, nil
+}
+
+type messageRefParserOptions struct {
+	defaultMessageEncoding MessageEncoding
+}
+
+func newMessageRefParserOptions() *messageRefParserOptions {
+	return &messageRefParserOptions{
+		defaultMessageEncoding: MessageEncodingBinpb,
+	}
 }
