@@ -44,6 +44,7 @@ type cachedHandler struct {
 	isBranchSyncedCache    map[isBranchSyncedCacheKey]bool
 	isGitCommitSynedCache  map[isGitCommitSyncedCacheKey]bool
 	isProtectedBranchCache map[isProtectedBranchCacheKey]bool
+	isReleaseBranchCache   map[string]bool
 }
 
 func newCachedHandler(delegate Handler) *cachedHandler {
@@ -138,6 +139,24 @@ func (c *cachedHandler) IsGitCommitSyncedToBranch(
 	return yes, err
 }
 
+func (c *cachedHandler) IsReleaseBranch(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	branchName string,
+) (bool, error) {
+	// All branch protection status can be cached, as this is _extremely_ unlikely to change
+	// during the lifetime of Sync or across Sync runs.
+	cacheKey := moduleIdentity.IdentityString()
+	if value, cached := c.isReleaseBranchCache[cacheKey]; cached {
+		return value, nil
+	}
+	yes, err := c.delegate.IsReleaseBranch(ctx, moduleIdentity, branchName)
+	if err != nil {
+		c.isReleaseBranchCache[cacheKey] = yes
+	}
+	return yes, err
+}
+
 func (c *cachedHandler) IsProtectedBranch(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
@@ -157,6 +176,15 @@ func (c *cachedHandler) IsProtectedBranch(
 		c.isProtectedBranchCache[cacheKey] = yes
 	}
 	return yes, err
+}
+
+func (c *cachedHandler) GetReleaseHead(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+) (*registryv1alpha1.RepositoryCommit, error) {
+	// This cannot be cached as it may change during the lifetime of Sync or across
+	// Sync runs.
+	return c.delegate.GetReleaseHead(ctx, moduleIdentity)
 }
 
 func (c *cachedHandler) ResolveSyncPoint(

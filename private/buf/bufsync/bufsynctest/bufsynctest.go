@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
@@ -39,21 +40,89 @@ type TestHandler interface {
 	)
 }
 
+// RunTestSuite runs a set of test cases using Syncer with the provided TestHandler. Use
+// this test suite to ensure compliance with Sync behaviour.
+//
+// The following behaviour is asserted:
+//
+// # Local validation
+//
+//   - Prevent duplicate module identities across module dirs on a branch.
+//
+// # Syncing commits
+//
+//	CONDITION							RESUME FROM (-> means fallback)
+//	new remote branch:
+//		unprotected:					any synced commit from any branch -> START of branch
+//		protected:
+//			not release branch:			START of branch
+//			release lineage:
+//				empty:					START of branch
+//				not empty:				content match(HEAD of Release) -> HEAD of branch
+//	existing remote branch:
+//		not previously synced:			content match -> HEAD of branch
+//		previously synced:
+//			protected:					protect branch && any synced commit from branch -> error
+//			unprotected:				any synced commit from any branch -> content match -> HEAD of branch
 func RunTestSuite(t *testing.T, handlerProvider func() TestHandler) {
-	t.Run("no_previous_sync_points", func(t *testing.T) {
-		t.Parallel()
-		handler := handlerProvider()
-		testNoPreviousSyncPoints(t, handler, makeRunFunc(handler))
-	})
-	t.Run("put_tags", func(t *testing.T) {
-		t.Parallel()
-		handler := handlerProvider()
-		testPutTags(t, handler, makeRunFunc(handler))
-	})
 	t.Run("duplicate_identities", func(t *testing.T) {
 		t.Parallel()
 		handler := handlerProvider()
 		testDuplicateIdentities(t, handler, makeRunFunc(handler))
+	})
+	// TODO: implement test cases
+	t.Run("new_remote_branch", func(t *testing.T) {
+		t.Run("unprotected", func(t *testing.T) {
+			t.Run("overlap_with_another_synced_branch", func(t *testing.T) {})
+			t.Run("no_overlap_with_any_synced_branch", func(t *testing.T) {})
+		})
+		t.Run("protected", func(t *testing.T) {
+			t.Run("not_release_branch", func(t *testing.T) {})
+			t.Run("release_branch", func(t *testing.T) {
+				t.Run("empty", func(t *testing.T) {})
+				t.Run("not_empty", func(t *testing.T) {
+					t.Run("content_match", func(t *testing.T) {})
+					t.Run("no_content_match", func(t *testing.T) {})
+				})
+			})
+		})
+	})
+	t.Run("existing_remote_branch", func(t *testing.T) {
+		t.Run("not_previously_synced", func(t *testing.T) {
+			t.Run("content_match", func(t *testing.T) {})
+			t.Run("no_content_match", func(t *testing.T) {})
+		})
+		t.Run("previously_synced", func(t *testing.T) {
+			t.Run("protected", func(t *testing.T) {
+				t.Run("fails_protection", func(t *testing.T) {})
+				t.Run("passes_protection", func(t *testing.T) {})
+			})
+			t.Run("unprotected", func(t *testing.T) {
+				t.Run("overlap_with_another_synced_branch", func(t *testing.T) {})
+				t.Run("content_match", func(t *testing.T) {})
+				t.Run("no_content_match", func(t *testing.T) {})
+			})
+		})
+	})
+	t.Run("new_branches_forking_off_of_synced_branches", func(t *testing.T) {
+		t.Parallel()
+		handler := handlerProvider()
+		testNewBranchesForkingOffOfSyncedBranches(t, handler, makeRunFunc(handler))
+	})
+	t.Run("resume_branch_no_overlap", func(t *testing.T) {
+		t.Parallel()
+		handler := handlerProvider()
+		testResumeBranchNoOverlapWithSyncedBranches(t, handler, makeRunFunc(handler))
+	})
+	t.Run("resume_branch_overlaps_sync_branch", func(t *testing.T) {
+		t.Parallel()
+		handler := handlerProvider()
+		testResumeBranchOverlapWithSyncedBranches(t, handler, makeRunFunc(handler))
+	})
+	t.Run("resume_protected_branch_overlaps_sync_branch", func(t *testing.T) {
+		t.Parallel()
+		handler := handlerProvider()
+		testResumeProtectedBranchOverlapWithSyncedBranches(t, handler, makeRunFunc(handler))
 	})
 }
 
@@ -77,4 +146,23 @@ func makeRunFunc(handler bufsync.Handler) runFunc {
 		}
 		return plan, syncer.Sync(context.Background())
 	}
+}
+
+func assertTagsSynced(t *testing.T, moduleTags bufsync.ModuleTags, expectedTags ...string) {
+	t.Helper()
+	var syncedTags []string
+	for _, taggedCommit := range moduleTags.TaggedCommitsToSync() {
+		syncedTags = append(syncedTags, taggedCommit.Tags()...)
+	}
+	assert.Len(t, syncedTags, len(expectedTags))
+	assert.ElementsMatch(t, expectedTags, syncedTags)
+}
+func assertCommitsSynced(t *testing.T, moduleBranch bufsync.ModuleBranch, expectedMessages ...string) {
+	t.Helper()
+	var syncedCommitMessages []string
+	for _, syncedCommit := range moduleBranch.CommitsToSync() {
+		syncedCommitMessages = append(syncedCommitMessages, syncedCommit.Commit().Message())
+	}
+	assert.Len(t, syncedCommitMessages, len(expectedMessages))
+	assert.ElementsMatch(t, expectedMessages, syncedCommitMessages)
 }

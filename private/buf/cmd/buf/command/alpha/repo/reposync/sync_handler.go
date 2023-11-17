@@ -257,6 +257,14 @@ func (h *syncHandler) IsProtectedBranch(
 	if branchName == h.repo.DefaultBranch() {
 		return true, nil
 	}
+	return h.IsReleaseBranch(ctx, moduleIdentity, branchName)
+}
+
+func (h *syncHandler) IsReleaseBranch(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	branchName string,
+) (bool, error) {
 	// Otherwise the only other protected branch is the Repository's default (release) branch.
 	// We cache a repository's default branch even though it can change because it's _extremely_ unlikely that it changes.
 	cacheKey := moduleIdentity.IdentityString()
@@ -283,11 +291,14 @@ func (h *syncHandler) GetBranchHead(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (*registryv1alpha1.RepositoryCommit, error) {
-	service := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewReferenceServiceClient)
-	refRes, err := service.GetReferenceByName(ctx, connect.NewRequest(&registryv1alpha1.GetReferenceByNameRequest{
-		Owner:          moduleIdentity.Owner(),
-		RepositoryName: moduleIdentity.Repository(),
-		Name:           branchName,
+	repositoryID, err := h.getRepositoryID(ctx, moduleIdentity)
+	if err != nil {
+		return nil, err
+	}
+	service := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryBranchServiceClient)
+	branchRes, err := service.GetRepositoryBranch(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryBranchRequest{
+		RepositoryId: repositoryID,
+		Name:         branchName,
 	}))
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -295,18 +306,31 @@ func (h *syncHandler) GetBranchHead(
 		}
 		return nil, err
 	}
-	if refRes.Msg.GetReference().GetBranch() == nil {
-		return nil, fmt.Errorf("reference %q did not resolve to a branch", branchName)
-	}
-	commitName := refRes.Msg.GetReference().GetBranch().GetLatestCommitName()
+	commitName := branchRes.Msg.Branch.LatestCommitName
 	if commitName == "" {
-		return nil, fmt.Errorf("branch %q has no commits on it", branchName)
+		return nil, nil // branch has no commits on it
 	}
 	commitService := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryCommitServiceClient)
 	res, err := commitService.GetRepositoryCommitByReference(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
 		RepositoryOwner: moduleIdentity.Owner(),
 		RepositoryName:  moduleIdentity.Repository(),
 		Reference:       commitName,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return res.Msg.RepositoryCommit, nil
+}
+
+func (h *syncHandler) GetReleaseHead(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+) (*registryv1alpha1.RepositoryCommit, error) {
+	commitService := connectclient.Make(h.clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryCommitServiceClient)
+	res, err := commitService.GetRepositoryCommitByReference(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
+		RepositoryOwner: moduleIdentity.Owner(),
+		RepositoryName:  moduleIdentity.Repository(),
+		Reference:       bufmoduleref.Main,
 	}))
 	if err != nil {
 		return nil, err

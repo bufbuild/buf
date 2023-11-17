@@ -70,6 +70,15 @@ type Handler interface {
 		branchName string,
 	) (*registryv1alpha1.RepositoryCommit, error)
 
+	// GetBranchHead is invoked by Syncer to resolve the latest released commit for the module. If an error is
+	// returned, sync will abort.
+	//
+	// If a branch does not exist or is empty, implementations must return (nil, nil).
+	GetReleaseHead(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+	) (*registryv1alpha1.RepositoryCommit, error)
+
 	// IsBranchSynced is invoked by Syncer to determine if a particular branch for a module is synced. If
 	// an error is returned, sync will abort.
 	IsBranchSynced(
@@ -93,6 +102,14 @@ type Handler interface {
 		moduleIdentity bufmoduleref.ModuleIdentity,
 		branchName string,
 		hash git.Hash,
+	) (bool, error)
+
+	// IsReleaseBranch is invoked when syncing branches to know if a branch's history is the release
+	// and must not diverge since the last sync. If an error is returned, sync will abort.
+	IsReleaseBranch(
+		ctx context.Context,
+		moduleIdentity bufmoduleref.ModuleIdentity,
+		branchName string,
 	) (bool, error)
 
 	// IsProtectedBranch is invoked when syncing branches to know if a branch's history is protected

@@ -405,69 +405,127 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 	return taggedCommitsOnBranch, nil
 }
 
+// determineCommitsToVisitForModuleBranch determines the set of commits to visit for a particular
+// branch for a module in this run of Syncer#Sync.
+//
+// This logic can be complicated, so here's a table of expected behaviour:
+//
+//	CONDITION							RESUME FROM (-> means fallback)
+//	new remote branch:
+//		unprotected:					any synced commit from any branch -> START of branch
+//		protected:
+//			not release branch:			START of branch
+//			release lineage:
+//				empty:					START of branch
+//				not empty:				content match(HEAD of Release) -> HEAD of branch
+//	existing remote branch:
+//		not previously synced:			content match -> HEAD of branch
+//		previously synced:
+//			protected:					protect branch && any synced commit from branch -> error
+//			unprotected:				any synced commit from any branch -> content match -> HEAD of branch
 func (s *syncer) determineCommitsToVisitForModuleBranch(
 	ctx context.Context,
 	moduleDir string,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
 ) ([]git.Hash, error) {
+	protected, err := s.handler.IsProtectedBranch(ctx, moduleIdentity, branch)
+	if err != nil {
+		return nil, err
+	}
 	bsrBranchHead, err := s.handler.GetBranchHead(ctx, moduleIdentity, branch)
 	if err != nil {
 		return nil, err
 	}
 	if bsrBranchHead == nil {
-		// Remote branch is empty, let's see if we can resume from another branch we intersect with
-		latestVcsCommitInRemote, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
-			return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
-		})
+		// The remote branch is empty.
+		if !protected {
+			// The remote branch is empty and unprotected. We are happy to backfill history from any synced place,
+			// or sync the whole branch.
+			found, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
+				return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
+			})
+			if err != nil {
+				return nil, err
+			}
+			if found != nil {
+				return walkedCommits, nil
+			}
+			return s.allCommitsOnBranch(branch)
+		}
+		// The remote branch is empty but unprotected. How we respond to this is based on whether this branch
+		// represents the Release branch or not.
+		if isReleaseBranch, err := s.handler.IsReleaseBranch(ctx, moduleIdentity, branch); err != nil {
+			return nil, err
+		} else if !isReleaseBranch {
+			// The remote branch is empty but protected and does not represent the Release branch. We don't
+			// trust the history of any other branch to backfill from, so we sync the whole branch.
+			return s.allCommitsOnBranch(branch)
+		}
+		// The remote branch is empty but protected. It represents the Release branch, so any commit
+		// synced from here is going to be released immediately.
+		// As a special case, we attempt to content-match to the _Release_ head if there is one. If
+		// there isn't, we can fallback to syncing the whole branch.
+		bsrReleasedHead, err := s.handler.GetReleaseHead(ctx, moduleIdentity)
 		if err != nil {
 			return nil, err
 		}
-		if latestVcsCommitInRemote != nil {
-			return walkedCommits, nil
+		if bsrReleasedHead != nil {
+			// This branch is the Release branch, and we have something we can content-match with. THis
+			// is the typical case of onboarding the Release branch.
+			return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrReleasedHead)
 		}
-		// No intersection with any other synced branch: sync from the start.
-		_, walkedCommits, err = s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) { return false, nil })
-		return walkedCommits, err
-	}
-	if protected, err := s.handler.IsProtectedBranch(ctx, moduleIdentity, branch); err != nil {
-		return nil, err
-	} else if !protected {
-		if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
-			return nil, err
-		} else if !isSynced {
-			// Don't both looking for any synced commits, there are non. Proceed straight to content-matching.
-			return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
-		}
-		latestVcsCommitInRemote, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
-			return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
-		})
-		if err != nil {
-			return nil, err
-		}
-		if latestVcsCommitInRemote != nil {
-			return walkedCommits, nil
-		}
-		s.logger.Warn("expected to find resume point for synced branch %q in the BSR, but didn't find one; onboarding branch again", zap.String("branch", branch))
+		// This branch is the Release branch, but there is no released commit. This is the typical case
+		// of a new module.
+		return s.allCommitsOnBranch(branch)
 	}
 	if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
 		return nil, err
 	} else if !isSynced {
+		// The remote branch is non-empty, but unsynced. This is the typical case of onboarding
+		// non-protected branches.
 		return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
 	}
-	if err := s.protectSyncedModuleBranch(ctx, moduleIdentity, branch); err != nil {
-		return nil, err
+	// The remote branch is non-empty and it has been synced at least once.
+	if protected {
+		// The remote branch is non-empty but was synced and is protected. We first protect the branch, and
+		// then resume from the last commit we synced for this branch specifically.
+		// If we don't find any such commit, this is an error. protectSyncedModuleBranch should catch this
+		// but we return an error just in case.
+		if err := s.protectSyncedModuleBranch(ctx, moduleIdentity, branch); err != nil {
+			return nil, err
+		}
+		latestVcsCommitInRemoteBranch, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
+			return s.handler.IsGitCommitSyncedToBranch(ctx, moduleIdentity, branch, commit.Hash())
+		})
+		if err != nil {
+			return nil, err
+		}
+		if latestVcsCommitInRemoteBranch != nil {
+			return walkedCommits, nil
+		}
+		// We should not get here unless there's a bug in protectSyncedModuleBranch.
+		return nil, errors.New("expected a synced commit to be found for a synced branch; did you rebase?")
 	}
-	latestVcsCommitInRemoteBranch, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
-		return s.handler.IsGitCommitSyncedToBranch(ctx, moduleIdentity, branch, commit.Hash())
+	// The remote branch is empty and non-protected but was synced. We are happy to backfill history from any
+	// synced commit. If we fail to find a synced commit, we attempt to recover by content matching again,
+	// and finally just syncing the HEAD of the branch.
+	latestVcsCommitInRemote, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
+		return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
 	})
 	if err != nil {
 		return nil, err
 	}
-	if latestVcsCommitInRemoteBranch != nil {
+	if latestVcsCommitInRemote != nil {
 		return walkedCommits, nil
 	}
-	return nil, errors.New("expected a synced commit to be found for a synced branch; did you rebase?")
+	s.logger.Warn(
+		"expected to find resume point for synced branch for module, but didn't find one; onboarding branch again",
+		zap.String("moduleDir", moduleDir),
+		zap.String("moduleIdentity", moduleIdentity.IdentityString()),
+		zap.String("branch", branch),
+	)
+	return s.contentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
 }
 
 func (s *syncer) contentMatchOrHead(
@@ -487,10 +545,14 @@ func (s *syncer) contentMatchOrHead(
 		module, err := s.readModuleAt(ctx, commit, moduleDir)
 		if err != nil {
 			if errors.Is(err, errReadModuleInvalidModule) || errors.Is(err, errReadModuleInvalidModuleConfig) {
-				// skip this commit
+				// bad module, skip this commit
 				return false, nil
 			}
 			return false, err
+		}
+		if module == nil {
+			// no module, skip this commit
+			return false, nil
 		}
 		manifestBlob, err := bufcas.ManifestToBlob(module.FileSet().Manifest())
 		if err != nil {
@@ -508,6 +570,9 @@ func (s *syncer) contentMatchOrHead(
 	if matched != nil {
 		s.logger.Debug(
 			"content matched to commit",
+			zap.String("moduleDir", moduleDir),
+			zap.String("moduleIdentity", moduleIdentity.IdentityString()),
+			zap.String("branch", branch),
 			zap.String("gitHash", matched.Hex()),
 			zap.String("bsrCommitID", bsrCommitToMatch.Id),
 		)
@@ -558,9 +623,14 @@ func (s *syncer) protectSyncedModuleBranch(
 	)
 }
 
+func (s *syncer) allCommitsOnBranch(branch string) ([]git.Hash, error) {
+	_, walkedCommits, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) { return false, nil })
+	return walkedCommits, err
+}
+
 // walkBranchUntil walks a branch starting from HEAD, accumulating the commits visited until f evaluates to true.
-// It returns the commit stopped at and all commits walked. If no commit was stopped at, it returns nil and all
-// commits walked.
+// including the commit for which f evaluated to true. It returns the commit stopped at and all commits walked.
+// If no commit was stopped at, it returns nil and all commits walked.
 func (s *syncer) walkBranchUntil(branch string, f func(commit git.Commit) (bool, error)) (git.Hash, []git.Hash, error) {
 	var (
 		walked    []git.Hash

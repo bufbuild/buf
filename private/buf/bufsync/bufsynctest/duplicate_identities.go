@@ -67,7 +67,7 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				repo := gittest.ScaffoldGitRepository(t)
-				prepareGitRepoMultiModule(t, repo, tc.modulesIdentitiesInHEAD)
+				prepareGitRepoDuplicateIdentities(t, repo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
@@ -78,6 +78,7 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 				}
 				_, err := run(t, repo, opts...)
 				require.Error(t, err)
+				// TODO: not the greatest way to test this, maybe we should mak this a structured error
 				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
 				assert.Contains(t, err.Error(), gittest.DefaultBranch)
 				for _, moduleDir := range moduleDirs {
@@ -88,8 +89,8 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 	}
 }
 
-// prepareGitRepoMultiModule commits valid modules to the passed directories and module identities.
-func prepareGitRepoMultiModule(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
+// prepareGitRepoDuplicateIdentities commits valid modules to the passed directories and module identities.
+func prepareGitRepoDuplicateIdentities(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
 	files := make(map[string]string)
 	for moduleDir, moduleIdentity := range moduleDirsToIdentities {
 		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())

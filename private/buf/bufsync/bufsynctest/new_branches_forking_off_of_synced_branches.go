@@ -25,13 +25,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testNoPreviousSyncPoints(t *testing.T, handler TestHandler, run runFunc) {
+func testNewBranchesForkingOffOfSyncedBranches(t *testing.T, handler TestHandler, run runFunc) {
 	moduleIdentityInHEAD, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	moduleIdentityOverride, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "bar")
 	require.NoError(t, err)
 	repo := gittest.ScaffoldGitRepository(t)
-	prepareGitRepoSyncWithNoPreviousSyncPoints(t, repo, moduleIdentityInHEAD, gittest.DefaultBranch)
+	prepareGitRepoNewBranchesForkingOffOfSyncedBranches(t, repo, moduleIdentityInHEAD, gittest.DefaultBranch)
 	type testCase struct {
 		name            string
 		branch          string
@@ -89,13 +89,13 @@ func testNoPreviousSyncPoints(t *testing.T, handler TestHandler, run runFunc) {
 	}
 }
 
-// prepareGitRepoSyncWithNoPreviousSyncPoints writes and pushes commits in the repo with the
+// prepareGitRepoNewBranchesForkingOffOfSyncedBranches writes and pushes commits in the repo with the
 // following commits:
 //
 // | o-o----------o-----------------o (master)
 // |   └o-o (foo) └o--------o (bar)
 // |               └o (baz)
-func prepareGitRepoSyncWithNoPreviousSyncPoints(
+func prepareGitRepoNewBranchesForkingOffOfSyncedBranches(
 	t *testing.T,
 	repo gittest.Repository,
 	moduleIdentity bufmoduleref.ModuleIdentity,

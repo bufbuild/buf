@@ -47,9 +47,9 @@ type testBranch struct {
 }
 
 type testCommit struct {
-	hash                 git.Hash
-	fromRepositoryCommit *registryv1alpha1.RepositoryCommit
-	fromSync             bufsync.ModuleBranchCommit
+	hash       git.Hash
+	fromDigest string
+	fromSync   bufsync.ModuleBranchCommit
 }
 
 type testSyncHandler struct {
@@ -168,6 +168,14 @@ func (c *testSyncHandler) IsGitCommitSynced(
 	return isSynced, nil
 }
 
+func (h *testSyncHandler) IsReleaseBranch(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+	branchName string,
+) (bool, error) {
+	return branchName == bufmoduleref.Main, nil
+}
+
 func (c *testSyncHandler) IsProtectedBranch(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
@@ -184,11 +192,31 @@ func (c *testSyncHandler) GetBranchHead(
 	_, branch := c.getRepoBranch(moduleIdentity, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
-		if commit.fromRepositoryCommit != nil {
+		if commit.fromDigest != "" {
 			// the latest repository commit commit
-			return commit.fromRepositoryCommit, nil
+			return &registryv1alpha1.RepositoryCommit{
+				// The only thing that matters here is the digest.
+				// We give it a useless name.
+				Name:           "manual",
+				ManifestDigest: commit.fromDigest,
+			}, nil
+		}
+		if commit.fromSync != nil {
+			// we want to "fake" a repository commit here
+			return &registryv1alpha1.RepositoryCommit{
+				// We manually give it a gibberish digest, this will not content match
+				// to any module.
+				ManifestDigest: "gibberish",
+			}, nil
 		}
 	}
+	return nil, nil
+}
+
+func (c *testSyncHandler) GetReleaseHead(
+	ctx context.Context,
+	moduleIdentity bufmoduleref.ModuleIdentity,
+) (*registryv1alpha1.RepositoryCommit, error) {
 	return nil, nil
 }
 
