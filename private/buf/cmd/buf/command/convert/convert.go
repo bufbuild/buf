@@ -20,22 +20,24 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufconvert"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	errorFormatFlagName = "error-format"
-	typeFlagName        = "type"
-	fromFlagName        = "from"
-	outputFlagName      = "to"
+	errorFormatFlagName     = "error-format"
+	typeFlagName            = "type"
+	fromFlagName            = "from"
+	outputFlagName          = "to"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -90,10 +92,11 @@ Use a module on the bsr:
 }
 
 type flags struct {
-	ErrorFormat string
-	Type        string
-	From        string
-	To          string
+	ErrorFormat     string
+	Type            string
+	From            string
+	To              string
+	DisableSymlinks bool
 
 	// special
 	InputHashtag string
@@ -105,6 +108,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -126,7 +130,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"-",
 		fmt.Sprintf(
 			`The location of the payload to be converted. Supported formats are %s`,
-			bufconvert.MessageEncodingFormatsString,
+			buffetch.MessageFormatsString,
 		),
 	)
 	flagSet.StringVar(
@@ -135,7 +139,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"-",
 		fmt.Sprintf(
 			`The output location of the conversion. Supported formats are %s`,
-			bufconvert.MessageEncodingFormatsString,
+			buffetch.MessageFormatsString,
 		),
 	)
 }
@@ -189,12 +193,21 @@ func run(
 	if inputErr != nil && image == nil {
 		return inputErr
 	}
-	fromMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.From, bufconvert.MessageEncodingBinpb)
+	fromMessageRef, err := buffetch.NewMessageRefParser(
+		container.Logger(),
+		buffetch.MessageRefParserWithDefaultMessageEncoding(
+			buffetch.MessageEncodingBinpb,
+		),
+	).GetMessageRef(ctx, flags.From)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+	runner := command.NewRunner()
 	message, err := bufcli.NewWireProtoEncodingReader(
 		container.Logger(),
+		storageosProvider,
+		runner,
 	).GetMessage(
 		ctx,
 		container,
@@ -209,7 +222,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.To, defaultToEncoding)
+	toMessageRef, err := buffetch.NewMessageRefParser(
+		container.Logger(),
+		buffetch.MessageRefParserWithDefaultMessageEncoding(
+			defaultToEncoding,
+		),
+	).GetMessageRef(ctx, flags.To)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -220,22 +238,22 @@ func run(
 		container,
 		image,
 		message,
-		outputMessageRef,
+		toMessageRef,
 	)
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
 // which will be the default output encoding for a given payload encoding.
-func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
+func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncoding, error) {
 	switch encoding {
-	case bufconvert.MessageEncodingBinpb:
-		return bufconvert.MessageEncodingJSON, nil
-	case bufconvert.MessageEncodingJSON:
-		return bufconvert.MessageEncodingBinpb, nil
-	case bufconvert.MessageEncodingTxtpb:
-		return bufconvert.MessageEncodingBinpb, nil
-	case bufconvert.MessageEncodingYAML:
-		return bufconvert.MessageEncodingBinpb, nil
+	case buffetch.MessageEncodingBinpb:
+		return buffetch.MessageEncodingJSON, nil
+	case buffetch.MessageEncodingJSON:
+		return buffetch.MessageEncodingBinpb, nil
+	case buffetch.MessageEncodingTxtpb:
+		return buffetch.MessageEncodingBinpb, nil
+	case buffetch.MessageEncodingYAML:
+		return buffetch.MessageEncodingBinpb, nil
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}

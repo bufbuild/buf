@@ -506,9 +506,12 @@ func NewWireImageWriter(
 // NewWireProtoEncodingReader returns a new ProtoEncodingReader.
 func NewWireProtoEncodingReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) bufwire.ProtoEncodingReader {
 	return bufwire.NewProtoEncodingReader(
 		logger,
+		newFetchMessageReader(logger, storageosProvider, runner),
 	)
 }
 
@@ -518,6 +521,9 @@ func NewWireProtoEncodingWriter(
 ) bufwire.ProtoEncodingWriter {
 	return bufwire.NewProtoEncodingWriter(
 		logger,
+		buffetch.NewWriter(
+			logger,
+		),
 	)
 }
 

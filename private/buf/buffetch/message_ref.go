@@ -22,10 +22,10 @@ import (
 var _ MessageRef = &messageRef{}
 
 type messageRef struct {
-	singleRef      internal.SingleRef
-	useProtoNames  bool
-	useEnumNumbers bool
-	messageEncoding  MessageEncoding
+	singleRef       internal.SingleRef
+	useProtoNames   bool
+	useEnumNumbers  bool
+	messageEncoding MessageEncoding
 }
 
 func newMessageRef(
@@ -41,10 +41,10 @@ func newMessageRef(
 		return nil, err
 	}
 	return &messageRef{
-		singleRef:      singleRef,
-		useProtoNames:  useProtoNames,
-		useEnumNumbers: useEnumNumbers,
-		messageEncoding:  messageEncoding,
+		singleRef:       singleRef,
+		useProtoNames:   useProtoNames,
+		useEnumNumbers:  useEnumNumbers,
+		messageEncoding: messageEncoding,
 	}, nil
 }
 
@@ -54,6 +54,10 @@ func (r *messageRef) PathForExternalPath(externalPath string) (string, error) {
 
 func (r *messageRef) MessageEncoding() MessageEncoding {
 	return r.messageEncoding
+}
+
+func (r *messageRef) Path() string {
+	return r.singleRef.Path()
 }
 
 func (r *messageRef) UseProtoNames() bool {
