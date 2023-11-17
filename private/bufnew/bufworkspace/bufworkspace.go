@@ -16,7 +16,6 @@ package bufworkspace
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -88,6 +87,8 @@ type Workspace interface {
 	// The ModuleRefs in this list will be unique by ModuleFullName. Resolution of ModuleRefs
 	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
 	// of the buf.yaml files in the Workspace, resolving common ModuleFullNames to a single ModuleRef.
+	//
+	// Sorted by ModuleFullName.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 	// LockedDepModuleKeys returns the locked dependencies of the Workspace as ModuleKeys.
 	//
@@ -96,6 +97,8 @@ type Workspace interface {
 	// The ModuleKeys in this list will be unique by ModuleFullName. Resolution of ModuleKeys
 	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
 	// of the buf.lock files in the Workspace, resolving common ModuleFullNames to a single ModuleKey.
+	//
+	// Sorted by ModuleFullName.
 	LockedDepModuleKeys() []bufmodule.ModuleKey
 
 	// GenerateConfigs returns the GenerateConfigs for the workspace, if they exist.
@@ -123,21 +126,20 @@ func NewWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	options ...WorkspaceOption,
 ) (Workspace, error) {
-	// TODO
-	return nil, errors.New("TODO NewWorkspaceForBucket")
+	return newWorkspaceForBucket(ctx, bucket, options...)
 }
 
 // WorkspaceOption is an option for a new Workspace.
 type WorkspaceOption func(*workspaceOptions)
 
-// This selects the specific modules within the Workspace bucket to target.
+// This selects the specific directory within the Workspace bucket to target.
 //
 // Example: We have modules at foo/bar, foo/baz. "." will result in both
 // modules being selected, so will "foo", but "foo/bar" will result in only
 // the foo/bar module.
-func WorkspaceWithTargetSubDirPaths(subDirPaths []string) WorkspaceOption {
+func WorkspaceWithTargetSubDirPath(subDirPath string) WorkspaceOption {
 	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.subDirPaths = subDirPaths
+		workspaceOptions.subDirPath = subDirPath
 	}
 }
 
@@ -145,6 +147,8 @@ func WorkspaceWithTargetSubDirPaths(subDirPaths []string) WorkspaceOption {
 // filtered to the specific module it applies to. If some modules do not have any
 // target paths, but we specified WorkspaceWithTargetPaths, then those modules
 // need to be built as non-targeted.
+//
+// Theese paths have to  be within the subDirPath, if it exists.
 func WorkspaceWithTargetPaths(
 	targetPaths []string,
 	targetExcludePaths []string,
@@ -246,7 +250,7 @@ func WorkspaceLocalLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKe
 }
 
 type workspaceOptions struct {
-	subDirPaths        []string
+	subDirPath         string
 	targetPaths        []string
 	targetExcludePaths []string
 	generateConfigs    []bufconfig.GenerateConfig
