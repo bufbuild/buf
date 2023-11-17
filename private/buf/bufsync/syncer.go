@@ -408,7 +408,7 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 // determineCommitsToVisitForModuleBranch determines the set of commits to visit for a particular
 // branch for a module in this run of Syncer#Sync.
 //
-// This logic can be complicated, so here's a table of expected behaviour:
+// This logic can be complicated, so here's a table of expected behavior:
 //
 //	CONDITION							RESUME FROM (-> means fallback)
 //	new remote branch:

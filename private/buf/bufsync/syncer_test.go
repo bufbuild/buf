@@ -103,7 +103,6 @@ func (c *testSyncHandler) putTags(repo *testRepo, commitHash git.Hash, tags []st
 		repo.tagsByName[tag] = commitHash
 	}
 	repo.tagsForHash[commitHash.Hex()] = tags
-
 }
 
 func (c *testSyncHandler) SyncModuleTags(
@@ -168,7 +167,7 @@ func (c *testSyncHandler) IsGitCommitSynced(
 	return isSynced, nil
 }
 
-func (h *testSyncHandler) IsReleaseBranch(
+func (c *testSyncHandler) IsReleaseBranch(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,

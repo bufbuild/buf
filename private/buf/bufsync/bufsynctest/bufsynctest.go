@@ -41,9 +41,9 @@ type TestHandler interface {
 }
 
 // RunTestSuite runs a set of test cases using Syncer with the provided TestHandler. Use
-// this test suite to ensure compliance with Sync behaviour.
+// this test suite to ensure compliance with Sync behavior.
 //
-// The following behaviour is asserted:
+// The following behavior is asserted:
 //
 // # Local validation
 //
