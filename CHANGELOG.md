@@ -4,6 +4,17 @@
 
 - No changes yet.
 
+## [v1.28.1] - 2023-11-15
+
+- The `buf curl` command has been updated to support the use of multiple schemas.
+  This allows users to specify multiple `--schema` flags and/or to use both `--schema`
+  and `--reflect` flags at the same time. The result is that additional sources can
+  be consulted to resolve an element. This can be useful when the result of an RPC
+  contains extensions or values in `google.protobuf.Any` messages that are not defined
+  in the same schema that defines the RPC service.
+- Fix issue where `buf lint` incorrectly reports error when `(buf.validate.field).required`
+  is set for an optional field in proto3.
+
 ## [v1.28.0] - 2023-11-10
 
 - Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
@@ -979,7 +990,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.1...HEAD
+[v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1

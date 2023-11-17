@@ -16,20 +16,10 @@ package bufmodulecache
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
 )
-
-type RepositoryServiceClientFactory func(address string) registryv1alpha1connect.RepositoryServiceClient
-
-func NewRepositoryServiceClientFactory(clientConfig *connectclient.Config) RepositoryServiceClientFactory {
-	return func(address string) registryv1alpha1connect.RepositoryServiceClient {
-		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
-	}
-}
 
 // NewModuleReader creates a new module reader using content addressable storage.
 func NewModuleReader(
@@ -37,12 +27,10 @@ func NewModuleReader(
 	verbosePrinter verbose.Printer,
 	bucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	repositoryClientFactory RepositoryServiceClientFactory,
 ) bufmodule.ModuleReader {
 	return newCASModuleReader(
 		bucket,
 		delegate,
-		repositoryClientFactory,
 		logger,
 		verbosePrinter,
 	)
