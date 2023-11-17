@@ -2,7 +2,16 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add support for `yaml` format. All commands that take image inputs, output images,
+  or convert between message formats, now take `yaml` as a format, in addition to
+  the existing `binpb` and `txtpb` formats. Some examples:
+  - `buf build -o image.yaml`
+  - `buf ls-files image.yaml`
+  - `buf convert --type foo.Bar --from input.binpb --to output.yaml`
+- The `yaml` and `json` formats now accept two new options: `use_proto_names` and
+  `use_enum_numbers`. This affects output serialization. Some examples:
+  - `buf convert --type foo.Bar --from input.binpb --to output.yaml#use_proto_names=true`
+  - `buf convert --type foo.Bar --from input.binpb --to -#format=yaml,use_enum_numbers=true`
 
 ## [v1.28.1] - 2023-11-15
 
