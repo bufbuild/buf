@@ -12,17 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync_test
+// Generated. DO NOT EDIT.
 
-import (
-	"testing"
+package bufsynctest
 
-	"github.com/bufbuild/buf/private/buf/bufsync"
-	"github.com/bufbuild/buf/private/buf/bufsync/bufsynctest"
-)
-
-func TestSyncer(t *testing.T) {
-	bufsynctest.RunTestSuite(t, func() bufsync.Handler {
-		return newTestSyncHandler()
-	})
-}
+import _ "github.com/bufbuild/buf/private/usage"
