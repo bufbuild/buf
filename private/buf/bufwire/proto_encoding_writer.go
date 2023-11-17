@@ -63,14 +63,11 @@ func (p *protoEncodingWriter) PutMessage(
 	case buffetch.MessageEncodingBinpb:
 		marshaler = protoencoding.NewWireMarshaler()
 	case buffetch.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshaler(resolver)
+		marshaler = newJSONMarshaler(resolver, messageRef)
 	case buffetch.MessageEncodingTxtpb:
 		marshaler = protoencoding.NewTxtpbMarshaler(resolver)
 	case buffetch.MessageEncodingYAML:
-		marshaler = protoencoding.NewYAMLMarshaler(
-			resolver,
-			protoencoding.YAMLMarshalerWithIndent(2),
-		)
+		marshaler = newYAMLMarshaler(resolver, messageRef)
 	default:
 		return errors.New("unknown message encoding type")
 	}

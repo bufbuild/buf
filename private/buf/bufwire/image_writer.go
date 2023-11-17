@@ -74,7 +74,7 @@ func (i *imageWriter) PutImage(
 	} else {
 		message = bufimage.ImageToProtoImage(writeImage)
 	}
-	data, err := i.imageMarshal(ctx, message, image, messageRef.MessageEncoding())
+	data, err := i.imageMarshal(ctx, message, image, messageRef)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (i *imageWriter) imageMarshal(
 	ctx context.Context,
 	message proto.Message,
 	image bufimage.Image,
-	messageEncoding buffetch.MessageEncoding,
+	messageRef buffetch.MessageRef,
 ) (_ []byte, retErr error) {
 	_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_marshal")
 	defer span.End()
@@ -103,7 +103,7 @@ func (i *imageWriter) imageMarshal(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	switch messageEncoding {
+	switch messageEncoding := messageRef.MessageEncoding(); messageEncoding {
 	case buffetch.MessageEncodingBinpb:
 		return protoencoding.NewWireMarshaler().Marshal(message)
 	case buffetch.MessageEncodingJSON:
@@ -114,7 +114,7 @@ func (i *imageWriter) imageMarshal(
 		if err != nil {
 			return nil, err
 		}
-		return protoencoding.NewJSONMarshaler(resolver).Marshal(message)
+		return newJSONMarshaler(resolver, messageRef).Marshal(message)
 	case buffetch.MessageEncodingTxtpb:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
@@ -133,9 +133,7 @@ func (i *imageWriter) imageMarshal(
 		if err != nil {
 			return nil, err
 		}
-		return protoencoding.NewYAMLMarshaler(
-			resolver,
-			protoencoding.YAMLMarshalerWithIndent(2)).Marshal(message)
+		return newYAMLMarshaler(resolver, messageRef).Marshal(message)
 	default:
 		return nil, fmt.Errorf("unknown message encoding: %v", messageEncoding)
 	}
