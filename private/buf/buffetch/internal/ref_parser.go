@@ -16,9 +16,10 @@ package internal
 
 import (
 	"context"
+	"sort"
 	"strconv"
+	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -87,8 +88,19 @@ func (a *refParser) getParsedRef(
 			return nil, NewFormatNotAllowedError(rawRef.Format, allowedFormats)
 		}
 	}
+	if !singleOK && len(rawRef.UnrecognizedOptions) > 0 {
+		// Only single refs allow custom options. In every other case, this is an error.
+		//
+		// We verify unrecognized options match what is expected in getSingleRef.
+		keys := make([]string, 0, len(rawRef.UnrecognizedOptions))
+		for key := range rawRef.UnrecognizedOptions {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		return nil, NewOptionsInvalidKeysError(keys...)
+	}
 	if singleOK {
-		return getSingleRef(rawRef, singleFormatInfo.defaultCompressionType)
+		return getSingleRef(rawRef, singleFormatInfo.defaultCompressionType, singleFormatInfo.customOptionKeys)
 	}
 	if archiveOK {
 		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
@@ -111,12 +123,13 @@ func (a *refParser) getParsedRef(
 // validated per rules on rawRef
 func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	// path is never empty after returning from this function
-	path, options, err := bufref.GetRawPathAndOptions(value)
+	path, options, err := getRawPathAndOptions(value)
 	if err != nil {
 		return nil, err
 	}
 	rawRef := &RawRef{
-		Path: path,
+		Path:                path,
+		UnrecognizedOptions: make(map[string]string),
 	}
 	if a.rawRefProcessor != nil {
 		if err := a.rawRefProcessor(rawRef); err != nil {
@@ -195,10 +208,10 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			case "false", "":
 				rawRef.IncludePackageFiles = false
 			default:
-				return nil, NewOptionsInvalidKeyError(key)
+				return nil, NewOptionsInvalidValueForKeyError(key, value)
 			}
 		default:
-			return nil, NewOptionsInvalidKeyError(key)
+			rawRef.UnrecognizedOptions[key] = value
 		}
 	}
 
@@ -249,18 +262,71 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	return rawRef, nil
 }
 
+// getRawPathAndOptions returns the raw path and options from the value provided,
+// the rawPath will be non-empty when returning without error here.
+func getRawPathAndOptions(value string) (string, map[string]string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", nil, newValueEmptyError()
+	}
+
+	switch splitValue := strings.Split(value, "#"); len(splitValue) {
+	case 1:
+		return value, nil, nil
+	case 2:
+		path := strings.TrimSpace(splitValue[0])
+		optionsString := strings.TrimSpace(splitValue[1])
+		if path == "" {
+			return "", nil, newValueStartsWithHashtagError(value)
+		}
+		if optionsString == "" {
+			return "", nil, newValueEndsWithHashtagError(value)
+		}
+		options := make(map[string]string)
+		for _, pair := range strings.Split(optionsString, ",") {
+			split := strings.Split(pair, "=")
+			if len(split) != 2 {
+				return "", nil, newOptionsInvalidError(optionsString)
+			}
+			key := strings.TrimSpace(split[0])
+			value := strings.TrimSpace(split[1])
+			if key == "" || value == "" {
+				return "", nil, newOptionsInvalidError(optionsString)
+			}
+			if _, ok := options[key]; ok {
+				return "", nil, newOptionsDuplicateKeyError(key)
+			}
+			options[key] = value
+		}
+		return path, options, nil
+	default:
+		return "", nil, newValueMultipleHashtagsError(value)
+	}
+}
+
 func getSingleRef(
 	rawRef *RawRef,
 	defaultCompressionType CompressionType,
+	customOptionKeys map[string]struct{},
 ) (ParsedSingleRef, error) {
 	compressionType := rawRef.CompressionType
 	if compressionType == 0 {
 		compressionType = defaultCompressionType
 	}
+	var invalidKeys []string
+	for key := range rawRef.UnrecognizedOptions {
+		if _, ok := customOptionKeys[key]; !ok {
+			invalidKeys = append(invalidKeys, key)
+		}
+	}
+	if len(invalidKeys) > 0 {
+		return nil, NewOptionsInvalidKeysError(invalidKeys...)
+	}
 	return newSingleRef(
 		rawRef.Format,
 		rawRef.Path,
 		compressionType,
+		rawRef.UnrecognizedOptions,
 	)
 }
 
@@ -354,11 +420,13 @@ func getProtoFileRef(rawRef *RawRef) (ParsedProtoFileRef, error) {
 
 type singleFormatInfo struct {
 	defaultCompressionType CompressionType
+	customOptionKeys       map[string]struct{}
 }
 
 func newSingleFormatInfo() *singleFormatInfo {
 	return &singleFormatInfo{
 		defaultCompressionType: CompressionTypeNone,
+		customOptionKeys:       make(map[string]struct{}),
 	}
 }
 

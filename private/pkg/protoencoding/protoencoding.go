@@ -89,10 +89,17 @@ func JSONMarshalerWithIndent() JSONMarshalerOption {
 	}
 }
 
-// JSONMarshalerWithUseProtoNames says to use an use proto names.
+// JSONMarshalerWithUseProtoNames says to use proto names.
 func JSONMarshalerWithUseProtoNames() JSONMarshalerOption {
 	return func(jsonMarshaler *jsonMarshaler) {
 		jsonMarshaler.useProtoNames = true
+	}
+}
+
+// JSONMarshalerWithUseEnumNumbers says to use enum numbers.
+func JSONMarshalerWithUseEnumNumbers() JSONMarshalerOption {
+	return func(jsonMarshaler *jsonMarshaler) {
+		jsonMarshaler.useEnumNumbers = true
 	}
 }
 
@@ -120,17 +127,24 @@ func NewYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshal
 // YAMLMarshalerOption is an option for a new YAMLMarshaler.
 type YAMLMarshalerOption func(*yamlMarshaler)
 
-// YAMLMarshalerWithIndent says to use an indent of the given number spaces.
-func YAMLMarshalerWithIndent(indent int) YAMLMarshalerOption {
+// YAMLMarshalerWithIndent says to use an indent of two spaces.
+func YAMLMarshalerWithIndent() YAMLMarshalerOption {
 	return func(yamlMarshaler *yamlMarshaler) {
-		yamlMarshaler.indent = indent
+		yamlMarshaler.indent = 2
 	}
 }
 
-// YAMLMarshalerWithUseProtoNames says to use an use proto names.
+// YAMLMarshalerWithUseProtoNames says to use proto names.
 func YAMLMarshalerWithUseProtoNames() YAMLMarshalerOption {
 	return func(yamlMarshaler *yamlMarshaler) {
 		yamlMarshaler.useProtoNames = true
+	}
+}
+
+// YAMLMarshalerWithUseEnumNumbers says to use enum numbers.
+func YAMLMarshalerWithUseEnumNumbers() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.useEnumNumbers = true
 	}
 }
 

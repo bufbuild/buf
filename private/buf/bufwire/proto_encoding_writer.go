@@ -17,12 +17,10 @@ package bufwire
 import (
 	"context"
 	"errors"
-	"os"
 
-	"github.com/bufbuild/buf/private/buf/bufconvert"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -30,16 +28,19 @@ import (
 )
 
 type protoEncodingWriter struct {
-	logger *zap.Logger
+	logger      *zap.Logger
+	fetchWriter buffetch.Writer
 }
 
 var _ ProtoEncodingWriter = &protoEncodingWriter{}
 
 func newProtoEncodingWriter(
 	logger *zap.Logger,
+	fetchWriter buffetch.Writer,
 ) *protoEncodingWriter {
 	return &protoEncodingWriter{
-		logger: logger,
+		logger:      logger,
+		fetchWriter: fetchWriter,
 	}
 }
 
@@ -48,7 +49,7 @@ func (p *protoEncodingWriter) PutMessage(
 	container app.EnvStdoutContainer,
 	image bufimage.Image,
 	message proto.Message,
-	messageRef bufconvert.MessageEncodingRef,
+	messageRef buffetch.MessageRef,
 ) (retErr error) {
 	// Currently, this support binpb and JSON format.
 	resolver, err := protoencoding.NewResolver(
@@ -59,14 +60,14 @@ func (p *protoEncodingWriter) PutMessage(
 	}
 	var marshaler protoencoding.Marshaler
 	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBinpb:
+	case buffetch.MessageEncodingBinpb:
 		marshaler = protoencoding.NewWireMarshaler()
-	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshaler(resolver)
-	case bufconvert.MessageEncodingTxtpb:
+	case buffetch.MessageEncodingJSON:
+		marshaler = newJSONMarshaler(resolver, messageRef)
+	case buffetch.MessageEncodingTxtpb:
 		marshaler = protoencoding.NewTxtpbMarshaler(resolver)
-	case bufconvert.MessageEncodingYAML:
-		marshaler = protoencoding.NewYAMLMarshaler(resolver)
+	case buffetch.MessageEncodingYAML:
+		marshaler = newYAMLMarshaler(resolver, messageRef)
 	default:
 		return errors.New("unknown message encoding type")
 	}
@@ -74,12 +75,9 @@ func (p *protoEncodingWriter) PutMessage(
 	if err != nil {
 		return err
 	}
-	writeCloser := ioextended.NopWriteCloser(container.Stdout())
-	if messageRef.Path() != "-" {
-		writeCloser, err = os.Create(messageRef.Path())
-		if err != nil {
-			return err
-		}
+	writeCloser, err := p.fetchWriter.PutMessageFile(ctx, container, messageRef)
+	if err != nil {
+		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, writeCloser.Close())

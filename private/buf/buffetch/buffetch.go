@@ -30,21 +30,24 @@ import (
 )
 
 const (
-	// ImageEncodingBin is the binary image encoding.
-	ImageEncodingBin ImageEncoding = iota + 1
-	// ImageEncodingJSON is the JSON image encoding.
-	ImageEncodingJSON
-	// ImageEncodingTxtpb is the text protobuf image encoding.
-	ImageEncodingTxtpb
-	// ImageEncodingYAML is the YAML image encoding.
-	ImageEncodingYAML
+	// MessageEncodingBinpb is the binary message encoding.
+	MessageEncodingBinpb MessageEncoding = iota + 1
+	// MessageEncodingJSON is the JSON message encoding.
+	MessageEncodingJSON
+	// MessageEncodingTxtpb is the text protobuf message encoding.
+	MessageEncodingTxtpb
+	// MessageEncodingYAML is the YAML message encoding.
+	MessageEncodingYAML
+
+	useProtoNamesKey  = "use_proto_names"
+	useEnumNumbersKey = "use_enum_numbers"
 )
 
 var (
-	// ImageFormatsString is the string representation of all image formats.
+	// MessageFormatsString is the string representation of all message formats.
 	//
 	// This does not include deprecated formats.
-	ImageFormatsString = stringutil.SliceToString(imageFormatsNotDeprecated)
+	MessageFormatsString = stringutil.SliceToString(messageFormatsNotDeprecated)
 	// SourceDirFormatsString is the string representation of all source directory formats.
 	// This includes all of the formats in SourceFormatsString except the protofile format.
 	//
@@ -70,8 +73,8 @@ var (
 	AllFormatsString = stringutil.SliceToString(allFormatsNotDeprecated)
 )
 
-// ImageEncoding is the encoding of the image.
-type ImageEncoding int
+// MessageEncoding is the encoding of the message.
+type MessageEncoding int
 
 // PathResolver resolves external paths to paths.
 type PathResolver interface {
@@ -92,19 +95,27 @@ type PathResolver interface {
 	PathForExternalPath(externalPath string) (string, error)
 }
 
-// Ref is an image file or source bucket reference.
+// Ref is an message file or source bucket reference.
 type Ref interface {
 	PathResolver
 
 	internalRef() internal.Ref
 }
 
-// ImageRef is an image file reference.
-type ImageRef interface {
+// MessageRef is an message file reference.
+type MessageRef interface {
 	Ref
-	ImageEncoding() ImageEncoding
+	MessageEncoding() MessageEncoding
+	// Path returns the path of the file.
+	//
+	// May be used for items such as YAML unmarshaling errors.
+	Path() string
+	// UseProtoNames only applies for MessageEncodingYAML at this time.
+	UseProtoNames() bool
+	// UseEnumNumbers only applies for MessageEncodingYAML at this time.
+	UseEnumNumbers() bool
 	IsNull() bool
-	internalFileRef() internal.FileRef
+	internalSingleRef() internal.SingleRef
 }
 
 // SourceOrModuleRef is a source bucket or module reference.
@@ -132,10 +143,10 @@ type ProtoFileRef interface {
 	internalProtoFileRef() internal.ProtoFileRef
 }
 
-// ImageRefParser is an image ref parser for Buf.
-type ImageRefParser interface {
-	// GetImageRef gets the reference for the image file.
-	GetImageRef(ctx context.Context, value string) (ImageRef, error)
+// MessageRefParser is an message ref parser for Buf.
+type MessageRefParser interface {
+	// GetMessageRef gets the reference for the message file.
+	GetMessageRef(ctx context.Context, value string) (MessageRef, error)
 }
 
 // SourceRefParser is a source ref parser for Buf.
@@ -157,16 +168,16 @@ type SourceOrModuleRefParser interface {
 	SourceRefParser
 	ModuleRefParser
 
-	// GetSourceOrModuleRef gets the reference for the image file or source bucket.
+	// GetSourceOrModuleRef gets the reference for the message file or source bucket.
 	GetSourceOrModuleRef(ctx context.Context, value string) (SourceOrModuleRef, error)
 }
 
 // RefParser is a ref parser for Buf.
 type RefParser interface {
-	ImageRefParser
+	MessageRefParser
 	SourceOrModuleRefParser
 
-	// GetRef gets the reference for the image file, source bucket, or module.
+	// GetRef gets the reference for the message file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
 }
 
@@ -177,11 +188,21 @@ func NewRefParser(logger *zap.Logger) RefParser {
 	return newRefParser(logger)
 }
 
-// NewImageRefParser returns a new RefParser for images only.
+// NewMessageRefParser returns a new RefParser for messages only.
+func NewMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) MessageRefParser {
+	return newMessageRefParser(logger, options...)
+}
+
+// MessageRefParserOption is an option for a new MessageRefParser.
+type MessageRefParserOption func(*messageRefParserOptions)
+
+// MessageRefParserWithDefaultMessageEncoding says to use the default MessageEncoding.
 //
-// This defaults to binary.
-func NewImageRefParser(logger *zap.Logger) ImageRefParser {
-	return newImageRefParser(logger)
+// The default default is MessageEncodingBinpb.
+func MessageRefParserWithDefaultMessageEncoding(defaultMessageEncoding MessageEncoding) MessageRefParserOption {
+	return func(messageRefParserOptions *messageRefParserOptions) {
+		messageRefParserOptions.defaultMessageEncoding = defaultMessageEncoding
+	}
 }
 
 // NewSourceRefParser returns a new RefParser for sources only.
@@ -218,15 +239,15 @@ type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 // ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
 type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
 
-// ImageReader is an image reader.
-type ImageReader interface {
-	// GetImageFile gets the image file.
+// MessageReader is an message reader.
+type MessageReader interface {
+	// GetMessageFile gets the message file.
 	//
 	// The returned file will be uncompressed.
-	GetImageFile(
+	GetMessageFile(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		imageRef ImageRef,
+		messageRef MessageRef,
 	) (io.ReadCloser, error)
 }
 
@@ -267,7 +288,7 @@ type ModuleFetcher interface {
 
 // Reader is a reader for Buf.
 type Reader interface {
-	ImageReader
+	MessageReader
 	SourceReader
 	ModuleFetcher
 }
@@ -293,15 +314,15 @@ func NewReader(
 	)
 }
 
-// NewImageReader returns a new ImageReader.
-func NewImageReader(
+// NewMessageReader returns a new MessageReader.
+func NewMessageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
-) ImageReader {
-	return newImageReader(
+) MessageReader {
+	return newMessageReader(
 		logger,
 		storageosProvider,
 		httpClient,
@@ -344,11 +365,11 @@ func NewModuleFetcher(
 
 // Writer is a writer for Buf.
 type Writer interface {
-	// PutImageFile puts the image file.
-	PutImageFile(
+	// PutMessageFile puts the message file.
+	PutMessageFile(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
-		imageRef ImageRef,
+		messageRef MessageRef,
 	) (io.WriteCloser, error)
 }
 

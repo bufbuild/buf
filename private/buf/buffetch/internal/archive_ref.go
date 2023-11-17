@@ -45,6 +45,7 @@ func newArchiveRef(
 		format,
 		path,
 		compressionType,
+		nil,
 	)
 	if err != nil {
 		return nil, err
