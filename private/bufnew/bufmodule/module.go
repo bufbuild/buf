@@ -411,6 +411,10 @@ func getModuleDepsRec(
 			for imp := range imports {
 				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
 				if err != nil {
+					if errors.Is(err, errIsWKT) {
+						// Do not include as a dependency.
+						continue
+					}
 					return err
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()

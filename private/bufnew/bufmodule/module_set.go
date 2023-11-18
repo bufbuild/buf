@@ -16,11 +16,13 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
@@ -28,6 +30,10 @@ import (
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
 )
+
+// errIsWKT is the error returned by getImportsForFilePath or getModuleForFilePath if the
+// input filePath is a well-known type.
+var errIsWKT = errors.New("wkt")
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
 //
@@ -68,10 +74,14 @@ type ModuleSet interface {
 	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet.
 	//
 	// This should only be used by Modules, and only for dependency calculations.
+	//
+	// returns errIsWKT if the filePath is a WKT.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
 	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet.
 	//
 	// This should only be used by Modules, and only for dependency calculations.
+	//
+	// returns errIsWKT if the filePath is a WKT.
 	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
 	isModuleSet()
 }
@@ -360,6 +370,12 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	}
 	switch len(matchingOpaqueIDs) {
 	case 0:
+		// TODO: This is likely a problem now as well, but we do not include WKTs in our
+		// digest calculations. We should discuss whether this is important or not - we could
+		// make an argument that it is not since WKTs are not downloaded in this usage.
+		if datawkt.Exists(filePath) {
+			return nil, errIsWKT
+		}
 		// This should likely never happen given how we call the cache.
 		return nil, fmt.Errorf("no Module contains file %q", filePath)
 	case 1:
