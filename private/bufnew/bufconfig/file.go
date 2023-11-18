@@ -161,15 +161,25 @@ func getFileVersionForData(
 	data []byte,
 	allowJSON bool,
 ) (FileVersion, error) {
-	unmarshalNonStrict := encoding.UnmarshalYAMLNonStrict
-	if allowJSON {
-		unmarshalNonStrict = encoding.UnmarshalJSONOrYAMLNonStrict
-	}
 	var externalFileVersion externalFileVersion
-	if err := unmarshalNonStrict(data, &externalFileVersion); err != nil {
+	if err := getUnmarshalNonStrict(allowJSON)(data, &externalFileVersion); err != nil {
 		return 0, err
 	}
 	return parseFileVersion(externalFileVersion.Version)
+}
+
+func getUnmarshalStrict(allowJSON bool) func([]byte, interface{}) error {
+	if allowJSON {
+		return encoding.UnmarshalJSONOrYAMLStrict
+	}
+	return encoding.UnmarshalYAMLStrict
+}
+
+func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
+	if allowJSON {
+		return encoding.UnmarshalJSONOrYAMLNonStrict
+	}
+	return encoding.UnmarshalYAMLNonStrict
 }
 
 func newDecodeError(fileIdentifier string, err error) error {
