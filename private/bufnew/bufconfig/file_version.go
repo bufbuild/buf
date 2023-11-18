@@ -15,7 +15,6 @@
 package bufconfig
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 )
@@ -71,14 +70,6 @@ func parseFileVersion(s string) (FileVersion, error) {
 func validateFileVersionExists(fileVersion FileVersion) error {
 	if _, ok := fileVersionToString[fileVersion]; !ok {
 		return fmt.Errorf("unknown file version: %v", fileVersion)
-	}
-	return nil
-}
-
-// TODO: Remove when V2 is supported.
-func checkV2SupportedYet(fileVersion FileVersion) error {
-	if fileVersion == FileVersionV2 {
-		return errors.New("v2 is not publicly supported yet")
 	}
 	return nil
 }
