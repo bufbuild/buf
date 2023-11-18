@@ -54,6 +54,12 @@ type externalBufLockFileDepV2 struct {
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
+// externalBufWorkYAMLFileV1 represents the v1 buf.work.yaml file.
+type externalBufWorkYAMLFileV1 struct {
+	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
+	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
+}
+
 // externalFileVersion represents just the version component of any file.
 type externalFileVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`

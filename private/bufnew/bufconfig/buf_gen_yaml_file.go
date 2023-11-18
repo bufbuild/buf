@@ -17,6 +17,7 @@ package bufconfig
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -88,24 +89,57 @@ func WriteBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 // *** PRIVATE ***
 
 type bufGenYAMLFile struct {
-	generateConfig
+	GenerateConfig
+
+	fileVersion FileVersion
 }
 
-func newBufGenYAMLFile() *bufGenYAMLFile {
-	return &bufGenYAMLFile{}
+func newBufGenYAMLFile(fileVersion FileVersion, generateConfig GenerateConfig) (*bufGenYAMLFile, error) {
+	return &bufGenYAMLFile{
+		GenerateConfig: generateConfig,
+		fileVersion:    fileVersion,
+	}, errors.New("TODO")
 }
 
 func (g *bufGenYAMLFile) FileVersion() FileVersion {
-	panic("not implemented") // TODO: Implement
+	return g.fileVersion
 }
 
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
 func (*bufGenYAMLFile) isFile()           {}
 
 func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error) {
-	return nil, errors.New("TODO")
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	fileVersion, err := getFileVersionForData(data, allowJSON)
+	if err != nil {
+		return nil, err
+	}
+	switch fileVersion {
+	case FileVersionV1Beta1:
+		return nil, errors.New("TODO")
+	case FileVersionV1:
+		return nil, errors.New("TODO")
+	case FileVersionV2:
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
 
 func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error {
-	return errors.New("TODO")
+	switch fileVersion := bufGenYAMLFile.FileVersion(); fileVersion {
+	case FileVersionV1Beta1:
+		return errors.New("TODO")
+	case FileVersionV1:
+		return errors.New("TODO")
+	case FileVersionV2:
+		return newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }

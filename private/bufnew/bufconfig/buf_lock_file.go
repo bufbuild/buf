@@ -224,11 +224,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		bufLockFile, err := newBufLockFile(fileVersion, depModuleKeys)
-		if err != nil {
-			return nil, err
-		}
-		return bufLockFile, nil
+		return newBufLockFile(fileVersion, depModuleKeys)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
@@ -253,11 +249,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		bufLockFile, err := newBufLockFile(fileVersion, depModuleKeys)
-		if err != nil {
-			return nil, err
-		}
-		return bufLockFile, nil
+		return newBufLockFile(fileVersion, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)

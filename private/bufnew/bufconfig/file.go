@@ -190,6 +190,10 @@ func newEncodeError(fileIdentifier string, err error) error {
 	return fmt.Errorf("failed to encode %s: %w", fileIdentifier, err)
 }
 
+func newUnsupportedFileVersionError(fileVersion FileVersion) error {
+	return fmt.Errorf("%s is not supported", fileVersion.String())
+}
+
 // TODO: Remove when V2 is supported.
 func checkV2SupportedYet(file File) error {
 	return checkFileVersionV2SupportedYet(file.FileVersion())

@@ -17,8 +17,11 @@ package bufconfig
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"sort"
 
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -47,9 +50,21 @@ var (
 type BufWorkYAMLFile interface {
 	File
 
-	DirPaths() string
+	DirPaths() []string
 
 	isBufWorkYAMLFile()
+}
+
+// NewBufWorkYAMLFile returns a new BufWorkYAMLFile.
+func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
+	bufWorkYAMLFile, err := newBufWorkYAMLFile(fileVersion, dirPaths)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(bufWorkYAMLFile); err != nil {
+		return nil, err
+	}
+	return bufWorkYAMLFile, nil
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file at the given bucket prefix.
@@ -98,30 +113,74 @@ func WriteBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 
 // *** PRIVATE ***
 
-type bufWorkYAMLFile struct{}
+type bufWorkYAMLFile struct {
+	fileVersion FileVersion
+	dirPaths    []string
+}
 
-func newBufWorkYAMLFile() *bufWorkYAMLFile {
-	return &bufWorkYAMLFile{}
+func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
+	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
+		return nil, err
+	}
+	sort.Strings(dirPaths)
+	return &bufWorkYAMLFile{
+		fileVersion: fileVersion,
+		dirPaths:    dirPaths,
+	}, nil
 }
 
 func (w *bufWorkYAMLFile) FileVersion() FileVersion {
-	panic("not implemented") // TODO: Implement
+	return w.fileVersion
 }
 
-func (w *bufWorkYAMLFile) DirPaths() string {
-	panic("not implemented") // TODO: Implement
+func (w *bufWorkYAMLFile) DirPaths() []string {
+	return slicesextended.Copy(w.dirPaths)
 }
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}
 func (*bufWorkYAMLFile) isFile()            {}
 
 func readBufWorkYAMLFile(reader io.Reader, allowJSON bool) (BufWorkYAMLFile, error) {
-	return nil, errors.New("TODO")
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	fileVersion, err := getFileVersionForData(data, allowJSON)
+	if err != nil {
+		return nil, err
+	}
+	switch fileVersion {
+	case FileVersionV1Beta1:
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	case FileVersionV1:
+		var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
+		if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		return newBufWorkYAMLFile(fileVersion, externalBufWorkYAMLFile.Directories)
+	case FileVersionV2:
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
 
 func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) error {
-	if bufWorkYAMLFile.FileVersion() == FileVersionV1Beta1 {
-		return errors.New("v1beta1 is not a valid version for buf.work.yaml files")
+	switch fileVersion := bufWorkYAMLFile.FileVersion(); fileVersion {
+	case FileVersionV1Beta1:
+		return newUnsupportedFileVersionError(fileVersion)
+	case FileVersionV1:
+		return errors.New("TODO")
+	case FileVersionV2:
+		return newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
+}
+
+func validateBufWorkYAMLDirPaths(dirPaths []string) error {
+	// TODO: copy from bufwork/config.go
 	return errors.New("TODO")
 }

@@ -17,8 +17,10 @@ package bufconfig
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -100,31 +102,71 @@ func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 
 // *** PRIVATE ***
 
-type bufYAMLFile struct{}
+type bufYAMLFile struct {
+	fileVersion     FileVersion
+	moduleConfigs   []ModuleConfig
+	generateConfigs []GenerateConfig
+}
 
-func newBufYAMLFile() *bufYAMLFile {
-	return &bufYAMLFile{}
+func newBufYAMLFile(
+	fileVersion FileVersion,
+	moduleConfigs []ModuleConfig,
+	generateConfigs []GenerateConfig,
+) (*bufYAMLFile, error) {
+	return &bufYAMLFile{
+		fileVersion:     fileVersion,
+		moduleConfigs:   moduleConfigs,
+		generateConfigs: generateConfigs,
+	}, errors.New("TODO")
 }
 
 func (c *bufYAMLFile) FileVersion() FileVersion {
-	panic("not implemented") // TODO: Implement
+	return c.FileVersion()
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
-	panic("not implemented") // TODO: Implement
+	return slicesextended.Copy(c.moduleConfigs)
 }
 
 func (c *bufYAMLFile) GenerateConfigs() []GenerateConfig {
-	panic("not implemented") // TODO: Implement
+	return slicesextended.Copy(c.generateConfigs)
 }
 
 func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 
 func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
-	return nil, errors.New("TODO")
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	fileVersion, err := getFileVersionForData(data, allowJSON)
+	if err != nil {
+		return nil, err
+	}
+	switch fileVersion {
+	case FileVersionV1Beta1:
+		return nil, errors.New("TODO")
+	case FileVersionV1:
+		return nil, errors.New("TODO")
+	case FileVersionV2:
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
 
 func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
-	return errors.New("TODO")
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case FileVersionV1Beta1:
+		return errors.New("TODO")
+	case FileVersionV1:
+		return errors.New("TODO")
+	case FileVersionV2:
+		return newUnsupportedFileVersionError(fileVersion)
+	default:
+		// This is a system error since we've already parsed.
+		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
 }
