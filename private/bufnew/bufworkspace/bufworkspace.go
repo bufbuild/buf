@@ -124,9 +124,10 @@ type Workspace interface {
 func NewWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceOption,
 ) (Workspace, error) {
-	return newWorkspaceForBucket(ctx, bucket, options...)
+	return newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
 }
 
 // WorkspaceOption is an option for a new Workspace.

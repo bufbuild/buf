@@ -39,6 +39,7 @@ type workspace struct {
 func newWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceOption,
 ) (*workspace, error) {
 	workspaceOptions := newWorkspaceOptions()

@@ -27,6 +27,8 @@ import (
 )
 
 func TestBasic(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -222,8 +224,7 @@ func TestBasic(t *testing.T) {
 		graph,
 		[]testStringNode{
 			{
-				Key:     "buf.build/bar/module2",
-				Inbound: []string{},
+				Key: "buf.build/bar/module2",
 				Outbound: []string{
 					"buf.build/foo/extdep1",
 					"buf.build/foo/extdep3",
@@ -231,34 +232,21 @@ func TestBasic(t *testing.T) {
 				},
 			},
 			{
-				Key: "buf.build/foo/extdep1",
-				Inbound: []string{
-					"buf.build/bar/module2",
-					"buf.build/foo/extdep2",
-				},
+				Key:      "buf.build/foo/extdep1",
 				Outbound: []string{},
 			},
 			{
-				Key: "buf.build/foo/extdep3",
-				Inbound: []string{
-					"buf.build/bar/module2",
-				},
+				Key:      "buf.build/foo/extdep3",
 				Outbound: []string{},
 			},
 			{
 				Key: "path/to/module1",
-				Inbound: []string{
-					"buf.build/bar/module2",
-				},
 				Outbound: []string{
 					"buf.build/foo/extdep2",
 				},
 			},
 			{
 				Key: "buf.build/foo/extdep2",
-				Inbound: []string{
-					"path/to/module1",
-				},
 				Outbound: []string{
 					"buf.build/foo/extdep1",
 				},
@@ -299,12 +287,11 @@ func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[strin
 func testWalkGraphNodes(t *testing.T, graph *dag.Graph[string], expected []testStringNode) {
 	var results []testStringNode
 	err := graph.WalkNodes(
-		func(key string, inbound []string, outbound []string) error {
+		func(key string, _ []string, outbound []string) error {
 			results = append(
 				results,
 				testStringNode{
 					Key:      key,
-					Inbound:  inbound,
 					Outbound: outbound,
 				},
 			)
