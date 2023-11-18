@@ -376,8 +376,9 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		if datawkt.Exists(filePath) {
 			return nil, errIsWKT
 		}
-		// This should likely never happen given how we call the cache.
-		return nil, fmt.Errorf("no Module contains file %q", filePath)
+		// This will happen if there is a file path we cannot find in our modules, which will result
+		// in an error on ModuleDeps() or Digest(). We make this error clear for users.
+		return nil, fmt.Errorf("no module or dependency contains file %q", filePath)
 	case 1:
 		var matchingOpaqueID string
 		for matchingOpaqueID = range matchingOpaqueIDs {
@@ -386,7 +387,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	default:
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.
-		return nil, fmt.Errorf("multiple Modules contained file %q: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
+		return nil, fmt.Errorf("multiple modules/dependencies contain file %q: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
 	}
 }
 
