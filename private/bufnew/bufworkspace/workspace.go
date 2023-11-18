@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"context"
 	"errors"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -96,10 +97,6 @@ const (
 	// v1 buf.yaml at the subDirPath, using the buf.work.yaml as the workspace if the buf.work.yaml
 	// contains the subDirPath as a directory.
 	searchResultTypeNoBufYAMLV1OrV1Beta1WithBufWorkYAMLV1
-
-	searchResultTypeBufWorkYAMLV1
-	searchResultTypeBufYAMLV1
-	searchResultTypeEmpty
 )
 
 type searchResultType int
@@ -126,16 +123,26 @@ func newSearchResult(
 	bucket storage.ReadBucket,
 	subDirPath string,
 ) (*searchResult, error) {
-	return nil, errors.New("TODO")
-}
-
-// for curPath := subDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-// }
-
-func readBufYAML(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	path string,
-) (bufconfig.ConfigFile, error) {
+	curPath := subDirPath
+	for {
+		bufWorkYAMLVersion, err := bufconfig.GetBufWorkYAMLFileVersionForPrefix(ctx, bucket, curPath)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+		}
+		bufYAMLVersion, err := bufconfig.GetBufYAMLFileVersionForPrefix(ctx, bucket, curPath)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+		}
+		_ = bufWorkYAMLVersion
+		_ = bufYAMLVersion
+		if curPath == "." {
+			break
+		}
+		curPath = normalpath.Dir(curPath)
+	}
 	return nil, errors.New("TODO")
 }
