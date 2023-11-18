@@ -131,6 +131,13 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 	return count, nil
 }
 
+// Copy returns a copy of the slice.
+func Copy[T any](s []T) []T {
+	sc := make([]T, len(s))
+	copy(sc, s)
+	return sc
+}
+
 // ToMap converts the slice to a map.
 func ToMap[T comparable](s []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(s))
