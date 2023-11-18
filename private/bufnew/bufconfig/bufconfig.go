@@ -18,3 +18,5 @@ package bufconfig
 // TODO: need to handle buf mod init --doc
 // TODO: All migration code between v1beta1, v1, v2 should live within this package, so that
 // we can expose less public types.
+// TODO: optimally, we can split this package into bufconfig, bufconfigfile, and ban
+// core from depending on bufconfigfile. See how it ends up.
