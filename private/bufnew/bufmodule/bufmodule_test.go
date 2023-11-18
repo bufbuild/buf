@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
-	"github.com/bufbuild/buf/private/pkg/dag"
+	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -219,10 +219,9 @@ func TestBasic(t *testing.T) {
 	// that we expect.
 	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
 	require.NoError(t, err)
-	testWalkGraphNodes(
+	dagtest.RequireGraphEqual(
 		t,
-		graph,
-		[]testStringNode{
+		[]dagtest.ExpectedNode[string]{
 			{
 				Key: "buf.build/bar/module2",
 				Outbound: []string{
@@ -252,6 +251,7 @@ func TestBasic(t *testing.T) {
 				},
 			},
 		},
+		graph,
 	)
 	topoSort, err := graph.TopoSort("buf.build/bar/module2")
 	require.NoError(t, err)
@@ -282,28 +282,4 @@ func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[strin
 		depOpaqueIDToDirect[moduleDep.OpaqueID()] = moduleDep.IsDirect()
 	}
 	return depOpaqueIDToDirect
-}
-
-func testWalkGraphNodes(t *testing.T, graph *dag.Graph[string], expected []testStringNode) {
-	var results []testStringNode
-	err := graph.WalkNodes(
-		func(key string, _ []string, outbound []string) error {
-			results = append(
-				results,
-				testStringNode{
-					Key:      key,
-					Outbound: outbound,
-				},
-			)
-			return nil
-		},
-	)
-	require.NoError(t, err)
-	require.Equal(t, expected, results)
-}
-
-type testStringNode struct {
-	Key      string
-	Inbound  []string
-	Outbound []string
 }

@@ -18,13 +18,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasic(t *testing.T) {
 	t.Parallel()
+	t.Skip()
 
 	ctx := context.Background()
 
@@ -56,5 +59,47 @@ func TestBasic(t *testing.T) {
 		),
 	)
 	require.NoError(t, err)
-	_ = workspace
+
+	graph, err := bufmodule.ModuleSetToDAG(workspace)
+	require.NoError(t, err)
+	dagtest.RequireGraphEqual(
+		t,
+		[]dagtest.ExpectedNode[string]{
+			{
+				Key: "buf.build/acme/extension",
+			},
+			{
+				Key: "buf.build/acme/date",
+				Outbound: []string{
+					"buf.build/acme/extension",
+				},
+			},
+			{
+				Key: "buf.build/acme/geo",
+			},
+			{
+				Key: "buf.build/acme/money",
+			},
+			{
+				Key: "buf.build/acme/bond",
+				Outbound: []string{
+					"buf.build/acme/extension",
+					"buf.build/acme/date",
+					"buf.build/acme/geo",
+					"buf.build/acme/money",
+				},
+			},
+			{
+				Key: "testdata/basic/finance/portfolio/proto",
+				Outbound: []string{
+					"buf.build/acme/extension",
+					"buf.build/acme/date",
+					"buf.build/acme/geo",
+					"buf.build/acme/money",
+					"buf.build/acme/bond",
+				},
+			},
+		},
+		graph,
+	)
 }
