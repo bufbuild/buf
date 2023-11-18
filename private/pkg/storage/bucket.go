@@ -131,6 +131,9 @@ func NopReadWriteBucketCloser(readWriteBucket ReadWriteBucket) ReadWriteBucketCl
 }
 
 // ObjectInfo contains object info.
+//
+// An ObjectInfo will always be the same for a given path within a given Bucket,
+// that is an ObjectInfo is cacheable for a given Bucket.
 type ObjectInfo interface {
 	// Path is the path of the object.
 	//
