@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package acme.extension.v1;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  bool experimental = 50001;
+}

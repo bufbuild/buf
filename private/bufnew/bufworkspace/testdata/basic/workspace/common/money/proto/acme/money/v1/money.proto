@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package acme.money.v1;
+
+import "acme/money/v1/currency_code.proto";
+
+message Money {
+  CurrencyCode currency_code = 1;
+  int64 value_micros = 2;
+}

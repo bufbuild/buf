@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package acme.geo.v1;
+
+enum CountryAlpha3Code {
+  CURRENCY_ALPHA_3_CODE_UNSPECIFIED = 0;
+  CURRENCY_ALPHA_3_CODE_USA = 1;
+  CURRENCY_ALPHA_3_CODE_CAN = 2;
+}
