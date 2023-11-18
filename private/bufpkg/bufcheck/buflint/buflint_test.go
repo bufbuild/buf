@@ -641,6 +641,7 @@ func TestRunProtovalidateRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 45, 5, 45, 48, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 49, 28, 49, 71, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 51, 38, 51, 92, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 53, 26, 53, 74, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 31, 5, 31, 46, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 36, 5, 36, 44, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 41, 5, 41, 44, "PROTOVALIDATE"),
