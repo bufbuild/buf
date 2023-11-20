@@ -129,13 +129,13 @@ type bufWorkYAMLFile struct {
 }
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
-	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
+	sortedNormalDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
+	if err != nil {
 		return nil, err
 	}
-	sort.Strings(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
-		dirPaths:    dirPaths,
+		dirPaths:    sortedNormalDirPaths,
 	}, nil
 }
 
@@ -200,52 +200,59 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	}
 }
 
-func validateBufWorkYAMLDirPaths(dirPaths []string) error {
+// validateBufWorkYAMLDirPaths validates dirPaths and returns normalized and
+// sorted dirPaths.
+func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	if len(dirPaths) == 0 {
-		return fmt.Errorf(`directories is empty`)
+		return nil, fmt.Errorf(`directories is empty`)
 	}
-	dirPathMap := make(map[string]struct{}, len(dirPaths))
+	normalDirPathToDirPath := make(map[string]string, len(dirPaths))
 	for _, dirPath := range dirPaths {
-		dirPath, err := normalpath.NormalizeAndValidate(dirPath)
+		normalDirPath, err := normalpath.NormalizeAndValidate(dirPath)
 		if err != nil {
-			return fmt.Errorf(`directory %q is invalid: %w`, normalpath.Unnormalize(dirPath), err)
+			return nil, fmt.Errorf(`directory %q is invalid: %w`, dirPath, err)
 		}
-		if _, ok := dirPathMap[dirPath]; ok {
-			return fmt.Errorf(`directory %q is listed more than once`, dirPath)
+		if _, ok := normalDirPathToDirPath[normalDirPath]; ok {
+			return nil, fmt.Errorf(`directory %q is listed more than once`, dirPath)
 		}
-		if dirPath == "." {
-			return fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
+		if normalDirPath == "." {
+			return nil, fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
 		}
-		dirPathMap[dirPath] = struct{}{}
+		normalDirPathToDirPath[normalDirPath] = dirPath
 	}
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
-	if err := validateDirPathsNoOverlap(slicesextended.MapToSortedSlice(dirPathMap)); err != nil {
-		return err
+	// TODO: use this line:
+	// sortedNormalDirPaths := slicesextended.MapKeysToSortedSlice(normalDirPathToDirPath)
+	sortedNormalDirPaths := make([]string, 0, len(normalDirPathToDirPath))
+	for normalDirPath := range normalDirPathToDirPath {
+		sortedNormalDirPaths = append(sortedNormalDirPaths, normalDirPath)
 	}
-	return nil
-}
-
-func validateDirPathsNoOverlap(dirPaths []string) error {
-	for i := 0; i < len(dirPaths); i++ {
-		for j := i + 1; j < len(dirPaths); j++ {
-			left := dirPaths[i]
-			right := dirPaths[j]
+	sort.Slice(
+		sortedNormalDirPaths,
+		func(i int, j int) bool {
+			return sortedNormalDirPaths[i] < sortedNormalDirPaths[j]
+		},
+	)
+	for i := 0; i < len(sortedNormalDirPaths); i++ {
+		for j := i + 1; j < len(sortedNormalDirPaths); j++ {
+			left := sortedNormalDirPaths[i]
+			right := sortedNormalDirPaths[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
-				return fmt.Errorf(
+				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalpath.Unnormalize(left),
-					normalpath.Unnormalize(right),
+					normalDirPathToDirPath[left],
+					normalDirPathToDirPath[right],
 				)
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
-				return fmt.Errorf(
+				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalpath.Unnormalize(right),
-					normalpath.Unnormalize(left),
+					normalDirPathToDirPath[right],
+					normalDirPathToDirPath[left],
 				)
 			}
 		}
 	}
-	return nil
+	return sortedNormalDirPaths, nil
 }
