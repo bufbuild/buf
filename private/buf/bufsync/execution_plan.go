@@ -35,15 +35,15 @@ func newExecutionPlan(
 	}
 	sortedBranchesToSync := make([]ModuleBranch, len(moduleBranchesToSync))
 	copy(sortedBranchesToSync, moduleBranchesToSync)
-	// ModuleBranches are sorted by moduleDir, then branch name. We retain the order of
-	// moduleDirs passed in.
+	// ModuleBranches are sorted by moduleDir, then branch name.
 	slices.SortFunc(sortedBranchesToSync, func(a, b ModuleBranch) int {
-		if sortedModuleDirIndexes[a.Directory()] > sortedModuleDirIndexes[b.Directory()] {
-			return 1
+		//  We retain the order of moduleDirs passed in.
+		if sortedModuleDirIndexes[a.Directory()] != sortedModuleDirIndexes[b.Directory()] {
+			return sortedModuleDirIndexes[a.Directory()] - sortedModuleDirIndexes[b.Directory()]
 		}
-		if sortedModuleDirIndexes[a.Directory()] < sortedModuleDirIndexes[b.Directory()] {
-			return -1
-		}
+		// NOTE: Protected branches should ideally be synced prior to non-protected branches,
+		// because they are preferred backfill sources for all branches that follow. But this is
+		// not strictly required.
 		if a.BranchName() > b.BranchName() {
 			return 1
 		}
