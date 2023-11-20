@@ -18,12 +18,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	bufconfig.AllowV2ForTesting()
+}
 
 func TestBasic(t *testing.T) {
 	t.Parallel()

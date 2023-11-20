@@ -1,0 +1,6 @@
+version: v2
+deps:
+  - name: buf.testing/acme/date
+    digest: shake256:b862c7c237b432e75012c1ee64963fa3cbfbe201ca51305a8a822af34ca16b2eb9619c16faf3bc80807c20d820ebc09ffbe480c68fd6cfef0b9dd68a774949cbA
+  - name: buf.testing/acme/extension
+    digest: shake256:d2c1da8f8331c5c75b50549c79fc360394dedfb6a11f5381c4523592018964119f561088fc8aaddfc9f5773ba02692e6fd9661853450f76a3355dec62c1f57b4

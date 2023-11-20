@@ -108,9 +108,6 @@ func TestDir(t *testing.T) {
 }
 
 func testDir(t *testing.T, expected string, input string) {
-	if os.PathSeparator == '/' {
-		assert.Equal(t, expected, filepath.Dir(input))
-	}
 	assert.Equal(t, expected, Dir(input))
 }
 

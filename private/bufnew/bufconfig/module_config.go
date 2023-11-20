@@ -16,6 +16,9 @@ package bufconfig
 
 import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
+// TODO
+var DefaultModuleConfig ModuleConfig = nil
+
 // ModuleConfig is configuration for a specific Module.
 //
 // ModuleConfigs do not expose BucketID or OpaqueID, however RootPath is effectively BucketID,

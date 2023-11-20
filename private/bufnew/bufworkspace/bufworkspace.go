@@ -261,14 +261,3 @@ func WorkspaceLocalLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKe
 	}
 	return localLockedDepModuleKeys
 }
-
-type workspaceOptions struct {
-	subDirPath         string
-	targetPaths        []string
-	targetExcludePaths []string
-	generateConfigs    []bufconfig.GenerateConfig
-}
-
-func newWorkspaceOptions() *workspaceOptions {
-	return &workspaceOptions{}
-}
