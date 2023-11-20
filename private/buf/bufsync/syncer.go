@@ -75,13 +75,28 @@ func newSyncer(
 func (s *syncer) Sync(ctx context.Context) error {
 	plan, err := s.Plan(ctx)
 	if err != nil {
-		return fmt.Errorf("sync preparation: %w", err)
+		return fmt.Errorf("determine plan: %w", err)
 	}
 	plan.log(s.logger)
 	if plan.Nop() {
 		s.logger.Warn("nothing to sync")
 		return nil
 	}
+	if err := s.executePlan(ctx, plan); err != nil {
+		return fmt.Errorf("execute plan: %w", err)
+	}
+	return nil
+}
+
+func (s *syncer) Plan(ctx context.Context) (ExecutionPlan, error) {
+	branchesToSync, tagsToSync, err := s.determineEverythingToSync(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return newExecutionPlan(branchesToSync, tagsToSync), nil
+}
+
+func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {
 	for _, moduleBranch := range plan.ModuleBranchesToSync() {
 		if err := s.handler.SyncModuleBranch(ctx, moduleBranch); err != nil {
 			return fmt.Errorf(
@@ -103,14 +118,6 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (s *syncer) Plan(ctx context.Context) (ExecutionPlan, error) {
-	branchesToSync, tagsToSync, err := s.determineEverythingToSync(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("determine branches to sync: %w", err)
-	}
-	return newExecutionPlan(branchesToSync, tagsToSync), nil
 }
 
 // resolveSyncPoint resolves a sync point for a particular module identity and protected branch.
