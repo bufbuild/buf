@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"slices"
+	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -125,7 +125,7 @@ func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAM
 	}
 	// It's very important that we sort the directories here so that the
 	// constructed modules and/or images are in a deterministic order.
-	slices.Sort(dirPaths)
+	sort.Strings(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
 		dirPaths:    dirPaths,
