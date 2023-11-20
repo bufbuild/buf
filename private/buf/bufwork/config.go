@@ -49,7 +49,7 @@ func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, 
 	}
 	// It's very important that we sort the directories here so that the
 	// constructed modules and/or images are in a deterministic order.
-	directories := slicesextended.MapToSlice(directorySet)
+	directories := slicesextended.MapKeysToSlice(directorySet)
 	sort.Slice(directories, func(i int, j int) bool {
 		return directories[i] < directories[j]
 	})
