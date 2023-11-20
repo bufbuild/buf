@@ -37,6 +37,7 @@ const (
 // For v2, generation configuration has been merged into BufYAMLFiles.
 type BufGenYAMLFile interface {
 	File
+	// Will always have empty GenerateInputConfigs.
 	GenerateConfig
 
 	isBufGenYAMLFile()
