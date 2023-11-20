@@ -172,6 +172,9 @@ func WorkspaceWithGenerateConfig(generateConfig bufconfig.GenerateConfig) Worksp
 // in both v1 and v2 buf.yamls.
 //
 // A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
+//
+// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
+// not even need to expose LockedDepModuleKeys.
 func WorkspaceUnreferencedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
 	var unreferencedConfiguredDepModuleRefs []bufmodule.ModuleRef
 	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
@@ -194,6 +197,9 @@ func WorkspaceUnreferencedConfiguredDepModuleRefs(workspace Workspace) []bufmodu
 // these should be pruned depending on v1 vs v2.
 //
 // A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
+//
+// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
+// not even need to expose LockedDepModuleKeys.
 func WorkspaceLocalConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
 	var localConfiguredDepModuleRefs []bufmodule.ModuleRef
 	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
@@ -213,6 +219,9 @@ func WorkspaceLocalConfiguredDepModuleRefs(workspace Workspace) []bufmodule.Modu
 // in both v1 and v2 buf.yamls.
 //
 // A ModuleKey is considered to reference a Module if it has the same ModuleFullName.
+//
+// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
+// not even need to expose LockedDepModuleKeys.
 func WorkspaceUnreferencedLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKey {
 	var unreferencedLockedDepModuleKeys []bufmodule.ModuleKey
 	for _, lockedDepModuleKey := range workspace.LockedDepModuleKeys() {
@@ -236,6 +245,9 @@ func WorkspaceUnreferencedLockedDepModuleKeys(workspace Workspace) []bufmodule.M
 // these should be pruned depending on v1 vs v2.
 //
 // A ModuleKey is considered to reference a Module if it has the same ModuleFullName.
+//
+// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
+// not even need to expose LockedDepModuleKeys.
 func WorkspaceLocalLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKey {
 	var localLockedDepModuleKeys []bufmodule.ModuleKey
 	for _, lockedDepModuleKey := range workspace.LockedDepModuleKeys() {
