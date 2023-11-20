@@ -63,14 +63,12 @@ func TestBasic(t *testing.T) {
 		),
 	)
 	require.NoError(t, err)
-
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
 	require.NotNil(t, module)
 	require.False(t, module.IsTarget())
 	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
 	require.NotNil(t, module)
 	require.True(t, module.IsTarget())
-
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	require.NoError(t, err)
 	dagtest.RequireGraphEqual(
@@ -109,4 +107,27 @@ func TestBasic(t *testing.T) {
 		},
 		graph,
 	)
+
+	workspace, err = NewWorkspaceForBucket(
+		ctx,
+		bucket,
+		bsrProvider,
+		WorkspaceWithTargetSubDirPath(
+			"common/money/proto",
+		),
+		WorkspaceWithTargetPaths(
+			[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
+			nil,
+		),
+	)
+	require.NoError(t, err)
+	module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
+	require.NotNil(t, module)
+	require.True(t, module.IsTarget())
+	fileInfo, err := module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
+	require.NoError(t, err)
+	require.True(t, fileInfo.IsTargetFile())
+	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
+	require.NoError(t, err)
+	require.False(t, fileInfo.IsTargetFile())
 }
