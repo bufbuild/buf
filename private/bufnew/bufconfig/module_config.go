@@ -17,7 +17,7 @@ package bufconfig
 import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
 // TODO
-var DefaultModuleConfig ModuleConfig = nil
+var DefaultModuleConfig ModuleConfig = newModuleConfig()
 
 // ModuleConfig is configuration for a specific Module.
 //
@@ -63,19 +63,23 @@ func newModuleConfig() *moduleConfig {
 }
 
 func (m *moduleConfig) RootPath() string {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return "."
 }
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return nil
 }
 
 func (m *moduleConfig) LintConfig() LintConfig {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return DefaultLintConfig
 }
 
 func (m *moduleConfig) BreakingConfig() BreakingConfig {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return DefaultBreakingConfig
 }
 
 func (*moduleConfig) isModuleConfig() {}

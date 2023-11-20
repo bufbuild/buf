@@ -32,7 +32,6 @@ func init() {
 
 func TestBasic(t *testing.T) {
 	t.Parallel()
-	t.Skip()
 
 	ctx := context.Background()
 

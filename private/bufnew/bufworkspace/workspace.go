@@ -280,7 +280,9 @@ func getModuleConfigForModuleDirPath(
 			// If we do not have a buf.yaml, we use the default config.
 			return bufconfig.DefaultModuleConfig, nil
 		}
-		return nil, err
+		// TODO: remove this when we have buf.yaml parsing in place
+		return bufconfig.DefaultModuleConfig, nil
+		//return nil, err
 	}
 	// Just a sanity check. This should have already been validated, but let's make sure.
 	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
