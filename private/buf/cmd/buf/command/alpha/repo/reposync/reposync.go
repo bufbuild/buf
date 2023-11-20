@@ -22,11 +22,14 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
+	"github.com/bufbuild/buf/private/buf/bufsync/bufsyncapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
@@ -215,16 +218,34 @@ func sync(
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
 		modulesDirsWithOverrides[moduleDir] = struct{}{}
 	}
+
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
 		repo,
 		storageProvider,
-		newSyncHandler(
+		bufsyncapi.NewHandler(
 			container.Logger(),
-			clientConfig,
 			container,
 			repo,
 			createWithVisibility,
+			func(address string) registryv1alpha1connect.SyncServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewSyncServiceClient)
+			},
+			func(address string) registryv1alpha1connect.ReferenceServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewReferenceServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryBranchServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryBranchServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryTagServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryTagServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryCommitServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryCommitServiceClient)
+			},
 		),
 		syncerOptions...,
 	)
