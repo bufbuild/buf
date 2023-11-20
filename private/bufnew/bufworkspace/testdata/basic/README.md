@@ -25,3 +25,9 @@
   - Transitive Dep: `buf.build/acme/geo`
   - Transitive Dep: `buf.build/acme/money`
   - Transitive Dep: `buf.build/acme/extension`
+
+## Development
+
+```
+bash scripts/digests.bash
+```

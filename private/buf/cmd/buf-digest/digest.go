@@ -16,14 +16,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -44,12 +43,11 @@ func newCommand() *appcmd.Command {
 	)
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <path/to/module>",
-		Short: "Produce a digest for a module and its dependencies",
-		Long: `This is a low-level command used to generate digest for modules on disk and their on-disk dependencies.
-
+		Use:   name + " <path/to/module1> <path/to/module2> ...",
+		Short: "Produce a digest for a set of self-contained modules.",
+		Long: `This is a low-level command used to generate digests for modules on disk.
+The modules given must be self-contained, i.e. all dependencies must be represented.
 This is not intended to be used outside of development of the buf codebase.`,
-		Args: cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -60,54 +58,44 @@ This is not intended to be used outside of development of the buf codebase.`,
 	}
 }
 
-type flags struct {
-	Deps []string
-}
+type flags struct{}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(
-		&f.Deps,
-		depFlagName,
-		nil,
-		`The path to a dependency on disk. This may or may not be an actual dependency of the input module - if it is not, it will not be used to calculate the digest`,
-	)
-}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
 ) error {
+	dirPaths := app.Args(container)
+	if len(dirPaths) == 0 {
+		dirPaths = []string{"."}
+	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
 	storageosProvider := storageos.NewProvider()
-	bucket, err := storageosProvider.NewReadWriteBucket(container.Arg(0))
-	if err != nil {
-		return err
-	}
-	moduleSetBuilder.AddLocalModule(bucket, container.Arg(0), true)
-	for _, dep := range flags.Deps {
-		bucket, err := storageosProvider.NewReadWriteBucket(dep)
+	for _, dirPath := range dirPaths {
+		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)
 		if err != nil {
 			return err
 		}
-		moduleSetBuilder.AddLocalModule(bucket, dep, false)
+		moduleSetBuilder.AddLocalModule(bucket, dirPath, true)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
 		return err
 	}
-	module := moduleSet.GetModuleForOpaqueID(container.Arg(0))
-	if module == nil {
-		return fmt.Errorf("could not get module by opaque ID %s", container.Arg(0))
+	for _, module := range moduleSet.Modules() {
+		digest, err := module.Digest()
+		if err != nil {
+			return err
+		}
+		if _, err := container.Stdout().Write([]byte(module.OpaqueID() + " " + digest.String() + "\n")); err != nil {
+			return err
+		}
 	}
-	digest, err := module.Digest()
-	if err != nil {
-		return err
-	}
-	_, err = container.Stdout().Write([]byte(digest.String() + "\n"))
-	return err
+	return nil
 }

@@ -22,7 +22,7 @@ BRANCH="release/v${VERSION}"
 git switch -C ${BRANCH}
 git add .
 git commit -m "Update version to ${VERSION}"
-git push --set-upstream origin --force ${BRANCH} 
+git push --set-upstream origin --force ${BRANCH}
 url=$(gh pr create --title "Release v${VERSION}" --body "Release prepared for ${VERSION}
 Reminder: Verify the changelog")
 
