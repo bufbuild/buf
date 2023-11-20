@@ -41,8 +41,8 @@ type isProtectedBranchCacheKey struct {
 type cachedHandler struct {
 	delegate Handler
 
-	isBranchSyncedCache    map[isBranchSyncedCacheKey]bool
-	isGitCommitSynedCache  map[isGitCommitSyncedCacheKey]bool
+	isBranchSyncedCache    map[isBranchSyncedCacheKey]struct{}
+	isGitCommitSynedCache  map[isGitCommitSyncedCacheKey]struct{}
 	isProtectedBranchCache map[isProtectedBranchCacheKey]bool
 	isReleaseBranchCache   map[string]bool
 }
@@ -50,8 +50,8 @@ type cachedHandler struct {
 func newCachedHandler(delegate Handler) *cachedHandler {
 	return &cachedHandler{
 		delegate:               delegate,
-		isBranchSyncedCache:    make(map[isBranchSyncedCacheKey]bool),
-		isGitCommitSynedCache:  make(map[isGitCommitSyncedCacheKey]bool),
+		isBranchSyncedCache:    make(map[isBranchSyncedCacheKey]struct{}),
+		isGitCommitSynedCache:  make(map[isGitCommitSyncedCacheKey]struct{}),
 		isProtectedBranchCache: make(map[isProtectedBranchCacheKey]bool),
 	}
 }
@@ -77,12 +77,12 @@ func (c *cachedHandler) IsBranchSynced(
 		moduleIdentityString: moduleIdentity.IdentityString(),
 		branchName:           branchName,
 	}
-	if c.isBranchSyncedCache[cacheKey] {
+	if _, ok := c.isBranchSyncedCache[cacheKey]; ok {
 		return true, nil
 	}
 	yes, err := c.delegate.IsBranchSynced(ctx, moduleIdentity, branchName)
 	if err != nil && yes {
-		c.isBranchSyncedCache[cacheKey] = yes
+		c.isBranchSyncedCache[cacheKey] = struct{}{}
 	}
 	return yes, err
 }
@@ -94,19 +94,16 @@ func (c *cachedHandler) IsGitCommitSynced(
 ) (bool, error) {
 	// Only synced commits can be cached, as non-synced commits may become synced during
 	// the lifetime of Sync or across Sync runs.
-	// Note: we want this to overlap with IsGitCommitSyncedToBranch, hence the foreach
-	for cached := range c.isGitCommitSynedCache {
-		if cached.moduleIdentityString == moduleIdentity.IdentityString() && cached.gitHash == hash.Hex() {
-			return true, nil
-		}
+	cacheKey := isGitCommitSyncedCacheKey{
+		moduleIdentityString: moduleIdentity.IdentityString(),
+		gitHash:              hash.Hex(),
+	}
+	if _, ok := c.isGitCommitSynedCache[cacheKey]; ok {
+		return true, nil
 	}
 	yes, err := c.delegate.IsGitCommitSynced(ctx, moduleIdentity, hash)
 	if err != nil && yes {
-		cacheKey := isGitCommitSyncedCacheKey{
-			moduleIdentityString: moduleIdentity.IdentityString(),
-			gitHash:              hash.Hex(),
-		}
-		c.isGitCommitSynedCache[cacheKey] = yes
+		c.isGitCommitSynedCache[cacheKey] = struct{}{}
 	}
 	return yes, err
 }
@@ -124,17 +121,17 @@ func (c *cachedHandler) IsGitCommitSyncedToBranch(
 		branchName:           branchName,
 		gitHash:              hash.Hex(),
 	}
-	if c.isGitCommitSynedCache[cacheKey] {
+	if _, ok := c.isGitCommitSynedCache[cacheKey]; ok {
 		return true, nil
 	}
 	yes, err := c.delegate.IsGitCommitSyncedToBranch(ctx, moduleIdentity, branchName, hash)
 	if err != nil && yes {
-		cacheKey := isGitCommitSyncedCacheKey{
+		c.isGitCommitSynedCache[cacheKey] = struct{}{}
+		// also cache that the commit is synced in general
+		c.isGitCommitSynedCache[isGitCommitSyncedCacheKey{
 			moduleIdentityString: moduleIdentity.IdentityString(),
-			branchName:           branchName,
 			gitHash:              hash.Hex(),
-		}
-		c.isGitCommitSynedCache[cacheKey] = yes
+		}] = struct{}{}
 	}
 	return yes, err
 }
