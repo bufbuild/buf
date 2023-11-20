@@ -147,8 +147,8 @@ func ToMap[T comparable](s []T) map[T]struct{} {
 	return m
 }
 
-// MapToSortedSlice converts the map to a sorted slice.
-func MapToSortedSlice[M ~map[T]struct{}, T Ordered](m M) []T {
+// MapToSortedSlice converts the map's keys to a sorted slice.
+func MapToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
 	s := MapToSlice(m)
 	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
 	sort.Slice(
@@ -160,9 +160,9 @@ func MapToSortedSlice[M ~map[T]struct{}, T Ordered](m M) []T {
 	return s
 }
 
-// MapToSlice converts the map to a slice.
-func MapToSlice[T comparable](m map[T]struct{}) []T {
-	s := make([]T, 0, len(m))
+// MapToSlice converts the map's keys to a slice.
+func MapToSlice[K comparable, V any](m map[K]V) []K {
+	s := make([]K, 0, len(m))
 	for e := range m {
 		s = append(s, e)
 	}
