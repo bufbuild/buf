@@ -932,6 +932,31 @@ func TestLsFilesImage1(t *testing.T) {
 	)
 }
 
+func TestLsFilesImage1_Yaml(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-#format=yaml",
+		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"-#format=yaml",
+	)
+}
+
 func TestLsFilesImage2(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
@@ -2019,6 +2044,23 @@ func TestConvert(t *testing.T) {
 			"-#format=binpb",
 		)
 	})
+	t.Run("stdin-json-payload-to-yaml-with-image", func(t *testing.T) {
+		t.Parallel()
+		file, err := os.Open(convertTestDataDir + "/bin_json/payload.json")
+		require.NoError(t, err)
+		testRunStdoutFile(t,
+			file,
+			0,
+			convertTestDataDir+"/bin_json/payload.yaml",
+			"convert",
+			"--type=buf.Foo",
+			convertTestDataDir+"/bin_json/image.yaml",
+			"--from",
+			"-#format=json",
+			"--to",
+			"-#format=yaml",
+		)
+	})
 	t.Run("stdin-image-json-to-binpb", func(t *testing.T) {
 		t.Parallel()
 		file, err := os.Open(convertTestDataDir + "/bin_json/image.json")
@@ -2035,6 +2077,22 @@ func TestConvert(t *testing.T) {
 			"-#format=binpb",
 		)
 	})
+	t.Run("stdin-image-json-to-yaml", func(t *testing.T) {
+		t.Parallel()
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.json")
+		require.NoError(t, err)
+		testRunStdoutFile(t,
+			file,
+			0,
+			convertTestDataDir+"/bin_json/payload.yaml",
+			"convert",
+			"--type=buf.Foo",
+			"-#format=json",
+			"--from="+convertTestDataDir+"/bin_json/payload.json",
+			"--to",
+			"-#format=yaml",
+		)
+	})
 	t.Run("stdin-image-txtpb-to-binpb", func(t *testing.T) {
 		t.Parallel()
 		file, err := os.Open(convertTestDataDir + "/bin_json/image.txtpb")
@@ -2047,6 +2105,22 @@ func TestConvert(t *testing.T) {
 			"--type=buf.Foo",
 			"-#format=txtpb",
 			"--from="+convertTestDataDir+"/bin_json/payload.txtpb",
+			"--to",
+			"-#format=binpb",
+		)
+	})
+	t.Run("stdin-image-yaml-to-binpb", func(t *testing.T) {
+		t.Parallel()
+		file, err := os.Open(convertTestDataDir + "/bin_json/image.yaml")
+		require.NoError(t, err)
+		testRunStdoutFile(t,
+			file,
+			0,
+			convertTestDataDir+"/bin_json/payload.binpb",
+			"convert",
+			"--type=buf.Foo",
+			"-#format=yaml",
+			"--from="+convertTestDataDir+"/bin_json/payload.yaml",
 			"--to",
 			"-#format=binpb",
 		)

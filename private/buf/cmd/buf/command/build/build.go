@@ -108,7 +108,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		app.DevNullFilePath,
 		fmt.Sprintf(
 			`The output location for the built image. Must be one of format %s`,
-			buffetch.ImageFormatsString,
+			buffetch.MessageFormatsString,
 		),
 	)
 	flagSet.StringVar(
@@ -155,7 +155,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Output)
+	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, flags.Output)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -170,7 +170,7 @@ func run(
 	).PutImage(
 		ctx,
 		container,
-		imageRef,
+		messageRef,
 		image,
 		flags.AsFileDescriptorSet,
 		flags.ExcludeImports,

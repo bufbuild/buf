@@ -54,7 +54,7 @@ func (s *fileOptionSweeper) mark(imageFilePath string, path []int32) {
 // Sweep applies all of the marks and sweeps the file option SourceCodeInfo_Locations.
 func (s *fileOptionSweeper) Sweep(ctx context.Context, image bufimage.Image) error {
 	for _, imageFile := range image.Files() {
-		descriptor := imageFile.Proto()
+		descriptor := imageFile.FileDescriptorProto()
 		if descriptor.SourceCodeInfo == nil {
 			continue
 		}

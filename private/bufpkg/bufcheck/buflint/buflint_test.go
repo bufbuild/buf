@@ -468,8 +468,8 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			// not reported for imports, only for non-imports.
 			var newImageFiles []bufimage.ImageFile
 			for _, imageFile := range image.Files() {
-				if imageFile.FileDescriptor().GetPackage() == "b" {
-					newImageFiles = append(newImageFiles, imageFile.ImageFileWithIsImport(true))
+				if imageFile.FileDescriptorProto().GetPackage() == "b" {
+					newImageFiles = append(newImageFiles, bufimage.ImageFileWithIsImport(imageFile, true))
 				} else {
 					require.False(t, imageFile.IsImport())
 					newImageFiles = append(newImageFiles, imageFile)
@@ -666,7 +666,6 @@ func TestRunProtovalidateRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 122, 5, 122, 47, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 130, 5, 130, 46, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 133, 5, 133, 45, "PROTOVALIDATE"),
-		bufanalysistesting.NewFileAnnotation(t, "string.proto", 142, 5, 142, 47, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 57, 5, 60, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 61, 5, 64, 6, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "timestamp.proto", 68, 5, 71, 6, "PROTOVALIDATE"),

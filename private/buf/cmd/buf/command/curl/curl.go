@@ -197,7 +197,7 @@ exit code that is the gRPC code, shifted three bits to the left.
 
 type flags struct {
 	// Flags for defining input schema
-	Schema string
+	Schemas []string
 
 	// Flags for server reflection
 	Reflect         bool
@@ -244,18 +244,22 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	f.flagSet = flagSet
 
-	flagSet.StringVar(
-		&f.Schema,
+	flagSet.StringSliceVar(
+		&f.Schemas,
 		schemaFlagName,
-		"",
+		nil,
 		fmt.Sprintf(
 			`The module to use for the RPC schema. This is necessary if the server does not support
 server reflection. The format of this argument is the same as for the <input> arguments to
 other buf sub-commands such as build and generate. It can indicate a directory, a file, a
 remote module in the Buf Schema Registry, or even standard in ("-") for feeding an image or
 file descriptor set to the command in a shell pipeline.
-Setting this flags implies --%s=false`,
-			reflectFlagName,
+If multiple %s flags are present, they will be consulted in order to resolve service and type
+names. Setting this flags implies --%s=false unless a %s flag is explicitly present. If both
+%s and %s flags are in use, reflection will be used first and the schemas will be consulted
+in order thereafter if reflection fails to resolve a schema element.`,
+			schemaFlagName, reflectFlagName, reflectFlagName,
+			schemaFlagName, reflectFlagName,
 		),
 	)
 	flagSet.BoolVar(
@@ -504,18 +508,24 @@ func (f *flags) validate(isSecure bool) error {
 		return fmt.Errorf("--%s and --%s flags are mutually exclusive; they may not both be specified", netrcFlagName, netrcFileFlagName)
 	}
 
-	if f.Schema != "" && f.Reflect {
-		if f.flagSet.Changed(reflectFlagName) {
-			// explicitly enabled both
-			return fmt.Errorf("cannot specify both --%s and --%s", schemaFlagName, reflectFlagName)
-		}
+	if len(f.Schemas) > 0 && f.Reflect && !f.flagSet.Changed(reflectFlagName) {
 		// Reflect just has default value; unset it since we're going to use --schema instead
 		f.Reflect = false
 	}
-	if !f.Reflect && f.Schema == "" {
+	if !f.Reflect && len(f.Schemas) == 0 {
 		return fmt.Errorf("must specify --%s if --%s is false", schemaFlagName, reflectFlagName)
 	}
-	schemaIsStdin := strings.HasPrefix(f.Schema, "-")
+	var schemaIsStdin bool
+	for _, schema := range f.Schemas {
+		isStdin := strings.HasPrefix(schema, "-")
+		if isStdin && schemaIsStdin {
+			// more than one schema argument wants to use stdin
+			return fmt.Errorf("multiple --%s flags indicate the use of stdin which is not allowed", schemaFlagName)
+		}
+		if isStdin {
+			schemaIsStdin = true
+		}
+	}
 	if (len(f.ReflectHeaders) > 0 || f.flagSet.Changed(reflectProtocolFlagName)) && !f.Reflect {
 		return fmt.Errorf(
 			"reflection flags (--%s, --%s) should not be used if --%s is false",
@@ -866,7 +876,7 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		}
 	}
 
-	var res protoencoding.Resolver
+	resolvers := make([]protoencoding.Resolver, 0, len(f.Schemas)+1)
 	if f.Reflect {
 		reflectHeaders, _, err := bufcurl.LoadHeaders(f.ReflectHeaders, "", requestHeaders)
 		if err != nil {
@@ -892,11 +902,12 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		var closeRes func()
-		res, closeRes = bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
+		res, closeRes := bufcurl.NewServerReflectionResolver(ctx, transport, clientOptions, baseURL, reflectProtocol, reflectHeaders, container.VerbosePrinter())
 		defer closeRes()
-	} else {
-		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, f.Schema)
+		resolvers = append(resolvers, res)
+	}
+	for _, schema := range f.Schemas {
+		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, schema)
 		if err != nil {
 			return err
 		}
@@ -943,11 +954,13 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		if err != nil {
 			return err
 		}
-		res, err = protoencoding.NewResolver(bufimage.ImageToFileDescriptors(image)...)
+		res, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return err
 		}
+		resolvers = append(resolvers, res)
 	}
+	res := protoencoding.CombineResolvers(resolvers...)
 
 	methodDescriptor, err := bufcurl.ResolveMethodDescriptor(res, service, method)
 	if err != nil {

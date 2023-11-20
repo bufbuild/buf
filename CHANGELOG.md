@@ -2,11 +2,37 @@
 
 ## [Unreleased]
 
+- Add support for `yaml` format. All commands that take image inputs, output images,
+  or convert between message formats, now take `yaml` as a format, in addition to
+  the existing `binpb` and `txtpb` formats. Some examples:
+  - `buf build -o image.yaml`
+  - `buf ls-files image.yaml`
+  - `buf convert --type foo.Bar --from input.binpb --to output.yaml`
+- The `yaml` and `json` formats now accept two new options: `use_proto_names` and
+  `use_enum_numbers`. This affects output serialization. Some examples:
+  - `buf convert --type foo.Bar --from input.binpb --to output.yaml#use_proto_names=true`
+  - `buf convert --type foo.Bar --from input.binpb --to -#format=yaml,use_enum_numbers=true`
+
+## [v1.28.1] - 2023-11-15
+
+- The `buf curl` command has been updated to support the use of multiple schemas.
+  This allows users to specify multiple `--schema` flags and/or to use both `--schema`
+  and `--reflect` flags at the same time. The result is that additional sources can
+  be consulted to resolve an element. This can be useful when the result of an RPC
+  contains extensions or values in `google.protobuf.Any` messages that are not defined
+  in the same schema that defines the RPC service.
+- Fix issue where `buf lint` incorrectly reports error when `(buf.validate.field).required`
+  is set for an optional field in proto3.
+
+## [v1.28.0] - 2023-11-10
+
 - Add lint rules for [protovalidate](https://github.com/bufbuild/protovalidate). `buf lint`
   will now verify that your protovalidate rules are valid. A single rule `PROTOVALIDATE` has been
   added to the `DEFAULT` group - given that protovalidate is net new, this does not represent
   a breaking change.
 - Update `buf beta price` with the latest pricing information.
+- Display a warning when reading a `buf.lock` with dependencies with b1 or b3 digests. b1 and b3
+  digests will be deprecated in a future version. Run `buf mod update` to update dependency digests.
 
 ## [v1.27.2] - 2023-10-27
 
@@ -973,7 +999,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.27.2...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.1...HEAD
+[v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
+[v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2
 [v1.27.1]: https://github.com/bufbuild/buf/compare/v1.27.0...v1.27.1
 [v1.27.0]: https://github.com/bufbuild/buf/compare/v1.26.1...v1.27.0

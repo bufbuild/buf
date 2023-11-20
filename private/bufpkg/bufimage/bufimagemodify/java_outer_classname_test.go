@@ -47,7 +47,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -67,7 +67,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -91,7 +91,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -111,7 +111,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -135,7 +135,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -163,7 +163,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -182,7 +182,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "AProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -206,7 +206,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -225,7 +225,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -249,7 +249,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assert.Equal(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
@@ -276,7 +276,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, stringutil.ToPascalCase(normalpath.Base(imageFile.Path())), descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
@@ -295,7 +295,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, stringutil.ToPascalCase(normalpath.Base(imageFile.Path())), descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -318,7 +318,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 				continue
@@ -341,7 +341,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
 				continue
@@ -371,7 +371,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.Equal(t, javaOuterClassnameValue(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
 				continue
@@ -395,7 +395,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				assert.Equal(t, javaOuterClassnameValue(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
 				continue

@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufref
+package dagtest
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -37,8 +37,16 @@ message RepositoryTag {
 
 // RepositoryTagService is the Repository tag service.
 service RepositoryTagService {
+  // GetRepositoryTag gets an existing repository tag.
+  rpc GetRepositoryTag(GetRepositoryTagRequest) returns (GetRepositoryTagResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
   // CreateRepositoryTag creates a new repository tag.
   rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+  // UpdateRepositoryTag update an existing repository tag.
+  rpc UpdateRepositoryTag(UpdateRepositoryTagRequest) returns (UpdateRepositoryTagResponse) {
     option idempotency_level = IDEMPOTENT;
   }
   // ListRepositoryTags lists the repository tags associated with a Repository.
@@ -52,6 +60,17 @@ service RepositoryTagService {
   }
 }
 
+message GetRepositoryTagRequest {
+  // The ID of the repository this tag belongs to.
+  string repository_id = 1;
+  // The name of the repository tag to get, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+  string name = 2;
+}
+
+message GetRepositoryTagResponse {
+  RepositoryTag repository_tag = 1;
+}
+
 message CreateRepositoryTagRequest {
   // The ID of the repository this tag should be created on.
   string repository_id = 1;
@@ -62,6 +81,19 @@ message CreateRepositoryTagRequest {
 }
 
 message CreateRepositoryTagResponse {
+  RepositoryTag repository_tag = 1;
+}
+
+message UpdateRepositoryTagRequest {
+  // The ID of the repository this tag belongs to.
+  string repository_id = 1;
+  // The name of the repository tag, to update e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+  string name = 2;
+  // The name of the commit this tag should reference.
+  optional string commit_name = 3;
+}
+
+message UpdateRepositoryTagResponse {
   RepositoryTag repository_tag = 1;
 }
 

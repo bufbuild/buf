@@ -467,11 +467,11 @@ type Method interface {
 // InputFile is an input file for NewFile.
 type InputFile interface {
 	FileInfo
-	// FileDescriptor is the backing FileDescriptor for this File.
+	// FileDescriptorProto is the backing FileDescriptorProto for this File.
 	//
 	// This will never be nil.
-	// The value Path() is equal to FileDescriptor().GetName() .
-	FileDescriptor() protodescriptor.FileDescriptor
+	// The value Path() is equal to FileDescriptorProto().GetName() .
+	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
 	IsSyntaxUnspecified() bool
 	// UnusedDependencyIndexes returns the indexes of the unused dependencies within

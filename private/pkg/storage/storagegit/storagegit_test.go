@@ -27,6 +27,18 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 
 	repo := gittest.ScaffoldGitRepository(t)
 	provider := NewProvider(repo.Objects())
+	repo.Commit(t, "first commit", map[string]string{
+		"randomBinary":                       "some executable",
+		"proto/buf.yaml":                     "some buf.yaml",
+		"proto/acme/petstore/v1/a.proto":     "cats",
+		"proto/acme/petstore/v1/b.proto":     "animals",
+		"proto/acme/petstore/v1/e.proto":     "loblaws",
+		"proto/acme/petstore/v1/f.proto":     "merchant of venice",
+		"proto/acme/grocerystore/v1/c.proto": "toysrus",
+		"proto/acme/grocerystore/v1/d.proto": "petsrus",
+		"proto/acme/grocerystore/v1/g.proto": "hamlet",
+		"proto/acme/grocerystore/v1/h.proto": "bethoven",
+	}, gittest.CommitWithExecutableFile("randomBinary"))
 	headCommit, err := repo.HEADCommit()
 	require.NoError(t, err)
 	require.NotNil(t, headCommit)
@@ -37,6 +49,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		t,
 		bucket,
 		"",
+		"README.md",
 		"proto/acme/grocerystore/v1/c.proto",
 		"proto/acme/grocerystore/v1/d.proto",
 		"proto/acme/grocerystore/v1/g.proto",
@@ -60,6 +73,7 @@ func TestNewBucketAtTreeHash(t *testing.T) {
 		bucket,
 		"",
 		map[string]string{
+			"README.md":                          "This is a scaffold repository.\n",
 			"proto/acme/grocerystore/v1/c.proto": "toysrus",
 			"proto/acme/grocerystore/v1/d.proto": "petsrus",
 			"proto/acme/grocerystore/v1/g.proto": "hamlet",

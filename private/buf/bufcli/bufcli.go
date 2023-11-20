@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.27.3-dev"
+	Version = "1.28.2-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -491,7 +491,7 @@ func NewWireImageReader(
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		newFetchImageReader(logger, storageosProvider, runner),
+		newFetchMessageReader(logger, storageosProvider, runner),
 	)
 }
 
@@ -510,9 +510,12 @@ func NewWireImageWriter(
 // NewWireProtoEncodingReader returns a new ProtoEncodingReader.
 func NewWireProtoEncodingReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) bufwire.ProtoEncodingReader {
 	return bufwire.NewProtoEncodingReader(
 		logger,
+		newFetchMessageReader(logger, storageosProvider, runner),
 	)
 }
 
@@ -522,6 +525,9 @@ func NewWireProtoEncodingWriter(
 ) bufwire.ProtoEncodingWriter {
 	return bufwire.NewProtoEncodingWriter(
 		logger,
+		buffetch.NewWriter(
+			logger,
+		),
 	)
 }
 
@@ -546,9 +552,12 @@ func newModuleReaderAndCreateCacheDirs(
 		return nil, err
 	}
 	delegateReader := bufapimodule.NewModuleReader(
+		container.Logger(),
 		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
+		bufapimodule.ModuleReaderWithDeprecationWarning(
+			bufapimodule.NewRepositoryServiceClientFactory(clientConfig),
+		),
 	)
-	repositoryClientFactory := bufmodulecache.NewRepositoryServiceClientFactory(clientConfig)
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var moduleReader bufmodule.ModuleReader
 	casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
@@ -560,7 +569,6 @@ func newModuleReaderAndCreateCacheDirs(
 		container.VerbosePrinter(),
 		casModuleBucket,
 		delegateReader,
-		repositoryClientFactory,
 	)
 	return moduleReader, nil
 }
@@ -1016,14 +1024,14 @@ func newFetchSourceReader(
 	)
 }
 
-// newFetchImageReader creates a new buffetch.ImageReader with the default HTTP client
+// newFetchMessageReader creates a new buffetch.MessageReader with the default HTTP client
 // and git cloner.
-func newFetchImageReader(
+func newFetchMessageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-) buffetch.ImageReader {
-	return buffetch.NewImageReader(
+) buffetch.MessageReader {
+	return buffetch.NewMessageReader(
 		logger,
 		storageosProvider,
 		defaultHTTPClient,

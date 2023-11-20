@@ -74,7 +74,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 	})
 
@@ -91,7 +91,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(image.Files()))
-		descriptor := image.Files()[0].Proto()
+		descriptor := image.Files()[0].FileDescriptorProto()
 		assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 	})
 }
@@ -115,7 +115,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
@@ -135,7 +135,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
@@ -157,7 +157,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
@@ -181,7 +181,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "a.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
@@ -219,7 +219,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
@@ -240,7 +240,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
@@ -263,7 +263,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
@@ -288,7 +288,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
@@ -318,7 +318,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
@@ -344,7 +344,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
+			descriptor := imageFile.FileDescriptorProto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
 				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())

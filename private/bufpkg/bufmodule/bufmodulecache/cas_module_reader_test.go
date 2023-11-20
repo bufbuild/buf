@@ -21,12 +21,9 @@ import (
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -66,9 +63,12 @@ func TestCASModuleReaderHappyPath(t *testing.T) {
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
 
-	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
-		return &testRepositoryServiceClient{}
-	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
+	moduleReader := newCASModuleReader(
+		storageBucket,
+		&testModuleReader{module: testModule},
+		zaptest.NewLogger(t),
+		&testVerbosePrinter{t: t},
+	)
 	pin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"test",
@@ -99,9 +99,12 @@ func TestCASModuleReaderNoDigest(t *testing.T) {
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
-		return &testRepositoryServiceClient{}
-	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
+	moduleReader := newCASModuleReader(
+		storageBucket,
+		&testModuleReader{module: testModule},
+		zaptest.NewLogger(t),
+		&testVerbosePrinter{t: t},
+	)
 	pin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"test",
@@ -125,9 +128,12 @@ func TestCASModuleReaderDigestMismatch(t *testing.T) {
 	storageProvider := storageos.NewProvider()
 	storageBucket, err := storageProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	moduleReader := newCASModuleReader(storageBucket, &testModuleReader{module: testModule}, func(_ string) registryv1alpha1connect.RepositoryServiceClient {
-		return &testRepositoryServiceClient{}
-	}, zaptest.NewLogger(t), &testVerbosePrinter{t: t})
+	moduleReader := newCASModuleReader(
+		storageBucket,
+		&testModuleReader{module: testModule},
+		zaptest.NewLogger(t),
+		&testVerbosePrinter{t: t},
+	)
 	pin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"test",
@@ -228,21 +234,6 @@ var _ bufmodule.ModuleReader = (*testModuleReader)(nil)
 
 func (t *testModuleReader) GetModule(_ context.Context, _ bufmoduleref.ModulePin) (bufmodule.Module, error) {
 	return t.module, nil
-}
-
-type testRepositoryServiceClient struct {
-	registryv1alpha1connect.UnimplementedRepositoryServiceHandler
-}
-
-var _ registryv1alpha1connect.RepositoryServiceClient = (*testRepositoryServiceClient)(nil)
-
-func (t *testRepositoryServiceClient) GetRepositoryByFullName(
-	_ context.Context,
-	_ *connect.Request[registryv1alpha1.GetRepositoryByFullNameRequest],
-) (*connect.Response[registryv1alpha1.GetRepositoryByFullNameResponse], error) {
-	return connect.NewResponse(&registryv1alpha1.GetRepositoryByFullNameResponse{
-		Repository: &registryv1alpha1.Repository{},
-	}), nil
 }
 
 type testVerbosePrinter struct {

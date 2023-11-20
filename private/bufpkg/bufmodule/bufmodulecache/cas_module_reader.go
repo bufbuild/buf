@@ -29,10 +29,9 @@ import (
 
 type casModuleReader struct {
 	// required parameters
-	delegate                bufmodule.ModuleReader
-	repositoryClientFactory RepositoryServiceClientFactory
-	logger                  *zap.Logger
-	verbosePrinter          verbose.Printer
+	delegate       bufmodule.ModuleReader
+	logger         *zap.Logger
+	verbosePrinter verbose.Printer
 	// initialized in newCASModuleReader
 	cache *casModuleCacher
 	stats *cacheStats
@@ -43,15 +42,13 @@ var _ bufmodule.ModuleReader = (*casModuleReader)(nil)
 func newCASModuleReader(
 	bucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	repositoryClientFactory RepositoryServiceClientFactory,
 	logger *zap.Logger,
 	verbosePrinter verbose.Printer,
 ) *casModuleReader {
 	return &casModuleReader{
-		delegate:                delegate,
-		repositoryClientFactory: repositoryClientFactory,
-		logger:                  logger,
-		verbosePrinter:          verbosePrinter,
+		delegate:       delegate,
+		logger:         logger,
+		verbosePrinter: verbosePrinter,
 		cache: &casModuleCacher{
 			logger: logger,
 			bucket: bucket,
@@ -100,9 +97,6 @@ func (c *casModuleReader) GetModule(
 		}
 	}
 	if err := c.cache.PutModule(ctx, modulePin, remoteModule); err != nil {
-		return nil, err
-	}
-	if err := warnIfDeprecated(ctx, c.repositoryClientFactory, modulePin, c.logger); err != nil {
 		return nil, err
 	}
 	return remoteModule, nil

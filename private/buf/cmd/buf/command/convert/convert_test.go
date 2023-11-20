@@ -74,6 +74,23 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
+	t.Run("default-input-txtpb", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			`one: "55"`,
+			nil,
+			nil,
+			"--type",
+			"buf.Foo",
+			"--from",
+			"testdata/convert/bin_json/payload.txtpb",
+			"--to",
+			"-#format=yaml",
+		)
+	})
 	t.Run("from-stdin-bin", func(t *testing.T) {
 		t.Parallel()
 		appcmdtesting.RunCommandExitCodeStdoutStdinFile(
@@ -106,7 +123,7 @@ func TestConvertDir(t *testing.T) {
 			"-#format=binpb",
 		)
 	})
-	t.Run("from-stdin-txtpb", func(t *testing.T) {
+	t.Run("from-stdin-txtpb-json", func(t *testing.T) {
 		t.Parallel()
 		appcmdtesting.RunCommandExitCodeStdoutStdinFile(
 			t,
@@ -122,6 +139,24 @@ func TestConvertDir(t *testing.T) {
 			"-#format=txtpb",
 			"--to",
 			"-#format=json",
+		)
+	})
+	t.Run("from-stdin-txtpb-yaml", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdoutStdinFile(
+			t,
+			cmd,
+			0,
+			`one: "55"`,
+			nil,
+			"testdata/convert/bin_json/payload.txtpb",
+
+			"--type",
+			"buf.Foo",
+			"--from",
+			"-#format=txtpb",
+			"--to",
+			"-#format=yaml",
 		)
 	})
 	t.Run("discarded-stdin", func(t *testing.T) {
@@ -186,6 +221,23 @@ func TestConvertDir(t *testing.T) {
 			"-#format=json",
 		)
 	})
+	t.Run("wellknowntype-txtpb", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdout(
+			t,
+			cmd,
+			0,
+			`3600s`,
+			nil,
+			nil,
+			"--type",
+			"google.protobuf.Duration",
+			"--from",
+			"testdata/convert/bin_json/duration.txtpb",
+			"--to",
+			"-#format=yaml",
+		)
+	})
 	t.Run("wellknowntype-format-bin", func(t *testing.T) {
 		t.Parallel()
 		appcmdtesting.RunCommandExitCodeStdoutFile(
@@ -201,6 +253,21 @@ func TestConvertDir(t *testing.T) {
 			"-#format=bin",
 		)
 	})
+	t.Run("wellknowntype-format-bin", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdoutFile(
+			t,
+			cmd,
+			0,
+			"testdata/convert/bin_json/duration.bin",
+			nil,
+			nil,
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.yaml",
+			"--to",
+			"-#format=bin",
+		)
+	})
 	t.Run("wellknowntype-format-binpb", func(t *testing.T) {
 		t.Parallel()
 		appcmdtesting.RunCommandExitCodeStdoutFile(
@@ -212,6 +279,21 @@ func TestConvertDir(t *testing.T) {
 			nil,
 			"--type=google.protobuf.Duration",
 			"--from=testdata/convert/bin_json/duration.json",
+			"--to",
+			"-#format=binpb",
+		)
+	})
+	t.Run("wellknowntype-format-binpb", func(t *testing.T) {
+		t.Parallel()
+		appcmdtesting.RunCommandExitCodeStdoutFile(
+			t,
+			cmd,
+			0,
+			"testdata/convert/bin_json/duration.binpb",
+			nil,
+			nil,
+			"--type=google.protobuf.Duration",
+			"--from=testdata/convert/bin_json/duration.yaml",
 			"--to",
 			"-#format=binpb",
 		)

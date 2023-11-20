@@ -20,28 +20,19 @@ import (
 	"fmt"
 	"strings"
 
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -195,11 +186,7 @@ func sync(
 		return fmt.Errorf("create connect client %w", err)
 	}
 	syncerOptions := []bufsync.SyncerOption{
-		bufsync.SyncerWithRemote(remoteName),
-		bufsync.SyncerWithResumption(syncPointResolver(clientConfig)),
-		bufsync.SyncerWithGitCommitChecker(syncGitCommitChecker(clientConfig)),
-		bufsync.SyncerWithModuleDefaultBranchGetter(defaultBranchGetter(clientConfig)),
-		bufsync.SyncerWithTagsBackfiller(tagsBackfiller(clientConfig)),
+		bufsync.SyncerWithGitRemote(remoteName),
 	}
 	if allBranches {
 		syncerOptions = append(syncerOptions, bufsync.SyncerWithAllBranches())
@@ -232,344 +219,17 @@ func sync(
 		container.Logger(),
 		repo,
 		storageProvider,
-		newErrorHandler(container.Logger(), modulesDirsWithOverrides),
+		newSyncHandler(
+			container.Logger(),
+			clientConfig,
+			container,
+			repo,
+			createWithVisibility,
+		),
 		syncerOptions...,
 	)
 	if err != nil {
 		return fmt.Errorf("new syncer: %w", err)
 	}
-	return syncer.Sync(ctx, func(ctx context.Context, moduleCommit bufsync.ModuleCommit) error {
-		syncPoint, err := pushOrCreate(
-			ctx,
-			clientConfig,
-			repo,
-			moduleCommit.Commit(),
-			moduleCommit.Branch(),
-			moduleCommit.Tags(),
-			moduleCommit.Identity(),
-			moduleCommit.Bucket(),
-			createWithVisibility,
-		)
-		if err != nil {
-			// We failed to push. We fail hard on this because the error may be recoverable
-			// (i.e., the BSR may be down) and we should re-attempt this commit.
-			return fmt.Errorf(
-				"failed to push or create %s at %s: %w",
-				moduleCommit.Identity().IdentityString(),
-				moduleCommit.Commit().Hash(),
-				err,
-			)
-		}
-		_, err = container.Stderr().Write([]byte(
-			// from local                                        -> to remote
-			// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
-			fmt.Sprintf(
-				"%s:%s:%s -> %s:%s\n",
-				moduleCommit.Directory(), moduleCommit.Branch(), moduleCommit.Commit().Hash().Hex(),
-				moduleCommit.Identity().IdentityString(), syncPoint.BsrCommitName,
-			)),
-		)
-		return err
-	})
-}
-
-func syncPointResolver(clientConfig *connectclient.Config) bufsync.SyncPointResolver {
-	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, branch string) (git.Hash, error) {
-		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
-		syncPoint, err := service.GetGitSyncPoint(ctx, connect.NewRequest(&registryv1alpha1.GetGitSyncPointRequest{
-			Owner:      module.Owner(),
-			Repository: module.Repository(),
-			Branch:     branch,
-		}))
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				// No syncpoint
-				return nil, nil
-			}
-			return nil, fmt.Errorf("get git sync point: %w", err)
-		}
-		hash, err := git.NewHashFromHex(syncPoint.Msg.GetSyncPoint().GitCommitHash)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"invalid sync point from BSR %q: %w",
-				syncPoint.Msg.GetSyncPoint().GetGitCommitHash(),
-				err,
-			)
-		}
-		return hash, nil
-	}
-}
-
-func syncGitCommitChecker(clientConfig *connectclient.Config) bufsync.SyncedGitCommitChecker {
-	return func(ctx context.Context, module bufmoduleref.ModuleIdentity, commitHashes map[string]struct{}) (map[string]struct{}, error) {
-		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewLabelServiceClient)
-		res, err := service.GetLabelsInNamespace(ctx, connect.NewRequest(&registryv1alpha1.GetLabelsInNamespaceRequest{
-			RepositoryOwner: module.Owner(),
-			RepositoryName:  module.Repository(),
-			LabelNamespace:  registryv1alpha1.LabelNamespace_LABEL_NAMESPACE_GIT_COMMIT,
-			LabelNames:      stringutil.MapToSlice(commitHashes),
-		}))
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				// Repo is not created
-				return nil, nil
-			}
-			return nil, fmt.Errorf("get labels in namespace: %w", err)
-		}
-		syncedHashes := make(map[string]struct{})
-		for _, label := range res.Msg.Labels {
-			syncedHash := label.LabelName.Name
-			if _, expected := commitHashes[syncedHash]; !expected {
-				return nil, fmt.Errorf("received unexpected synced hash %q, expected %v", syncedHash, commitHashes)
-			}
-			syncedHashes[syncedHash] = struct{}{}
-		}
-		return syncedHashes, nil
-	}
-}
-
-func defaultBranchGetter(clientConfig *connectclient.Config) bufsync.ModuleDefaultBranchGetter {
-	return func(ctx context.Context, module bufmoduleref.ModuleIdentity) (string, error) {
-		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
-		res, err := service.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: module.Owner() + "/" + module.Repository(),
-		}))
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				// Repo is not created
-				return "", bufsync.ErrModuleDoesNotExist
-			}
-			return "", fmt.Errorf("get repository by full name %q: %w", module.IdentityString(), err)
-		}
-		return res.Msg.Repository.DefaultBranch, nil
-	}
-}
-
-func tagsBackfiller(clientConfig *connectclient.Config) bufsync.TagsBackfiller {
-	return func(
-		ctx context.Context,
-		module bufmoduleref.ModuleIdentity,
-		alreadySyncedHash git.Hash,
-		author git.Ident,
-		committer git.Ident,
-		tags []string,
-	) (string, error) {
-		service := connectclient.Make(clientConfig, module.Remote(), registryv1alpha1connect.NewSyncServiceClient)
-		res, err := service.AttachGitTags(ctx, connect.NewRequest(&registryv1alpha1.AttachGitTagsRequest{
-			Owner:      module.Owner(),
-			Repository: module.Repository(),
-			Hash:       alreadySyncedHash.Hex(),
-			Author: &registryv1alpha1.GitIdentity{
-				Name:  author.Name(),
-				Email: author.Email(),
-				Time:  timestamppb.New(author.Timestamp()),
-			},
-			Committer: &registryv1alpha1.GitIdentity{
-				Name:  committer.Name(),
-				Email: committer.Email(),
-				Time:  timestamppb.New(committer.Timestamp()),
-			},
-			Tags: tags,
-		}))
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				// Repo is not created
-				return "", bufsync.ErrModuleDoesNotExist
-			}
-			return "", fmt.Errorf("attach git tags to module %q: %w", module.IdentityString(), err)
-		}
-		return res.Msg.GetBsrCommitName(), nil
-	}
-}
-
-type syncErrorHandler struct {
-	logger                          *zap.Logger
-	modulesDirsWithIdentityOverride map[string]struct{}
-}
-
-func newErrorHandler(
-	logger *zap.Logger,
-	modulesDirsWithIdentityOverride map[string]struct{},
-) bufsync.ErrorHandler {
-	return &syncErrorHandler{
-		logger:                          logger,
-		modulesDirsWithIdentityOverride: modulesDirsWithIdentityOverride,
-	}
-}
-
-func (h *syncErrorHandler) HandleReadModuleError(err *bufsync.ReadModuleError) bufsync.LookbackDecisionCode {
-	switch err.Code() {
-	case bufsync.ReadModuleErrorCodeModuleNotFound,
-		bufsync.ReadModuleErrorCodeInvalidModuleConfig,
-		bufsync.ReadModuleErrorCodeBuildModule:
-		// if the module cannot be found, has an invalid config, or cannot build, we can just skip the
-		// commit.
-		return bufsync.LookbackDecisionCodeSkip
-	case bufsync.ReadModuleErrorCodeUnnamedModule,
-		bufsync.ReadModuleErrorCodeUnexpectedName:
-		// if the module has an unexpected or no name, we should override the module identity only if it
-		// was passed explicitly as an identity override, otherwise skip the commit.
-		if _, hasExplicitOverride := h.modulesDirsWithIdentityOverride[err.ModuleDir()]; hasExplicitOverride {
-			return bufsync.LookbackDecisionCodeOverride
-		}
-		return bufsync.LookbackDecisionCodeSkip
-	}
-	// any unhandled scenarios? just fail the sync
-	return bufsync.LookbackDecisionCodeFail
-}
-
-func (h *syncErrorHandler) InvalidBSRSyncPoint(
-	module bufmoduleref.ModuleIdentity,
-	branch string,
-	syncPoint git.Hash,
-	isGitDefaultBranch bool,
-	err error,
-) error {
-	// The most likely culprit for an invalid sync point is a rebase, where the last known commit has
-	// been garbage collected. In this case, let's present a better error message.
-	//
-	// This is not trivial scenario if the branch that's been rebased is a long-lived branch (like
-	// main) whose artifacts are consumed by other branches, as we may fail to sync those commits if
-	// we continue.
-	//
-	// For now we simply error if this happens in the default branch, and WARN+skip for the other
-	// branches. We may want to provide a flag in the future for forcing sync to continue despite
-	// this.
-	if errors.Is(err, git.ErrObjectNotFound) {
-		if isGitDefaultBranch {
-			return fmt.Errorf(
-				"last synced git commit %q for default branch %q in module %q is not found in the git repo, did you rebase or reset your default branch?",
-				syncPoint.Hex(), branch, module.IdentityString(),
-			)
-		}
-		h.logger.Warn(
-			"last synced git commit not found in the git repo for a non-default branch",
-			zap.String("module", module.IdentityString()),
-			zap.String("branch", branch),
-			zap.String("last synced git commit", syncPoint.Hex()),
-		)
-		return nil
-	}
-	// Other error, let's abort sync.
-	return fmt.Errorf(
-		"invalid sync point %q for branch %q in module %q: %w",
-		syncPoint.Hex(), branch, module.IdentityString(), err,
-	)
-}
-
-func pushOrCreate(
-	ctx context.Context,
-	clientConfig *connectclient.Config,
-	repo git.Repository,
-	commit git.Commit,
-	branch string,
-	tags []string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	moduleBucket storage.ReadBucket,
-	createWithVisibility string,
-) (*registryv1alpha1.GitSyncPoint, error) {
-	modulePin, err := push(
-		ctx,
-		clientConfig,
-		repo,
-		commit,
-		branch,
-		tags,
-		moduleIdentity,
-		moduleBucket,
-	)
-	if err != nil {
-		// We rely on Push* returning a NotFound error to denote the repository is not created.
-		// This technically could be a NotFound error for some other entity than the repository
-		// in question, however if it is, then this Create call will just fail as the repository
-		// is already created, and there is no side effect. The 99% case is that a NotFound
-		// error is because the repository does not exist, and we want to avoid having to do
-		// a GetRepository RPC call for every call to push --create.
-		if createWithVisibility != "" && connect.CodeOf(err) == connect.CodeNotFound {
-			if err := create(ctx, clientConfig, moduleIdentity, createWithVisibility); err != nil {
-				return nil, fmt.Errorf("create repo: %w", err)
-			}
-			return push(
-				ctx,
-				clientConfig,
-				repo,
-				commit,
-				branch,
-				tags,
-				moduleIdentity,
-				moduleBucket,
-			)
-		}
-		return nil, fmt.Errorf("push: %w", err)
-	}
-	return modulePin, nil
-}
-
-func push(
-	ctx context.Context,
-	clientConfig *connectclient.Config,
-	repo git.Repository,
-	commit git.Commit,
-	branch string,
-	tags []string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	moduleBucket storage.ReadBucket,
-) (*registryv1alpha1.GitSyncPoint, error) {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewSyncServiceClient)
-	fileSet, err := bufcas.NewFileSetForBucket(ctx, moduleBucket)
-	if err != nil {
-		return nil, err
-	}
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
-		Owner:      moduleIdentity.Owner(),
-		Repository: moduleIdentity.Repository(),
-		Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
-		Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
-		Hash:       commit.Hash().Hex(),
-		Branch:     branch,
-		Tags:       tags,
-		Author: &registryv1alpha1.GitIdentity{
-			Name:  commit.Author().Name(),
-			Email: commit.Author().Email(),
-			Time:  timestamppb.New(commit.Author().Timestamp()),
-		},
-		Committer: &registryv1alpha1.GitIdentity{
-			Name:  commit.Committer().Name(),
-			Email: commit.Committer().Email(),
-			Time:  timestamppb.New(commit.Committer().Timestamp()),
-		},
-	}))
-	if err != nil {
-		return nil, err
-	}
-	return resp.Msg.SyncPoint, nil
-}
-
-func create(
-	ctx context.Context,
-	clientConfig *connectclient.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	visibility string,
-) error {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
-	visiblity, err := bufcli.VisibilityFlagToVisibility(visibility)
-	if err != nil {
-		return err
-	}
-	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
-	_, err = service.CreateRepositoryByFullName(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   fullName,
-			Visibility: visiblity,
-		}),
-	)
-	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("expected repository %s to be missing but found the repository to already exist", fullName))
-	}
-	return err
+	return syncer.Sync(ctx)
 }

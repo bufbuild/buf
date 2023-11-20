@@ -31,19 +31,11 @@ import (
 type ImageFile interface {
 	bufmoduleref.FileInfo
 
-	// Proto is the backing *descriptorpb.FileDescriptorProto for this File.
-	//
-	// FileDescriptor should be preferred to Proto. We keep this method around
-	// because we have code that does modification to the ImageFile via this.
+	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// This will never be nil.
-	// The value Path() is equal to Proto.GetName() .
-	Proto() *descriptorpb.FileDescriptorProto
-	// FileDescriptor is the backing FileDescriptor for this File.
-	//
-	// This will never be nil.
-	// The value Path() is equal to FileDescriptor.GetName() .
-	FileDescriptor() protodescriptor.FileDescriptor
+	// The value Path() is equal to FileDescriptorProto().GetName() .
+	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
@@ -54,12 +46,6 @@ type ImageFile interface {
 	// All indexes will be valid.
 	// Will return nil if empty.
 	UnusedDependencyIndexes() []int32
-	// ImageFileWithIsImport returns a copy of the ImageFile with the new ImageFile
-	// now marked as an import.
-	//
-	// If the original ImageFile was already an import, this returns
-	// the original ImageFile.
-	ImageFileWithIsImport(isImport bool) ImageFile
 
 	isImageFile()
 }
@@ -86,6 +72,25 @@ func NewImageFile(
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
+	)
+}
+
+// ImageFileWithIsImport returns a copy of the ImageFile with the new ImageFile
+// now marked as an import.
+//
+// If the original ImageFile was already an import, this returns
+// the original ImageFile.
+func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
+	if imageFile.IsImport() == isImport {
+		return imageFile
+	}
+	// No need to validate as ImageFile is already validated.
+	return newImageFileNoValidate(
+		imageFile.FileDescriptorProto(),
+		imageFile,
+		isImport,
+		imageFile.IsSyntaxUnspecified(),
+		imageFile.UnusedDependencyIndexes(),
 	)
 }
 
@@ -376,12 +381,7 @@ func ImageToProtoImage(image Image) *imagev1.Image {
 
 // ImageToFileDescriptorSet returns a new FileDescriptorSet for the Image.
 func ImageToFileDescriptorSet(image Image) *descriptorpb.FileDescriptorSet {
-	return protodescriptor.FileDescriptorSetForFileDescriptors(ImageToFileDescriptors(image)...)
-}
-
-// ImageToFileDescriptors returns the FileDescriptors for the Image.
-func ImageToFileDescriptors(image Image) []protodescriptor.FileDescriptor {
-	return imageFilesToFileDescriptors(image.Files())
+	return protodescriptor.FileDescriptorSetForFileDescriptors(ImageToFileDescriptorProtos(image)...)
 }
 
 // ImageToFileDescriptorProtos returns the FileDescriptorProtos for the Image.
@@ -473,12 +473,7 @@ func ImagesToCodeGeneratorRequests(
 	return requests
 }
 
-// ProtoImageToFileDescriptors returns the FileDescriptors for the proto Image.
-func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.FileDescriptor {
-	return protoImageFilesToFileDescriptors(protoImage.File)
-}
-
-// ImageDependency is a dependency of an image.
+// ImageModuleDependency is a dependency of an image.
 //
 // This could conceivably be part of ImageFile or bufmoduleref.FileInfo.
 // For ImageFile, this would be a field that is ignored when translated to proto,
@@ -528,16 +523,16 @@ type ImageModuleDependency interface {
 	isImageModuleDependency()
 }
 
-// ImageModuleDependency returns all ImageModuleDependencies for the Image.
+// ImageModuleDependencies returns all ImageModuleDependency values for the Image.
 //
-// Does not return any ImageModuleDependencies for non-imports, that is the
+// Does not return any ImageModuleDependency values for non-imports, that is the
 // ModuleIdentities and commits represented by non-imports are not represented
 // in this list.
 func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
-			for _, dependency := range imageFile.FileDescriptor().GetDependency() {
+			for _, dependency := range imageFile.FileDescriptorProto().GetDependency() {
 				importsOfNonImports[dependency] = struct{}{}
 			}
 		}
@@ -578,11 +573,7 @@ type newImageForProtoOptions struct {
 func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) error {
 	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver := protoencoding.NewLazyResolver(
-		ProtoImageToFileDescriptors(
-			protoImage,
-		)...,
-	)
+	resolver := protoencoding.NewLazyResolver(protoImage.File...)
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
 		return fmt.Errorf("could not reparse image: %v", err)
 	}

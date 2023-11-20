@@ -26,6 +26,7 @@ type jsonMarshaler struct {
 	resolver        Resolver
 	indent          string
 	useProtoNames   bool
+	useEnumNumbers  bool
 	emitUnpopulated bool
 }
 
@@ -46,6 +47,7 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	options := protojson.MarshalOptions{
 		Resolver:        m.resolver,
 		UseProtoNames:   m.useProtoNames,
+		UseEnumNumbers:  m.useEnumNumbers,
 		EmitUnpopulated: m.emitUnpopulated,
 	}
 	data, err := options.Marshal(message)

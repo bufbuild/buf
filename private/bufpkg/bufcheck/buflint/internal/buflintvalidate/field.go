@@ -178,7 +178,9 @@ func checkConstraintsForField(
 	if fieldDescriptor.IsExtension() {
 		checkConstraintsForExtension(adder, fieldConstraints)
 	}
-	if fieldDescriptor.ContainingOneof() != nil && fieldConstraints.GetRequired() {
+	if fieldDescriptor.ContainingOneof() != nil &&
+		!protodesc.ToFieldDescriptorProto(fieldDescriptor).GetProto3Optional() &&
+		fieldConstraints.GetRequired() {
 		adder.addForPathf(
 			[]int32{requiredFieldNumber},
 			"Field %q has %s but is in a oneof (%s). Oneof fields must not have %s.",
@@ -511,19 +513,6 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 				adder.getFieldRuleName(stringRulesFieldNumber, substringFieldNumber),
 				substring,
 				*stringRules.NotContains,
-				substring,
-				*stringRules.NotContains,
-			)
-		}
-		if stringRules.NotContains != nil && strings.Contains(*stringRules.NotContains, substring) {
-			adder.addForPathf(
-				[]int32{stringRulesFieldNumber, substringFieldNumber},
-				"Field %q has a %s (%q) containing its %s (%q). It is impossible for a string to contain %q without containing %q.",
-				adder.fieldName(),
-				adder.getFieldRuleName(stringRulesFieldNumber, notContainsFieldNumberInStringRules),
-				*stringRules.NotContains,
-				substringField.name,
-				substring,
 				substring,
 				*stringRules.NotContains,
 			)

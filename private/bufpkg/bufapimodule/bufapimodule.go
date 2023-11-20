@@ -25,6 +25,7 @@ import (
 type DownloadServiceClientFactory func(address string) registryv1alpha1connect.DownloadServiceClient
 type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1connect.RepositoryCommitServiceClient
 type ResolveServiceClientFactory func(address string) registryv1alpha1connect.ResolveServiceClient
+type RepositoryServiceClientFactory func(address string) registryv1alpha1connect.RepositoryServiceClient
 
 func NewDownloadServiceClientFactory(clientConfig *connectclient.Config) DownloadServiceClientFactory {
 	return func(address string) registryv1alpha1connect.DownloadServiceClient {
@@ -44,12 +45,20 @@ func NewResolveServiceClientFactory(clientConfig *connectclient.Config) ResolveS
 	}
 }
 
+func NewRepositoryServiceClientFactory(clientConfig *connectclient.Config) RepositoryServiceClientFactory {
+	return func(address string) registryv1alpha1connect.RepositoryServiceClient {
+		return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
+	}
+}
+
 // NewModuleReader returns a new ModuleReader backed by the download service.
 func NewModuleReader(
+	logger *zap.Logger,
 	downloadClientFactory DownloadServiceClientFactory,
 	opts ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
+		logger,
 		downloadClientFactory,
 		opts...,
 	)
@@ -57,6 +66,16 @@ func NewModuleReader(
 
 // ModuleReaderOption allows configuration of a module reader.
 type ModuleReaderOption func(reader *moduleReader)
+
+// ModuleReaderWithDeprecationWarning makes the module reader print a warning
+// when reading a deprecated module.
+func ModuleReaderWithDeprecationWarning(
+	repositoryClientFactory RepositoryServiceClientFactory,
+) ModuleReaderOption {
+	return func(reader *moduleReader) {
+		reader.repositoryClientFactory = repositoryClientFactory
+	}
+}
 
 // NewModuleResolver returns a new ModuleResolver backed by the resolve service.
 func NewModuleResolver(

@@ -16,6 +16,7 @@ package protoencoding
 
 import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -35,7 +36,7 @@ type Resolver interface {
 // If the input slice is empty, this returns nil
 // The given FileDescriptors must be self-contained, that is they must contain all imports.
 // This can NOT be guaranteed for FileDescriptorSets given over the wire, and can only be guaranteed from builds.
-func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+func NewResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	return newResolver(fileDescriptors...)
 }
 
@@ -44,10 +45,17 @@ func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, e
 //
 // If there is an error when constructing the resolver, it will be returned by all
 // method calls of the returned resolver.
-func NewLazyResolver(fileDescriptors ...protodescriptor.FileDescriptor) Resolver {
+func NewLazyResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) Resolver {
 	return &lazyResolver{fn: func() (Resolver, error) {
 		return newResolver(fileDescriptors...)
 	}}
+}
+
+// CombineResolvers returns a resolver that uses all of the given resolvers. It
+// will use the first resolver, and if it returns an error, the second will be
+// tried, and so on.
+func CombineResolvers(resolvers ...Resolver) Resolver {
+	return combinedResolver(resolvers)
 }
 
 // Marshaler marshals Messages.
@@ -66,7 +74,7 @@ func NewWireMarshaler() Marshaler {
 // NewJSONMarshaler returns a new Marshaler for JSON.
 //
 // This has the potential to be unstable over time.
-// resolver can be nil if unknown and are only needed for extensions.
+// resolver can be nil if unknown and is only needed for extensions.
 func NewJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
 	return newJSONMarshaler(resolver, options...)
 }
@@ -81,10 +89,17 @@ func JSONMarshalerWithIndent() JSONMarshalerOption {
 	}
 }
 
-// JSONMarshalerWithUseProtoNames says to use an use proto names.
+// JSONMarshalerWithUseProtoNames says to use proto names.
 func JSONMarshalerWithUseProtoNames() JSONMarshalerOption {
 	return func(jsonMarshaler *jsonMarshaler) {
 		jsonMarshaler.useProtoNames = true
+	}
+}
+
+// JSONMarshalerWithUseEnumNumbers says to use enum numbers.
+func JSONMarshalerWithUseEnumNumbers() JSONMarshalerOption {
+	return func(jsonMarshaler *jsonMarshaler) {
+		jsonMarshaler.useEnumNumbers = true
 	}
 }
 
@@ -97,9 +112,47 @@ func JSONMarshalerWithEmitUnpopulated() JSONMarshalerOption {
 
 // NewTxtpbMarshaler returns a new Marshaler for txtpb.
 //
-// resolver can be nil if unknown and are only needed for extensions.
+// resolver can be nil if unknown and is only needed for extensions.
 func NewTxtpbMarshaler(resolver Resolver) Marshaler {
 	return newTxtpbMarshaler(resolver)
+}
+
+// NewYAMLMarshaler returns a new Marshaler for YAML.
+//
+// resolver can be nil if unknown and is only needed for extensions.
+func NewYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshaler {
+	return newYAMLMarshaler(resolver, options...)
+}
+
+// YAMLMarshalerOption is an option for a new YAMLMarshaler.
+type YAMLMarshalerOption func(*yamlMarshaler)
+
+// YAMLMarshalerWithIndent says to use an indent of two spaces.
+func YAMLMarshalerWithIndent() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.indent = 2
+	}
+}
+
+// YAMLMarshalerWithUseProtoNames says to use proto names.
+func YAMLMarshalerWithUseProtoNames() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.useProtoNames = true
+	}
+}
+
+// YAMLMarshalerWithUseEnumNumbers says to use enum numbers.
+func YAMLMarshalerWithUseEnumNumbers() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.useEnumNumbers = true
+	}
+}
+
+// YAMLMarshalerWithEmitUnpopulated says to emit unpopulated values
+func YAMLMarshalerWithEmitUnpopulated() YAMLMarshalerOption {
+	return func(yamlMarshaler *yamlMarshaler) {
+		yamlMarshaler.emitUnpopulated = true
+	}
 }
 
 // Unmarshaler unmarshals Messages.
@@ -117,8 +170,18 @@ func NewWireUnmarshaler(resolver Resolver) Unmarshaler {
 // NewJSONUnmarshaler returns a new Unmarshaler for json.
 //
 // resolver can be nil if unknown and are only needed for extensions.
-func NewJSONUnmarshaler(resolver Resolver) Unmarshaler {
-	return newJSONUnmarshaler(resolver)
+func NewJSONUnmarshaler(resolver Resolver, options ...JSONUnmarshalerOption) Unmarshaler {
+	return newJSONUnmarshaler(resolver, options...)
+}
+
+// JSONUnmarshalerOption is an option for a new JSONUnmarshaler.
+type JSONUnmarshalerOption func(*jsonUnmarshaler)
+
+// JSONUnmarshalerWithDisallowUnknown says to disallow unrecognized fields.
+func JSONUnmarshalerWithDisallowUnknown() JSONUnmarshalerOption {
+	return func(jsonUnmarshaler *jsonUnmarshaler) {
+		jsonUnmarshaler.disallowUnknown = true
+	}
 }
 
 // NewTxtpbUnmarshaler returns a new Unmarshaler for txtpb.
@@ -126,4 +189,27 @@ func NewJSONUnmarshaler(resolver Resolver) Unmarshaler {
 // resolver can be nil if unknown and are only needed for extensions.
 func NewTxtpbUnmarshaler(resolver Resolver) Unmarshaler {
 	return newTxtpbUnmarshaler(resolver)
+}
+
+// YAMLUnmarshalerOption is an option for a new YAMLUnmarshaler.
+type YAMLUnmarshalerOption func(*yamlUnmarshaler)
+
+// YAMLUnmarshalerWithPath says to use the given path.
+func YAMLUnmarshalerWithPath(path string) YAMLUnmarshalerOption {
+	return func(yamlUnmarshaler *yamlUnmarshaler) {
+		yamlUnmarshaler.path = path
+	}
+}
+
+func YAMLUnmarshalerWithValidator(validator protoyaml.Validator) YAMLUnmarshalerOption {
+	return func(yamlUnmarshaler *yamlUnmarshaler) {
+		yamlUnmarshaler.validator = validator
+	}
+}
+
+// NewYAMLUnmarshaler returns a new Unmarshaler for yaml.
+//
+// resolver can be nil if unknown and are only needed for extensions.
+func NewYAMLUnmarshaler(resolver Resolver, options ...YAMLUnmarshalerOption) Unmarshaler {
+	return newYAMLUnmarshaler(resolver, options...)
 }
