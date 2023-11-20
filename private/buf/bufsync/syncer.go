@@ -93,7 +93,11 @@ func (s *syncer) Plan(ctx context.Context) (ExecutionPlan, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newExecutionPlan(branchesToSync, tagsToSync), nil
+	return newExecutionPlan(
+		s.sortedModulesDirsForSync,
+		branchesToSync,
+		tagsToSync,
+	), nil
 }
 
 func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {

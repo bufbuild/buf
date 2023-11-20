@@ -25,17 +25,23 @@ type executionPlan struct {
 }
 
 func newExecutionPlan(
+	sortedModuleDirs []string,
 	moduleBranchesToSync []ModuleBranch,
 	moduleTagsToSync []ModuleTags,
 ) *executionPlan {
+	sortedModuleDirIndexes := make(map[string]int)
+	for i, dir := range sortedModuleDirs {
+		sortedModuleDirIndexes[dir] = i
+	}
 	sortedBranchesToSync := make([]ModuleBranch, len(moduleBranchesToSync))
 	copy(sortedBranchesToSync, moduleBranchesToSync)
+	// ModuleBranches are sorted by moduleDir, then branch name. We retain the order of
+	// moduleDirs passed in.
 	slices.SortFunc(sortedBranchesToSync, func(a, b ModuleBranch) int {
-		// TODO: this needs to be original order of moduleDirs
-		if a.Directory() > b.Directory() {
+		if sortedModuleDirIndexes[a.Directory()] > sortedModuleDirIndexes[b.Directory()] {
 			return 1
 		}
-		if a.Directory() < b.Directory() {
+		if sortedModuleDirIndexes[a.Directory()] < sortedModuleDirIndexes[b.Directory()] {
 			return -1
 		}
 		if a.BranchName() > b.BranchName() {
