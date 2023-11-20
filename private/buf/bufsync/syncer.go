@@ -354,7 +354,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				// identity. If it doesn't, this is still okay if the user configured an override for this
 				// moduleDir. If the identities don't match, and user didn't configure an override for this
 				// moduleDir, warn and skip the commit.
-				if identityOverride != nil && module.ModuleIdentity().IdentityString() != targetModuleIdentity.IdentityString() {
+				if identityOverride == nil && module.ModuleIdentity().IdentityString() != targetModuleIdentity.IdentityString() {
 					s.logger.Warn(
 						"mismatched module identity from HEAD of branch; skipping",
 						zap.Stringer("commit", commitToVisit),
@@ -401,9 +401,10 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 			taggedCommitsOnBranch, err := s.determineSyncedTaggedCommitsReachableFrom(
 				ctx,
 				targetModuleIdentity,
-				// Start walking back from the first commit we'll sync. There is always
-				// at least one commit to sync, so this is safe to index.
-				moduleBranch.CommitsToSync()[0].Commit().Hash(),
+				// Start walking back from the first commit we'll sync.
+				// There may not be a commit to sync, but there is always at least 1 commit
+				// to visit because there is always at least one commit on a branch.
+				commitsToVisit[0],
 				commitHashToTags,
 			)
 			if err != nil {
