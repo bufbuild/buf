@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -123,7 +123,9 @@ func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAM
 	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
 		return nil, err
 	}
-	sort.Strings(dirPaths)
+	// It's very important that we sort the directories here so that the
+	// constructed modules and/or images are in a deterministic order.
+	slices.Sort(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
 		dirPaths:    dirPaths,
@@ -209,12 +211,7 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) error {
 		}
 		directorySet[normalizedDirectory] = struct{}{}
 	}
-	// It's very important that we sort the directories here so that the
-	// constructed modules and/or images are in a deterministic order.
 	directories := slicesextended.MapToSlice(directorySet)
-	sort.Slice(directories, func(i int, j int) bool {
-		return directories[i] < directories[j]
-	})
 	if err := validateConfigurationOverlap(directories); err != nil {
 		return err
 	}
