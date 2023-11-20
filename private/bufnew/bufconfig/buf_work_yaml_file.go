@@ -53,10 +53,13 @@ type BufWorkYAMLFile interface {
 
 	// DirPaths returns all the directory paths specified in buf.work.yaml,
 	// relative to the directory with buf.work.yaml. The following are guaranteed:
-	//  1. There is at least one path.
-	//  2. There are no duplicate paths.
-	//  3. No path contains another path.
-	//  4. Paths are sorted deterministically.
+	//
+	// - There is at least one path, i.e. DirPaths() will never be empty..
+	// - There are no duplicate paths - all values of DirPaths() are unique.
+	// - No path contains another path, i.e. "foo" and "foo/bar" will not be in DirPaths().
+	// - "." is not in DirPaths().
+	//
+	// Returned paths are sorted.
 	DirPaths() []string
 
 	isBufWorkYAMLFile()
@@ -201,34 +204,33 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) error {
 	if len(dirPaths) == 0 {
 		return fmt.Errorf(`directories is empty`)
 	}
-	directorySet := make(map[string]struct{}, len(dirPaths))
-	for _, directory := range dirPaths {
-		normalizedDirectory, err := normalpath.NormalizeAndValidate(directory)
+	dirPathMap := make(map[string]struct{}, len(dirPaths))
+	for _, dirPath := range dirPaths {
+		dirPath, err := normalpath.NormalizeAndValidate(dirPath)
 		if err != nil {
-			return fmt.Errorf(`directory %q is invalid: %w`, normalpath.Unnormalize(directory), err)
+			return fmt.Errorf(`directory %q is invalid: %w`, normalpath.Unnormalize(dirPath), err)
 		}
-		if _, ok := directorySet[normalizedDirectory]; ok {
-			return fmt.Errorf(`directory %q is listed more than once`, normalpath.Unnormalize(normalizedDirectory))
+		if _, ok := dirPathMap[dirPath]; ok {
+			return fmt.Errorf(`directory %q is listed more than once`, dirPath)
 		}
-		if normalizedDirectory == "." {
+		if dirPath == "." {
 			return fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
 		}
-		directorySet[normalizedDirectory] = struct{}{}
+		dirPathMap[dirPath] = struct{}{}
 	}
-	directories := slicesextended.MapToSlice(directorySet)
-	if err := validateConfigurationOverlap(directories); err != nil {
+	// We already know the paths are unique due to above validation.
+	// We sort to print deterministic errors.
+	if err := validateDirPathsNoOverlap(slicesextended.MapToSortedSlice(dirPathMap)); err != nil {
 		return err
 	}
 	return nil
 }
 
-// validateOverlap returns a non-nil error if any of the directories overlap
-// with each other.
-func validateConfigurationOverlap(directories []string) error {
-	for i := 0; i < len(directories); i++ {
-		for j := i + 1; j < len(directories); j++ {
-			left := directories[i]
-			right := directories[j]
+func validateDirPathsNoOverlap(dirPaths []string) error {
+	for i := 0; i < len(dirPaths); i++ {
+		for j := i + 1; j < len(dirPaths); j++ {
+			left := dirPaths[i]
+			right := dirPaths[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
 				return fmt.Errorf(
 					`directory %q contains directory %q`,
