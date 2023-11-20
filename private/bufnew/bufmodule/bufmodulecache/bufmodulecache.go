@@ -63,9 +63,7 @@ func NewModuleDataProvider(
 //   it will NOT be picked up as part of the module's files, and will NOT be used to compute digests,
 //   as newModule -> newModuleReadBucket filters to the specific module files it needs. You'll have to
 //   manually read this file via bufconfig.GetBufLockFileForPrefix(...) to get the dependency list,
-//   and then recursively call the cache's GetModuleDataForModuleKeys to get any dependencies (being
-//   careful to make sure you properly handle any locking issues, ie always operating within any required
-//   locks, and making sure you do this in DAG order for lock ordering. Ask me if you have any questions here).
+//   and then turn these into ModuleKeys.
 //
 // - Use bufmodule.NewModuleData to create the returned ModuleData. The getBucket function can return
 //   storage.MapReadBucket(moduleCacheBucket, storage.MapOnPrefix(normalpath.Join(...)), even though this
