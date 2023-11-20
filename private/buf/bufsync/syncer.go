@@ -100,7 +100,7 @@ func (s *syncer) Plan(ctx context.Context) (ExecutionPlan, error) {
 		s.sortedModulesDirsForSync,
 		branchesToSync,
 		tagsToSync,
-	), nil
+	)
 }
 
 // executePlan executes an ExecutionPlan using the Handler.

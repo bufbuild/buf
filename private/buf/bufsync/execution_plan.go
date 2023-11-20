@@ -15,6 +15,8 @@
 package bufsync
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
@@ -28,10 +30,15 @@ func newExecutionPlan(
 	sortedModuleDirs []string,
 	moduleBranchesToSync []ModuleBranch,
 	moduleTagsToSync []ModuleTags,
-) *executionPlan {
+) (*executionPlan, error) {
 	sortedModuleDirIndexes := make(map[string]int)
 	for i, dir := range sortedModuleDirs {
 		sortedModuleDirIndexes[dir] = i
+	}
+	for _, moduleBranch := range moduleBranchesToSync {
+		if _, ok := sortedModuleDirIndexes[moduleBranch.Directory()]; !ok {
+			return nil, fmt.Errorf("sort index for moduleDir %q is unknown", moduleBranch.Directory())
+		}
 	}
 	sortedBranchesToSync := make([]ModuleBranch, len(moduleBranchesToSync))
 	copy(sortedBranchesToSync, moduleBranchesToSync)
@@ -55,7 +62,7 @@ func newExecutionPlan(
 	return &executionPlan{
 		moduleBranchesToSync: sortedBranchesToSync,
 		moduleTagsToSync:     moduleTagsToSync,
-	}
+	}, nil
 }
 
 func (p *executionPlan) ModuleBranchesToSync() []ModuleBranch {
