@@ -51,6 +51,12 @@ var (
 type BufWorkYAMLFile interface {
 	File
 
+	// DirPaths returns all the directory paths specified in buf.work.yaml,
+	// relative to the directory with buf.work.yaml. The following are guaranteed:
+	//  1. There is at least one path.
+	//  2. There are no duplicate paths.
+	//  3. No path contains another path.
+	//  4. Paths are sorted deterministically.
 	DirPaths() []string
 
 	isBufWorkYAMLFile()
@@ -123,8 +129,6 @@ func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAM
 	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
 		return nil, err
 	}
-	// It's very important that we sort the directories here so that the
-	// constructed modules and/or images are in a deterministic order.
 	sort.Strings(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
@@ -175,10 +179,10 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 		return newUnsupportedFileVersionError(fileVersion)
 	case FileVersionV1:
 		externalBufWorkYAMLFile := externalBufWorkYAMLFileV1{
-			Version:     fileVersion.String(),
+			Version: fileVersion.String(),
+			// No need to sort - DirPaths() is already sorted per the documentation on BufWorkYAMLFile
 			Directories: bufWorkYAMLFile.DirPaths(),
 		}
-		// No need to sort - dirPaths is already sorted in newBufWorkYAMLFile
 		data, err := encoding.MarshalYAML(&externalBufWorkYAMLFile)
 		if err != nil {
 			return err
@@ -195,16 +199,16 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 
 func validateBufWorkYAMLDirPaths(dirPaths []string) error {
 	if len(dirPaths) == 0 {
-		return fmt.Errorf(`no directory is set. Please add "directories: [...]"`)
+		return fmt.Errorf(`directories is empty`)
 	}
 	directorySet := make(map[string]struct{}, len(dirPaths))
 	for _, directory := range dirPaths {
 		normalizedDirectory, err := normalpath.NormalizeAndValidate(directory)
 		if err != nil {
-			return fmt.Errorf(`directory "%s" is invalid: %w`, normalpath.Unnormalize(directory), err)
+			return fmt.Errorf(`directory %q is invalid: %w`, normalpath.Unnormalize(directory), err)
 		}
 		if _, ok := directorySet[normalizedDirectory]; ok {
-			return fmt.Errorf(`directory "%s" is listed more than once`, normalpath.Unnormalize(normalizedDirectory))
+			return fmt.Errorf(`directory %q is listed more than once`, normalpath.Unnormalize(normalizedDirectory))
 		}
 		if normalizedDirectory == "." {
 			return fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
@@ -227,14 +231,14 @@ func validateConfigurationOverlap(directories []string) error {
 			right := directories[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
 				return fmt.Errorf(
-					`directory "%s" contains directory "%s"`,
+					`directory %q contains directory %q`,
 					normalpath.Unnormalize(left),
 					normalpath.Unnormalize(right),
 				)
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
 				return fmt.Errorf(
-					`directory "%s" contains directory "%s"`,
+					`directory %q contains directory %q`,
 					normalpath.Unnormalize(right),
 					normalpath.Unnormalize(left),
 				)
