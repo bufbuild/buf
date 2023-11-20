@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -311,7 +310,9 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 			// commitsToSync expects commits in the order in which they should be synced:
 			// 		parentN -> .. -> parent2 -> parent1 -> HEAD
 			// So reverse the set of commits to visit.
-			slices.Reverse(commitsToVisit)
+			for i, j := 0, len(commitsToVisit)-1; i < j; i, j = i+1, j-1 {
+				commitsToVisit[i], commitsToVisit[j] = commitsToVisit[j], commitsToVisit[i]
+			}
 			for i, commitToVisit := range commitsToVisit {
 				commit, err := s.repo.Objects().Commit(commitToVisit)
 				if err != nil {
