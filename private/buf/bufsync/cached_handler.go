@@ -53,6 +53,7 @@ func newCachedHandler(delegate Handler) *cachedHandler {
 		isBranchSyncedCache:    make(map[isBranchSyncedCacheKey]struct{}),
 		isGitCommitSynedCache:  make(map[isGitCommitSyncedCacheKey]struct{}),
 		isProtectedBranchCache: make(map[isProtectedBranchCacheKey]bool),
+		isReleaseBranchCache:   make(map[string]bool),
 	}
 }
 

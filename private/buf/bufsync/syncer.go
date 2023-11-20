@@ -130,10 +130,10 @@ func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {
 	return nil
 }
 
-// resolveSyncPoint resolves a sync point for a target module identity and protected branch.
+// resolveSyncPointForProtectedBranch resolves a sync point for a target module identity and protected branch.
 // If there is no sync point for the branch, this returns (nil, nil).
 // The sync point is validated to exist before it is returned.
-func (s *syncer) resolveSyncPoint(
+func (s *syncer) resolveSyncPointForProtectedBranch(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
@@ -158,7 +158,7 @@ func (s *syncer) resolveSyncPoint(
 		// For now we simply error with a specific message if this happens.
 		if errors.Is(err, git.ErrObjectNotFound) {
 			return nil, fmt.Errorf(
-				"last synced git commit %q for default branch %q in module %q is not found in the git repo, did you rebase or reset your default branch?",
+				"last synced git commit %q for protected branch %q in module %q is not found in the git repo, did you rebase or reset your default branch?",
 				syncPoint.Hex(),
 				branch,
 				moduleIdentity.IdentityString(),
@@ -677,7 +677,7 @@ func (s *syncer) protectSyncedModuleBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
 ) error {
-	syncPoint, err := s.resolveSyncPoint(ctx, moduleIdentity, branch)
+	syncPoint, err := s.resolveSyncPointForProtectedBranch(ctx, moduleIdentity, branch)
 	if err != nil {
 		return err
 	}
