@@ -70,37 +70,37 @@ func TestBasic(t *testing.T) {
 		t,
 		[]dagtest.ExpectedNode[string]{
 			{
-				Key: "buf.build/acme/extension",
+				Key: "buf.testing/acme/extension",
 			},
 			{
-				Key: "buf.build/acme/date",
+				Key: "buf.testing/acme/date",
 				Outbound: []string{
-					"buf.build/acme/extension",
+					"buf.testing/acme/extension",
 				},
 			},
 			{
-				Key: "buf.build/acme/geo",
+				Key: "buf.testing/acme/geo",
 			},
 			{
-				Key: "buf.build/acme/money",
+				Key: "buf.testing/acme/money",
 			},
 			{
-				Key: "buf.build/acme/bond",
+				Key: "buf.testing/acme/bond",
 				Outbound: []string{
-					"buf.build/acme/extension",
-					"buf.build/acme/date",
-					"buf.build/acme/geo",
-					"buf.build/acme/money",
+					"buf.testing/acme/extension",
+					"buf.testing/acme/date",
+					"buf.testing/acme/geo",
+					"buf.testing/acme/money",
 				},
 			},
 			{
-				Key: "testdata/basic/finance/portfolio/proto",
+				Key: "finance/portfolio/proto",
 				Outbound: []string{
-					"buf.build/acme/extension",
-					"buf.build/acme/date",
-					"buf.build/acme/geo",
-					"buf.build/acme/money",
-					"buf.build/acme/bond",
+					"buf.testing/acme/extension",
+					"buf.testing/acme/date",
+					"buf.testing/acme/geo",
+					"buf.testing/acme/money",
+					"buf.testing/acme/bond",
 				},
 			},
 		},

@@ -17,7 +17,7 @@ package bufconfig
 import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
 // TODO
-var DefaultModuleConfig ModuleConfig = newModuleConfig()
+var DefaultModuleConfig ModuleConfig = newModuleConfig(nil)
 
 // ModuleConfig is configuration for a specific Module.
 //
@@ -56,10 +56,15 @@ type ModuleConfig interface {
 
 // *** PRIVATE ***
 
-type moduleConfig struct{}
+type moduleConfig struct {
+	moduleFullName bufmodule.ModuleFullName
+}
 
-func newModuleConfig() *moduleConfig {
-	return &moduleConfig{}
+// TODO: implement
+func newModuleConfig(moduleFullName bufmodule.ModuleFullName) *moduleConfig {
+	return &moduleConfig{
+		moduleFullName: moduleFullName,
+	}
 }
 
 func (m *moduleConfig) RootPath() string {
@@ -68,8 +73,7 @@ func (m *moduleConfig) RootPath() string {
 }
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
-	// TODO: implement
-	return nil
+	return m.moduleFullName
 }
 
 func (m *moduleConfig) LintConfig() LintConfig {

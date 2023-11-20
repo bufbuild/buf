@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -113,15 +114,16 @@ func newBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	generateConfigs []GenerateConfig,
 ) (*bufYAMLFile, error) {
+	// TODO
 	return &bufYAMLFile{
 		fileVersion:     fileVersion,
 		moduleConfigs:   moduleConfigs,
 		generateConfigs: generateConfigs,
-	}, errors.New("TODO")
+	}, nil
 }
 
 func (c *bufYAMLFile) FileVersion() FileVersion {
-	return c.FileVersion()
+	return c.fileVersion
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
@@ -148,7 +150,22 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	case FileVersionV1Beta1:
 		return nil, errors.New("TODO")
 	case FileVersionV1:
-		return nil, errors.New("TODO")
+		var externalBufYAMLFile externalBufYAMLFileV1
+		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		moduleFullName, err := bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
+		if err != nil {
+			return nil, fmt.Errorf("invalid module name: %w", err)
+		}
+		// TODO: finish
+		return newBufYAMLFile(
+			fileVersion,
+			[]ModuleConfig{
+				newModuleConfig(moduleFullName),
+			},
+			nil,
+		)
 	case FileVersionV2:
 		return nil, newUnsupportedFileVersionError(fileVersion)
 	default:

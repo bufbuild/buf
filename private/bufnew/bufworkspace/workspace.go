@@ -102,6 +102,7 @@ func newWorkspaceForBucket(
 		if err != nil {
 			return nil, err
 		}
+		//fmt.Println("buf.work.yaml found at", workspaceOptions.subDirPath, "moduleDirPaths", moduleDirPaths)
 		return newWorkspaceForBucketAndModuleDirPaths(
 			ctx,
 			bucket,
@@ -113,40 +114,50 @@ func newWorkspaceForBucket(
 
 	// We did not find a buf.work.yaml at subDirPath, we will search for one.
 	//
-	// normalpath.Dir(".") == ".", so doing this initially will still hit end condition even if we started with ".".
-	for curDirPath := normalpath.Dir(workspaceOptions.subDirPath); curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
-		bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, curDirPath)
-		if err != nil {
-			return nil, err
-		}
-		if bufWorkYAMLExists {
-			moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, curDirPath)
+	// We skip this if we're already at "." before first iteration.
+	if workspaceOptions.subDirPath != "." {
+		curDirPath := normalpath.Dir(workspaceOptions.subDirPath)
+		// We can't just do a normal for-loop, we want to run this condition even if curDirPath == ".", this is a do...while loop
+		for {
+			bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, curDirPath)
 			if err != nil {
 				return nil, err
 			}
-			if len(moduleDirPaths) == 0 {
-				// In this case, the enclosing buf.work.yaml does not list any module under subDirPath, and we will
-				// operate as if there is no workspace.
-				// TODO: do we instead want to error? I think we error right now, but we may not want to anymore.
+			if bufWorkYAMLExists {
+				moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, curDirPath)
+				if err != nil {
+					return nil, err
+				}
+				if len(moduleDirPaths) == 0 {
+					// In this case, the enclosing buf.work.yaml does not list any module under subDirPath, and we will
+					// operate as if there is no workspace.
+					// TODO: do we instead want to error? I think we error right now, but we may not want to anymore.
+					return newWorkspaceForBucketAndModuleDirPaths(
+						ctx,
+						bucket,
+						moduleDataProvider,
+						[]string{workspaceOptions.subDirPath},
+						workspaceOptions,
+					)
+				}
+				//fmt.Println("buf.work.yaml found at", curDirPath, "moduleDirPaths", moduleDirPaths)
 				return newWorkspaceForBucketAndModuleDirPaths(
 					ctx,
 					bucket,
 					moduleDataProvider,
-					[]string{workspaceOptions.subDirPath},
+					moduleDirPaths,
 					workspaceOptions,
 				)
 			}
-			return newWorkspaceForBucketAndModuleDirPaths(
-				ctx,
-				bucket,
-				moduleDataProvider,
-				moduleDirPaths,
-				workspaceOptions,
-			)
+			if curDirPath == "." {
+				break
+			}
+			curDirPath = normalpath.Dir(curDirPath)
 		}
 	}
 
 	// No buf.work.yaml found, we operate as if the subDirPath is a single module with no enclosing workspace.
+	//fmt.Println("no buf.work.yaml found")
 	return newWorkspaceForBucketAndModuleDirPaths(
 		ctx,
 		bucket,
@@ -198,12 +209,14 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			}
 		} else {
 			for _, depModuleKey := range bufLockFile.DepModuleKeys() {
+				//fmt.Println("adding remote", depModuleKey.ModuleFullName())
 				moduleSetBuilder.AddRemoteModule(
 					depModuleKey,
 					false,
 				)
 			}
 		}
+		//fmt.Println("adding", moduleDirPath)
 		// TODO: does not take into account RootToExclude yet, do so.
 		moduleSetBuilder.AddLocalModule(
 			moduleBucket,
@@ -280,9 +293,7 @@ func getModuleConfigForModuleDirPath(
 			// If we do not have a buf.yaml, we use the default config.
 			return bufconfig.DefaultModuleConfig, nil
 		}
-		// TODO: remove this when we have buf.yaml parsing in place
-		return bufconfig.DefaultModuleConfig, nil
-		//return nil, err
+		return nil, err
 	}
 	// Just a sanity check. This should have already been validated, but let's make sure.
 	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
