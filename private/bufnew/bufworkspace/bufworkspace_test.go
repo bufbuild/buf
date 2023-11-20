@@ -87,7 +87,6 @@ func TestBasic(t *testing.T) {
 			{
 				Key: "buf.testing/acme/bond",
 				Outbound: []string{
-					"buf.testing/acme/extension",
 					"buf.testing/acme/date",
 					"buf.testing/acme/geo",
 					"buf.testing/acme/money",
@@ -96,11 +95,8 @@ func TestBasic(t *testing.T) {
 			{
 				Key: "finance/portfolio/proto",
 				Outbound: []string{
-					"buf.testing/acme/extension",
-					"buf.testing/acme/date",
-					"buf.testing/acme/geo",
-					"buf.testing/acme/money",
 					"buf.testing/acme/bond",
+					"buf.testing/acme/extension",
 				},
 			},
 		},
