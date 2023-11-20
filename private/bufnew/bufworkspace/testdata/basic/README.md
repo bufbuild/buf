@@ -29,5 +29,5 @@
 ## Development
 
 ```
-bash scripts/digests.bash
+bash scripts/fakebuflock.bash
 ```

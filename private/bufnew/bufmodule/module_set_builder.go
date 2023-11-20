@@ -251,8 +251,17 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	}
 	if len(moduleDatas) != 1 {
 		b.errs = append(b.errs, fmt.Errorf("expected 1 ModuleData, got %d", len(moduleDatas)))
+		return b
 	}
 	moduleData := moduleDatas[0]
+	if moduleData.ModuleKey().ModuleFullName() == nil {
+		b.errs = append(b.errs, errors.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider"))
+		return b
+	}
+	if moduleData.ModuleKey().CommitID() == "" {
+		b.errs = append(b.errs, fmt.Errorf("got empty CommitID for ModuleKey with ModuleFullName %q returned from a ModuleDataProvider", moduleData.ModuleKey().ModuleFullName().String()))
+		return b
+	}
 	module, err := newModule(
 		b.ctx,
 		moduleData.Bucket,

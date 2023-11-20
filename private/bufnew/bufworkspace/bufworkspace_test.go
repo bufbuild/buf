@@ -38,12 +38,12 @@ func TestBasic(t *testing.T) {
 	// This represents some external dependencies from the BSR.
 	bsrProvider, err := bufmoduletest.NewOmniProvider(
 		bufmoduletest.ModuleData{
-			Name:    "buf.build/acme/date",
-			DirPath: "testdata/basic/bsr/buf.build/acme/date",
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
 		},
 		bufmoduletest.ModuleData{
-			Name:    "buf.build/acme/extension",
-			DirPath: "testdata/basic/bsr/buf.build/acme/extension",
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
 	)
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestBasic(t *testing.T) {
 		bucket,
 		bsrProvider,
 		WorkspaceWithTargetSubDirPath(
-			"testdata/basic/workspace/finance/portfolio/proto",
+			"finance/portfolio/proto",
 		),
 	)
 	require.NoError(t, err)
