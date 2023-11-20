@@ -15,8 +15,8 @@ github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/bufbuild/protocompile v0.6.1-0.20231108163138-146b831231f7 h1:1pUks8VaLdprN9wrxAgshb06b08IzdYp0B7JgoDeUfw=
 github.com/bufbuild/protocompile v0.6.1-0.20231108163138-146b831231f7/go.mod h1:9N39DyRmxAF5+5AjqXQKV6hyWDI0EeoX4TRMix2ZnPE=
-github.com/bufbuild/protovalidate-go v0.4.1 h1:ye/8S72WbEklCeltPkSEeT8Eu1A7P/gmMsmapkwqTFk=
-github.com/bufbuild/protovalidate-go v0.4.1/go.mod h1:+p5FXfOjSEgLz5WBDTOMPMdQPXqALEERbJZU7huDCtA=
+github.com/bufbuild/protovalidate-go v0.4.2 h1:rh34FFVIJ2pQ/vPnkiQK+Y5pMQ6W4POmHkqHFZLfPWA=
+github.com/bufbuild/protovalidate-go v0.4.2/go.mod h1:+p5FXfOjSEgLz5WBDTOMPMdQPXqALEERbJZU7huDCtA=
 github.com/bufbuild/protoyaml-go v0.1.6 h1:wcdVCJOepw2Xd1KC53RuXoXkk4bc25gbFceFKN8QaO0=
 github.com/bufbuild/protoyaml-go v0.1.6/go.mod h1:zrn7hI6KzmuW6kb8E437j3NAI2jY60eImQgxTInvcT8=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
