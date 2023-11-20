@@ -303,6 +303,17 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 					)
 					continue
 				}
+				if module.ModuleIdentity().IdentityString() != targetModuleIdentity.IdentityString() {
+					s.logger.Debug(
+						"mismatched module identity from HEAD of branch; skipping",
+						zap.Stringer("commit", commitToSync),
+						zap.String("moduleDir", moduleDir),
+						zap.String("branch", branch),
+						zap.String("moduleIdentityAtHead", targetModuleIdentity.IdentityString()),
+						zap.String("moduleIdentityAtCommit", module.ModuleIdentity().IdentityString()),
+					)
+					continue
+				}
 				commitsToSync = append(commitsToSync, newModuleCommit(
 					commit,
 					commitHashToTags[commit.Hash().Hex()],
