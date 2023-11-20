@@ -18,7 +18,26 @@ package bufconfig
 //
 // TODO
 type GenerateConfig interface {
+	GeneratePluginConfigs() []GeneratePluginConfig
+	// may be nil
+	GenerateManagedConfig() GenerateManagedConfig
 	isGenerateConfig()
+}
+
+type GeneratePluginConfig interface {
+	Plugin() string
+	Revision() int
+	Out() string
+	// TODO define enum in same pattern as FileVersion
+	// GenerateStrategy() GenerateStrategy
+	// TODO finish
+	// TODO: figure out what to do with TypesConfig
+}
+
+type GenerateManagedConfig interface {
+	// second value is whether or not this was present
+	CCEnableArenas() (bool, bool)
+	// TODO finish
 }
 
 // *** PRIVATE ***
