@@ -21,34 +21,34 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-type moduleBranchCommit struct {
+type moduleCommit struct {
 	commit    git.Commit
 	tags      []string
 	getBucket func(ctx context.Context) (storage.ReadBucket, error)
 }
 
-func newModuleBranchCommit(
+func newModuleCommit(
 	commit git.Commit,
 	tags []string,
 	getBucket func(ctx context.Context) (storage.ReadBucket, error),
-) *moduleBranchCommit {
-	return &moduleBranchCommit{
+) *moduleCommit {
+	return &moduleCommit{
 		commit:    commit,
 		tags:      tags,
 		getBucket: getBucket,
 	}
 }
 
-func (m *moduleBranchCommit) Commit() git.Commit {
+func (m *moduleCommit) Commit() git.Commit {
 	return m.commit
 }
 
-func (m *moduleBranchCommit) Tags() []string {
+func (m *moduleCommit) Tags() []string {
 	return m.tags
 }
 
-func (m *moduleBranchCommit) Bucket(ctx context.Context) (storage.ReadBucket, error) {
+func (m *moduleCommit) Bucket(ctx context.Context) (storage.ReadBucket, error) {
 	return m.getBucket(ctx)
 }
 
-var _ ModuleBranchCommit = (*moduleBranchCommit)(nil)
+var _ ModuleCommit = (*moduleCommit)(nil)

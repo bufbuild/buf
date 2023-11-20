@@ -22,14 +22,14 @@ type moduleBranch struct {
 	name                 string
 	moduleDir            string
 	targetModuleIdentity bufmoduleref.ModuleIdentity
-	commitsToSync        []ModuleBranchCommit
+	commitsToSync        []ModuleCommit
 }
 
 func newModuleBranch(
 	name string,
 	dir string,
 	targetModuleIdentity bufmoduleref.ModuleIdentity,
-	commitsToSync []ModuleBranchCommit,
+	commitsToSync []ModuleCommit,
 ) *moduleBranch {
 	return &moduleBranch{
 		name:                 name,
@@ -51,7 +51,7 @@ func (b *moduleBranch) TargetModuleIdentity() bufmoduleref.ModuleIdentity {
 	return b.targetModuleIdentity
 }
 
-func (b *moduleBranch) CommitsToSync() []ModuleBranchCommit {
+func (b *moduleBranch) CommitsToSync() []ModuleCommit {
 	return b.commitsToSync
 }
 

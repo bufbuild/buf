@@ -193,8 +193,8 @@ func SyncerWithAllBranches() SyncerOption {
 	}
 }
 
-// ModuleBranchCommit is a commit on a branch with a module that will be synced.
-type ModuleBranchCommit interface {
+// ModuleCommit is a commit with a module that will be synced.
+type ModuleCommit interface {
 	// Commit is the commit that the module is sourced from.
 	Commit() git.Commit
 	// Tags are the git tags associated with Commit.
@@ -217,7 +217,7 @@ type ModuleBranch interface {
 	TargetModuleIdentity() bufmoduleref.ModuleIdentity
 	// CommitsToSync is the set of commits that will be synced, in the order in which they will
 	// be synced.
-	CommitsToSync() []ModuleBranchCommit
+	CommitsToSync() []ModuleCommit
 }
 
 type ModuleTags interface {

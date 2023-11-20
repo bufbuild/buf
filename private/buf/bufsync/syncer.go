@@ -251,7 +251,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 			if err != nil {
 				return nil, nil, err
 			}
-			var commitsToSync []ModuleBranchCommit
+			var commitsToSync []ModuleCommit
 			// determineCommitsToVisitForModuleBranch returns commits in the order in which
 			// the branch is iterated:
 			// 		HEAD -> parent1 -> .. -> parentN
@@ -292,7 +292,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 					)
 					continue
 				}
-				commitsToSync = append(commitsToSync, newModuleBranchCommit(
+				commitsToSync = append(commitsToSync, newModuleCommit(
 					commit,
 					commitHashToTags[commit.Hash().Hex()],
 					func(ctx context.Context) (storage.ReadBucket, error) {

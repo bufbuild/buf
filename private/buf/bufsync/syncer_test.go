@@ -49,7 +49,7 @@ type testBranch struct {
 type testCommit struct {
 	hash       git.Hash
 	fromDigest string
-	fromSync   bufsync.ModuleBranchCommit
+	fromSync   bufsync.ModuleCommit
 }
 
 type testSyncHandler struct {
