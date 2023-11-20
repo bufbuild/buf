@@ -127,7 +127,7 @@ func (h *syncHandler) IsGitCommitSynced(
 	}))
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Repo is not created.
+			// Repo is not created, or reference does not exist anywhere. Either way, false.
 			return false, nil
 		}
 		return false, fmt.Errorf("get reference by name: %w", err)
@@ -146,23 +146,32 @@ func (h *syncHandler) IsGitCommitSyncedToBranch(
 		return false, err
 	}
 	service := h.repositoryBranchServiceClientFactory(moduleIdentity.Remote())
-	res, err := service.ListRepositoryBranchesByReference(ctx, connect.NewRequest(&registryv1alpha1.ListRepositoryBranchesByReferenceRequest{
-		RepositoryId: repositoryID,
-		Reference: &registryv1alpha1.ListRepositoryBranchesByReferenceRequest_VcsCommitHash{
-			VcsCommitHash: hash.Hex(),
-		},
-	}))
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Repo is not created
-			return false, nil
+	nextPageToken := ""
+	for {
+		res, err := service.ListRepositoryBranchesByReference(ctx, connect.NewRequest(&registryv1alpha1.ListRepositoryBranchesByReferenceRequest{
+			RepositoryId: repositoryID,
+			PageToken:    nextPageToken,
+			PageSize:     10,
+			Reference: &registryv1alpha1.ListRepositoryBranchesByReferenceRequest_VcsCommitHash{
+				VcsCommitHash: hash.Hex(),
+			},
+		}))
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				// Repo is not created
+				return false, nil
+			}
+			return false, fmt.Errorf("list repository branch by reference: %w", err)
 		}
-		return false, fmt.Errorf("list repository branch by reference: %w", err)
-	}
-	for _, branch := range res.Msg.RepositoryBranches {
-		if branch.Name == branchName {
-			return true, nil
+		for _, branch := range res.Msg.RepositoryBranches {
+			if branch.Name == branchName {
+				return true, nil
+			}
 		}
+		if res.Msg.NextPageToken == "" {
+			break
+		}
+		nextPageToken = res.Msg.NextPageToken
 	}
 	return false, nil
 }
@@ -287,8 +296,7 @@ func (h *syncHandler) IsReleaseBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	// Otherwise the only other protected branch is the Repository's default (release) branch.
-	// We cache a repository's default branch even though it can change because it's _extremely_ unlikely that it changes.
+	// We cache a repository's release branch even though it can change because it's _extremely_ unlikely that it changes.
 	cacheKey := moduleIdentity.IdentityString()
 	if _, ok := h.moduleIdentityToDefaultBranchCache[cacheKey]; !ok {
 		service := h.repositoryServiceClientFactory(moduleIdentity.Remote())
