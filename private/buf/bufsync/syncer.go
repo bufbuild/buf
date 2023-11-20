@@ -129,52 +129,6 @@ func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {
 	return nil
 }
 
-// resolveSyncPointForProtectedBranch resolves a sync point for a target module identity and protected branch.
-// If there is no sync point for the branch, this returns (nil, nil).
-// The sync point is validated to exist before it is returned.
-func (s *syncer) resolveSyncPointForProtectedBranch(
-	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	branch string,
-) (git.Hash, error) {
-	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleIdentity, branch)
-	if err != nil {
-		return nil, fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
-	}
-	if syncPoint == nil {
-		// No sync point for that module in that branch.
-		return nil, nil
-	}
-	// Validate that the commit pointed to by the sync point exists in the git repo.
-	if _, err := s.repo.Objects().Commit(syncPoint); err != nil {
-		// The most likely culprit for an invalid sync point is a rebase, where the last known commit has
-		// been garbage collected. In this case, let's present a better error message.
-		//
-		// This is not trivial scenario if the branch that's been rebased is a long-lived branch (like
-		// main) whose artifacts are consumed by other branches, as we may fail to sync those commits if
-		// we continue.
-		//
-		// For now we simply error with a specific message if this happens.
-		if errors.Is(err, git.ErrObjectNotFound) {
-			return nil, fmt.Errorf(
-				"last synced git commit %q for protected branch %q in module %q is not found in the git repo, did you rebase or reset your default branch?",
-				syncPoint.Hex(),
-				branch,
-				moduleIdentity.IdentityString(),
-			)
-		}
-		// Other error, fail.
-		return nil, fmt.Errorf(
-			"invalid sync point %q for branch %q in module %q: %w",
-			syncPoint.Hex(),
-			branch,
-			moduleIdentity.IdentityString(),
-			err,
-		)
-	}
-	return syncPoint, nil
-}
-
 // readModule returns a module that has a name and builds correctly given a commit and a module directory.
 func (s *syncer) readModuleAt(
 	ctx context.Context,
@@ -679,7 +633,10 @@ func (s *syncer) protectSyncedModuleBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branch string,
 ) error {
-	syncPoint, err := s.resolveSyncPointForProtectedBranch(ctx, moduleIdentity, branch)
+	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleIdentity, branch)
+	if err != nil {
+		return fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
+	}
 	if err != nil {
 		return err
 	}
