@@ -168,11 +168,11 @@ func (c *cachedHandler) IsProtectedBranch(
 	if value, cached := c.isProtectedBranchCache[cacheKey]; cached {
 		return value, nil
 	}
-	yes, err := c.delegate.IsProtectedBranch(ctx, moduleIdentity, branchName)
+	isProtected, err := c.delegate.IsProtectedBranch(ctx, moduleIdentity, branchName)
 	if err != nil {
-		c.isProtectedBranchCache[cacheKey] = yes
+		c.isProtectedBranchCache[cacheKey] = isProtected
 	}
-	return yes, err
+	return isProtected, err
 }
 
 func (c *cachedHandler) GetReleaseHead(
