@@ -21,11 +21,14 @@ import (
 )
 
 func TestExecutionPlanSortsModuleBranchesCorrectly(t *testing.T) {
+	t.Parallel()
 	t.Run("UnknownModuleSortIndex", func(t *testing.T) {
+		t.Parallel()
 		_, err := newExecutionPlan(nil, []ModuleBranch{newModuleBranch("", "module1", nil, nil)}, nil)
 		require.Error(t, err)
 	})
 	t.Run("KnownModuleSortIndex", func(t *testing.T) {
+		t.Parallel()
 		expectedOrder := []string{
 			"module1",
 			"module-9",
