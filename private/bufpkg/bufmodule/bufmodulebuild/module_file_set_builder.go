@@ -91,7 +91,7 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 	// through dependency resolution.
 	var (
 		dependencyModulePins              []bufmoduleref.ModulePin
-		seenDependencyModulePinIdentities = make(map[string]bufmoduleref.ModulePin)
+		seenDependencyIdentityStringToPin = make(map[string]bufmoduleref.ModulePin)
 		seenDependencyModulePins          = make(map[string]bufmoduleref.ModulePin)
 		conflicts                         []bufmoduleref.ModuleReference
 	)
@@ -103,7 +103,7 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 		}
 		dependencyModulePins = append(dependencyModulePins, dependencyModulePin)
 		seenDependencyModulePins[dependencyModulePin.String()] = dependencyModulePin
-		seenDependencyModulePinIdentities[dependencyModulePin.IdentityString()] = dependencyModulePin
+		seenDependencyIdentityStringToPin[dependencyModulePin.IdentityString()] = dependencyModulePin
 	}
 	// From the perspective of the ModuleFileSet, we include all of the files
 	// specified in the workspace. When we build the Image from the ModuleFileSet,
@@ -145,7 +145,7 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 				// We've already seen this pin, that's fine, this is not a conflict, we don't dupe it.
 				continue
 			}
-			if _, conflict := seenDependencyModulePinIdentities[pin.IdentityString()]; conflict {
+			if _, conflict := seenDependencyIdentityStringToPin[pin.IdentityString()]; conflict {
 				// Conflicting dependency module pin. We carry on, but we'll need to
 				// go through dependency resolution now.
 				conflictingPinAsRef, err := bufmoduleref.NewModuleReference(
@@ -162,7 +162,7 @@ func (m *moduleFileSetBuilder) getDependenciesForWorkspaceModule(
 				dependencyModulePins = append(dependencyModulePins, pin)
 			}
 			seenDependencyModulePins[pin.String()] = pin
-			seenDependencyModulePinIdentities[pin.IdentityString()] = pin
+			seenDependencyIdentityStringToPin[pin.IdentityString()] = pin
 		}
 	}
 	if len(conflicts) > 0 {
