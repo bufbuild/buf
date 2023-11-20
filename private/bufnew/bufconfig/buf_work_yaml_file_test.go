@@ -16,13 +16,15 @@ package bufconfig
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetBufWorkYAMLFileForPrefix(t *testing.T) {
+func TestPutAndGetBufWorkYAMLFileForPrefix(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	bufWorkYAMLFile, err := NewBufWorkYAMLFile(FileVersionV1, []string{"foo", "bar"})
@@ -39,6 +41,19 @@ func TestGetBufWorkYAMLFileForPrefix(t *testing.T) {
 		[]string{"bar", "foo"},
 		readBufWorkYAMLFile.DirPaths(),
 	)
+}
+
+func TestReadBufWorkYAMLFileValidateVersion(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(filepath.Join("testdata", "bufworkyaml"))
+	require.NoError(t, err)
+	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "valid")
+	require.NoError(t, err)
+	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "invalid_version_v1beta1")
+	require.Error(t, err)
+	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "invalid_version_v2")
+	require.Error(t, err)
 }
 
 func TestNewBufWorkYAMLFile(t *testing.T) {
