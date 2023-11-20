@@ -58,6 +58,8 @@ type BufWorkYAMLFile interface {
 	// - There are no duplicate paths - all values of DirPaths() are unique.
 	// - No path contains another path, i.e. "foo" and "foo/bar" will not be in DirPaths().
 	// - "." is not in DirPaths().
+	// - Each path is normalized and validated, because this is guaranteed at the
+	//   construction time of a BufWorkYAMLFile.
 	//
 	// Returned paths are sorted.
 	DirPaths() []string
