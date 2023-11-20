@@ -171,7 +171,7 @@ func (s *syncer) prepareSync(ctx context.Context) error {
 	var branchesToSync []string
 	if s.syncAllBranches {
 		// sync all branches
-		branchesToSync = slicesextended.MapToSlice(allBranches)
+		branchesToSync = slicesextended.MapKeysToSlice(allBranches)
 	} else {
 		// sync current branch, make sure it's present
 		currentBranch, err := s.repo.CheckedOutBranch()

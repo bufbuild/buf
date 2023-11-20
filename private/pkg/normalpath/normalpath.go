@@ -297,7 +297,7 @@ func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType P
 	if len(m) == 0 {
 		return nil
 	}
-	return slicesextended.MapToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
+	return slicesextended.MapKeysToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
 }
 
 // StripComponents strips the specified number of components.

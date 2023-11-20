@@ -305,5 +305,5 @@ func getExternalPathsForImages(imageConfigs []bufwire.ImageConfig, excludeImport
 			externalPaths[imageFile.ExternalPath()] = struct{}{}
 		}
 	}
-	return slicesextended.MapToSlice(externalPaths), nil
+	return slicesextended.MapKeysToSlice(externalPaths), nil
 }
