@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"sort"
 	"sync"
 
@@ -76,12 +77,14 @@ type ModuleSet interface {
 	// This should only be used by Modules, and only for dependency calculations.
 	//
 	// returns errIsWKT if the filePath is a WKT.
+	// returns an error with fs.ErrNotExist if the file is not found.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
 	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet.
 	//
 	// This should only be used by Modules, and only for dependency calculations.
 	//
 	// returns errIsWKT if the filePath is a WKT.
+	// returns an error with fs.ErrNotExist if the file is not found.
 	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
 	isModuleSet()
 }
@@ -377,8 +380,8 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 			return nil, errIsWKT
 		}
 		// This will happen if there is a file path we cannot find in our modules, which will result
-		// in an error on ModuleDeps() or Digest(). We make this error clear for users.
-		return nil, fmt.Errorf("no module or dependency contains file %q", filePath)
+		// in an error on ModuleDeps() or Digest().
+		return nil, &fs.PathError{Op: "stat", Path: filePath, Err: fs.ErrNotExist}
 	case 1:
 		var matchingOpaqueID string
 		for matchingOpaqueID = range matchingOpaqueIDs {
@@ -387,7 +390,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	default:
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.
-		return nil, fmt.Errorf("multiple modules/dependencies contain file %q: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
+		return nil, fmt.Errorf("%s is contained in multiple modules: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
 	}
 }
 
@@ -416,7 +419,7 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 	}()
 	imports, err := imports.ScanForImports(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s had import parsing error: %w", filePath, err)
 	}
 	return stringutil.SliceToMap(imports), nil
 }

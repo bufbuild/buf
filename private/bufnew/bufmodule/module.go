@@ -17,6 +17,8 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
 	"sort"
 	"sync"
 
@@ -406,7 +408,11 @@ func getModuleDepsRec(
 			}
 			imports, err := moduleSet.getImportsForFilePath(ctx, fileInfo.Path())
 			if err != nil {
-				return err
+				if errors.Is(err, fs.ErrNotExist) {
+					// Strip any PathError and just get to the point.
+					err = fs.ErrNotExist
+				}
+				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
 			for imp := range imports {
 				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
@@ -415,7 +421,11 @@ func getModuleDepsRec(
 						// Do not include as a dependency.
 						continue
 					}
-					return err
+					if errors.Is(err, fs.ErrNotExist) {
+						// Strip any PathError and just get to the point.
+						err = fs.ErrNotExist
+					}
+					return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep
