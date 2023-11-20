@@ -67,7 +67,7 @@ func NewModuleDataProvider(
 //
 // - Use bufmodule.NewModuleData to create the returned ModuleData. The getBucket function can return
 //   storage.MapReadBucket(moduleCacheBucket, storage.MapOnPrefix(normalpath.Join(...)), even though this
-//   bucket will have the buf.lock in it. See above. You'll need to create the dep ModuleKeys from that
+//   bucket will have the buf.lock in it. See above. You'll need to read the dep ModuleKeys from that
 //   buf.lock file manually, see above.
 //
 // - Make sure to use bufmodule.ModuleDataWithActualDigest(inputModuleKey.Digest()). This will do tamper-proofing.
