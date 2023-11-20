@@ -129,13 +129,13 @@ type bufWorkYAMLFile struct {
 }
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
-	sortedNormalDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
+	sortedNormalizedDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
 	if err != nil {
 		return nil, err
 	}
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
-		dirPaths:    sortedNormalDirPaths,
+		dirPaths:    sortedNormalizedDirPaths,
 	}, nil
 }
 
@@ -206,53 +206,53 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	if len(dirPaths) == 0 {
 		return nil, fmt.Errorf(`directories is empty`)
 	}
-	normalDirPathToDirPath := make(map[string]string, len(dirPaths))
+	normalizedDirPathToDirPath := make(map[string]string, len(dirPaths))
 	for _, dirPath := range dirPaths {
-		normalDirPath, err := normalpath.NormalizeAndValidate(dirPath)
+		normalizedDirPath, err := normalpath.NormalizeAndValidate(dirPath)
 		if err != nil {
 			return nil, fmt.Errorf(`directory %q is invalid: %w`, dirPath, err)
 		}
-		if _, ok := normalDirPathToDirPath[normalDirPath]; ok {
+		if _, ok := normalizedDirPathToDirPath[normalizedDirPath]; ok {
 			return nil, fmt.Errorf(`directory %q is listed more than once`, dirPath)
 		}
-		if normalDirPath == "." {
+		if normalizedDirPath == "." {
 			return nil, fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
 		}
-		normalDirPathToDirPath[normalDirPath] = dirPath
+		normalizedDirPathToDirPath[normalizedDirPath] = dirPath
 	}
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
 	// TODO: use this line:
-	// sortedNormalDirPaths := slicesextended.MapKeysToSortedSlice(normalDirPathToDirPath)
-	sortedNormalDirPaths := make([]string, 0, len(normalDirPathToDirPath))
-	for normalDirPath := range normalDirPathToDirPath {
-		sortedNormalDirPaths = append(sortedNormalDirPaths, normalDirPath)
+	// sortedNormalizedDirPaths := slicesextended.MapKeysToSortedSlice(normalDirPathToDirPath)
+	sortedNormalizedDirPaths := make([]string, 0, len(normalizedDirPathToDirPath))
+	for normalizedDirPath := range normalizedDirPathToDirPath {
+		sortedNormalizedDirPaths = append(sortedNormalizedDirPaths, normalizedDirPath)
 	}
 	sort.Slice(
-		sortedNormalDirPaths,
+		sortedNormalizedDirPaths,
 		func(i int, j int) bool {
-			return sortedNormalDirPaths[i] < sortedNormalDirPaths[j]
+			return sortedNormalizedDirPaths[i] < sortedNormalizedDirPaths[j]
 		},
 	)
-	for i := 0; i < len(sortedNormalDirPaths); i++ {
-		for j := i + 1; j < len(sortedNormalDirPaths); j++ {
-			left := sortedNormalDirPaths[i]
-			right := sortedNormalDirPaths[j]
+	for i := 0; i < len(sortedNormalizedDirPaths); i++ {
+		for j := i + 1; j < len(sortedNormalizedDirPaths); j++ {
+			left := sortedNormalizedDirPaths[i]
+			right := sortedNormalizedDirPaths[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
 				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalDirPathToDirPath[left],
-					normalDirPathToDirPath[right],
+					normalizedDirPathToDirPath[left],
+					normalizedDirPathToDirPath[right],
 				)
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
 				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalDirPathToDirPath[right],
-					normalDirPathToDirPath[left],
+					normalizedDirPathToDirPath[right],
+					normalizedDirPathToDirPath[left],
 				)
 			}
 		}
 	}
-	return sortedNormalDirPaths, nil
+	return sortedNormalizedDirPaths, nil
 }
