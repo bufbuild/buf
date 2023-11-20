@@ -392,18 +392,19 @@ func (h *syncHandler) IsBranchSynced(
 }
 
 func (h *syncHandler) getRepositoryID(ctx context.Context, moduleIdentity bufmoduleref.ModuleIdentity) (string, error) {
-	if _, hit := h.moduleIdentityToRepositoryIDCache[moduleIdentity.IdentityString()]; !hit {
-		repoService := h.repositoryServiceClientFactory(moduleIdentity.Remote())
-		if repoRes, err := repoService.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
-		})); err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				return "", fmt.Errorf("repository for module %q does not exist", moduleIdentity.IdentityString())
-			}
-			return "", fmt.Errorf("get repository for module identity: %w", err)
-		} else {
-			h.moduleIdentityToRepositoryIDCache[moduleIdentity.IdentityString()] = repoRes.Msg.Repository.Id
+	if repositoryID, hit := h.moduleIdentityToRepositoryIDCache[moduleIdentity.IdentityString()]; hit {
+		return repositoryID, nil
+	}
+	repoService := h.repositoryServiceClientFactory(moduleIdentity.Remote())
+	if repoRes, err := repoService.GetRepositoryByFullName(ctx, connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
+		FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+	})); err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return "", fmt.Errorf("repository for module %q does not exist", moduleIdentity.IdentityString())
 		}
+		return "", fmt.Errorf("get repository for module identity: %w", err)
+	} else {
+		h.moduleIdentityToRepositoryIDCache[moduleIdentity.IdentityString()] = repoRes.Msg.Repository.Id
 	}
 	return h.moduleIdentityToRepositoryIDCache[moduleIdentity.IdentityString()], nil
 }
