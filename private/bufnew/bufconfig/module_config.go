@@ -16,6 +16,9 @@ package bufconfig
 
 import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
+// TODO
+var DefaultModuleConfig ModuleConfig = newModuleConfig(nil)
+
 // ModuleConfig is configuration for a specific Module.
 //
 // ModuleConfigs do not expose BucketID or OpaqueID, however RootPath is effectively BucketID,
@@ -53,26 +56,34 @@ type ModuleConfig interface {
 
 // *** PRIVATE ***
 
-type moduleConfig struct{}
+type moduleConfig struct {
+	moduleFullName bufmodule.ModuleFullName
+}
 
-func newModuleConfig() *moduleConfig {
-	return &moduleConfig{}
+// TODO: implement
+func newModuleConfig(moduleFullName bufmodule.ModuleFullName) *moduleConfig {
+	return &moduleConfig{
+		moduleFullName: moduleFullName,
+	}
 }
 
 func (m *moduleConfig) RootPath() string {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return "."
 }
 
 func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
-	panic("not implemented") // TODO: Implement
+	return m.moduleFullName
 }
 
 func (m *moduleConfig) LintConfig() LintConfig {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return DefaultLintConfig
 }
 
 func (m *moduleConfig) BreakingConfig() BreakingConfig {
-	panic("not implemented") // TODO: Implement
+	// TODO: implement
+	return DefaultBreakingConfig
 }
 
 func (*moduleConfig) isModuleConfig() {}

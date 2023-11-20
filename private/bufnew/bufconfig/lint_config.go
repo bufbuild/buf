@@ -14,6 +14,9 @@
 
 package bufconfig
 
+// TODO
+var DefaultLintConfig LintConfig = newLintConfig()
+
 // LintConfig is lint configuration for a specific Module.
 type LintConfig interface {
 	CheckConfig

@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -25,21 +26,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	bufconfig.AllowV2ForTesting()
+}
+
 func TestBasic(t *testing.T) {
 	t.Parallel()
-	t.Skip()
 
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
 	bsrProvider, err := bufmoduletest.NewOmniProvider(
 		bufmoduletest.ModuleData{
-			Name:    "buf.build/acme/date",
-			DirPath: "testdata/basic/bsr/buf.build/acme/date",
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
 		},
 		bufmoduletest.ModuleData{
-			Name:    "buf.build/acme/extension",
-			DirPath: "testdata/basic/bsr/buf.build/acme/extension",
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
 	)
 	require.NoError(t, err)
@@ -55,51 +59,98 @@ func TestBasic(t *testing.T) {
 		bucket,
 		bsrProvider,
 		WorkspaceWithTargetSubDirPath(
-			"testdata/basic/workspace/finance/portfolio/proto",
+			"finance/portfolio/proto",
 		),
 	)
 	require.NoError(t, err)
-
+	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
+	require.NotNil(t, module)
+	require.False(t, module.IsTarget())
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	require.NotNil(t, module)
+	require.True(t, module.IsTarget())
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	require.NoError(t, err)
 	dagtest.RequireGraphEqual(
 		t,
 		[]dagtest.ExpectedNode[string]{
 			{
-				Key: "buf.build/acme/extension",
+				Key: "buf.testing/acme/extension",
 			},
 			{
-				Key: "buf.build/acme/date",
+				Key: "buf.testing/acme/date",
 				Outbound: []string{
-					"buf.build/acme/extension",
+					"buf.testing/acme/extension",
 				},
 			},
 			{
-				Key: "buf.build/acme/geo",
+				Key: "buf.testing/acme/geo",
 			},
 			{
-				Key: "buf.build/acme/money",
+				Key: "buf.testing/acme/money",
 			},
 			{
-				Key: "buf.build/acme/bond",
+				Key: "buf.testing/acme/bond",
 				Outbound: []string{
-					"buf.build/acme/extension",
-					"buf.build/acme/date",
-					"buf.build/acme/geo",
-					"buf.build/acme/money",
+					"buf.testing/acme/date",
+					"buf.testing/acme/geo",
+					"buf.testing/acme/money",
 				},
 			},
 			{
-				Key: "testdata/basic/finance/portfolio/proto",
+				Key: "finance/portfolio/proto",
 				Outbound: []string{
-					"buf.build/acme/extension",
-					"buf.build/acme/date",
-					"buf.build/acme/geo",
-					"buf.build/acme/money",
-					"buf.build/acme/bond",
+					"buf.testing/acme/bond",
+					"buf.testing/acme/extension",
 				},
 			},
 		},
 		graph,
 	)
+
+	workspace, err = NewWorkspaceForBucket(
+		ctx,
+		bucket,
+		bsrProvider,
+		WorkspaceWithTargetSubDirPath(
+			"common/money/proto",
+		),
+		WorkspaceWithTargetPaths(
+			[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
+			nil,
+		),
+	)
+	require.NoError(t, err)
+	module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
+	require.NotNil(t, module)
+	require.True(t, module.IsTarget())
+	fileInfo, err := module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
+	require.NoError(t, err)
+	require.True(t, fileInfo.IsTargetFile())
+	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
+	require.NoError(t, err)
+	require.False(t, fileInfo.IsTargetFile())
+
+	//workspace, err = NewWorkspaceForBucket(
+	//ctx,
+	//bucket,
+	//bsrProvider,
+	//WorkspaceWithTargetSubDirPath(
+	//"common/geo/proto",
+	//),
+	//WorkspaceWithTargetPaths(
+	//[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
+	//nil,
+	//),
+	//)
+	//require.NoError(t, err)
+	//module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
+	//require.NotNil(t, module)
+	//require.False(t, module.IsTarget())
+	//fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
+	//require.NoError(t, err)
+	//require.False(t, fileInfo.IsTargetFile())
+	//fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
+	//require.NoError(t, err)
+	//require.False(t, fileInfo.IsTargetFile())
 }
