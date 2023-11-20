@@ -64,6 +64,13 @@ func TestBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
+	require.NotNil(t, module)
+	require.False(t, module.IsTarget())
+	module = workspace.GetModuleForOpaqueID("finance/portfolio/proto")
+	require.NotNil(t, module)
+	require.True(t, module.IsTarget())
+
 	graph, err := bufmodule.ModuleSetToDAG(workspace)
 	require.NoError(t, err)
 	dagtest.RequireGraphEqual(
