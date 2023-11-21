@@ -20,10 +20,14 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/buf/bufsync/bufsynctest"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 )
 
@@ -36,6 +40,7 @@ func TestSyncer(t *testing.T) {
 
 type testRepo struct {
 	syncedGitHashes map[string]struct{}
+	releasedCommits []*testCommit
 	branches        map[string]*testBranch
 	tagsByName      map[string]git.Hash
 	tagsForHash     map[string][]string
@@ -81,12 +86,6 @@ func (c *testSyncHandler) getRepoBranch(moduleIdentity bufmoduleref.ModuleIdenti
 		repo.branches[branchName] = &testBranch{}
 	}
 	return repo, repo.branches[branchName]
-}
-
-func (c *testSyncHandler) SetSyncPoint(ctx context.Context, t *testing.T, moduleIdentity bufmoduleref.ModuleIdentity, branchName string, hash git.Hash) {
-	repo, branch := c.getRepoBranch(moduleIdentity, branchName)
-	repo.syncedGitHashes[hash.Hex()] = struct{}{}
-	branch.manualSyncPoint = hash
 }
 
 func (c *testSyncHandler) putTags(repo *testRepo, commitHash git.Hash, tags []string) {
@@ -148,6 +147,12 @@ func (c *testSyncHandler) SyncModuleBranch(
 	branch.manualSyncPoint = nil // clear manual sync point
 	for _, commit := range moduleBranch.CommitsToSync() {
 		repo.syncedGitHashes[commit.Commit().Hash().Hex()] = struct{}{}
+		if moduleBranch.BranchName() == bufsynctest.ReleaseBranchName {
+			repo.releasedCommits = append(repo.releasedCommits, &testCommit{
+				hash:     commit.Commit().Hash(),
+				fromSync: commit,
+			})
+		}
 		branch.commits = append(branch.commits, &testCommit{
 			hash:     commit.Commit().Hash(),
 			fromSync: commit,
@@ -172,7 +177,7 @@ func (c *testSyncHandler) IsReleaseBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	return branchName == bufmoduleref.Main, nil
+	return branchName == bufsynctest.ReleaseBranchName, nil
 }
 
 func (c *testSyncHandler) IsProtectedBranch(
@@ -180,7 +185,9 @@ func (c *testSyncHandler) IsProtectedBranch(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	branchName string,
 ) (bool, error) {
-	return branchName == gittest.DefaultBranch || branchName == bufmoduleref.Main, nil
+	return branchName == gittest.DefaultBranch ||
+		branchName == bufsynctest.ReleaseBranchName ||
+		branchName == bufsynctest.OtherProtectedBranchName, nil
 }
 
 func (c *testSyncHandler) GetBranchHead(
@@ -205,7 +212,7 @@ func (c *testSyncHandler) GetBranchHead(
 			return &registryv1alpha1.RepositoryCommit{
 				// We manually give it a gibberish digest, this will not content match
 				// to any module.
-				ManifestDigest: "gibberish",
+				ManifestDigest: "shake256:ab534c69595477fefb2eeceb5ea6239b5ba5b8308e4b4b8009a3b7a4a53dd8272899e3d59704ebc41c51f1dcd3d931f56ee2abe2e53a00839ea19decb6de06dc",
 			}, nil
 		}
 	}
@@ -216,6 +223,27 @@ func (c *testSyncHandler) GetReleaseHead(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 ) (*registryv1alpha1.RepositoryCommit, error) {
+	repo := c.getRepo(moduleIdentity)
+	for i := len(repo.releasedCommits) - 1; i >= 0; i-- {
+		commit := repo.releasedCommits[i]
+		if commit.fromDigest != "" {
+			// the latest repository commit commit
+			return &registryv1alpha1.RepositoryCommit{
+				// The only thing that matters here is the digest.
+				// We give it a useless name.
+				Name:           "manual",
+				ManifestDigest: commit.fromDigest,
+			}, nil
+		}
+		if commit.fromSync != nil {
+			// we want to "fake" a repository commit here
+			return &registryv1alpha1.RepositoryCommit{
+				// We manually give it a gibberish digest, this will not content match
+				// to any module.
+				ManifestDigest: "gibberish",
+			}, nil
+		}
+	}
 	return nil, nil
 }
 
@@ -248,6 +276,30 @@ func (c *testSyncHandler) IsGitCommitSyncedToBranch(
 		}
 	}
 	return false, nil
+}
+
+func (c *testSyncHandler) ManuallyPushModule(
+	ctx context.Context,
+	t *testing.T,
+	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	branchName string,
+	manifest *modulev1alpha1.Blob,
+	blobs []*modulev1alpha1.Blob,
+) {
+	digest, err := bufcas.ProtoToDigest(bufcasalpha.AlphaToDigest(manifest.Digest))
+	require.NoError(t, err)
+	if branchName == "" {
+		// release commit
+		repo := c.getRepo(targetModuleIdentity)
+		repo.releasedCommits = append(repo.releasedCommits, &testCommit{
+			fromDigest: digest.String(),
+		})
+	} else {
+		_, branch := c.getRepoBranch(targetModuleIdentity, branchName)
+		branch.commits = append(branch.commits, &testCommit{
+			fromDigest: digest.String(),
+		})
+	}
 }
 
 var _ bufsync.Handler = (*testSyncHandler)(nil)

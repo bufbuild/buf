@@ -425,6 +425,7 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 				} else {
 					s.logger.Debug(
 						"skipping tags because the commit is not synced",
+						zap.String("commit", commit.Hash().Hex()),
 						zap.String("targetModuleIdentity", targetModuleIdentity.IdentityString()),
 						zap.Strings("tags", tags),
 					)
@@ -574,6 +575,10 @@ func (s *syncer) contentMatchOrHead(
 	branch string,
 	bsrCommitToMatch *registryv1alpha1.RepositoryCommit,
 ) ([]git.Hash, error) {
+	digestToMatch, err := bufcas.ParseDigest(bsrCommitToMatch.ManifestDigest)
+	if err != nil {
+		return nil, fmt.Errorf("parse digest: %w", err)
+	}
 	var head git.Hash
 	matched, walked, err := s.walkBranchUntil(branch, func(commit git.Commit) (bool, error) {
 		// Capture the branch head; if no content-match is found, it will be needed.
@@ -593,12 +598,16 @@ func (s *syncer) contentMatchOrHead(
 			// No module, skip this commit.
 			return false, nil
 		}
-		manifestBlob, err := bufcas.ManifestToBlob(module.FileSet().Manifest())
+		// TODO: Julian will fix this
+		fileSet, err := bufcas.NewFileSetForBucket(ctx, module.Bucket)
+		if err != nil {
+			return false, err
+		}
+		manifestBlob, err := bufcas.ManifestToBlob(fileSet.Manifest())
 		if err != nil {
 			return false, fmt.Errorf("manifest to blob: %w", err)
 		}
-		manifestDigest := manifestBlob.Digest().String()
-		if manifestDigest == bsrCommitToMatch.ManifestDigest {
+		if bufcas.DigestEqual(digestToMatch, manifestBlob.Digest()) {
 			// Content-match found; select this commit.
 			return true, nil
 		}
@@ -640,7 +649,7 @@ func (s *syncer) protectSyncedModuleBranch(
 	if err != nil {
 		return err
 	}
-	if syncPoint != nil {
+	if syncPoint == nil {
 		// Branch has never been synced, there is nothing to protected against.
 		return nil
 	}

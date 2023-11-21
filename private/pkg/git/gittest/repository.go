@@ -88,9 +88,9 @@ func (r *repository) Commit(t *testing.T, msg string, files map[string]string, o
 }
 func (r *repository) Tag(t *testing.T, name string, msg string) {
 	if msg != "" {
-		runInDir(t, r.runner, r.repoDir, "git", "tag", "-m", msg, name)
+		runInDir(t, r.runner, r.repoDir, "git", "tag", "-fm", msg, name)
 	} else {
-		runInDir(t, r.runner, r.repoDir, "git", "tag", name)
+		runInDir(t, r.runner, r.repoDir, "git", "tag", "-f", name)
 	}
 }
 func (r *repository) Push(t *testing.T) {
@@ -104,6 +104,9 @@ func (r *repository) Merge(t *testing.T, branch string) {
 func (r *repository) PackRefs(t *testing.T) {
 	runInDir(t, r.runner, r.repoDir, "git", "pack-refs", "--all")
 	runInDir(t, r.runner, r.repoDir, "git", "repack")
+}
+func (r *repository) ResetHard(t *testing.T, ref string) {
+	runInDir(t, r.runner, r.repoDir, "git", "reset", "--hard", ref)
 }
 
 var _ Repository = (*repository)(nil)
