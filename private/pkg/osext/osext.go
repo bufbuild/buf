@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package osextended provides os utilities.
-package osextended
+// Package osext provides os utilities.
+package osext
 
 import (
 	"errors"

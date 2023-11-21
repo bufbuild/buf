@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opentelemetry.io/otel"
@@ -268,8 +268,8 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigSet(
 	if err != nil {
 		return nil, err
 	}
-	workspaceConfigs := slicesextended.ToMap(bufwork.AllConfigFilePaths)
-	moduleConfigs := slicesextended.ToMap(bufconfig.AllConfigFilePaths)
+	workspaceConfigs := slicesext.ToMap(bufwork.AllConfigFilePaths)
+	moduleConfigs := slicesext.ToMap(bufconfig.AllConfigFilePaths)
 	terminateFileProvider := readBucketCloser.TerminateFileProvider()
 	var workspaceConfigDirectory string
 	var moduleConfigDirectory string

@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protovalidate-go"
 	"google.golang.org/protobuf/proto"
 )
@@ -66,7 +66,7 @@ func BlobToProto(blob Blob, options ...ProtoOption) (*storagev1beta1.Blob, error
 
 // BlobsToProto converts the given Blobs to proto Blobs.
 func BlobsToProto(blobs []Blob, options ...ProtoOption) ([]*storagev1beta1.Blob, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		blobs,
 		func(blob Blob) (*storagev1beta1.Blob, error) {
 			return BlobToProto(blob, options...)
@@ -90,7 +90,7 @@ func ProtoToBlob(protoBlob *storagev1beta1.Blob, options ...ProtoOption) (Blob, 
 
 // ProtoToBlobs converts the given proto Blobs to Blobs.
 func ProtoToBlobs(protoBlobs []*storagev1beta1.Blob, options ...ProtoOption) ([]Blob, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		protoBlobs,
 		func(protoBlob *storagev1beta1.Blob) (Blob, error) {
 			return ProtoToBlob(protoBlob, options...)
@@ -146,7 +146,7 @@ func DigestToProto(digest Digest, options ...ProtoOption) (*storagev1beta1.Diges
 
 // DigestsToProto converts the given Digests to proto Digests.
 func DigestsToProto(digests []Digest, options ...ProtoOption) ([]*storagev1beta1.Digest, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		digests,
 		func(digest Digest) (*storagev1beta1.Digest, error) {
 			return DigestToProto(digest, options...)
@@ -174,7 +174,7 @@ func ProtoToDigest(protoDigest *storagev1beta1.Digest, options ...ProtoOption) (
 
 // ProtoToDigests converts the given proto Digests to Digests.
 func ProtoToDigests(protoDigests []*storagev1beta1.Digest, options ...ProtoOption) ([]Digest, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		protoDigests,
 		func(protoDigest *storagev1beta1.Digest) (Digest, error) {
 			return ProtoToDigest(protoDigest, options...)
@@ -200,7 +200,7 @@ func FileNodeToProto(fileNode FileNode, options ...ProtoOption) (*storagev1beta1
 
 // FileNodesToProto converts the given FileNodes to proto FileNodes.
 func FileNodesToProto(fileNodes []FileNode, options ...ProtoOption) ([]*storagev1beta1.FileNode, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		fileNodes,
 		func(fileNode FileNode) (*storagev1beta1.FileNode, error) {
 			return FileNodeToProto(fileNode, options...)
@@ -224,7 +224,7 @@ func ProtoToFileNode(protoFileNode *storagev1beta1.FileNode, options ...ProtoOpt
 
 // ProtoToFileNodes converts the given proto FileNodes to FileNodes.
 func ProtoToFileNodes(protoFileNodes []*storagev1beta1.FileNode, options ...ProtoOption) ([]FileNode, error) {
-	return slicesextended.MapError(
+	return slicesext.MapError(
 		protoFileNodes,
 		func(protoFileNode *storagev1beta1.FileNode) (FileNode, error) {
 			return ProtoToFileNode(protoFileNode, options...)

@@ -21,7 +21,7 @@ import (
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/netextended"
+	"github.com/bufbuild/buf/private/pkg/netext"
 )
 
 // ValidateProtoModuleReference verifies the given module reference is well-formed.
@@ -126,7 +126,7 @@ func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 }
 
 func validateRemote(remote string) error {
-	if _, err := netextended.ValidateHostname(remote); err != nil {
+	if _, err := netext.ValidateHostname(remote); err != nil {
 		return fmt.Errorf("invalid remote %q: %w", remote, err)
 	}
 	return nil

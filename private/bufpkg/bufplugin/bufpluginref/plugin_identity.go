@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/netextended"
+	"github.com/bufbuild/buf/private/pkg/netext"
 )
 
 type pluginIdentity struct {
@@ -81,7 +81,7 @@ func ValidateRemote(remote string) error {
 	if remote == "" {
 		return errors.New("remote name is required")
 	}
-	if _, err := netextended.ValidateHostname(remote); err != nil {
+	if _, err := netext.ValidateHostname(remote); err != nil {
 		return fmt.Errorf("invalid remote %q: %w", remote, err)
 	}
 	return nil

@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testingextended
+// Generated. DO NOT EDIT.
 
-import (
-	"testing"
-	"time"
-)
+package filepathext
 
-// SkipIfShort skips the test if testing.short is set.
-func SkipIfShort(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-}
-
-// GetTestTimeout returns the time remaining until the test times out or 10m if the test is not set to timeout.
-func GetTestTimeout(t *testing.T) time.Duration {
-	if deadline, ok := t.Deadline(); ok && !deadline.IsZero() {
-		return time.Until(deadline)
-	}
-	return 10 * time.Minute
-}
+import _ "github.com/bufbuild/buf/private/usage"

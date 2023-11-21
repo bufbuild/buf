@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/testingextended"
+	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -68,7 +68,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -83,7 +83,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(
@@ -98,7 +98,7 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -110,7 +110,7 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(
@@ -122,7 +122,7 @@ func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	t.Parallel()
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
 	testCompareGeneratedStubs(
