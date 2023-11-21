@@ -69,11 +69,7 @@ type BufWorkYAMLFile interface {
 
 // NewBufWorkYAMLFile returns a new BufWorkYAMLFile.
 func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
-	bufWorkYAMLFile, err := newBufWorkYAMLFile(fileVersion, dirPaths)
-	if err != nil {
-		return nil, err
-	}
-	return bufWorkYAMLFile, nil
+	return newBufWorkYAMLFile(fileVersion, dirPaths)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file at the given bucket prefix.

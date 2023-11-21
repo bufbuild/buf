@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,14 +45,61 @@ func TestPutAndGetBufWorkYAMLFileForPrefix(t *testing.T) {
 func TestReadBufWorkYAMLFileValidateVersion(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	bucket, err := storageos.NewProvider().NewReadWriteBucket(filepath.Join("testdata", "bufworkyaml"))
-	require.NoError(t, err)
-	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "valid")
-	require.NoError(t, err)
-	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "invalid_version_v1beta1")
-	require.Error(t, err)
-	_, err = GetBufWorkYAMLFileForPrefix(ctx, bucket, "invalid_version_v2")
-	require.Error(t, err)
+	testcases := []struct {
+		description      string
+		prefix           string
+		content          string
+		isErr            bool
+		expectedDirPaths []string
+	}{
+		{
+			description: "current_directory",
+			prefix:      ".",
+			content: `version: v1
+directories:
+  - foo
+  - bar
+`,
+			expectedDirPaths: []string{"bar", "foo"},
+		},
+		{
+			description: "sub_directory",
+			prefix:      "path",
+			content: `version: v1
+directories:
+  - foo
+`,
+			expectedDirPaths: []string{"bar"},
+		},
+		{
+			description: "invalid_version",
+			prefix:      ".",
+			content: `version: 1
+directories:
+  - foo
+`,
+			isErr: true,
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+			readBucket, err := storagemem.NewReadBucket(
+				map[string][]byte{
+					filepath.Join(testcase.prefix, "buf.work.yaml"): []byte(testcase.content),
+				},
+			)
+			require.NoError(t, err)
+			bufWorkYAMLFile, err := GetBufWorkYAMLFileForPrefix(ctx, readBucket, testcase.prefix)
+			if testcase.isErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, testcase.expectedDirPaths, bufWorkYAMLFile.DirPaths())
+		})
+	}
 }
 
 func TestNewBufWorkYAMLFile(t *testing.T) {
@@ -132,7 +178,12 @@ func TestNewWorkYAMLFileFail(t *testing.T) {
 			dirPaths:    []string{"foo", "."},
 		},
 		{
-			description: "invalid_version",
+			description: "invalid_version_v1beta1",
+			version:     FileVersionV1Beta1,
+			dirPaths:    []string{"foo", "bar"},
+		},
+		{
+			description: "invalid_version_v2",
 			version:     FileVersionV2,
 			dirPaths:    []string{"foo", "bar"},
 		},
