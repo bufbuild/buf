@@ -14,8 +14,28 @@
 
 package bufconfig
 
-// TODO
-var DefaultLintConfig LintConfig = nil
+var (
+	DefaultLintConfig LintConfig = defaultLintConfigV1
+
+	defaultLintConfigV1Beta1 = newLintConfig(
+		defaultCheckConfigV1Beta1,
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
+	defaultLintConfigV1 = newLintConfig(
+		defaultCheckConfigV1,
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
+)
 
 // LintConfig is lint configuration for a specific Module.
 type LintConfig interface {

@@ -16,6 +16,23 @@ package bufconfig
 
 import "github.com/bufbuild/buf/private/pkg/slicesextended"
 
+var (
+	defaultCheckConfigV1Beta1 = newCheckConfig(
+		FileVersionV1Beta1,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+	defaultCheckConfigV1 = newCheckConfig(
+		FileVersionV1,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+)
+
 // CheckConfig is the common interface for the configuration shared by
 // LintConfig and BreakingConfig.
 type CheckConfig interface {

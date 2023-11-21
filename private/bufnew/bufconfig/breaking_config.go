@@ -14,8 +14,18 @@
 
 package bufconfig
 
-// TODO
-var DefaultBreakingConfig BreakingConfig = nil
+var (
+	DefaultBreakingConfig BreakingConfig = defaultBreakingConfigV1
+
+	defaultBreakingConfigV1Beta1 = newBreakingConfig(
+		defaultCheckConfigV1Beta1,
+		false,
+	)
+	defaultBreakingConfigV1 = newBreakingConfig(
+		defaultCheckConfigV1,
+		false,
+	)
+)
 
 // BreakingConfig is breaking configuration for a specific Module.
 type BreakingConfig interface {
