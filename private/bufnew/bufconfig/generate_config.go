@@ -15,8 +15,6 @@
 package bufconfig
 
 // GenerateConfig is a generation configuration.
-//
-// TODO
 type GenerateConfig interface {
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
 	// non-empty. Zero plugin configs will cause an error at construction time.
