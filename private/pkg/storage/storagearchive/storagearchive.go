@@ -229,7 +229,7 @@ func Unzip(
 
 func isAppleExtendedAttributesFile(fileInfo fs.FileInfo) bool {
 	// On macOS, .tar archives created with libarchive will contain additional
-	// files with a prefix of "._" if there are files with ext attributes
+	// files with a prefix of "._" if there are files with extended attributes
 	// and copyfile is enabled.
 	// Archive Utility.app has a similar behavior when creating .zip archives,
 	// except they are placed under a separate MACOSX directory tree.
