@@ -39,7 +39,7 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 			categoriesMap[category] = struct{}{}
 		}
 	}
-	categories := slicesextended.MapToSlice(categoriesMap)
+	categories := slicesextended.MapKeysToSlice(categoriesMap)
 	sort.Slice(
 		categories,
 		func(i int, j int) bool {
@@ -57,7 +57,7 @@ func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
 	for id := range versionSpec.IDToCategories {
 		m[id] = struct{}{}
 	}
-	return slicesextended.MapToSortedSlice(m)
+	return slicesextended.MapKeysToSortedSlice(m)
 }
 
 // AllCategoriesAndIDsForVersionSpec returns all categories and rules for the VersionSpec.
@@ -71,5 +71,5 @@ func AllCategoriesAndIDsForVersionSpec(versionSpec *VersionSpec) []string {
 			m[category] = struct{}{}
 		}
 	}
-	return slicesextended.MapToSortedSlice(m)
+	return slicesextended.MapKeysToSortedSlice(m)
 }

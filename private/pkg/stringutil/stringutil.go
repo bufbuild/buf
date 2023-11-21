@@ -60,14 +60,14 @@ func SplitTrimLinesNoEmpty(output string) []string {
 //
 // Deprecated: Use slicesextended.MapToSortedSlice instead.
 func MapToSortedSlice(m map[string]struct{}) []string {
-	return slicesextended.MapToSortedSlice(m)
+	return slicesextended.MapKeysToSortedSlice(m)
 }
 
 // MapToSlice transforms m to a slice.
 //
 // Deprecated: Use slicesextended.MapToSlice instead.
 func MapToSlice(m map[string]struct{}) []string {
-	return slicesextended.MapToSlice(m)
+	return slicesextended.MapKeysToSlice(m)
 }
 
 // SliceToMap transforms s to a map.
@@ -94,7 +94,7 @@ func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
 			delete(m, key)
 		}
 	}
-	return slicesextended.MapToSortedSlice(m)
+	return slicesextended.MapKeysToSortedSlice(m)
 }
 
 // SliceToChunks splits s into chunks of the given chunk size.
