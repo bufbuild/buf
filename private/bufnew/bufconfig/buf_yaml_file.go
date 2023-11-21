@@ -21,8 +21,10 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesextended"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 const (
@@ -114,7 +116,7 @@ func newBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	generateConfigs []GenerateConfig,
 ) (*bufYAMLFile, error) {
-	// TODO
+	// TODO: validation
 	return &bufYAMLFile{
 		fileVersion:     fileVersion,
 		moduleConfigs:   moduleConfigs,
@@ -137,6 +139,7 @@ func (c *bufYAMLFile) GenerateConfigs() []GenerateConfig {
 func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 
+// TODO: port tests from bufmoduleconfig, buflintconfig, bufbreakingconfig
 func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -152,20 +155,24 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}
+		if fileVersion == FileVersionV1 && len(externalBufYAMLFile.Build.Roots) > 0 {
+			return nil, fmt.Errorf("build.roots cannot be set on version %v: %v", fileVersion, externalBufYAMLFile.Build.Roots)
+		}
+		rootToExcludes, err := getRootToExcludes(externalBufYAMLFile.Build.Roots, externalBufYAMLFile.Build.Excludes)
+		if err != nil {
+			return nil, err
+		}
 		moduleFullName, err := bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
 		if err != nil {
 			return nil, fmt.Errorf("invalid module name: %w", err)
 		}
-		// TODO: finish
 		return newBufYAMLFile(
 			fileVersion,
 			[]ModuleConfig{
 				newModuleConfig(
 					".",
 					moduleFullName,
-					map[string][]string{
-						".": []string{},
-					},
+					rootToExcludes,
 					newLintConfig(
 						newCheckConfig(
 							fileVersion,
@@ -215,6 +222,77 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// This is a system error since we've already parsed.
 		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
+}
+
+func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]string, error) {
+	if len(roots) == 0 {
+		roots = []string{"."}
+	}
+
+	rootToExcludes := make(map[string][]string)
+	roots, err := normalizeAndCheckPaths(roots, "root")
+	if err != nil {
+		return nil, err
+	}
+	for _, root := range roots {
+		// we already checked duplicates, but just in case
+		if _, ok := rootToExcludes[root]; ok {
+			return nil, fmt.Errorf("unexpected duplicate root: %q", root)
+		}
+		rootToExcludes[root] = []string{}
+	}
+	if len(fullExcludes) == 0 {
+		return rootToExcludes, nil
+	}
+
+	// This also verifies that fullExcludes is unique.
+	fullExcludes, err = normalizeAndCheckPaths(fullExcludes, "exclude")
+	if err != nil {
+		return nil, err
+	}
+	// Verify that no exclude equals a root directly and only directories are specified.
+	for _, fullExclude := range fullExcludes {
+		if normalpath.Ext(fullExclude) == ".proto" {
+			return nil, fmt.Errorf("excludes can only be directories but file %s discovered", fullExclude)
+		}
+		if _, ok := rootToExcludes[fullExclude]; ok {
+			return nil, fmt.Errorf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", fullExclude)
+		}
+	}
+
+	// Verify that all excludes are within a root.
+	rootMap := slicesextended.ToMap(roots)
+	for _, fullExclude := range fullExcludes {
+		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
+		case 0:
+			return nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", fullExclude)
+		case 1:
+			root := matchingRoots[0]
+			exclude, err := normalpath.Rel(root, fullExclude)
+			if err != nil {
+				return nil, err
+			}
+			// Just in case.
+			exclude, err = normalpath.NormalizeAndValidate(exclude)
+			if err != nil {
+				return nil, err
+			}
+			rootToExcludes[root] = append(rootToExcludes[root], exclude)
+		default:
+			// This should never happen, but just in case.
+			return nil, fmt.Errorf("exclude %q was in multiple roots %v", fullExclude, matchingRoots)
+		}
+	}
+
+	for root, excludes := range rootToExcludes {
+		uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
+		if len(excludes) != len(uniqueSortedExcludes) {
+			// This should never happen, but just in case.
+			return nil, fmt.Errorf("excludes %v are not unique", excludes)
+		}
+		rootToExcludes[root] = uniqueSortedExcludes
+	}
+	return rootToExcludes, nil
 }
 
 // externalBufYAMLFileV1Beta1 represents the v1 or v1beta1 buf.yaml file, which have
