@@ -18,44 +18,35 @@ package bufconfig
 //
 // TODO
 type GenerateConfig interface {
+	// GeneratePluginConfigs returns the plugin configurations. This will always be
+	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
-	// may be nil
+	// GenerateManagedConfig returns the managed mode configuration. This is never nil.
+	// If not defined by user, this config will return false from Enabled().
 	GenerateManagedConfig() GenerateManagedConfig
-	// may be empty
-	// will always be empty in v2
+	// GenerateTypeConfig returns the types to generate code for. This overrides other type
+	// filters from input configurations, which exist in v2.
+	// This will always be nil in v2
+	GenerateTypeConfig() GenerateTypeConfig
 	// TODO: we may need a way to attach inputs to make this consistent, but
 	// can deal with that for v2.
-	//GenerateInputConfigs() []GenerateInputConfig
+	// GenerateInputConfigs() []GenerateInputConfig
 
-	// may be nil
-	// will always be nil in v2
-	GenerateTypeConfig() GenerateTypeConfig
 	isGenerateConfig()
 }
 
-type GeneratePluginConfig interface {
-	Plugin() string
-	Revision() int
-	Out() string
-	// TODO define enum in same pattern as FileVersion
-	// GenerateStrategy() GenerateStrategy
-	// TODO finish
-	// TODO: figure out what to do with TypesConfig
-	isGeneratePluginConfig()
+// GenerateInputConfig is an input configuration.
+type GenerateInputConfig interface {
+	// TODO: implement this in v2
+	isGenerateInputConfig()
 }
 
-type GenerateManagedConfig interface {
-	// second value is whether or not this was present
-	CCEnableArenas() (bool, bool)
-	// TODO finish
-	isGenerateManagedConfig()
-}
-
-//type GenerateInputConfig interface {
-//isGenerateInputConfig()
-//}
-
+// GenerateTypeConfig is a type filter configuration.
 type GenerateTypeConfig interface {
+	// If IncludeTypes returns a non-empty list, it means that only those types are
+	// generated. Otherwise all types are generated.
+	IncludeTypes() []string
+
 	isGenerateTypeConfig()
 }
 
