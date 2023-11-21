@@ -176,16 +176,18 @@ func testExistingRemoteBranchPreviouslySyncedUnprotectedOverlapWithAnotherSynced
 func testExistingRemoteBranchPreviouslySyncedUnprotectedNoOverlapWithAnySyncedBranchContentMatch(t *testing.T, run runFunc) {
 	repo := gittest.ScaffoldGitRepository(t)
 	repo.CheckoutB(t, "basebranch")
+	originalHead, err := repo.HEADCommit(git.HEADCommitWithBranch("basebranch"))
+	require.NoError(t, err)
 	module1 := doCommitRandomModule(t, repo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
 	doEmptyCommits(t, repo, 3, &counter)
-	_, err := run(t, repo, opts...)
+	_, err = run(t, repo, opts...)
 	require.NoError(t, err)
 	// remove all commits and recreate again
-	repo.ResetHard(t, "HEAD~4")
+	repo.ResetHard(t, originalHead.Hash().Hex())
 	doCommitRandomModule(t, repo, ".", module1) // put back original module
 	doEmptyCommits(t, repo, 3, &counter)
 
