@@ -22,7 +22,7 @@ import "sync"
 //
 // If f panics, the returned function will panic with the same value on every call.
 //
-// This is copied from sync.OnceValues and ext to for three values.
+// This is copied from sync.OnceValues and extended to for three values.
 func OnceValues3[T1, T2, T3 any](f func() (T1, T2, T3)) func() (T1, T2, T3) {
 	var (
 		once  sync.Once
