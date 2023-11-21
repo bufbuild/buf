@@ -17,7 +17,7 @@ package app
 import (
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 )
 
 type stderrContainer struct {
@@ -29,7 +29,7 @@ func newStderrContainer(writer io.Writer) *stderrContainer {
 		writer = io.Discard
 	}
 	return &stderrContainer{
-		writer: ioextended.LockedWriter(writer),
+		writer: ioext.LockedWriter(writer),
 	}
 }
 

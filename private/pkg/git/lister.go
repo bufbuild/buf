@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
@@ -65,7 +65,7 @@ func (l *lister) ListFilesAndUnstagedFiles(
 	if err != nil {
 		return nil, err
 	}
-	return slicesextended.ToUniqueSorted(
+	return slicesext.ToUniqueSorted(
 		filterNonRegularFiles(
 			stringSliceExceptMatches(
 				stringSliceExcept(
@@ -82,7 +82,7 @@ func (l *lister) ListFilesAndUnstagedFiles(
 
 // stringSliceExcept returns all elements in source that are not in except.
 func stringSliceExcept(source []string, except []string) []string {
-	exceptMap := slicesextended.ToMap(except)
+	exceptMap := slicesext.ToMap(except)
 	result := make([]string, 0, len(source))
 	for _, s := range source {
 		if _, ok := exceptMap[s]; !ok {

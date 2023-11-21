@@ -35,7 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Image is an extended FileDescriptorSet.
+// Image is an ext FileDescriptorSet.
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 type Image struct {
@@ -85,7 +85,7 @@ func (x *Image) GetFile() []*ImageFile {
 	return nil
 }
 
-// ImageFile is an extended FileDescriptorProto.
+// ImageFile is an ext FileDescriptorProto.
 //
 // Since FileDescriptorProto does not have extensions, we copy the fields from
 // FileDescriptorProto, and then add our own extensions via the buf_extension

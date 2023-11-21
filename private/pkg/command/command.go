@@ -74,7 +74,7 @@ func RunWithEnv(env map[string]string) RunOption {
 
 // RunWithStdin returns a new RunOption that sets the stdin.
 //
-// The default is ioextended.DiscardReader.
+// The default is ioext.DiscardReader.
 func RunWithStdin(stdin io.Reader) RunOption {
 	return func(execOptions *execOptions) {
 		execOptions.stdin = stdin
@@ -133,7 +133,7 @@ func StartWithEnv(env map[string]string) StartOption {
 
 // StartWithStdin returns a new RunOption that sets the stdin.
 //
-// The default is ioextended.DiscardReader.
+// The default is ioext.DiscardReader.
 func StartWithStdin(stdin io.Reader) StartOption {
 	return func(execOptions *execOptions) {
 		execOptions.stdin = stdin

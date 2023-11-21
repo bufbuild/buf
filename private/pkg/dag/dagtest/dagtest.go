@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,7 +68,7 @@ func normalizeExpectedNodes[Key Ordered](expectedNodes []ExpectedNode[Key]) []Ex
 	if expectedNodes == nil {
 		return []ExpectedNode[Key]{}
 	}
-	c := slicesextended.Copy(expectedNodes)
+	c := slicesext.Copy(expectedNodes)
 	sort.Slice(
 		c,
 		func(i int, j int) bool {
@@ -86,7 +86,7 @@ func normalizeKeys[Key Ordered](keys []Key) []Key {
 	if keys == nil {
 		return []Key{}
 	}
-	keys = slicesextended.Copy(keys)
+	keys = slicesext.Copy(keys)
 	sort.Slice(
 		keys,
 		func(i int, j int) bool {

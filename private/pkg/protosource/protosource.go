@@ -155,7 +155,7 @@ type OptionExtensionDescriptor interface {
 
 // Location defines source code info location information.
 //
-// May be extended in the future to include comments.
+// May be ext in the future to include comments.
 //
 // Note that unlike SourceCodeInfo_Location, these are not zero-indexed.
 type Location interface {

@@ -20,7 +20,7 @@ import (
 	"os/exec"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
@@ -108,7 +108,7 @@ func (e *execOptions) ApplyToCmd(cmd *exec.Cmd) {
 	// If the user did not specify any stdin, we want to make sure
 	// the command has access to none, as the default is the default stdin.
 	if e.stdin == nil {
-		cmd.Stdin = ioextended.DiscardReader
+		cmd.Stdin = ioext.DiscardReader
 	} else {
 		cmd.Stdin = e.stdin
 	}

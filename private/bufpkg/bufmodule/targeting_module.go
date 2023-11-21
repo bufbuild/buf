@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -56,7 +56,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			bufmoduleref.SortFileInfos(fileInfos)
 		}
 	}()
-	excludePathMap := slicesextended.ToMap(m.excludePaths)
+	excludePathMap := slicesext.ToMap(m.excludePaths)
 	// We start by ensuring that no paths have been duplicated between target and exclude pathes.
 	for _, targetPath := range m.targetPaths {
 		if _, ok := excludePathMap[targetPath]; ok {
@@ -150,7 +150,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	}
 	// We have potential directory paths, do the expensive operation to
 	// make a map of the directory paths.
-	potentialDirPathMap := slicesextended.ToMap(potentialDirPaths)
+	potentialDirPathMap := slicesext.ToMap(potentialDirPaths)
 	// The map of paths within potentialDirPath that matches a file.
 	// This needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every targetPath input.

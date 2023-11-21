@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package netextended
+package testingext
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -25,7 +25,7 @@ type field struct {
 	label         descriptorpb.FieldDescriptorProto_Label
 	typ           descriptorpb.FieldDescriptorProto_Type
 	typeName      string
-	// if the field is an extension, this is the type being extended
+	// if the field is an extension, this is the type being ext
 	extendee string
 	// this has to be the pointer to the private struct or you have the bug where the
 	// interface is nil but value == nil is false

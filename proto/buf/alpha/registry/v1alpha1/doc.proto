@@ -361,7 +361,7 @@ message Field {
   // import_module_ref is included if the field is an imported type.
   // It contains all the metadata for the import.
   ImportModuleRef import_module_ref = 8;
-  // Extendee is the name of the type that is being extended if the field is an extension.
+  // Extendee is the name of the type that is being ext if the field is an extension.
   // This is an empty string for fields that are not extenions.
   string extendee = 9;
   FieldOptions field_options = 10;
@@ -392,7 +392,7 @@ message MapEntry {
 
 // FileExtension provides the information for the documentation of a file extension.
 message FileExtension {
-  // extension_type is the string representation of the type being extended.
+  // extension_type is the string representation of the type being ext.
   string extension_type = 1;
   // description is derived from the leading comments of a given message field.
   //

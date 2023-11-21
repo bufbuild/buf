@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpserver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -186,7 +186,7 @@ func run(
 		container.Logger(),
 		flags.Origin,
 		clientTLSConfig,
-		slicesextended.ToMap(flags.DisallowedHeaders),
+		slicesext.ToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 		flags.PrivateNetwork,
 	)

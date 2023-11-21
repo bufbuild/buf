@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package osextended
+package ioext
 
 import _ "github.com/bufbuild/buf/private/usage"

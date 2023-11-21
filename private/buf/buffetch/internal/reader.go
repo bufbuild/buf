@@ -29,9 +29,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/osextended"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -238,7 +238,7 @@ func (r *reader) getArchiveBucket(
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
-			readerAt, err = ioextended.ReaderAtForReader(readCloser)
+			readerAt, err = ioext.ReaderAtForReader(readCloser)
 			if err != nil {
 				return nil, err
 			}
@@ -418,7 +418,7 @@ func (r *reader) getBucketRootPathAndRelativePath(
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
 		// terminateFileDirectoryAbsPath to the target DirRef.Path.
-		wd, err := osextended.Getwd()
+		wd, err := osext.Getwd()
 		if err != nil {
 			return "", "", err
 		}
@@ -579,9 +579,9 @@ func (r *reader) getFileReadCloserAndSize(
 		if err != nil {
 			return nil, -1, err
 		}
-		return ioextended.CompositeReadCloser(
+		return ioext.CompositeReadCloser(
 			gzipReadCloser,
-			ioextended.ChainCloser(
+			ioext.ChainCloser(
 				gzipReadCloser,
 				readCloser,
 			),
@@ -592,9 +592,9 @@ func (r *reader) getFileReadCloserAndSize(
 			return nil, -1, err
 		}
 		zstdReadCloser := zstdDecoder.IOReadCloser()
-		return ioextended.CompositeReadCloser(
+		return ioext.CompositeReadCloser(
 			zstdReadCloser,
-			ioextended.ChainCloser(
+			ioext.ChainCloser(
 				zstdReadCloser,
 				readCloser,
 			),
@@ -642,7 +642,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 	case FileSchemeStdout:
 		return nil, -1, errors.New("cannot read from stdout")
 	case FileSchemeNull:
-		return ioextended.DiscardReadCloser, 0, nil
+		return ioext.DiscardReadCloser, 0, nil
 	default:
 		return nil, -1, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}

@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package filepathextended
+package osext
 
 import _ "github.com/bufbuild/buf/private/usage"
