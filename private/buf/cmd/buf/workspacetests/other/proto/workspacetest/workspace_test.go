@@ -25,14 +25,14 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/osextended"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWorkspaceSubDirectory(t *testing.T) {
 	// Execute buf within a workspace directory.
 	t.Parallel()
-	wd, err := osextended.Getwd()
+	wd, err := osext.Getwd()
 	require.NoError(t, err)
 	parentDirectory := filepath.Join(wd, "..")
 	testRunStdout(

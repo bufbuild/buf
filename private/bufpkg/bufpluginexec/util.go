@@ -23,7 +23,7 @@ import (
 // handlePotentialTooManyFilesError checks if the error is a result of too many files
 // being open, and if so, modifies the output error with a help message.
 //
-// This could potentially go in osextended, but we want to provide a specific help
+// This could potentially go in osext, but we want to provide a specific help
 // message referencing StrategyAll, so it is simplest to just put this here for now.
 func handlePotentialTooManyFilesError(err error) error {
 	if isTooManyFilesError(err) {

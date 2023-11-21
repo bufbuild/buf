@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -128,6 +128,6 @@ func newStderrWriteCloser(delegate io.Writer, pluginPath string) io.WriteCloser 
 		// We did not document if pluginPath is normalized or not, so
 		return newProtocGenSwiftStderrWriteCloser(delegate)
 	default:
-		return ioextended.NopWriteCloser(delegate)
+		return ioext.NopWriteCloser(delegate)
 	}
 }

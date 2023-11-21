@@ -17,7 +17,7 @@ package app
 import (
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 )
 
 type stdoutContainer struct {
@@ -29,7 +29,7 @@ func newStdoutContainer(writer io.Writer) *stdoutContainer {
 		writer = io.Discard
 	}
 	return &stdoutContainer{
-		writer: ioextended.LockedWriter(writer),
+		writer: ioext.LockedWriter(writer),
 	}
 }
 

@@ -7,7 +7,7 @@ message Foo {
   extensions 10 to max;
 }
 extend Foo {
-  optional string extended = 11;
+  optional string ext = 11;
 }
 -- b.proto --
 syntax = "proto2";
