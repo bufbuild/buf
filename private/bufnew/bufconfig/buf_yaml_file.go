@@ -166,8 +166,31 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 					map[string][]string{
 						".": []string{},
 					},
-					DefaultLintConfig,
-					DefaultBreakingConfig,
+					newLintConfig(
+						newCheckConfig(
+							fileVersion,
+							externalBufYAMLFile.Lint.Use,
+							externalBufYAMLFile.Lint.Except,
+							externalBufYAMLFile.Lint.Ignore,
+							externalBufYAMLFile.Lint.IgnoreOnly,
+						),
+						externalBufYAMLFile.Lint.EnumZeroValueSuffix,
+						externalBufYAMLFile.Lint.RPCAllowSameRequestResponse,
+						externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyRequests,
+						externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyResponses,
+						externalBufYAMLFile.Lint.ServiceSuffix,
+						externalBufYAMLFile.Lint.AllowCommentIgnores,
+					),
+					newBreakingConfig(
+						newCheckConfig(
+							fileVersion,
+							externalBufYAMLFile.Breaking.Use,
+							externalBufYAMLFile.Breaking.Except,
+							externalBufYAMLFile.Breaking.Ignore,
+							externalBufYAMLFile.Breaking.IgnoreOnly,
+						),
+						externalBufYAMLFile.Breaking.IgnoreUnstablePackages,
+					),
 				),
 			},
 			nil,
