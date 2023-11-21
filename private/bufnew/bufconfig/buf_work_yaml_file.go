@@ -254,3 +254,9 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	}
 	return sortedNormalizedDirPaths, nil
 }
+
+// externalBufWorkYAMLFileV1 represents the v1 buf.work.yaml file.
+type externalBufWorkYAMLFileV1 struct {
+	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
+	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
+}
