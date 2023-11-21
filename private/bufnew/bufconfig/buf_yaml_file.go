@@ -166,6 +166,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid module name: %w", err)
 		}
+		// TODO: deps are currently dropped
 		return newBufYAMLFile(
 			fileVersion,
 			[]ModuleConfig{
