@@ -438,19 +438,19 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 //
 // This logic can be complicated, so here's a table of expected behavior:
 //
-//	CONDITION							RESUME FROM (-> means fallback)
+//	CONDITION                        RESUME FROM (-> means fallback)
 //	new remote branch:
-//		unprotected:					any synced commit from any branch -> START of branch
-//		protected:
-//			not release branch:			START of branch
-//			release lineage:
-//				empty:					START of branch
-//				not empty:				content match(HEAD of Release) -> HEAD of branch
+//	  unprotected:                   any synced commit from any branch -> START of branch
+//	  protected:
+//	    not release branch:          START of branch
+//	    release lineage:
+//	      empty:                     START of branch
+//	      not empty:                 content match(HEAD of Release) -> HEAD of branch
 //	existing remote branch:
-//		not previously synced:			content match -> HEAD of branch
-//		previously synced:
-//			protected:					protect branch && any synced commit from branch -> error
-//			unprotected:				any synced commit from any branch -> content match -> HEAD of branch
+//	  not previously synced:         content match -> HEAD of branch
+//	  previously synced:
+//	    protected:                   protect branch && any synced commit from branch -> error
+//	    unprotected:                 any synced commit from any branch -> content match -> HEAD of branch
 func (s *syncer) determineCommitsToVisitForModuleBranch(
 	ctx context.Context,
 	moduleDir string,
