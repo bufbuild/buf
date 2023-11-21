@@ -16,6 +16,7 @@ package gittest
 
 import (
 	"testing"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -107,6 +108,8 @@ func (r *repository) PackRefs(t *testing.T) {
 }
 func (r *repository) ResetHard(t *testing.T, ref string) {
 	runInDir(t, r.runner, r.repoDir, "git", "reset", "--hard", ref)
+	// pause for a sec and let Git update some internal state
+	time.Sleep(1 * time.Second)
 }
 
 var _ Repository = (*repository)(nil)

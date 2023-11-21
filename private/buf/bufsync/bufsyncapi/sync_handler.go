@@ -145,7 +145,7 @@ func (h *syncHandler) IsGitCommitSyncedToBranch(
 		return false, err
 	}
 	service := h.repositoryBranchServiceClientFactory(moduleIdentity.Remote())
-	nextPageToken := ""
+	var nextPageToken string
 	for {
 		res, err := service.ListRepositoryBranchesByReference(ctx, connect.NewRequest(&registryv1alpha1.ListRepositoryBranchesByReferenceRequest{
 			RepositoryId: repositoryID,

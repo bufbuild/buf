@@ -25,53 +25,54 @@ import (
 )
 
 func testExistingRemoteBranchNotPreviouslySyncedContentMatch(t *testing.T, handler TestHandler, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	repo.CheckoutB(t, "randombranch")
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	gitRepo.CheckoutB(t, "randombranch")
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	doRandomUpdateToModule(t, repo, ".", &counter)
-	headCommit, err := repo.HEADCommit(git.HEADCommitWithBranch("randombranch"))
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	headCommit, err := gitRepo.HEADCommit(git.HEADCommitWithBranch("randombranch"))
 	require.NoError(t, err)
-	doManualPushCommit(t, handler, repo, module1, ".", "randombranch", headCommit)
-	doRandomUpdateToModule(t, repo, ".", &counter)
-	doRandomUpdateToModule(t, repo, ".", &counter)
+	doManualPushCommit(t, handler, gitRepo, module1, ".", "randombranch", headCommit)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
 	assertPlanForModuleBranch(
 		t, plan, module1, "randombranch",
-		"change-module-3", // content matched commit
-		"change-module-4", // all commits after that
-		"change-module-5",
+		"change-module-4", // content matched commit
+		"change-module-5", // all commits after that
+		"change-module-6",
 	)
 	assertPlanForModuleTags(
 		t, plan, module1,
-		"change-module-3",
 		"change-module-4",
 		"change-module-5",
+		"change-module-6",
 	)
 }
 
 func testExistingRemoteBranchNotPreviouslySyncedNoContentMatch(t *testing.T, handler TestHandler, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	repo.CheckoutB(t, "randombranch")
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	gitRepo.CheckoutB(t, "randombranch")
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	doRandomUpdateToModule(t, repo, ".", &counter)
-	doRandomUpdateToModule(t, repo, ".", &counter)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
 	doManualPushRandomModule(t, handler, module1, "randombranch", &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -86,37 +87,37 @@ func testExistingRemoteBranchNotPreviouslySyncedNoContentMatch(t *testing.T, han
 }
 
 func testExistingRemoteBranchPreviouslySyncedProtectedFailsProtection(t *testing.T, handler TestHandler, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	_, err := run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	_, err := run(t, gitRepo, opts...)
 	require.NoError(t, err)
-	repo.ResetHard(t, "HEAD~1")
-	doRandomUpdateToModule(t, repo, ".", &counter)
+	gitRepo.ResetHard(t, "HEAD~1")
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
 
-	_, err = run(t, repo, opts...)
+	_, err = run(t, gitRepo, opts...)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `history on protected branch "master" has diverged`)
 }
 
 func testExistingRemoteBranchPreviouslySyncedProtectedPassesProtection(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	_, err := run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	_, err := run(t, gitRepo, opts...)
 	require.NoError(t, err)
-	doRandomUpdateToModule(t, repo, ".", &counter)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -136,24 +137,24 @@ func testExistingRemoteBranchPreviouslySyncedProtectedPassesProtection(t *testin
 }
 
 func testExistingRemoteBranchPreviouslySyncedUnprotectedOverlapWithAnotherSyncedBranch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	repo.CheckoutB(t, "basebranch")
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	gitRepo.CheckoutB(t, "basebranch")
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	_, err := run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	_, err := run(t, gitRepo, opts...)
 	require.NoError(t, err)
-	doEmptyCommits(t, repo, 3, &counter)
-	repo.CheckoutB(t, "otherbranch")
-	doRandomUpdateToModule(t, repo, ".", &counter)
-	_, err = run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	gitRepo.CheckoutB(t, "otherbranch")
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	_, err = run(t, gitRepo, opts...)
 	require.NoError(t, err)
-	repo.Checkout(t, "basebranch")
+	gitRepo.Checkout(t, "basebranch")
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -174,61 +175,55 @@ func testExistingRemoteBranchPreviouslySyncedUnprotectedOverlapWithAnotherSynced
 }
 
 func testExistingRemoteBranchPreviouslySyncedUnprotectedNoOverlapWithAnySyncedBranchContentMatch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	repo.CheckoutB(t, "basebranch")
-	originalHead, err := repo.HEADCommit(git.HEADCommitWithBranch("basebranch"))
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	gitRepo.CheckoutB(t, "basebranch")
+	originalHead, err := gitRepo.HEADCommit(git.HEADCommitWithBranch("basebranch"))
 	require.NoError(t, err)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	_, err = run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	_, err = run(t, gitRepo, opts...)
 	require.NoError(t, err)
 	// remove all commits and recreate again
-	repo.ResetHard(t, originalHead.Hash().Hex())
-	doCommitRandomModule(t, repo, ".", module1) // put back original module
-	doEmptyCommits(t, repo, 3, &counter)
+	gitRepo.ResetHard(t, originalHead.Hash().Hex())
+	doCommitRandomModule(t, gitRepo, ".", module1) // put back original module
+	doEmptyCommits(t, gitRepo, 3, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
 	assertPlanForModuleBranch(
 		t, plan, module1, "basebranch",
-		"module-"+module1.IdentityString(), // content-matched commit
-		"commit-4",
-		"commit-5",
-		"commit-6",
+		"commit-6", // content-matched commit
 	)
 	assertPlanForModuleTags(
 		t, plan, module1,
-		"module-"+module1.IdentityString(),
-		"commit-4",
-		"commit-5",
 		"commit-6",
 	)
 }
 
 func testExistingRemoteBranchPreviouslySyncedUnprotectedNoOverlapWithAnySyncedBranchNoContentMatch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	repo.CheckoutB(t, "basebranch")
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	gitRepo.CheckoutB(t, "basebranch")
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 3, &counter)
-	_, err := run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 3, &counter)
+	_, err := run(t, gitRepo, opts...)
 	require.NoError(t, err)
 	// remove all commits and recreate again
-	repo.ResetHard(t, "HEAD~4")
-	doRandomUpdateToModule(t, repo, ".", &counter) // put some module files first
-	doCommitRandomModule(t, repo, ".", module1)    // then put back original module, but content won't match
-	doEmptyCommits(t, repo, 3, &counter)
+	gitRepo.ResetHard(t, "HEAD~4")
+	doRandomUpdateToModule(t, gitRepo, ".", &counter) // put some module files first
+	doCommitRandomModule(t, gitRepo, ".", module1)    // then put back original module, but content won't match
+	doEmptyCommits(t, gitRepo, 3, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())

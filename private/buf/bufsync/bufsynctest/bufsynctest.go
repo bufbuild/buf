@@ -23,6 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -239,7 +241,16 @@ func doManualPushCommit(
 	commitBucket, err := storagegit.NewProvider(repo.Objects()).NewReadBucket(commit.Tree())
 	require.NoError(t, err)
 	moduleBucket := storage.MapReadBucket(commitBucket, storage.MapOnPrefix(moduleDir))
-	fileSet, err := bufcas.NewFileSetForBucket(context.Background(), moduleBucket)
+	sourceConfig, err := bufconfig.GetConfigForBucket(context.Background(), moduleBucket)
+	require.NoError(t, err)
+	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+		context.Background(),
+		moduleBucket,
+		sourceConfig.Build,
+		bufmodulebuild.WithModuleIdentity(sourceConfig.ModuleIdentity),
+	)
+	require.NoError(t, err)
+	fileSet, err := bufcas.NewFileSetForBucket(context.Background(), builtModule.Bucket)
 	require.NoError(t, err)
 	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
 	require.NoError(t, err)
@@ -282,7 +293,11 @@ func doManualPushRandomModule(
 func doEmptyCommits(t *testing.T, repo gittest.Repository, numOfCommits int, counter *int) {
 	for i := 0; i < numOfCommits; i++ {
 		*counter++
-		repo.Commit(t, fmt.Sprintf("commit-%d", *counter), nil)
+		randomContent, err := uuidutil.New()
+		require.NoError(t, err)
+		repo.Commit(t, fmt.Sprintf("commit-%d", *counter), map[string]string{
+			"randomfile.txt": randomContent.String(),
+		})
 		repo.Tag(t, fmt.Sprintf("tag-%d", *counter), "")
 	}
 }

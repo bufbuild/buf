@@ -25,19 +25,19 @@ import (
 )
 
 func testNewRemoteBranchUnprotectedOverlapWithAnotherSyncedBranch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	_, err := run(t, repo, opts...)
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	_, err := run(t, gitRepo, opts...)
 	require.NoError(t, err)
-	repo.CheckoutB(t, "otherbranch")
-	doEmptyCommits(t, repo, 5, &counter)
+	gitRepo.CheckoutB(t, "otherbranch")
+	doEmptyCommits(t, gitRepo, 5, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -64,17 +64,17 @@ func testNewRemoteBranchUnprotectedOverlapWithAnotherSyncedBranch(t *testing.T, 
 }
 
 func testNewRemoteBranchUnprotectedNoOverlapWithAnySyncedBranch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	repo.CheckoutB(t, "otherbranch")
-	doEmptyCommits(t, repo, 5, &counter)
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	gitRepo.CheckoutB(t, "otherbranch")
+	doEmptyCommits(t, gitRepo, 5, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -103,17 +103,17 @@ func testNewRemoteBranchUnprotectedNoOverlapWithAnySyncedBranch(t *testing.T, ru
 }
 
 func testNewRemoteBranchProtectedNotReleaseBranch(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	repo.CheckoutB(t, OtherProtectedBranchName)
-	doEmptyCommits(t, repo, 5, &counter)
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	gitRepo.CheckoutB(t, OtherProtectedBranchName)
+	doEmptyCommits(t, gitRepo, 5, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -142,17 +142,17 @@ func testNewRemoteBranchProtectedNotReleaseBranch(t *testing.T, run runFunc) {
 }
 
 func testNewRemoteBranchProtectedReleaseBranchEmpty(t *testing.T, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	repo.CheckoutB(t, ReleaseBranchName)
-	doEmptyCommits(t, repo, 5, &counter)
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	gitRepo.CheckoutB(t, ReleaseBranchName)
+	doEmptyCommits(t, gitRepo, 5, &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -181,21 +181,21 @@ func testNewRemoteBranchProtectedReleaseBranchEmpty(t *testing.T, run runFunc) {
 }
 
 func testNewRemoteBranchProtectedReleaseBranchNotEmptyContentMatch(t *testing.T, handler TestHandler, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	repo.CheckoutB(t, ReleaseBranchName)
-	doEmptyCommits(t, repo, 5, &counter)
-	headCommit, err := repo.HEADCommit(git.HEADCommitWithBranch(ReleaseBranchName))
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	gitRepo.CheckoutB(t, ReleaseBranchName)
+	doEmptyCommits(t, gitRepo, 5, &counter)
+	headCommit, err := gitRepo.HEADCommit(git.HEADCommitWithBranch(ReleaseBranchName))
 	require.NoError(t, err)
-	doManualPushCommit(t, handler, repo, module1, ".", "", headCommit)
-	doRandomUpdateToModule(t, repo, ".", &counter)
+	doManualPushCommit(t, handler, gitRepo, module1, ".", "", headCommit)
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())
@@ -212,25 +212,25 @@ func testNewRemoteBranchProtectedReleaseBranchNotEmptyContentMatch(t *testing.T,
 }
 
 func testNewRemoteBranchProtectedReleaseBranchNotEmptyNoContentMatch(t *testing.T, handler TestHandler, run runFunc) {
-	repo := gittest.ScaffoldGitRepository(t)
-	module1 := doCommitRandomModule(t, repo, ".", nil)
+	gitRepo := gittest.ScaffoldGitRepository(t)
+	module1 := doCommitRandomModule(t, gitRepo, ".", nil)
 	opts := []bufsync.SyncerOption{
 		bufsync.SyncerWithModule(".", module1),
 	}
 	var counter int
-	doEmptyCommits(t, repo, 2, &counter)
-	repo.CheckoutB(t, ReleaseBranchName)
-	doEmptyCommits(t, repo, 5, &counter)
+	doEmptyCommits(t, gitRepo, 2, &counter)
+	gitRepo.CheckoutB(t, ReleaseBranchName)
+	doEmptyCommits(t, gitRepo, 5, &counter)
 	// checkout other branch and manual push from there
-	repo.CheckoutB(t, "foo")
-	doRandomUpdateToModule(t, repo, ".", &counter)
-	headCommit, err := repo.HEADCommit(git.HEADCommitWithBranch(ReleaseBranchName))
-	doManualPushCommit(t, handler, repo, module1, ".", "", headCommit)
+	gitRepo.CheckoutB(t, "foo")
+	doRandomUpdateToModule(t, gitRepo, ".", &counter)
+	headCommit, err := gitRepo.HEADCommit(git.HEADCommitWithBranch(ReleaseBranchName))
+	doManualPushCommit(t, handler, gitRepo, module1, ".", "", headCommit)
 	require.NoError(t, err)
 	// go back to release branch
-	repo.Checkout(t, ReleaseBranchName)
+	gitRepo.Checkout(t, ReleaseBranchName)
 
-	plan, err := run(t, repo, opts...)
+	plan, err := run(t, gitRepo, opts...)
 
 	require.NoError(t, err)
 	assert.False(t, plan.Nop())

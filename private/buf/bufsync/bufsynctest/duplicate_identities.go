@@ -66,8 +66,8 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				repo := gittest.ScaffoldGitRepository(t)
-				prepareGitRepoDuplicateIdentities(t, repo, tc.modulesIdentitiesInHEAD)
+				gitRepo := gittest.ScaffoldGitRepository(t)
+				prepareGitRepoDuplicateIdentities(t, gitRepo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
@@ -76,7 +76,7 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 				for moduleDir, identityOverride := range tc.modulesOverrides {
 					opts = append(opts, bufsync.SyncerWithModule(moduleDir, identityOverride))
 				}
-				_, err := run(t, repo, opts...)
+				_, err := run(t, gitRepo, opts...)
 				require.Error(t, err)
 				// TODO: not the greatest way to test this, maybe we should mak this a structured error
 				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
