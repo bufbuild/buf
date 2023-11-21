@@ -56,6 +56,14 @@ type BufYAMLFile interface {
 	// For v1 buf.yaml, this will be empty.
 	GenerateConfigs() []GenerateConfig
 
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
+	//
+	// These come from buf.yaml files.
+	//
+	// The ModuleRefs in this list will be unique by ModuleFullName.
+	// Sorted by ModuleFullName.
+	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
+
 	isBufYAMLFile()
 }
 
@@ -106,21 +114,24 @@ func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 // *** PRIVATE ***
 
 type bufYAMLFile struct {
-	fileVersion     FileVersion
-	moduleConfigs   []ModuleConfig
-	generateConfigs []GenerateConfig
+	fileVersion             FileVersion
+	moduleConfigs           []ModuleConfig
+	generateConfigs         []GenerateConfig
+	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
 func newBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
 	generateConfigs []GenerateConfig,
+	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
 	// TODO: validation
 	return &bufYAMLFile{
-		fileVersion:     fileVersion,
-		moduleConfigs:   moduleConfigs,
-		generateConfigs: generateConfigs,
+		fileVersion:             fileVersion,
+		moduleConfigs:           moduleConfigs,
+		generateConfigs:         generateConfigs,
+		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
 }
 
@@ -134,6 +145,10 @@ func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
 
 func (c *bufYAMLFile) GenerateConfigs() []GenerateConfig {
 	return slicesextended.Copy(c.generateConfigs)
+}
+
+func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
+	return slicesextended.Copy(c.configuredDepModuleRefs)
 }
 
 func (*bufYAMLFile) isBufYAMLFile() {}
@@ -201,6 +216,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 					),
 				),
 			},
+			nil,
 			nil,
 		)
 	case FileVersionV2:

@@ -72,6 +72,16 @@ func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
 	return NewModuleRef(registry, owner, name, ref)
 }
 
+// SortModuleRefs sorts the ModuleRefs
+func SortModuleRefs(moduleRefs []ModuleRef) {
+
+}
+
+// DuplicateModuleRefs returns those ModuleRefs in the input slice that are duplicates
+func DuplicateModuleRefs(moduleRefs []ModuleRef) []ModuleRef {
+	return nil
+}
+
 // *** PRIVATE ***
 
 // TODO: deal with Main, there were special rules for this previously.

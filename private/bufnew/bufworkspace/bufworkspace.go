@@ -84,11 +84,12 @@ type Workspace interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list will be unique by ModuleFullName. Resolution of ModuleRefs
-	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
-	// of the buf.yaml files in the Workspace, resolving common ModuleFullNames to a single ModuleRef.
+	// The ModuleRefs in this list may *not* be unique by ModuleFullName. When doing items
+	// such as buf mod update, it is up to the caller to resolve conflicts. Foe example,
+	// with v1 buf.yaml, this is a union of the deps in the buf.yaml files in the workspace.
 	//
-	// Sorted by ModuleFullName.
+	// Sorted.
+	// TODO: rename to AllConfiguredDepModuleRefs, to differentiate from BufYAMLFile?
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 	// LockedDepModuleKeys returns the locked dependencies of the Workspace as ModuleKeys.
 	//
