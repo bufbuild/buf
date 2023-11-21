@@ -125,7 +125,7 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			`The location to write the FileDescriptorSet. Must be one of format %s.`,
-			buffetch.ImageFormatsString,
+			buffetch.MessageFormatsString,
 		),
 	)
 	flagSet.StringVar(

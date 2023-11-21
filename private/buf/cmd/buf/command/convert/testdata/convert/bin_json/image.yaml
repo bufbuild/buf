@@ -1,0 +1,89 @@
+file:
+    - bufExtension:
+        isImport: false
+        isSyntaxUnspecified: false
+      messageType:
+        - field:
+            - jsonName: one
+              label: LABEL_OPTIONAL
+              name: one
+              number: 1
+              type: TYPE_INT64
+          name: Foo
+      name: buf.proto
+      package: buf
+      sourceCodeInfo:
+        location:
+            - span:
+                - 0
+                - 0
+                - 6
+                - 1
+            - path:
+                - 12
+              span:
+                - 0
+                - 0
+                - 18
+            - path:
+                - 2
+              span:
+                - 2
+                - 0
+                - 12
+            - path:
+                - 4
+                - 0
+              span:
+                - 4
+                - 0
+                - 6
+                - 1
+            - path:
+                - 4
+                - 0
+                - 1
+              span:
+                - 4
+                - 8
+                - 11
+            - path:
+                - 4
+                - 0
+                - 2
+                - 0
+              span:
+                - 5
+                - 2
+                - 16
+            - path:
+                - 4
+                - 0
+                - 2
+                - 0
+                - 5
+              span:
+                - 5
+                - 2
+                - 7
+            - path:
+                - 4
+                - 0
+                - 2
+                - 0
+                - 1
+              span:
+                - 5
+                - 8
+                - 11
+            - path:
+                - 4
+                - 0
+                - 2
+                - 0
+                - 3
+              span:
+                - 5
+                - 14
+                - 15
+      syntax: proto3

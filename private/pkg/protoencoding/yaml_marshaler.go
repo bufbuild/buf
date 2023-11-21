@@ -15,36 +15,34 @@
 package protoencoding
 
 import (
-	"bytes"
-	"encoding/json"
-
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 )
 
-type jsonMarshaler struct {
+type yamlMarshaler struct {
 	resolver        Resolver
-	indent          string
+	indent          int
 	useProtoNames   bool
 	useEnumNumbers  bool
 	emitUnpopulated bool
 }
 
-func newJSONMarshaler(resolver Resolver, options ...JSONMarshalerOption) Marshaler {
-	jsonMarshaler := &jsonMarshaler{
+func newYAMLMarshaler(resolver Resolver, options ...YAMLMarshalerOption) Marshaler {
+	yamlMarshaler := &yamlMarshaler{
 		resolver: resolver,
 	}
 	for _, option := range options {
-		option(jsonMarshaler)
+		option(yamlMarshaler)
 	}
-	return jsonMarshaler
+	return yamlMarshaler
 }
 
-func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
+func (m *yamlMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	if err := ReparseUnrecognized(m.resolver, message.ProtoReflect()); err != nil {
 		return nil, err
 	}
-	options := protojson.MarshalOptions{
+	options := protoyaml.MarshalOptions{
+		Indent:          m.indent,
 		Resolver:        m.resolver,
 		UseProtoNames:   m.useProtoNames,
 		UseEnumNumbers:  m.useEnumNumbers,
@@ -54,23 +52,5 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// This is needed due to the instability of protojson output.
-	//
-	// https://github.com/golang/protobuf/issues/1121
-	// https://go-review.googlesource.com/c/protobuf/+/151340
-	// https://developers.google.com/protocol-buffers/docs/reference/go/faq#unstable-json
-	//
-	// We may need to do a full encoding/json encode/decode in the future if protojson
-	// produces non-deterministic output.
-	buffer := bytes.NewBuffer(nil)
-	if m.indent != "" {
-		if err := json.Indent(buffer, data, "", m.indent); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := json.Compact(buffer, data); err != nil {
-			return nil, err
-		}
-	}
-	return buffer.Bytes(), nil
+	return data, nil
 }

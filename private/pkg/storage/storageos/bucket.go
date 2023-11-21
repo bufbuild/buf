@@ -164,11 +164,7 @@ func (b *bucket) Walk(
 	return nil
 }
 
-func (b *bucket) Put(ctx context.Context, path string, opts ...storage.PutOption) (storage.WriteObjectCloser, error) {
-	var putOptions storage.PutOptions
-	for _, opt := range opts {
-		opt(&putOptions)
-	}
+func (b *bucket) Put(ctx context.Context, path string, options ...storage.PutOption) (storage.WriteObjectCloser, error) {
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {
 		return nil, err
@@ -193,7 +189,7 @@ func (b *bucket) Put(ctx context.Context, path string, opts ...storage.PutOption
 	}
 	var file *os.File
 	var finalPath string
-	if putOptions.Atomic {
+	if storage.NewPutOptions(options).Atomic() {
 		file, err = os.CreateTemp(externalDir, ".tmp"+filepath.Base(externalPath)+"*")
 		finalPath = externalPath
 	} else {

@@ -12,29 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufconvert
+// Generated. DO NOT EDIT.
 
-var _ MessageEncodingRef = &messageEncodingRef{}
+package dagtest
 
-type messageEncodingRef struct {
-	path            string
-	messageEncoding MessageEncoding
-}
-
-func newMessageEncodingRef(
-	path string,
-	messageEncoding MessageEncoding,
-) *messageEncodingRef {
-	return &messageEncodingRef{
-		path:            path,
-		messageEncoding: messageEncoding,
-	}
-}
-
-func (r *messageEncodingRef) Path() string {
-	return r.path
-}
-
-func (r *messageEncodingRef) MessageEncoding() MessageEncoding {
-	return r.messageEncoding
-}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -378,6 +378,7 @@ func checkMapRules(
 			baseAdder.fieldName(),
 			baseAdder.getFieldRuleName(mapRulesFieldNumber),
 		)
+		return nil
 	}
 	if mapRules.MinPairs != nil && mapRules.MaxPairs != nil && *mapRules.MinPairs > *mapRules.MaxPairs {
 		baseAdder.addForPathf(
@@ -513,19 +514,6 @@ func checkStringRules(adder *adder, stringRules *validate.StringRules) error {
 				adder.getFieldRuleName(stringRulesFieldNumber, substringFieldNumber),
 				substring,
 				*stringRules.NotContains,
-				substring,
-				*stringRules.NotContains,
-			)
-		}
-		if stringRules.NotContains != nil && strings.Contains(*stringRules.NotContains, substring) {
-			adder.addForPathf(
-				[]int32{stringRulesFieldNumber, substringFieldNumber},
-				"Field %q has a %s (%q) containing its %s (%q). It is impossible for a string to contain %q without containing %q.",
-				adder.fieldName(),
-				adder.getFieldRuleName(stringRulesFieldNumber, notContainsFieldNumberInStringRules),
-				*stringRules.NotContains,
-				substringField.name,
-				substring,
 				substring,
 				*stringRules.NotContains,
 			)

@@ -117,13 +117,13 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []protosource.
 		if _, ok := pkgMap[""]; ok {
 			delete(pkgMap, "")
 			if len(pkgMap) > 1 {
-				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(slicesextended.MapKeysToSortedSlice(pkgMap), ","))
 			} else {
 				// Join works with only one element as well by adding no comma
-				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(slicesextended.MapKeysToSortedSlice(pkgMap), ","))
 			}
 		} else {
-			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesextended.MapToSortedSlice(pkgMap), ","))
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(slicesextended.MapKeysToSortedSlice(pkgMap), ","))
 		}
 		for _, file := range files {
 			add(file, file.PackageLocation(), nil, "%s detected within directory %q.", messagePrefix, dirPath)
@@ -526,7 +526,7 @@ func checkPackageSameDirectory(add addFunc, pkg string, files []protosource.File
 		dirMap[normalpath.Dir(file.Path())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
-		dirs := slicesextended.MapToSortedSlice(dirMap)
+		dirs := slicesextended.MapKeysToSortedSlice(dirMap)
 		for _, file := range files {
 			add(file, file.PackageLocation(), nil, "Multiple directories %q contain files with package %q.", strings.Join(dirs, ","), pkg)
 		}
@@ -603,7 +603,7 @@ func checkPackageSameOptionValue(
 	if len(optionValueMap) > 1 {
 		_, noOptionValue := optionValueMap[""]
 		delete(optionValueMap, "")
-		optionValues := slicesextended.MapToSortedSlice(optionValueMap)
+		optionValues := slicesextended.MapKeysToSortedSlice(optionValueMap)
 		for _, file := range files {
 			if noOptionValue {
 				add(file, getOptionLocation(file), nil, "Files in package %q have both values %q and no value for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
