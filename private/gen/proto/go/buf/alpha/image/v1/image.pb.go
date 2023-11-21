@@ -85,7 +85,7 @@ func (x *Image) GetFile() []*ImageFile {
 	return nil
 }
 
-// ImageFile is an ext FileDescriptorProto.
+// ImageFile is an extended FileDescriptorProto.
 //
 // Since FileDescriptorProto does not have extensions, we copy the fields from
 // FileDescriptorProto, and then add our own extensions via the buf_extension

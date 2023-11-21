@@ -2397,7 +2397,7 @@ type FileExtension struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// extension_type is the string representation of the type being ext.
+	// extension_type is the string representation of the type being extended.
 	ExtensionType string `protobuf:"bytes,1,opt,name=extension_type,json=extensionType,proto3" json:"extension_type,omitempty"`
 	// description is derived from the leading comments of a given message field.
 	//

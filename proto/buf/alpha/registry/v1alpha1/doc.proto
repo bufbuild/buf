@@ -392,7 +392,7 @@ message MapEntry {
 
 // FileExtension provides the information for the documentation of a file extension.
 message FileExtension {
-  // extension_type is the string representation of the type being ext.
+  // extension_type is the string representation of the type being extended.
   string extension_type = 1;
   // description is derived from the leading comments of a given message field.
   //
