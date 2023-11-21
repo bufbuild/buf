@@ -35,7 +35,7 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		commit   string
 		filepath string
 	}
-	identityStringToCommit := make(map[string]commitAndFilepath)
+	identityStringToCommitAndFilepath := make(map[string]commitAndFilepath)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
@@ -44,7 +44,7 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		pathToImageFile[path] = file
 		if moduleIdentity := file.ModuleIdentity(); moduleIdentity != nil {
 			identityString := moduleIdentity.IdentityString()
-			existing, ok := identityStringToCommit[identityString]
+			existing, ok := identityStringToCommitAndFilepath[identityString]
 			if ok {
 				if existing.commit != file.Commit() {
 					return nil, fmt.Errorf(
@@ -53,7 +53,7 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 					)
 				}
 			} else {
-				identityStringToCommit[identityString] = commitAndFilepath{
+				identityStringToCommitAndFilepath[identityString] = commitAndFilepath{
 					commit:   file.Commit(),
 					filepath: path,
 				}
