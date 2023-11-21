@@ -58,6 +58,8 @@ type BufWorkYAMLFile interface {
 	// - There are no duplicate paths - all values of DirPaths() are unique.
 	// - No path contains another path, i.e. "foo" and "foo/bar" will not be in DirPaths().
 	// - "." is not in DirPaths().
+	// - Each path is normalized and validated, because this is guaranteed at the
+	//   construction time of a BufWorkYAMLFile.
 	//
 	// Returned paths are sorted.
 	DirPaths() []string
@@ -67,14 +69,7 @@ type BufWorkYAMLFile interface {
 
 // NewBufWorkYAMLFile returns a new BufWorkYAMLFile.
 func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
-	bufWorkYAMLFile, err := newBufWorkYAMLFile(fileVersion, dirPaths)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkV2SupportedYet(bufWorkYAMLFile); err != nil {
-		return nil, err
-	}
-	return bufWorkYAMLFile, nil
+	return newBufWorkYAMLFile(fileVersion, dirPaths)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file at the given bucket prefix.
@@ -129,13 +124,16 @@ type bufWorkYAMLFile struct {
 }
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
-	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
+	if fileVersion != FileVersionV1 {
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	}
+	sortedNormalizedDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
+	if err != nil {
 		return nil, err
 	}
-	sort.Strings(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
-		dirPaths:    dirPaths,
+		dirPaths:    sortedNormalizedDirPaths,
 	}, nil
 }
 
@@ -200,52 +198,59 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	}
 }
 
-func validateBufWorkYAMLDirPaths(dirPaths []string) error {
+// validateBufWorkYAMLDirPaths validates dirPaths and returns normalized and
+// sorted dirPaths.
+func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	if len(dirPaths) == 0 {
-		return fmt.Errorf(`directories is empty`)
+		return nil, fmt.Errorf(`directories is empty`)
 	}
-	dirPathMap := make(map[string]struct{}, len(dirPaths))
+	normalizedDirPathToDirPath := make(map[string]string, len(dirPaths))
 	for _, dirPath := range dirPaths {
-		dirPath, err := normalpath.NormalizeAndValidate(dirPath)
+		normalizedDirPath, err := normalpath.NormalizeAndValidate(dirPath)
 		if err != nil {
-			return fmt.Errorf(`directory %q is invalid: %w`, normalpath.Unnormalize(dirPath), err)
+			return nil, fmt.Errorf(`directory %q is invalid: %w`, dirPath, err)
 		}
-		if _, ok := dirPathMap[dirPath]; ok {
-			return fmt.Errorf(`directory %q is listed more than once`, dirPath)
+		if _, ok := normalizedDirPathToDirPath[normalizedDirPath]; ok {
+			return nil, fmt.Errorf(`directory %q is listed more than once`, dirPath)
 		}
-		if dirPath == "." {
-			return fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
+		if normalizedDirPath == "." {
+			return nil, fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
 		}
-		dirPathMap[dirPath] = struct{}{}
+		normalizedDirPathToDirPath[normalizedDirPath] = dirPath
 	}
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
-	if err := validateDirPathsNoOverlap(slicesextended.MapToSortedSlice(dirPathMap)); err != nil {
-		return err
+	// TODO: use this line:
+	// sortedNormalizedDirPaths := slicesextended.MapKeysToSortedSlice(normalDirPathToDirPath)
+	sortedNormalizedDirPaths := make([]string, 0, len(normalizedDirPathToDirPath))
+	for normalizedDirPath := range normalizedDirPathToDirPath {
+		sortedNormalizedDirPaths = append(sortedNormalizedDirPaths, normalizedDirPath)
 	}
-	return nil
-}
-
-func validateDirPathsNoOverlap(dirPaths []string) error {
-	for i := 0; i < len(dirPaths); i++ {
-		for j := i + 1; j < len(dirPaths); j++ {
-			left := dirPaths[i]
-			right := dirPaths[j]
+	sort.Slice(
+		sortedNormalizedDirPaths,
+		func(i int, j int) bool {
+			return sortedNormalizedDirPaths[i] < sortedNormalizedDirPaths[j]
+		},
+	)
+	for i := 0; i < len(sortedNormalizedDirPaths); i++ {
+		for j := i + 1; j < len(sortedNormalizedDirPaths); j++ {
+			left := sortedNormalizedDirPaths[i]
+			right := sortedNormalizedDirPaths[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
-				return fmt.Errorf(
+				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalpath.Unnormalize(left),
-					normalpath.Unnormalize(right),
+					normalizedDirPathToDirPath[left],
+					normalizedDirPathToDirPath[right],
 				)
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
-				return fmt.Errorf(
+				return nil, fmt.Errorf(
 					`directory %q contains directory %q`,
-					normalpath.Unnormalize(right),
-					normalpath.Unnormalize(left),
+					normalizedDirPathToDirPath[right],
+					normalizedDirPathToDirPath[left],
 				)
 			}
 		}
 	}
-	return nil
+	return sortedNormalizedDirPaths, nil
 }
