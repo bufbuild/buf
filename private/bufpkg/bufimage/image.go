@@ -31,7 +31,11 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
-	moduleFullNameStringToCommitID := make(map[string]string)
+	type commitIDAndFilePath struct {
+		commitID string
+		filePath string
+	}
+	moduleFullNameStringToCommitIDAndFilePath := make(map[string]commitIDAndFilePath)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
@@ -40,13 +44,19 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		pathToImageFile[path] = file
 		if moduleFullName := file.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
-			existingCommitID, ok := moduleFullNameStringToCommitID[moduleFullNameString]
+			existing, ok := moduleFullNameStringToCommitIDAndFilePath[moduleFullNameString]
 			if ok {
-				if existingCommitID != file.CommitID() {
-					return nil, fmt.Errorf("image had two different commit IDs for the same module: %q and %q", existingCommitID, file.CommitID())
+				if existing.commitID != file.CommitID() {
+					return nil, fmt.Errorf(
+						"files with different commits for the same module %s: %s:%s and %s:%s",
+						moduleFullNameString, existing.filePath, existing.commitID, path, file.CommitID(),
+					)
 				}
 			} else {
-				moduleFullNameStringToCommitID[moduleFullNameString] = file.CommitID()
+				moduleFullNameStringToCommitIDAndFilePath[moduleFullNameString] = commitIDAndFilePath{
+					commitID: file.CommitID(),
+					filePath: path,
+				}
 			}
 		}
 	}
