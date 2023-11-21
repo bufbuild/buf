@@ -73,9 +73,6 @@ func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAML
 	if err != nil {
 		return nil, err
 	}
-	if err := checkV2SupportedYet(bufWorkYAMLFile); err != nil {
-		return nil, err
-	}
 	return bufWorkYAMLFile, nil
 }
 
@@ -131,6 +128,9 @@ type bufWorkYAMLFile struct {
 }
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
+	if fileVersion != FileVersionV1 {
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	}
 	sortedNormalizedDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
 	if err != nil {
 		return nil, err
