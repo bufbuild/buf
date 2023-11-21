@@ -16,7 +16,6 @@ package bufconfig
 
 import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
 )
 
 // TODO
@@ -127,11 +126,7 @@ func (m *moduleConfig) ModuleFullName() bufmodule.ModuleFullName {
 }
 
 func (m *moduleConfig) RootToExcludes() map[string][]string {
-	c := make(map[string][]string)
-	for key, value := range m.rootToExcludes {
-		c[key] = slicesextended.Copy(value)
-	}
-	return c
+	return copyStringToStringSliceMap(m.rootToExcludes)
 }
 
 func (m *moduleConfig) LintConfig() LintConfig {

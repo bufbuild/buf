@@ -15,7 +15,7 @@
 package bufconfig
 
 // TODO
-var DefaultBreakingConfig BreakingConfig = newBreakingConfig()
+var DefaultBreakingConfig BreakingConfig = nil
 
 // BreakingConfig is breaking configuration for a specific Module.
 type BreakingConfig interface {
@@ -30,14 +30,22 @@ type BreakingConfig interface {
 
 type breakingConfig struct {
 	checkConfig
+
+	ignoreUnstablePackages bool
 }
 
-func newBreakingConfig() *breakingConfig {
-	return &breakingConfig{}
+func newBreakingConfig(
+	checkConfig checkConfig,
+	ignoreUnstablePackages bool,
+) *breakingConfig {
+	return &breakingConfig{
+		checkConfig:            checkConfig,
+		ignoreUnstablePackages: ignoreUnstablePackages,
+	}
 }
 
 func (b *breakingConfig) IgnoreUnstablePackages() bool {
-	panic("not implemented") // TODO: Implement
+	return b.ignoreUnstablePackages
 }
 
 func (*breakingConfig) isBreakingConfig() {}
