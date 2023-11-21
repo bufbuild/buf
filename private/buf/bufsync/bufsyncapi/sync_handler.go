@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
@@ -44,7 +43,7 @@ type syncHandler struct {
 	logger               *zap.Logger
 	container            appflag.Container
 	repo                 git.Repository
-	createWithVisibility string
+	createWithVisibility *registryv1alpha1.Visibility
 
 	syncServiceClientFactory             SyncServiceClientFactory
 	referenceServiceClientFactory        ReferenceServiceClientFactory
@@ -61,7 +60,7 @@ func newSyncHandler(
 	logger *zap.Logger,
 	container appflag.Container,
 	repo git.Repository,
-	createWithVisibility string,
+	createWithVisibility *registryv1alpha1.Visibility,
 	syncServiceClientFactory SyncServiceClientFactory,
 	referenceServiceClientFactory ReferenceServiceClientFactory,
 	repositoryServiceClientFactory RepositoryServiceClientFactory,
@@ -451,7 +450,7 @@ func (h *syncHandler) pushOrCreate(
 		// is already created, and there is no side effect. The 99% case is that a NotFound
 		// error is because the repository does not exist, and we want to avoid having to do
 		// a GetRepository RPC call for every call to push --create.
-		if h.createWithVisibility != "" && connect.CodeOf(err) == connect.CodeNotFound {
+		if h.createWithVisibility != nil && connect.CodeOf(err) == connect.CodeNotFound {
 			if err := h.create(ctx, moduleIdentity); err != nil {
 				return nil, fmt.Errorf("create repo: %w", err)
 			}
@@ -516,16 +515,12 @@ func (h *syncHandler) create(
 	moduleIdentity bufmoduleref.ModuleIdentity,
 ) error {
 	service := h.repositoryServiceClientFactory(moduleIdentity.Remote())
-	visiblity, err := bufcli.VisibilityFlagToVisibility(h.createWithVisibility)
-	if err != nil {
-		return err
-	}
 	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
-	_, err = service.CreateRepositoryByFullName(
+	_, err := service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
 			FullName:   fullName,
-			Visibility: visiblity,
+			Visibility: *h.createWithVisibility,
 		}),
 	)
 	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {

@@ -16,6 +16,7 @@ package bufsyncapi
 
 import (
 	"github.com/bufbuild/buf/private/buf/bufsync"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"go.uber.org/zap"
@@ -26,7 +27,7 @@ func NewHandler(
 	logger *zap.Logger,
 	container appflag.Container,
 	repo git.Repository,
-	createWithVisibility string,
+	createWithVisibility *registryv1alpha1.Visibility,
 	syncServiceClientFactory SyncServiceClientFactory,
 	referenceServiceClientFactory ReferenceServiceClientFactory,
 	repositoryServiceClientFactory RepositoryServiceClientFactory,
