@@ -147,10 +147,8 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		return nil, err
 	}
 	switch fileVersion {
-	case FileVersionV1Beta1:
-		return nil, errors.New("TODO")
-	case FileVersionV1:
-		var externalBufYAMLFile externalBufYAMLFileV1
+	case FileVersionV1Beta1, FileVersionV1:
+		var externalBufYAMLFile externalBufYAMLFileV1OrV1Beta1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}
