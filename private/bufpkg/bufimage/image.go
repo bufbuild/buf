@@ -31,11 +31,11 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		return nil, errors.New("image contains no files")
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
-	type commitAndFilepath struct {
+	type commitAndFilePath struct {
 		commit   string
-		filepath string
+		filePath string
 	}
-	identityStringToCommitAndFilepath := make(map[string]commitAndFilepath)
+	identityStringToCommitAndFilePath := make(map[string]commitAndFilePath)
 	for _, file := range files {
 		path := file.Path()
 		if _, ok := pathToImageFile[path]; ok {
@@ -44,18 +44,18 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 		pathToImageFile[path] = file
 		if moduleIdentity := file.ModuleIdentity(); moduleIdentity != nil {
 			identityString := moduleIdentity.IdentityString()
-			existing, ok := identityStringToCommitAndFilepath[identityString]
+			existing, ok := identityStringToCommitAndFilePath[identityString]
 			if ok {
 				if existing.commit != file.Commit() {
 					return nil, fmt.Errorf(
 						"files with different commits for the same module %s: %s:%s and %s:%s",
-						identityString, existing.filepath, existing.commit, path, file.Commit(),
+						identityString, existing.filePath, existing.commit, path, file.Commit(),
 					)
 				}
 			} else {
-				identityStringToCommitAndFilepath[identityString] = commitAndFilepath{
+				identityStringToCommitAndFilePath[identityString] = commitAndFilePath{
 					commit:   file.Commit(),
-					filepath: path,
+					filePath: path,
 				}
 			}
 		}
