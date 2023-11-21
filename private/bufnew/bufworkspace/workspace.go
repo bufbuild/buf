@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -46,21 +46,21 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 }
 
 func (w *workspace) GenerateConfigs() []bufconfig.GenerateConfig {
-	return slicesextended.Copy(w.generateConfigs)
+	return slicesext.Copy(w.generateConfigs)
 }
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 	if 1 == 1 {
 		panic("TODO")
 	}
-	return slicesextended.Copy(w.configuredDepModuleRefs)
+	return slicesext.Copy(w.configuredDepModuleRefs)
 }
 
 func (w *workspace) LockedDepModuleKeys() []bufmodule.ModuleKey {
 	if 1 == 1 {
 		panic("TODO")
 	}
-	return slicesextended.Copy(w.lockedDepModuleKeys)
+	return slicesext.Copy(w.lockedDepModuleKeys)
 }
 
 func (*workspace) isWorkspace() {}

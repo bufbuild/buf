@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
@@ -96,7 +96,7 @@ type ModuleSet interface {
 // Targeting information will remain the same.
 func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleReadBucket {
 	return newMultiModuleReadBucket(
-		slicesextended.Map(
+		slicesext.Map(
 			moduleSet.Modules(),
 			func(module Module) ModuleReadBucket {
 				return ModuleReadBucketWithOnlyProtoFiles(module)
@@ -108,7 +108,7 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 // ModuleSetTargetModules is a convenience function that returns the target Modules
 // from a ModuleSet.
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
-	return slicesextended.Filter(
+	return slicesext.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsTarget() },
 	)
@@ -117,7 +117,7 @@ func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
 // ModuleSetNonTargetModules is a convenience function that returns the non-target Modules
 // from a ModuleSet.
 func ModuleSetNonTargetModules(moduleSet ModuleSet) []Module {
-	return slicesextended.Filter(
+	return slicesext.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return !module.IsTarget() },
 	)
@@ -126,7 +126,7 @@ func ModuleSetNonTargetModules(moduleSet ModuleSet) []Module {
 // ModuleSetLocalModules is a convenience function that returns the local Modules
 // from a ModuleSet.
 func ModuleSetLocalModules(moduleSet ModuleSet) []Module {
-	return slicesextended.Filter(
+	return slicesext.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return module.IsLocal() },
 	)
@@ -135,7 +135,7 @@ func ModuleSetLocalModules(moduleSet ModuleSet) []Module {
 // ModuleSetRemoteModules is a convenience function that returns the remote Modules
 // from a ModuleSet.
 func ModuleSetRemoteModules(moduleSet ModuleSet) []Module {
-	return slicesextended.Filter(
+	return slicesext.Filter(
 		moduleSet.Modules(),
 		func(module Module) bool { return !module.IsLocal() },
 	)
@@ -482,7 +482,7 @@ func moduleSetRemoteDepsRec(
 }
 
 func modulesOpaqueIDs(modules []Module) []string {
-	return slicesextended.Map(
+	return slicesext.Map(
 		modules,
 		func(module Module) string { return module.OpaqueID() },
 	)

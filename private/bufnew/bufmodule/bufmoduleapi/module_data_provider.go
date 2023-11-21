@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
@@ -180,13 +180,13 @@ func (a *moduleDataProvider) getBucketForProtoFileNodes(
 ) (storage.ReadBucket, error) {
 	commitServiceClient := a.clientProvider.CommitServiceClient(registryHostname)
 	// TODO: we could de-dupe this.
-	protoDigests := slicesextended.Map(
+	protoDigests := slicesext.Map(
 		protoFileNodes,
 		func(protoFileNode *storagev1beta1.FileNode) *storagev1beta1.Digest {
 			return protoFileNode.Digest
 		},
 	)
-	protoDigestChunks := slicesextended.ToChunks(protoDigests, 250)
+	protoDigestChunks := slicesext.ToChunks(protoDigests, 250)
 	var blobs []bufcas.Blob
 	for _, protoDigestChunk := range protoDigestChunks {
 		response, err := commitServiceClient.GetBlobs(

@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -194,7 +194,7 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 				if err != nil {
 					return nil, err
 				}
-				return slicesextended.MapError(
+				return slicesext.MapError(
 					moduleDeps,
 					func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
 						return bufmodule.ModuleToModuleKey(moduleDep)
@@ -292,5 +292,5 @@ func addModuleDataToModuleSetBuilder(
 }
 
 func boolCount(bools ...bool) int {
-	return slicesextended.Count(bools, func(value bool) bool { return value })
+	return slicesext.Count(bools, func(value bool) bool { return value })
 }

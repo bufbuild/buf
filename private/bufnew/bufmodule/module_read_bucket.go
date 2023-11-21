@@ -25,7 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -222,8 +222,8 @@ func newModuleReadBucket(
 		),
 		module:               module,
 		targetPaths:          targetPaths,
-		targetPathMap:        slicesextended.ToMap(targetPaths),
-		targetExcludePathMap: slicesextended.ToMap(targetExcludePaths),
+		targetPathMap:        slicesext.ToMap(targetPaths),
+		targetExcludePathMap: slicesext.ToMap(targetExcludePaths),
 	}
 }
 
@@ -540,7 +540,7 @@ func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 		"%s exists in multiple modules: %v",
 		path,
 		strings.Join(
-			slicesextended.Map(
+			slicesext.Map(
 				fileInfos,
 				func(fileInfo FileInfo) string {
 					return fileInfo.Module().OpaqueID()

@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
@@ -140,15 +140,15 @@ func (c *bufYAMLFile) FileVersion() FileVersion {
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
-	return slicesextended.Copy(c.moduleConfigs)
+	return slicesext.Copy(c.moduleConfigs)
 }
 
 func (c *bufYAMLFile) GenerateConfigs() []GenerateConfig {
-	return slicesextended.Copy(c.generateConfigs)
+	return slicesext.Copy(c.generateConfigs)
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
-	return slicesextended.Copy(c.configuredDepModuleRefs)
+	return slicesext.Copy(c.configuredDepModuleRefs)
 }
 
 func (*bufYAMLFile) isBufYAMLFile() {}
@@ -278,7 +278,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	// Verify that all excludes are within a root.
-	rootMap := slicesextended.ToMap(roots)
+	rootMap := slicesext.ToMap(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
