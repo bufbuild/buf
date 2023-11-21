@@ -69,7 +69,7 @@ directories:
 directories:
   - foo
 `,
-			expectedDirPaths: []string{"bar"},
+			expectedDirPaths: []string{"foo"},
 		},
 		{
 			description: "invalid_version",

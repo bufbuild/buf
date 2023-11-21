@@ -160,7 +160,15 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		return newBufYAMLFile(
 			fileVersion,
 			[]ModuleConfig{
-				newModuleConfig(moduleFullName),
+				newModuleConfig(
+					".",
+					moduleFullName,
+					map[string][]string{
+						".": []string{},
+					},
+					DefaultLintConfig,
+					DefaultBreakingConfig,
+				),
 			},
 			nil,
 		)
