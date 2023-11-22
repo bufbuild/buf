@@ -19,8 +19,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -205,15 +204,8 @@ func NewGitRef(
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleReference() bufmoduleref.ModuleReference
+	ModuleRef() bufmodule.ModuleRef
 	moduleRef()
-}
-
-// NewModuleRef returns a new ModuleRef.
-//
-// The path must be in the form server/owner/repository/branch[:digest].
-func NewModuleRef(path string) (ModuleRef, error) {
-	return newModuleRef("", path)
 }
 
 // HasFormat is an object that has a format.
@@ -352,7 +344,7 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleReference bufmoduleref.ModuleReference,
+	moduleReference bufmodule.ModuleRef,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
@@ -375,37 +367,10 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// TerminateFileProvider provides TerminateFiles.
-type TerminateFileProvider interface {
-	// GetTerminateFiles returns the list of terminate files in priority order.
-	GetTerminateFiles() []TerminateFile
-}
-
-// TerminateFile is a terminate file.
-type TerminateFile interface {
-	// Name returns the name of the TerminateFile (i.e. the base of the fully-qualified file paths).
-	Name() string
-	// Path returns the normalized directory path where the TemrinateFile is located.
-	Path() string
-}
-
-// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
-type ReadBucketCloserWithTerminateFileProvider interface {
-	ReadBucketCloser
-
-	// TerminateFileProvider returns a TerminateFileProvider.
-	TerminateFileProvider() TerminateFileProvider
-}
-
 // ReadBucketCloser is a bucket returned from GetBucket.
 type ReadBucketCloser interface {
 	storage.ReadBucketCloser
 
-	// RelativeRootPath is the relative path to the root of the bucket
-	// based on the current working directory.
-	//
-	// This will be set if a terminate filename was specified and found.
-	RelativeRootPath() string
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
 	// This will be set if a terminate filename was specified and found.
@@ -413,19 +378,6 @@ type ReadBucketCloser interface {
 	// this terminate file, and the subdir will be the subdir of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-	// SetSubDirPath sets the value of `SubDirPath`.
-	//
-	// This should only be called if a terminate file name was specified and found outside of
-	// a workspace where the bucket is originally closed.
-	SetSubDirPath(string)
-}
-
-// ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
-//
-// The returned ReadBucketCloser may be upgradeable to a ReadWriteBucketCloser.
-type ReadWriteBucketCloser interface {
-	ReadBucketCloser
-	storage.WriteBucket
 }
 
 // Reader is a reader.
@@ -439,14 +391,12 @@ type Reader interface {
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
 	// GetBucket gets the bucket.
-	//
-	// The returned ReadBucketCloser may actually be upgradeable to a ReadWriteBucketCloser.
 	GetBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (ReadBucketCloserWithTerminateFileProvider, error)
+	) (ReadBucketCloser, error)
 	// GetModule gets the module.
 	GetModule(
 		ctx context.Context,
@@ -718,13 +668,13 @@ func WithReaderGit(gitCloner git.Cloner) ReaderOption {
 
 // WithReaderModule enables modules.
 func WithReaderModule(
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 ) ReaderOption {
 	return func(reader *reader) {
 		reader.moduleEnabled = true
-		reader.moduleResolver = moduleResolver
-		reader.moduleReader = moduleReader
+		reader.moduleKeyProvider = moduleKeyProvider
+		reader.moduleDataProvider = moduleDataProvider
 	}
 }
 
@@ -784,30 +734,12 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
 
-// WithGetBucketTerminateFileNames only applies if subdir is specified.
-//
-// The terminate files are organized as a slice of slices of file names.
-// Priority will be given to the first slice of terminate file names, which will be workspace
-// configuration files. The second layer of priority will be given to modules.
-//
-// This says that for a given subdir, ascend directories until you reach
-// a file with one of these names, and if you do, the returned bucket will be
-// for the directory with this filename, while SubDirPath on the
-// returned bucket will be set to the original subdir relative
-// to the terminate file.
-//
-// This is used for workspaces and modules. So if you have i.e. "proto/foo"
-// subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
-// be for "proto", and the SubDirPath will be "foo".
-//
-// The terminateFileNames are expected to be valid and have no slashes.
-// Example of terminateFileNames:
-//
-//	[][]string{
-//		[]string{"buf.work.yaml", "buf.work"},
-//		[]string{"buf.yaml", "buf.mod"},
-//	}.
-func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
+// WithGetBucketTerminateFileNames says to search the bucket for the given file names,
+// and return a bucket of the parent directory with such file name, with subDirPath
+// set to the path that the Ref was targeting.
+
+// Example of terminateFileNames: []string{"buf.work.yaml", "buf.work"}
+func WithGetBucketTerminateFileNames(terminateFileNames []string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames
 	}

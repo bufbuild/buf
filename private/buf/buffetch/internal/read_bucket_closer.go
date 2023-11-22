@@ -24,13 +24,11 @@ var _ ReadBucketCloser = &readBucketCloser{}
 type readBucketCloser struct {
 	storage.ReadBucketCloser
 
-	relativeRootPath string
-	subDirPath       string
+	subDirPath string
 }
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	relativeRootPath string,
 	subDirPath string,
 ) (*readBucketCloser, error) {
 	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
@@ -39,19 +37,10 @@ func newReadBucketCloser(
 	}
 	return &readBucketCloser{
 		ReadBucketCloser: storageReadBucketCloser,
-		relativeRootPath: normalpath.Normalize(relativeRootPath),
 		subDirPath:       normalizedSubDirPath,
 	}, nil
 }
 
-func (r *readBucketCloser) RelativeRootPath() string {
-	return r.relativeRootPath
-}
-
 func (r *readBucketCloser) SubDirPath() string {
 	return r.subDirPath
-}
-
-func (r *readBucketCloser) SetSubDirPath(subDirPath string) {
-	r.subDirPath = subDirPath
 }

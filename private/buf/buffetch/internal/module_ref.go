@@ -17,7 +17,7 @@ package internal
 import (
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
@@ -26,8 +26,8 @@ var (
 )
 
 type moduleRef struct {
-	format          string
-	moduleReference bufmoduleref.ModuleReference
+	format    string
+	moduleRef bufmodule.ModuleRef
 }
 
 func newModuleRef(
@@ -46,18 +46,18 @@ func newModuleRef(
 	if strings.Contains(path, "://") {
 		return nil, NewInvalidPathError(format, path)
 	}
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(path)
+	moduleRef, err := bufmodule.ParseModuleRef(path)
 	if err != nil {
 		// TODO: this is dumb
 		return nil, NewInvalidPathError(format, path)
 	}
-	return newDirectModuleRef(format, moduleReference), nil
+	return newDirectModuleRef(format, moduleRef), nil
 }
 
-func newDirectModuleRef(format string, moduleReference bufmoduleref.ModuleReference) *moduleRef {
+func newDirectModuleRef(format string, moduleRef bufmodule.ModuleRef) *moduleRef {
 	return &moduleRef{
-		format:          format,
-		moduleReference: moduleReference,
+		format:    format,
+		moduleRef: moduleRef,
 	}
 }
 
@@ -65,8 +65,8 @@ func (r *moduleRef) Format() string {
 	return r.format
 }
 
-func (r *moduleRef) ModuleReference() bufmoduleref.ModuleReference {
-	return r.moduleReference
+func (r *moduleRef) ModuleRef() bufmodule.ModuleRef {
+	return r.moduleRef
 }
 
 func (*moduleRef) ref()       {}
