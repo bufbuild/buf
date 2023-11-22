@@ -152,7 +152,7 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 			},
 		}, nil
 	case FileVersionV2:
-		return nil, newUnsupportedFileVersionError(fileVersion)
+		return nil, errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
