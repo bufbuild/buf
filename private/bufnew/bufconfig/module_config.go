@@ -84,9 +84,6 @@ type ModuleConfig interface {
 	// If this was not set, this will be set to the default breaking configuration.
 	BreakingConfig() BreakingConfig
 
-	// TODO: DependencyModuleReferences: how do these fit in? We likely add them here,
-	// and do not have ModuleConfigs at the bufworkspace level.
-
 	isModuleConfig()
 }
 

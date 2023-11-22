@@ -85,7 +85,7 @@ type Workspace interface {
 	// These come from buf.yaml files.
 	//
 	// The ModuleRefs in this list may *not* be unique by ModuleFullName. When doing items
-	// such as buf mod update, it is up to the caller to resolve conflicts. Foe example,
+	// such as buf mod update, it is up to the caller to resolve conflicts. For example,
 	// with v1 buf.yaml, this is a union of the deps in the buf.yaml files in the workspace.
 	//
 	// Sorted.

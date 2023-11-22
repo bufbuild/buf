@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -174,6 +175,13 @@ func newBufYAMLFile(
 			),
 		)
 	}
+	sort.Slice(
+		configuredDepModuleRefs,
+		func(i int, j int) bool {
+			return configuredDepModuleRefs[i].ModuleFullName().String() <
+				configuredDepModuleRefs[i].ModuleFullName().String()
+		},
+	)
 	if len(generateConfigs) > 0 {
 		return nil, errors.New("we do not support generation configation in buf.yaml yet")
 	}

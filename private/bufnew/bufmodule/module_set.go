@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
 )
@@ -390,7 +389,7 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	default:
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.
-		return nil, fmt.Errorf("%s is contained in multiple modules: %v", filePath, stringutil.MapToSortedSlice(matchingOpaqueIDs))
+		return nil, fmt.Errorf("%s is contained in multiple modules: %v", filePath, slicesext.MapKeysToSortedSlice(matchingOpaqueIDs))
 	}
 }
 
