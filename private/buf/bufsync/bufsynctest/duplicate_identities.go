@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync_test
+package bufsynctest
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
-	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 )
 
-func TestPrepareSyncDuplicateIdentities(t *testing.T) {
-	t.Parallel()
+func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 	moduleDirs := map[string]struct{}{
 		"dir1": {},
 		"dir2": {},
@@ -70,8 +66,8 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 		func(tc testCase) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
-				repo := gittest.ScaffoldGitRepository(t)
-				prepareGitRepoMultiModule(t, repo, tc.modulesIdentitiesInHEAD)
+				gitRepo := gittest.ScaffoldGitRepository(t)
+				prepareGitRepoDuplicateIdentities(t, gitRepo, tc.modulesIdentitiesInHEAD)
 				var moduleDirs []string
 				for moduleDir := range tc.modulesIdentitiesInHEAD {
 					moduleDirs = append(moduleDirs, moduleDir)
@@ -80,16 +76,9 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 				for moduleDir, identityOverride := range tc.modulesOverrides {
 					opts = append(opts, bufsync.SyncerWithModule(moduleDir, identityOverride))
 				}
-				syncer, err := bufsync.NewSyncer(
-					zaptest.NewLogger(t),
-					repo,
-					storagegit.NewProvider(repo.Objects()),
-					newTestSyncHandler(),
-					opts...,
-				)
-				require.NoError(t, err)
-				err = syncer.Sync(context.Background())
+				_, err := run(t, gitRepo, opts...)
 				require.Error(t, err)
+				// TODO: not the greatest way to test this, maybe we should mak this a structured error
 				assert.Contains(t, err.Error(), repeatedIdentity.IdentityString())
 				assert.Contains(t, err.Error(), gittest.DefaultBranch)
 				for _, moduleDir := range moduleDirs {
@@ -100,8 +89,8 @@ func TestPrepareSyncDuplicateIdentities(t *testing.T) {
 	}
 }
 
-// prepareGitRepoMultiModule commits valid modules to the passed directories and module identities.
-func prepareGitRepoMultiModule(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
+// prepareGitRepoDuplicateIdentities commits valid modules to the passed directories and module identities.
+func prepareGitRepoDuplicateIdentities(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
 	files := make(map[string]string)
 	for moduleDir, moduleIdentity := range moduleDirsToIdentities {
 		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())
