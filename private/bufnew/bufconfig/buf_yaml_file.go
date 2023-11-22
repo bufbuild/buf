@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -126,7 +127,56 @@ func newBufYAMLFile(
 	generateConfigs []GenerateConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
-	// TODO: validation
+	if fileVersion != FileVersionV1Beta1 && fileVersion != FileVersionV1 {
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	}
+	// Zero values are not added to duplicates.
+	duplicateModuleConfigDirPaths := slicesext.Duplicates(
+		slicesext.Map(
+			moduleConfigs,
+			func(moduleConfig ModuleConfig) string {
+				return moduleConfig.DirPath()
+			},
+		),
+	)
+	if len(duplicateModuleConfigDirPaths) > 0 {
+		return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
+	}
+	// Zero values are not added to duplicates.
+	duplicateModuleConfigFullNameStrings := slicesext.Duplicates(
+		slicesext.Map(
+			moduleConfigs,
+			func(moduleConfig ModuleConfig) string {
+				if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+					return moduleFullName.String()
+				}
+				return ""
+			},
+		),
+	)
+	if len(duplicateModuleConfigFullNameStrings) > 0 {
+		return nil, fmt.Errorf("module name %q seen more than once", strings.Join(duplicateModuleConfigFullNameStrings, ", "))
+	}
+	duplicateDepModuleFullNames := slicesext.Duplicates(
+		slicesext.Map(
+			configuredDepModuleRefs,
+			func(moduleRef bufmodule.ModuleRef) string {
+				return moduleRef.ModuleFullName().String()
+			},
+		),
+	)
+	if len(duplicateDepModuleFullNames) > 0 {
+		return nil, fmt.Errorf(
+			"dep with module name %q seen more than once",
+			strings.Join(
+				duplicateDepModuleFullNames,
+				", ",
+			),
+		)
+	}
+	if len(generateConfigs) > 0 {
+		return nil, errors.New("we do not support generation configation in buf.yaml yet")
+	}
 	return &bufYAMLFile{
 		fileVersion:             fileVersion,
 		moduleConfigs:           moduleConfigs,
@@ -181,7 +231,14 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid module name: %w", err)
 		}
-		// TODO: deps are currently dropped
+		configuredDepModuleRefs := make([]bufmodule.ModuleRef, len(externalBufYAMLFile.Deps))
+		for i, dep := range externalBufYAMLFile.Deps {
+			moduleRef, err := bufmodule.ParseModuleRef(dep)
+			if err != nil {
+				return nil, fmt.Errorf("invalid dep: %w", err)
+			}
+			configuredDepModuleRefs[i] = moduleRef
+		}
 		return newBufYAMLFile(
 			fileVersion,
 			[]ModuleConfig{
@@ -217,7 +274,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 				),
 			},
 			nil,
-			nil,
+			configuredDepModuleRefs,
 		)
 	case FileVersionV2:
 		return nil, newUnsupportedFileVersionError(fileVersion)
@@ -278,7 +335,7 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	}
 
 	// Verify that all excludes are within a root.
-	rootMap := slicesext.ToMap(roots)
+	rootMap := slicesext.ToStructMap(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:

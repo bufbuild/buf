@@ -421,7 +421,7 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 	if err != nil {
 		return nil, fmt.Errorf("%s had import parsing error: %w", filePath, err)
 	}
-	return stringutil.SliceToMap(imports), nil
+	return slicesext.ToStructMap(imports), nil
 }
 
 func (*moduleSet) isModuleSet() {}

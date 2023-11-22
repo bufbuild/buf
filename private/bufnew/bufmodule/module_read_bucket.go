@@ -222,8 +222,8 @@ func newModuleReadBucket(
 		),
 		module:               module,
 		targetPaths:          targetPaths,
-		targetPathMap:        slicesext.ToMap(targetPaths),
-		targetExcludePathMap: slicesext.ToMap(targetExcludePaths),
+		targetPathMap:        slicesext.ToStructMap(targetPaths),
+		targetExcludePathMap: slicesext.ToStructMap(targetExcludePaths),
 	}
 }
 
