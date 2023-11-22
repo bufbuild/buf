@@ -49,7 +49,8 @@ func TestElementsContained(t *testing.T) {
 	assert.False(t, ElementsContained([]string{"two"}, []string{"one", "two"}))
 }
 
-func TestDuplicats(t *testing.T) {
+func TestDuplicates(t *testing.T) {
+	t.Parallel()
 	assert.Equal(
 		t,
 		[]string{},
