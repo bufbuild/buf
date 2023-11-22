@@ -41,9 +41,6 @@ type CheckConfig interface {
 	// We don't want to have to take FileVersion into account for *Configs, however
 	// with lint and breaking configurations, the FileVersion changes the interpretation
 	// of the IDs and categories.
-	//
-	// TODO: optimally we don't need this because we do the id/category parsing inside
-	// bufconfig, but this would be a major refactor (this currently lives inside bufcheck/internal)
 	FileVersion() FileVersion
 
 	UseIDsAndCategories() []string

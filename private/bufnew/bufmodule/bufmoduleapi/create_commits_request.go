@@ -105,7 +105,6 @@ func addProtoModuleNodeAndGetBlobsForLocalModule(
 	}
 	var protoDepNodes []*modulev1beta1.CreateCommitsRequest_DepNode
 	for _, moduleDep := range moduleDeps {
-		// TODO: Should we only add direct dependencies? Talk about API.
 		if moduleDep.IsLocal() {
 			moduleDepBlobs, err := addProtoModuleNodeAndGetBlobsForLocalModule(
 				ctx,

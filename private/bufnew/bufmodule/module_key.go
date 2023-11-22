@@ -47,7 +47,6 @@ type ModuleKey interface {
 // NewModuleKey returns a new ModuleKey.
 //
 // Note that commit is optional.
-// TODO: change commit into option?
 //
 // The Digest will be loaded lazily if needed. Note this means that NewModuleKey does
 // *not* validate the digest. If you need to validate the digest, call Digest() and evaluate

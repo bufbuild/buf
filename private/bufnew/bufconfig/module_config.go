@@ -18,8 +18,6 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 )
 
-// TODO
-// Should match v1 buf.yaml
 var DefaultModuleConfig ModuleConfig = newModuleConfig(
 	"",
 	nil,
