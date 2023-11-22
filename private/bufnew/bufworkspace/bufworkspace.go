@@ -30,6 +30,7 @@ import (
 //
 //   - bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles
 //   - bufmodule.ModuleSetToTargetModules
+//   - bufmodule.ModuleSetRemoteDepsOfLocalModules - gives you exact deps to put in buf.lock
 //
 // To get a specific file from a Workspace:
 //
@@ -91,16 +92,6 @@ type Workspace interface {
 	// Sorted.
 	// TODO: rename to AllConfiguredDepModuleRefs, to differentiate from BufYAMLFile?
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
-	// LockedDepModuleKeys returns the locked dependencies of the Workspace as ModuleKeys.
-	//
-	// These come from buf.lock files.
-	//
-	// The ModuleKeys in this list will be unique by ModuleFullName. Resolution of ModuleKeys
-	// is done at Workspace construction time. For example, with v1 buf.yaml, this is a union
-	// of the buf.lock files in the Workspace, resolving common ModuleFullNames to a single ModuleKey.
-	//
-	// Sorted by ModuleFullName.
-	LockedDepModuleKeys() []bufmodule.ModuleKey
 
 	// GenerateConfigs returns the GenerateConfigs for the workspace, if they exist.
 	//
@@ -174,91 +165,42 @@ func WorkspaceWithGenerateConfig(generateConfig bufconfig.GenerateConfig) Worksp
 //
 // A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
 //
-// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
-// not even need to expose LockedDepModuleKeys.
+// TODO: This logic may be broken for pruning. Consider what happens when we add remotes we shouldnt to the ModuleSet.
 func WorkspaceUnreferencedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
-	var unreferencedConfiguredDepModuleRefs []bufmodule.ModuleRef
+	var resultDepModuleRefs []bufmodule.ModuleRef
 	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
+		module := workspace.GetModuleForModuleFullName(configuredDepModuleRef.ModuleFullName())
 		// Workspaces are self-contained and have all dependencies, therefore
 		// this check is all that is needed.
-		if workspace.GetModuleForModuleFullName(configuredDepModuleRef.ModuleFullName()) == nil {
-			unreferencedConfiguredDepModuleRefs = append(unreferencedConfiguredDepModuleRefs, configuredDepModuleRef)
+		if module == nil {
+			resultDepModuleRefs = append(resultDepModuleRefs, configuredDepModuleRef)
 		}
 	}
-	return unreferencedConfiguredDepModuleRefs
+	return resultDepModuleRefs
 }
 
-// WorkspaceLocalConfiguredDepModuleRefs returns those configured dependency ModuleRefs that
-// reference local Modules in the workspace. In theory, these can be pruned from v2 buf.yamls.
+// WorkspaceUnreferencedOrLocalConfiguredDepModuleRefs returns those configured dependency ModuleRefs that
+// do not reference any Module in the workspace, or reference local Modules within the Workspace.
+// In theory, these can be pruned from v2 buf.yamls.
 //
-// These are present in v1 buf.yaml, but they are not used by buf anymore. A note
-// that this means that if we prune these, upgrading buf is a one-way door - if a buf
-// lock is pruned based on a newer version of buf, it will no longer be useable by
+// Local modules are present in v1 buf.yaml, but they are not used by buf anymore. A note
+// that this means that if we prune these, ***upgrading buf is a one-way door*** - if a buf.lock
+// is pruned based on a newer version of buf, it will no longer be useable by
 // old versions of buf, if we prune these. We should discuss what we want to do here - perhaps
 // these should be pruned depending on v1 vs v2.
 //
 // A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
 //
-// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
-// not even need to expose LockedDepModuleKeys.
-func WorkspaceLocalConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
-	var localConfiguredDepModuleRefs []bufmodule.ModuleRef
+// TODO: This logic may be broken for pruning. Consider what happens when we add remotes we shouldnt to the ModuleSet.
+func WorkspaceUnreferencedOrLocalConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
+	var resultDepModuleRefs []bufmodule.ModuleRef
 	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
 		module := workspace.GetModuleForModuleFullName(configuredDepModuleRef.ModuleFullName())
-		if module == nil {
-			continue
-		}
-		if module.IsLocal() {
-			localConfiguredDepModuleRefs = append(localConfiguredDepModuleRefs, configuredDepModuleRef)
-		}
-	}
-	return localConfiguredDepModuleRefs
-}
-
-// WorkspaceUnreferencedLockedDepModuleKeys returns those locked ModuleKeys that do not
-// reference any Module within the workspace. These can be pruned from the buf.lock
-// in both v1 and v2 buf.yamls.
-//
-// A ModuleKey is considered to reference a Module if it has the same ModuleFullName.
-//
-// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
-// not even need to expose LockedDepModuleKeys.
-func WorkspaceUnreferencedLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKey {
-	var unreferencedLockedDepModuleKeys []bufmodule.ModuleKey
-	for _, lockedDepModuleKey := range workspace.LockedDepModuleKeys() {
 		// Workspaces are self-contained and have all dependencies, therefore
 		// this check is all that is needed.
-		if workspace.GetModuleForModuleFullName(lockedDepModuleKey.ModuleFullName()) == nil {
-			unreferencedLockedDepModuleKeys = append(unreferencedLockedDepModuleKeys, lockedDepModuleKey)
+		if module == nil || module.IsLocal() {
+			resultDepModuleRefs = append(resultDepModuleRefs, configuredDepModuleRef)
 		}
 	}
-	return unreferencedLockedDepModuleKeys
-}
-
-// WorkspaceLocalLockedDepModuleKeys returns those locked dependency ModuleKeys that
-// reference local Modules in the workspace. In theory, these can be pruned from the buf.lock
-// in v2 buf.yamls.
-//
-// These are present in v1 buf.yaml buf.locks, but they are not used by buf anymore. A note
-// that this means that if we prune these, upgrading buf is a one-way door - if a buf
-// lock is pruned based on a newer version of buf, it will no longer be useable by
-// old versions of buf, if we prune these. We should discuss what we want to do here - perhaps
-// these should be pruned depending on v1 vs v2.
-//
-// A ModuleKey is considered to reference a Module if it has the same ModuleFullName.
-//
-// TODO: This logic is likely broken, need to use ModuleSetRemoteDepsOfLocalModules. We may
-// not even need to expose LockedDepModuleKeys.
-func WorkspaceLocalLockedDepModuleKeys(workspace Workspace) []bufmodule.ModuleKey {
-	var localLockedDepModuleKeys []bufmodule.ModuleKey
-	for _, lockedDepModuleKey := range workspace.LockedDepModuleKeys() {
-		module := workspace.GetModuleForModuleFullName(lockedDepModuleKey.ModuleFullName())
-		if module == nil {
-			continue
-		}
-		if module.IsLocal() {
-			localLockedDepModuleKeys = append(localLockedDepModuleKeys, lockedDepModuleKey)
-		}
-	}
-	return localLockedDepModuleKeys
+	return resultDepModuleRefs
 }

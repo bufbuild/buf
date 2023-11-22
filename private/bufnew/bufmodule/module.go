@@ -160,6 +160,20 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	), nil
 }
 
+// ModuleRemoteModuleDeps is a convenience function that returns only the remote dependencies of the Module.
+//
+// This can be used for v1 buf.yamls to determine what needs to be in the buf.lock.
+func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Filter(
+		moduleDeps,
+		func(moduleDep ModuleDep) bool { return !moduleDep.IsLocal() },
+	), nil
+}
+
 // *** PRIVATE ***
 
 // module
