@@ -169,3 +169,46 @@ func TestBasic(t *testing.T) {
 	//require.NoError(t, err)
 	//require.False(t, fileInfo.IsTargetFile())
 }
+
+func TestProtoc(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	workspace, err := NewWorkspaceForProtoc(
+		ctx,
+		storageos.NewProvider(),
+		[]string{
+			"testdata/basic/bsr/buf.testing/acme/date",
+			"testdata/basic/bsr/buf.testing/acme/extension",
+			"testdata/basic/workspace/common/geo/proto",
+			"testdata/basic/workspace/common/money/proto",
+			"testdata/basic/workspace/finance/bond/proto/root1",
+			"testdata/basic/workspace/finance/bond/proto/root2",
+			"testdata/basic/workspace/finance/portfolio/proto",
+		},
+		[]string{
+			"testdata/basic/workspace/finance/portfolio/proto/acme/portfolio/v1/portfolio.proto",
+		},
+	)
+	require.NoError(t, err)
+
+	modules := workspace.Modules()
+	require.Equal(t, 1, len(modules))
+	module := modules[0]
+	require.Equal(t, ".", module.OpaqueID())
+	require.True(t, module.IsTarget())
+
+	fileInfo, err := module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
+	require.NoError(t, err)
+	require.False(t, fileInfo.IsTargetFile())
+	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
+	require.NoError(t, err)
+	require.False(t, fileInfo.IsTargetFile())
+	fileInfo, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")
+	require.NoError(t, err)
+	require.False(t, fileInfo.IsTargetFile())
+	fileInfo, err = module.StatFileInfo(ctx, "acme/portfolio/v1/portfolio.proto")
+	require.NoError(t, err)
+	require.True(t, fileInfo.IsTargetFile())
+}
