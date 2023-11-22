@@ -56,34 +56,6 @@ func SplitTrimLinesNoEmpty(output string) []string {
 	return lines
 }
 
-// MapToSortedSlice transforms m to a sorted slice.
-//
-// Deprecated: Use slicesext.MapToSortedSlice instead.
-func MapToSortedSlice(m map[string]struct{}) []string {
-	return slicesext.MapKeysToSortedSlice(m)
-}
-
-// MapToSlice transforms m to a slice.
-//
-// Deprecated: Use slicesext.MapToSlice instead.
-func MapToSlice(m map[string]struct{}) []string {
-	return slicesext.MapKeysToSlice(m)
-}
-
-// SliceToMap transforms s to a map.
-//
-// Deprecated: Use slicesext.ToStructMap instead.
-func SliceToMap(s []string) map[string]struct{} {
-	return slicesext.ToStructMap(s)
-}
-
-// SliceToUniqueSortedSlice returns a sorted copy of s with no duplicates.
-//
-// Deprecated: Use slicesext.ToUniqueSorted instead.
-func SliceToUniqueSortedSlice(s []string) []string {
-	return slicesext.ToUniqueSorted(s)
-}
-
 // SliceToUniqueSortedSliceFilterEmptyStrings returns a sorted copy of s with no duplicates and no empty strings.
 //
 // Strings with only spaces are considered empty.
@@ -95,34 +67,6 @@ func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
 		}
 	}
 	return slicesext.MapKeysToSortedSlice(m)
-}
-
-// SliceToChunks splits s into chunks of the given chunk size.
-//
-// If s is nil or empty, returns empty.
-// If chunkSize is <=0, returns [][]string{s}.
-//
-// Deprecated: use slicesext.ToChunks instead.
-func SliceToChunks(s []string, chunkSize int) [][]string {
-	return slicesext.ToChunks(s, chunkSize)
-}
-
-// SliceElementsEqual returns true if the two slices have equal elements.
-//
-// Nil and empty slices are treated as equals.
-//
-// Deprecated: use slicesext.ElementsEqual instead.
-func SliceElementsEqual(one []string, two []string) bool {
-	return slicesext.ElementsEqual(one, two)
-}
-
-// SliceElementsContained returns true if superset contains subset.
-//
-// Nil and empty slices are treated as equals.
-//
-// Deprecated: use slicesext.ElementsContained instead.
-func SliceElementsContained(superset []string, subset []string) bool {
-	return slicesext.ElementsContained(superset, subset)
 }
 
 // JoinSliceQuoted joins the slice with quotes.
