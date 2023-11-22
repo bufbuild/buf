@@ -25,7 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -59,10 +59,10 @@ type reader struct {
 	gitEnabled bool
 	gitCloner  git.Cloner
 
-	moduleEnabled  bool
-	moduleReader   bufmodule.ModuleReader
-	moduleResolver bufmodule.ModuleResolver
-	tracer         trace.Tracer
+	moduleEnabled      bool
+	moduleKeyProvider  bufmodule.ModuleKeyProvider
+	moduleDataProvider bufmodule.ModuleDataProvider
+	tracer             trace.Tracer
 }
 
 func newReader(
@@ -116,7 +116,7 @@ func (r *reader) GetBucket(
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
 	options ...GetBucketOption,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
+) (ReadBucketCloser, error) {
 	getBucketOptions := newGetBucketOptions()
 	for _, option := range options {
 		option(getBucketOptions)
@@ -198,7 +198,7 @@ func (r *reader) getArchiveBucket(
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
 	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
+) (_ ReadBucketCloser, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
 		return nil, err
@@ -307,7 +307,7 @@ func (r *reader) getDirBucket(
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
+) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
@@ -366,7 +366,7 @@ func (r *reader) getProtoFileBucket(
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
 	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
+) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
@@ -457,7 +457,7 @@ func (r *reader) getGitBucket(
 	container app.EnvStdinContainer,
 	gitRef GitRef,
 	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
+) (_ ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
 	}
