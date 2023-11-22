@@ -170,7 +170,7 @@ func (m *managedDisableRule) FieldOption() FieldOption {
 	return m.fieldOption
 }
 
-func (m *managedDisableRule) isManagedDisable() {}
+func (m *managedDisableRule) isManagedDisableRule() {}
 
 type managedOverrideRule struct {
 	path           string
@@ -182,3 +182,52 @@ type managedOverrideRule struct {
 	prefix         string
 	suffix         string
 }
+
+// TODO: decide where to validate path and module full name
+func newManagedOverrideRule(
+	path string,
+	moduleFullName string,
+	fileOption FileOption,
+	value interface{},
+) (*managedOverrideRule, error) {
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fileOption:     fileOption,
+		value:          value,
+	}, nil
+}
+
+func (m *managedOverrideRule) Path() string {
+	return m.path
+}
+
+func (m *managedOverrideRule) ModuleFullName() string {
+	return m.moduleFullName
+}
+
+func (m *managedOverrideRule) FieldName() string {
+	return m.fieldName
+}
+
+func (m *managedOverrideRule) FileOption() FileOption {
+	return m.fileOption
+}
+
+func (m *managedOverrideRule) FieldOption() FieldOption {
+	return m.fieldOption
+}
+
+func (m *managedOverrideRule) Value() interface{} {
+	return m.value
+}
+
+func (m *managedOverrideRule) Prefix() string {
+	return m.prefix
+}
+
+func (m *managedOverrideRule) Suffix() string {
+	return m.suffix
+}
+
+func (m *managedOverrideRule) isManagedOverrideRule() {}
