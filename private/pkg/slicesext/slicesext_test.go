@@ -71,6 +71,11 @@ func TestDuplicates(t *testing.T) {
 		[]string{"b", "a"},
 		Duplicates([]string{"a", "b", "b", "a", "e"}),
 	)
+	assert.Equal(
+		t,
+		[]string{"b", "a"},
+		Duplicates([]string{"a", "b", "b", "a", "b"}),
+	)
 }
 
 func TestToChunks(t *testing.T) {
