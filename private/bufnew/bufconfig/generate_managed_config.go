@@ -37,16 +37,16 @@ type GenerateManagedConfig interface {
 //     it means for all files/fields the specified options are not modified.
 //
 // A ManagedDisableRule is guaranteed to specify at least one of the two aspects.
-// i.e. At least one of Path, ModuleFullNameString, FieldName, FileOption and
+// i.e. At least one of Path, ModuleFullName, FieldName, FileOption and
 // FieldOption is not empty. A rule can disable all options for certain files/fields,
 // disable certains options for all files/fields, or disable certain options for
 // certain files/fields. To disable all options for all files/fields, turn off managed mode.
 type ManagedDisableRule interface {
 	// Path returns the file path, relative to its module, to disable managed mode for.
 	Path() string
-	// ModuleFullNameString returns the full name string of the module to disable
+	// ModuleFullName returns the full name string of the module to disable
 	// managed mode for.
-	ModuleFullNameString() string
+	ModuleFullName() string
 	// FieldName returns the fully qualified name for the field to disable managed
 	// mode for. This is guaranteed to be empty if FileOption is not empty.
 	FieldName() string
@@ -64,16 +64,16 @@ type ManagedDisableRule interface {
 //   - The options to modify. Exactly one of FileOption and FieldOption is not empty.
 //   - The value, prefix or suffix to modify these options with. Exactly one of
 //     Value, Prefix and Suffix is not empty.
-//   - The files/fields for which the options are modified. If all of Path, ModuleFullNameString
+//   - The files/fields for which the options are modified. If all of Path, ModuleFullName
 //   - or FieldName are empty, all files/fields are modified. Otherwise, only
-//     file/fields that match the specified Path, ModuleFullNameString and FieldName
+//     file/fields that match the specified Path, ModuleFullName and FieldName
 //     is modified.
 type ManagedOverrideRule interface {
 	// Path is the file path, relative to its module, to disable managed mode for.
 	Path() string
-	// ModuleFullNameString is the full name string of the module to disable
+	// ModuleFullName is the full name string of the module to disable
 	// managed mode for.
-	ModuleFullNameString() string
+	ModuleFullName() string
 	// FieldName is the fully qualified name for the field to disable managed
 	// mode for. This is guranteed to be empty is FileOption is not empty.
 	FieldName() string
