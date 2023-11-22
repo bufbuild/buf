@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -118,16 +117,17 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		false,
 		`Print the free field numbers of all messages.`,
 	)
-	flagSet.StringVarP(
-		&f.Output,
-		outputFlagName,
-		"o",
-		"",
-		fmt.Sprintf(
-			`The location to write the FileDescriptorSet. Must be one of format %s.`,
-			buffetch.MessageFormatsString,
-		),
-	)
+	// TODO: ** re-enable **
+	//flagSet.StringVarP(
+	//&f.Output,
+	//outputFlagName,
+	//"o",
+	//"",
+	//fmt.Sprintf(
+	//`The location to write the FileDescriptorSet. Must be one of format %s.`,
+	//buffetch.MessageFormatsString,
+	//),
+	//)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
