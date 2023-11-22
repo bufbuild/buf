@@ -22,6 +22,10 @@ const (
 	FileOptionUnspecified FileOption = iota
 	// FileOptionJavaPackage is the file option java_package.
 	FileOptionJavaPackage
+	// FileOptionJavaPackagePrefix is the file option java_package_prefix.
+	FileOptionJavaPackagePrefix
+	// FileOptionJavaPackageSuffix is the file option java_package_suffix.
+	FileOptionJavaPackageSuffix
 	// FileOptionJavaOuterClassname is the file option java_outer_classname.
 	FileOptionJavaOuterClassname
 	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
@@ -32,18 +36,26 @@ const (
 	FileOptionOptimizeFor
 	// FileOptionGoPackage is the file option go_package.
 	FileOptionGoPackage
+	// FileOptionGoPackagePrefix is the file option go_package_prefix.
+	FileOptionGoPackagePrefix
 	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
 	FileOptionCcEnableArenas
 	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
 	FileOptionObjcClassPrefix
 	// FileOptionCsharpNamespace is the file option csharp_namespace.
 	FileOptionCsharpNamespace
+	// FileOptionCsharpNamespacePrefix is the file option csharp_namespace_prefix.
+	FileOptionCsharpNamespacePrefix
 	// FileOptionPhpNamespace is the file option php_namespace.
 	FileOptionPhpNamespace
 	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
 	FileOptionPhpMetadataNamespace
+	// FileOptionPhpMetadataNamespaceSuffix is the file option php_metadata_namespace_suffix.
+	FileOptionPhpMetadataNamespaceSuffix
 	// FileOptionRubyPackage is the file option ruby_package.
 	FileOptionRubyPackage
+	// FileOptionRubyPackageSuffix is the file option ruby_package_suffix.
+	FileOptionRubyPackageSuffix
 )
 
 // FieldOption is a field option.
@@ -99,8 +111,7 @@ type ManagedDisableRule interface {
 // ManagedOverrideRule is an override rule. An override describes:
 //
 //   - The options to modify. Exactly one of FileOption and FieldOption is not empty.
-//   - The value, prefix or suffix to modify these options with. Exactly one of
-//     Value, Prefix and Suffix is not empty.
+//   - The value to modify these options with.
 //   - The files/fields for which the options are modified. If all of Path, ModuleFullName
 //   - or FieldName are empty, all files/fields are modified. Otherwise, only
 //     file/fields that match the specified Path, ModuleFullName and FieldName
@@ -121,10 +132,6 @@ type ManagedOverrideRule interface {
 	FieldOption() FieldOption
 	// Value returns the override value.
 	Value() interface{}
-	// Prefix returns the override prefix.
-	Prefix() string
-	// Suffix returns the override suffix.
-	Suffix() string
 
 	isManagedOverrideRule()
 }
