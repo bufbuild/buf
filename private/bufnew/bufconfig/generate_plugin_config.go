@@ -99,7 +99,7 @@ type GeneratePluginConfig interface {
 	// This is not empty only when the plugin is remote.
 	Revision() int
 
-	isPluginConfig()
+	isGeneratePluginConfig()
 }
 
 func parseStrategy(s string) (GenerateStrategy, error) {
@@ -127,7 +127,7 @@ type pluginConfig struct {
 	revision         int
 }
 
-func (p *pluginConfig) PluginConfigType() PluginConfigType {
+func (p *pluginConfig) Type() PluginConfigType {
 	return p.pluginConfigType
 }
 
@@ -171,10 +171,12 @@ func (p *pluginConfig) Revision() int {
 	return p.revision
 }
 
+func (p *pluginConfig) isGeneratePluginConfig() {}
+
 // TODO: figure out where is the best place to do parameter validation, here or in new*plugin.
 func newPluginConfigFromExternalV1(
 	externalConfig externalGeneratePluginConfigV1,
-) (*pluginConfig, error) {
+) (GeneratePluginConfig, error) {
 	if externalConfig.Remote != "" {
 		return nil, errors.New(remoteAlphaPluginDeprecationMessage)
 	}

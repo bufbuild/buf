@@ -32,15 +32,6 @@ type GenerateConfig interface {
 	isGenerateConfig()
 }
 
-// GenerateTypeConfig is a type filter configuration.
-type GenerateTypeConfig interface {
-	// If IncludeTypes returns a non-empty list, it means that only those types are
-	// generated. Otherwise all types are generated.
-	IncludeTypes() []string
-
-	isGenerateTypeConfig()
-}
-
 // *** PRIVATE ***
 
 type generateConfig struct {

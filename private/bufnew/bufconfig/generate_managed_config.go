@@ -332,6 +332,8 @@ func (g *generateManagedConfig) Overrides() []ManagedOverrideRule {
 	return g.overrides
 }
 
+func (g *generateManagedConfig) isGenerateManagedConfig() {}
+
 type managedDisableRule struct {
 	path           string
 	moduleFullName string
