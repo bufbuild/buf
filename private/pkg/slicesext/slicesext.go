@@ -149,11 +149,17 @@ func ToStructMap[T comparable](s []T) map[T]struct{} {
 
 // ToValuesMap transforms the input slice into a map from f(V) -> V.
 //
+// If f(V) is the zero value of K, nothing is added to the map.
+//
 // Duplicate values of type K will result in a single map entry.
 func ToValuesMapV[K comparable, V any](s []V, f func(V) K) map[K]V {
+	var zero K
 	m := make(map[K]V)
-	for _, e := range s {
-		m[f(e)] = e
+	for _, v := range s {
+		k := f(v)
+		if k != zero {
+			m[k] = v
+		}
 	}
 	return m
 }
@@ -188,11 +194,17 @@ func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
 // Duplicates returns the duplicate values in s.
 //
 // Values are returned in the order they are found in S.
+//
+// If an element is the zero value, it is not added to duplicates.
 func Duplicates[T comparable](s []T) []T {
+	var zero T
 	count := make(map[T]int, len(s))
 	// Needed instead of var declaration to make tests pass.
 	duplicates := make([]T, 0)
 	for _, e := range s {
+		if e == zero {
+			continue
+		}
 		count[e] = count[e] + 1
 		if count[e] == 2 {
 			// Only insert the first time this is found.
