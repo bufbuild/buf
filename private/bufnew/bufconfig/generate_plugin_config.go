@@ -14,8 +14,10 @@
 
 package bufconfig
 
-// TODO: should this type live here? Perhaps it should live in the package that handles generation?
 // GenerateStrategy is the generation strategy for a protoc plugin.
+//
+// TODO: Should this type live in this package? Perhaps it should live in the package that handles generation?
+// TODO: The same question can be asked for FieldOption and FileOption.
 type GenerateStrategy int
 
 const (
@@ -29,48 +31,59 @@ const (
 	GenerateStrategyAll GenerateStrategy = 2
 )
 
+type PluginConfigType int
+
+const (
+	// PluginConfigTypeRemote is the remote plugin config type.
+	PluginConfigTypeRemote PluginConfigType = iota + 1
+	// PluginConfigTypeBinary is the binary plugin config type.
+	PluginConfigTypeBinary
+	// PluginConfigTypeProtocBuiltin is the protoc built-in plugin config type.
+	PluginConfigTypeProtocBuiltin
+	// PluginConfigTypeLocal is the local plugin config type. This type indicates
+	// it is to be determined whether the plugin is binary or protoc built-in.
+	// We defer further classification to the plugin executor. In v2 the exact
+	// plugin config type is always specified and it will never be just local.
+	PluginConfigTypeLocal
+)
+
 // GeneratePluginConfig is a configuration for a plugin.
 type GeneratePluginConfig interface {
+	// Type returns the plugin type. This is never the zero value.
+	Type() PluginConfigType
+	// Name returns the plugin name. This is never empty.
 	Name() string
+	// Out returns the output directory for generation. This is never empty.
 	Out() string
+	// Opt returns the plugin options as a comma seperated string.
 	Opt() string
+	// IncludeImports returns whether to generate code for imported files. This
+	// is always false in v1.
 	IncludeImports() bool
+	// IncludeWKT returns whether to generate code for the well-known types.
+	// This returns true only if IncludeImports returns true. This is always
+	// false in v1.
 	IncludeWKT() bool
-
-	isPluginConfig()
-}
-
-// LocalPluginConfig is a plugin configuration for a local plugin. It maybe a
-// binary or protoc builtin plugin, but its type is undetermined. We defer to
-// the plugin executor to decide which type it is.
-type LocalPluginConfig interface {
-	GeneratePluginConfig
+	// Strategy returns the generation strategy.
+	//
+	// This is not empty only when the plugin is local, binary or protoc builtin.
 	Strategy() GenerateStrategy
-
-	isLocalPluginConfig()
-}
-
-// BinaryPluginConfig is a binary plugin configuration.
-type BinaryPluginConfig interface {
-	LocalPluginConfig
+	// Path returns the path, including arguments, to invoke the binary plugin.
+	//
+	// This is not empty only when the plugin is binary.
 	Path() []string
-
-	isBinaryPluginConfig()
-}
-
-// ProtocBuiltinPluginConfig is a protoc builtin plugin configuration.
-type ProtocBuiltinPluginConfig interface {
-	LocalPluginConfig
+	// ProtocPath returns a path to protoc.
+	//
+	// This is not empty only when the plugin is protoc-builtin
 	ProtocPath() string
-
-	isProtocBuiltinPluginConfig()
-}
-
-// RemotePluginConfig is a remote plugin configuration.
-type RemotePluginConfig interface {
-	GeneratePluginConfig
+	// RemoteHost returns the remote host of the remote plugin.
+	//
+	// This is not empty only when the plugin is remote.
 	RemoteHost() string
+	// Revision returns the revision of the remote plugin.
+	//
+	// This is not empty only when the plugin is remote.
 	Revision() int
 
-	isRemotePluginConfig()
+	isPluginConfig()
 }
