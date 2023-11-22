@@ -23,7 +23,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -154,9 +154,23 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	return slicesextended.Filter(
+	return slicesext.Filter(
 		moduleDeps,
 		func(moduleDep ModuleDep) bool { return moduleDep.IsDirect() },
+	), nil
+}
+
+// ModuleRemoteModuleDeps is a convenience function that returns only the remote dependencies of the Module.
+//
+// This can be used for v1 buf.yamls to determine what needs to be in the buf.lock.
+func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Filter(
+		moduleDeps,
+		func(moduleDep ModuleDep) bool { return !moduleDep.IsLocal() },
 	), nil
 }
 

@@ -26,7 +26,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/filepathextended"
+	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
@@ -106,7 +106,7 @@ func (r *repository) ForEachBranch(f func(string, Hash) error, options ...ForEac
 	} else {
 		branchesDir = filepath.Join(r.gitDirPath, "refs", "remotes", normalpath.Unnormalize(config.remote)) // only branches in this remote
 	}
-	if err := filepathextended.Walk(branchesDir, func(branchPath string, info fs.FileInfo, err error) error {
+	if err := filepathext.Walk(branchesDir, func(branchPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,7 @@ func (r *repository) ForEachTag(f func(string, Hash) error) error {
 	seen := map[string]struct{}{}
 	// Read unpacked tag refs.
 	tagsDir := filepath.Join(r.gitDirPath, "refs", "tags")
-	if err := filepathextended.Walk(tagsDir, func(tagPath string, info fs.FileInfo, err error) error {
+	if err := filepathext.Walk(tagsDir, func(tagPath string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

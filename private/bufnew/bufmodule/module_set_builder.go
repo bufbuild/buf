@@ -21,7 +21,7 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -251,8 +251,17 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	}
 	if len(moduleDatas) != 1 {
 		b.errs = append(b.errs, fmt.Errorf("expected 1 ModuleData, got %d", len(moduleDatas)))
+		return b
 	}
 	moduleData := moduleDatas[0]
+	if moduleData.ModuleKey().ModuleFullName() == nil {
+		b.errs = append(b.errs, errors.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider"))
+		return b
+	}
+	if moduleData.ModuleKey().CommitID() == "" {
+		b.errs = append(b.errs, fmt.Errorf("got empty CommitID for ModuleKey with ModuleFullName %q returned from a ModuleDataProvider", moduleData.ModuleKey().ModuleFullName().String()))
+		return b
+	}
 	module, err := newModule(
 		b.ctx,
 		moduleData.Bucket,
@@ -301,7 +310,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if len(b.modules) == 0 {
 		return nil, errors.New("no Modules added to ModuleSetBuilder")
 	}
-	if slicesextended.Count(b.modules, func(m Module) bool { return m.IsTarget() }) < 1 {
+	if slicesext.Count(b.modules, func(m Module) bool { return m.IsTarget() }) < 1 {
 		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
 	}
 	modules, err := getUniqueModulesByOpaqueID(b.ctx, b.modules)

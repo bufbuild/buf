@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/pkg/osextended"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
@@ -38,7 +38,7 @@ func TestWorkspaceDir(t *testing.T) {
 		"dir",
 		"dir_buf_work",
 	} {
-		wd, err := osextended.Getwd()
+		wd, err := osext.Getwd()
 		require.NoError(t, err)
 		testRunStdout(
 			t,
@@ -1104,7 +1104,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"archive.zip",
 	)
-	wd, err := osextended.Getwd()
+	wd, err := osext.Getwd()
 	require.NoError(t, err)
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1176,7 +1176,7 @@ func TestWorkspaceProtoFile(t *testing.T) {
 		"dir",
 		"dir_buf_work",
 	} {
-		wd, err := osextended.Getwd()
+		wd, err := osext.Getwd()
 		require.NoError(t, err)
 		testRunStdout(
 			t,

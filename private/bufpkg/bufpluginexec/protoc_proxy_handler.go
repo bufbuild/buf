@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -140,7 +140,7 @@ func (h *protocProxyHandler) Handle(
 		args,
 		request.FileToGenerate...,
 	)
-	stdin := ioextended.DiscardReader
+	stdin := ioext.DiscardReader
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
 		stdin = bytes.NewReader(fileDescriptorSetData)
 	}

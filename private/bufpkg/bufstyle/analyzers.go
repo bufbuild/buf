@@ -92,5 +92,24 @@ func newAnalyzers() []*analysis.Analyzer {
 				return nil, nil
 			},
 		},
+		{
+			Name: "FILEPATH_CASING",
+			Doc:  "Verifies filePath or FilePath is used, not filepath or Filepath.",
+			Run: func(pass *analysis.Pass) (interface{}, error) {
+				if typesInfo := pass.TypesInfo; typesInfo != nil {
+					for _, object := range pass.TypesInfo.Defs {
+						if object != nil {
+							if strings.Contains(object.Name(), "Filepath") {
+								pass.Reportf(object.Pos(), `Use "FilePath" instead of "Filepath" in name %q`, object.Name())
+							}
+							if strings.Contains(object.Name(), "filepath") {
+								pass.Reportf(object.Pos(), `Use "filePath" instead of "filepath" in name %q`, object.Name())
+							}
+						}
+					}
+				}
+				return nil, nil
+			},
+		},
 	}
 }

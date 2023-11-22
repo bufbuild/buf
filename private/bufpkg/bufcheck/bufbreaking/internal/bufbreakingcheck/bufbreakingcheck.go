@@ -25,7 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protosource"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -135,7 +135,7 @@ func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue
 	// ie if you now have FOO=2, BAR=2, you need to have had FOO=2, BAR=2 previously
 	// FOO=2, BAR=2, BAZ=2 now would pass
 	// FOO=2, BAR=2, BAZ=2 previously would fail
-	if !slicesextended.ElementsContained(names, previousNames) {
+	if !slicesext.ElementsContained(names, previousNames) {
 		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
 		namesString := stringutil.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""

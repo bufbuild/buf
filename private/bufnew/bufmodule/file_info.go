@@ -15,7 +15,7 @@
 package bufmodule
 
 import (
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -48,7 +48,7 @@ type FileInfo interface {
 
 // FileInfoPaths is a convenience function that returns the paths of the FileInfos.
 func FileInfoPaths(fileInfos []FileInfo) []string {
-	return slicesextended.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() })
+	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() })
 }
 
 // *** PRIVATE ***

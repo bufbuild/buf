@@ -201,8 +201,8 @@ func checkV2SupportedYet(file File) error {
 
 // TODO: Remove when V2 is supported.
 func checkFileVersionV2SupportedYet(fileVersion FileVersion) error {
-	if fileVersion == FileVersionV2 {
-		return errors.New("v2 is not publicly supported yet")
+	if !isV2Allowed() && fileVersion == FileVersionV2 {
+		return errors.New("v2 is not supported yet")
 	}
 	return nil
 }

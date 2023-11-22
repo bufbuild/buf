@@ -14,6 +14,19 @@
 
 package bufconfig
 
+var (
+	DefaultBreakingConfig BreakingConfig = defaultBreakingConfigV1
+
+	defaultBreakingConfigV1Beta1 = newBreakingConfig(
+		defaultCheckConfigV1Beta1,
+		false,
+	)
+	defaultBreakingConfigV1 = newBreakingConfig(
+		defaultCheckConfigV1,
+		false,
+	)
+)
+
 // BreakingConfig is breaking configuration for a specific Module.
 type BreakingConfig interface {
 	CheckConfig
@@ -27,14 +40,22 @@ type BreakingConfig interface {
 
 type breakingConfig struct {
 	checkConfig
+
+	ignoreUnstablePackages bool
 }
 
-func newBreakingConfig() *breakingConfig {
-	return &breakingConfig{}
+func newBreakingConfig(
+	checkConfig checkConfig,
+	ignoreUnstablePackages bool,
+) *breakingConfig {
+	return &breakingConfig{
+		checkConfig:            checkConfig,
+		ignoreUnstablePackages: ignoreUnstablePackages,
+	}
 }
 
 func (b *breakingConfig) IgnoreUnstablePackages() bool {
-	panic("not implemented") // TODO: Implement
+	return b.ignoreUnstablePackages
 }
 
 func (*breakingConfig) isBreakingConfig() {}

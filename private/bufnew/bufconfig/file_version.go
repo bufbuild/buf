@@ -73,3 +73,8 @@ func validateFileVersionExists(fileVersion FileVersion) error {
 	}
 	return nil
 }
+
+// externalFileVersion represents just the version component of any file.
+type externalFileVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}

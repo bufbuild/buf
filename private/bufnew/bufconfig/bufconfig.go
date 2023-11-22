@@ -14,9 +14,24 @@
 
 package bufconfig
 
+import "sync/atomic"
+
 // TODO: need to handle bufmigrate, that likely moves into this package.
 // TODO: need to handle buf mod init --doc
 // TODO: All migration code between v1beta1, v1, v2 should live within this package, so that
 // we can expose less public types.
 // TODO: optimally, we can split this package into bufconfig, bufconfigfile, and ban
 // core from depending on bufconfigfile. See how it ends up.
+
+var (
+	globalAllowV2 atomic.Bool
+)
+
+// AllowV2ForTesting allows v2 files to be used for testing.
+func AllowV2ForTesting() {
+	globalAllowV2.Store(true)
+}
+
+func isV2Allowed() bool {
+	return globalAllowV2.Load()
+}

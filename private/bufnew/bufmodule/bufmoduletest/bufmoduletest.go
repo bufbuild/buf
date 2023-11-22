@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -33,7 +33,7 @@ import (
 // Name is the ModuleFullName string. When creating an OmniProvider, Name is required.
 //
 // CommitID is optional, and can be any string, but it must be unique across all ModuleDatas.
-// If CommitID is not set, a mock commitID is created.
+// If CommitID is not set, a mock commitID is created if Name is set.
 type ModuleData struct {
 	Name        string
 	CommitID    string
@@ -166,6 +166,24 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 		if module == nil {
 			return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
 		}
+		// Need to use moduleKey from module, as we need CommitID if present.
+		moduleFullName := module.ModuleFullName()
+		if moduleFullName == nil {
+			return nil, errors.New("must set TestModuleData.Name if using OmniProvider as a ModuleDataProvider")
+		}
+		commitID := module.CommitID()
+		if commitID == "" {
+			// This is a system error, we should have done this during omniProvider construction.
+			return nil, fmt.Errorf("no commitID for TestModuleData with name %q", moduleFullName.String())
+		}
+		moduleKey, err := bufmodule.NewModuleKey(
+			moduleFullName,
+			commitID,
+			module.Digest,
+		)
+		if err != nil {
+			return nil, err
+		}
 		moduleData, err := bufmodule.NewModuleData(
 			moduleKey,
 			func() (storage.ReadBucket, error) {
@@ -176,7 +194,7 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 				if err != nil {
 					return nil, err
 				}
-				return slicesextended.MapError(
+				return slicesext.MapError(
 					moduleDeps,
 					func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
 						return bufmodule.ModuleToModuleKey(moduleDep)
@@ -274,5 +292,5 @@ func addModuleDataToModuleSetBuilder(
 }
 
 func boolCount(bools ...bool) int {
-	return slicesextended.Count(bools, func(value bool) bool { return value })
+	return slicesext.Count(bools, func(value bool) bool { return value })
 }

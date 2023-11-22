@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/klauspost/compress/zstd"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -122,9 +122,9 @@ func (w *writer) putFileWriteCloser(
 		return writeCloser, nil
 	case CompressionTypeGzip:
 		gzipWriteCloser := gzip.NewWriter(writeCloser)
-		return ioextended.CompositeWriteCloser(
+		return ioext.CompositeWriteCloser(
 			gzipWriteCloser,
-			ioextended.ChainCloser(
+			ioext.ChainCloser(
 				gzipWriteCloser,
 				writeCloser,
 			),
@@ -134,9 +134,9 @@ func (w *writer) putFileWriteCloser(
 		if err != nil {
 			return nil, err
 		}
-		return ioextended.CompositeWriteCloser(
+		return ioext.CompositeWriteCloser(
 			zstdWriteCloser,
-			ioextended.ChainCloser(
+			ioext.ChainCloser(
 				zstdWriteCloser,
 				writeCloser,
 			),
@@ -171,11 +171,11 @@ func (w *writer) putFileWriteCloserPotentiallyUncompressed(
 		if !w.stdioEnabled {
 			return nil, NewWriteStdioDisabledError()
 		}
-		return ioextended.NopWriteCloser(container.Stdout()), nil
+		return ioext.NopWriteCloser(container.Stdout()), nil
 	case FileSchemeStdin:
 		return nil, errors.New("cannot write to stdin")
 	case FileSchemeNull:
-		return ioextended.DiscardWriteCloser, nil
+		return ioext.DiscardWriteCloser, nil
 	default:
 		return nil, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}

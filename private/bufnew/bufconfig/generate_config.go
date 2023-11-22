@@ -25,7 +25,8 @@ type GenerateConfig interface {
 	// will always be empty in v2
 	// TODO: we may need a way to attach inputs to make this consistent, but
 	// can deal with that for v2.
-	GenerateInputConfigs() []GenerateInputConfig
+	//GenerateInputConfigs() []GenerateInputConfig
+
 	// may be nil
 	// will always be nil in v2
 	GenerateTypeConfig() GenerateTypeConfig
@@ -50,9 +51,9 @@ type GenerateManagedConfig interface {
 	isGenerateManagedConfig()
 }
 
-type GenerateInputConfig interface {
-	isGenerateInputConfig()
-}
+//type GenerateInputConfig interface {
+//isGenerateInputConfig()
+//}
 
 type GenerateTypeConfig interface {
 	isGenerateTypeConfig()

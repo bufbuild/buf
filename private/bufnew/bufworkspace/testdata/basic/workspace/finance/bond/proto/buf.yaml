@@ -1,0 +1,5 @@
+version: v1
+name: buf.testing/acme/bond
+deps:
+  - buf.testing/name/date
+  - buf.testing/name/extension

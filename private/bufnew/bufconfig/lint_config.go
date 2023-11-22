@@ -14,6 +14,29 @@
 
 package bufconfig
 
+var (
+	DefaultLintConfig LintConfig = defaultLintConfigV1
+
+	defaultLintConfigV1Beta1 = newLintConfig(
+		defaultCheckConfigV1Beta1,
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
+	defaultLintConfigV1 = newLintConfig(
+		defaultCheckConfigV1,
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
+)
+
 // LintConfig is lint configuration for a specific Module.
 type LintConfig interface {
 	CheckConfig
@@ -32,34 +55,57 @@ type LintConfig interface {
 
 type lintConfig struct {
 	checkConfig
+
+	enumZeroValueSuffix                  string
+	rpcAllowSameRequestResponse          bool
+	rpcAllowGoogleProtobuEmptyRequests   bool
+	rpcAllowGoogleProtobufEmptyResponses bool
+	serviceSuffix                        string
+	allowCommentIgnores                  bool
 }
 
-func newLintConfig() *lintConfig {
-	return &lintConfig{}
+func newLintConfig(
+	checkConfig checkConfig,
+	enumZeroValueSuffix string,
+	rpcAllowSameRequestResponse bool,
+	rpcAllowGoogleProtobuEmptyRequests bool,
+	rpcAllowGoogleProtobufEmptyResponses bool,
+	serviceSuffix string,
+	allowCommentIgnores bool,
+) *lintConfig {
+	return &lintConfig{
+		checkConfig:                          checkConfig,
+		enumZeroValueSuffix:                  enumZeroValueSuffix,
+		rpcAllowSameRequestResponse:          rpcAllowSameRequestResponse,
+		rpcAllowGoogleProtobuEmptyRequests:   rpcAllowGoogleProtobuEmptyRequests,
+		rpcAllowGoogleProtobufEmptyResponses: rpcAllowGoogleProtobufEmptyResponses,
+		serviceSuffix:                        serviceSuffix,
+		allowCommentIgnores:                  allowCommentIgnores,
+	}
 }
 
 func (l *lintConfig) EnumZeroValueSuffix() string {
-	panic("not implemented") // TODO: Implement
+	return l.enumZeroValueSuffix
 }
 
 func (l *lintConfig) RPCAllowSameRequestResponse() bool {
-	panic("not implemented") // TODO: Implement
+	return l.rpcAllowSameRequestResponse
 }
 
 func (l *lintConfig) RPCAllowGoogleProtobufEmptyRequests() bool {
-	panic("not implemented") // TODO: Implement
+	return l.rpcAllowGoogleProtobuEmptyRequests
 }
 
 func (l *lintConfig) RPCAllowGoogleProtobufEmptyResponses() bool {
-	panic("not implemented") // TODO: Implement
+	return l.rpcAllowGoogleProtobufEmptyResponses
 }
 
 func (l *lintConfig) ServiceSuffix() string {
-	panic("not implemented") // TODO: Implement
+	return l.serviceSuffix
 }
 
 func (l *lintConfig) AllowCommentIgnores() bool {
-	panic("not implemented") // TODO: Implement
+	return l.allowCommentIgnores
 }
 
 func (*lintConfig) isLintConfig() {}

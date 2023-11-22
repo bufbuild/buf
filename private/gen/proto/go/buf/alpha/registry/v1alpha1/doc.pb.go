@@ -2132,7 +2132,7 @@ type Field struct {
 	// import_module_ref is included if the field is an imported type.
 	// It contains all the metadata for the import.
 	ImportModuleRef *ImportModuleRef `protobuf:"bytes,8,opt,name=import_module_ref,json=importModuleRef,proto3" json:"import_module_ref,omitempty"`
-	// Extendee is the name of the type that is being extended if the field is an extension.
+	// Extendee is the name of the type that is being ext if the field is an extension.
 	// This is an empty string for fields that are not extenions.
 	Extendee     string        `protobuf:"bytes,9,opt,name=extendee,proto3" json:"extendee,omitempty"`
 	FieldOptions *FieldOptions `protobuf:"bytes,10,opt,name=field_options,json=fieldOptions,proto3" json:"field_options,omitempty"`

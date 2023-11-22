@@ -16,12 +16,13 @@ package bufconfig
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -50,6 +51,17 @@ var (
 type BufWorkYAMLFile interface {
 	File
 
+	// DirPaths returns all the directory paths specified in buf.work.yaml,
+	// relative to the directory with buf.work.yaml. The following are guaranteed:
+	//
+	// - There is at least one path, i.e. DirPaths() will never be empty..
+	// - There are no duplicate paths - all values of DirPaths() are unique.
+	// - No path contains another path, i.e. "foo" and "foo/bar" will not be in DirPaths().
+	// - "." is not in DirPaths().
+	// - Each path is normalized and validated, because this is guaranteed at the
+	//   construction time of a BufWorkYAMLFile.
+	//
+	// Returned paths are sorted.
 	DirPaths() []string
 
 	isBufWorkYAMLFile()
@@ -57,14 +69,7 @@ type BufWorkYAMLFile interface {
 
 // NewBufWorkYAMLFile returns a new BufWorkYAMLFile.
 func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
-	bufWorkYAMLFile, err := newBufWorkYAMLFile(fileVersion, dirPaths)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkV2SupportedYet(bufWorkYAMLFile); err != nil {
-		return nil, err
-	}
-	return bufWorkYAMLFile, nil
+	return newBufWorkYAMLFile(fileVersion, dirPaths)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file at the given bucket prefix.
@@ -119,13 +124,16 @@ type bufWorkYAMLFile struct {
 }
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
-	if err := validateBufWorkYAMLDirPaths(dirPaths); err != nil {
+	if fileVersion != FileVersionV1 {
+		return nil, newUnsupportedFileVersionError(fileVersion)
+	}
+	sortedNormalizedDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
+	if err != nil {
 		return nil, err
 	}
-	sort.Strings(dirPaths)
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
-		dirPaths:    dirPaths,
+		dirPaths:    sortedNormalizedDirPaths,
 	}, nil
 }
 
@@ -134,7 +142,7 @@ func (w *bufWorkYAMLFile) FileVersion() FileVersion {
 }
 
 func (w *bufWorkYAMLFile) DirPaths() []string {
-	return slicesextended.Copy(w.dirPaths)
+	return slicesext.Copy(w.dirPaths)
 }
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}
@@ -171,7 +179,17 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	case FileVersionV1Beta1:
 		return newUnsupportedFileVersionError(fileVersion)
 	case FileVersionV1:
-		return errors.New("TODO")
+		externalBufWorkYAMLFile := externalBufWorkYAMLFileV1{
+			Version: fileVersion.String(),
+			// No need to sort - DirPaths() is already sorted per the documentation on BufWorkYAMLFile
+			Directories: bufWorkYAMLFile.DirPaths(),
+		}
+		data, err := encoding.MarshalYAML(&externalBufWorkYAMLFile)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write(append(bufLockFileHeader, data...))
+		return err
 	case FileVersionV2:
 		return newUnsupportedFileVersionError(fileVersion)
 	default:
@@ -180,7 +198,65 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	}
 }
 
-func validateBufWorkYAMLDirPaths(dirPaths []string) error {
-	// TODO: copy from bufwork/config.go
-	return errors.New("TODO")
+// validateBufWorkYAMLDirPaths validates dirPaths and returns normalized and
+// sorted dirPaths.
+func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
+	if len(dirPaths) == 0 {
+		return nil, fmt.Errorf(`directories is empty`)
+	}
+	normalizedDirPathToDirPath := make(map[string]string, len(dirPaths))
+	for _, dirPath := range dirPaths {
+		normalizedDirPath, err := normalpath.NormalizeAndValidate(dirPath)
+		if err != nil {
+			return nil, fmt.Errorf(`directory %q is invalid: %w`, dirPath, err)
+		}
+		if _, ok := normalizedDirPathToDirPath[normalizedDirPath]; ok {
+			return nil, fmt.Errorf(`directory %q is listed more than once`, dirPath)
+		}
+		if normalizedDirPath == "." {
+			return nil, fmt.Errorf(`directory "." is listed, it is not valid to have "." as a workspace directory, as this is no different than not having a workspace at all, see https://buf.build/docs/reference/workspaces/#directories for more details`)
+		}
+		normalizedDirPathToDirPath[normalizedDirPath] = dirPath
+	}
+	// We already know the paths are unique due to above validation.
+	// We sort to print deterministic errors.
+	// TODO: use this line:
+	// sortedNormalizedDirPaths := slicesext.MapKeysToSortedSlice(normalDirPathToDirPath)
+	sortedNormalizedDirPaths := make([]string, 0, len(normalizedDirPathToDirPath))
+	for normalizedDirPath := range normalizedDirPathToDirPath {
+		sortedNormalizedDirPaths = append(sortedNormalizedDirPaths, normalizedDirPath)
+	}
+	sort.Slice(
+		sortedNormalizedDirPaths,
+		func(i int, j int) bool {
+			return sortedNormalizedDirPaths[i] < sortedNormalizedDirPaths[j]
+		},
+	)
+	for i := 0; i < len(sortedNormalizedDirPaths); i++ {
+		for j := i + 1; j < len(sortedNormalizedDirPaths); j++ {
+			left := sortedNormalizedDirPaths[i]
+			right := sortedNormalizedDirPaths[j]
+			if normalpath.ContainsPath(left, right, normalpath.Relative) {
+				return nil, fmt.Errorf(
+					`directory %q contains directory %q`,
+					normalizedDirPathToDirPath[left],
+					normalizedDirPathToDirPath[right],
+				)
+			}
+			if normalpath.ContainsPath(right, left, normalpath.Relative) {
+				return nil, fmt.Errorf(
+					`directory %q contains directory %q`,
+					normalizedDirPathToDirPath[right],
+					normalizedDirPathToDirPath[left],
+				)
+			}
+		}
+	}
+	return sortedNormalizedDirPaths, nil
+}
+
+// externalBufWorkYAMLFileV1 represents the v1 buf.work.yaml file.
+type externalBufWorkYAMLFileV1 struct {
+	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
+	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
 }
