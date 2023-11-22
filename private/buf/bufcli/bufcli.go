@@ -28,19 +28,16 @@ import (
 	otelconnect "connectrpc.com/otelconnect"
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/bufnew/bufapi"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -54,7 +51,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
@@ -164,6 +160,10 @@ var (
 	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
 	// v1CacheModuleSumRelDirPath with a cache implementation using content addressable storage.
 	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
+	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CacheModuleRelDirPath = normalpath.Join("v3", "module")
 
 	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
 	allVisibiltyStrings = []string{
@@ -383,190 +383,185 @@ func NewStorageosProvider(disableSymlinks bool) storageos.Provider {
 	return storageos.NewProvider(storageos.ProviderWithSymlinks())
 }
 
-// NewWireImageConfigReader returns a new ImageConfigReader.
-func NewWireImageConfigReader(
-	container appflag.Container,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	clientConfig *connectclient.Config,
-) (bufwire.ImageConfigReader, error) {
-	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(
-		logger,
-		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
-	)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return nil, err
-	}
-	return bufwire.NewImageConfigReader(
-		logger,
-		storageosProvider,
-		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader),
-	), nil
-}
+//// NewWireImageConfigReader returns a new ImageConfigReader.
+//func NewWireImageConfigReader(
+//container appflag.Container,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//clientConfig *connectclient.Config,
+//) (bufwire.ImageConfigReader, error) {
+//logger := container.Logger()
+//moduleKeyProvider := bufapimodule.NewModuleKeyProvider(
+//logger,
+//bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+//)
+//moduleDataProvider, err := NewModuleDataProviderAndCreateCacheDirs(container, clientConfig)
+//if err != nil {
+//return nil, err
+//}
+//return bufwire.NewImageConfigReader(
+//logger,
+//storageosProvider,
+//NewFetchReader(logger, storageosProvider, runner, moduleKeyProvider, moduleDataProvider),
+//bufmodulebuild.NewModuleBucketBuilder(),
+//bufimagebuild.NewBuilder(logger, moduleDataProvider),
+//), nil
+//}
 
-// NewWireModuleConfigReader returns a new ModuleConfigReader.
-func NewWireModuleConfigReader(
-	container appflag.Container,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	clientConfig *connectclient.Config,
-) (bufwire.ModuleConfigReader, error) {
-	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(
-		logger,
-		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
-	)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return nil, err
-	}
-	return bufwire.NewModuleConfigReader(
-		logger,
-		storageosProvider,
-		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
-	), nil
-}
+//// NewWireModuleConfigReader returns a new ModuleConfigReader.
+//func NewWireModuleConfigReader(
+//container appflag.Container,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//clientConfig *connectclient.Config,
+//) (bufwire.ModuleConfigReader, error) {
+//logger := container.Logger()
+//moduleKeyProvider := bufapimodule.NewModuleKeyProvider(
+//logger,
+//bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+//)
+//moduleDataProvider, err := NewModuleDataProviderAndCreateCacheDirs(container, clientConfig)
+//if err != nil {
+//return nil, err
+//}
+//return bufwire.NewModuleConfigReader(
+//logger,
+//storageosProvider,
+//NewFetchReader(logger, storageosProvider, runner, moduleKeyProvider, moduleDataProvider),
+//bufmodulebuild.NewModuleBucketBuilder(),
+//), nil
+//}
 
-// NewWireModuleConfigReaderForModuleReader returns a new ModuleConfigReader using
-// the given ModuleReader.
-func NewWireModuleConfigReaderForModuleReader(
-	container appflag.Container,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	clientConfig *connectclient.Config,
-	moduleReader bufmodule.ModuleReader,
-) (bufwire.ModuleConfigReader, error) {
-	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(
-		logger,
-		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
-	)
-	return bufwire.NewModuleConfigReader(
-		logger,
-		storageosProvider,
-		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
-	), nil
-}
+//// NewWireModuleConfigReaderForModuleDataProvider returns a new ModuleConfigReader using
+//// the given ModuleDataProvider.
+//func NewWireModuleConfigReaderForModuleDataProvider(
+//container appflag.Container,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//clientConfig *connectclient.Config,
+//moduleDataProvider bufmodule.ModuleDataProvider,
+//) (bufwire.ModuleConfigReader, error) {
+//logger := container.Logger()
+//moduleKeyProvider := bufapimodule.NewModuleKeyProvider(
+//logger,
+//bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+//)
+//return bufwire.NewModuleConfigReader(
+//logger,
+//storageosProvider,
+//NewFetchReader(logger, storageosProvider, runner, moduleKeyProvider, moduleDataProvider),
+//bufmodulebuild.NewModuleBucketBuilder(),
+//), nil
+//}
 
-// NewWireFileLister returns a new FileLister.
-func NewWireFileLister(
-	container appflag.Container,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	clientConfig *connectclient.Config,
-) (bufwire.FileLister, error) {
-	logger := container.Logger()
-	moduleResolver := bufapimodule.NewModuleResolver(
-		logger,
-		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
-	)
-	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return nil, err
-	}
-	return bufwire.NewFileLister(
-		logger,
-		storageosProvider,
-		NewFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
-		bufimagebuild.NewBuilder(logger, moduleReader),
-	), nil
-}
+//// NewWireFileLister returns a new FileLister.
+//func NewWireFileLister(
+//container appflag.Container,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//clientConfig *connectclient.Config,
+//) (bufwire.FileLister, error) {
+//logger := container.Logger()
+//moduleKeyProvider := bufapimodule.NewModuleKeyProvider(
+//logger,
+//bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
+//)
+//moduleDataProvider, err := NewModuleDataProviderAndCreateCacheDirs(container, clientConfig)
+//if err != nil {
+//return nil, err
+//}
+//return bufwire.NewFileLister(
+//logger,
+//storageosProvider,
+//NewFetchReader(logger, storageosProvider, runner, moduleKeyProvider, moduleDataProvider),
+//bufmodulebuild.NewModuleBucketBuilder(),
+//bufimagebuild.NewBuilder(logger, moduleDataProvider),
+//), nil
+//}
 
-// NewWireImageReader returns a new ImageReader.
-func NewWireImageReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-) bufwire.ImageReader {
-	return bufwire.NewImageReader(
-		logger,
-		newFetchMessageReader(logger, storageosProvider, runner),
-	)
-}
+//// NewWireImageReader returns a new ImageReader.
+//func NewWireImageReader(
+//logger *zap.Logger,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//) bufwire.ImageReader {
+//return bufwire.NewImageReader(
+//logger,
+//newFetchMessageReader(logger, storageosProvider, runner),
+//)
+//}
 
-// NewWireImageWriter returns a new ImageWriter.
-func NewWireImageWriter(
-	logger *zap.Logger,
-) bufwire.ImageWriter {
-	return bufwire.NewImageWriter(
-		logger,
-		buffetch.NewWriter(
-			logger,
-		),
-	)
-}
+//// NewWireImageWriter returns a new ImageWriter.
+//func NewWireImageWriter(
+//logger *zap.Logger,
+//) bufwire.ImageWriter {
+//return bufwire.NewImageWriter(
+//logger,
+//buffetch.NewWriter(
+//logger,
+//),
+//)
+//}
 
-// NewWireProtoEncodingReader returns a new ProtoEncodingReader.
-func NewWireProtoEncodingReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-) bufwire.ProtoEncodingReader {
-	return bufwire.NewProtoEncodingReader(
-		logger,
-		newFetchMessageReader(logger, storageosProvider, runner),
-	)
-}
+//// NewWireProtoEncodingReader returns a new ProtoEncodingReader.
+//func NewWireProtoEncodingReader(
+//logger *zap.Logger,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//) bufwire.ProtoEncodingReader {
+//return bufwire.NewProtoEncodingReader(
+//logger,
+//newFetchMessageReader(logger, storageosProvider, runner),
+//)
+//}
 
-// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
-func NewWireProtoEncodingWriter(
-	logger *zap.Logger,
-) bufwire.ProtoEncodingWriter {
-	return bufwire.NewProtoEncodingWriter(
-		logger,
-		buffetch.NewWriter(
-			logger,
-		),
-	)
-}
+//// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
+//func NewWireProtoEncodingWriter(
+//logger *zap.Logger,
+//) bufwire.ProtoEncodingWriter {
+//return bufwire.NewProtoEncodingWriter(
+//logger,
+//buffetch.NewWriter(
+//logger,
+//),
+//)
+//}
 
-// NewModuleReaderAndCreateCacheDirs returns a new ModuleReader while creating the
+// NewModuleDataProviderAndCreateCacheDirs returns a new ModuleDataProvider while creating the
 // required cache directories.
-func NewModuleReaderAndCreateCacheDirs(
+func NewModuleDataProviderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-) (bufmodule.ModuleReader, error) {
-	return newModuleReaderAndCreateCacheDirs(container, clientConfig)
+) (bufmodule.ModuleDataProvider, error) {
+	return newModuleDataProviderAndCreateCacheDirs(container, clientConfig)
 }
 
-func newModuleReaderAndCreateCacheDirs(
+func newModuleDataProviderAndCreateCacheDirs(
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-) (bufmodule.ModuleReader, error) {
-	cacheModuleDirPathV2 := normalpath.Join(container.CacheDirPath(), v2CacheModuleRelDirPath)
-	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheModuleDirPathV2); err != nil {
+) (bufmodule.ModuleDataProvider, error) {
+	cacheModuleDirPathV3 := normalpath.Join(container.CacheDirPath(), v3CacheModuleRelDirPath)
+	if err := checkExistingCacheDirs(container.CacheDirPath(), cacheModuleDirPathV3); err != nil {
 		return nil, err
 	}
-	if err := createCacheDirs(cacheModuleDirPathV2); err != nil {
+	if err := createCacheDirs(cacheModuleDirPathV3); err != nil {
 		return nil, err
 	}
-	delegateReader := bufapimodule.NewModuleReader(
-		container.Logger(),
-		bufapimodule.NewDownloadServiceClientFactory(clientConfig),
-		bufapimodule.ModuleReaderWithDeprecationWarning(
-			bufapimodule.NewRepositoryServiceClientFactory(clientConfig),
+	// TODO: re-add deprecation warning
+	delegateReader := bufmoduleapi.NewModuleDataProvider(
+		bufapi.NewClientProvider(
+			clientConfig,
 		),
 	)
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	var moduleReader bufmodule.ModuleReader
-	casModuleBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV2)
+	storageosProvider := storageos.NewProvider()
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV3)
 	if err != nil {
 		return nil, err
 	}
-	moduleReader = bufmodulecache.NewModuleReader(
-		container.Logger(),
-		container.VerbosePrinter(),
-		casModuleBucket,
+	return bufmodulecache.NewModuleDataProvider(
 		delegateReader,
-	)
-	return moduleReader, nil
+		cacheBucket,
+	), nil
 }
 
 // NewConfig creates a new Config.
@@ -641,8 +636,8 @@ func NewFetchReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 ) buffetch.Reader {
 	return buffetch.NewReader(
 		logger,
@@ -650,8 +645,8 @@ func NewFetchReader(
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
 		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
-		moduleResolver,
-		moduleReader,
+		moduleKeyProvider,
+		moduleDataProvider,
 	)
 }
 
@@ -699,150 +694,144 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 	return promptUser(container, prompt, true)
 }
 
-// BucketAndConfigForSource returns a bucket and config. The bucket contains
-// just the files that constitute a module. It also checks if config
-// exists and defines a module identity, returning ErrNoConfigFile and
-// ErrNoModuleName respectfully.
-//
-// Workspaces are disabled when fetching the source.
-func BucketAndConfigForSource(
-	ctx context.Context,
-	logger *zap.Logger,
-	container app.EnvStdinContainer,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	source string,
-) (storage.ReadBucketCloser, *bufconfig.Config, error) {
-	sourceRef, err := buffetch.NewSourceRefParser(
-		logger,
-	).GetSourceRef(
-		ctx,
-		source,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	sourceBucket, err := newFetchSourceReader(
-		logger,
-		storageosProvider,
-		runner,
-	).GetSourceBucket(
-		ctx,
-		container,
-		sourceRef,
-		buffetch.GetSourceBucketWithWorkspacesDisabled(),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, sourceBucket)
-	if err != nil {
-		return nil, nil, NewInternalError(err)
-	}
-	if existingConfigFilePath == "" {
-		return nil, nil, ErrNoConfigFile
-	}
-	// TODO: This should just read a lock file
-	sourceConfig, err := bufconfig.GetConfigForBucket(
-		ctx,
-		sourceBucket,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	if sourceConfig.ModuleIdentity == nil {
-		return nil, nil, ErrNoModuleName
-	}
+//// BucketAndConfigForSource returns a bucket and config. The bucket contains
+//// just the files that constitute a module. It also checks if config
+//// exists and defines a module identity, returning ErrNoConfigFile and
+//// ErrNoModuleName respectfully.
+////
+//// Workspaces are disabled when fetching the source.
+//func BucketAndConfigForSource(
+//ctx context.Context,
+//logger *zap.Logger,
+//container app.EnvStdinContainer,
+//storageosProvider storageos.Provider,
+//runner command.Runner,
+//source string,
+//) (storage.ReadBucketCloser, *bufconfig.Config, error) {
+//sourceRef, err := buffetch.NewSourceRefParser(
+//logger,
+//).GetSourceRef(
+//ctx,
+//source,
+//)
+//if err != nil {
+//return nil, nil, err
+//}
+//sourceBucket, err := newFetchSourceReader(
+//logger,
+//storageosProvider,
+//runner,
+//).GetSourceBucket(
+//ctx,
+//container,
+//sourceRef,
+//buffetch.GetSourceBucketWithWorkspacesDisabled(),
+//)
+//if err != nil {
+//return nil, nil, err
+//}
+//existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, sourceBucket)
+//if err != nil {
+//return nil, nil, NewInternalError(err)
+//}
+//if existingConfigFilePath == "" {
+//return nil, nil, ErrNoConfigFile
+//}
+//// TODO: This should just read a lock file
+//sourceConfig, err := bufconfig.GetConfigForBucket(
+//ctx,
+//sourceBucket,
+//)
+//if err != nil {
+//return nil, nil, err
+//}
+//if sourceConfig.ModuleIdentity == nil {
+//return nil, nil, ErrNoModuleName
+//}
 
-	return sourceBucket, sourceConfig, nil
-}
+//return sourceBucket, sourceConfig, nil
+//}
 
-// NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
-func NewImageForSource(
-	ctx context.Context,
-	container appflag.Container,
-	source string,
-	errorFormat string,
-	disableSymlinks bool,
-	configOverride string,
-	externalDirOrFilePaths []string,
-	externalExcludeDirOrFilePaths []string,
-	externalDirOrFilePathsAllowNotExist bool,
-	excludeSourceCodeInfo bool,
-) (bufimage.Image, error) {
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, source)
-	if err != nil {
-		return nil, err
-	}
-	storageosProvider := NewStorageosProvider(disableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	imageConfigReader, err := NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-	)
-	if err != nil {
-		return nil, err
-	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-		ctx,
-		container,
-		ref,
-		configOverride,
-		externalDirOrFilePaths,
-		externalExcludeDirOrFilePaths,
-		externalDirOrFilePathsAllowNotExist,
-		excludeSourceCodeInfo,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdout potentially
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			errorFormat,
-		); err != nil {
-			return nil, err
-		}
-		return nil, ErrFileAnnotation
-	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	return bufimage.MergeImages(images...)
-}
+//// NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
+//func NewImageForSource(
+//ctx context.Context,
+//container appflag.Container,
+//source string,
+//errorFormat string,
+//disableSymlinks bool,
+//configOverride string,
+//externalDirOrFilePaths []string,
+//externalExcludeDirOrFilePaths []string,
+//externalDirOrFilePathsAllowNotExist bool,
+//excludeSourceCodeInfo bool,
+//) (bufimage.Image, error) {
+//ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, source)
+//if err != nil {
+//return nil, err
+//}
+//storageosProvider := NewStorageosProvider(disableSymlinks)
+//runner := command.NewRunner()
+//clientConfig, err := NewConnectClientConfig(container)
+//if err != nil {
+//return nil, err
+//}
+//imageConfigReader, err := NewWireImageConfigReader(
+//container,
+//storageosProvider,
+//runner,
+//clientConfig,
+//)
+//if err != nil {
+//return nil, err
+//}
+//imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+//ctx,
+//container,
+//ref,
+//configOverride,
+//externalDirOrFilePaths,
+//externalExcludeDirOrFilePaths,
+//externalDirOrFilePathsAllowNotExist,
+//excludeSourceCodeInfo,
+//)
+//if err != nil {
+//return nil, err
+//}
+//if len(fileAnnotations) > 0 {
+//// stderr since we do output to stdout potentially
+//if err := bufanalysis.PrintFileAnnotations(
+//container.Stderr(),
+//fileAnnotations,
+//errorFormat,
+//); err != nil {
+//return nil, err
+//}
+//return nil, ErrFileAnnotation
+//}
+//images := make([]bufimage.Image, 0, len(imageConfigs))
+//for _, imageConfig := range imageConfigs {
+//images = append(images, imageConfig.Image())
+//}
+//return bufimage.MergeImages(images...)
+//}
 
-// WellKnownTypeImage returns the image for the well known type (google.protobuf.Duration for example).
-func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownType string) (bufimage.Image, error) {
-	sourceConfig, err := bufconfig.GetConfigForBucket(
-		ctx,
-		storage.NopReadBucketCloser(datawkt.ReadBucket),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		ctx,
+// WellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
+func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownTypeName string) (bufimage.Image, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
 		datawkt.ReadBucket,
-		sourceConfig.Build,
+		".",
+		true,
 	)
+	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimagebuild.NewBuilder(logger, bufmodule.NewNopModuleReader()).Build(ctx, module)
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, moduleSet)
 	if err != nil {
 		return nil, err
 	}
-	return bufimageutil.ImageFilteredByTypes(image, wellKnownType)
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownTypeName)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
@@ -907,25 +896,25 @@ Use a specific module version and plugin version.
 `, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
 
-// SelectReferenceForRemote receives a list of module references and selects one for remote
-// operations. In most cases, all references will have the same remote, which will result in the
-// first reference being selected. In cases in which there is a mix of remotes, the first reference
-// with a remote different than "buf.build" will be selected. This func is useful for targeting
-// single-tenant BSR addresses.
-func SelectReferenceForRemote(references []bufmoduleref.ModuleReference) bufmoduleref.ModuleReference {
-	if len(references) == 0 {
-		return nil
-	}
-	for _, ref := range references {
-		if ref == nil {
-			continue
-		}
-		if ref.Remote() != bufconnect.DefaultRemote {
-			return ref
-		}
-	}
-	return references[0]
-}
+//// SelectReferenceForRemote receives a list of module references and selects one for remote
+//// operations. In most cases, all references will have the same remote, which will result in the
+//// first reference being selected. In cases in which there is a mix of remotes, the first reference
+//// with a remote different than "buf.build" will be selected. This func is useful for targeting
+//// single-tenant BSR addresses.
+//func SelectReferenceForRemote(references []bufmoduleref.ModuleReference) bufmoduleref.ModuleReference {
+//if len(references) == 0 {
+//return nil
+//}
+//for _, ref := range references {
+//if ref == nil {
+//continue
+//}
+//if ref.Remote() != bufconnect.DefaultRemote {
+//return ref
+//}
+//}
+//return references[0]
+//}
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
 	for _, formatString := range validFormatStrings {

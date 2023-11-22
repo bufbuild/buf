@@ -21,8 +21,8 @@ import (
 	"net"
 
 	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -129,10 +129,9 @@ func NewRepositoryNotFoundError(name string) error {
 	return fmt.Errorf(`a repository named %q does not exist, use "buf beta registry repository create" to create one`, name)
 }
 
-// NewModuleReferenceNotFoundError informs the user that a module
-// reference does not exist.
-func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) error {
-	return fmt.Errorf("%q does not exist", reference)
+// NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
+func NewModuleRefFoundError(moduleRef bufmodule.ModuleRef) error {
+	return fmt.Errorf("%q does not exist", moduleRef)
 }
 
 // NewTokenNotFoundError informs the user that a token with
