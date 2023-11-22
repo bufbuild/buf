@@ -230,6 +230,9 @@ func newManagedOverrideRuleFromExternalV1(
 			FileOptionGoPackagePrefix,
 			externalGoPackagePrefix.Override,
 		)
+		if err != nil {
+			return nil, err
+		}
 		disables = append(disables, goPackagePrefixDisables...)
 		overrides = append(overrides, goPackagePrefixOverrides...)
 	}
