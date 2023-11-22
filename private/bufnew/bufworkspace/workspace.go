@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 type workspace struct {
@@ -180,10 +181,6 @@ func newWorkspaceForBucketAndModuleDirPaths(
 		}
 		allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRefs...)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		moduleTargeting, err := newModuleTargeting(moduleDirPath, workspaceOptions)
-		if err != nil {
-			return nil, err
-		}
 		moduleBucket := storage.MapReadBucket(
 			bucket,
 			storage.MapOnPrefix(moduleDirPath),
@@ -195,16 +192,21 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			}
 		} else {
 			for _, depModuleKey := range bufLockFile.DepModuleKeys() {
-				//fmt.Println("adding remote", depModuleKey.ModuleFullName())
 				moduleSetBuilder.AddRemoteModule(
 					depModuleKey,
 					false,
 				)
 			}
 		}
-		// TODO: does not take into account RootToExclude yet, do so.
-		moduleSetBuilder.AddLocalModule(
+		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
+			ctx,
 			moduleBucket,
+			moduleDirPath,
+			moduleConfig,
+			workspaceOptions,
+		)
+		moduleSetBuilder.AddLocalModule(
+			mappedModuleBucket,
 			moduleDirPath,
 			isTargetFunc(moduleDirPath),
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
@@ -293,6 +295,65 @@ func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 	return moduleConfigs[0], bufYAMLFile.ConfiguredDepModuleRefs(), nil
 }
 
+func getMappedModuleBucketAndModuleTargeting(
+	ctx context.Context,
+	moduleBucket storage.ReadBucket,
+	moduleDirPath string,
+	moduleConfig bufconfig.ModuleConfig,
+	workspaceOptions *workspaceOptions,
+) (storage.ReadBucket, *moduleTargeting, error) {
+	rootToExcludes := moduleConfig.RootToExcludes()
+	var rootBuckets []storage.ReadBucket
+	for root, excludes := range rootToExcludes {
+		// Roots only applies to .proto files.
+		mappers := []storage.Mapper{
+			// need to do match extension here
+			// https://github.com/bufbuild/buf/issues/113
+			storage.MatchPathExt(".proto"),
+			storage.MapOnPrefix(root),
+		}
+		if len(excludes) != 0 {
+			var notOrMatchers []storage.Matcher
+			for _, exclude := range excludes {
+				notOrMatchers = append(
+					notOrMatchers,
+					storage.MatchPathContained(exclude),
+				)
+			}
+			mappers = append(
+				mappers,
+				storage.MatchNot(
+					storage.MatchOr(
+						notOrMatchers...,
+					),
+				),
+			)
+		}
+		rootBuckets = append(
+			rootBuckets,
+			storage.MapReadBucket(
+				moduleBucket,
+				mappers...,
+			),
+		)
+	}
+	rootBuckets = append(
+		rootBuckets,
+		bufmodule.GetDocStorageReadBucket(ctx, moduleBucket),
+		bufmodule.GetLicenseStorageReadBucket(moduleBucket),
+	)
+	mappedModuleBucket := storage.MultiReadBucket(rootBuckets...)
+	moduleTargeting, err := newModuleTargeting(
+		moduleDirPath,
+		slicesext.MapKeysToSlice(rootToExcludes),
+		workspaceOptions,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return mappedModuleBucket, moduleTargeting, nil
+}
+
 func bufWorkYAMLExistsAtPrefix(ctx context.Context, bucket storage.ReadBucket, prefix string) (bool, error) {
 	fileVersion, err := bufconfig.GetBufWorkYAMLFileVersionForPrefix(ctx, bucket, prefix)
 	if err != nil {
@@ -357,19 +418,23 @@ func normalizeAndValidateWorkspaceOptions(workspaceOptions *workspaceOptions) er
 	return nil
 }
 
+// TODO: All the module_bucket_builder_test.go stuff needs to be copied over
+
 type moduleTargeting struct {
-	// relative to the actual moduleDirPath
+	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetPaths []string
-	// relative to the actual moduleDirPath
+	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetExcludePaths []string
 }
 
 func newModuleTargeting(
 	moduleDirPath string,
+	roots []string,
 	workspaceOptions *workspaceOptions,
 ) (*moduleTargeting, error) {
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
+
 	for _, targetPath := range workspaceOptions.targetPaths {
 		if targetPath == moduleDirPath {
 			// We're just going to be realists in our error messages here.
@@ -400,8 +465,57 @@ func newModuleTargeting(
 			moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
 		}
 	}
+
+	moduleTargetPaths, err := slicesext.MapError(
+		moduleTargetPaths,
+		func(moduleTargetPath string) (string, error) {
+			return applyRootsToTargetPath(roots, moduleTargetPath)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	moduleTargetExcludePaths, err = slicesext.MapError(
+		moduleTargetExcludePaths,
+		func(moduleTargetExcludePath string) (string, error) {
+			return applyRootsToTargetPath(roots, moduleTargetExcludePath)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &moduleTargeting{
 		moduleTargetPaths:        moduleTargetPaths,
 		moduleTargetExcludePaths: moduleTargetExcludePaths,
 	}, nil
+}
+
+func applyRootsToTargetPath(roots []string, path string) (string, error) {
+	var matchingRoots []string
+	for _, root := range roots {
+		if normalpath.ContainsPath(root, path, normalpath.Relative) {
+			matchingRoots = append(matchingRoots, root)
+		}
+	}
+	switch len(matchingRoots) {
+	case 0:
+		// this is a user error and will likely happen often
+		return "", fmt.Errorf(
+			"path %q is not contained within any of roots %s - note that specified paths "+
+				"cannot be roots, but must be contained within roots",
+			path,
+			stringutil.SliceToHumanStringQuoted(roots),
+		)
+	case 1:
+		targetPath, err := normalpath.Rel(matchingRoots[0], path)
+		if err != nil {
+			return "", err
+		}
+		// just in case
+		return normalpath.NormalizeAndValidate(targetPath)
+	default:
+		// this should never happen
+		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
+	}
 }

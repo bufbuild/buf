@@ -173,6 +173,26 @@ func GetLicenseFile(ctx context.Context, moduleReadBucket ModuleReadBucket) (Fil
 	return moduleReadBucket.GetFile(ctx, licenseFilePath)
 }
 
+// GetDocStorageReadBucket gets a storage.ReadBucket that just contains the documentation file(s).
+//
+// This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
+func GetDocStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) storage.ReadBucket {
+	return storage.MapReadBucket(
+		bucket,
+		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
+	)
+}
+
+// GetLicenseStorageReadBucket gets a storage.ReadBucket that just contains the license file(s).
+//
+// This is needed for i.e. using RootToExcludes in NewWorkspaceForBucket.
+func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
+	return storage.MapReadBucket(
+		bucket,
+		storage.MatchPathEqual(licenseFilePath),
+	)
+}
+
 // *** PRIVATE ***
 
 // moduleReadBucket
@@ -207,15 +227,7 @@ func newModuleReadBucket(
 				if err != nil {
 					return nil, err
 				}
-				docFilePath := getDocFilePathForStorageReadBucket(ctx, bucket)
-				return storage.MapReadBucket(
-					bucket,
-					storage.MatchOr(
-						storage.MatchPathExt(".proto"),
-						storage.MatchPathEqual(licenseFilePath),
-						storage.MatchPathEqual(docFilePath),
-					),
-				), nil
+				return storage.MapReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
 			},
 		),
 		module:               module,
@@ -530,6 +542,16 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 			}
 			return f(fileInfo)
 		},
+	)
+}
+
+// getStorageMatcher gets the storage.Matcher that will filter the storage.ReadBucket down to specifically
+// the files that are relevant to a ModuleReadBucket.
+func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.Matcher {
+	return storage.MatchOr(
+		storage.MatchPathExt(".proto"),
+		storage.MatchPathEqual(licenseFilePath),
+		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
 	)
 }
 

@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -125,23 +124,6 @@ func ReadBufLockFile(reader io.Reader) (BufLockFile, error) {
 // WriteBufLockFile writes the BufLockFile to the io.Writer.
 func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
 	return writeFile(writer, "lock file", bufLockFile, writeBufLockFile)
-}
-
-// ValidateBufLockFileDigests validates that all Digests on the ModuleKeys are valid, by calling
-// each Digest() function.
-//
-// TODO: should we just ensure this property when returning from NewFile, ReadFile?
-func ValidateBufLockFileDigests(bufLockFile BufLockFile) error {
-	if err := checkV2SupportedYet(bufLockFile); err != nil {
-		return err
-	}
-	var errs []error
-	for _, depModuleKey := range bufLockFile.DepModuleKeys() {
-		if _, err := depModuleKey.Digest(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return multierr.Combine(errs...)
 }
 
 // *** PRIVATE ***

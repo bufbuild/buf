@@ -67,7 +67,7 @@ type ModuleConfig interface {
 	// actual path to an exclude is DirPath()/root/exclude (in v1beta1 and v1, this
 	// is just root and root/exclude).
 	//
-	// This will never return a nil value.
+	// This will never return a nil or empty value.
 	// If RootToExcludes is empty in the buf.yaml, this will return "." -> []string{}.
 	//
 	// For v1beta1, this may contain multiple keys.
