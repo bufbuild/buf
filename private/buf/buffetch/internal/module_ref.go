@@ -26,8 +26,8 @@ var (
 )
 
 type moduleRef struct {
-	format    string
-	moduleRef bufmodule.ModuleRef
+	format     string
+	iModuleRef bufmodule.ModuleRef
 }
 
 func newModuleRef(
@@ -54,10 +54,10 @@ func newModuleRef(
 	return newDirectModuleRef(format, moduleRef), nil
 }
 
-func newDirectModuleRef(format string, moduleRef bufmodule.ModuleRef) *moduleRef {
+func newDirectModuleRef(format string, iModuleRef bufmodule.ModuleRef) *moduleRef {
 	return &moduleRef{
-		format:    format,
-		moduleRef: moduleRef,
+		format:     format,
+		iModuleRef: iModuleRef,
 	}
 }
 
@@ -66,7 +66,7 @@ func (r *moduleRef) Format() string {
 }
 
 func (r *moduleRef) ModuleRef() bufmodule.ModuleRef {
-	return r.moduleRef
+	return r.iModuleRef
 }
 
 func (*moduleRef) ref()       {}

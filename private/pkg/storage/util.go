@@ -163,7 +163,15 @@ type compositeReadObjectCloser struct {
 	io.ReadCloser
 }
 
-type compositeReadWriteBucket struct {
+type compositeReadWriteBucketCloser struct {
 	ReadBucket
 	WriteBucket
+	closeFunc func() error
+}
+
+func (c compositeReadWriteBucketCloser) Close() error {
+	if c.closeFunc != nil {
+		return c.closeFunc()
+	}
+	return nil
 }

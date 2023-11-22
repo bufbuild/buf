@@ -397,13 +397,13 @@ type Reader interface {
 		bucketRef BucketRef,
 		options ...GetBucketOption,
 	) (ReadBucketCloser, error)
-	// GetModule gets the module.
-	GetModule(
+	// GetModuleData gets the ModuleData.
+	GetModuleData(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
-	) (bufmodule.Module, error)
+	) (bufmodule.ModuleData, error)
 }
 
 // NewReader returns a new Reader.
