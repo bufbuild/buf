@@ -16,6 +16,8 @@ package bufworkspace
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
@@ -107,6 +109,15 @@ func TestBasic(t *testing.T) {
 		},
 		graph,
 	)
+	require.NoError(t, err)
+	module = workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
+	require.NotNil(t, module)
+	_, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")
+	require.NoError(t, err)
+	_, err = module.StatFileInfo(ctx, "acme/bond/v2/bond.proto")
+	require.NoError(t, err)
+	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
+	require.True(t, errors.Is(err, fs.ErrNotExist))
 
 	workspace, err = NewWorkspaceForBucket(
 		ctx,

@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package acme.portfolio.v1;
 
-import "acme/bond/v1/bond.proto":
+import "acme/bond/v2/bond.proto":
 import "acme/extension/v1/extension.proto":
 
 message Portfolio {
   option (acme.extension.v1.experimental) = true;
 
-  repeated acme.bond.v1.Bond bonds = 1;
+  repeated acme.bond.v2.Bond bonds = 1;
 }

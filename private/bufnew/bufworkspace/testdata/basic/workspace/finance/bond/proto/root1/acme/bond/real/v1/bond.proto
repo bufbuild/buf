@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package acme.bond.real.v1;
+
+import "acme/date/v1/date.proto":
+import "acme/geo/v1/country_alpha_3_code.proto":
+import "acme/money/v1/currency_code.proto":
+import "google/protobuf/duration.proto";
+
+message Bond {
+  acme.geo.v1.CountryAlpha3Code country_alpha_3_code = 1;
+  acme.money.v1.CurrencyCode currency_code = 2;
+  acme.date.v1.Date purchase_date = 3;
+  google.protobuf.Duration duration = 4;
+  int64 interest_rate_micros = 5;
+}

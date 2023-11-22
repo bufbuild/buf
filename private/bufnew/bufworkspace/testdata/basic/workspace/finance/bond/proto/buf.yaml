@@ -1,5 +1,11 @@
-version: v1
+version: v1beta1
 name: buf.testing/acme/bond
+build:
+  roots:
+    - root1
+    - root2
+  excludes:
+    - root1/acme/bond/excluded/v1
 deps:
   - buf.testing/name/date
   - buf.testing/name/extension
