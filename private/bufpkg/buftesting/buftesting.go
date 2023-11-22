@@ -22,7 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -130,14 +131,23 @@ func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
 
 // GetProtocFilePathsErr is like GetProtocFilePaths except it returns an error and accepts a ctx.
 func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]string, error) {
-	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop(), testStorageosProvider).BuildForIncludes(
+	// TODO: This is a really convoluted way to get protoc files. It also may have an
+	// impact on our dependency tree.
+	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
+		testStorageosProvider,
 		[]string{dirPath},
+		nil,
 	)
 	if err != nil {
 		return nil, err
 	}
-	targetFileInfos, err := module.TargetFileInfos(ctx)
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+			workspace,
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
