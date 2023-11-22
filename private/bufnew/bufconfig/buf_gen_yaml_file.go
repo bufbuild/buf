@@ -123,7 +123,7 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 	case FileVersionV1Beta1:
 		return nil, errors.New("TODO")
 	case FileVersionV1:
-		var externalGenYAMLFile externalBufGenYAMLV1
+		var externalGenYAMLFile externalBufGenYAMLFileV1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}

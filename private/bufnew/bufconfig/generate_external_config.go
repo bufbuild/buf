@@ -21,8 +21,8 @@ import "encoding/json"
 // TODO: update struct type names to externalXYZFileV1/2/1Beta1
 // TODO: update GODOCs to the style of '// externalBufLockFileV2 represents the v2 buf.lock file.'
 
-// externalBufGenYAMLV1 is a v1 external generate configuration.
-type externalBufGenYAMLV1 struct {
+// externalBufGenYAMLFileV1 is a v1 external generate configuration.
+type externalBufGenYAMLFileV1 struct {
 	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []externalGeneratePluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed externalGenerateManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
