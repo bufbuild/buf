@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package testingextended
+package syncext
 
 import _ "github.com/bufbuild/buf/private/usage"

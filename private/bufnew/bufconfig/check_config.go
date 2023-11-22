@@ -14,7 +14,7 @@
 
 package bufconfig
 
-import "github.com/bufbuild/buf/private/pkg/slicesextended"
+import "github.com/bufbuild/buf/private/pkg/slicesext"
 
 var (
 	defaultCheckConfigV1Beta1 = newCheckConfig(
@@ -89,15 +89,15 @@ func (c *checkConfig) FileVersion() FileVersion {
 }
 
 func (c *checkConfig) UseIDsAndCategories() []string {
-	return slicesextended.Copy(c.use)
+	return slicesext.Copy(c.use)
 }
 
 func (c *checkConfig) ExceptIDsAndCategories() []string {
-	return slicesextended.Copy(c.except)
+	return slicesext.Copy(c.except)
 }
 
 func (c *checkConfig) IgnorePaths() []string {
-	return slicesextended.Copy(c.ignore)
+	return slicesext.Copy(c.ignore)
 }
 
 func (c *checkConfig) IgnoreIDOrCategoryToPaths() map[string][]string {

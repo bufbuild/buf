@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -142,7 +142,7 @@ func (w *bufWorkYAMLFile) FileVersion() FileVersion {
 }
 
 func (w *bufWorkYAMLFile) DirPaths() []string {
-	return slicesextended.Copy(w.dirPaths)
+	return slicesext.Copy(w.dirPaths)
 }
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}
@@ -221,7 +221,7 @@ func validateBufWorkYAMLDirPaths(dirPaths []string) ([]string, error) {
 	// We already know the paths are unique due to above validation.
 	// We sort to print deterministic errors.
 	// TODO: use this line:
-	// sortedNormalizedDirPaths := slicesextended.MapKeysToSortedSlice(normalDirPathToDirPath)
+	// sortedNormalizedDirPaths := slicesext.MapKeysToSortedSlice(normalDirPathToDirPath)
 	sortedNormalizedDirPaths := make([]string, 0, len(normalizedDirPathToDirPath))
 	for normalizedDirPath := range normalizedDirPathToDirPath {
 		sortedNormalizedDirPaths = append(sortedNormalizedDirPaths, normalizedDirPath)

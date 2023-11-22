@@ -24,13 +24,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
-	"github.com/bufbuild/buf/private/pkg/testingextended"
+	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestCompareGoogleapis(t *testing.T) {
-	testingextended.SkipIfShort(t)
+	testingext.SkipIfShort(t)
 	// Don't run in parallel as it allocates a lot of memory
 	// cannot directly compare with source code info as buf alpha protoc creates additional source
 	// code infos that protoc does not

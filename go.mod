@@ -3,14 +3,14 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231106192134-1baebb0a1518.2
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231115204500-e097f827e652.2
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.12.0-20231111212044-1119bf4b707e.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231111212044-1119bf4b707e.2
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231115201000-c928b3e4cf35.2
 	connectrpc.com/connect v1.12.0
 	connectrpc.com/otelconnect v0.6.0
 	github.com/bufbuild/protocompile v0.6.1-0.20231108163138-146b831231f7
-	github.com/bufbuild/protovalidate-go v0.4.1
-	github.com/bufbuild/protoyaml-go v0.1.6
+	github.com/bufbuild/protovalidate-go v0.4.2
+	github.com/bufbuild/protoyaml-go v0.1.7
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/gofrs/flock v0.8.1
@@ -20,7 +20,7 @@ require (
 	github.com/google/go-containerregistry v0.16.1
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect v1.15.3
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.3
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/profile v1.7.0
@@ -29,9 +29,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	github.com/tetratelabs/wazero v1.5.0
-	go.opentelemetry.io/otel v1.20.0
-	go.opentelemetry.io/otel/sdk v1.20.0
-	go.opentelemetry.io/otel/trace v1.20.0
+	go.opentelemetry.io/otel v1.21.0
+	go.opentelemetry.io/otel/sdk v1.21.0
+	go.opentelemetry.io/otel/trace v1.21.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.26.0
@@ -77,9 +77,9 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
-	go.opentelemetry.io/otel/metric v1.20.0 // indirect
+	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20231120223509-83a465c0220f // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 )

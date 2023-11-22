@@ -17,7 +17,7 @@
 //go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
 
-package filepathextended
+package filepathext
 
 import (
 	"os"
@@ -31,10 +31,10 @@ import (
 
 func TestRealClean(t *testing.T) {
 	t.Parallel()
-	path, err := RealClean("../filepathextended")
+	path, err := RealClean("../filepathext")
 	assert.NoError(t, err)
 	assert.Equal(t, ".", path)
-	path, err = RealClean("../filepathextended/foo")
+	path, err = RealClean("../filepathext/foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", path)
 	path, err = RealClean("/foo")

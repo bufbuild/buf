@@ -35,7 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/netextended"
+	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -149,7 +149,7 @@ func run(
 		return err
 	}
 	if len(flags.OverrideRemote) > 0 {
-		if _, err := netextended.ValidateHostname(flags.OverrideRemote); err != nil {
+		if _, err := netext.ValidateHostname(flags.OverrideRemote); err != nil {
 			return fmt.Errorf("%s: %w", overrideRemoteFlagName, err)
 		}
 	}

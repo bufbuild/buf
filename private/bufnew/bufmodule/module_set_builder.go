@@ -21,7 +21,7 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -310,7 +310,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if len(b.modules) == 0 {
 		return nil, errors.New("no Modules added to ModuleSetBuilder")
 	}
-	if slicesextended.Count(b.modules, func(m Module) bool { return m.IsTarget() }) < 1 {
+	if slicesext.Count(b.modules, func(m Module) bool { return m.IsTarget() }) < 1 {
 		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
 	}
 	modules, err := getUniqueModulesByOpaqueID(b.ctx, b.modules)

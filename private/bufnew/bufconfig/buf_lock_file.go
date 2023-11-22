@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -158,7 +158,7 @@ func newBufLockFile(
 		return nil, err
 	}
 	// To make sure we aren't editing input.
-	depModuleKeys = slicesextended.Copy(depModuleKeys)
+	depModuleKeys = slicesext.Copy(depModuleKeys)
 	sort.Slice(
 		depModuleKeys,
 		func(i int, j int) bool {

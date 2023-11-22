@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package slicesextended
+package slicesext
 
 import _ "github.com/bufbuild/buf/private/usage"

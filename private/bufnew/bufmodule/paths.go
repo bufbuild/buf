@@ -17,8 +17,8 @@ package bufmodule
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 const (
@@ -43,7 +43,7 @@ var (
 )
 
 func init() {
-	docFilePathMap = stringutil.SliceToMap(orderedDocFilePaths)
+	docFilePathMap = slicesext.ToStructMap(orderedDocFilePaths)
 }
 
 func getDocFilePathForStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) string {

@@ -21,7 +21,7 @@ import "google/protobuf/descriptor.proto";
 option cc_enable_arenas = true;
 option optimize_for = SPEED;
 
-// Image is an extended FileDescriptorSet.
+// Image is an ext FileDescriptorSet.
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 message Image {
