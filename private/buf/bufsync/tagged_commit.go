@@ -15,40 +15,30 @@
 package bufsync
 
 import (
-	"context"
-
 	"github.com/bufbuild/buf/private/pkg/git"
-	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-type moduleCommit struct {
-	commit    git.Commit
-	tags      []string
-	getBucket func(ctx context.Context) (storage.ReadBucket, error)
+type taggedCommit struct {
+	commit git.Commit
+	tags   []string
 }
 
-func newModuleCommit(
+func newTaggedCommit(
 	commit git.Commit,
 	tags []string,
-	getBucket func(ctx context.Context) (storage.ReadBucket, error),
-) *moduleCommit {
-	return &moduleCommit{
-		commit:    commit,
-		tags:      tags,
-		getBucket: getBucket,
+) *taggedCommit {
+	return &taggedCommit{
+		commit: commit,
+		tags:   tags,
 	}
 }
 
-func (m *moduleCommit) Commit() git.Commit {
+func (m *taggedCommit) Commit() git.Commit {
 	return m.commit
 }
 
-func (m *moduleCommit) Tags() []string {
+func (m *taggedCommit) Tags() []string {
 	return m.tags
 }
 
-func (m *moduleCommit) Bucket(ctx context.Context) (storage.ReadBucket, error) {
-	return m.getBucket(ctx)
-}
-
-var _ ModuleCommit = (*moduleCommit)(nil)
+var _ TaggedCommit = (*taggedCommit)(nil)

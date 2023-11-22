@@ -43,6 +43,7 @@ type Repository interface {
 	Push(t *testing.T)
 	Merge(t *testing.T, branch string)
 	PackRefs(t *testing.T)
+	ResetHard(t *testing.T, ref string)
 }
 
 type commitOpts struct {
