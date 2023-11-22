@@ -25,7 +25,6 @@ import (
 //
 //   - No paths are empty.
 //   - All paths are normalized and validated.
-//   - All paths are normalized if pathType is Absolute.
 //   - All paths are unique.
 //   - No path contains another path.
 //
@@ -46,11 +45,6 @@ func normalizeAndCheckPaths(paths []string, name string) ([]string, error) {
 		}
 		outputs[i] = output
 	}
-	return sortAndCheckDuplicatePaths(outputs, name)
-}
-
-// TODO: refactor this
-func sortAndCheckDuplicatePaths(outputs []string, name string) ([]string, error) {
 	sort.Strings(outputs)
 	for i := 0; i < len(outputs); i++ {
 		for j := i + 1; j < len(outputs); j++ {

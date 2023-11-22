@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
 // Workspace is a buf workspace.
@@ -135,6 +136,28 @@ func WorkspaceWithTargetPaths(
 		workspaceOptions.targetPaths = targetPaths
 		workspaceOptions.targetExcludePaths = targetExcludePaths
 	}
+}
+
+// NewWorkspaceForProtoc is a specialized function that creates a new Workspace
+// for given includes and file paths in the style of protoc.
+//
+// The returned Workspace will have a single targeted Module, with target files
+// matching the filePaths.
+//
+// Technically this will work with len(filePaths) == 0 but we should probably make sure
+// that is banned in protoc.
+func NewWorkspaceForProtoc(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	includeDirPaths []string,
+	filePaths []string,
+) (Workspace, error) {
+	return newWorkspaceForProtoc(
+		ctx,
+		storageosProvider,
+		includeDirPaths,
+		filePaths,
+	)
 }
 
 // WorkspaceUnreferencedConfiguredDepModuleRefs returns those configured ModuleRefs that do not
