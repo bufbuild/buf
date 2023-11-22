@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -1083,7 +1083,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleReference(
+			testNewModuleRef(
 				t,
 				"example.com",
 				"foob",
@@ -1097,7 +1097,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleReference(
+			testNewModuleRef(
 				t,
 				"example.com",
 				"foob",
@@ -1340,14 +1340,14 @@ func testGetParsedRef(
 	}
 }
 
-func testNewModuleReference(
+func testNewModuleRef(
 	t *testing.T,
-	remote string,
+	registry string,
 	owner string,
-	repository string,
-	reference string,
-) bufmoduleref.ModuleReference {
-	moduleReference, err := bufmoduleref.NewModuleReference(remote, owner, repository, reference)
+	name string,
+	ref string,
+) bufmodule.ModuleRef {
+	moduleRef, err := bufmodule.NewModuleRef(registry, owner, name, ref)
 	require.NoError(t, err)
-	return moduleReference
+	return moduleRef
 }

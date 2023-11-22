@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -230,15 +230,6 @@ func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
 // declaration to do so.
 type ReadBucketCloser internal.ReadBucketCloser
 
-// ReadWriteBucketCloser is a bucket returned from GetBucket.
-// We need to surface the internal.ReadWriteBucketCloser
-// interface to other packages, so we use a type
-// declaration to do so.
-type ReadWriteBucketCloser internal.ReadWriteBucketCloser
-
-// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
-type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
-
 // MessageReader is an message reader.
 type MessageReader interface {
 	// GetMessageFile gets the message file.
@@ -254,36 +245,22 @@ type MessageReader interface {
 // SourceReader is a source reader.
 type SourceReader interface {
 	// GetSourceBucket gets the source bucket.
-	//
-	// The returned bucket will only have .proto and configuration files.
-	// The returned bucket may be upgradeable to a ReadWriteBucketCloser.
 	GetSourceBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
-		options ...GetSourceBucketOption,
-	) (ReadBucketCloserWithTerminateFileProvider, error)
-}
-
-// GetSourceBucketOption is an option for GetSourceBucket.
-type GetSourceBucketOption func(*getSourceBucketOptions)
-
-// GetSourceBucketWithWorkspacesDisabled disables workspace mode.
-func GetSourceBucketWithWorkspacesDisabled() GetSourceBucketOption {
-	return func(o *getSourceBucketOptions) {
-		o.workspacesDisabled = true
-	}
+	) (ReadBucketCloser, error)
 }
 
 // ModuleFetcher is a module fetcher.
 type ModuleFetcher interface {
-	// GetModule gets the module.
+	// GetModuleData gets the ModuleData.
 	// Unresolved ModuleRef's are automatically resolved.
-	GetModule(
+	GetModuleData(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
-	) (bufmodule.Module, error)
+	) (bufmodule.ModuleData, error)
 }
 
 // Reader is a reader for Buf.
@@ -300,8 +277,8 @@ func NewReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 ) Reader {
 	return newReader(
 		logger,
@@ -309,8 +286,8 @@ func NewReader(
 		httpClient,
 		httpAuthenticator,
 		gitCloner,
-		moduleResolver,
-		moduleReader,
+		moduleKeyProvider,
+		moduleDataProvider,
 	)
 }
 
@@ -352,14 +329,14 @@ func NewSourceReader(
 func NewModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
+	moduleDataProvider bufmodule.ModuleDataProvider,
 ) ModuleFetcher {
 	return newModuleFetcher(
 		logger,
 		storageosProvider,
-		moduleResolver,
-		moduleReader,
+		moduleKeyProvider,
+		moduleDataProvider,
 	)
 }
 
@@ -380,8 +357,4 @@ func NewWriter(
 	return newWriter(
 		logger,
 	)
-}
-
-type getSourceBucketOptions struct {
-	workspacesDisabled bool
 }

@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -628,7 +628,7 @@ func assumeModuleOrDir(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("assumeModuleOrDir: no path given")
 	}
-	if _, err := bufmoduleref.ModuleReferenceForString(path); err == nil {
+	if _, err := bufmodule.ParseModuleRef(path); err == nil {
 		// this is possible to be a module, check if it is a directory though
 		// OK to use os.Stat instead of os.Lstat here
 		fileInfo, err := os.Stat(path)
