@@ -14,6 +14,12 @@
 
 package bufconfig
 
+import (
+	"errors"
+
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+)
+
 // GenerateConfig is a generation configuration.
 type GenerateConfig interface {
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
@@ -30,6 +36,32 @@ type GenerateConfig interface {
 	GenerateInputConfigs() []GenerateInputConfig
 
 	isGenerateConfig()
+}
+
+func newGenerateConfigFromExternalFileV1(
+	externalFile externalBufGenYAMLFileV1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedOverrideRuleFromExternalV1(externalFile.Managed)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, errors.New("must specifiy at least one plugin")
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
+		// TODO for v2
+		inputConfigs: nil,
+	}, nil
 }
 
 // *** PRIVATE ***

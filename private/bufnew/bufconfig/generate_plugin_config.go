@@ -282,13 +282,17 @@ func newLocalPluginConfig(
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
+	if strategy == 0 {
+		strategy = GenerateStrategyDirectory
+	}
 	return &pluginConfig{
-		name:           name,
-		strategy:       strategy,
-		out:            out,
-		opt:            opt,
-		includeImports: includeImports,
-		includeWKT:     includeWKT,
+		pluginConfigType: PluginConfigTypeLocal,
+		name:             name,
+		strategy:         strategy,
+		out:              out,
+		opt:              opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
 	}, nil
 }
 
@@ -307,14 +311,18 @@ func newBinaryPluginConfig(
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
+	if strategy == 0 {
+		strategy = GenerateStrategyDirectory
+	}
 	return &pluginConfig{
-		name:           name,
-		path:           path,
-		strategy:       strategy,
-		out:            out,
-		opt:            opt,
-		includeImports: includeImports,
-		includeWKT:     includeWKT,
+		pluginConfigType: PluginConfigTypeBinary,
+		name:             name,
+		path:             path,
+		strategy:         strategy,
+		out:              out,
+		opt:              opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
 	}, nil
 }
 
@@ -330,14 +338,18 @@ func newProtocBuiltinPluginConfig(
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
+	if strategy == 0 {
+		strategy = GenerateStrategyDirectory
+	}
 	return &pluginConfig{
-		name:           name,
-		protocPath:     protocPath,
-		out:            out,
-		opt:            opt,
-		strategy:       strategy,
-		includeImports: includeImports,
-		includeWKT:     includeWKT,
+		pluginConfigType: PluginConfigTypeProtocBuiltin,
+		name:             name,
+		protocPath:       protocPath,
+		out:              out,
+		opt:              opt,
+		strategy:         strategy,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
 	}, nil
 }
 
@@ -356,14 +368,16 @@ func newRemotePluginConfig(
 	if err != nil {
 		return nil, err
 	}
+	// TODO: validate revision
 	return &pluginConfig{
-		name:           name,
-		remoteHost:     remoteHost,
-		revision:       revision,
-		out:            out,
-		opt:            opt,
-		includeImports: includeImports,
-		includeWKT:     includeWKT,
+		pluginConfigType: PluginConfigTypeRemote,
+		name:             name,
+		remoteHost:       remoteHost,
+		revision:         revision,
+		out:              out,
+		opt:              opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
 	}, nil
 }
 

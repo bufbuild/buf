@@ -28,7 +28,7 @@ type generateTypeConfig struct {
 }
 
 // TODO: it seems like this isn't validated in main, but we should do some validation
-func newGenerateTypeConfig(includeTypes []string) *generateTypeConfig {
+func newGenerateTypeConfig(includeTypes []string) GenerateTypeConfig {
 	if len(includeTypes) == 0 {
 		return nil
 	}

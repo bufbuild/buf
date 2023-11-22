@@ -99,7 +99,7 @@ type generateManagedConfig struct {
 
 func newManagedOverrideRuleFromExternalV1(
 	externalConfig externalGenerateManagedConfigV1,
-) (*generateManagedConfig, error) {
+) (GenerateManagedConfig, error) {
 	if externalConfig.isEmpty() || !externalConfig.Enabled {
 		return nil, nil
 	}

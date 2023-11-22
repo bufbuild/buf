@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -127,29 +126,13 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}
-		managedConfig, err := newManagedOverrideRuleFromExternalV1(externalGenYAMLFile.Managed)
-		if err != nil {
-			return nil, err
-		}
-		if len(externalGenYAMLFile.Plugins) == 0 {
-			return nil, errors.New("must specifiy at least one plugin")
-		}
-		pluginConfigs, err := slicesext.MapError(
-			externalGenYAMLFile.Plugins,
-			newPluginConfigFromExternalV1,
-		)
+		generateConfig, err := newGenerateConfigFromExternalFileV1(externalGenYAMLFile)
 		if err != nil {
 			return nil, err
 		}
 		return &bufGenYAMLFile{
-			fileVersion: FileVersionV1,
-			GenerateConfig: &generateConfig{
-				pluginConfigs: pluginConfigs,
-				managedConfig: managedConfig,
-				typeConfig:    newGenerateTypeConfig(externalGenYAMLFile.Types.Include),
-				// TODO for v2
-				inputConfigs: nil,
-			},
+			fileVersion:    fileVersion,
+			GenerateConfig: generateConfig,
 		}, nil
 	case FileVersionV2:
 		return nil, errors.New("TODO")
