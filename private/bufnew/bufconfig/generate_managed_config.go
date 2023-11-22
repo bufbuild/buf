@@ -107,42 +107,42 @@ func newManagedOverrideRuleFromExternalV1(
 		disables  []ManagedDisableRule
 		overrides []ManagedOverrideRule
 	)
-	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-		override, err := newFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionCcEnableArenas,
-			*externalCCEnableArenas,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, override)
-	}
-	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-		override, err := newFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionJavaMultipleFiles,
-			*externalJavaMultipleFiles,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, override)
-	}
-	if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
-		override, err := newFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionJavaStringCheckUtf8,
-			*externalJavaStringCheckUtf8,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, override)
-	}
+	// if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
+	// 	override, err := newFileOptionOverrideRule(
+	// 		"",
+	// 		"",
+	// 		FileOptionCcEnableArenas,
+	// 		*externalCCEnableArenas,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	overrides = append(overrides, override)
+	// }
+	// if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
+	// 	override, err := newFileOptionOverrideRule(
+	// 		"",
+	// 		"",
+	// 		FileOptionJavaMultipleFiles,
+	// 		*externalJavaMultipleFiles,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	overrides = append(overrides, override)
+	// }
+	// if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
+	// 	override, err := newFileOptionOverrideRule(
+	// 		"",
+	// 		"",
+	// 		FileOptionJavaStringCheckUtf8,
+	// 		*externalJavaStringCheckUtf8,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	overrides = append(overrides, override)
+	// }
 	if externalJavaPackagePrefix := externalConfig.JavaPackagePrefix; !externalJavaPackagePrefix.isEmpty() {
 		if externalJavaPackagePrefix.Default == "" {
 			// TODO: resolve this: this message has been updated, compared to the one in bufgen/config.go:

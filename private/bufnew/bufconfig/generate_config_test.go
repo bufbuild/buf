@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestParseConfigFromExternalV1(t *testing.T) {
@@ -272,6 +273,70 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						revision:         1,
 						name:             "buf.build/protocolbuffers/go",
 						out:              "go/out",
+					},
+				},
+			},
+		},
+		{
+			description: "managed mode",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled:             true,
+					CcEnableArenas:      proto.Bool(true),
+					JavaMultipleFiles:   proto.Bool(true),
+					JavaStringCheckUtf8: proto.Bool(true),
+					JavaPackagePrefix: externalJavaPackagePrefixConfigV1{
+						Default: "foo",
+						Except:  []string{"buf.build/acme/foo", "buf.build/acme/bar"},
+						Override: map[string]string{
+							"buf.build/acme/baz": "baz",
+							"buf.build/acme/bat": "bat",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionJavaPackage,
+							moduleFullName: "buf.build/acme/foo",
+						},
+						&managedDisableRule{
+							fileOption:     FileOptionJavaPackage,
+							moduleFullName: "buf.build/acme/bar",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption: FileOptionJavaPackagePrefix,
+							value:      "foo",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionJavaPackagePrefix,
+							moduleFullName: "buf.build/acme/baz",
+							value:          "baz",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionJavaPackagePrefix,
+							moduleFullName: "buf.build/acme/bat",
+							value:          "bat",
+						},
 					},
 				},
 			},
