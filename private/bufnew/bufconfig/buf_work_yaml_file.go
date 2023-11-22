@@ -97,6 +97,7 @@ func GetBufWorkYAMLFileVersionForPrefix(
 // PutBufWorkYAMLFileForPrefix puts the buf.work.yaml file at the given bucket prefix.
 //
 // The buf.work.yaml file will be attempted to be written to prefix/buf.work.yaml.
+// The buf.work.yaml file will be written atomically.
 func PutBufWorkYAMLFileForPrefix(
 	ctx context.Context,
 	bucket storage.WriteBucket,

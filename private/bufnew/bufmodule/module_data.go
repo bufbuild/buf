@@ -35,6 +35,9 @@ type ModuleData interface {
 	// Bucket returns a Bucket of the Module's files.
 	//
 	// This bucket is not self-contained - it requires the files from dependencies to be so.
+	//
+	// This bucket may contain extra files that are not part of the Module - if so, it is
+	// the responsibility of ModuleReadBucket to filter these files.
 	Bucket() (storage.ReadBucket, error)
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)

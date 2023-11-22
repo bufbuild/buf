@@ -104,6 +104,7 @@ func GetBufLockFileVersionForPrefix(
 // PutBufLockFileForPrefix puts the buf.lock file at the given bucket prefix.
 //
 // The buf.lock file will be attempted to be written to prefix/buf.lock.
+// The buf.lock file will be written atomically.
 func PutBufLockFileForPrefix(
 	ctx context.Context,
 	bucket storage.WriteBucket,

@@ -1,20 +1,19 @@
-package bufmodulecache_test
+package bufmodulecache
 
 import (
 	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCacheSimple(t *testing.T) {
-	ctx := context.TODO()
+func TestCacheBasic(t *testing.T) {
+	ctx := context.Background()
 
-	moduleCacheBucket := storagemem.NewReadWriteBucket()
 	bsrProvider, err := bufmoduletest.NewOmniProvider(
 		bufmoduletest.ModuleData{
 			Name: "buf.build/foo/mod1",
@@ -42,8 +41,7 @@ func TestCacheSimple(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-
-	cacheProvider := bufmodulecache.NewModuleDataProvider(bsrProvider, moduleCacheBucket)
+	cacheProvider := newModuleDataProvider(bsrProvider, storagemem.NewReadWriteBucket())
 
 	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
 	require.NoError(t, err)
@@ -54,14 +52,48 @@ func TestCacheSimple(t *testing.T) {
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		moduleRefMod1,
-		moduleRefMod2,
+		// Switching order on purpose.
 		moduleRefMod3,
+		moduleRefMod2,
 	)
 	require.NoError(t, err)
 
-	data, err := cacheProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys...)
+	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys...)
 	require.NoError(t, err)
+	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.getModuleKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			moduleDatas,
+			func(moduleData bufmodule.ModuleData) string {
+				return moduleData.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
 
-	_ = data
-	// TODO: draw the rest of the owl
+	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
+	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys...)
+	require.NoError(t, err)
+	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.getModuleKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			moduleDatas,
+			func(moduleData bufmodule.ModuleData) string {
+				return moduleData.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
 }

@@ -114,7 +114,7 @@ func putFileForPrefix[F File](
 	if err := checkV2SupportedYet(f); err != nil {
 		return newEncodeError(path, err)
 	}
-	writeObjectCloser, err := bucket.Put(ctx, path)
+	writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())
 	if err != nil {
 		return err
 	}
