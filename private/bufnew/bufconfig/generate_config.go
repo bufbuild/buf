@@ -19,24 +19,17 @@ type GenerateConfig interface {
 	// GeneratePluginConfigs returns the plugin configurations. This will always be
 	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
-	// GenerateManagedConfig returns the managed mode configuration. This is never nil.
-	// If not defined by user, this config will return false from Enabled().
+	// GenerateManagedConfig returns the managed mode configuration.
+	// This may be nil.
 	GenerateManagedConfig() GenerateManagedConfig
 	// GenerateTypeConfig returns the types to generate code for. This overrides other type
 	// filters from input configurations, which exist in v2.
 	// This will always be nil in v2
 	GenerateTypeConfig() GenerateTypeConfig
-	// TODO: we may need a way to attach inputs to make this consistent, but
-	// can deal with that for v2.
-	// GenerateInputConfigs() []GenerateInputConfig
+	// GenerateInputConfigs returns the input config.
+	GenerateInputConfigs() []GenerateInputConfig
 
 	isGenerateConfig()
-}
-
-// GenerateInputConfig is an input configuration.
-type GenerateInputConfig interface {
-	// TODO: implement this in v2
-	isGenerateInputConfig()
 }
 
 // GenerateTypeConfig is a type filter configuration.

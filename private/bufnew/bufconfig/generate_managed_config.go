@@ -21,62 +21,126 @@ import (
 
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
-	// Enabled returns whether managed mode is enabled.
-	Enabled() bool
-	// The first return value is the value to modify the file's option to. For
-	// example, if a config has set java_package_prefix to foo for a file with
-	// package bar, this returns "foo.bar" for the first value.
-	// The second value indicates whether this option should be modified.
-	// Reasons not to modify:
-	// 1. Some options are not supposed to be modified unless a value is specified,
-	//    such as optimize_for.
-	// 2. In the config the user has specified not to modify this option for this file.
-	// 3. The file already has the desired file option value.
-	// 4. The file is a WKT.
-	// TODO: 3 and 4 are debatable, asking the question what is the responsibility
-	// of a managed config.
-	//
-	// Note: this means a GenerateManagedConfig's interface does not deal with
-	// options like java_package_prefix and java_package_suffix, because it returns
-	// the final value to modify java_package to.
-	ValueForFileOption(imageFile, fileOption) (interface{}, bool)
+	// Disables returns the disable rules in the configuration.
+	Disables() []ManagedDisableRule
+	// Overrides returns the override rules in the configuration.
+	Overrides() []ManagedOverrideRule
 
 	isGenerateManagedConfig()
 }
 
+// ManagedDisableRule is a disable rule. A disable rule describes:
+//
+//   - The options to not modify. If not specified, it means all options (both
+//     file options and field options) are not modified.
+//   - The files/fields for which these options are not modified. If not specified,
+//     it means for all files/fields the specified options are not modified.
+//
+// A ManagedDisableRule is guaranteed to specify at least one of the two aspects.
+// i.e. At least one of Path, ModuleFullNameString, FieldName, FileOption and
+// FieldOption is not empty. A rule can disable all options for certain files/fields,
+// disable certains options for all files/fields, or disable certain options for
+// certain files/fields. To disable all options for all files/fields, turn off managed mode.
+type ManagedDisableRule interface {
+	// Path returns the file path, relative to its module, to disable managed mode for.
+	Path() string
+	// ModuleFullNameString returns the full name string of the module to disable
+	// managed mode for.
+	ModuleFullNameString() string
+	// FieldName returns the fully qualified name for the field to disable managed
+	// mode for. This is guaranteed to be empty if FileOption is not empty.
+	FieldName() string
+	// FileOption returns the file option to disable managed mode for. This is
+	// guaranteed to be empty if FieldName is not empty.
+	FileOption() FileOption
+	// FieldOption returns the field option to disalbe managed mode for.
+	FieldOption() FieldOption
+
+	isManagedDisable()
+}
+
+// ManagedOverrideRule is an override rule. An override describes:
+//
+//   - The options to modify. Exactly one of FileOption and FieldOption is not empty.
+//   - The value, prefix or suffix to modify these options with. Exactly one of
+//     Value, Prefix and Suffix is not empty.
+//   - The files/fields for which the options are modified. If all of Path, ModuleFullNameString
+//   - or FieldName are empty, all files/fields are modified. Otherwise, only
+//     file/fields that match the specified Path, ModuleFullNameString and FieldName
+//     is modified.
+type ManagedOverrideRule interface {
+	// Path is the file path, relative to its module, to disable managed mode for.
+	Path() string
+	// ModuleFullNameString is the full name string of the module to disable
+	// managed mode for.
+	ModuleFullNameString() string
+	// FieldName is the fully qualified name for the field to disable managed
+	// mode for. This is guranteed to be empty is FileOption is not empty.
+	FieldName() string
+	// FileOption returns the file option to disable managed mode for. This is
+	// guaranteed to be empty (FileOptionUnspecified) if FieldName is empty.
+	FileOption() FileOption
+	// FieldOption returns the field option to disable managed mode for.
+	FieldOption() FieldOption
+	// Value returns the override value.
+	Value() interface{}
+	// Prefix returns the override prefix.
+	Prefix() string
+	// Suffix returns the override suffix.
+	Suffix() string
+
+	isManagedOverride()
+}
+
 // bufimage.ImageFile implements this, but this also allows private implementation
 // for testing.
-type imageFile interface {
+type ImageFile interface {
+	// ModuleFullName returns its module's full name
 	ModuleFullName() bufmodule.ModuleFullName
+	// Path returns the path relative to the its module's root.
 	Path() string
+	// FileDescriptorProto returns the its field descriptor.
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 }
 
-type fileOption int
+// FileOption is a file option.
+type FileOption int
 
 const (
-	// fileOptionJavaPackage is the file option java_package.
-	fileOptionJavaPackage fileOption = iota + 1
-	// fileOptionJavaOuterClassname is the file option java_outer_classname.
-	fileOptionJavaOuterClassname
-	// fileOptionJavaMultipleFiles is the file option java_multiple_files.
-	fileOptionJavaMultipleFiles
-	// fileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
-	fileOptionJavaStringCheckUtf8
-	// fileOptionOptimizeFor is the file option optimize_for.
-	fileOptionOptimizeFor
-	// fileOptionGoPackage is the file option go_package.
-	fileOptionGoPackage
-	// fileOptionCcEnableArenas is the file option cc_enable_arenas.
-	fileOptionCcEnableArenas
-	// fileOptionObjcClassPrefix is the file option objc_class_prefix.
-	fileOptionObjcClassPrefix
-	// fileOptionCsharpNamespace is the file option csharp_namespace.
-	fileOptionCsharpNamespace
-	// fileOptionPhpNamespace is the file option php_namespace.
-	fileOptionPhpNamespace
-	// fileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
-	fileOptionPhpMetadataNamespace
-	// fileOptionRubyPackage is the file option ruby_package.
-	fileOptionRubyPackage
+	// FileOptionUnspecified is an unspecified file option.
+	FileOptionUnspecified FileOption = iota
+	// FileOptionJavaPackage is the file option java_package.
+	FileOptionJavaPackage
+	// FileOptionJavaOuterClassname is the file option java_outer_classname.
+	FileOptionJavaOuterClassname
+	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
+	FileOptionJavaMultipleFiles
+	// FileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
+	FileOptionJavaStringCheckUtf8
+	// FileOptionOptimizeFor is the file option optimize_for.
+	FileOptionOptimizeFor
+	// FileOptionGoPackage is the file option go_package.
+	FileOptionGoPackage
+	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
+	FileOptionCcEnableArenas
+	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
+	FileOptionObjcClassPrefix
+	// FileOptionCsharpNamespace is the file option csharp_namespace.
+	FileOptionCsharpNamespace
+	// FileOptionPhpNamespace is the file option php_namespace.
+	FileOptionPhpNamespace
+	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
+	FileOptionPhpMetadataNamespace
+	// FileOptionRubyPackage is the file option ruby_package.
+	FileOptionRubyPackage
+)
+
+// FieldOption is a field option.
+type FieldOption int
+
+const (
+	// FieldOptionUnspecified is an unspecified field option.
+	FieldOptionUnspecified FieldOption = iota
+	// FieldOptionJSType is the field option js_type.
+	FieldOptionJSType
 )
