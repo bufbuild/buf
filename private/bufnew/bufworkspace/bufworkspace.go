@@ -74,13 +74,6 @@ type Workspace interface {
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
 
-	// GetGenerateConfigs gets the generation configurations associated with the workspace.
-	//
-	// For v2 buf.yamls, these are read directly.
-	// For v1 buf.yamls, these need to be separately read and provided to the Workspace
-	// via WorkspaceWithGenerateConfig.
-	GenerateConfigs() []bufconfig.GenerateConfig
-
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -104,15 +97,7 @@ type Workspace interface {
 // NewWorkspaceForBucket returns a new Workspace for the given Bucket.
 //
 // All parsing of configuration files is done behind the scenes here.
-// This function can read a single v1 buf.yaml, a v1 buf.work.yaml, or a v2 buf.yaml.
-//
-// TODO: we might just want to pass a Bucket for the root OS directory, i.e. "/", along
-// with a path, for any DirRef or ProtoFileRef. For git and archives, we'll pass a Bucket
-// representing the root of the git repostory or archive, along with a path. Then, we let
-// this function deal with all the finding of files. The one hiccup here is dealing with
-// external paths - we want to have the same behavior as we've had with external paths.
-// But removing all the SubDirPath, RootRelativePath (if possible), TerminalFileProvider
-// stuff by massively simplifying this might be a win.
+// This function can read a single v1 or v1beta1 buf.yaml, a v1 buf.work.yaml, or a v2 buf.yaml.
 func NewWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -149,13 +134,6 @@ func WorkspaceWithTargetPaths(
 	return func(workspaceOptions *workspaceOptions) {
 		workspaceOptions.targetPaths = targetPaths
 		workspaceOptions.targetExcludePaths = targetExcludePaths
-	}
-}
-
-// WorkspaceWithGenerateConfig returns a new WorkspaceOption that adds the given GenerateConfig.
-func WorkspaceWithGenerateConfig(generateConfig bufconfig.GenerateConfig) WorkspaceOption {
-	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.generateConfigs = append(workspaceOptions.generateConfigs, generateConfig)
 	}
 }
 

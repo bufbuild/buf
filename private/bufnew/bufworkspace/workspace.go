@@ -32,9 +32,7 @@ type workspace struct {
 
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
-	generateConfigs          []bufconfig.GenerateConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
-	lockedDepModuleKeys      []bufmodule.ModuleKey
 }
 
 func (w *workspace) GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig {
@@ -45,22 +43,8 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 	return w.opaqueIDToBreakingConfig[opaqueID]
 }
 
-func (w *workspace) GenerateConfigs() []bufconfig.GenerateConfig {
-	return slicesext.Copy(w.generateConfigs)
-}
-
 func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
-	if 1 == 1 {
-		panic("TODO")
-	}
 	return slicesext.Copy(w.configuredDepModuleRefs)
-}
-
-func (w *workspace) LockedDepModuleKeys() []bufmodule.ModuleKey {
-	if 1 == 1 {
-		panic("TODO")
-	}
-	return slicesext.Copy(w.lockedDepModuleKeys)
 }
 
 func (*workspace) isWorkspace() {}
@@ -188,11 +172,13 @@ func newWorkspaceForBucketAndModuleDirPaths(
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
+	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
 	for _, moduleDirPath := range moduleDirPaths {
-		moduleConfig, err := getModuleConfigForModuleDirPath(ctx, bucket, moduleDirPath)
+		moduleConfig, configuredDepModuleRefs, err := getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(ctx, bucket, moduleDirPath)
 		if err != nil {
 			return nil, err
 		}
+		allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRefs...)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
 		moduleTargeting, err := newModuleTargeting(moduleDirPath, workspaceOptions)
 		if err != nil {
@@ -216,7 +202,6 @@ func newWorkspaceForBucketAndModuleDirPaths(
 				)
 			}
 		}
-		//fmt.Println("adding", moduleDirPath)
 		// TODO: does not take into account RootToExclude yet, do so.
 		moduleSetBuilder.AddLocalModule(
 			moduleBucket,
@@ -250,13 +235,11 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
 		}
 	}
-	// TODO: other fields
 	return &workspace{
 		ModuleSet:                moduleSet,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
-		// TODO: sorted in some way?
-		generateConfigs: workspaceOptions.generateConfigs,
+		configuredDepModuleRefs:  allConfiguredDepModuleRefs,
 	}, nil
 }
 
@@ -282,29 +265,32 @@ func getModuleDirPathsForConfirmedBufWorkYAMLDirPath(
 	return moduleDirPaths, nil
 }
 
-func getModuleConfigForModuleDirPath(
+// This helper function kind of sucks. When we go to v2, we'll just want to pass back the BufYAMLFile
+// and let above functions deal with it, but for now we get some validation that this is just v1.
+func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDirPath string,
-) (bufconfig.ModuleConfig, error) {
+) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			// If we do not have a buf.yaml, we use the default config.
-			return bufconfig.DefaultModuleConfig, nil
+			// This is a v1 config.
+			return bufconfig.DefaultModuleConfig, nil, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	// Just a sanity check. This should have already been validated, but let's make sure.
 	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
-		return nil, fmt.Errorf("buf.yaml at %s did not have version v1beta1 or v1", moduleDirPath)
+		return nil, nil, fmt.Errorf("buf.yaml at %s did not have version v1beta1 or v1", moduleDirPath)
 	}
 	moduleConfigs := bufYAMLFile.ModuleConfigs()
 	if len(moduleConfigs) != 1 {
 		// This is a system error. This should never happen.
-		return nil, fmt.Errorf("received %d ModuleConfigs from a v1beta1 or v1 BufYAMLFIle", len(moduleConfigs))
+		return nil, nil, fmt.Errorf("received %d ModuleConfigs from a v1beta1 or v1 BufYAMLFIle", len(moduleConfigs))
 	}
-	return moduleConfigs[0], nil
+	return moduleConfigs[0], bufYAMLFile.ConfiguredDepModuleRefs(), nil
 }
 
 func bufWorkYAMLExistsAtPrefix(ctx context.Context, bucket storage.ReadBucket, prefix string) (bool, error) {
@@ -341,7 +327,6 @@ type workspaceOptions struct {
 	subDirPath         string
 	targetPaths        []string
 	targetExcludePaths []string
-	generateConfigs    []bufconfig.GenerateConfig
 }
 
 func newWorkspaceOptions() *workspaceOptions {
