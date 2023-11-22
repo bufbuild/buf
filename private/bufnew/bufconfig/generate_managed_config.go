@@ -128,3 +128,57 @@ type ManagedOverrideRule interface {
 
 	isManagedOverride()
 }
+
+type generateManagedConfig struct {
+	disables  []ManagedDisableRule
+	overrides []ManagedOverrideRule
+}
+
+func (g *generateManagedConfig) Disables() []ManagedDisableRule {
+	return g.disables
+}
+
+func (g *generateManagedConfig) Overrides() []ManagedOverrideRule {
+	return g.overrides
+}
+
+type managedDisableRule struct {
+	path           string
+	moduleFullName string
+	fieldName      string
+	fileOption     FileOption
+	fieldOption    FieldOption
+}
+
+func (m *managedDisableRule) Path() string {
+	return m.path
+}
+
+func (m *managedDisableRule) ModuleFullName() string {
+	return m.moduleFullName
+}
+
+func (m *managedDisableRule) FieldName() string {
+	return m.fieldName
+}
+
+func (m *managedDisableRule) FileOption() FileOption {
+	return m.fileOption
+}
+
+func (m *managedDisableRule) FieldOption() FieldOption {
+	return m.fieldOption
+}
+
+func (m *managedDisableRule) isManagedDisable() {}
+
+type managedOverrideRule struct {
+	path           string
+	moduleFullName string
+	fieldName      string
+	fileOption     FileOption
+	fieldOption    FieldOption
+	value          interface{}
+	prefix         string
+	suffix         string
+}
