@@ -72,9 +72,9 @@ func MapToSlice(m map[string]struct{}) []string {
 
 // SliceToMap transforms s to a map.
 //
-// Deprecated: Use slicesext.ToMap instead.
+// Deprecated: Use slicesext.ToStructMap instead.
 func SliceToMap(s []string) map[string]struct{} {
-	return slicesext.ToMap(s)
+	return slicesext.ToStructMap(s)
 }
 
 // SliceToUniqueSortedSlice returns a sorted copy of s with no duplicates.
@@ -88,7 +88,7 @@ func SliceToUniqueSortedSlice(s []string) []string {
 //
 // Strings with only spaces are considered empty.
 func SliceToUniqueSortedSliceFilterEmptyStrings(s []string) []string {
-	m := slicesext.ToMap(s)
+	m := slicesext.ToStructMap(s)
 	for key := range m {
 		if strings.TrimSpace(key) == "" {
 			delete(m, key)

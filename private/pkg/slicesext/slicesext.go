@@ -138,11 +138,22 @@ func Copy[T any](s []T) []T {
 	return sc
 }
 
-// ToMap converts the slice to a map.
-func ToMap[T comparable](s []T) map[T]struct{} {
+// ToStructMap converts the slice to a map with struct{} values.
+func ToStructMap[T comparable](s []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(s))
 	for _, e := range s {
 		m[e] = struct{}{}
+	}
+	return m
+}
+
+// ToValuesMap transforms the input slice into a map from f(V) -> V.
+//
+// Duplicate values of type K will result in a single map entry.
+func ToValuesMapV[K comparable, V any](s []V, f func(V) K) map[K]V {
+	m := make(map[K]V)
+	for _, e := range s {
+		m[f(e)] = e
 	}
 	return m
 }
@@ -171,7 +182,24 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
 func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
-	return MapKeysToSortedSlice(ToMap(s))
+	return MapKeysToSortedSlice(ToStructMap(s))
+}
+
+// Duplicates returns the duplicate values in s.
+//
+// Values are returned in the order they are found in S.
+func Duplicates[T comparable](s []T) []T {
+	count := make(map[T]int, len(s))
+	// Needed instead of var declaration to make tests pass.
+	duplicates := make([]T, 0)
+	for _, e := range s {
+		count[e] = count[e] + 1
+		if count[e] == 2 {
+			// Only insert the first time this is found.
+			duplicates = append(duplicates, e)
+		}
+	}
+	return duplicates
 }
 
 // ToChunks splits s into chunks of the given chunk size.
@@ -214,7 +242,7 @@ func ElementsEqual[T comparable](one []T, two []T) bool {
 //
 // Nil and empty slices are treated as equals.
 func ElementsContained(superset []string, subset []string) bool {
-	m := ToMap(superset)
+	m := ToStructMap(superset)
 	for _, elem := range subset {
 		if _, ok := m[elem]; !ok {
 			return false

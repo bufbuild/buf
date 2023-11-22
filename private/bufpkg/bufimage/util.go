@@ -44,7 +44,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludeFileOrDirPaths); err != nil {
 		return nil, err
 	}
-	excludeFileOrDirPathMap := slicesext.ToMap(excludeFileOrDirPaths)
+	excludeFileOrDirPathMap := slicesext.ToStructMap(excludeFileOrDirPaths)
 	// These are the files that fileOrDirPaths actually reference and will
 	// result in the non-imports in our resulting Image. The Image will also include
 	// the ImageFiles that the nonImportImageFiles import
@@ -132,7 +132,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	// make a map of the directory paths
 	// note that we do not make this a map to begin with as maps are unordered,
 	// and we want to make sure we iterate over the paths in a deterministic order
-	potentialDirPathMap := slicesext.ToMap(potentialDirPaths)
+	potentialDirPathMap := slicesext.ToStructMap(potentialDirPaths)
 
 	// map of all paths based on the imageFiles
 	// the map of paths within potentialDirPath that matches a file in image.Files()

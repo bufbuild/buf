@@ -49,6 +49,35 @@ func TestElementsContained(t *testing.T) {
 	assert.False(t, ElementsContained([]string{"two"}, []string{"one", "two"}))
 }
 
+func TestDuplicates(t *testing.T) {
+	t.Parallel()
+	assert.Equal(
+		t,
+		[]string{},
+		Duplicates([]string{"a", "b", "c", "d", "e"}),
+	)
+	assert.Equal(
+		t,
+		[]string{"a"},
+		Duplicates([]string{"a", "b", "c", "a", "e"}),
+	)
+	assert.Equal(
+		t,
+		[]string{"a"},
+		Duplicates([]string{"a", "a", "c", "a", "e"}),
+	)
+	assert.Equal(
+		t,
+		[]string{"b", "a"},
+		Duplicates([]string{"a", "b", "b", "a", "e"}),
+	)
+	assert.Equal(
+		t,
+		[]string{"b", "a"},
+		Duplicates([]string{"a", "b", "b", "a", "b"}),
+	)
+}
+
 func TestToChunks(t *testing.T) {
 	t.Parallel()
 	testToChunks(
