@@ -14,6 +14,48 @@
 
 package bufconfig
 
+// FileOption is a file option.
+type FileOption int
+
+const (
+	// FileOptionUnspecified is an unspecified file option.
+	FileOptionUnspecified FileOption = iota
+	// FileOptionJavaPackage is the file option java_package.
+	FileOptionJavaPackage
+	// FileOptionJavaOuterClassname is the file option java_outer_classname.
+	FileOptionJavaOuterClassname
+	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
+	FileOptionJavaMultipleFiles
+	// FileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
+	FileOptionJavaStringCheckUtf8
+	// FileOptionOptimizeFor is the file option optimize_for.
+	FileOptionOptimizeFor
+	// FileOptionGoPackage is the file option go_package.
+	FileOptionGoPackage
+	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
+	FileOptionCcEnableArenas
+	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
+	FileOptionObjcClassPrefix
+	// FileOptionCsharpNamespace is the file option csharp_namespace.
+	FileOptionCsharpNamespace
+	// FileOptionPhpNamespace is the file option php_namespace.
+	FileOptionPhpNamespace
+	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
+	FileOptionPhpMetadataNamespace
+	// FileOptionRubyPackage is the file option ruby_package.
+	FileOptionRubyPackage
+)
+
+// FieldOption is a field option.
+type FieldOption int
+
+const (
+	// FieldOptionUnspecified is an unspecified field option.
+	FieldOptionUnspecified FieldOption = iota
+	// FieldOptionJSType is the field option js_type.
+	FieldOptionJSType
+)
+
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
 	// Disables returns the disable rules in the configuration.
@@ -86,45 +128,3 @@ type ManagedOverrideRule interface {
 
 	isManagedOverride()
 }
-
-// FileOption is a file option.
-type FileOption int
-
-const (
-	// FileOptionUnspecified is an unspecified file option.
-	FileOptionUnspecified FileOption = iota
-	// FileOptionJavaPackage is the file option java_package.
-	FileOptionJavaPackage
-	// FileOptionJavaOuterClassname is the file option java_outer_classname.
-	FileOptionJavaOuterClassname
-	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
-	FileOptionJavaMultipleFiles
-	// FileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
-	FileOptionJavaStringCheckUtf8
-	// FileOptionOptimizeFor is the file option optimize_for.
-	FileOptionOptimizeFor
-	// FileOptionGoPackage is the file option go_package.
-	FileOptionGoPackage
-	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
-	FileOptionCcEnableArenas
-	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
-	FileOptionObjcClassPrefix
-	// FileOptionCsharpNamespace is the file option csharp_namespace.
-	FileOptionCsharpNamespace
-	// FileOptionPhpNamespace is the file option php_namespace.
-	FileOptionPhpNamespace
-	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
-	FileOptionPhpMetadataNamespace
-	// FileOptionRubyPackage is the file option ruby_package.
-	FileOptionRubyPackage
-)
-
-// FieldOption is a field option.
-type FieldOption int
-
-const (
-	// FieldOptionUnspecified is an unspecified field option.
-	FieldOptionUnspecified FieldOption = iota
-	// FieldOptionJSType is the field option js_type.
-	FieldOptionJSType
-)
