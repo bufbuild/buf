@@ -93,7 +93,7 @@ type ManagedDisableRule interface {
 	// FieldOption returns the field option to disalbe managed mode for.
 	FieldOption() FieldOption
 
-	isManagedDisable()
+	isManagedDisableRule()
 }
 
 // ManagedOverrideRule is an override rule. An override describes:
@@ -126,7 +126,7 @@ type ManagedOverrideRule interface {
 	// Suffix returns the override suffix.
 	Suffix() string
 
-	isManagedOverride()
+	isManagedOverrideRule()
 }
 
 type generateManagedConfig struct {
