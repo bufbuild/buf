@@ -35,7 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Image is an extended FileDescriptorSet.
+// Image is an ext FileDescriptorSet.
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 type Image struct {

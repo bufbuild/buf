@@ -27,7 +27,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 const (
@@ -297,7 +297,7 @@ func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType P
 	if len(m) == 0 {
 		return nil
 	}
-	return slicesextended.MapKeysToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
+	return slicesext.MapKeysToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
 }
 
 // StripComponents strips the specified number of components.

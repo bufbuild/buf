@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package syncextended
+package netext
 
 import _ "github.com/bufbuild/buf/private/usage"

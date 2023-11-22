@@ -24,7 +24,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/pkg/slicesextended"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -362,7 +362,7 @@ func TestMapHasEqualOrContainingPath(t *testing.T) {
 }
 
 func testMapHasEqualOrContainingPath(t *testing.T, expected bool, path string, keys ...string) {
-	keyMap := slicesextended.ToMap(keys)
+	keyMap := slicesext.ToStructMap(keys)
 	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
 }
 
@@ -386,7 +386,7 @@ func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path stri
 		expected = make([]string, 0)
 	}
 	sort.Strings(expected)
-	keyMap := slicesextended.ToMap(keys)
+	keyMap := slicesext.ToStructMap(keys)
 	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
 }
 
@@ -497,7 +497,7 @@ func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
 }
 
 func testMapHasEqualOrContainingPathAbs(t *testing.T, expected bool, path string, keys ...string) {
-	keyMap := slicesextended.ToMap(keys)
+	keyMap := slicesext.ToStructMap(keys)
 	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
 }
 
@@ -527,6 +527,6 @@ func testMapAllEqualOrContainingPathsAbs(t *testing.T, expected []string, path s
 		expected = make([]string, 0)
 	}
 	sort.Strings(expected)
-	keyMap := slicesextended.ToMap(keys)
+	keyMap := slicesext.ToStructMap(keys)
 	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
 }

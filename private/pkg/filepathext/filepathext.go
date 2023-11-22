@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package filepathextended provides filepath utilities.
-package filepathextended
+// Package filepathext provides filepath utilities.
+package filepathext
 
 // Walking largely copied from https://github.com/golang/go/blob/master/src/path/filepath/path.go
 //
@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/osextended"
+	"github.com/bufbuild/buf/private/pkg/osext"
 	"go.uber.org/multierr"
 )
 
@@ -45,7 +45,7 @@ func RealClean(path string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		pwd, err := osextended.Getwd()
+		pwd, err := osext.Getwd()
 		if err != nil {
 			return "", err
 		}
