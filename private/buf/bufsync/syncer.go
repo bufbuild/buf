@@ -246,7 +246,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				moduleDir,
 			)
 			// Determine commits to _visit_ since the last sync. Not all commits that are visitable
-			// are syncable, as any of those commits may contain an invalid invalid module.
+			// are syncable, as any of those commits may contain an invalid module.
 			commitsToVisit, err := s.determineCommitsToVisitForModuleBranch(
 				ctx,
 				moduleDir,
