@@ -14,58 +14,14 @@
 
 package bufconfig
 
-// FileOption is a file option.
-type FileOption int
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 
-const (
-	// FileOptionUnspecified is an unspecified file option.
-	FileOptionUnspecified FileOption = iota
-	// FileOptionJavaPackage is the file option java_package.
-	FileOptionJavaPackage
-	// FileOptionJavaPackagePrefix is the file option java_package_prefix.
-	FileOptionJavaPackagePrefix
-	// FileOptionJavaPackageSuffix is the file option java_package_suffix.
-	FileOptionJavaPackageSuffix
-	// FileOptionJavaOuterClassname is the file option java_outer_classname.
-	FileOptionJavaOuterClassname
-	// FileOptionJavaMultipleFiles is the file option java_multiple_files.
-	FileOptionJavaMultipleFiles
-	// FileOptionJavaStringCheckUtf8 is the file option java_string_check_utf8.
-	FileOptionJavaStringCheckUtf8
-	// FileOptionOptimizeFor is the file option optimize_for.
-	FileOptionOptimizeFor
-	// FileOptionGoPackage is the file option go_package.
-	FileOptionGoPackage
-	// FileOptionGoPackagePrefix is the file option go_package_prefix.
-	FileOptionGoPackagePrefix
-	// FileOptionCcEnableArenas is the file option cc_enable_arenas.
-	FileOptionCcEnableArenas
-	// FileOptionObjcClassPrefix is the file option objc_class_prefix.
-	FileOptionObjcClassPrefix
-	// FileOptionCsharpNamespace is the file option csharp_namespace.
-	FileOptionCsharpNamespace
-	// FileOptionCsharpNamespacePrefix is the file option csharp_namespace_prefix.
-	FileOptionCsharpNamespacePrefix
-	// FileOptionPhpNamespace is the file option php_namespace.
-	FileOptionPhpNamespace
-	// FileOptionPhpMetadataNamespace is the file option php_metadata_namespace.
-	FileOptionPhpMetadataNamespace
-	// FileOptionPhpMetadataNamespaceSuffix is the file option php_metadata_namespace_suffix.
-	FileOptionPhpMetadataNamespaceSuffix
-	// FileOptionRubyPackage is the file option ruby_package.
-	FileOptionRubyPackage
-	// FileOptionRubyPackageSuffix is the file option ruby_package_suffix.
-	FileOptionRubyPackageSuffix
-)
-
-// FieldOption is a field option.
-type FieldOption int
-
-const (
-	// FieldOptionUnspecified is an unspecified field option.
-	FieldOptionUnspecified FieldOption = iota
-	// FieldOptionJSType is the field option js_type.
-	FieldOptionJSType
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -141,6 +97,230 @@ type generateManagedConfig struct {
 	overrides []ManagedOverrideRule
 }
 
+func newManagedOverrideRuleFromExternalV1(
+	externalConfig externalGenerateManagedConfigV1,
+) (*generateManagedConfig, error) {
+	if externalConfig.isEmpty() || !externalConfig.Enabled {
+		return nil, nil
+	}
+	var (
+		disables  []ManagedDisableRule
+		overrides []ManagedOverrideRule
+	)
+	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionCcEnableArenas,
+			*externalCCEnableArenas,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaMultipleFiles,
+			*externalJavaMultipleFiles,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaStringCheckUtf8,
+			*externalJavaStringCheckUtf8,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaPackagePrefix := externalConfig.JavaPackagePrefix; !externalJavaPackagePrefix.isEmpty() {
+		if externalJavaPackagePrefix.Default == "" {
+			// TODO: resolve this: this message has been updated, compared to the one in bufgen/config.go:
+			// "java_package_prefix setting requires a default value"
+			return nil, errors.New("java_package_prefix must have a default value")
+		}
+		defaultOverride, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaPackagePrefix,
+			externalJavaPackagePrefix.Default,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, defaultOverride)
+		javaPackagePrefixDisables, javaPackagePrefixOverrides, err := getDisablesAndOverrides(
+			FileOptionJavaPackage,
+			externalJavaPackagePrefix.Except,
+			FileOptionJavaPackagePrefix,
+			externalJavaPackagePrefix.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, javaPackagePrefixDisables...)
+		overrides = append(overrides, javaPackagePrefixOverrides...)
+	}
+	if externalCsharpNamespace := externalConfig.CsharpNamespace; !externalCsharpNamespace.isEmpty() {
+		csharpNamespaceDisables, csharpNamespaceOverrides, err := getDisablesAndOverrides(
+			FileOptionCsharpNamespace,
+			externalCsharpNamespace.Except,
+			FileOptionCsharpNamespace,
+			externalCsharpNamespace.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, csharpNamespaceDisables...)
+		overrides = append(overrides, csharpNamespaceOverrides...)
+	}
+	if externalOptimizeFor := externalConfig.OptimizeFor; !externalOptimizeFor.isEmpty() {
+		if externalOptimizeFor.Default == "" {
+			return nil, errors.New("optimize_for must have a default value")
+		}
+		defaultOverride, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionOptimizeFor,
+			externalOptimizeFor.Default,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, defaultOverride)
+		optimizeForDisables, optimizeForOverrides, err := getDisablesAndOverrides(
+			FileOptionOptimizeFor,
+			externalOptimizeFor.Except,
+			FileOptionOptimizeFor,
+			externalOptimizeFor.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, optimizeForDisables...)
+		overrides = append(overrides, optimizeForOverrides...)
+	}
+	if externalGoPackagePrefix := externalConfig.GoPackagePrefix; !externalGoPackagePrefix.isEmpty() {
+		if externalGoPackagePrefix.Default != "" {
+			return nil, errors.New("go_package_prefix must have a default value")
+		}
+		defaultOverride, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionGoPackagePrefix,
+			externalGoPackagePrefix.Default,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, defaultOverride)
+		goPackagePrefixDisables, goPackagePrefixOverrides, err := getDisablesAndOverrides(
+			FileOptionGoPackage,
+			externalGoPackagePrefix.Except,
+			FileOptionGoPackagePrefix,
+			externalGoPackagePrefix.Override,
+		)
+		disables = append(disables, goPackagePrefixDisables...)
+		overrides = append(overrides, goPackagePrefixOverrides...)
+	}
+	if externalObjcClassPrefix := externalConfig.ObjcClassPrefix; !externalObjcClassPrefix.isEmpty() {
+		if externalObjcClassPrefix.Default != "" {
+			// objc class prefix allows empty default
+			defaultOverride, err := newFileOptionOverrideRule(
+				"",
+				"",
+				FileOptionObjcClassPrefix,
+				externalObjcClassPrefix.Default,
+			)
+			if err != nil {
+				return nil, err
+			}
+			overrides = append(overrides, defaultOverride)
+		}
+		objcClassPrefixDisables, objcClassPrefixOverrides, err := getDisablesAndOverrides(
+			FileOptionObjcClassPrefix,
+			externalObjcClassPrefix.Except,
+			FileOptionObjcClassPrefix,
+			externalObjcClassPrefix.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, objcClassPrefixDisables...)
+		overrides = append(overrides, objcClassPrefixOverrides...)
+	}
+	if externalRubyPackage := externalConfig.RubyPackage; !externalRubyPackage.isEmpty() {
+		rubyPackageDisables, rubyPackageOverrides, err := getDisablesAndOverrides(
+			FileOptionRubyPackage,
+			externalRubyPackage.Except,
+			FileOptionRubyPackage,
+			externalRubyPackage.Override,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, rubyPackageDisables...)
+		overrides = append(overrides, rubyPackageOverrides...)
+	}
+	for upperCaseFileOption, fileToOverride := range externalConfig.Override {
+		lowerCaseFileOption := strings.ToLower(upperCaseFileOption)
+		fileOption, ok := stringToFileOption[lowerCaseFileOption]
+		if !ok {
+			return nil, fmt.Errorf("%q is not a valid file option", upperCaseFileOption)
+		}
+		for filePath, override := range fileToOverride {
+			normalizedFilePath, err := normalpath.NormalizeAndValidate(filePath)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed to normalize import path: %s provided for override: %s",
+					filePath,
+					upperCaseFileOption,
+				)
+			}
+			if filePath != normalizedFilePath {
+				return nil, fmt.Errorf(
+					"override can only take normalized import paths, invalid import path: %s provided for override: %s",
+					filePath,
+					upperCaseFileOption,
+				)
+			}
+			var overrideValue interface{} = override
+			switch fileOption {
+			case FileOptionCcEnableArenas, FileOptionJavaMultipleFiles, FileOptionJavaStringCheckUtf8:
+				parseOverrideValue, err := strconv.ParseBool(override)
+				if err != nil {
+					return nil, fmt.Errorf("")
+				}
+				overrideValue = parseOverrideValue
+			}
+			overrideRule, err := newFileOptionOverrideRule(
+				filePath,
+				"",
+				fileOption,
+				overrideValue,
+			)
+			if err != nil {
+				return nil, err
+			}
+			overrides = append(overrides, overrideRule)
+		}
+	}
+	return &generateManagedConfig{
+		disables:  disables,
+		overrides: overrides,
+	}, nil
+}
+
 func (g *generateManagedConfig) Disables() []ManagedDisableRule {
 	return g.disables
 }
@@ -155,6 +335,38 @@ type managedDisableRule struct {
 	fieldName      string
 	fileOption     FileOption
 	fieldOption    FieldOption
+}
+
+func newDisableRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fileOption FileOption,
+	fieldOption FieldOption,
+) (*managedDisableRule, error) {
+	if path == "" && moduleFullName == "" && fieldName == "" && fileOption == FileOptionUnspecified && fieldOption == FieldOptionUnspecified {
+		// This should never happen to parsing configs from provided by users.
+		return nil, errors.New("empty disable rule is not allowed")
+	}
+	if fileOption != FileOptionUnspecified && fieldOption != FieldOptionUnspecified {
+		return nil, errors.New("at most one of file_option and field_option can be specified")
+	}
+	if fieldName != "" && fileOption != FileOptionUnspecified {
+		return nil, errors.New("cannot disable a file option for a field")
+	}
+	// TODO: validate path here? Was it validated in v1/main?
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	return &managedDisableRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fileOption:     fileOption,
+		fieldOption:    fieldOption,
+	}, nil
 }
 
 func (m *managedDisableRule) Path() string {
@@ -186,22 +398,71 @@ type managedOverrideRule struct {
 	fileOption     FileOption
 	fieldOption    FieldOption
 	value          interface{}
-	prefix         string
-	suffix         string
 }
 
-// TODO: decide where to validate path and module full name
-func newManagedOverrideRule(
+func newFileOptionOverrideRule(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
 	value interface{},
 ) (*managedOverrideRule, error) {
+	// TODO: validate path here? Was it validated in v1/main?
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	// All valid file options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fileOption: %v", fileOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
+	}
 	return &managedOverrideRule{
 		path:           path,
 		moduleFullName: moduleFullName,
 		fileOption:     fileOption,
-		value:          value,
+		value:          parsedValue,
+	}, nil
+}
+
+func newFieldOptionOverrideRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fieldOption FieldOption,
+	value interface{},
+) (*managedOverrideRule, error) {
+	// TODO: validate path here? Was it validated in v1/main?
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	// All valid field options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fieldOption: %v", fieldOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
+	}
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fieldOption:    fieldOption,
+		value:          parsedValue,
 	}, nil
 }
 
@@ -229,12 +490,56 @@ func (m *managedOverrideRule) Value() interface{} {
 	return m.value
 }
 
-func (m *managedOverrideRule) Prefix() string {
-	return m.prefix
-}
-
-func (m *managedOverrideRule) Suffix() string {
-	return m.suffix
-}
-
 func (m *managedOverrideRule) isManagedOverrideRule() {}
+
+func getDisablesAndOverrides(
+	exceptFileOption FileOption,
+	exceptModuleFullNames []string,
+	overrideFileOption FileOption,
+	moduleFullNameToOverride map[string]string,
+) ([]ManagedDisableRule, []ManagedOverrideRule, error) {
+	var (
+		disables  []ManagedDisableRule
+		overrides []ManagedOverrideRule
+	)
+	seenExceptModuleFullNames := make(map[string]struct{}, len(exceptModuleFullNames))
+	for _, exceptModuleFullName := range exceptModuleFullNames {
+		if _, err := bufmodule.ParseModuleFullName(exceptModuleFullName); err != nil {
+			return nil, nil, err
+		}
+		if _, ok := seenExceptModuleFullNames[exceptModuleFullName]; ok {
+			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptModuleFullName)
+		}
+		seenExceptModuleFullNames[exceptModuleFullName] = struct{}{}
+		disable, err := newDisableRule(
+			"",
+			exceptModuleFullName,
+			"",
+			exceptFileOption,
+			FieldOptionUnspecified,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		disables = append(disables, disable)
+	}
+	for overrideModuleFullName, overrideValue := range moduleFullNameToOverride {
+		if _, err := bufmodule.ParseModuleFullName(overrideModuleFullName); err != nil {
+			return nil, nil, err
+		}
+		if _, ok := seenExceptModuleFullNames[overrideModuleFullName]; ok {
+			return nil, nil, fmt.Errorf("override %q is already defined as an except", overrideModuleFullName)
+		}
+		override, err := newFileOptionOverrideRule(
+			"",
+			overrideModuleFullName,
+			overrideFileOption,
+			overrideValue,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	return disables, overrides, nil
+}

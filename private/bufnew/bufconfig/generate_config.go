@@ -43,10 +43,31 @@ type GenerateTypeConfig interface {
 
 // *** PRIVATE ***
 
-type generateConfig struct{}
+type generateConfig struct {
+	pluginConfigs []GeneratePluginConfig
+	managedConfig GenerateManagedConfig
+	typeConfig    GenerateTypeConfig
+	inputConfigs  []GenerateInputConfig
+}
 
 func newGenerateConfig() *generateConfig {
 	return &generateConfig{}
+}
+
+func (*generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
+	return nil
+}
+
+func (*generateConfig) GenerateManagedConfig() GenerateManagedConfig {
+	return nil
+}
+
+func (*generateConfig) GenerateTypeConfig() GenerateTypeConfig {
+	return nil
+}
+
+func (*generateConfig) GenerateInputConfigs() []GenerateInputConfig {
+	return nil
 }
 
 func (*generateConfig) isGenerateConfig() {}

@@ -122,7 +122,23 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 	case FileVersionV1Beta1:
 		return nil, errors.New("TODO")
 	case FileVersionV1:
-		return nil, errors.New("TODO")
+		var externalGenYAMLFile externalBufGenYAMLV1
+		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		return &bufGenYAMLFile{
+			fileVersion: FileVersionV1,
+			GenerateConfig: &generateConfig{
+				// TODO
+				pluginConfigs: nil,
+				// TODO
+				managedConfig: nil,
+				// TODO
+				typeConfig: nil,
+				// TODO
+				inputConfigs: nil,
+			},
+		}, nil
 	case FileVersionV2:
 		return nil, newUnsupportedFileVersionError(fileVersion)
 	default:

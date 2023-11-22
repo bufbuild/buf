@@ -18,9 +18,11 @@ import "encoding/json"
 
 // TODO: this is a temporary file to avoid crowing other files. We can choose to move stuff from this file over.
 // TODO: this is also completely copied over from bufgen.go, the only change made to it so far is unexporting the type.
+// TODO: update struct type names to externalXYZFileV1/2/1Beta1
+// TODO: update GODOCs to the style of '// externalBufLockFileV2 represents the v2 buf.lock file.'
 
-// externalGenerateConfigV1 is a v1 external generate configuration.
-type externalGenerateConfigV1 struct {
+// externalBufGenYAMLV1 is a v1 external generate configuration.
+type externalBufGenYAMLV1 struct {
 	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
 	Plugins []externalGeneratePluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed externalGenerateManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
@@ -214,8 +216,8 @@ func (e externalObjcClassPrefixConfigV1) isEmpty() bool {
 		len(e.Override) == 0
 }
 
-// externalConfigV1Beta1 is a v1 external generate configuration.
-type externalConfigV1Beta1 struct {
+// externalBufGenYAMLV1Beta1 is a v1 external generate configuration.
+type externalBufGenYAMLV1Beta1 struct {
 	Version string                                `json:"version,omitempty" yaml:"version,omitempty"`
 	Managed bool                                  `json:"managed,omitempty" yaml:"managed,omitempty"`
 	Plugins []externalGeneratePluginConfigV1Beta1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
