@@ -4,12 +4,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	bufconfig.AllowV2ForTesting()
+}
 
 func TestCacheBasic(t *testing.T) {
 	ctx := context.Background()
