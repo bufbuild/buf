@@ -268,8 +268,8 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigSet(
 	if err != nil {
 		return nil, err
 	}
-	workspaceConfigs := slicesext.ToMap(bufwork.AllConfigFilePaths)
-	moduleConfigs := slicesext.ToMap(bufconfig.AllConfigFilePaths)
+	workspaceConfigs := slicesext.ToStructMap(bufwork.AllConfigFilePaths)
+	moduleConfigs := slicesext.ToStructMap(bufconfig.AllConfigFilePaths)
 	terminateFileProvider := readBucketCloser.TerminateFileProvider()
 	var workspaceConfigDirectory string
 	var moduleConfigDirectory string

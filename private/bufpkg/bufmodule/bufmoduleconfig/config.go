@@ -76,7 +76,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 	}
 
 	// verify that all excludes are within a root
-	rootMap := slicesext.ToMap(roots)
+	rootMap := slicesext.ToStructMap(roots)
 	for _, fullExclude := range fullExcludes {
 		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
