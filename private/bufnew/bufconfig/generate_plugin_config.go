@@ -31,6 +31,7 @@ const (
 	GenerateStrategyAll GenerateStrategy = 2
 )
 
+// PluginConfigType is a plugin configuration type.
 type PluginConfigType int
 
 const (

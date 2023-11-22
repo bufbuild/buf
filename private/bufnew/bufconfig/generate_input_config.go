@@ -17,6 +17,7 @@ package bufconfig
 
 import "github.com/bufbuild/buf/private/buf/buffetch"
 
+// GenerateInputConfig is an input configuration for code generation.
 type GenerateInputConfig interface {
 	// Ref returns the input ref.
 	Ref() buffetch.Ref
