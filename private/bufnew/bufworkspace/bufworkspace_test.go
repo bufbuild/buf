@@ -118,6 +118,10 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	_, err = module.StatFileInfo(ctx, "acme/bond/excluded/v2/excluded.proto")
 	require.True(t, errors.Is(err, fs.ErrNotExist))
+	_, err = module.StatFileInfo(ctx, "README.md")
+	require.NoError(t, err)
+	_, err = module.StatFileInfo(ctx, "LICENSE")
+	require.NoError(t, err)
 
 	workspace, err = NewWorkspaceForBucket(
 		ctx,
