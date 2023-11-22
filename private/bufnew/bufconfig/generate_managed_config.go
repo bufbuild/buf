@@ -14,11 +14,6 @@
 
 package bufconfig
 
-import (
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"google.golang.org/protobuf/types/descriptorpb"
-)
-
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
 	// Disables returns the disable rules in the configuration.
@@ -90,17 +85,6 @@ type ManagedOverrideRule interface {
 	Suffix() string
 
 	isManagedOverride()
-}
-
-// bufimage.ImageFile implements this, but this also allows private implementation
-// for testing.
-type ImageFile interface {
-	// ModuleFullName returns its module's full name
-	ModuleFullName() bufmodule.ModuleFullName
-	// Path returns the path relative to the its module's root.
-	Path() string
-	// FileDescriptorProto returns the its field descriptor.
-	FileDescriptorProto() *descriptorpb.FileDescriptorProto
 }
 
 // FileOption is a file option.
