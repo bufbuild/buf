@@ -16,10 +16,11 @@ package protoc
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -137,9 +139,7 @@ func run(
 		}
 		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
 		// but this also makes us consistent with the rest of buf
-		return errors.New("")
-		// TODO: **re-enable when deps work again ***
-		//return bufcli.ErrFileAnnotation
+		return bufcli.ErrFileAnnotation
 	}
 
 	if env.PrintFreeFieldNumbers {
@@ -175,12 +175,11 @@ func run(
 			}
 			span.End()
 		}
-		// TODO: re-enable when deps work again!
-		//wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		//filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
-		//if err != nil {
-		//return err
-		//}
+		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
+		if err != nil {
+			return err
+		}
 		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
@@ -192,9 +191,7 @@ func run(
 				container.Logger(),
 				storageosProvider,
 				runner,
-				nil,
-				// TODO: re-enable when deps work again!
-				//wasmPluginExecutor,
+				wasmPluginExecutor,
 				container,
 				images,
 				pluginName,
