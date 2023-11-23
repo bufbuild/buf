@@ -383,6 +383,7 @@ type ReadBucketCloser interface {
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
+	//
 	// SingleRefs and ArchiveRefs will result in decompressed files unless KeepFileCompression is set.
 	GetFile(
 		ctx context.Context,
@@ -391,6 +392,10 @@ type Reader interface {
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
 	// GetBucket gets the bucket.
+	//
+	// If done for a ProtoFileRef, the Bucket will be for the enclosing module or workspace via
+	// terminateFileNames or protoFileTerminateFileNames. No filtering of the Bucket is performed, this is
+	// the responsibility of the caller.
 	GetBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
@@ -739,6 +744,10 @@ type GetBucketOption func(*getBucketOptions)
 // set to the path that the Ref was targeting.
 
 // Example of terminateFileNames: []string{"buf.work.yaml", "buf.work"}
+//
+// TODO: Instead of file names, we will need to pass an actual function with logic when we
+// get into the world of buf.yaml v2. We'll want the equivalent of terminateFileNames to mean
+// "a buf.work.yaml, or a v2 buf.yaml".
 func WithGetBucketTerminateFileNames(terminateFileNames []string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames
@@ -750,6 +759,10 @@ func WithGetBucketTerminateFileNames(terminateFileNames []string) GetBucketOptio
 // If one is not found, the current directory is considered to be the encapsulating bucket.
 //
 // Example of terminateFileNames: []string{"buf.yaml", "buf.mod"}
+//
+// TODO: Instead of file names, we will need to pass an actual function with logic when we
+// get into the world of buf.yaml v2. We'll want the equivalent of terminateFileNames to mean
+// "a buf.work.yaml, or a v2 buf.yaml".
 func WithGetBucketProtoFileTerminateFileNames(protoFileTerminateFileNames []string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.protoFileTerminateFileNames = protoFileTerminateFileNames
