@@ -279,7 +279,8 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here.
+	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
+	// add as targeting files when constructing a Workspace.
 	return getReadBucketCloserForOS(ctx, r.storageosProvider, protoFileRef.Path(), terminateFileNames)
 }
 
@@ -573,7 +574,8 @@ func getReadBucketCloserForOS(
 			return nil, err
 		}
 		pwd = normalpath.Normalize(pwd)
-		bucketPath, err = normalpath.Rel(pwd, mapPath)
+		// Deleting leading os.PathSeparator so we can make mapPath relative.
+		bucketPath, err = normalpath.Rel(pwd[1:], mapPath)
 		if err != nil {
 			return nil, err
 		}

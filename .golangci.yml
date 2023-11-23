@@ -14,6 +14,10 @@ linters-settings:
       # os.Rename does not work across filesystem boundaries
       # See https://github.com/bufbuild/buf/issues/639
       - '^os\.Rename$'
+      # Use private/pkg/osext.Getwd
+      - '^os\.Getwd$'
+      # Use private/pkg/osext.Chdir
+      - '^os\.Chdir$'
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
@@ -92,6 +96,16 @@ issues:
       # This is safe (we aren't traversing filesystem boundaries).
       path: private/pkg/storage/storageos/bucket.go
       text: "os.Rename"
+    - linters:
+        - forbidigo
+      # We cache os.Getwd in osext, osext is the entrypoint.
+      path: private/pkg/osext/osext.go
+      text: "os.Getwd"
+    - linters:
+        - forbidigo
+      # We cache os.Getwd in osext, osext has a Chdir that clears the cache.
+      path: private/pkg/osext/osext.go
+      text: "os.Chdir"
     - linters:
         - stylecheck
       text: "ST1005:"

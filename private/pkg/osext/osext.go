@@ -22,25 +22,41 @@ import (
 )
 
 var (
-	workDirPath    string
-	workDirPathErr error
-	once           sync.Once
+	globalWorkDirPath    string
+	globalWorkDirPathErr error
+
+	globalLock sync.RWMutex
 
 	errOSGetwdEmpty = errors.New("os.Getwd returned empty and no error")
 )
 
 // Getwd replaces os.Getwd and caches the result.
 func Getwd() (string, error) {
-	once.Do(func() {
-		workDirPath, workDirPathErr = getwdUncached()
-	})
-	return workDirPath, workDirPathErr
+	globalLock.RLock()
+	workDirPath, workDirPathErr := globalWorkDirPath, globalWorkDirPathErr
+	globalLock.RUnlock()
+	if workDirPath != "" || workDirPathErr != nil {
+		return workDirPath, workDirPathErr
+	}
+	globalLock.Lock()
+	defer globalLock.Unlock()
+	globalWorkDirPath, globalWorkDirPathErr = getwdUncached()
+	return globalWorkDirPath, globalWorkDirPathErr
+}
+
+// Chdir calls os.Chdir and clears any cached result of Getwd.
+func Chdir(dir string) error {
+	globalLock.Lock()
+	defer globalLock.Unlock()
+	globalWorkDirPath = ""
+	globalWorkDirPathErr = nil
+	return os.Chdir(dir)
 }
 
 func getwdUncached() (string, error) {
-	currentWorkDirPath, currentWorkDirPathErr := os.Getwd()
-	if currentWorkDirPath == "" && currentWorkDirPathErr == nil {
+	workDirPath, workDirPathErr := os.Getwd()
+	if workDirPath == "" && workDirPathErr == nil {
 		return "", errOSGetwdEmpty
 	}
-	return currentWorkDirPath, currentWorkDirPathErr
+	return workDirPath, workDirPathErr
 }
