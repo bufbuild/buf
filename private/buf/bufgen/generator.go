@@ -21,9 +21,8 @@ import (
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
@@ -84,7 +83,7 @@ func newGenerator(
 func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	config *Config,
+	config bufconfig.GenerateConfig,
 	image bufimage.Image,
 	options ...GenerateOption,
 ) error {
@@ -107,20 +106,20 @@ func (g *generator) Generate(
 func (g *generator) generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	config *Config,
+	config bufconfig.GenerateConfig,
 	image bufimage.Image,
 	baseOutDirPath string,
 	includeImports bool,
 	includeWellKnownTypes bool,
 	wasmEnabled bool,
 ) error {
-	if err := modifyImage(ctx, g.logger, config, image); err != nil {
+	if err := modifyImage(ctx, g.logger, config.GenerateManagedConfig(), image); err != nil {
 		return err
 	}
 	responses, err := g.execPlugins(
 		ctx,
 		container,
-		config,
+		config.GeneratePluginConfigs(),
 		image,
 		includeImports,
 		includeWellKnownTypes,
@@ -135,21 +134,21 @@ func (g *generator) generate(
 		g.storageosProvider,
 		appprotoos.ResponseWriterWithCreateOutDirIfNotExists(),
 	)
-	for i, pluginConfig := range config.PluginConfigs {
-		out := pluginConfig.Out
+	for i, pluginConfig := range config.GeneratePluginConfigs() {
+		out := pluginConfig.Out()
 		if baseOutDirPath != "" && baseOutDirPath != "." {
 			out = filepath.Join(baseOutDirPath, out)
 		}
 		response := responses[i]
 		if response == nil {
-			return fmt.Errorf("failed to get plugin response for %s", pluginConfig.PluginName())
+			return fmt.Errorf("failed to get plugin response for %s", pluginConfig.Name())
 		}
 		if err := responseWriter.AddResponse(
 			ctx,
 			response,
 			out,
 		); err != nil {
-			return fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
+			return fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
 		}
 	}
 	if err := responseWriter.Close(); err != nil {
@@ -161,7 +160,7 @@ func (g *generator) generate(
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	config *Config,
+	pluginConfigs []bufconfig.GeneratePluginConfig,
 	image bufimage.Image,
 	includeImports bool,
 	includeWellKnownTypes bool,
@@ -169,14 +168,14 @@ func (g *generator) execPlugins(
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
-	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
-	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
+	jobs := make([]func(context.Context) error, 0, len(pluginConfigs))
+	responses := make([]*pluginpb.CodeGeneratorResponse, len(pluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
-	remotePluginConfigTable := make(map[string][]*remotePluginExecArgs, len(config.PluginConfigs))
-	for i, pluginConfig := range config.PluginConfigs {
+	remotePluginConfigTable := make(map[string][]*remotePluginExecArgs, len(pluginConfigs))
+	for i, pluginConfig := range pluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
-		remote := currentPluginConfig.GetRemoteHostname()
+		remote := currentPluginConfig.RemoteHost()
 		if remote != "" {
 			remotePluginConfigTable[remote] = append(
 				remotePluginConfigTable[remote],
@@ -210,9 +209,10 @@ func (g *generator) execPlugins(
 		indexedPluginConfigs := indexedPluginConfigs
 		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
 		for _, param := range indexedPluginConfigs {
-			if param.PluginConfig.Remote != "" {
-				return nil, fmt.Errorf("invalid plugin reference: %s", param.PluginConfig.Remote)
-			}
+			// TODO: check that it's ok to skip it. It's fine because remote is not a thing anymore.
+			// if param.PluginConfig.Remote != "" {
+			// 	return nil, fmt.Errorf("invalid plugin reference: %s", param.PluginConfig.Remote)
+			// }
 			v2Args = append(v2Args, param)
 		}
 		if len(v2Args) > 0 {
@@ -260,10 +260,10 @@ func (g *generator) execPlugins(
 		}
 		return nil, err
 	}
-	if err := validateResponses(responses, config.PluginConfigs); err != nil {
+	if err := validateResponses(responses, pluginConfigs); err != nil {
 		return nil, err
 	}
-	checkRequiredFeatures(container, requiredFeatures, responses, config.PluginConfigs)
+	checkRequiredFeatures(container, requiredFeatures, responses, pluginConfigs)
 	return responses, nil
 }
 
@@ -271,18 +271,18 @@ func (g *generator) execLocalPlugin(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	imageProvider *imageProvider,
-	pluginConfig *PluginConfig,
+	pluginConfig bufconfig.GeneratePluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
 	wasmEnabled bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy)
+	pluginImages, err := imageProvider.GetImages(Strategy(pluginConfig.Strategy()))
 	if err != nil {
 		return nil, err
 	}
 	generateOptions := []bufpluginexec.GenerateOption{
-		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path...),
-		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
+		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
+		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
 	}
 	if wasmEnabled {
 		generateOptions = append(
@@ -293,10 +293,10 @@ func (g *generator) execLocalPlugin(
 	response, err := g.pluginexecGenerator.Generate(
 		ctx,
 		container,
-		pluginConfig.PluginName(),
+		pluginConfig.Name(),
 		bufimage.ImagesToCodeGeneratorRequests(
 			pluginImages,
-			pluginConfig.Opt,
+			pluginConfig.Opt(),
 			nil,
 			includeImports,
 			includeWellKnownTypes,
@@ -304,14 +304,14 @@ func (g *generator) execLocalPlugin(
 		generateOptions...,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
+		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)
 	}
 	return response, nil
 }
 
 type remotePluginExecArgs struct {
 	Index        int
-	PluginConfig *PluginConfig
+	PluginConfig bufconfig.GeneratePluginConfig
 }
 
 type remotePluginExecutionResult struct {
@@ -370,23 +370,23 @@ func (g *generator) execRemotePluginsV2(
 }
 
 func getPluginGenerationRequest(
-	pluginConfig *PluginConfig,
+	pluginConfig bufconfig.GeneratePluginConfig,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
-	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Plugin, pluginConfig.Revision); err == nil {
+	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Name(), pluginConfig.Revision()); err == nil {
 		curatedPluginReference = bufplugin.PluginReferenceToProtoCuratedPluginReference(reference)
 	} else {
 		// Try parsing as a plugin identity (no version information)
-		identity, err := bufpluginref.PluginIdentityForString(pluginConfig.Plugin)
+		identity, err := bufpluginref.PluginIdentityForString(pluginConfig.Name())
 		if err != nil {
-			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Plugin)
+			return nil, fmt.Errorf("invalid remote plugin %q", pluginConfig.Name())
 		}
 		curatedPluginReference = bufplugin.PluginIdentityToProtoCuratedPluginReference(identity)
 	}
 	var options []string
-	if len(pluginConfig.Opt) > 0 {
+	if len(pluginConfig.Opt()) > 0 {
 		// Only include parameters if they're not empty.
-		options = []string{pluginConfig.Opt}
+		options = []string{pluginConfig.Opt()}
 	}
 	return &registryv1alpha1.PluginGenerationRequest{
 		PluginReference: curatedPluginReference,
@@ -398,188 +398,11 @@ func getPluginGenerationRequest(
 func modifyImage(
 	ctx context.Context,
 	logger *zap.Logger,
-	config *Config,
+	config bufconfig.GenerateManagedConfig,
 	image bufimage.Image,
 ) error {
-	if config.ManagedConfig == nil {
-		// If the config is nil, it implies that the
-		// user has not enabled managed mode.
-		return nil
-	}
-	sweeper := bufimagemodify.NewFileOptionSweeper()
-	modifier, err := newModifier(logger, config.ManagedConfig, sweeper)
-	if err != nil {
-		return err
-	}
-	modifier = bufimagemodify.Merge(modifier, bufimagemodify.ModifierFunc(sweeper.Sweep))
-	return modifier.Modify(ctx, image)
-}
-
-func newModifier(
-	logger *zap.Logger,
-	managedConfig *ManagedConfig,
-	sweeper bufimagemodify.Sweeper,
-) (bufimagemodify.Modifier, error) {
-	modifier := bufimagemodify.NewMultiModifier(
-		bufimagemodify.JavaOuterClassname(
-			logger,
-			sweeper,
-			managedConfig.Override[bufimagemodify.JavaOuterClassNameID],
-			false, // preserveExistingValue
-		),
-		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
-		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
-	)
-	javaPackagePrefix := &JavaPackagePrefixConfig{Default: bufimagemodify.DefaultJavaPackagePrefix}
-	if managedConfig.JavaPackagePrefixConfig != nil {
-		javaPackagePrefix = managedConfig.JavaPackagePrefixConfig
-	}
-	javaPackageModifier, err := bufimagemodify.JavaPackage(
-		logger,
-		sweeper,
-		javaPackagePrefix.Default,
-		javaPackagePrefix.Except,
-		javaPackagePrefix.Override,
-		managedConfig.Override[bufimagemodify.JavaPackageID],
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to construct java_package modifier: %w", err)
-	}
-	modifier = bufimagemodify.Merge(
-		modifier,
-		javaPackageModifier,
-	)
-	javaMultipleFilesValue := bufimagemodify.DefaultJavaMultipleFilesValue
-	if managedConfig.JavaMultipleFiles != nil {
-		javaMultipleFilesValue = *managedConfig.JavaMultipleFiles
-	}
-	javaMultipleFilesModifier, err := bufimagemodify.JavaMultipleFiles(
-		logger,
-		sweeper,
-		javaMultipleFilesValue,
-		managedConfig.Override[bufimagemodify.JavaMultipleFilesID],
-		false, // preserveExistingValue
-	)
-	if err != nil {
-		return nil, err
-	}
-	modifier = bufimagemodify.Merge(modifier, javaMultipleFilesModifier)
-	if managedConfig.CcEnableArenas != nil {
-		ccEnableArenasModifier, err := bufimagemodify.CcEnableArenas(
-			logger,
-			sweeper,
-			*managedConfig.CcEnableArenas,
-			managedConfig.Override[bufimagemodify.CcEnableArenasID],
-		)
-		if err != nil {
-			return nil, err
-		}
-		modifier = bufimagemodify.Merge(modifier, ccEnableArenasModifier)
-	}
-	if managedConfig.JavaStringCheckUtf8 != nil {
-		javaStringCheckUtf8, err := bufimagemodify.JavaStringCheckUtf8(
-			logger,
-			sweeper,
-			*managedConfig.JavaStringCheckUtf8,
-			managedConfig.Override[bufimagemodify.JavaStringCheckUtf8ID],
-		)
-		if err != nil {
-			return nil, err
-		}
-		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
-	}
-	var (
-		csharpNamespaceExcept   []bufmoduleref.ModuleIdentity
-		csharpNamespaceOverride map[bufmoduleref.ModuleIdentity]string
-	)
-	if csharpNameSpaceConfig := managedConfig.CsharpNameSpaceConfig; csharpNameSpaceConfig != nil {
-		csharpNamespaceExcept = csharpNameSpaceConfig.Except
-		csharpNamespaceOverride = csharpNameSpaceConfig.Override
-	}
-	csharpNamespaceModifier := bufimagemodify.CsharpNamespace(
-		logger,
-		sweeper,
-		csharpNamespaceExcept,
-		csharpNamespaceOverride,
-		managedConfig.Override[bufimagemodify.CsharpNamespaceID],
-	)
-	modifier = bufimagemodify.Merge(modifier, csharpNamespaceModifier)
-	if managedConfig.OptimizeForConfig != nil {
-		optimizeFor, err := bufimagemodify.OptimizeFor(
-			logger,
-			sweeper,
-			managedConfig.OptimizeForConfig.Default,
-			managedConfig.OptimizeForConfig.Except,
-			managedConfig.OptimizeForConfig.Override,
-			managedConfig.Override[bufimagemodify.OptimizeForID],
-		)
-		if err != nil {
-			return nil, err
-		}
-		modifier = bufimagemodify.Merge(
-			modifier,
-			optimizeFor,
-		)
-	}
-	if managedConfig.GoPackagePrefixConfig != nil {
-		goPackageModifier, err := bufimagemodify.GoPackage(
-			logger,
-			sweeper,
-			managedConfig.GoPackagePrefixConfig.Default,
-			managedConfig.GoPackagePrefixConfig.Except,
-			managedConfig.GoPackagePrefixConfig.Override,
-			managedConfig.Override[bufimagemodify.GoPackageID],
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to construct go_package modifier: %w", err)
-		}
-		modifier = bufimagemodify.Merge(
-			modifier,
-			goPackageModifier,
-		)
-	}
-	var (
-		objcClassPrefixDefault  string
-		objcClassPrefixExcept   []bufmoduleref.ModuleIdentity
-		objcClassPrefixOverride map[bufmoduleref.ModuleIdentity]string
-	)
-	if objcClassPrefixConfig := managedConfig.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
-		objcClassPrefixDefault = objcClassPrefixConfig.Default
-		objcClassPrefixExcept = objcClassPrefixConfig.Except
-		objcClassPrefixOverride = objcClassPrefixConfig.Override
-	}
-	objcClassPrefixModifier := bufimagemodify.ObjcClassPrefix(
-		logger,
-		sweeper,
-		objcClassPrefixDefault,
-		objcClassPrefixExcept,
-		objcClassPrefixOverride,
-		managedConfig.Override[bufimagemodify.ObjcClassPrefixID],
-	)
-	modifier = bufimagemodify.Merge(
-		modifier,
-		objcClassPrefixModifier,
-	)
-	var (
-		rubyPackageExcept    []bufmoduleref.ModuleIdentity
-		rubyPackageOverrides map[bufmoduleref.ModuleIdentity]string
-	)
-	if rubyPackageConfig := managedConfig.RubyPackageConfig; rubyPackageConfig != nil {
-		rubyPackageExcept = rubyPackageConfig.Except
-		rubyPackageOverrides = rubyPackageConfig.Override
-	}
-	rubyPackageModifier := bufimagemodify.RubyPackage(
-		logger,
-		sweeper,
-		rubyPackageExcept,
-		rubyPackageOverrides,
-		managedConfig.Override[bufimagemodify.RubyPackageID],
-	)
-	modifier = bufimagemodify.Merge(
-		modifier,
-		rubyPackageModifier,
-	)
-	return modifier, nil
+	// TODO
+	return nil
 }
 
 // validateResponses verifies that a response is set for each of the
@@ -587,7 +410,7 @@ func newModifier(
 // plugin.
 func validateResponses(
 	responses []*pluginpb.CodeGeneratorResponse,
-	pluginConfigs []*PluginConfig,
+	pluginConfigs []bufconfig.GeneratePluginConfig,
 ) error {
 	if len(responses) != len(pluginConfigs) {
 		return fmt.Errorf("unexpected number of responses: expected %d but got %d", len(pluginConfigs), len(responses))
@@ -596,14 +419,14 @@ func validateResponses(
 	for i, response := range responses {
 		pluginConfig := pluginConfigs[i]
 		if response == nil {
-			return fmt.Errorf("failed to create a response for %q", pluginConfig.PluginName())
+			return fmt.Errorf("failed to create a response for %q", pluginConfig.Name())
 		}
 		pluginResponses = append(
 			pluginResponses,
 			appproto.NewPluginResponse(
 				response,
-				pluginConfig.PluginName(),
-				pluginConfig.Out,
+				pluginConfig.Name(),
+				pluginConfig.Out(),
 			),
 		)
 	}

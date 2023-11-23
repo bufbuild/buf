@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
@@ -106,7 +107,7 @@ type Generator interface {
 	Generate(
 		ctx context.Context,
 		container app.EnvStdioContainer,
-		config *Config,
+		config bufconfig.GenerateConfig,
 		image bufimage.Image,
 		options ...GenerateOption,
 	) error

@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -60,7 +61,7 @@ func checkRequiredFeatures(
 	container app.StderrContainer,
 	required requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
-	configs []*PluginConfig,
+	configs []bufconfig.GeneratePluginConfig,
 ) {
 	for responseIndex, response := range responses {
 		if response == nil || response.GetError() != "" {
@@ -81,7 +82,7 @@ func checkRequiredFeatures(
 		if len(failed) > 0 {
 			// TODO: plugin config to turn this into an error
 			_, _ = fmt.Fprintf(container.Stderr(), "Warning: plugin %q does not support required features.\n",
-				configs[responseIndex].PluginName())
+				configs[responseIndex].Name())
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i].Number() < failedFeatures[j].Number()
 			})
