@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
+// TODO: check normalize(path) == path for disable and override paths.
+
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
 	// Disables returns the disable rules in the configuration.
@@ -34,6 +36,18 @@ type GenerateManagedConfig interface {
 
 	isGenerateManagedConfig()
 }
+
+// // TODO/Note: this is exported only for testing. Might want to reconsider this approach.
+// // NewGenerateManagedConfig returns a new GenerateManagedConfig.
+// func NewGenerateManagedConfig(
+// 	disables []ManagedDisableRule,
+// 	overrides []ManagedOverrideRule,
+// ) GenerateManagedConfig {
+// 	return &generateManagedConfig{
+// 		disables:  disables,
+// 		overrides: overrides,
+// 	}
+// }
 
 // ManagedDisableRule is a disable rule. A disable rule describes:
 //

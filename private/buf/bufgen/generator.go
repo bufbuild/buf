@@ -23,6 +23,7 @@ import (
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
@@ -401,8 +402,11 @@ func modifyImage(
 	config bufconfig.GenerateManagedConfig,
 	image bufimage.Image,
 ) error {
-	// TODO
-	return nil
+	return bufimagemodify.Modify(
+		ctx,
+		image,
+		config,
+	)
 }
 
 // validateResponses verifies that a response is set for each of the
