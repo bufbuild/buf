@@ -212,7 +212,7 @@ func parseOverrideValueOptimizeMode(overrideValue interface{}) (interface{}, err
 	if !ok {
 		return nil, errors.New("must be one of SPEED, CODE_SIZE or LITE_RUNTIME")
 	}
-	return optimizeMode, nil
+	return descriptorpb.FileOptions_OptimizeMode(optimizeMode), nil
 }
 
 func parseOverrideValueJSType(override interface{}) (interface{}, error) {

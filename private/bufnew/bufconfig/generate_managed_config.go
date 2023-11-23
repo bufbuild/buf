@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -100,49 +101,49 @@ type generateManagedConfig struct {
 func newManagedOverrideRuleFromExternalV1(
 	externalConfig externalGenerateManagedConfigV1,
 ) (GenerateManagedConfig, error) {
-	if externalConfig.isEmpty() || !externalConfig.Enabled {
+	if !externalConfig.Enabled {
 		return nil, nil
 	}
 	var (
 		disables  []ManagedDisableRule
 		overrides []ManagedOverrideRule
 	)
-	// if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-	// 	override, err := newFileOptionOverrideRule(
-	// 		"",
-	// 		"",
-	// 		FileOptionCcEnableArenas,
-	// 		*externalCCEnableArenas,
-	// 	)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	overrides = append(overrides, override)
-	// }
-	// if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-	// 	override, err := newFileOptionOverrideRule(
-	// 		"",
-	// 		"",
-	// 		FileOptionJavaMultipleFiles,
-	// 		*externalJavaMultipleFiles,
-	// 	)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	overrides = append(overrides, override)
-	// }
-	// if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
-	// 	override, err := newFileOptionOverrideRule(
-	// 		"",
-	// 		"",
-	// 		FileOptionJavaStringCheckUtf8,
-	// 		*externalJavaStringCheckUtf8,
-	// 	)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	overrides = append(overrides, override)
-	// }
+	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionCcEnableArenas,
+			*externalCCEnableArenas,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaMultipleFiles,
+			*externalJavaMultipleFiles,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
+		override, err := newFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaStringCheckUtf8,
+			*externalJavaStringCheckUtf8,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
 	if externalJavaPackagePrefix := externalConfig.JavaPackagePrefix; !externalJavaPackagePrefix.isEmpty() {
 		if externalJavaPackagePrefix.Default == "" {
 			// TODO: resolve this: this message has been updated, compared to the one in bufgen/config.go:
@@ -159,7 +160,7 @@ func newManagedOverrideRuleFromExternalV1(
 			return nil, err
 		}
 		overrides = append(overrides, defaultOverride)
-		javaPackagePrefixDisables, javaPackagePrefixOverrides, err := getDisablesAndOverrides(
+		javaPackagePrefixDisables, javaPackagePrefixOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionJavaPackage,
 			externalJavaPackagePrefix.Except,
 			FileOptionJavaPackagePrefix,
@@ -172,7 +173,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides = append(overrides, javaPackagePrefixOverrides...)
 	}
 	if externalCsharpNamespace := externalConfig.CsharpNamespace; !externalCsharpNamespace.isEmpty() {
-		csharpNamespaceDisables, csharpNamespaceOverrides, err := getDisablesAndOverrides(
+		csharpNamespaceDisables, csharpNamespaceOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionCsharpNamespace,
 			externalCsharpNamespace.Except,
 			FileOptionCsharpNamespace,
@@ -198,7 +199,7 @@ func newManagedOverrideRuleFromExternalV1(
 			return nil, err
 		}
 		overrides = append(overrides, defaultOverride)
-		optimizeForDisables, optimizeForOverrides, err := getDisablesAndOverrides(
+		optimizeForDisables, optimizeForOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionOptimizeFor,
 			externalOptimizeFor.Except,
 			FileOptionOptimizeFor,
@@ -211,7 +212,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides = append(overrides, optimizeForOverrides...)
 	}
 	if externalGoPackagePrefix := externalConfig.GoPackagePrefix; !externalGoPackagePrefix.isEmpty() {
-		if externalGoPackagePrefix.Default != "" {
+		if externalGoPackagePrefix.Default == "" {
 			return nil, errors.New("go_package_prefix must have a default value")
 		}
 		defaultOverride, err := newFileOptionOverrideRule(
@@ -224,7 +225,7 @@ func newManagedOverrideRuleFromExternalV1(
 			return nil, err
 		}
 		overrides = append(overrides, defaultOverride)
-		goPackagePrefixDisables, goPackagePrefixOverrides, err := getDisablesAndOverrides(
+		goPackagePrefixDisables, goPackagePrefixOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionGoPackage,
 			externalGoPackagePrefix.Except,
 			FileOptionGoPackagePrefix,
@@ -250,7 +251,7 @@ func newManagedOverrideRuleFromExternalV1(
 			}
 			overrides = append(overrides, defaultOverride)
 		}
-		objcClassPrefixDisables, objcClassPrefixOverrides, err := getDisablesAndOverrides(
+		objcClassPrefixDisables, objcClassPrefixOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionObjcClassPrefix,
 			externalObjcClassPrefix.Except,
 			FileOptionObjcClassPrefix,
@@ -263,7 +264,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides = append(overrides, objcClassPrefixOverrides...)
 	}
 	if externalRubyPackage := externalConfig.RubyPackage; !externalRubyPackage.isEmpty() {
-		rubyPackageDisables, rubyPackageOverrides, err := getDisablesAndOverrides(
+		rubyPackageDisables, rubyPackageOverrides, err := disablesAndOverridesFromExceptAndOverrideV1(
 			FileOptionRubyPackage,
 			externalRubyPackage.Except,
 			FileOptionRubyPackage,
@@ -275,49 +276,11 @@ func newManagedOverrideRuleFromExternalV1(
 		disables = append(disables, rubyPackageDisables...)
 		overrides = append(overrides, rubyPackageOverrides...)
 	}
-	for upperCaseFileOption, fileToOverride := range externalConfig.Override {
-		lowerCaseFileOption := strings.ToLower(upperCaseFileOption)
-		fileOption, ok := stringToFileOption[lowerCaseFileOption]
-		if !ok {
-			return nil, fmt.Errorf("%q is not a valid file option", upperCaseFileOption)
-		}
-		for filePath, override := range fileToOverride {
-			normalizedFilePath, err := normalpath.NormalizeAndValidate(filePath)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"failed to normalize import path: %s provided for override: %s",
-					filePath,
-					upperCaseFileOption,
-				)
-			}
-			if filePath != normalizedFilePath {
-				return nil, fmt.Errorf(
-					"override can only take normalized import paths, invalid import path: %s provided for override: %s",
-					filePath,
-					upperCaseFileOption,
-				)
-			}
-			var overrideValue interface{} = override
-			switch fileOption {
-			case FileOptionCcEnableArenas, FileOptionJavaMultipleFiles, FileOptionJavaStringCheckUtf8:
-				parseOverrideValue, err := strconv.ParseBool(override)
-				if err != nil {
-					return nil, fmt.Errorf("")
-				}
-				overrideValue = parseOverrideValue
-			}
-			overrideRule, err := newFileOptionOverrideRule(
-				filePath,
-				"",
-				fileOption,
-				overrideValue,
-			)
-			if err != nil {
-				return nil, err
-			}
-			overrides = append(overrides, overrideRule)
-		}
+	perFileOverrides, err := overrideRulesForPerFileOverridesV1(externalConfig.Override)
+	if err != nil {
+		return nil, err
 	}
+	overrides = append(overrides, perFileOverrides...)
 	return &generateManagedConfig{
 		disables:  disables,
 		overrides: overrides,
@@ -497,7 +460,7 @@ func (m *managedOverrideRule) Value() interface{} {
 
 func (m *managedOverrideRule) isManagedOverrideRule() {}
 
-func getDisablesAndOverrides(
+func disablesAndOverridesFromExceptAndOverrideV1(
 	exceptFileOption FileOption,
 	exceptModuleFullNames []string,
 	overrideFileOption FileOption,
@@ -528,7 +491,9 @@ func getDisablesAndOverrides(
 		}
 		disables = append(disables, disable)
 	}
-	for overrideModuleFullName, overrideValue := range moduleFullNameToOverride {
+	// Sort by keys for deterministic order.
+	sortedModuleFullNames := slicesext.MapKeysToSortedSlice(moduleFullNameToOverride)
+	for _, overrideModuleFullName := range sortedModuleFullNames {
 		if _, err := bufmodule.ParseModuleFullName(overrideModuleFullName); err != nil {
 			return nil, nil, err
 		}
@@ -539,7 +504,7 @@ func getDisablesAndOverrides(
 			"",
 			overrideModuleFullName,
 			overrideFileOption,
-			overrideValue,
+			moduleFullNameToOverride[overrideModuleFullName],
 		)
 		if err != nil {
 			return nil, nil, err
@@ -547,4 +512,58 @@ func getDisablesAndOverrides(
 		overrides = append(overrides, override)
 	}
 	return disables, overrides, nil
+}
+
+func overrideRulesForPerFileOverridesV1(
+	fileOptionToFilePathToOverride map[string]map[string]string,
+) ([]ManagedOverrideRule, error) {
+	var overrideRules []ManagedOverrideRule
+	sortedFileOptionStrings := slicesext.MapKeysToSortedSlice(fileOptionToFilePathToOverride)
+	for _, fileOptionString := range sortedFileOptionStrings {
+		fileOption, ok := stringToFileOption[strings.ToLower(fileOptionString)]
+		if !ok {
+			return nil, fmt.Errorf("%q is not a valid file option", fileOptionString)
+		}
+		filePathToOverride := fileOptionToFilePathToOverride[fileOptionString]
+		sortedFilePaths := slicesext.MapKeysToSortedSlice(filePathToOverride)
+		for _, filePath := range sortedFilePaths {
+			normalizedFilePath, err := normalpath.NormalizeAndValidate(filePath)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"%s for override %s is not a valid import path: %w",
+					filePath,
+					fileOptionString,
+					err,
+				)
+			}
+			if filePath != normalizedFilePath {
+				return nil, fmt.Errorf(
+					"import path %s for override %s is not normalized, use %s instead",
+					filePath,
+					fileOptionString,
+					normalizedFilePath,
+				)
+			}
+			overrideString := filePathToOverride[filePath]
+			var overrideValue interface{} = overrideString
+			switch fileOption {
+			case FileOptionCcEnableArenas, FileOptionJavaMultipleFiles, FileOptionJavaStringCheckUtf8:
+				overrideValue, err = strconv.ParseBool(overrideString)
+				if err != nil {
+					return nil, fmt.Errorf("")
+				}
+			}
+			overrideRule, err := newFileOptionOverrideRule(
+				filePath,
+				"",
+				fileOption,
+				overrideValue,
+			)
+			if err != nil {
+				return nil, err
+			}
+			overrideRules = append(overrideRules, overrideRule)
+		}
+	}
+	return overrideRules, nil
 }

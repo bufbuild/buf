@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestParseConfigFromExternalV1(t *testing.T) {
@@ -278,7 +279,33 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			},
 		},
 		{
-			description: "managed mode",
+			description: "managed_mode_empty",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{},
+			},
+		},
+		{
+			description: "managed_mode_bools_and_java_package",
 			externalConfig: externalBufGenYAMLFileV1{
 				Version: "v1",
 				Plugins: []externalGeneratePluginConfigV1{
@@ -296,8 +323,9 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						Default: "foo",
 						Except:  []string{"buf.build/acme/foo", "buf.build/acme/bar"},
 						Override: map[string]string{
-							"buf.build/acme/baz": "baz",
-							"buf.build/acme/bat": "bat",
+							"buf.build/acme/weatherapis": "weather",
+							"buf.build/acme/paymentapis": "payment",
+							"buf.build/acme/petapis":     "pet",
 						},
 					},
 				},
@@ -324,18 +352,327 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 					overrides: []ManagedOverrideRule{
 						&managedOverrideRule{
+							fileOption: FileOptionCcEnableArenas,
+							value:      true,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionJavaMultipleFiles,
+							value:      true,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionJavaStringCheckUtf8,
+							value:      true,
+						},
+						&managedOverrideRule{
 							fileOption: FileOptionJavaPackagePrefix,
 							value:      "foo",
 						},
+						// the next three rules are ordered by their module names
 						&managedOverrideRule{
 							fileOption:     FileOptionJavaPackagePrefix,
-							moduleFullName: "buf.build/acme/baz",
-							value:          "baz",
+							moduleFullName: "buf.build/acme/paymentapis",
+							value:          "payment",
 						},
 						&managedOverrideRule{
 							fileOption:     FileOptionJavaPackagePrefix,
-							moduleFullName: "buf.build/acme/bat",
-							value:          "bat",
+							moduleFullName: "buf.build/acme/petapis",
+							value:          "pet",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionJavaPackagePrefix,
+							moduleFullName: "buf.build/acme/weatherapis",
+							value:          "weather",
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "managed_mode_optimize_for",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					OptimizeFor: externalOptimizeForConfigV1{
+						Default: "LITE_RUNTIME",
+						Except:  []string{"buf.build/acme/foo"},
+						Override: map[string]string{
+							"buf.build/acme/petapis":     "CODE_SIZE",
+							"buf.build/acme/paymentapis": "SPEED",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionOptimizeFor,
+							moduleFullName: "buf.build/acme/foo",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption: FileOptionOptimizeFor,
+							value:      descriptorpb.FileOptions_LITE_RUNTIME,
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionOptimizeFor,
+							moduleFullName: "buf.build/acme/paymentapis",
+							value:          descriptorpb.FileOptions_SPEED,
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionOptimizeFor,
+							moduleFullName: "buf.build/acme/petapis",
+							value:          descriptorpb.FileOptions_CODE_SIZE,
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "managed_mode_go_package_prefix",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					GoPackagePrefix: externalGoPackagePrefixConfigV1{
+						Default: "foo",
+						Except:  []string{"buf.build/acme/foo"},
+						Override: map[string]string{
+							"buf.build/acme/petapis": "pet",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionGoPackage,
+							moduleFullName: "buf.build/acme/foo",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption: FileOptionGoPackagePrefix,
+							value:      "foo",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionGoPackagePrefix,
+							moduleFullName: "buf.build/acme/petapis",
+							value:          "pet",
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "managed_mode_objc_class_prefix",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					ObjcClassPrefix: externalObjcClassPrefixConfigV1{
+						Default: "foo",
+						Except:  []string{"buf.build/acme/foo"},
+						Override: map[string]string{
+							"buf.build/acme/petapis": "pet",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionObjcClassPrefix,
+							moduleFullName: "buf.build/acme/foo",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption: FileOptionObjcClassPrefix,
+							value:      "foo",
+						},
+						&managedOverrideRule{
+							fileOption:     FileOptionObjcClassPrefix,
+							moduleFullName: "buf.build/acme/petapis",
+							value:          "pet",
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "managed_mode_ruby_package",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					RubyPackage: externalRubyPackageConfigV1{
+						Except: []string{"buf.build/acme/foo"},
+						Override: map[string]string{
+							"buf.build/acme/petapis": "pet",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					disables: []ManagedDisableRule{
+						&managedDisableRule{
+							fileOption:     FileOptionRubyPackage,
+							moduleFullName: "buf.build/acme/foo",
+						},
+					},
+					overrides: []ManagedOverrideRule{
+						&managedOverrideRule{
+							fileOption:     FileOptionRubyPackage,
+							moduleFullName: "buf.build/acme/petapis",
+							value:          "pet",
+						},
+					},
+				},
+			},
+		},
+		{
+			description: "managed_mode_per_file_override",
+			externalConfig: externalBufGenYAMLFileV1{
+				Version: "v1",
+				Plugins: []externalGeneratePluginConfigV1{
+					{
+						Plugin: "go",
+						Out:    "go/out",
+					},
+				},
+				Managed: externalGenerateManagedConfigV1{
+					Enabled: true,
+					Override: map[string]map[string]string{
+						"JAVA_PACKAGE": {
+							"foo.proto": "foo",
+							"bar.proto": "bar",
+							"baz.proto": "baz",
+						},
+						"CC_ENABLE_ARENAS": {
+							"foo.proto": "false",
+							"baz.proto": "true",
+						},
+						"OPTIMIZE_FOR": {
+							"dir/baz.proto": "SPEED",
+							"dir/foo.proto": "CODE_SIZE",
+							"dir/bar.proto": "LITE_RUNTIME",
+						},
+					},
+				},
+			},
+			expectedConfig: &generateConfig{
+				pluginConfigs: []GeneratePluginConfig{
+					&pluginConfig{
+						pluginConfigType: PluginConfigTypeLocal,
+						name:             "go",
+						out:              "go/out",
+						strategy:         GenerateStrategyDirectory,
+					},
+				},
+				managedConfig: &generateManagedConfig{
+					overrides: []ManagedOverrideRule{
+						// ordered by file option names and then by file paths
+						&managedOverrideRule{
+							fileOption: FileOptionCcEnableArenas,
+							path:       "baz.proto",
+							value:      true,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionCcEnableArenas,
+							path:       "foo.proto",
+							value:      false,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionJavaPackage,
+							path:       "bar.proto",
+							value:      "bar",
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionJavaPackage,
+							path:       "baz.proto",
+							value:      "baz",
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionJavaPackage,
+							path:       "foo.proto",
+							value:      "foo",
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionOptimizeFor,
+							path:       "dir/bar.proto",
+							value:      descriptorpb.FileOptions_LITE_RUNTIME,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionOptimizeFor,
+							path:       "dir/baz.proto",
+							value:      descriptorpb.FileOptions_SPEED,
+						},
+						&managedOverrideRule{
+							fileOption: FileOptionOptimizeFor,
+							path:       "dir/foo.proto",
+							value:      descriptorpb.FileOptions_CODE_SIZE,
 						},
 					},
 				},
