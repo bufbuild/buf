@@ -25,9 +25,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// TODO: this is a temporary file, although it might stay
-
-// TODO: testcases:
+// TODO: this is a temporary file, although it might stay. Need to rename the file at least.
 
 func Modify(
 	ctx context.Context,
