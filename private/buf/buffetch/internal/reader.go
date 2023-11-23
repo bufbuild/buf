@@ -148,6 +148,7 @@ func (r *reader) GetBucket(
 			container,
 			t,
 			getBucketOptions.terminateFileNames,
+			getBucketOptions.protoFileTerminateFileNames,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -275,13 +276,18 @@ func (r *reader) getProtoFileBucket(
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
 	terminateFileNames []string,
+	protoFileTerminateFileNames []string,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
-	// add as targeting files when constructing a Workspace.
-	return getReadBucketCloserForOS(ctx, r.storageosProvider, protoFileRef.Path(), terminateFileNames)
+	return getReadBucketCloserForOSProtoFile(
+		ctx,
+		r.storageosProvider,
+		protoFileRef.Path(),
+		terminateFileNames,
+		protoFileTerminateFileNames,
+	)
 }
 
 func (r *reader) getGitBucket(
@@ -509,7 +515,7 @@ func getReadBucketCloserForBucket(
 	inputSubDirPath string,
 	terminateFileNames []string,
 ) (ReadBucketCloser, error) {
-	mapPath, subDirPath, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFileNames)
+	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +548,7 @@ func getReadBucketCloserForOS(
 	if err != nil {
 		return nil, err
 	}
-	mapPath, subDirPath, err := getMapPathAndSubDirPath(
+	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(
 		ctx,
 		osRootBucket,
 		// This makes the path relative to the bucket.
@@ -591,6 +597,79 @@ func getReadBucketCloserForOS(
 	return newReadBucketCloser(storage.NopReadBucketCloser(bucket), subDirPath)
 }
 
+// Use for ProtoFileRefs.
+func getReadBucketCloserForOSProtoFile(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	protoFilePath string,
+	terminateFileNames []string,
+	protoFileTerminateFileNames []string,
+) (ReadBucketCloser, error) {
+	// First, we figure out which directory we consider to be the module that encapsulates
+	// this ProtoFileRef. If we find a buf.yaml, then we use that as the directory. If we
+	// do not, we use the current directory as the directory.
+	protoFileDirPath := normalpath.Dir(protoFilePath)
+	absProtoFileDirPath, err := normalpath.NormalizeAndAbsolute(protoFileDirPath)
+	if err != nil {
+		return nil, err
+	}
+	osRootBucket, err := storageosProvider.NewReadWriteBucket(
+		"/",
+		// TODO: is this right? verify in deleted code
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	fmt.Println(absProtoFileDirPath)
+	// mapPath is the path to the bucket that contains a buf.yaml.
+	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
+	mapPath, _, foundProtoTerminateFileName, err := getMapPathAndSubDirPath(
+		ctx,
+		osRootBucket,
+		// This makes the path relative to the bucket.
+		absProtoFileDirPath[1:],
+		protoFileTerminateFileNames,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var protoTerminateFileDirPath string
+	if !foundProtoTerminateFileName {
+		// If we did not find a buf.yaml, use the current directory.
+		// If the input path was absolute, use an absolute path, otherwise relative.
+		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
+			pwd, err := osext.Getwd()
+			if err != nil {
+				return nil, err
+			}
+			protoTerminateFileDirPath = normalpath.Normalize(pwd)
+		} else {
+			protoTerminateFileDirPath = "."
+		}
+	} else {
+		// We found a buf.yaml, use that directory.
+		// If we found a buf.yaml and the path is absolute, use an absolute path, otherwise relative.
+		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
+			protoTerminateFileDirPath = string(os.PathSeparator) + mapPath
+		} else {
+			pwd, err := osext.Getwd()
+			if err != nil {
+				return nil, err
+			}
+			pwd = normalpath.Normalize(pwd)
+			// Deleting leading os.PathSeparator so we can make mapPath relative.
+			protoTerminateFileDirPath, err = normalpath.Rel(pwd[1:], mapPath)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	fmt.Println("getting for dir", protoTerminateFileDirPath)
+	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
+	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
+	// add as targeting files when constructing a Workspace.
+	return getReadBucketCloserForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFileNames)
+}
+
 // Gets two values:
 //
 //   - The directory relative to the bucket that the bucket should be mapped onto.
@@ -622,15 +701,15 @@ func getMapPathAndSubDirPath(
 	inputBucket storage.ReadBucket,
 	inputSubDirPath string,
 	terminateFileNames []string,
-) (string, string, error) {
+) (mapPath string, subDirPath string, foundTerminateFileName bool, retErr error) {
 	inputSubDirPath, err := normalpath.NormalizeAndValidate(inputSubDirPath)
 	if err != nil {
-		return "", "", err
+		return "", "", false, err
 	}
 	// The for loops would take care of these base cases, but we don't want to call storage.MapReadBucket
 	// unless we have to.
 	if len(terminateFileNames) == 0 {
-		return inputSubDirPath, ".", nil
+		return inputSubDirPath, ".", false, nil
 	}
 	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
 		for _, terminateFileName := range terminateFileNames {
@@ -638,13 +717,13 @@ func getMapPathAndSubDirPath(
 			if err == nil {
 				subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
 				if err != nil {
-					return "", "", err
+					return "", "", false, err
 				}
-				return curPath, subDirPath, nil
+				return curPath, subDirPath, true, nil
 			}
 		}
 	}
-	return inputSubDirPath, ".", nil
+	return inputSubDirPath, ".", false, nil
 }
 
 type getFileOptions struct {
@@ -656,7 +735,8 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getBucketOptions struct {
-	terminateFileNames []string
+	terminateFileNames          []string
+	protoFileTerminateFileNames []string
 }
 
 func newGetBucketOptions() *getBucketOptions {

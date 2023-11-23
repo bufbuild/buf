@@ -129,7 +129,7 @@ func TestGetReadBucketCloserForOSParentPwd(t *testing.T) {
 	ctx := context.Background()
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
-	require.NoError(t, osext.Chdir(normalpath.Unnormalize("./testdata/one/two/three/four")))
+	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/one/two/three/four"))))
 	readBucketCloser, err := getReadBucketCloserForOS(
 		ctx,
 		storageos.NewProvider(),
@@ -156,12 +156,105 @@ func TestGetReadBucketCloserForOSAbsPwd(t *testing.T) {
 	require.NoError(t, err)
 	pwd, err := osext.Getwd()
 	require.NoError(t, err)
-	require.NoError(t, osext.Chdir(normalpath.Unnormalize("./testdata/one/two/three/four")))
+	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/one/two/three/four"))))
 	readBucketCloser, err := getReadBucketCloserForOS(
 		ctx,
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/one/two/three/four/five"),
 		[]string{"buf.work.yaml"},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
+	require.NoError(t, err)
+	require.Equal(t, normalpath.Join(absDirPath, "testdata/one/two/three/four/five/buf.yaml"), fileInfo.ExternalPath())
+	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
+	require.NoError(t, err)
+	require.Equal(t, normalpath.Join(absDirPath, "testdata/one/two/three/buf.work.yaml"), fileInfo.ExternalPath())
+	require.NoError(t, readBucketCloser.Close())
+	require.NoError(t, osext.Chdir(pwd))
+}
+
+func TestGetReadBucketCloserForOSProtoFileNoTerminateFileName(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+		ctx,
+		storageos.NewProvider(),
+		"testdata/one/two/three/four/five/proto/foo.proto",
+		nil,
+		[]string{"buf.yaml"},
+	)
+	require.NoError(t, err)
+	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	fileInfo, err := readBucketCloser.Stat(ctx, "buf.yaml")
+	require.NoError(t, err)
+	require.Equal(t, "testdata/one/two/three/four/five/buf.yaml", fileInfo.ExternalPath())
+	require.NoError(t, readBucketCloser.Close())
+}
+
+func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+		ctx,
+		storageos.NewProvider(),
+		"testdata/one/two/three/four/five/proto/foo.proto",
+		[]string{"buf.work.yaml"},
+		[]string{"buf.yaml"},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
+	require.NoError(t, err)
+	require.Equal(t, "testdata/one/two/three/four/five/buf.yaml", fileInfo.ExternalPath())
+	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
+	require.NoError(t, err)
+	require.Equal(t, "testdata/one/two/three/buf.work.yaml", fileInfo.ExternalPath())
+	require.NoError(t, readBucketCloser.Close())
+}
+
+func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
+	// Cannot be parallel since we chdir.
+
+	ctx := context.Background()
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/one/two/three/four"))))
+	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+		ctx,
+		storageos.NewProvider(),
+		"five/proto/foo.proto",
+		[]string{"buf.work.yaml"},
+		[]string{"buf.yaml"},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
+	require.NoError(t, err)
+	require.Equal(t, "five/buf.yaml", fileInfo.ExternalPath())
+	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
+	require.NoError(t, err)
+	require.Equal(t, "../buf.work.yaml", fileInfo.ExternalPath())
+	require.NoError(t, readBucketCloser.Close())
+	require.NoError(t, osext.Chdir(pwd))
+}
+
+func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
+	// Cannot be parallel since we chdir.
+
+	ctx := context.Background()
+	absDirPath, err := filepath.Abs(".")
+	require.NoError(t, err)
+	pwd, err := osext.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, osext.Chdir(normalpath.Unnormalize(normalpath.Join(pwd, "testdata/one/two/three/four"))))
+	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+		ctx,
+		storageos.NewProvider(),
+		normalpath.Join(absDirPath, "testdata/one/two/three/four/five/proto/foo.proto"),
+		[]string{"buf.work.yaml"},
+		[]string{"buf.yaml"},
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())

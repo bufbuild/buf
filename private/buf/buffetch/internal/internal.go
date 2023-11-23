@@ -745,6 +745,17 @@ func WithGetBucketTerminateFileNames(terminateFileNames []string) GetBucketOptio
 	}
 }
 
+// WithGetBucketProtoFileTerminateFileNames says to search the bucket for the given file names,
+// and if one is found, consider this to be the encapsulating bucket for the given ProtoFileRef.
+// If one is not found, the current directory is considered to be the encapsulating bucket.
+//
+// Example of terminateFileNames: []string{"buf.yaml", "buf.mod"}
+func WithGetBucketProtoFileTerminateFileNames(protoFileTerminateFileNames []string) GetBucketOption {
+	return func(getBucketOptions *getBucketOptions) {
+		getBucketOptions.protoFileTerminateFileNames = protoFileTerminateFileNames
+	}
+}
+
 // PutFileOption is a PutFile option.
 type PutFileOption func(*putFileOptions)
 
