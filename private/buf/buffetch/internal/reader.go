@@ -606,7 +606,7 @@ func getReadBucketCloserForOSProtoFile(
 	protoFileTerminateFileNames []string,
 ) (ReadBucketCloser, error) {
 	// First, we figure out which directory we consider to be the module that encapsulates
-	// this ProtoFileRef. If we find a buf.yaml, then we use that as the directory. If we
+	// this ProtoFileRef. If we find a buf.yaml or buf.work.yaml, then we use that as the directory. If we
 	// do not, we use the current directory as the directory.
 	protoFileDirPath := normalpath.Dir(protoFilePath)
 	absProtoFileDirPath, err := normalpath.NormalizeAndAbsolute(protoFileDirPath)
@@ -618,7 +618,6 @@ func getReadBucketCloserForOSProtoFile(
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
-	fmt.Println(absProtoFileDirPath)
 	// mapPath is the path to the bucket that contains a buf.yaml.
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, foundProtoTerminateFileName, err := getMapPathAndSubDirPath(
@@ -626,7 +625,10 @@ func getReadBucketCloserForOSProtoFile(
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
-		protoFileTerminateFileNames,
+		append(
+			terminateFileNames,
+			protoFileTerminateFileNames...,
+		),
 	)
 	if err != nil {
 		return nil, err
@@ -634,8 +636,8 @@ func getReadBucketCloserForOSProtoFile(
 
 	var protoTerminateFileDirPath string
 	if !foundProtoTerminateFileName {
-		// If we did not find a buf.yaml, use the current directory.
-		// If the input path was absolute, use an absolute path, otherwise relative.
+		// If we did not find a buf.yaml or buf.work.yaml, use the current directory.
+		// If the ProtoFileRef path was absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
 			pwd, err := osext.Getwd()
 			if err != nil {
@@ -646,8 +648,8 @@ func getReadBucketCloserForOSProtoFile(
 			protoTerminateFileDirPath = "."
 		}
 	} else {
-		// We found a buf.yaml, use that directory.
-		// If we found a buf.yaml and the path is absolute, use an absolute path, otherwise relative.
+		// We found a buf.yaml or buf.work.yaml, use that directory.
+		// If we found a buf.yaml or buf.workl.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
 			protoTerminateFileDirPath = string(os.PathSeparator) + mapPath
 		} else {
@@ -663,7 +665,6 @@ func getReadBucketCloserForOSProtoFile(
 			}
 		}
 	}
-	fmt.Println("getting for dir", protoTerminateFileDirPath)
 	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
 	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
 	// add as targeting files when constructing a Workspace.
