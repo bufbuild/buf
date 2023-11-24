@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufnew/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -161,11 +162,13 @@ func run(
 			return err
 		}
 	}
+	if flags.ExcludeImports {
+		image = bufimage.ImageWithoutImports(image)
+	}
 	return controller.PutImage(
 		ctx,
 		flags.Output,
 		image,
 		bufctl.WithAsFileDescriptorSet(flags.AsFileDescriptorSet),
-		bufctl.WithExcludeImports(flags.ExcludeImports),
 	)
 }

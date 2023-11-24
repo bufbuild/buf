@@ -175,9 +175,6 @@ func (c *controller) PutImage(
 		return nil
 	}
 	writeImage := image
-	if functionOptions.excludeImports {
-		writeImage = bufimage.ImageWithoutImports(image)
-	}
 	var message proto.Message
 	if functionOptions.asFileDescriptorSet {
 		message = bufimage.ImageToFileDescriptorSet(writeImage)
@@ -478,7 +475,6 @@ func validateErrorFormat(errorFormat string) error {
 type functionOptions struct {
 	targetPaths         []string
 	targetExcludePaths  []string
-	excludeImports      bool
 	excludeSourceInfo   bool
 	asFileDescriptorSet bool
 }
@@ -493,7 +489,6 @@ func (f *functionOptions) withPathsForReadBucketCloser(
 	c := &functionOptions{
 		targetPaths:         f.targetPaths,
 		targetExcludePaths:  f.targetExcludePaths,
-		excludeImports:      f.excludeImports,
 		excludeSourceInfo:   f.excludeSourceInfo,
 		asFileDescriptorSet: f.asFileDescriptorSet,
 	}

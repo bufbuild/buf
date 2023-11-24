@@ -17,14 +17,15 @@ package lsfiles
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufnew/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -114,59 +115,39 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	fileLister, err := bufcli.NewWireFileLister(
+	controller, err := bufcli.NewController(
 		container,
-		storageosProvider,
-		runner,
-		clientConfig,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	fileRefs, fileAnnotations, err := fileLister.ListFiles(
+	image, err := controller.GetImage(
 		ctx,
-		container,
-		ref,
-		flags.Config,
-		flags.IncludeImports,
+		input,
+		bufctl.WithExcludeSourceInfo(true),
 	)
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdout potentially
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			flags.ErrorFormat,
-		); err != nil {
-			return err
-		}
-		return bufcli.ErrFileAnnotation
+	if !flags.IncludeImports {
+		image = bufimage.ImageWithoutImports(image)
 	}
+	imageFilePathFunc := bufimage.ImageFile.ExternalPath
 	if flags.AsImportPaths {
-		bufmoduleref.SortFileInfos(fileRefs)
-		for _, fileRef := range fileRefs {
-			if _, err := fmt.Fprintln(container.Stdout(), fileRef.Path()); err != nil {
-				return err
-			}
-		}
-	} else {
-		bufmoduleref.SortFileInfosByExternalPath(fileRefs)
-		for _, fileRef := range fileRefs {
-			if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalPath()); err != nil {
-				return err
-			}
+		imageFilePathFunc = bufimage.ImageFile.Path
+	}
+	paths := slicesext.Map(
+		image.Files(),
+		func(imageFile bufimage.ImageFile) string {
+			return imageFilePathFunc(imageFile)
+		},
+	)
+	sort.Strings(paths)
+	for _, path := range paths {
+		if _, err := fmt.Fprintln(container.Stdout(), path); err != nil {
+			return err
 		}
 	}
 	return nil

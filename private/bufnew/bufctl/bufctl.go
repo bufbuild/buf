@@ -124,12 +124,6 @@ func WithExcludeSourceInfo(excludeSourceInfo bool) FunctionOption {
 	}
 }
 
-func WithExcludeImports(excludeImports bool) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.excludeImports = excludeImports
-	}
-}
-
 func WithAsFileDescriptorSet(asFileDescriptorSet bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.asFileDescriptorSet = asFileDescriptorSet
