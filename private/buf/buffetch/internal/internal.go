@@ -378,6 +378,12 @@ type ReadBucketCloser interface {
 	// this terminate file, and the subdir will be the subdir of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
+
+	// PathForExternalPath takes a path external to the asset and converts it to
+	// a path that is relative to the asset.
+	//
+	// The returned path will be normalized and validated.
+	PathForExternalPath(externalPath string) (string, error)
 }
 
 // Reader is a reader.
@@ -402,13 +408,13 @@ type Reader interface {
 		bucketRef BucketRef,
 		options ...GetBucketOption,
 	) (ReadBucketCloser, error)
-	// GetModuleData gets the ModuleData.
-	GetModuleData(
+	// GetModuleKey gets the ModuleKey.
+	GetModuleKey(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
-	) (bufmodule.ModuleData, error)
+	) (bufmodule.ModuleKey, error)
 }
 
 // NewReader returns a new Reader.
@@ -674,12 +680,10 @@ func WithReaderGit(gitCloner git.Cloner) ReaderOption {
 // WithReaderModule enables modules.
 func WithReaderModule(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
 ) ReaderOption {
 	return func(reader *reader) {
 		reader.moduleEnabled = true
 		reader.moduleKeyProvider = moduleKeyProvider
-		reader.moduleDataProvider = moduleDataProvider
 	}
 }
 

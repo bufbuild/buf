@@ -154,6 +154,21 @@ func newWorkspaceForBucket(
 	)
 }
 
+func newWorkspaceForModuleSet(moduleSet bufmodule.ModuleSet) (*workspace, error) {
+	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
+	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
+	for _, module := range moduleSet.Modules() {
+		opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
+		opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
+	}
+	return &workspace{
+		ModuleSet:                moduleSet,
+		opaqueIDToLintConfig:     opaqueIDToLintConfig,
+		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
+		configuredDepModuleRefs:  nil,
+	}, nil
+}
+
 func newWorkspaceForProtoc(
 	ctx context.Context,
 	storageosProvider storageos.Provider,

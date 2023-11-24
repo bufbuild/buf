@@ -58,10 +58,9 @@ type reader struct {
 	gitEnabled bool
 	gitCloner  git.Cloner
 
-	moduleEnabled      bool
-	moduleKeyProvider  bufmodule.ModuleKeyProvider
-	moduleDataProvider bufmodule.ModuleDataProvider
-	tracer             trace.Tracer
+	moduleEnabled     bool
+	moduleKeyProvider bufmodule.ModuleKeyProvider
+	tracer            trace.Tracer
 }
 
 func newReader(
@@ -155,15 +154,15 @@ func (r *reader) GetBucket(
 	}
 }
 
-func (r *reader) GetModuleData(
+func (r *reader) GetModuleKey(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef ModuleRef,
 	_ ...GetModuleOption,
-) (bufmodule.ModuleData, error) {
+) (bufmodule.ModuleKey, error) {
 	switch t := moduleRef.(type) {
 	case ModuleRef:
-		return r.getModuleData(
+		return r.getModuleKey(
 			ctx,
 			container,
 			t,
@@ -327,19 +326,16 @@ func (r *reader) getGitBucket(
 	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFileNames)
 }
 
-func (r *reader) getModuleData(
+func (r *reader) getModuleKey(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef ModuleRef,
-) (bufmodule.ModuleData, error) {
+) (bufmodule.ModuleKey, error) {
 	if !r.moduleEnabled {
 		return nil, NewReadModuleDisabledError()
 	}
 	if r.moduleKeyProvider == nil {
 		return nil, errors.New("module key provider is nil")
-	}
-	if r.moduleDataProvider == nil {
-		return nil, errors.New("module data provider is nil")
 	}
 	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRef.ModuleRef())
 	if err != nil {
@@ -348,14 +344,7 @@ func (r *reader) getModuleData(
 	if len(moduleKeys) != 1 {
 		return nil, fmt.Errorf("expected 1 ModuleKey, got %d", len(moduleKeys))
 	}
-	moduleDatas, err := r.moduleDataProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys[0])
-	if err != nil {
-		return nil, err
-	}
-	if len(moduleDatas) != 1 {
-		return nil, fmt.Errorf("expected 1 ModuleData, got %d", len(moduleDatas))
-	}
-	return moduleDatas[0], nil
+	return moduleKeys[0], nil
 }
 
 func (r *reader) getFileReadCloserAndSize(
@@ -525,7 +514,13 @@ func getReadBucketCloserForBucket(
 			storage.MapOnPrefix(mapPath),
 		)
 	}
-	return newReadBucketCloser(inputBucket, subDirPath)
+	return newReadBucketCloser(
+		inputBucket,
+		subDirPath,
+		func(externalPath string) (string, error) {
+			return normalpath.NormalizeAndValidate(externalPath)
+		},
+	)
 }
 
 // Use for directory-based buckets.
@@ -594,7 +589,26 @@ func getReadBucketCloserForOS(
 	if err != nil {
 		return nil, err
 	}
-	return newReadBucketCloser(storage.NopReadBucketCloser(bucket), subDirPath)
+	return newReadBucketCloser(
+		storage.NopReadBucketCloser(bucket),
+		subDirPath,
+		func(externalPath string) (string, error) {
+			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketPath))
+			if err != nil {
+				return "", err
+			}
+			// We shouldn't actually need to unnormalize externalPath but we do anyways.
+			absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
+			if err != nil {
+				return "", err
+			}
+			path, err := filepath.Rel(absBucketPath, absExternalPath)
+			if err != nil {
+				return "", err
+			}
+			return normalpath.NormalizeAndValidate(path)
+		},
+	)
 }
 
 // Use for ProtoFileRefs.

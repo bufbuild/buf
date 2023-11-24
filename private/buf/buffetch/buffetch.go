@@ -76,29 +76,8 @@ var (
 // MessageEncoding is the encoding of the message.
 type MessageEncoding int
 
-// PathResolver resolves external paths to paths.
-type PathResolver interface {
-	// PathForExternalPath takes a path external to the asset and converts it to
-	// a path that is relative to the asset.
-	//
-	// The returned path will be normalized and validated.
-	//
-	// Example:
-	//   Directory: /foo/bar
-	//   ExternalPath: /foo/bar/baz/bat.proto
-	//   Path: baz/bat.proto
-	//
-	// Example:
-	//   Directory: .
-	//   ExternalPath: baz/bat.proto
-	//   Path: baz/bat.proto
-	PathForExternalPath(externalPath string) (string, error)
-}
-
 // Ref is an message file or source bucket reference.
 type Ref interface {
-	PathResolver
-
 	internalRef() internal.Ref
 }
 
@@ -254,13 +233,13 @@ type SourceReader interface {
 
 // ModuleFetcher is a module fetcher.
 type ModuleFetcher interface {
-	// GetModuleData gets the ModuleData.
+	// GetModuleKey gets the ModuleKey.
 	// Unresolved ModuleRef's are automatically resolved.
-	GetModuleData(
+	GetModuleKey(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
-	) (bufmodule.ModuleData, error)
+	) (bufmodule.ModuleKey, error)
 }
 
 // Reader is a reader for Buf.
@@ -278,7 +257,6 @@ func NewReader(
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
 ) Reader {
 	return newReader(
 		logger,
@@ -287,7 +265,6 @@ func NewReader(
 		httpAuthenticator,
 		gitCloner,
 		moduleKeyProvider,
-		moduleDataProvider,
 	)
 }
 
@@ -330,13 +307,11 @@ func NewModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
 ) ModuleFetcher {
 	return newModuleFetcher(
 		logger,
 		storageosProvider,
 		moduleKeyProvider,
-		moduleDataProvider,
 	)
 }
 

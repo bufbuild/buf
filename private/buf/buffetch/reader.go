@@ -40,7 +40,6 @@ func newReader(
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
@@ -57,7 +56,6 @@ func newReader(
 			internal.WithReaderStdio(),
 			internal.WithReaderModule(
 				moduleKeyProvider,
-				moduleDataProvider,
 			),
 		),
 	}
@@ -112,7 +110,6 @@ func newModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
@@ -120,7 +117,6 @@ func newModuleFetcher(
 			storageosProvider,
 			internal.WithReaderModule(
 				moduleKeyProvider,
-				moduleDataProvider,
 			),
 		),
 	}
@@ -147,10 +143,10 @@ func (a *reader) GetSourceBucket(
 	)
 }
 
-func (a *reader) GetModuleData(
+func (a *reader) GetModuleKey(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef ModuleRef,
-) (bufmodule.ModuleData, error) {
-	return a.internalReader.GetModuleData(ctx, container, moduleRef.internalModuleRef())
+) (bufmodule.ModuleKey, error) {
+	return a.internalReader.GetModuleKey(ctx, container, moduleRef.internalModuleRef())
 }

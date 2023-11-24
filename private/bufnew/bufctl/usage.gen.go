@@ -12,30 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffetch
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-)
+package bufctl
 
-var _ ModuleRef = &moduleRef{}
-
-type moduleRef struct {
-	iModuleRef internal.ModuleRef
-}
-
-func newModuleRef(iModuleRef internal.ModuleRef) *moduleRef {
-	return &moduleRef{
-		iModuleRef: iModuleRef,
-	}
-}
-
-func (r *moduleRef) internalRef() internal.Ref {
-	return r.iModuleRef
-}
-
-func (r *moduleRef) internalModuleRef() internal.ModuleRef {
-	return r.iModuleRef
-}
-
-func (*moduleRef) isSourceOrModuleRef() {}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -24,22 +24,13 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-)
-
-const (
-	loggerName = "bufwire"
-	tracerName = "bufbuild/buf"
 )
 
 type imageReader struct {
 	logger      *zap.Logger
 	fetchReader buffetch.MessageReader
-	tracer      trace.Tracer
 }
 
 func newImageReader(
@@ -47,9 +38,8 @@ func newImageReader(
 	fetchReader buffetch.MessageReader,
 ) *imageReader {
 	return &imageReader{
-		logger:      logger.Named(loggerName),
+		logger:      logger,
 		fetchReader: fetchReader,
-		tracer:      otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -62,14 +52,6 @@ func (i *imageReader) GetImage(
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ bufimage.Image, retErr error) {
-	ctx, span := i.tracer.Start(ctx, "get_image")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
 	readCloser, err := i.fetchReader.GetMessageFile(ctx, container, messageRef)
 	if err != nil {
 		return nil, err
@@ -88,27 +70,17 @@ func (i *imageReader) GetImage(
 	// See https://github.com/golang/protobuf/issues/1123
 	// TODO: revisit
 	case buffetch.MessageEncodingBinpb:
-		_, span := i.tracer.Start(ctx, "wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage); err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-			span.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
-		span.End()
 	case buffetch.MessageEncodingJSON:
 		resolver, err := i.bootstrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
-		_, jsonUnmarshalSpan := i.tracer.Start(ctx, "json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			jsonUnmarshalSpan.RecordError(err)
-			jsonUnmarshalSpan.SetStatus(codes.Error, err.Error())
-			jsonUnmarshalSpan.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
-		jsonUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.MessageEncodingTxtpb:
@@ -116,14 +88,9 @@ func (i *imageReader) GetImage(
 		if err != nil {
 			return nil, err
 		}
-		_, txtpbUnmarshalSpan := i.tracer.Start(ctx, "txtpb_unmarshal")
 		if err := protoencoding.NewTxtpbUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			txtpbUnmarshalSpan.RecordError(err)
-			txtpbUnmarshalSpan.SetStatus(codes.Error, err.Error())
-			txtpbUnmarshalSpan.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
-		txtpbUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.MessageEncodingYAML:
@@ -131,14 +98,9 @@ func (i *imageReader) GetImage(
 		if err != nil {
 			return nil, err
 		}
-		_, yamlUnmarshalSpan := i.tracer.Start(ctx, "yaml_unmarshal")
 		if err := protoencoding.NewYAMLUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			yamlUnmarshalSpan.RecordError(err)
-			yamlUnmarshalSpan.SetStatus(codes.Error, err.Error())
-			yamlUnmarshalSpan.End()
 			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
-		yamlUnmarshalSpan.End()
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
@@ -185,22 +147,12 @@ func (i *imageReader) bootstrapResolver(
 	data []byte,
 ) (protoencoding.Resolver, error) {
 	firstProtoImage := &imagev1.Image{}
-	_, span := i.tracer.Start(ctx, "bootstrap_unmarshal")
 	if err := unresolving.Unmarshal(data, firstProtoImage); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		span.End()
 		return nil, fmt.Errorf("could not unmarshal image: %v", err)
 	}
-	span.End()
-	_, newResolverSpan := i.tracer.Start(ctx, "new_resolver")
 	resolver, err := protoencoding.NewResolver(firstProtoImage.File...)
 	if err != nil {
-		newResolverSpan.RecordError(err)
-		newResolverSpan.SetStatus(codes.Error, err.Error())
-		newResolverSpan.End()
 		return nil, err
 	}
-	newResolverSpan.End()
 	return resolver, nil
 }

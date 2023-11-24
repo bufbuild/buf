@@ -108,34 +108,13 @@ func NewWorkspaceForBucket(
 	return newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
 }
 
-// WorkspaceOption is an option for a new Workspace.
-type WorkspaceOption func(*workspaceOptions)
-
-// This selects the specific directory within the Workspace bucket to target.
+// NewWorkspaceForModuleSet wraps the ModuleSet into a workspace, returning defaults
+// for config values, and empty ConfiguredDepModuleRefs.
 //
-// Example: We have modules at foo/bar, foo/baz. "." will result in both
-// modules being selected, so will "foo", but "foo/bar" will result in only
-// the foo/bar module.
-func WorkspaceWithTargetSubDirPath(subDirPath string) WorkspaceOption {
-	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.subDirPath = subDirPath
-	}
-}
-
-// Note these paths need to have the path/to/module stripped, and then each new path
-// filtered to the specific module it applies to. If some modules do not have any
-// target paths, but we specified WorkspaceWithTargetPaths, then those modules
-// need to be built as non-targeted.
-//
-// Theese paths have to  be within the subDirPath, if it exists.
-func WorkspaceWithTargetPaths(
-	targetPaths []string,
-	targetExcludePaths []string,
-) WorkspaceOption {
-	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.targetPaths = targetPaths
-		workspaceOptions.targetExcludePaths = targetExcludePaths
-	}
+// This is useful for when ModuleSets are created from remotes, but you still need
+// associated configuration.
+func NewWorkspaceForModuleSet(moduleSet bufmodule.ModuleSet) (Workspace, error) {
+	return newWorkspaceForModuleSet(moduleSet)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -158,6 +137,38 @@ func NewWorkspaceForProtoc(
 		includeDirPaths,
 		filePaths,
 	)
+}
+
+// WorkspaceOption is an option for a new Workspace.
+type WorkspaceOption func(*workspaceOptions)
+
+// This selects the specific directory within the Workspace bucket to target.
+//
+// Example: We have modules at foo/bar, foo/baz. "." will result in both
+// modules being selected, so will "foo", but "foo/bar" will result in only
+// the foo/bar module.
+//
+// A subDirPath of "." is equivalent of not setting this option.
+func WorkspaceWithTargetSubDirPath(subDirPath string) WorkspaceOption {
+	return func(workspaceOptions *workspaceOptions) {
+		workspaceOptions.subDirPath = subDirPath
+	}
+}
+
+// Note these paths need to have the path/to/module stripped, and then each new path
+// filtered to the specific module it applies to. If some modules do not have any
+// target paths, but we specified WorkspaceWithTargetPaths, then those modules
+// need to be built as non-targeted.
+//
+// Theese paths have to  be within the subDirPath, if it exists.
+func WorkspaceWithTargetPaths(
+	targetPaths []string,
+	targetExcludePaths []string,
+) WorkspaceOption {
+	return func(workspaceOptions *workspaceOptions) {
+		workspaceOptions.targetPaths = targetPaths
+		workspaceOptions.targetExcludePaths = targetExcludePaths
+	}
 }
 
 // WorkspaceUnreferencedConfiguredDepModuleRefs returns those configured ModuleRefs that do not
