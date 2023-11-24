@@ -28,21 +28,32 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"go.uber.org/zap"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider for the given API client.
-func NewModuleDataProvider(clientProvider bufapi.ClientProvider) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(clientProvider)
+//
+// A warning is printed to the logger if a given Module is deprecated.
+func NewModuleDataProvider(
+	logger *zap.Logger,
+	clientProvider bufapi.ClientProvider,
+) bufmodule.ModuleDataProvider {
+	return newModuleDataProvider(logger, clientProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleDataProvider struct {
+	logger         *zap.Logger
 	clientProvider bufapi.ClientProvider
 }
 
-func newModuleDataProvider(clientProvider bufapi.ClientProvider) *moduleDataProvider {
+func newModuleDataProvider(
+	logger *zap.Logger,
+	clientProvider bufapi.ClientProvider,
+) *moduleDataProvider {
 	return &moduleDataProvider{
+		logger:         logger,
 		clientProvider: clientProvider,
 	}
 }
@@ -125,6 +136,19 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		return nil, fmt.Errorf("expected 1 CommitNode, got %d", len(response.Msg.CommitNodes))
 	}
 	protoCommitNode := response.Msg.CommitNodes[0]
+
+	protoModule, err := a.getProtoModuleForModuleID(
+		ctx,
+		registryHostname,
+		protoCommitNode.Commit.ModuleId,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+	}
+
 	digest, err := bufcas.ProtoToDigest(protoCommitNode.Commit.Digest)
 	if err != nil {
 		return nil, err

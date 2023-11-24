@@ -23,21 +23,30 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufapi"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"go.uber.org/zap"
 )
 
 // NewModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
-func NewModuleKeyProvider(clientProvider bufapi.ClientProvider) bufmodule.ModuleKeyProvider {
-	return newModuleKeyProvider(clientProvider)
+func NewModuleKeyProvider(
+	logger *zap.Logger,
+	clientProvider bufapi.ClientProvider,
+) bufmodule.ModuleKeyProvider {
+	return newModuleKeyProvider(logger, clientProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleKeyProvider struct {
+	logger         *zap.Logger
 	clientProvider bufapi.ClientProvider
 }
 
-func newModuleKeyProvider(clientProvider bufapi.ClientProvider) *moduleKeyProvider {
+func newModuleKeyProvider(
+	logger *zap.Logger,
+	clientProvider bufapi.ClientProvider,
+) *moduleKeyProvider {
 	return &moduleKeyProvider{
+		logger:         logger,
 		clientProvider: clientProvider,
 	}
 }

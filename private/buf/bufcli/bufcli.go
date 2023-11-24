@@ -412,7 +412,7 @@ func newController(
 	}
 	return bufctl.NewController(
 		container,
-		bufmoduleapi.NewModuleKeyProvider(clientProvider),
+		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
@@ -448,7 +448,7 @@ func newModuleDataProvider(
 		return nil, err
 	}
 	// TODO: re-add deprecation warning
-	delegateReader := bufmoduleapi.NewModuleDataProvider(clientProvider)
+	delegateReader := bufmoduleapi.NewModuleDataProvider(container.Logger(), clientProvider)
 	storageosProvider := storageos.NewProvider()
 	cacheBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDirPathV3)
 	if err != nil {
