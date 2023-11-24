@@ -34,14 +34,6 @@ const (
 )
 
 var (
-	// AllBufWorkYAMLFileNames are all file names we have used for buf.work.yaml.
-	//
-	// This is only exposed because we need it in buffetch. Otherwise do not use.
-	AllBufWorkYAMLFileNames = []string{
-		"buf.work.yaml",
-		"buf.work",
-	}
-
 	// otherBufWorkYAMLFileNames are all file names we have ever used for workspace files.
 	//
 	// Originally we thought we were going to move to buf.work, and had this around for
