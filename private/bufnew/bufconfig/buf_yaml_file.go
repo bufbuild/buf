@@ -207,9 +207,12 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if fileVersion == FileVersionV1 && len(externalBufYAMLFile.Build.Roots) > 0 {
 			return nil, fmt.Errorf("build.roots cannot be set on version %v: %v", fileVersion, externalBufYAMLFile.Build.Roots)
 		}
-		moduleFullName, err := bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
-		if err != nil {
-			return nil, fmt.Errorf("invalid module name: %w", err)
+		var moduleFullName bufmodule.ModuleFullName
+		if externalBufYAMLFile.Name != "" {
+			moduleFullName, err = bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
+			if err != nil {
+				return nil, err
+			}
 		}
 		rootToExcludes, err := getRootToExcludes(externalBufYAMLFile.Build.Roots, externalBufYAMLFile.Build.Excludes)
 		if err != nil {
@@ -246,9 +249,12 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalBufYAMLFile.Modules {
 			dirPath := externalModule.Directory
-			moduleFullName, err := bufmodule.ParseModuleFullName(externalModule.Name)
-			if err != nil {
-				return nil, err
+			var moduleFullName bufmodule.ModuleFullName
+			if externalModule.Name != "" {
+				moduleFullName, err = bufmodule.ParseModuleFullName(externalModule.Name)
+				if err != nil {
+					return nil, err
+				}
 			}
 			rootToExcludes, err := getRootToExcludes([]string{dirPath}, externalModule.Excludes)
 			if err != nil {

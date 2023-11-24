@@ -20,15 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -459,10 +457,10 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 
 func TestRunPackageNoImportCycle(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLintWithOptions(
 		t,
 		"package_no_import_cycle",
-		nil,
+		"",
 		func(image bufimage.Image) bufimage.Image {
 			// Testing that import cycles are still detected via imports, but are
 			// not reported for imports, only for non-imports.
@@ -479,7 +477,6 @@ func TestRunPackageNoImportCycle(t *testing.T) {
 			require.NoError(t, err)
 			return newImage
 		},
-		"",
 		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
 	)
@@ -556,11 +553,13 @@ func TestRunPackageVersionSuffix(t *testing.T) {
 	)
 }
 
-func TestRunProtovalidateRules(t *testing.T) {
+func TestRunProtovalidate(t *testing.T) {
 	t.Parallel()
-	testLintWithValidate(
+	testLintWithOptions(
 		t,
-		"protovalidate_rules",
+		"protovalidate",
+		"buf.testing/lint/protovalidate",
+		nil,
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 18, 51, 18, 84, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 19, 31, 19, 69, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "bool.proto", 20, 50, 20, 88, "PROTOVALIDATE"),
@@ -978,7 +977,7 @@ func TestCommentIgnoresOff(t *testing.T) {
 	t.Parallel()
 	testLint(
 		t,
-		"comment_ignores",
+		"comment_ignores_off",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_DIRECTORY_MATCH"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 9, 1, 9, 11, "PACKAGE_VERSION_SUFFIX"),
@@ -1019,14 +1018,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 
 func TestCommentIgnoresOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLint(
 		t,
-		"comment_ignores",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-		"",
+		"comment_ignores_on",
 	)
 }
 
@@ -1034,7 +1028,7 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 	t.Parallel()
 	testLint(
 		t,
-		"comment_ignores_cascade",
+		"comment_ignores_cascade_off",
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 6, 13, 13, "ENUM_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 3, 15, 29, "ENUM_NO_ALLOW_ALIAS"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_VALUE_UPPER_SNAKE_CASE"),
@@ -1073,14 +1067,9 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 
 func TestCommentIgnoresCascadeOn(t *testing.T) {
 	t.Parallel()
-	testLintWithModifiers(
+	testLint(
 		t,
-		"comment_ignores_cascade",
-		func(config *bufconfig.Config) {
-			config.Lint.AllowCommentIgnores = true
-		},
-		nil,
-		"",
+		"comment_ignores_cascade_on",
 	)
 }
 
@@ -1089,87 +1078,43 @@ func testLint(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testLintWithModifiers(
+	testLintWithOptions(
 		t,
 		relDirPath,
-		nil,
-		nil,
 		"",
-		expectedFileAnnotations...,
-	)
-}
-
-func testLintWithValidate(
-	t *testing.T,
-	relDirPath string,
-	expectedFileAnnotations ...bufanalysis.FileAnnotation,
-) {
-	testLintWithModifiers(
-		t,
-		relDirPath,
-		func(config *bufconfig.Config) {
-			config.Lint.IgnoreRootPaths = []string{"buf/validate"}
-		},
 		nil,
-		"deps/protovalidate",
 		expectedFileAnnotations...,
 	)
 }
 
-func testLintWithModifiers(
+func testLintWithOptions(
 	t *testing.T,
 	relDirPath string,
-	configModifier func(*bufconfig.Config),
+	// only set if in workspace
+	moduleFullNameString string,
 	imageModifier func(bufimage.Image) bufimage.Image,
-	dependencyPathPrefix string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zap.NewNop()
 
 	dirPath := filepath.Join("testdata", relDirPath)
-
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-
-	config := testGetConfig(t, readWriteBucket)
-	if configModifier != nil {
-		configModifier(config)
-	}
-
-	var module *bufmodulebuild.BuiltModule
-	if dependencyPathPrefix != "" {
-		dependencyReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
-			filepath.Join("testdata", dependencyPathPrefix),
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		require.NoError(t, err)
-		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-			context.Background(),
-			storage.MultiReadBucket(dependencyReadWriteBucket, readWriteBucket),
-			config.Build,
-		)
-		require.NoError(t, err)
-	} else {
-		module, err = bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-			context.Background(),
-			readWriteBucket,
-			config.Build,
-		)
-		require.NoError(t, err)
-	}
-
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
-		module,
+		readWriteBucket,
+		bufmodule.NopModuleDataProvider,
+	)
+	require.NoError(t, err)
+
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+		ctx,
+		workspace,
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
@@ -1177,10 +1122,16 @@ func testLintWithModifiers(
 		image = imageModifier(image)
 	}
 
-	handler := buflint.NewHandler(logger)
+	if moduleFullNameString == "" {
+		// opaqueID
+		moduleFullNameString = "."
+	}
+	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
+	require.NotNil(t, lintConfig)
+	handler := buflint.NewHandler(zap.NewNop())
 	fileAnnotations, err = handler.Check(
 		ctx,
-		config.Lint,
+		lintConfig,
 		image,
 	)
 	assert.NoError(t, err)
@@ -1189,15 +1140,4 @@ func testLintWithModifiers(
 		expectedFileAnnotations,
 		fileAnnotations,
 	)
-}
-
-func testGetConfig(
-	t *testing.T,
-	readBucket storage.ReadBucket,
-) *bufconfig.Config {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
-	require.NoError(t, err)
-	return config
 }

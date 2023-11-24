@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package a;
+
+// buf:lint:ignore ENUM_FIRST_VALUE_ZERO
+enum EnumFoo {
+  ENUM_FOO_UNSPECIFIED = 10;
+}
