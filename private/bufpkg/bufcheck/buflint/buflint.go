@@ -19,14 +19,15 @@ package buflint
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"go.uber.org/zap"
 )
@@ -71,7 +72,7 @@ func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(buflintv1beta1.VersionSpec)
+	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1beta1.VersionSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(buflintv1.VersionSpec)
+	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1.VersionSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV2() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(buflintv2.VersionSpec)
+	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv2.VersionSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -160,21 +161,20 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 	return s
 }
 
-func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.LintConfig{
+func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.LintConfig {
 	return bufconfig.NewLintConfig(
-			bufconfig.NewCheckConfig(
-				bufconfig.FileVersionV1Beta1,
-				internal.AllIDsForVersionSpec(versionSpec),
-				nil,
-				nil,
-				nil,
-			),
-			"",
-			false,
-			false,
-			false,
-			"",
-			false,
+		bufconfig.NewCheckConfig(
+			bufconfig.FileVersionV1Beta1,
+			internal.AllIDsForVersionSpec(versionSpec),
+			nil,
+			nil,
+			nil,
 		),
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
 }
-
