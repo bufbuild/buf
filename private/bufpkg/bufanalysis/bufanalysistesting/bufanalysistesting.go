@@ -19,9 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // NewFileAnnotationNoLocationOrPath returns a new FileAnnotation with no location or FileInfo.
@@ -87,16 +85,9 @@ func newFileAnnotation(
 	typeString string,
 	message string,
 ) bufanalysis.FileAnnotation {
-	var fileInfo bufmoduleref.FileInfo
-	var err error
+	var fileInfo bufanalysis.FileInfo
 	if path != "" {
-		fileInfo, err = bufmoduleref.NewFileInfo(
-			path,
-			"",
-			nil,
-			"",
-		)
-		require.NoError(t, err)
+		fileInfo = newFileInfo(path)
 	}
 	return bufanalysis.NewFileAnnotation(
 		fileInfo,
@@ -139,15 +130,8 @@ func normalizeFileAnnotations(
 	normalizedFileAnnotations := make([]bufanalysis.FileAnnotation, len(fileAnnotations))
 	for i, a := range fileAnnotations {
 		fileInfo := a.FileInfo()
-		var err error
 		if fileInfo != nil {
-			fileInfo, err = bufmoduleref.NewFileInfo(
-				fileInfo.Path(),
-				"",
-				nil,
-				"",
-			)
-			require.NoError(t, err)
+			fileInfo = newFileInfo(fileInfo.Path())
 		}
 		normalizedFileAnnotations[i] = bufanalysis.NewFileAnnotation(
 			fileInfo,
@@ -160,4 +144,22 @@ func normalizeFileAnnotations(
 		)
 	}
 	return normalizedFileAnnotations
+}
+
+type fileInfo struct {
+	path string
+}
+
+func newFileInfo(path string) *fileInfo {
+	return &fileInfo{
+		path: path,
+	}
+}
+
+func (f *fileInfo) Path() string {
+	return f.path
+}
+
+func (f *fileInfo) ExternalPath() string {
+	return f.path
 }
