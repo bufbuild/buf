@@ -225,7 +225,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	}
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		var externalBufYAMLFile externalBufYAMLFileV1OrV1Beta1
+		var externalBufYAMLFile externalBufYAMLFileV1Beta1V1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}
@@ -378,34 +378,53 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 	return rootToExcludes, nil
 }
 
-// externalBufYAMLFileV1Beta1 represents the v1 or v1beta1 buf.yaml file, which have
+// externalBufYAMLFileV1Beta1V1 represents the v1 or v1beta1 buf.yaml file, which have
 // the same shape EXCEPT build.roots.
 //
 // Note that the lint and breaking ids/categories DID change between v1beta1 and v1, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
-type externalBufYAMLFileV1OrV1Beta1 struct {
+type externalBufYAMLFileV1Beta1V1 struct {
 	Version  string                                 `json:"version,omitempty" yaml:"version,omitempty"`
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Build    externalBufYAMLFileBuildV1OrV1Beta1    `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking externalBufYAMLFileBreakingV1OrV1Beta1 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     externalBufYAMLFileLintV1OrV1Beta1     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Build    externalBufYAMLFileBuildV1Beta1V1      `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
 }
 
-// externalBufYAMLFileBuildV1OrV1Beta1 represents build configuation within a v1 or
+// externalBufYAMLFileV2 represents the v2 buf.yaml file.
+//
+// Note that the lint and breaking ids/categories DID change between versions, make
+// sure to deal with this when parsing what to set as defaults, or how to interpret categories.
+type externalBufYAMLFileV2 struct {
+	Version string                        `json:"version,omitempty" yaml:"version,omitempty"`
+	Modules []externalBufYAMLFileModuleV2 `json:"modules,omitempty" yaml:"modules,omitempty"`
+	Deps    []string                      `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+// externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
+type externalBufYAMLFileModuleV2 struct {
+	Directory string                                 `json:"directory,omitempty" yaml:"directory,omitempty"`
+	Name      string                                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Excludes  []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+	Breaking  externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint      externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+}
+
+// externalBufYAMLFileBuildV1Beta1V1 represents build configuation within a v1 or
 // v1beta1 buf.yaml file, which have the same shape except for roots.
-type externalBufYAMLFileBuildV1OrV1Beta1 struct {
+type externalBufYAMLFileBuildV1Beta1V1 struct {
 	// Roots are only valid in v1beta! Validate that this is not set for v1.
 	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
-// externalBufYAMLFileBreakingV1OrV1Beta1 represents breaking configuation within a v1 or
-// v1beta1 buf.yaml file, which have the same shape.
+// externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
+// or v2 buf.yaml file, which have the same shape.
 //
-// Note that the lint and breaking ids/categories DID change between v1beta1 and v1, make
+// Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
-type externalBufYAMLFileBreakingV1OrV1Beta1 struct {
+type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// Ignore are the paths to ignore.
@@ -415,12 +434,12 @@ type externalBufYAMLFileBreakingV1OrV1Beta1 struct {
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }
 
-// externalBufYAMLFileLintV1OrV1Beta1 represents lint configuation within a v1 or
-// v1beta1 buf.yaml file, which have the same shape.
+// externalBufYAMLFileLintV1Beta1V1V2 represents lint configuation within a v1beta1, v1,
+// or v2 buf.yaml file, which have the same shape.
 //
-// Note that the lint and breaking ids/categories DID change between v1beta1 and v1, make
+// Note that the lint and breaking ids/categories DID change between versiobs, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
-type externalBufYAMLFileLintV1OrV1Beta1 struct {
+type externalBufYAMLFileLintV1Beta1V1V2 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// Ignore are the paths to ignore.

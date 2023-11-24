@@ -183,7 +183,7 @@ func readBufLockFile(
 	}
 	switch fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
-		var externalBufLockFile externalBufLockFileV1OrV1Beta1
+		var externalBufLockFile externalBufLockFileV1Beta1V1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 		}
@@ -255,16 +255,16 @@ func writeBufLockFile(
 	switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		depModuleKeys := bufLockFile.DepModuleKeys()
-		externalBufLockFile := externalBufLockFileV1OrV1Beta1{
+		externalBufLockFile := externalBufLockFileV1Beta1V1{
 			Version: fileVersion.String(),
-			Deps:    make([]externalBufLockFileDepV1OrV1Beta1, len(depModuleKeys)),
+			Deps:    make([]externalBufLockFileDepV1Beta1V1, len(depModuleKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
 			digest, err := depModuleKey.Digest()
 			if err != nil {
 				return err
 			}
-			externalBufLockFile.Deps[i] = externalBufLockFileDepV1OrV1Beta1{
+			externalBufLockFile.Deps[i] = externalBufLockFileDepV1Beta1V1{
 				Remote:     depModuleKey.ModuleFullName().Registry(),
 				Owner:      depModuleKey.ModuleFullName().Owner(),
 				Repository: depModuleKey.ModuleFullName().Name(),
@@ -343,16 +343,16 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 	}
 }
 
-// externalBufLockFileV1OrV1Beta1 represents the v1 or v1beta1 buf.lock file,
+// externalBufLockFileV1Beta1V1 represents the v1 or v1beta1 buf.lock file,
 // which have the same shape.
-type externalBufLockFileV1OrV1Beta1 struct {
+type externalBufLockFileV1Beta1V1 struct {
 	Version string                              `json:"version,omitempty" yaml:"version,omitempty"`
-	Deps    []externalBufLockFileDepV1OrV1Beta1 `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Deps    []externalBufLockFileDepV1Beta1V1 `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
-// externalBufLockFileDepV1OrV1Beta1 represents a single dep within a v1 or v1beta1 buf.lock file,
+// externalBufLockFileDepV1Beta1V1 represents a single dep within a v1 or v1beta1 buf.lock file,
 // which have the same shape.
-type externalBufLockFileDepV1OrV1Beta1 struct {
+type externalBufLockFileDepV1Beta1V1 struct {
 	Remote     string    `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`
 	Repository string    `json:"repository,omitempty" yaml:"repository,omitempty"`
