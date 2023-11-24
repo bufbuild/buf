@@ -17,12 +17,16 @@ package bufconfig
 var (
 	DefaultBreakingConfig BreakingConfig = defaultBreakingConfigV1
 
-	defaultBreakingConfigV1Beta1 = newBreakingConfig(
+	defaultBreakingConfigV1Beta1 = NewBreakingConfig(
 		defaultCheckConfigV1Beta1,
 		false,
 	)
-	defaultBreakingConfigV1 = newBreakingConfig(
+	defaultBreakingConfigV1 = NewBreakingConfig(
 		defaultCheckConfigV1,
+		false,
+	)
+	defaultBreakingConfigV2 = NewBreakingConfig(
+		defaultCheckConfigV2,
 		false,
 	)
 )
@@ -36,20 +40,30 @@ type BreakingConfig interface {
 	isBreakingConfig()
 }
 
+func NewBreakingConfig(
+	checkConfig CheckConfig,
+	ignoreUnstablePackages bool,
+) BreakingConfig {
+	return newBreakingConfig(
+		checkConfig,
+		ignoreUnstablePackages,
+	)
+}
+
 // *** PRIVATE ***
 
 type breakingConfig struct {
-	checkConfig
+	CheckConfig
 
 	ignoreUnstablePackages bool
 }
 
 func newBreakingConfig(
-	checkConfig checkConfig,
+	checkConfig CheckConfig,
 	ignoreUnstablePackages bool,
 ) *breakingConfig {
 	return &breakingConfig{
-		checkConfig:            checkConfig,
+		CheckConfig:            checkConfig,
 		ignoreUnstablePackages: ignoreUnstablePackages,
 	}
 }

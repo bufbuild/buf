@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buflintv1beta1 contains the VersionSpec for v1beta1.
-//
-// It uses buflintcheck and buflintbuild.
-package buflintv1beta1
+package buflintv2
 
 import (
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"testing"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/internaltesting"
 )
 
-// VersionSpec is the version specification for v1beta1.
-var VersionSpec = &internal.VersionSpec{
-	FileVersion:       bufconfig.FileVersionV1Beta1,
-	RuleBuilders:      v1beta1RuleBuilders,
-	DefaultCategories: v1beta1DefaultCategories,
-	IDToCategories:    v1beta1IDToCategories,
+func TestVersionSpec(t *testing.T) {
+	t.Parallel()
+	internaltesting.RunTestVersionSpec(t, VersionSpec)
 }

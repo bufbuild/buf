@@ -17,15 +17,22 @@ package bufconfig
 import "github.com/bufbuild/buf/private/pkg/slicesext"
 
 var (
-	defaultCheckConfigV1Beta1 = newCheckConfig(
+	defaultCheckConfigV1Beta1 = NewCheckConfig(
 		FileVersionV1Beta1,
 		nil,
 		nil,
 		nil,
 		nil,
 	)
-	defaultCheckConfigV1 = newCheckConfig(
+	defaultCheckConfigV1 = NewCheckConfig(
 		FileVersionV1,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+	defaultCheckConfigV2 = NewCheckConfig(
+		FileVersionV2,
 		nil,
 		nil,
 		nil,
@@ -55,6 +62,23 @@ type CheckConfig interface {
 	isCheckConfig()
 }
 
+// NewCheckConfig returns a new CheckConfig.
+func NewCheckConfig(
+	fileVersion FileVersion,
+	use []string,
+	except []string,
+	ignore []string,
+	ignoreOnly map[string][]string,
+) CheckConfig {
+	return newCheckConfig(
+		fileVersion,
+		use,
+		except,
+		ignore,
+		ignoreOnly,
+	)
+}
+
 // *** PRIVATE ***
 
 type checkConfig struct {
@@ -71,8 +95,8 @@ func newCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
-) checkConfig {
-	return checkConfig{
+) *checkConfig {
+	return &checkConfig{
 		fileVersion: fileVersion,
 		use:         use,
 		except:      except,

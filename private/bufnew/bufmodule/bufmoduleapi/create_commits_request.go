@@ -17,11 +17,13 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // ModuleSetToProtoModuleNodesAndBlobs creates new
@@ -31,17 +33,25 @@ import (
 // This creates ModuleNodes and Blobs for all local targets, as well as their local dependencies.
 // DepNodes are created for all remote dependencies.
 // All Modules in the ModuleSet that will be pushed or are dependencies are required to have ModuleFullNames.
+// All Modules in the ModuleSet are required to have the same ModuleFullName().Registry(), which is the
+// registry that this request will be sent to. This is validated in this function.
 func ModuleSetToProtoModuleNodesAndBlobs(
 	ctx context.Context,
 	moduleSet bufmodule.ModuleSet,
 ) ([]*modulev1beta1.CreateCommitsRequest_ModuleNode, []*storagev1beta1.Blob, error) {
 	opaqueIDToProtoModuleNode := make(map[string]*modulev1beta1.CreateCommitsRequest_ModuleNode)
 	var blobs []bufcas.Blob
+	registries := make(map[string]struct{})
 	for _, module := range moduleSet.Modules() {
 		if !module.IsTarget() || !module.IsLocal() {
 			// We only create ModuleNodes for local targets or their local dependencies.
 			continue
 		}
+		moduleFullName := module.ModuleFullName()
+		if moduleFullName == nil {
+			return nil, nil, fmt.Errorf("module %s had no name, which is required", module.OpaqueID())
+		}
+		registries[moduleFullName.Registry()] = struct{}{}
 		moduleBlobs, err := addProtoModuleNodeAndGetBlobsForLocalModule(
 			ctx,
 			opaqueIDToProtoModuleNode,
@@ -51,6 +61,12 @@ func ModuleSetToProtoModuleNodesAndBlobs(
 			return nil, nil, err
 		}
 		blobs = append(blobs, moduleBlobs...)
+	}
+	if len(registries) > 1 {
+		return nil, nil, fmt.Errorf(
+			"multiple registries discovered for ModuleSet, which is not currently supported when pushing to the BSR: %v",
+			strings.Join(slicesext.MapKeysToSortedSlice(registries), ","),
+		)
 	}
 	protoModuleNodes := make([]*modulev1beta1.CreateCommitsRequest_ModuleNode, 0, len(opaqueIDToProtoModuleNode))
 	for _, protoModuleNode := range opaqueIDToProtoModuleNode {

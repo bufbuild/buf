@@ -17,11 +17,13 @@ package internal
 import (
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // VersionSpec specifies the rules, ids, and categories for a given version.
 type VersionSpec struct {
+	FileVersion       bufconfig.FileVersion
 	RuleBuilders      []*RuleBuilder
 	DefaultCategories []string
 	// May include IDs without any categories.

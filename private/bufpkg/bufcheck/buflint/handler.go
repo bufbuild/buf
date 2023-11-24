@@ -17,8 +17,8 @@ package buflint
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -48,7 +48,7 @@ func newHandler(logger *zap.Logger) *handler {
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *buflintconfig.Config,
+	config bufconfig.LintConfig,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)

@@ -12,20 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buflintv1beta1 contains the VersionSpec for v1beta1.
+// Package buflintv2 contains the VersionSpec for v2.
 //
 // It uses buflintcheck and buflintbuild.
-package buflintv1beta1
+//
+// The only change from v1 to v2 was that PACKAGE_NO_IMPORT_CYCLE was added
+// to MINIMAL, BASIC, DEFAULT.
+package buflintv2
 
 import (
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 )
 
-// VersionSpec is the version specification for v1beta1.
+// VersionSpec is the version specification for v2.
+//
+// PACKAGE_NO_IMPORT_CYCLE was added to MINIMAL, BASIC, DEFAULT.
 var VersionSpec = &internal.VersionSpec{
-	FileVersion:       bufconfig.FileVersionV1Beta1,
-	RuleBuilders:      v1beta1RuleBuilders,
-	DefaultCategories: v1beta1DefaultCategories,
-	IDToCategories:    v1beta1IDToCategories,
+	FileVersion:       bufconfig.FileVersionV2,
+	RuleBuilders:      v2RuleBuilders,
+	DefaultCategories: v2DefaultCategories,
+	IDToCategories:    v2IDToCategories,
 }

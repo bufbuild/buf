@@ -16,11 +16,13 @@
 //
 // It uses buflintcheck and buflintbuild.
 //
-// The only changes from v1beta1 to v1 were that ENUM_FIRST_VALUE_ZERO was moved
-// from OTHER to MINIMAL, and the OTHER category was deleted.
+// Changes are specified on VersionSpec.
 package buflintv1
 
-import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+import (
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+)
 
 // VersionSpec is the version specification for v1.
 //
@@ -74,6 +76,7 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //   - PACKAGE_DIRECTORY_MATCH
 //   - PACKAGE_SAME_DIRECTORY
 var VersionSpec = &internal.VersionSpec{
+	FileVersion:       bufconfig.FileVersionV1,
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,
 	IDToCategories:    v1IDToCategories,
