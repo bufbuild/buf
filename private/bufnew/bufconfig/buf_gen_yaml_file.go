@@ -23,13 +23,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-const (
-	// defaultBufGenYAMLFileName is the default file name you should use for buf.gen.yaml Files.
-	//
-	// This is not included in AllFileNames.
-	//
-	// For v2, generation configuration is merged into buf.yaml.
-	defaultBufGenYAMLFileName = "buf.gen.yaml"
+var (
+	bufGenYAML          = newFileName("buf.gen.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
+	bufGenYAMLFileNames = []*fileName{bufGenYAML}
 )
 
 // BufGenYAMLFile represents a buf.gen.yaml file.
@@ -51,7 +47,7 @@ func GetBufGenYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufGenYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, defaultBufGenYAMLFileName, nil, readBufGenYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, readBufGenYAMLFile)
 }
 
 // GetBufGenYAMLFileForPrefix gets the buf.gen.yaml file version at the given bucket prefix.
@@ -62,7 +58,7 @@ func GetBufGenYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, defaultBufGenYAMLFileName, nil)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames)
 }
 
 // PutBufGenYAMLFileForPrefix puts the buf.gen.yaml file at the given bucket prefix.
@@ -75,7 +71,7 @@ func PutBufGenYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufGenYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, defaultBufGenYAMLFileName, writeBufGenYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufGenYAML, writeBufGenYAMLFile)
 }
 
 // ReadBufGenYAMLFile reads the BufGenYAMLFile from the io.Reader.
@@ -125,7 +121,7 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 	case FileVersionV1:
 		return nil, errors.New("TODO")
 	case FileVersionV2:
-		return nil, newUnsupportedFileVersionError(fileVersion)
+		return nil, errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
@@ -139,7 +135,7 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	case FileVersionV1:
 		return errors.New("TODO")
 	case FileVersionV2:
-		return newUnsupportedFileVersionError(fileVersion)
+		return errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
 		return fmt.Errorf("unknown FileVersion: %v", fileVersion)

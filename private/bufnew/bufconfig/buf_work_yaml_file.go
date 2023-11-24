@@ -26,22 +26,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-const (
-	// defaultBufWorkYAMLFileName is the default file name you should use for buf.work.yaml Files.
-	//
-	// For v2, generation configuration is merged into buf.yaml.
-	defaultBufWorkYAMLFileName = "buf.work.yaml"
-)
-
 var (
-	// otherBufWorkYAMLFileNames are all file names we have ever used for workspace files.
-	//
+	// We only supported buf.work.yamls in v1.
+	bufWorkYAML = newFileName("buf.work.yaml", FileVersionV1)
 	// Originally we thought we were going to move to buf.work, and had this around for
 	// a while, but then reverted back to buf.work.yaml. We still need to support buf.work as
 	// we released with it, however.
-	otherBufWorkYAMLFileNames = []string{
-		"buf.work",
-	}
+	bufWork              = newFileName("buf.work", FileVersionV1)
+	bufWorkYAMLFileNames = []*fileName{bufWorkYAML, bufWork}
 )
 
 // BufWorkYAMLFile represents a buf.work.yaml file.
@@ -80,7 +72,7 @@ func GetBufWorkYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufWorkYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, defaultBufWorkYAMLFileName, otherBufWorkYAMLFileNames, readBufWorkYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, readBufWorkYAMLFile)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file version at the given bucket prefix.
@@ -91,7 +83,7 @@ func GetBufWorkYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, defaultBufWorkYAMLFileName, otherBufWorkYAMLFileNames)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames)
 }
 
 // PutBufWorkYAMLFileForPrefix puts the buf.work.yaml file at the given bucket prefix.
@@ -104,7 +96,7 @@ func PutBufWorkYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufWorkYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, defaultBufWorkYAMLFileName, writeBufWorkYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufWorkYAML, writeBufWorkYAMLFile)
 }
 
 // ReadBufWorkYAMLFile reads the buf.work.yaml file from the io.Reader.
@@ -126,7 +118,7 @@ type bufWorkYAMLFile struct {
 
 func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
 	if fileVersion != FileVersionV1 {
-		return nil, newUnsupportedFileVersionError(fileVersion)
+		return nil, newUnsupportedFileVersionError("", fileVersion)
 	}
 	sortedNormalizedDirPaths, err := validateBufWorkYAMLDirPaths(dirPaths)
 	if err != nil {
@@ -158,45 +150,34 @@ func readBufWorkYAMLFile(reader io.Reader, allowJSON bool) (BufWorkYAMLFile, err
 	if err != nil {
 		return nil, err
 	}
-	switch fileVersion {
-	case FileVersionV1Beta1:
-		return nil, newUnsupportedFileVersionError(fileVersion)
-	case FileVersionV1:
-		var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
-		if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
-			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
-		}
-		return newBufWorkYAMLFile(fileVersion, externalBufWorkYAMLFile.Directories)
-	case FileVersionV2:
-		return nil, newUnsupportedFileVersionError(fileVersion)
-	default:
-		// This is a system error since we've already parsed.
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	if fileVersion != FileVersionV1 {
+		// This is effectively a system error.
+		return nil, newUnsupportedFileVersionError("", fileVersion)
 	}
+	var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
+	if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
+		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+	}
+	return newBufWorkYAMLFile(fileVersion, externalBufWorkYAMLFile.Directories)
 }
 
 func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) error {
-	switch fileVersion := bufWorkYAMLFile.FileVersion(); fileVersion {
-	case FileVersionV1Beta1:
-		return newUnsupportedFileVersionError(fileVersion)
-	case FileVersionV1:
-		externalBufWorkYAMLFile := externalBufWorkYAMLFileV1{
-			Version: fileVersion.String(),
-			// No need to sort - DirPaths() is already sorted per the documentation on BufWorkYAMLFile
-			Directories: bufWorkYAMLFile.DirPaths(),
-		}
-		data, err := encoding.MarshalYAML(&externalBufWorkYAMLFile)
-		if err != nil {
-			return err
-		}
-		_, err = writer.Write(append(bufLockFileHeader, data...))
-		return err
-	case FileVersionV2:
-		return newUnsupportedFileVersionError(fileVersion)
-	default:
-		// This is a system error since we've already parsed.
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	fileVersion := bufWorkYAMLFile.FileVersion()
+	if fileVersion != FileVersionV1 {
+		// This is effectively a system error.
+		return newUnsupportedFileVersionError("", fileVersion)
 	}
+	externalBufWorkYAMLFile := externalBufWorkYAMLFileV1{
+		Version: fileVersion.String(),
+		// No need to sort - DirPaths() is already sorted per the documentation on BufWorkYAMLFile
+		Directories: bufWorkYAMLFile.DirPaths(),
+	}
+	data, err := encoding.MarshalYAML(&externalBufWorkYAMLFile)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(append(bufLockFileHeader, data...))
+	return err
 }
 
 // validateBufWorkYAMLDirPaths validates dirPaths and returns normalized and

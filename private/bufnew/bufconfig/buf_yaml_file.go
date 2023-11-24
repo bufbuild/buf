@@ -29,20 +29,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
-const (
-	// defaultBufYAMLFileName is the default file name you should use for buf.yaml Files.
-	defaultBufYAMLFileName = "buf.yaml"
-)
-
 var (
-	// otherBufYAMLFileNames are all file names we have ever used for configuration files.
-	//
+	bufYAML = newFileName("buf.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
 	// Originally we thought we were going to move to buf.mod, and had this around for
 	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
 	// we released with it, however.
-	otherBufYAMLFileNames = []string{
-		"buf.mod",
-	}
+	bufMod           = newFileName("buf.mod", FileVersionV1Beta1, FileVersionV1)
+	bufYAMLFileNames = []*fileName{bufYAML, bufMod}
 )
 
 // BufYAMLFile represents a buf.yaml file.
@@ -72,7 +65,7 @@ func GetBufYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, defaultBufYAMLFileName, otherBufYAMLFileNames, readBufYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufYAMLFileNames, readBufYAMLFile)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file version at the given bucket prefix.
@@ -83,7 +76,7 @@ func GetBufYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, defaultBufYAMLFileName, otherBufYAMLFileNames)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufYAMLFileNames)
 }
 
 // PutBufYAMLFileForPrefix puts the buf.yaml file at the given bucket prefix.
@@ -96,7 +89,7 @@ func PutBufYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, defaultBufYAMLFileName, writeBufYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufYAML, writeBufYAMLFile)
 }
 
 // ReadBufYAMLFile reads the BufYAMLFile from the io.Reader.
@@ -299,7 +292,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 	case FileVersionV1:
 		return errors.New("TODO")
 	case FileVersionV2:
-		return newUnsupportedFileVersionError(fileVersion)
+		return errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
 		return fmt.Errorf("unknown FileVersion: %v", fileVersion)

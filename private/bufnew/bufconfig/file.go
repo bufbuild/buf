@@ -41,15 +41,14 @@ func getFileForPrefix[F File](
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	defaultFileName string,
-	otherFileNames []string,
+	fileNames []*fileName,
 	readFileFunc func(
 		reader io.Reader,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
-	for _, fileName := range append([]string{defaultFileName}, otherFileNames...) {
-		path := normalpath.Join(prefix, fileName)
+	for _, fileName := range fileNames {
+		path := normalpath.Join(prefix, fileName.Name())
 		readObjectCloser, err := bucket.Get(ctx, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
@@ -62,24 +61,23 @@ func getFileForPrefix[F File](
 		if err != nil {
 			return f, multierr.Append(newDecodeError(path, err), readObjectCloser.Close())
 		}
-		if err := checkV2SupportedYet(f); err != nil {
+		if err := fileName.CheckSupportedFile(f); err != nil {
 			return f, multierr.Append(newDecodeError(path, err), readObjectCloser.Close())
 		}
 		return f, readObjectCloser.Close()
 	}
 	var f F
-	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, defaultFileName), Err: fs.ErrNotExist}
+	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0].Name()), Err: fs.ErrNotExist}
 }
 
 func getFileVersionForPrefix(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	defaultFileName string,
-	otherFileNames []string,
+	fileNames []*fileName,
 ) (FileVersion, error) {
-	for _, fileName := range append([]string{defaultFileName}, otherFileNames...) {
-		path := normalpath.Join(prefix, fileName)
+	for _, fileName := range fileNames {
+		path := normalpath.Join(prefix, fileName.Name())
 		data, err := storage.ReadPath(ctx, bucket, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
@@ -91,12 +89,12 @@ func getFileVersionForPrefix(
 		if err != nil {
 			return 0, newDecodeError(path, err)
 		}
-		if err := checkFileVersionV2SupportedYet(fileVersion); err != nil {
+		if err := fileName.CheckSupportedFileVersion(fileVersion); err != nil {
 			return 0, newDecodeError(path, err)
 		}
 		return fileVersion, nil
 	}
-	return 0, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, defaultFileName), Err: fs.ErrNotExist}
+	return 0, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0].Name()), Err: fs.ErrNotExist}
 }
 
 func putFileForPrefix[F File](
@@ -104,16 +102,17 @@ func putFileForPrefix[F File](
 	bucket storage.WriteBucket,
 	prefix string,
 	f F,
-	defaultFileName string,
+	fileName *fileName,
 	writeFileFunc func(
 		writer io.Writer,
 		f F,
 	) error,
 ) (retErr error) {
-	path := normalpath.Join(prefix, defaultFileName)
-	if err := checkV2SupportedYet(f); err != nil {
-		return newEncodeError(path, err)
+	if err := fileName.CheckSupportedFile(f); err != nil {
+		// This is effectively a system error. We should be able to write with whatever file name we have.
+		return newEncodeError(fileName.Name(), err)
 	}
+	path := normalpath.Join(prefix, fileName.Name())
 	writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())
 	if err != nil {
 		return err
@@ -136,7 +135,7 @@ func readFile[F File](
 	if err != nil {
 		return f, newDecodeError(fileIdentifier, err)
 	}
-	if err := checkV2SupportedYet(f); err != nil {
+	if err := checkV2SupportedYet(f.FileVersion()); err != nil {
 		return f, newDecodeError(fileIdentifier, err)
 	}
 	return f, nil
@@ -151,7 +150,7 @@ func writeFile[F File](
 		f F,
 	) error,
 ) error {
-	if err := checkV2SupportedYet(f); err != nil {
+	if err := checkV2SupportedYet(f.FileVersion()); err != nil {
 		return newEncodeError(fileIdentifier, err)
 	}
 	return writeFileFunc(writer, f)
@@ -188,21 +187,4 @@ func newDecodeError(fileIdentifier string, err error) error {
 
 func newEncodeError(fileIdentifier string, err error) error {
 	return fmt.Errorf("failed to encode %s: %w", fileIdentifier, err)
-}
-
-func newUnsupportedFileVersionError(fileVersion FileVersion) error {
-	return fmt.Errorf("%s is not supported", fileVersion.String())
-}
-
-// TODO: Remove when V2 is supported.
-func checkV2SupportedYet(file File) error {
-	return checkFileVersionV2SupportedYet(file.FileVersion())
-}
-
-// TODO: Remove when V2 is supported.
-func checkFileVersionV2SupportedYet(fileVersion FileVersion) error {
-	if !isV2Allowed() && fileVersion == FileVersionV2 {
-		return errors.New("v2 is not supported yet")
-	}
-	return nil
 }

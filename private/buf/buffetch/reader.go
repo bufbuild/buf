@@ -139,7 +139,8 @@ func (a *reader) GetSourceBucket(
 		ctx,
 		container,
 		sourceRef.internalBucketRef(),
-		internal.WithGetBucketTerminateFileNames(bufconfig.AllBufWorkYAMLFileNames),
+		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+		internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
 	)
 }
 
