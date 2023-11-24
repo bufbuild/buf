@@ -54,9 +54,11 @@ type CheckConfig interface {
 	ExceptIDsAndCategories() []string
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
+	// TODO: should we make these now relative to root of workspace in v2?
 	IgnorePaths() []string
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
+	// TODO: should we make these now relative to root of workspace in v2?
 	IgnoreIDOrCategoryToPaths() map[string][]string
 
 	isCheckConfig()
