@@ -19,14 +19,15 @@ package bufbreaking
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"go.uber.org/zap"
 )
@@ -41,7 +42,7 @@ type Handler interface {
 	// Images should be filtered with regards to imports before passing to this function.
 	Check(
 		ctx context.Context,
-		config *bufbreakingconfig.Config,
+		config bufconfig.BreakingConfig,
 		previousImage bufimage.Image,
 		image bufimage.Image,
 	) ([]bufanalysis.FileAnnotation, error)
@@ -55,7 +56,7 @@ func NewHandler(logger *zap.Logger) Handler {
 // RulesForConfig returns the rules for a given config.
 //
 // Should only be used for printing.
-func RulesForConfig(config *bufbreakingconfig.Config) ([]bufcheck.Rule, error) {
+func RulesForConfig(config bufconfig.BreakingConfig) ([]bufcheck.Rule, error) {
 	internalConfig, err := internalConfigForConfig(config)
 	if err != nil {
 		return nil, err
@@ -67,12 +68,7 @@ func RulesForConfig(config *bufbreakingconfig.Config) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(
-		&bufbreakingconfig.Config{
-			Use:     internal.AllIDsForVersionSpec(bufbreakingv1beta1.VersionSpec),
-			Version: bufconfig.V1Beta1Version,
-		},
-	)
+	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv1beta1.VersionSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +79,18 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(
-		&bufbreakingconfig.Config{
-			Use:     internal.AllIDsForVersionSpec(bufbreakingv1.VersionSpec),
-			Version: bufconfig.V1Version,
-		},
-	)
+	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv1.VersionSpec))
+	if err != nil {
+		return nil, err
+	}
+	return rulesForInternalRules(internalConfig.Rules), nil
+}
+
+// GetAllRulesV2 gets all known rules.
+//
+// Should only be used for printing.
+func GetAllRulesV2() ([]bufcheck.Rule, error) {
+	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv2.VersionSpec))
 	if err != nil {
 		return nil, err
 	}
@@ -109,20 +111,31 @@ func GetAllRulesAndCategoriesV1() []string {
 	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv1.VersionSpec)
 }
 
-func internalConfigForConfig(config *bufbreakingconfig.Config) (*internal.Config, error) {
+// GetAllRulesAndCategoriesV2 returns all rules and categories for v2 as a string slice.
+//
+// This is used for validation purposes only.
+func GetAllRulesAndCategoriesV2() []string {
+	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv2.VersionSpec)
+}
+
+func internalConfigForConfig(config bufconfig.BreakingConfig) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
-	switch config.Version {
-	case bufconfig.V1Beta1Version:
+	switch fileVersion := config.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1:
 		versionSpec = bufbreakingv1beta1.VersionSpec
-	case bufconfig.V1Version:
+	case bufconfig.FileVersionV1:
 		versionSpec = bufbreakingv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = bufbreakingv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 	return internal.ConfigBuilder{
-		Use:                           config.Use,
-		Except:                        config.Except,
-		IgnoreRootPaths:               config.IgnoreRootPaths,
-		IgnoreIDOrCategoryToRootPaths: config.IgnoreIDOrCategoryToRootPaths,
-		IgnoreUnstablePackages:        config.IgnoreUnstablePackages,
+		Use:                           config.UseIDsAndCategories(),
+		Except:                        config.ExceptIDsAndCategories(),
+		IgnoreRootPaths:               config.IgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths: config.IgnoreIDOrCategoryToPaths(),
+		IgnoreUnstablePackages:        config.IgnoreUnstablePackages(),
 	}.NewConfig(
 		versionSpec,
 	)
@@ -137,4 +150,17 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 		s[i] = e
 	}
 	return s
+}
+
+func newBreakingConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.BreakingConfig {
+	return bufconfig.NewBreakingConfig(
+		bufconfig.NewCheckConfig(
+			versionSpec.FileVersion,
+			internal.AllIDsForVersionSpec(versionSpec),
+			nil,
+			nil,
+			nil,
+		),
+		false,
+	)
 }

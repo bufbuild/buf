@@ -17,8 +17,8 @@ package bufbreaking
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -44,7 +44,7 @@ func newHandler(
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *bufbreakingconfig.Config,
+	config bufconfig.BreakingConfig,
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {

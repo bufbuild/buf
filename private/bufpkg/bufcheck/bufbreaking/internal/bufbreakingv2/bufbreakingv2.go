@@ -12,28 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufbreakingv1 contains the VersionSpec for v1.
+// Package bufbreakingv2 contains the VersionSpec for v2.
 //
 // It uses bufbreakingcheck and bufbreakingbuild.
-package bufbreakingv1
+//
+// There were no changes from v1.
+package bufbreakingv2
 
 import (
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 )
 
-// VersionSpec is the version specification for v1.
-//
-// Changes from v1beta1:
-//
-// Adds FILE_SAME_PACKAGE to PACKAGE, WIRE, and WIRE_JSON.
-//
-// Splits FIELD_SAME_TYPE into FIELD_SAME_TYPE for FILE AND PACKAGE,
-// FIRE_WIRE_JSON_COMPATIBLE_TYPE for WIRE_JSON, and
-// FIELD_WIRE_COMPATIBLE_TYPE for WIRE.
+// VersionSpec is the version specification for v2.
 var VersionSpec = &internal.VersionSpec{
-	FileVersion:       bufconfig.FileVersionV1,
-	RuleBuilders:      v1RuleBuilders,
-	DefaultCategories: v1DefaultCategories,
-	IDToCategories:    v1IDToCategories,
+	FileVersion:       bufconfig.FileVersionV2,
+	RuleBuilders:      v2RuleBuilders,
+	DefaultCategories: v2DefaultCategories,
+	IDToCategories:    v2IDToCategories,
 }

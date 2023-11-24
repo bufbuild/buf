@@ -20,15 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -758,7 +756,6 @@ func testBreaking(
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zap.NewNop()
 
 	previousDirPath := filepath.Join("testdata_previous", relDirPath)
 	dirPath := filepath.Join("testdata", relDirPath)
@@ -775,48 +772,42 @@ func testBreaking(
 	)
 	require.NoError(t, err)
 
-	previousConfig := testGetConfig(t, previousReadWriteBucket)
-	config := testGetConfig(t, readWriteBucket)
-
-	previousModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
+	previousWorkspace, err := bufworkspace.NewWorkspaceForBucket(
+		ctx,
 		previousReadWriteBucket,
-		previousConfig.Build,
+		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
-		previousModule,
+		readWriteBucket,
+		bufmodule.NopModuleDataProvider,
+	)
+	require.NoError(t, err)
+
+	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+		ctx,
+		previousWorkspace,
 		bufimagebuild.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
-		module,
+		workspace,
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
-	handler := bufbreaking.NewHandler(logger)
+	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
+	require.NotNil(t, breakingConfig)
+	handler := bufbreaking.NewHandler(zap.NewNop())
 	fileAnnotations, err = handler.Check(
 		ctx,
-		config.Breaking,
+		breakingConfig,
 		previousImage,
 		image,
 	)
@@ -826,15 +817,4 @@ func testBreaking(
 		expectedFileAnnotations,
 		fileAnnotations,
 	)
-}
-
-func testGetConfig(
-	t *testing.T,
-	readBucket storage.ReadBucket,
-) *bufconfig.Config {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
-	require.NoError(t, err)
-	return config
 }

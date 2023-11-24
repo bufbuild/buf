@@ -12,8 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufbreakingv2
 
-package bufbreakingconfig
+import (
+	"testing"
 
-import _ "github.com/bufbuild/buf/private/usage"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal/internaltesting"
+)
+
+func TestVersionSpec(t *testing.T) {
+	t.Parallel()
+	internaltesting.RunTestVersionSpec(t, VersionSpec)
+}
