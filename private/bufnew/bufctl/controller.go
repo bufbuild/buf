@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -42,9 +43,9 @@ type controller struct {
 	container          Container
 	moduleDataProvider bufmodule.ModuleDataProvider
 
-	disableSymlinks         bool
-	errorFormat             string
-	fileAnnotationsToStdout bool
+	disableSymlinks           bool
+	fileAnnotationErrorFormat string
+	fileAnnotationsToStdout   bool
 
 	commandRunner        command.Runner
 	storageosProvider    storageos.Provider
@@ -70,7 +71,7 @@ func newController(
 	for _, option := range options {
 		option(controller)
 	}
-	if err := validateErrorFormat(controller.errorFormat); err != nil {
+	if err := validateFileAnnotationErrorFormat(controller.fileAnnotationErrorFormat); err != nil {
 		return nil, err
 	}
 	controller.commandRunner = command.NewRunner()
@@ -174,12 +175,15 @@ func (c *controller) PutImage(
 	if messageRef.IsNull() {
 		return nil
 	}
-	writeImage := image
+	putImage, err := filterImage(image, functionOptions)
+	if err != nil {
+		return err
+	}
 	var message proto.Message
-	if functionOptions.asFileDescriptorSet {
-		message = bufimage.ImageToFileDescriptorSet(writeImage)
+	if functionOptions.imageAsFileDescriptorSet {
+		message = bufimage.ImageToFileDescriptorSet(putImage)
 	} else {
-		message = bufimage.ImageToProtoImage(writeImage)
+		message = bufimage.ImageToProtoImage(putImage)
 	}
 	data, err := c.marshalImage(ctx, message, image, messageRef)
 	if err != nil {
@@ -310,13 +314,17 @@ func (c *controller) getImageForMessageRef(
 	default:
 		return nil, err
 	}
-	if functionOptions.excludeSourceInfo {
+	if functionOptions.imageExcludeSourceInfo {
 		for _, fileDescriptorProto := range protoImage.File {
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
 
 	image, err := bufimage.NewImageForProto(protoImage, imageFromProtoOptions...)
+	if err != nil {
+		return nil, err
+	}
+	image, err = filterImage(image, functionOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +342,7 @@ func (c *controller) buildImage(
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
 	var options []bufimagebuild.BuildOption
-	if functionOptions.excludeSourceInfo {
+	if functionOptions.imageExcludeSourceInfo {
 		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
 	}
 	image, fileAnnotations, err := c.bufimagebuildBuilder.Build(
@@ -353,13 +361,13 @@ func (c *controller) buildImage(
 		if err := bufanalysis.PrintFileAnnotations(
 			writer,
 			fileAnnotations,
-			c.errorFormat,
+			c.fileAnnotationErrorFormat,
 		); err != nil {
 			return nil, err
 		}
 		return nil, ErrFileAnnotation
 	}
-	return image, nil
+	return filterImage(image, functionOptions)
 }
 
 func (c *controller) bootstrapResolver(
@@ -407,6 +415,21 @@ func (c *controller) marshalImage(
 		// This is a system error.
 		return nil, fmt.Errorf("unknown MessageEncoding: %v", messageEncoding)
 	}
+}
+
+func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufimage.Image, error) {
+	newImage := image
+	var err error
+	if functionOptions.imageExcludeImports {
+		newImage = bufimage.ImageWithoutImports(newImage)
+	}
+	if len(functionOptions.imageTypes) > 0 {
+		newImage, err = bufimageutil.ImageFilteredByTypes(newImage, functionOptions.imageTypes...)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newImage, nil
 }
 
 func newStorageosProvider(disableSymlinks bool) storageos.Provider {
@@ -461,22 +484,27 @@ func newYAMLMarshaler(
 	return protoencoding.NewYAMLMarshaler(resolver, yamlMarshalerOptions...)
 }
 
-func validateErrorFormat(errorFormat string) error {
-	// TODO: get standard flag names and bindings into this package.
-	errorFormatFlagName := "error-format"
+func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
+	if fileAnnotationErrorFormat == "" {
+		return nil
+	}
 	for _, formatString := range bufanalysis.AllFormatStrings {
-		if errorFormat == formatString {
+		if fileAnnotationErrorFormat == formatString {
 			return nil
 		}
 	}
-	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormat)
+	// TODO: get standard flag names and bindings into this package.
+	fileAnnotationErrorFormatFlagName := "error-format"
+	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", fileAnnotationErrorFormatFlagName, fileAnnotationErrorFormat)
 }
 
 type functionOptions struct {
-	targetPaths         []string
-	targetExcludePaths  []string
-	excludeSourceInfo   bool
-	asFileDescriptorSet bool
+	targetPaths              []string
+	targetExcludePaths       []string
+	imageExcludeSourceInfo   bool
+	imageExcludeImports      bool
+	imageTypes               []string
+	imageAsFileDescriptorSet bool
 }
 
 func newFunctionOptions() *functionOptions {
@@ -486,12 +514,8 @@ func newFunctionOptions() *functionOptions {
 func (f *functionOptions) withPathsForReadBucketCloser(
 	readBucketCloser buffetch.ReadBucketCloser,
 ) (*functionOptions, error) {
-	c := &functionOptions{
-		targetPaths:         f.targetPaths,
-		targetExcludePaths:  f.targetExcludePaths,
-		excludeSourceInfo:   f.excludeSourceInfo,
-		asFileDescriptorSet: f.asFileDescriptorSet,
-	}
+	deref := *f
+	c := &deref
 	for _, targetPath := range c.targetPaths {
 		targetPath, err := readBucketCloser.PathForExternalPath(targetPath)
 		if err != nil {

@@ -118,7 +118,7 @@ func run(
 	controller, err := bufcli.NewController(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
-		bufctl.WithErrorFormat(flags.ErrorFormat),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
@@ -126,13 +126,11 @@ func run(
 	image, err := controller.GetImage(
 		ctx,
 		input,
-		bufctl.WithExcludeSourceInfo(true),
+		bufctl.WithImageExcludeSourceInfo(true),
+		bufctl.WithImageExcludeImports(!flags.IncludeImports),
 	)
 	if err != nil {
 		return err
-	}
-	if !flags.IncludeImports {
-		image = bufimage.ImageWithoutImports(image)
 	}
 	imageFilePathFunc := bufimage.ImageFile.ExternalPath
 	if flags.AsImportPaths {

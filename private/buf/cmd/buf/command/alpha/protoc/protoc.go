@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufnew/bufctl"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -227,21 +228,20 @@ func run(
 		}
 		return nil
 	}
-
-	return nil
-	// TODO: *** re-enable when ImageWriter is migrated! ***
-	//if env.Output == "" {
-	//return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
-	//}
-	//messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, env.Output)
-	//if err != nil {
-	//return fmt.Errorf("--%s: %v", outputFlagName, err)
-	//}
-	//return bufcli.NewWireImageWriter(container.Logger()).PutImage(ctx,
-	//container,
-	//messageRef,
-	//image,
-	//true,
-	//!env.IncludeImports,
-	//)
+	if env.Output == "" {
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
+	}
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
+	return controller.PutImage(
+		ctx,
+		env.Output,
+		image,
+		// Actually redundant with bufimagebuild right now.
+		bufctl.WithImageExcludeSourceInfo(!env.IncludeSourceInfo),
+		bufctl.WithImageExcludeImports(!env.IncludeImports),
+		bufctl.WithImageAsFileDescriptorSet(true),
+	)
 }

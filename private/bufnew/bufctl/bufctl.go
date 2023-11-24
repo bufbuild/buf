@@ -97,9 +97,9 @@ func WithDisableSymlinks(disableSymlinks bool) ControllerOption {
 	}
 }
 
-func WithErrorFormat(errorFormat string) ControllerOption {
+func WithFileAnnotationErrorFormat(fileAnnotationErrorFormat string) ControllerOption {
 	return func(controller *controller) {
-		controller.errorFormat = errorFormat
+		controller.fileAnnotationErrorFormat = fileAnnotationErrorFormat
 	}
 }
 
@@ -118,14 +118,26 @@ func WithTargetPaths(targetPaths []string, targetExcludePaths []string) Function
 	}
 }
 
-func WithExcludeSourceInfo(excludeSourceInfo bool) FunctionOption {
+func WithImageExcludeSourceInfo(imageExcludeSourceInfo bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
-		functionOptions.excludeSourceInfo = excludeSourceInfo
+		functionOptions.imageExcludeSourceInfo = imageExcludeSourceInfo
 	}
 }
 
-func WithAsFileDescriptorSet(asFileDescriptorSet bool) FunctionOption {
+func WithImageExcludeImports(imageExcludeImports bool) FunctionOption {
 	return func(functionOptions *functionOptions) {
-		functionOptions.asFileDescriptorSet = asFileDescriptorSet
+		functionOptions.imageExcludeImports = imageExcludeImports
+	}
+}
+
+func WithImageTypes(imageTypes []string) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageTypes = imageTypes
+	}
+}
+
+func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet
 	}
 }

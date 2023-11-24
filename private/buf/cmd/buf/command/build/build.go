@@ -22,8 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufnew/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -142,7 +140,7 @@ func run(
 	controller, err := bufcli.NewController(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
-		bufctl.WithErrorFormat(flags.ErrorFormat),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
@@ -151,24 +149,17 @@ func run(
 		ctx,
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
-		bufctl.WithExcludeSourceInfo(flags.ExcludeSourceInfo),
+		bufctl.WithImageExcludeSourceInfo(flags.ExcludeSourceInfo),
+		bufctl.WithImageExcludeImports(flags.ExcludeImports),
+		bufctl.WithImageTypes(flags.Types),
 	)
 	if err != nil {
 		return err
-	}
-	if len(flags.Types) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
-		if err != nil {
-			return err
-		}
-	}
-	if flags.ExcludeImports {
-		image = bufimage.ImageWithoutImports(image)
 	}
 	return controller.PutImage(
 		ctx,
 		flags.Output,
 		image,
-		bufctl.WithAsFileDescriptorSet(flags.AsFileDescriptorSet),
+		bufctl.WithImageAsFileDescriptorSet(flags.AsFileDescriptorSet),
 	)
 }

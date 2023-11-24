@@ -92,20 +92,20 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing plugin reference: %s", err.Error())
 	}
-	if pluginIdentity.Remote() != moduleRef.Registry() {
+	if pluginIdentity.Remote() != moduleRef.ModuleFullName().Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same remote")
 	}
 	resolver := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
 	packageVersion, err := resolver.GetMavenVersion(ctx, connect.NewRequest(
 		&registryv1alpha1.GetMavenVersionRequest{
-			ModuleRef: &registryv1alpha1.LocalModuleReference{
-				Owner:      moduleRef.Owner(),
-				Repository: moduleRef.Name(),
-				Reference:  moduleRef.Reference(),
+			ModuleReference: &registryv1alpha1.LocalModuleReference{
+				Owner:      moduleRef.ModuleFullName().Owner(),
+				Repository: moduleRef.ModuleFullName().Name(),
+				Reference:  moduleRef.Ref(),
 			},
 			PluginReference: &registryv1alpha1.GetRemotePackageVersionPlugin{
 				Owner:   pluginIdentity.Owner(),
