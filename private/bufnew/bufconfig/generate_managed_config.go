@@ -37,17 +37,16 @@ type GenerateManagedConfig interface {
 	isGenerateManagedConfig()
 }
 
-// // TODO/Note: this is exported only for testing. Might want to reconsider this approach.
-// // NewGenerateManagedConfig returns a new GenerateManagedConfig.
-// func NewGenerateManagedConfig(
-// 	disables []ManagedDisableRule,
-// 	overrides []ManagedOverrideRule,
-// ) GenerateManagedConfig {
-// 	return &generateManagedConfig{
-// 		disables:  disables,
-// 		overrides: overrides,
-// 	}
-// }
+// NewGenerateManagedConfig returns a new GenerateManagedConfig.
+func NewGenerateManagedConfig(
+	disables []ManagedDisableRule,
+	overrides []ManagedOverrideRule,
+) GenerateManagedConfig {
+	return &generateManagedConfig{
+		disables:  disables,
+		overrides: overrides,
+	}
+}
 
 // ManagedDisableRule is a disable rule. A disable rule describes:
 //
@@ -79,6 +78,43 @@ type ManagedDisableRule interface {
 	isManagedDisableRule()
 }
 
+// NewDisableRule returns a new ManagedDisableRule
+func NewDisableRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fileOption FileOption,
+	fieldOption FieldOption,
+) (ManagedDisableRule, error) {
+	if path != "" && normalpath.Normalize(path) != path {
+		// TODO: do we want to show words like 'normalized' to users?
+		return nil, fmt.Errorf("path must be normalized: %s", path)
+	}
+	if path == "" && moduleFullName == "" && fieldName == "" && fileOption == FileOptionUnspecified && fieldOption == FieldOptionUnspecified {
+		// This should never happen to parsing configs from provided by users.
+		return nil, errors.New("empty disable rule is not allowed")
+	}
+	if fieldName != "" && fileOption != FileOptionUnspecified {
+		return nil, errors.New("cannot disable a file option for a field")
+	}
+	if fileOption != FileOptionUnspecified && fieldOption != FieldOptionUnspecified {
+		return nil, errors.New("at most one of file_option and field_option can be specified")
+	}
+	// TODO: validate path here? Was it validated in v1/main?
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	return &managedDisableRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fileOption:     fileOption,
+		fieldOption:    fieldOption,
+	}, nil
+}
+
 // ManagedOverrideRule is an override rule. An override describes:
 //
 //   - The options to modify. Exactly one of FileOption and FieldOption is not empty.
@@ -107,6 +143,81 @@ type ManagedOverrideRule interface {
 	isManagedOverrideRule()
 }
 
+// NewFieldOptionOverrideRule returns an OverrideRule for a field option.
+func NewFileOptionOverrideRule(
+	path string,
+	moduleFullName string,
+	fileOption FileOption,
+	value interface{},
+) (*managedOverrideRule, error) {
+	if path != "" && normalpath.Normalize(path) != path {
+		// TODO: do we want to show words like 'normalized' to users?
+		return nil, fmt.Errorf("path must be normalized: %s", path)
+	}
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	// All valid file options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fileOption: %v", fileOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
+	}
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fileOption:     fileOption,
+		value:          parsedValue,
+	}, nil
+}
+
+// NewFieldOptionOverrideRule returns an OverrideRule for a field option.
+func NewFieldOptionOverrideRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fieldOption FieldOption,
+	value interface{},
+) (ManagedOverrideRule, error) {
+	if path != "" && normalpath.Normalize(path) != path {
+		// TODO: do we want to show words like 'normalized' to users?
+		return nil, fmt.Errorf("path must be normalized: %s", path)
+	}
+	// TODO: validate path here? Was it validated in v1/main?
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	// All valid field options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fieldOption: %v", fieldOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
+	}
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fieldOption:    fieldOption,
+		value:          parsedValue,
+	}, nil
+}
+
 type generateManagedConfig struct {
 	disables  []ManagedDisableRule
 	overrides []ManagedOverrideRule
@@ -123,7 +234,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides []ManagedOverrideRule
 	)
 	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-		override, err := newFileOptionOverrideRule(
+		override, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionCcEnableArenas,
@@ -135,7 +246,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides = append(overrides, override)
 	}
 	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-		override, err := newFileOptionOverrideRule(
+		override, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionJavaMultipleFiles,
@@ -147,7 +258,7 @@ func newManagedOverrideRuleFromExternalV1(
 		overrides = append(overrides, override)
 	}
 	if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
-		override, err := newFileOptionOverrideRule(
+		override, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionJavaStringCheckUtf8,
@@ -164,7 +275,7 @@ func newManagedOverrideRuleFromExternalV1(
 			// "java_package_prefix setting requires a default value"
 			return nil, errors.New("java_package_prefix must have a default value")
 		}
-		defaultOverride, err := newFileOptionOverrideRule(
+		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionJavaPackagePrefix,
@@ -203,7 +314,7 @@ func newManagedOverrideRuleFromExternalV1(
 		if externalOptimizeFor.Default == "" {
 			return nil, errors.New("optimize_for must have a default value")
 		}
-		defaultOverride, err := newFileOptionOverrideRule(
+		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionOptimizeFor,
@@ -229,7 +340,7 @@ func newManagedOverrideRuleFromExternalV1(
 		if externalGoPackagePrefix.Default == "" {
 			return nil, errors.New("go_package_prefix must have a default value")
 		}
-		defaultOverride, err := newFileOptionOverrideRule(
+		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
 			"",
 			FileOptionGoPackagePrefix,
@@ -254,7 +365,7 @@ func newManagedOverrideRuleFromExternalV1(
 	if externalObjcClassPrefix := externalConfig.ObjcClassPrefix; !externalObjcClassPrefix.isEmpty() {
 		if externalObjcClassPrefix.Default != "" {
 			// objc class prefix allows empty default
-			defaultOverride, err := newFileOptionOverrideRule(
+			defaultOverride, err := NewFileOptionOverrideRule(
 				"",
 				"",
 				FileOptionObjcClassPrefix,
@@ -319,38 +430,6 @@ type managedDisableRule struct {
 	fieldOption    FieldOption
 }
 
-func newDisableRule(
-	path string,
-	moduleFullName string,
-	fieldName string,
-	fileOption FileOption,
-	fieldOption FieldOption,
-) (*managedDisableRule, error) {
-	if path == "" && moduleFullName == "" && fieldName == "" && fileOption == FileOptionUnspecified && fieldOption == FieldOptionUnspecified {
-		// This should never happen to parsing configs from provided by users.
-		return nil, errors.New("empty disable rule is not allowed")
-	}
-	if fileOption != FileOptionUnspecified && fieldOption != FieldOptionUnspecified {
-		return nil, errors.New("at most one of file_option and field_option can be specified")
-	}
-	if fieldName != "" && fileOption != FileOptionUnspecified {
-		return nil, errors.New("cannot disable a file option for a field")
-	}
-	// TODO: validate path here? Was it validated in v1/main?
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	return &managedDisableRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fieldName:      fieldName,
-		fileOption:     fileOption,
-		fieldOption:    fieldOption,
-	}, nil
-}
-
 func (m *managedDisableRule) Path() string {
 	return m.path
 }
@@ -380,72 +459,6 @@ type managedOverrideRule struct {
 	fileOption     FileOption
 	fieldOption    FieldOption
 	value          interface{}
-}
-
-func newFileOptionOverrideRule(
-	path string,
-	moduleFullName string,
-	fileOption FileOption,
-	value interface{},
-) (*managedOverrideRule, error) {
-	// TODO: validate path here? Was it validated in v1/main?
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	// All valid file options have a parse func. This lookup implicitly validates the option.
-	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
-	if !ok {
-		return nil, fmt.Errorf("invalid fileOption: %v", fileOption)
-	}
-	if value == nil {
-		return nil, fmt.Errorf("value must be specified for override")
-	}
-	parsedValue, err := parseOverrideValueFunc(value)
-	if err != nil {
-		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
-	}
-	return &managedOverrideRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fileOption:     fileOption,
-		value:          parsedValue,
-	}, nil
-}
-
-func newFieldOptionOverrideRule(
-	path string,
-	moduleFullName string,
-	fieldName string,
-	fieldOption FieldOption,
-	value interface{},
-) (*managedOverrideRule, error) {
-	// TODO: validate path here? Was it validated in v1/main?
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	// All valid field options have a parse func. This lookup implicitly validates the option.
-	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
-	if !ok {
-		return nil, fmt.Errorf("invalid fieldOption: %v", fieldOption)
-	}
-	if value == nil {
-		return nil, fmt.Errorf("value must be specified for override")
-	}
-	parsedValue, err := parseOverrideValueFunc(value)
-	if err != nil {
-		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
-	}
-	return &managedOverrideRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fieldName:      fieldName,
-		fieldOption:    fieldOption,
-		value:          parsedValue,
-	}, nil
 }
 
 func (m *managedOverrideRule) Path() string {
@@ -493,7 +506,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptModuleFullName)
 		}
 		seenExceptModuleFullNames[exceptModuleFullName] = struct{}{}
-		disable, err := newDisableRule(
+		disable, err := NewDisableRule(
 			"",
 			exceptModuleFullName,
 			"",
@@ -514,7 +527,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		if _, ok := seenExceptModuleFullNames[overrideModuleFullName]; ok {
 			return nil, nil, fmt.Errorf("override %q is already defined as an except", overrideModuleFullName)
 		}
-		override, err := newFileOptionOverrideRule(
+		override, err := NewFileOptionOverrideRule(
 			"",
 			overrideModuleFullName,
 			overrideFileOption,
@@ -567,7 +580,7 @@ func overrideRulesForPerFileOverridesV1(
 					return nil, fmt.Errorf("")
 				}
 			}
-			overrideRule, err := newFileOptionOverrideRule(
+			overrideRule, err := NewFileOptionOverrideRule(
 				filePath,
 				"",
 				fileOption,
