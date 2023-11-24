@@ -1,5 +1,0 @@
-syntax = "proto3";
-
-package d.v1;
-
-message D {}

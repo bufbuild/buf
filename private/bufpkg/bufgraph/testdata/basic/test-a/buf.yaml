@@ -1,6 +1,0 @@
-version: v1
-name: bsr.internal/foo/test-a
-deps:
-  - bsr.internal/foo/test-b
-  - bsr.internal/foo/test-d
-  - bsr.internal/foo/test-e

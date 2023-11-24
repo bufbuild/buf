@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package a2.v1;
-
-import "e/v1/e.proto";
-
-message A2 {
-  e.v1.E e = 3;
-}
