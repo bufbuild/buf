@@ -53,11 +53,6 @@ type BufYAMLFile interface {
 	//
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
 	ModuleConfigs() []ModuleConfig
-	// GenerateConfigs returns the GenerateConfigs for the File.
-	//
-	// For v1 buf.yaml, this will be empty.
-	GenerateConfigs() []GenerateConfig
-
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -119,19 +114,14 @@ func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 type bufYAMLFile struct {
 	fileVersion             FileVersion
 	moduleConfigs           []ModuleConfig
-	generateConfigs         []GenerateConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
 func newBufYAMLFile(
 	fileVersion FileVersion,
 	moduleConfigs []ModuleConfig,
-	generateConfigs []GenerateConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
-	if fileVersion != FileVersionV1Beta1 && fileVersion != FileVersionV1 {
-		return nil, newUnsupportedFileVersionError(fileVersion)
-	}
 	// Zero values are not added to duplicates.
 	duplicateModuleConfigDirPaths := slicesext.Duplicates(
 		slicesext.Map(
@@ -183,13 +173,9 @@ func newBufYAMLFile(
 				configuredDepModuleRefs[i].ModuleFullName().String()
 		},
 	)
-	if len(generateConfigs) > 0 {
-		return nil, errors.New("we do not support generation configation in buf.yaml yet")
-	}
 	return &bufYAMLFile{
 		fileVersion:             fileVersion,
 		moduleConfigs:           moduleConfigs,
-		generateConfigs:         generateConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
 }
@@ -200,10 +186,6 @@ func (c *bufYAMLFile) FileVersion() FileVersion {
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
 	return slicesext.Copy(c.moduleConfigs)
-}
-
-func (c *bufYAMLFile) GenerateConfigs() []GenerateConfig {
-	return slicesext.Copy(c.generateConfigs)
 }
 
 func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
@@ -232,21 +214,17 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if fileVersion == FileVersionV1 && len(externalBufYAMLFile.Build.Roots) > 0 {
 			return nil, fmt.Errorf("build.roots cannot be set on version %v: %v", fileVersion, externalBufYAMLFile.Build.Roots)
 		}
-		rootToExcludes, err := getRootToExcludes(externalBufYAMLFile.Build.Roots, externalBufYAMLFile.Build.Excludes)
-		if err != nil {
-			return nil, err
-		}
 		moduleFullName, err := bufmodule.ParseModuleFullName(externalBufYAMLFile.Name)
 		if err != nil {
 			return nil, fmt.Errorf("invalid module name: %w", err)
 		}
-		configuredDepModuleRefs := make([]bufmodule.ModuleRef, len(externalBufYAMLFile.Deps))
-		for i, dep := range externalBufYAMLFile.Deps {
-			moduleRef, err := bufmodule.ParseModuleRef(dep)
-			if err != nil {
-				return nil, fmt.Errorf("invalid dep: %w", err)
-			}
-			configuredDepModuleRefs[i] = moduleRef
+		rootToExcludes, err := getRootToExcludes(externalBufYAMLFile.Build.Roots, externalBufYAMLFile.Build.Excludes)
+		if err != nil {
+			return nil, err
+		}
+		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
+		if err != nil {
+			return nil, err
 		}
 		return newBufYAMLFile(
 			fileVersion,
@@ -255,38 +233,59 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 					".",
 					moduleFullName,
 					rootToExcludes,
-					newLintConfig(
-						newCheckConfig(
-							fileVersion,
-							externalBufYAMLFile.Lint.Use,
-							externalBufYAMLFile.Lint.Except,
-							externalBufYAMLFile.Lint.Ignore,
-							externalBufYAMLFile.Lint.IgnoreOnly,
-						),
-						externalBufYAMLFile.Lint.EnumZeroValueSuffix,
-						externalBufYAMLFile.Lint.RPCAllowSameRequestResponse,
-						externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyRequests,
-						externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyResponses,
-						externalBufYAMLFile.Lint.ServiceSuffix,
-						externalBufYAMLFile.Lint.AllowCommentIgnores,
+					getLintConfigForExternalLint(
+						fileVersion,
+						externalBufYAMLFile.Lint,
 					),
-					newBreakingConfig(
-						newCheckConfig(
-							fileVersion,
-							externalBufYAMLFile.Breaking.Use,
-							externalBufYAMLFile.Breaking.Except,
-							externalBufYAMLFile.Breaking.Ignore,
-							externalBufYAMLFile.Breaking.IgnoreOnly,
-						),
-						externalBufYAMLFile.Breaking.IgnoreUnstablePackages,
+					getBreakingConfigForExternalBreaking(
+						fileVersion,
+						externalBufYAMLFile.Breaking,
 					),
 				),
 			},
-			nil,
 			configuredDepModuleRefs,
 		)
 	case FileVersionV2:
-		return nil, newUnsupportedFileVersionError(fileVersion)
+		var externalBufYAMLFile externalBufYAMLFileV2
+		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		var moduleConfigs []ModuleConfig
+		for _, externalModule := range externalBufYAMLFile.Modules {
+			dirPath := externalModule.Directory
+			moduleFullName, err := bufmodule.ParseModuleFullName(externalModule.Name)
+			if err != nil {
+				return nil, err
+			}
+			rootToExcludes, err := getRootToExcludes([]string{dirPath}, externalModule.Excludes)
+			if err != nil {
+				return nil, err
+			}
+			moduleConfigs = append(
+				moduleConfigs, newModuleConfig(
+					dirPath,
+					moduleFullName,
+					rootToExcludes,
+					getLintConfigForExternalLint(
+						fileVersion,
+						externalModule.Lint,
+					),
+					getBreakingConfigForExternalBreaking(
+						fileVersion,
+						externalModule.Breaking,
+					),
+				),
+			)
+		}
+		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
+		if err != nil {
+			return nil, err
+		}
+		return newBufYAMLFile(
+			fileVersion,
+			moduleConfigs,
+			configuredDepModuleRefs,
+		)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
@@ -376,6 +375,57 @@ func getRootToExcludes(roots []string, fullExcludes []string) (map[string][]stri
 		rootToExcludes[root] = uniqueSortedExcludes
 	}
 	return rootToExcludes, nil
+}
+
+func getConfiguredDepModuleRefsForExternalDeps(
+	externalDeps []string,
+) ([]bufmodule.ModuleRef, error) {
+	configuredDepModuleRefs := make([]bufmodule.ModuleRef, len(externalDeps))
+	for i, externalDep := range externalDeps {
+		moduleRef, err := bufmodule.ParseModuleRef(externalDep)
+		if err != nil {
+			return nil, fmt.Errorf("invalid dep: %w", err)
+		}
+		configuredDepModuleRefs[i] = moduleRef
+	}
+	return configuredDepModuleRefs, nil
+}
+
+func getLintConfigForExternalLint(
+	fileVersion FileVersion,
+	externalLint externalBufYAMLFileLintV1Beta1V1V2,
+) LintConfig {
+	return newLintConfig(
+		newCheckConfig(
+			fileVersion,
+			externalLint.Use,
+			externalLint.Except,
+			externalLint.Ignore,
+			externalLint.IgnoreOnly,
+		),
+		externalLint.EnumZeroValueSuffix,
+		externalLint.RPCAllowSameRequestResponse,
+		externalLint.RPCAllowGoogleProtobufEmptyRequests,
+		externalLint.RPCAllowGoogleProtobufEmptyResponses,
+		externalLint.ServiceSuffix,
+		externalLint.AllowCommentIgnores,
+	)
+}
+
+func getBreakingConfigForExternalBreaking(
+	fileVersion FileVersion,
+	externalBreaking externalBufYAMLFileBreakingV1Beta1V1V2,
+) BreakingConfig {
+	return newBreakingConfig(
+		newCheckConfig(
+			fileVersion,
+			externalBreaking.Use,
+			externalBreaking.Except,
+			externalBreaking.Ignore,
+			externalBreaking.IgnoreOnly,
+		),
+		externalBreaking.IgnoreUnstablePackages,
+	)
 }
 
 // externalBufYAMLFileV1Beta1V1 represents the v1 or v1beta1 buf.yaml file, which have
