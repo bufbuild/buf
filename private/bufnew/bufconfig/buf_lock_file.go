@@ -16,6 +16,7 @@ package bufconfig
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -194,6 +195,15 @@ func readBufLockFile(
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {
 			dep := dep
+			if dep.Remote == "" {
+				return nil, errors.New("remote missing")
+			}
+			if dep.Owner == "" {
+				return nil, errors.New("owner missing")
+			}
+			if dep.Repository == "" {
+				return nil, errors.New("repository missing")
+			}
 			moduleFullName, err := bufmodule.NewModuleFullName(
 				dep.Remote,
 				dep.Owner,
@@ -204,6 +214,9 @@ func readBufLockFile(
 			}
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
+			}
+			if dep.Digest == "" {
+				return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {
@@ -231,9 +244,15 @@ func readBufLockFile(
 		depModuleKeys := make([]bufmodule.ModuleKey, len(externalBufLockFile.Deps))
 		for i, dep := range externalBufLockFile.Deps {
 			dep := dep
+			if dep.Name == "" {
+				return nil, errors.New("no module name specified")
+			}
 			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
 			if err != nil {
 				return nil, fmt.Errorf("invalid module name: %w", err)
+			}
+			if dep.Digest == "" {
+				return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {

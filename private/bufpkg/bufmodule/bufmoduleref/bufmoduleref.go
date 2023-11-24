@@ -15,19 +15,13 @@
 package bufmoduleref
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -357,55 +351,6 @@ func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 	return nil
 }
 
-// ValidateModulePinsConsistentDigests verifies that module pins to the same commit don't change digests.
-// This is important to avoid MITM issues, where the module digest stored in a buf.lock file doesn't match
-// the module pin returned from the BSR.
-// Returns an error that fulfills IsDigestChanged if any valid digest changed from the buf.lock file for
-// the same dependency commit.
-func ValidateModulePinsConsistentDigests(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	modulePins []ModulePin,
-) error {
-	currentConfig, err := buflock.ReadConfig(ctx, bucket)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil
-		}
-		return err
-	}
-	if len(currentConfig.Dependencies) == 0 {
-		return nil
-	}
-	currentIdentityAndCommitToDigest := make(map[string]string, len(currentConfig.Dependencies))
-	for _, dep := range currentConfig.Dependencies {
-		// Ignore dependencies with no digest
-		if dep.Digest == "" {
-			continue
-		}
-		// Ignore dependencies with an invalid digest.
-		// We want to replace these with a valid digest.
-		if _, err := bufcas.ParseDigest(dep.Digest); err != nil {
-			continue
-		}
-		key := fmt.Sprintf("%s/%s/%s:%s", dep.Remote, dep.Owner, dep.Repository, dep.Commit)
-		currentIdentityAndCommitToDigest[key] = dep.Digest
-	}
-	var changedErrors error
-	for _, pin := range modulePins {
-		if pin.Digest() == "" {
-			continue
-		}
-		if currentDigest, ok := currentIdentityAndCommitToDigest[pin.String()]; ok && currentDigest != pin.Digest() {
-			changedErrors = multierr.Append(changedErrors, &digestChangedError{
-				currentDigest: currentDigest,
-				updatedPin:    pin,
-			})
-		}
-	}
-	return changedErrors
-}
-
 // ModuleReferenceEqual returns true if a equals b.
 func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	if (a == nil) != (b == nil) {
@@ -433,65 +378,6 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 		a.Repository() == b.Repository() &&
 		a.Commit() == b.Commit() &&
 		a.Digest() == b.Digest()
-}
-
-// DependencyModulePinsForBucket reads the module dependencies from the lock file in the bucket.
-func DependencyModulePinsForBucket(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-) ([]ModulePin, error) {
-	lockFile, err := buflock.ReadConfig(ctx, readBucket)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read lock file: %w", err)
-	}
-	modulePins := make([]ModulePin, 0, len(lockFile.Dependencies))
-	for _, dep := range lockFile.Dependencies {
-		modulePin, err := NewModulePin(
-			dep.Remote,
-			dep.Owner,
-			dep.Repository,
-			dep.Commit,
-			dep.Digest,
-		)
-		if err != nil {
-			return nil, err
-		}
-		modulePins = append(modulePins, modulePin)
-	}
-	// just to be safe
-	SortModulePins(modulePins)
-	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
-		return nil, err
-	}
-	return modulePins, nil
-}
-
-// PutDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
-func PutDependencyModulePinsToBucket(
-	ctx context.Context,
-	writeBucket storage.WriteBucket,
-	modulePins []ModulePin,
-) error {
-	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
-		return err
-	}
-	SortModulePins(modulePins)
-	lockFile := &buflock.Config{
-		Dependencies: make([]buflock.Dependency, 0, len(modulePins)),
-	}
-	for _, pin := range modulePins {
-		lockFile.Dependencies = append(
-			lockFile.Dependencies,
-			buflock.Dependency{
-				Remote:     pin.Remote(),
-				Owner:      pin.Owner(),
-				Repository: pin.Repository(),
-				Commit:     pin.Commit(),
-				Digest:     pin.Digest(),
-			},
-		)
-	}
-	return buflock.WriteConfig(ctx, writeBucket, lockFile)
 }
 
 // SortFileInfos sorts the FileInfos by Path.
