@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -34,6 +35,11 @@ var (
 
 	bufLock          = newFileName("buf.lock", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
 	bufLockFileNames = []*fileName{bufLock}
+
+	deprecatedDigestTypeToPrefix = map[string]string{
+		"b1": "b1-",
+		"b3": "b3-",
+	}
 )
 
 // BufLockFile represents a buf.lock file.
@@ -199,6 +205,11 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
+			for digestType, prefix := range deprecatedDigestTypeToPrefix {
+				if strings.HasPrefix(dep.Digest, prefix) {
+					return nil, fmt.Errorf(`%s digests are no longer supported, run "buf mod update" to update your buf.lock`, digestType)
+				}
+			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
 				dep.Commit,
@@ -223,6 +234,11 @@ func readBufLockFile(
 			moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
 			if err != nil {
 				return nil, fmt.Errorf("invalid module name: %w", err)
+			}
+			for digestType, prefix := range deprecatedDigestTypeToPrefix {
+				if strings.HasPrefix(dep.Digest, prefix) {
+					return nil, fmt.Errorf(`%s digests are no longer supported, run "buf mod update" to update your buf.lock`, digestType)
+				}
 			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
