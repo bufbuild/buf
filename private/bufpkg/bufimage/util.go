@@ -17,7 +17,6 @@ package bufimage
 import (
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -482,70 +481,4 @@ func isFileToGenerate(
 		alreadyUsedPaths[path] = struct{}{}
 	}
 	return true
-}
-
-func sortImageModuleDependencies(imageModuleDependencies []ImageModuleDependency) {
-	sort.Slice(imageModuleDependencies, func(i, j int) bool {
-		return imageModuleDependencyLess(imageModuleDependencies[i], imageModuleDependencies[j])
-	})
-}
-
-func imageModuleDependencyLess(a ImageModuleDependency, b ImageModuleDependency) bool {
-	return imageModuleDependencyCompareTo(a, b) < 0
-}
-
-// return -1 if less
-// return 1 if greater
-// return 0 if equal
-func imageModuleDependencyCompareTo(a ImageModuleDependency, b ImageModuleDependency) int {
-	if a == nil && b == nil {
-		return 0
-	}
-	if a == nil && b != nil {
-		return -1
-	}
-	if a != nil && b == nil {
-		return 1
-	}
-	aModuleFullName := a.ModuleFullName()
-	bModuleFullName := b.ModuleFullName()
-	if aModuleFullName != nil || bModuleFullName != nil {
-		if aModuleFullName == nil && bModuleFullName != nil {
-			return -1
-		}
-		if aModuleFullName != nil && bModuleFullName == nil {
-			return 1
-		}
-		if aModuleFullName.Registry() < bModuleFullName.Registry() {
-			return -1
-		}
-		if aModuleFullName.Registry() > bModuleFullName.Registry() {
-			return 1
-		}
-		if aModuleFullName.Owner() < bModuleFullName.Owner() {
-			return -1
-		}
-		if aModuleFullName.Owner() > bModuleFullName.Owner() {
-			return 1
-		}
-		if aModuleFullName.Name() < bModuleFullName.Name() {
-			return -1
-		}
-		if aModuleFullName.Name() > bModuleFullName.Name() {
-			return 1
-		}
-	}
-	if a.CommitID() < b.CommitID() {
-		return -1
-	}
-	if a.CommitID() > b.CommitID() {
-		return 1
-	}
-	if a.IsDirect() && !b.IsDirect() {
-		return -1
-	}
-	if !a.IsDirect() && b.IsDirect() {
-		return 1
-	}
-	return 0
 }
