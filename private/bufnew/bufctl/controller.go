@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -42,7 +42,9 @@ type controller struct {
 	container          Container
 	moduleDataProvider bufmodule.ModuleDataProvider
 
-	disableSymlinks bool
+	disableSymlinks         bool
+	errorFormat             string
+	fileAnnotationsToStdout bool
 
 	commandRunner        command.Runner
 	storageosProvider    storageos.Provider
@@ -60,13 +62,16 @@ func newController(
 	httpauthAuthenticator httpauth.Authenticator,
 	gitClonerOptions git.ClonerOptions,
 	options ...ControllerOption,
-) *controller {
+) (*controller, error) {
 	controller := &controller{
 		container:          container,
 		moduleDataProvider: moduleDataProvider,
 	}
 	for _, option := range options {
 		option(controller)
+	}
+	if err := validateErrorFormat(controller.errorFormat); err != nil {
+		return nil, err
 	}
 	controller.commandRunner = command.NewRunner()
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
@@ -86,7 +91,7 @@ func newController(
 	)
 	controller.buffetchWriter = buffetch.NewWriter(container.Logger())
 	controller.bufimagebuildBuilder = bufimagebuild.NewBuilder(container.Logger())
-	return controller
+	return controller, nil
 }
 
 func (c *controller) GetWorkspace(
@@ -119,42 +124,40 @@ func (c *controller) GetImage(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
+) (bufimage.Image, error) {
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
 	}
 	ref, err := c.buffetchRefParser.GetRef(ctx, input)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, nil, errors.New("TODO")
+		return nil, errors.New("TODO")
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		return c.buildImage(ctx, workspace, functionOptions)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		return c.buildImage(ctx, workspace, functionOptions)
 	case buffetch.MessageRef:
-		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
-		return image, nil, err
+		return c.getImageForMessageRef(ctx, t, functionOptions)
 	default:
 		// This is a system error.
-		return nil, nil, fmt.Errorf("invalid Ref: %T", ref)
+		return nil, fmt.Errorf("invalid Ref: %T", ref)
 	}
 }
 
 func (c *controller) PutImage(
 	ctx context.Context,
-	container app.EnvStdoutContainer,
 	imageOutput string,
 	image bufimage.Image,
 	options ...FunctionOption,
@@ -332,16 +335,34 @@ func (c *controller) buildImage(
 	ctx context.Context,
 	moduleSet bufmodule.ModuleSet,
 	functionOptions *functionOptions,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
+) (bufimage.Image, error) {
 	var options []bufimagebuild.BuildOption
 	if functionOptions.excludeSourceInfo {
 		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
 	}
-	return c.bufimagebuildBuilder.Build(
+	image, fileAnnotations, err := c.bufimagebuildBuilder.Build(
 		ctx,
 		moduleSet,
 		options...,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		writer := c.container.Stderr()
+		if c.fileAnnotationsToStdout {
+			writer = c.container.Stdout()
+		}
+		if err := bufanalysis.PrintFileAnnotations(
+			writer,
+			fileAnnotations,
+			c.errorFormat,
+		); err != nil {
+			return nil, err
+		}
+		return nil, ErrFileAnnotation
+	}
+	return image, nil
 }
 
 func (c *controller) bootstrapResolver(
@@ -441,6 +462,17 @@ func newYAMLMarshaler(
 		)
 	}
 	return protoencoding.NewYAMLMarshaler(resolver, yamlMarshalerOptions...)
+}
+
+func validateErrorFormat(errorFormat string) error {
+	// TODO: get standard flag names and bindings into this package.
+	errorFormatFlagName := "error-format"
+	for _, formatString := range bufanalysis.AllFormatStrings {
+		if errorFormat == formatString {
+			return nil
+		}
+	}
+	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormat)
 }
 
 type functionOptions struct {

@@ -375,6 +375,17 @@ func WarnBetaCommand(_ context.Context, container appflag.Container) {
 	}
 }
 
+// ErrorOnFileAnnotations returns an error if there are any file annotions, and also prints them.
+func ErrorOnFileAnnotations(
+	fileAnnotations []bufanalysis.FileAnnotation,
+	stderrOrStdout io.Writer,
+	errorFormat string,
+) error {
+	if len(fileAnnotations) > 0 {
+	}
+	return nil
+}
+
 // NewController returns a new Controller.
 func NewController(container appflag.Container, options ...bufctl.ControllerOption) (bufctl.Controller, error) {
 	clientConfig, err := NewConnectClientConfig(container)
@@ -406,7 +417,7 @@ func newController(
 		defaultHTTPAuthenticator,
 		defaultGitClonerOptions,
 		options...,
-	), nil
+	)
 }
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -633,9 +644,15 @@ func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
 	return app.EnvBool(container, AlphaEnableWASMEnvKey, false)
 }
 
-// ValidateErrorFormatFlag validates the error format flag for all commands but lint.
-func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
-	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
+// ValidateRequiredFlag validates that the required flag is set.
+//
+// TODO: Is this needed over cobra.MarkFlagRequired?
+func ValidateRequiredFlag[T comparable](flagName string, value T) error {
+	var zero T
+	if value == zero {
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
+	}
+	return nil
 }
 
 // ValidateErrorFormatFlagLint validates the error format flag for lint.

@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufnew/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -130,34 +131,29 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if flags.Output == "" {
-		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
-	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+	if err := bufcli.ValidateRequiredFlag(outputFlagName, flags.Output); err != nil {
 		return err
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	image, err := bufcli.NewImageForSource(
-		ctx,
+	controller, err := bufcli.NewController(
 		container,
-		input,
-		flags.ErrorFormat,
-		flags.DisableSymlinks,
-		flags.Config,
-		flags.Paths,
-		flags.ExcludePaths, // we exclude these paths
-		false,
-		flags.ExcludeSourceInfo,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, flags.Output)
+	image, err := controller.GetImage(
+		ctx,
+		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithExcludeSourceInfo(flags.ExcludeSourceInfo),
+	)
 	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
+		return err
 	}
 	if len(flags.Types) > 0 {
 		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
@@ -165,14 +161,11 @@ func run(
 			return err
 		}
 	}
-	return bufcli.NewWireImageWriter(
-		container.Logger(),
-	).PutImage(
+	return controller.PutImage(
 		ctx,
-		container,
-		messageRef,
+		flags.Output,
 		image,
-		flags.AsFileDescriptorSet,
-		flags.ExcludeImports,
+		bufctl.WithAsFileDescriptorSet(flags.AsFileDescriptorSet),
+		bufctl.WithExcludeImports(flags.ExcludeImports),
 	)
 }
