@@ -125,29 +125,29 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getBucketOptions.terminateFunc,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getBucketOptions.terminateFunc,
 		)
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
+			getBucketOptions.terminateFunc,
 		)
 	case ProtoFileRef:
 		return r.getProtoFileBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileNames,
-			getBucketOptions.protoFileTerminateFileNames,
+			getBucketOptions.terminateFunc,
+			getBucketOptions.protoFileTerminateFunc,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -196,7 +196,7 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	terminateFileNames []string,
+	terminateFunc TerminateFunc,
 ) (_ ReadBucketCloser, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
@@ -255,27 +255,27 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFileNames)
+	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	terminateFileNames []string,
+	terminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	return getReadBucketCloserForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFileNames)
+	return getReadBucketCloserForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFunc)
 }
 
 func (r *reader) getProtoFileBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
-	terminateFileNames []string,
-	protoFileTerminateFileNames []string,
+	terminateFunc TerminateFunc,
+	protoFileTerminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
@@ -284,8 +284,8 @@ func (r *reader) getProtoFileBucket(
 		ctx,
 		r.storageosProvider,
 		protoFileRef.Path(),
-		terminateFileNames,
-		protoFileTerminateFileNames,
+		terminateFunc,
+		protoFileTerminateFunc,
 	)
 }
 
@@ -293,7 +293,7 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	terminateFileNames []string,
+	terminateFunc TerminateFunc,
 ) (_ ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
@@ -323,7 +323,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFileNames)
+	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getModuleKey(
@@ -502,9 +502,9 @@ func getReadBucketCloserForBucket(
 	ctx context.Context,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
-	terminateFileNames []string,
+	terminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
-	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFileNames)
+	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -528,7 +528,7 @@ func getReadBucketCloserForOS(
 	ctx context.Context,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
-	terminateFileNames []string,
+	terminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
 	inputDirPath = normalpath.Normalize(inputDirPath)
 	absInputDirPath, err := normalpath.NormalizeAndAbsolute(inputDirPath)
@@ -548,7 +548,7 @@ func getReadBucketCloserForOS(
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absInputDirPath[1:],
-		terminateFileNames,
+		terminateFunc,
 	)
 	if err != nil {
 		return nil, err
@@ -616,8 +616,8 @@ func getReadBucketCloserForOSProtoFile(
 	ctx context.Context,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
-	terminateFileNames []string,
-	protoFileTerminateFileNames []string,
+	terminateFunc TerminateFunc,
+	protoFileTerminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
 	// First, we figure out which directory we consider to be the module that encapsulates
 	// this ProtoFileRef. If we find a buf.yaml or buf.work.yaml, then we use that as the directory. If we
@@ -634,14 +634,14 @@ func getReadBucketCloserForOSProtoFile(
 	)
 	// mapPath is the path to the bucket that contains a buf.yaml.
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
-	mapPath, _, foundProtoTerminateFileName, err := getMapPathAndSubDirPath(
+	mapPath, _, terminate, err := getMapPathAndSubDirPath(
 		ctx,
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
-		append(
-			terminateFileNames,
-			protoFileTerminateFileNames...,
+		newMultiTerminateFunc(
+			terminateFunc,
+			protoFileTerminateFunc,
 		),
 	)
 	if err != nil {
@@ -649,7 +649,7 @@ func getReadBucketCloserForOSProtoFile(
 	}
 
 	var protoTerminateFileDirPath string
-	if !foundProtoTerminateFileName {
+	if !terminate {
 		// If we did not find a buf.yaml or buf.work.yaml, use the current directory.
 		// If the ProtoFileRef path was absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
@@ -682,7 +682,7 @@ func getReadBucketCloserForOSProtoFile(
 	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
 	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
 	// add as targeting files when constructing a Workspace.
-	return getReadBucketCloserForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFileNames)
+	return getReadBucketCloserForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 }
 
 // Gets two values:
@@ -715,30 +715,55 @@ func getMapPathAndSubDirPath(
 	ctx context.Context,
 	inputBucket storage.ReadBucket,
 	inputSubDirPath string,
-	terminateFileNames []string,
-) (mapPath string, subDirPath string, foundTerminateFileName bool, retErr error) {
+	terminateFunc TerminateFunc,
+) (mapPath string, subDirPath string, terminate bool, retErr error) {
 	inputSubDirPath, err := normalpath.NormalizeAndValidate(inputSubDirPath)
 	if err != nil {
 		return "", "", false, err
 	}
-	// The for loops would take care of these base cases, but we don't want to call storage.MapReadBucket
-	// unless we have to.
-	if len(terminateFileNames) == 0 {
+	// The for loops would take care of this base case, but we don't want
+	// to call storage.MapReadBucket unless we have to.
+	if terminateFunc == nil {
 		return inputSubDirPath, ".", false, nil
 	}
 	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-		for _, terminateFileName := range terminateFileNames {
-			_, err := inputBucket.Stat(ctx, normalpath.Join(curPath, terminateFileName))
-			if err == nil {
-				subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
-				if err != nil {
-					return "", "", false, err
-				}
-				return curPath, subDirPath, true, nil
+		terminate, err := terminateFunc(ctx, inputBucket, curPath)
+		if err != nil {
+			return "", "", false, err
+		}
+		if terminate {
+			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
+			if err != nil {
+				return "", "", false, err
 			}
+			return curPath, subDirPath, true, nil
 		}
 	}
 	return inputSubDirPath, ".", false, nil
+}
+
+func newMultiTerminateFunc(terminateFuncs ...TerminateFunc) TerminateFunc {
+	return TerminateFunc(
+		func(
+			ctx context.Context,
+			bucket storage.ReadBucket,
+			prefix string,
+		) (bool, error) {
+			for _, terminateFunc := range terminateFuncs {
+				if terminateFunc == nil {
+					continue
+				}
+				terminate, err := terminateFunc(ctx, bucket, prefix)
+				if err != nil {
+					return false, err
+				}
+				if terminate {
+					return true, nil
+				}
+			}
+			return false, nil
+		},
+	)
 }
 
 type getFileOptions struct {
@@ -750,8 +775,8 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getBucketOptions struct {
-	terminateFileNames          []string
-	protoFileTerminateFileNames []string
+	terminateFunc          TerminateFunc
+	protoFileTerminateFunc TerminateFunc
 }
 
 func newGetBucketOptions() *getBucketOptions {

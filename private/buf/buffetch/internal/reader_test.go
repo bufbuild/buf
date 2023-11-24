@@ -40,7 +40,7 @@ func TestGetReadBucketCloserTerminateFileName(t *testing.T) {
 		ctx,
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
-		[]string{"buf.work.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -78,7 +78,7 @@ func TestGetReadBucketCloserForBucketAbs(t *testing.T) {
 		ctx,
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
-		[]string{"buf.work.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -111,7 +111,7 @@ func TestGetReadBucketCloserForOSTerminateFileName(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
-		[]string{"buf.work.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -142,7 +142,7 @@ func TestGetReadBucketCloserForOSParentPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		"five",
-		[]string{"buf.work.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -175,7 +175,7 @@ func TestGetReadBucketCloserForOSAbsPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five"),
-		[]string{"buf.work.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -196,7 +196,7 @@ func TestGetReadBucketCloserForOSProtoFileNoTerminateFileName(t *testing.T) {
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
 		nil,
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -213,8 +213,8 @@ func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -245,8 +245,8 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -279,8 +279,8 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/proto/foo.proto"),
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -301,7 +301,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLNoTerminateFileName(t *testin
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
 		nil,
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -318,8 +318,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.
 		ctx,
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -347,8 +347,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -382,8 +382,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 		ctx,
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"),
-		[]string{"buf.work.yaml"},
-		[]string{"buf.yaml"},
+		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		NewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())

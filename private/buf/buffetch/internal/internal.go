@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -373,9 +374,8 @@ type ReadBucketCloser interface {
 
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
-	// This will be set if a terminate filename was specified and found.
-	// If so, the actual Bucket will be the directory that contained
-	// this terminate file, and the subdir will be the subdir of
+	// This will be set if a terminate file was found. If so, the actual Bucket will be
+	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
 
@@ -743,34 +743,54 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
 
-// WithGetBucketTerminateFileNames says to search the bucket for the given file names,
-// and return a bucket of the parent directory with such file name, with subDirPath
-// set to the path that the Ref was targeting.
-
-// Example of terminateFileNames: []string{"buf.work.yaml", "buf.work"}
+// WithGetBucketTerminateFunc says to check the bucket at the given prefix, and
+// potentially terminate the search for the workspace file. This will result in the
+// given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
-// TODO: Instead of file names, we will need to pass an actual function with logic when we
-// get into the world of buf.yaml v2. We'll want the equivalent of terminateFileNames to mean
-// "a buf.work.yaml, or a v2 buf.yaml".
-func WithGetBucketTerminateFileNames(terminateFileNames []string) GetBucketOption {
+// See NewTerminateAtFileNamesFunc as an example that would work in the pre-buf.yaml-v2 world
+// where we just wanted to terminate at file names buf.work.yaml, buf.work.
+func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.terminateFileNames = terminateFileNames
+		getBucketOptions.terminateFunc = terminateFunc
 	}
 }
 
-// WithGetBucketProtoFileTerminateFileNames says to search the bucket for the given file names,
-// and if one is found, consider this to be the encapsulating bucket for the given ProtoFileRef.
-// If one is not found, the current directory is considered to be the encapsulating bucket.
+// WithGetBucketProtoFileTerminateFunc is like WithGetBucketTerminateFunc, but determines
+// where to stop searching when given a ProtoFileRef, to determine what prefix is the enclosing
+// module.
 //
-// Example of terminateFileNames: []string{"buf.yaml", "buf.mod"}
-//
-// TODO: Instead of file names, we will need to pass an actual function with logic when we
-// get into the world of buf.yaml v2. We'll want the equivalent of terminateFileNames to mean
-// "a buf.work.yaml, or a v2 buf.yaml".
-func WithGetBucketProtoFileTerminateFileNames(protoFileTerminateFileNames []string) GetBucketOption {
+// In pre-buf.yaml-v2 world, this would be NewTerminateAtFilesNamesFunc("buf.yaml", "buf.mod").
+func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.protoFileTerminateFileNames = protoFileTerminateFileNames
+		getBucketOptions.protoFileTerminateFunc = protoFileTerminateFunc
 	}
+}
+
+// TerminateFunc is a termination function.
+//
+// See with WithGetBucketTerminateFunc for documentation.
+type TerminateFunc func(ctx context.Context, bucket storage.ReadBucket, prefix string) (terminate bool, err error)
+
+// NewTerminateAtFileNamesFunc returns a new terminate function that terminates at the
+// given file names.
+//
+// This is mostly left here as an example and for simple testing. Our actual logic takes
+// the version of configs into account.
+func NewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
+	return TerminateFunc(
+		func(
+			ctx context.Context,
+			bucket storage.ReadBucket,
+			prefix string,
+		) (bool, error) {
+			for _, terminateFileName := range terminateFileNames {
+				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {
+					return true, nil
+				}
+			}
+			return false, nil
+		},
+	)
 }
 
 // PutFileOption is a PutFile option.
