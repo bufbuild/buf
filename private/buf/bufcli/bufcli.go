@@ -397,6 +397,7 @@ func NewController(container appflag.Container, options ...bufctl.ControllerOpti
 		bufapi.NewClientProvider(
 			clientConfig,
 		),
+		options...,
 	)
 }
 
