@@ -19,16 +19,11 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/bufnew/bufctl"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufgraph"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -98,86 +93,30 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleResolver := bufapimodule.NewModuleResolver(
-		container.Logger(),
-		bufapimodule.NewRepositoryCommitServiceClientFactory(clientConfig),
-	)
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	moduleConfigReader := bufwire.NewModuleConfigReader(
-		container.Logger(),
-		storageosProvider,
-		bufcli.NewFetchReader(container.Logger(), storageosProvider, runner, moduleResolver, moduleReader),
-		bufmodulebuild.NewModuleBucketBuilder(),
-	)
-	if err != nil {
-		return err
-	}
-	graphBuilder := bufgraph.NewBuilder(
-		container.Logger(),
-		moduleResolver,
-		moduleReader,
-	)
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
-		ctx,
+	controller, err := bufcli.NewController(
 		container,
-		sourceOrModuleRef,
-		flags.Config,
-		nil,
-		nil,
-		false,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	moduleConfigs := moduleConfigSet.ModuleConfigs()
-	modules := make([]bufmodule.Module, len(moduleConfigs))
-	for i, moduleConfig := range moduleConfigs {
-		modules[i] = moduleConfig.Module()
-	}
-	graph, fileAnnotations, err := graphBuilder.Build(
+	workspace, err := controller.GetWorkspace(
 		ctx,
-		modules,
-		bufgraph.BuildWithWorkspace(moduleConfigSet.Workspace()),
+		input,
 	)
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdout potentially
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			flags.ErrorFormat,
-		); err != nil {
-			return err
-		}
-		return bufcli.ErrFileAnnotation
+	graph, err := bufmodule.ModuleSetToDAG(workspace)
+	if err != nil {
+		return err
 	}
-	dotString, err := graph.DOTString(
-		func(node bufgraph.Node) string {
-			return node.String()
-		},
-	)
+	dotString, err := graph.DOTString(func(s string) string { return s })
 	if err != nil {
 		return err
 	}
