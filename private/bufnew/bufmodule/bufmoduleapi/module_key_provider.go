@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"io/fs"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
@@ -107,6 +108,10 @@ func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, modu
 		),
 	)
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Required by ModuleKeyProvider documentation
+			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
+		}
 		return nil, err
 	}
 	if len(response.Msg.Commits) != 1 {

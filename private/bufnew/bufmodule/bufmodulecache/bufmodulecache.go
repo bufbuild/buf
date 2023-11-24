@@ -95,6 +95,7 @@ func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 			)...,
 		)
 		if err != nil {
+			// Automatically returns an error with fs.ErrNotExist if a ModuleKey is not found.
 			return nil, err
 		}
 		// Just a sanity check.

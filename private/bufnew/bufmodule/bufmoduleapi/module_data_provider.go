@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"io/fs"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
@@ -130,6 +131,10 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		),
 	)
 	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Required by ModuleDataProvider documentation
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.ModuleFullName().String(), Err: fs.ErrNotExist}
+		}
 		return nil, err
 	}
 	if len(response.Msg.CommitNodes) != 1 {

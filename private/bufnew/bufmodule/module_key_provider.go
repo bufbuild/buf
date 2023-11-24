@@ -26,6 +26,7 @@ type ModuleKeyProvider interface {
 	//
 	// If there is no error, the length of the ModuleKeys returned will match the length of the ModuleRefs.
 	// If there is an error, no ModuleKeys will be returned.
+	// An error with fs.ErrNotExist will be returned if a ModuleRef is not found.
 	//
 	// All ModuleKeys will have CommitID set.
 	GetModuleKeysForModuleRefs(context.Context, ...ModuleRef) ([]ModuleKey, error)
