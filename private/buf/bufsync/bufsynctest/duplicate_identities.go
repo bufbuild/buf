@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,23 +32,23 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 		"dir3": {},
 	}
 	var (
-		moduleDirsToDuplicatedIdentities = make(map[string]bufmoduleref.ModuleIdentity, len(moduleDirs))
-		moduleDirsToDifferentIdentities  = make(map[string]bufmoduleref.ModuleIdentity, len(moduleDirs))
-		moduleDirsToNilIdentities        = make(map[string]bufmoduleref.ModuleIdentity, len(moduleDirs))
+		moduleDirsToDuplicatedIdentities = make(map[string]bufmodule.ModuleFullName, len(moduleDirs))
+		moduleDirsToDifferentIdentities  = make(map[string]bufmodule.ModuleFullName, len(moduleDirs))
+		moduleDirsToNilIdentities        = make(map[string]bufmodule.ModuleFullName, len(moduleDirs))
 	)
-	repeatedIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", "foo")
+	repeatedIdentity, err := bufmodule.NewModuleFullName("buf.build", "acme", "foo")
 	require.NoError(t, err)
 	for moduleDir := range moduleDirs {
 		moduleDirsToDuplicatedIdentities[moduleDir] = repeatedIdentity
-		differentIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "acme", moduleDir)
+		differentIdentity, err := bufmodule.NewModuleFullName("buf.build", "acme", moduleDir)
 		require.NoError(t, err)
 		moduleDirsToDifferentIdentities[moduleDir] = differentIdentity
 		moduleDirsToNilIdentities[moduleDir] = nil
 	}
 	type testCase struct {
 		name                    string
-		modulesIdentitiesInHEAD map[string]bufmoduleref.ModuleIdentity
-		modulesOverrides        map[string]bufmoduleref.ModuleIdentity
+		modulesIdentitiesInHEAD map[string]bufmodule.ModuleFullName
+		modulesOverrides        map[string]bufmodule.ModuleFullName
 	}
 	testCases := []testCase{
 		{
@@ -90,10 +90,10 @@ func testDuplicateIdentities(t *testing.T, handler TestHandler, run runFunc) {
 }
 
 // prepareGitRepoDuplicateIdentities commits valid modules to the passed directories and module identities.
-func prepareGitRepoDuplicateIdentities(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmoduleref.ModuleIdentity) {
+func prepareGitRepoDuplicateIdentities(t *testing.T, repo gittest.Repository, moduleDirsToIdentities map[string]bufmodule.ModuleFullName) {
 	files := make(map[string]string)
-	for moduleDir, moduleIdentity := range moduleDirsToIdentities {
-		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString())
+	for moduleDir, moduleFullName := range moduleDirsToIdentities {
+		files[moduleDir+"/buf.yaml"] = fmt.Sprintf("version: v1\nname: %s\n", moduleFullName.String())
 		files[moduleDir+"/foo/v1/foo.proto"] = "syntax = \"proto3\";\n\npackage foo.v1;\n\nmessage Foo {}\n"
 	}
 	repo.Commit(t, "commit", files)

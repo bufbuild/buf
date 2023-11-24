@@ -90,7 +90,7 @@ func (p *executionPlan) log(logger *zap.Logger) {
 			"sync plan for module branch",
 			zap.String("branch", branch.BranchName()),
 			zap.String("moduleDir", branch.Directory()),
-			zap.String("moduleIdentity", branch.TargetModuleIdentity().IdentityString()),
+			zap.String("moduleFullName", branch.TargetModuleFullName().IdentityString()),
 			zap.Strings("commitsToSync", commitSHAs),
 		)
 	}
@@ -99,7 +99,7 @@ func (p *executionPlan) log(logger *zap.Logger) {
 			logger.Debug(
 				"sync plan for tags for module commit",
 				zap.Stringer("commit", commitTags.Commit()),
-				zap.String("moduleIdentity", moduleTags.TargetModuleIdentity().IdentityString()),
+				zap.String("moduleFullName", moduleTags.TargetModuleFullName().IdentityString()),
 				zap.Strings("tagsToSync", commitTags.Tags()),
 			)
 		}

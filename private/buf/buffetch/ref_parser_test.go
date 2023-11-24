@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -1102,10 +1101,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 				"example.com",
 				"foob",
 				"bar",
-				bufmoduletesting.TestCommit,
+				"12345",
 			),
 		),
-		"example.com/foob/bar:"+bufmoduletesting.TestCommit,
+		"example.com/foob/bar:12345",
 	)
 	testGetParsedRefSuccess(
 		t,

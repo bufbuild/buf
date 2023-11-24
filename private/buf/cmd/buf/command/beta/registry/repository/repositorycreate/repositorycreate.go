@@ -21,7 +21,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -82,7 +82,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -101,13 +101,13 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	resp, err := service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+			FullName:   moduleFullName.Owner() + "/" + moduleFullName.Name(),
 			Visibility: visibility,
 		}),
 	)
@@ -120,7 +120,7 @@ func run(
 	repository := resp.Msg.Repository
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		container.Stdout(),
 	).PrintRepository(ctx, format, repository)
 }

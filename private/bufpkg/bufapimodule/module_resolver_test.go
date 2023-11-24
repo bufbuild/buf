@@ -21,7 +21,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -85,14 +85,14 @@ func testGetModulePin(
 		}
 		ctx := context.Background()
 		mr := newModuleResolver(nil, clientFactory) // logger is unused
-		moduleReference, err := bufmoduleref.NewModuleReference(
+		moduleRef, err := bufmodule.NewModuleRef(
 			"remote",
 			"owner",
 			"repository",
 			"reference",
 		)
 		require.NoError(t, err)
-		pin, err := mr.GetModulePin(ctx, moduleReference)
+		pin, err := mr.GetModulePin(ctx, moduleRef)
 		if isError {
 			assert.Error(t, err)
 		} else {

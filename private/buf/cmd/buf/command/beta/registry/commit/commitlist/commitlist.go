@@ -21,7 +21,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -99,7 +99,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -114,11 +114,11 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleReference.Remote(),
+		moduleRef.Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 
-	reference := moduleReference.Reference()
+	reference := moduleRef.Reference()
 	if reference == "" {
 		reference = bufmoduleref.Main
 	}
@@ -126,8 +126,8 @@ func run(
 	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
-			RepositoryOwner: moduleReference.Owner(),
-			RepositoryName:  moduleReference.Repository(),
+			RepositoryOwner: moduleRef.Owner(),
+			RepositoryName:  moduleRef.Name(),
 			Reference:       reference,
 			PageSize:        flags.PageSize,
 			PageToken:       flags.PageToken,
@@ -136,7 +136,7 @@ func run(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleReferenceNotFoundError(moduleReference)
+			return bufcli.NewModuleRefNotFoundError(moduleRef)
 		}
 		return err
 	}

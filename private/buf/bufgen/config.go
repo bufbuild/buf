@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -317,30 +317,30 @@ func newJavaPackagePrefixConfigV1(externalJavaPackagePrefixConfig ExternalJavaPa
 	if externalJavaPackagePrefixConfig.Default == "" {
 		return nil, errors.New("java_package_prefix setting requires a default value")
 	}
-	seenModuleIdentities := make(map[string]struct{}, len(externalJavaPackagePrefixConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalJavaPackagePrefixConfig.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalJavaPackagePrefixConfig.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalJavaPackagePrefixConfig.Except))
 	for _, moduleName := range externalJavaPackagePrefixConfig.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid java_package_prefix except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid java_package_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid java_package_prefix except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalJavaPackagePrefixConfig.Override))
+	override := make(map[bufmodule.ModuleFullName]string, len(externalJavaPackagePrefixConfig.Override))
 	for moduleName, javaPackagePrefix := range externalJavaPackagePrefixConfig.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid java_package_prefix override key: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid java_package_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid java_package_prefix override: %q is already defined as an except", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = javaPackagePrefix
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = javaPackagePrefix
 	}
 	return &JavaPackagePrefixConfig{
 		Default:  externalJavaPackagePrefixConfig.Default,
@@ -364,22 +364,22 @@ func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfi
 		)
 	}
 	defaultOptimizeFor := descriptorpb.FileOptions_OptimizeMode(value)
-	seenModuleIdentities := make(map[string]struct{}, len(externalOptimizeForConfigV1.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalOptimizeForConfigV1.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalOptimizeForConfigV1.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalOptimizeForConfigV1.Except))
 	for _, moduleName := range externalOptimizeForConfigV1.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid optimize_for except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid optimize_for except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid optimize_for except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode, len(externalOptimizeForConfigV1.Override))
+	override := make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode, len(externalOptimizeForConfigV1.Override))
 	for moduleName, optimizeFor := range externalOptimizeForConfigV1.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid optimize_for override key: %w", err)
 		}
@@ -390,14 +390,14 @@ func newOptimizeForConfigV1(externalOptimizeForConfigV1 ExternalOptimizeForConfi
 				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
 			)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
 			return nil, fmt.Errorf(
 				"invalid optimize_for override: %q is already defined as an except",
-				moduleIdentity.IdentityString(),
+				moduleFullName.String(),
 			)
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = descriptorpb.FileOptions_OptimizeMode(value)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = descriptorpb.FileOptions_OptimizeMode(value)
 	}
 	return &OptimizeForConfig{
 		Default:  defaultOptimizeFor,
@@ -417,22 +417,22 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 	if err != nil {
 		return nil, fmt.Errorf("invalid go_package_prefix default: %w", err)
 	}
-	seenModuleIdentities := make(map[string]struct{}, len(externalGoPackagePrefixConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalGoPackagePrefixConfig.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalGoPackagePrefixConfig.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalGoPackagePrefixConfig.Except))
 	for _, moduleName := range externalGoPackagePrefixConfig.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid go_package_prefix except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid go_package_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid go_package_prefix except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalGoPackagePrefixConfig.Override))
+	override := make(map[bufmodule.ModuleFullName]string, len(externalGoPackagePrefixConfig.Override))
 	for moduleName, goPackagePrefix := range externalGoPackagePrefixConfig.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid go_package_prefix override key: %w", err)
 		}
@@ -440,11 +440,11 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 		if err != nil {
 			return nil, fmt.Errorf("invalid go_package_prefix override value: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid go_package_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid go_package_prefix override: %q is already defined as an except", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = normalizedGoPackagePrefix
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = normalizedGoPackagePrefix
 	}
 	return &GoPackagePrefixConfig{
 		Default:  defaultGoPackagePrefix,
@@ -459,30 +459,30 @@ func newRubyPackageConfigV1(
 	if externalRubyPackageConfig.IsEmpty() {
 		return nil, nil
 	}
-	seenModuleIdentities := make(map[string]struct{}, len(externalRubyPackageConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalRubyPackageConfig.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalRubyPackageConfig.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalRubyPackageConfig.Except))
 	for _, moduleName := range externalRubyPackageConfig.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid ruby_package except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid ruby_package except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid ruby_package except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalRubyPackageConfig.Override))
+	override := make(map[bufmodule.ModuleFullName]string, len(externalRubyPackageConfig.Override))
 	for moduleName, rubyPackage := range externalRubyPackageConfig.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid ruby_package override key: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid ruby_package override: %q is already defined as an except", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid ruby_package override: %q is already defined as an except", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = rubyPackage
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = rubyPackage
 	}
 	return &RubyPackageConfig{
 		Except:   except,
@@ -496,30 +496,30 @@ func newCsharpNamespaceConfigV1(
 	if externalCsharpNamespaceConfig.IsEmpty() {
 		return nil, nil
 	}
-	seenModuleIdentities := make(map[string]struct{}, len(externalCsharpNamespaceConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalCsharpNamespaceConfig.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalCsharpNamespaceConfig.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalCsharpNamespaceConfig.Except))
 	for _, moduleName := range externalCsharpNamespaceConfig.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid csharp_namespace except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid csharp_namespace except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid csharp_namespace except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalCsharpNamespaceConfig.Override))
+	override := make(map[bufmodule.ModuleFullName]string, len(externalCsharpNamespaceConfig.Override))
 	for moduleName, csharpNamespace := range externalCsharpNamespaceConfig.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid csharp_namespace override key: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid csharp_namespace override: %q is already defined as an except", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid csharp_namespace override: %q is already defined as an except", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = csharpNamespace
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = csharpNamespace
 	}
 	return &CsharpNameSpaceConfig{
 		Except:   except,
@@ -533,30 +533,30 @@ func newObjcClassPrefixConfigV1(externalObjcClassPrefixConfig ExternalObjcClassP
 	}
 	// It's ok to have an empty default, which will have the same effect as previously enabling managed mode.
 	defaultObjcClassPrefix := externalObjcClassPrefixConfig.Default
-	seenModuleIdentities := make(map[string]struct{}, len(externalObjcClassPrefixConfig.Except))
-	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalObjcClassPrefixConfig.Except))
+	seenModuleFullNames := make(map[string]struct{}, len(externalObjcClassPrefixConfig.Except))
+	except := make([]bufmodule.ModuleFullName, 0, len(externalObjcClassPrefixConfig.Except))
 	for _, moduleName := range externalObjcClassPrefixConfig.Except {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid objc_class_prefix except: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid objc_class_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix except: %q is defined multiple times", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		except = append(except, moduleIdentity)
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		except = append(except, moduleFullName)
 	}
-	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalObjcClassPrefixConfig.Override))
+	override := make(map[bufmodule.ModuleFullName]string, len(externalObjcClassPrefixConfig.Override))
 	for moduleName, objcClassPrefix := range externalObjcClassPrefixConfig.Override {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid objc_class_prefix override key: %w", err)
 		}
-		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
-			return nil, fmt.Errorf("invalid objc_class_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		if _, ok := seenModuleFullNames[moduleFullName.String()]; ok {
+			return nil, fmt.Errorf("invalid objc_class_prefix override: %q is already defined as an except", moduleFullName.String())
 		}
-		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
-		override[moduleIdentity] = objcClassPrefix
+		seenModuleFullNames[moduleFullName.String()] = struct{}{}
+		override[moduleFullName] = objcClassPrefix
 	}
 	return &ObjcClassPrefixConfig{
 		Default:  defaultObjcClassPrefix,
@@ -627,8 +627,8 @@ func newManagedConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1,
 		}
 		optimizeForConfig = &OptimizeForConfig{
 			Default:  descriptorpb.FileOptions_OptimizeMode(value),
-			Except:   make([]bufmoduleref.ModuleIdentity, 0),
-			Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+			Except:   make([]bufmodule.ModuleFullName, 0),
+			Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 		}
 	}
 	return &ManagedConfig{

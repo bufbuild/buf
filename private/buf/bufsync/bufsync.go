@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -56,7 +56,7 @@ type Handler interface {
 	// If no syncpoint is found, this function returns nil. If an error is returned, sync will abort.
 	ResolveSyncPoint(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 	) (git.Hash, error)
 
@@ -66,7 +66,7 @@ type Handler interface {
 	// If a branch does not exist or is empty, implementations must return (nil, nil).
 	GetBranchHead(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 	) (*registryv1alpha1.RepositoryCommit, error)
 
@@ -76,14 +76,14 @@ type Handler interface {
 	// If a branch does not exist or is empty, implementations must return (nil, nil).
 	GetReleaseHead(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 	) (*registryv1alpha1.RepositoryCommit, error)
 
 	// IsBranchSynced is invoked by Syncer to determine if a particular branch for a module is synced. If
 	// an error is returned, sync will abort.
 	IsBranchSynced(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 	) (bool, error)
 
@@ -91,7 +91,7 @@ type Handler interface {
 	// If an error is returned, sync will abort.
 	IsGitCommitSynced(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		hash git.Hash,
 	) (bool, error)
 
@@ -99,7 +99,7 @@ type Handler interface {
 	// to a particular branch. If an error is returned, sync will abort.
 	IsGitCommitSyncedToBranch(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 		hash git.Hash,
 	) (bool, error)
@@ -108,7 +108,7 @@ type Handler interface {
 	// and must not diverge since the last sync. If an error is returned, sync will abort.
 	IsReleaseBranch(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 	) (bool, error)
 
@@ -116,7 +116,7 @@ type Handler interface {
 	// and must not diverge since the last sync. If an error is returned, sync will abort.
 	IsProtectedBranch(
 		ctx context.Context,
-		moduleIdentity bufmoduleref.ModuleIdentity,
+		moduleFullName bufmodule.ModuleFullName,
 		branchName string,
 	) (bool, error)
 }
@@ -172,7 +172,7 @@ func SyncerWithGitRemote(gitRemoteName string) SyncerOption {
 // the module are passed is preserved, and those modules are synced in the same order. If the same
 // module directory is passed multiple times this option errors, since the order cannot be preserved
 // anymore.
-func SyncerWithModule(moduleDir string, identityOverride bufmoduleref.ModuleIdentity) SyncerOption {
+func SyncerWithModule(moduleDir string, identityOverride bufmodule.ModuleFullName) SyncerOption {
 	return func(s *syncer) error {
 		moduleDir = normalpath.Normalize(moduleDir)
 		if _, alreadyAdded := s.modulesDirsToIdentityOverrideForSync[moduleDir]; alreadyAdded {
@@ -211,20 +211,20 @@ type ModuleBranch interface {
 	// Directory is the directory relative to the root of the git repository that this module is
 	// sourced from.
 	Directory() string
-	// ModuleIdentity is the identity of the module located in Directory, or an override if one
+	// ModuleFullName is the identity of the module located in Directory, or an override if one
 	// was specified for Directory. This does not necessarily match the identity in each commit
 	// in source, but overrides their identity.
-	TargetModuleIdentity() bufmoduleref.ModuleIdentity
+	TargetModuleFullName() bufmodule.ModuleFullName
 	// CommitsToSync is the set of commits that will be synced, in the order in which they will
 	// be synced.
 	CommitsToSync() []ModuleCommit
 }
 
 type ModuleTags interface {
-	// ModuleIdentity is the identity of the module located in Directory, or an override if one
+	// ModuleFullName is the identity of the module located in Directory, or an override if one
 	// was specified for Directory. This does not necessarily match the identity in each commit
 	// in source, but overrides their identity.
-	TargetModuleIdentity() bufmoduleref.ModuleIdentity
+	TargetModuleFullName() bufmodule.ModuleFullName
 	TaggedCommitsToSync() []TaggedCommit
 }
 

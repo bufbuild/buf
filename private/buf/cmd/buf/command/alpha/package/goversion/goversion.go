@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -84,7 +84,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(flags.Module)
+	moduleRef, err := bufmodule.ParseModuleRef(flags.Module)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing module reference: %s", err.Error())
 	}
@@ -92,20 +92,20 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing plugin reference: %s", err.Error())
 	}
-	if pluginIdentity.Remote() != moduleReference.Remote() {
+	if pluginIdentity.Remote() != moduleRef.Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same remote")
 	}
 	resolver := connectclient.Make(
 		clientConfig,
-		moduleReference.Remote(),
+		moduleRef.Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
 	packageVersion, err := resolver.GetGoVersion(ctx, connect.NewRequest(
 		&registryv1alpha1.GetGoVersionRequest{
-			ModuleReference: &registryv1alpha1.LocalModuleReference{
-				Owner:      moduleReference.Owner(),
-				Repository: moduleReference.Repository(),
-				Reference:  moduleReference.Reference(),
+			ModuleRef: &registryv1alpha1.LocalModuleReference{
+				Owner:      moduleRef.Owner(),
+				Repository: moduleRef.Name(),
+				Reference:  moduleRef.Reference(),
 			},
 			PluginReference: &registryv1alpha1.GetRemotePackageVersionPlugin{
 				Owner:   pluginIdentity.Owner(),

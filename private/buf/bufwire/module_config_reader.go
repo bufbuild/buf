@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -598,7 +598,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 				//
 				// This is particularly useful for the GoPackage modifier used in
 				// managed mode, which supports module-specific overrides.
-				bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
+				bufmodulebuild.WithModuleFullName(moduleConfig.ModuleFullName),
 			}
 			bucketRelPaths := make([]string, len(externalDirOrFilePaths))
 			for i, externalDirOrFilePath := range externalDirOrFilePaths {
@@ -643,8 +643,8 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	); len(missingReferences) > 0 {
 		var builder strings.Builder
 		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
-		for _, moduleReference := range missingReferences {
-			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
+		for _, moduleRef := range missingReferences {
+			_, _ = builder.WriteString("\n\t- " + moduleRef.IdentityString())
 		}
 		m.logger.Warn(builder.String())
 	}
@@ -664,16 +664,16 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 }
 
 func detectMissingDependencies(
-	references []bufmoduleref.ModuleReference,
+	references []bufmodule.ModuleRef,
 	pins []bufmoduleref.ModulePin,
 	workspace bufmodule.Workspace,
-) []bufmoduleref.ModuleReference {
+) []bufmodule.ModuleRef {
 	pinSet := make(map[string]struct{})
 	for _, pin := range pins {
 		pinSet[pin.IdentityString()] = struct{}{}
 	}
 
-	var missingReferences []bufmoduleref.ModuleReference
+	var missingReferences []bufmodule.ModuleRef
 	for _, reference := range references {
 		if _, ok := pinSet[reference.IdentityString()]; !ok {
 			if workspace != nil {

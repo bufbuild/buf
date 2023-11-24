@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -75,7 +75,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -85,18 +85,18 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
+		if err := bufcli.PromptUserForDelete(container, "repository", moduleFullName.Name()); err != nil {
 			return err
 		}
 	}
 	if _, err := service.DeleteRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DeleteRepositoryByFullNameRequest{
-			FullName: moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
+			FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
 		}),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

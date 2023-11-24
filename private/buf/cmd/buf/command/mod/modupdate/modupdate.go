@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -156,14 +156,14 @@ func run(
 		return bufcli.NewInternalError(err)
 	}
 	// Before updating buf.lock file, verify that no file path exists in more than one module.
-	pathToModuleIdentityStrings := make(map[string][]string)
+	pathToModuleFullNameStrings := make(map[string][]string)
 	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	currentModuleIdentityString := "the current module"
-	if currentModuleIdentity := currentModule.ModuleIdentity(); currentModuleIdentity != nil {
-		currentModuleIdentityString = currentModuleIdentity.IdentityString()
+	currentModuleFullNameString := "the current module"
+	if currentModuleFullName := currentModule.ModuleFullName(); currentModuleFullName != nil {
+		currentModuleFullNameString = currentModuleFullName.String()
 	}
 	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
 	if err != nil {
@@ -171,7 +171,7 @@ func run(
 	}
 	for _, sourceFileInfo := range currentModuleSourceFileInfos {
 		path := sourceFileInfo.Path()
-		pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], currentModuleIdentityString)
+		pathToModuleFullNameStrings[path] = append(pathToModuleFullNameStrings[path], currentModuleFullNameString)
 	}
 	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
@@ -188,13 +188,13 @@ func run(
 		}
 		for _, sourceFileInfo := range sourceFileInfos {
 			path := sourceFileInfo.Path()
-			pathToModuleIdentityStrings[path] = append(pathToModuleIdentityStrings[path], modulePin.IdentityString())
+			pathToModuleFullNameStrings[path] = append(pathToModuleFullNameStrings[path], modulePin.IdentityString())
 		}
 	}
-	for path, moduleIdentityStrings := range pathToModuleIdentityStrings {
-		if len(moduleIdentityStrings) > 1 {
+	for path, moduleFullNameStrings := range pathToModuleFullNameStrings {
+		if len(moduleFullNameStrings) > 1 {
 			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and each import path must uniquely identify a file."
-			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleIdentityStrings), explanation)
+			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleFullNameStrings), explanation)
 		}
 	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
@@ -216,12 +216,12 @@ func getDependencies(
 		return nil, nil
 	}
 	var remote string
-	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
-		remote = moduleConfig.ModuleIdentity.Remote()
+	if moduleConfig.ModuleFullName != nil && moduleConfig.ModuleFullName.Remote() != "" {
+		remote = moduleConfig.ModuleFullName.Remote()
 	} else {
 		// At this point we know there's at least one dependency. If it's an unnamed module, select
 		// the right remote from the list of dependencies.
-		selectedRef := bufcli.SelectReferenceForRemote(moduleConfig.Build.DependencyModuleReferences)
+		selectedRef := bufcli.SelectRefForRegistry(moduleConfig.Build.DependencyModuleReferences)
 		if selectedRef == nil {
 			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
 		}
@@ -239,16 +239,16 @@ func getDependencies(
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
 	var currentProtoModulePins []*modulev1alpha1.ModulePin
 	if len(flags.Only) > 0 {
-		referencesByIdentity := map[string]bufmoduleref.ModuleReference{}
+		referencesByIdentity := map[string]bufmodule.ModuleRef{}
 		for _, reference := range moduleConfig.Build.DependencyModuleReferences {
 			referencesByIdentity[reference.IdentityString()] = reference
 		}
 		for _, only := range flags.Only {
-			moduleReference, ok := referencesByIdentity[only]
+			moduleRef, ok := referencesByIdentity[only]
 			if !ok {
 				return nil, fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
 			}
-			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference))
+			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleRef))
 		}
 		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
 		if err != nil {
@@ -269,7 +269,7 @@ func getDependencies(
 	)
 	if err != nil {
 		if remote != bufconnect.DefaultRemote {
-			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
+			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleConfig.ModuleFullName.String())
 		}
 		return nil, err
 	}

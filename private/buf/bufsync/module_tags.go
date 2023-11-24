@@ -14,25 +14,25 @@
 
 package bufsync
 
-import "github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+import "github.com/bufbuild/buf/private/bufnew/bufmodule"
 
 type moduleTags struct {
-	targetModuleIdentity bufmoduleref.ModuleIdentity
+	targetModuleFullName bufmodule.ModuleFullName
 	taggedCommitsToSync  []TaggedCommit
 }
 
 func newModuleTags(
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	taggedCommitsToSync []TaggedCommit,
 ) *moduleTags {
 	return &moduleTags{
-		targetModuleIdentity: targetModuleIdentity,
+		targetModuleFullName: targetModuleFullName,
 		taggedCommitsToSync:  taggedCommitsToSync,
 	}
 }
 
-func (b *moduleTags) TargetModuleIdentity() bufmoduleref.ModuleIdentity {
-	return b.targetModuleIdentity
+func (b *moduleTags) TargetModuleFullName() bufmodule.ModuleFullName {
+	return b.targetModuleFullName
 }
 
 func (b *moduleTags) TaggedCommitsToSync() []TaggedCommit {

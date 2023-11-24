@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -49,8 +49,8 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			JavaStringCheckUtf8: nil,
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_CODE_SIZE,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 	}
@@ -58,8 +58,8 @@ func TestReadConfigV1Beta1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -76,8 +76,8 @@ func TestReadConfigV1Beta1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -93,8 +93,8 @@ func TestReadConfigV1Beta1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -156,13 +156,13 @@ func TestReadConfigV1(t *testing.T) {
 			JavaStringCheckUtf8: &truth,
 			JavaPackagePrefixConfig: &JavaPackagePrefixConfig{
 				Default:  "org",
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]string),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]string),
 			},
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_CODE_SIZE,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 			Override: map[string]map[string]string{
 				bufimagemodify.JavaPackageID: {"a.proto": "override"},
@@ -178,8 +178,8 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_SPEED,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -196,8 +196,8 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default:  descriptorpb.FileOptions_LITE_RUNTIME,
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -227,7 +227,7 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 	}
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+	moduleFullName, err := bufmodule.NewModuleFullName(
 		"someremote.com",
 		"owner",
 		"repo",
@@ -237,8 +237,8 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			JavaPackagePrefixConfig: &JavaPackagePrefixConfig{
 				Default:  "org",
-				Except:   []bufmoduleref.ModuleIdentity{moduleIdentity},
-				Override: make(map[bufmoduleref.ModuleIdentity]string),
+				Except:   []bufmodule.ModuleFullName{moduleFullName},
+				Override: make(map[bufmodule.ModuleFullName]string),
 			},
 		},
 		PluginConfigs: []*PluginConfig{
@@ -261,25 +261,25 @@ func TestReadConfigV1(t *testing.T) {
 		},
 		ManagedConfig: nil,
 	}
-	moduleIdentity1 := mustCreateModuleIdentity(
+	moduleFullName1 := mustCreateModuleFullName(
 		t,
 		"someremote.com",
 		"owner",
 		"repo",
 	)
-	moduleIdentity2 := mustCreateModuleIdentity(
+	moduleFullName2 := mustCreateModuleFullName(
 		t,
 		"someremote.com",
 		"owner",
 		"foo",
 	)
-	moduleIdentity3 := mustCreateModuleIdentity(
+	moduleFullName3 := mustCreateModuleFullName(
 		t,
 		"someremote.com",
 		"owner",
 		"bar",
 	)
-	moduleIdentity4 := mustCreateModuleIdentity(
+	moduleFullName4 := mustCreateModuleFullName(
 		t,
 		"someremote.com",
 		"owner",
@@ -288,34 +288,34 @@ func TestReadConfigV1(t *testing.T) {
 	successConfig8 := &Config{
 		ManagedConfig: &ManagedConfig{
 			CsharpNameSpaceConfig: &CsharpNameSpaceConfig{
-				Except: []bufmoduleref.ModuleIdentity{
-					moduleIdentity1,
+				Except: []bufmodule.ModuleFullName{
+					moduleFullName1,
 				},
-				Override: map[bufmoduleref.ModuleIdentity]string{
-					moduleIdentity2: "a",
-					moduleIdentity3: "b",
-					moduleIdentity4: "c",
+				Override: map[bufmodule.ModuleFullName]string{
+					moduleFullName2: "a",
+					moduleFullName3: "b",
+					moduleFullName4: "c",
 				},
 			},
 			ObjcClassPrefixConfig: &ObjcClassPrefixConfig{
 				Default: "default",
-				Except: []bufmoduleref.ModuleIdentity{
-					moduleIdentity1,
+				Except: []bufmodule.ModuleFullName{
+					moduleFullName1,
 				},
-				Override: map[bufmoduleref.ModuleIdentity]string{
-					moduleIdentity2: "a",
-					moduleIdentity3: "b",
-					moduleIdentity4: "c",
+				Override: map[bufmodule.ModuleFullName]string{
+					moduleFullName2: "a",
+					moduleFullName3: "b",
+					moduleFullName4: "c",
 				},
 			},
 			RubyPackageConfig: &RubyPackageConfig{
-				Except: []bufmoduleref.ModuleIdentity{
-					moduleIdentity1,
+				Except: []bufmodule.ModuleFullName{
+					moduleFullName1,
 				},
-				Override: map[bufmoduleref.ModuleIdentity]string{
-					moduleIdentity2: "x",
-					moduleIdentity3: "y",
-					moduleIdentity4: "z",
+				Override: map[bufmodule.ModuleFullName]string{
+					moduleFullName2: "x",
+					moduleFullName3: "y",
+					moduleFullName4: "z",
 				},
 			},
 		},
@@ -331,28 +331,28 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			OptimizeForConfig: &OptimizeForConfig{
 				Default: descriptorpb.FileOptions_CODE_SIZE,
-				Except: []bufmoduleref.ModuleIdentity{
-					mustCreateModuleIdentity(
+				Except: []bufmodule.ModuleFullName{
+					mustCreateModuleFullName(
 						t,
 						"someremote.com",
 						"owner",
 						"repo",
 					),
-					mustCreateModuleIdentity(
+					mustCreateModuleFullName(
 						t,
 						"someremote.com",
 						"owner",
 						"foo",
 					),
 				},
-				Override: map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode{
-					mustCreateModuleIdentity(
+				Override: map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode{
+					mustCreateModuleFullName(
 						t,
 						"someremote.com",
 						"owner",
 						"bar",
 					): descriptorpb.FileOptions_SPEED,
-					mustCreateModuleIdentity(
+					mustCreateModuleFullName(
 						t,
 						"someremote.com",
 						"owner",
@@ -619,8 +619,8 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			GoPackagePrefixConfig: &GoPackagePrefixConfig{
 				Default:  "github.com/foo/bar/gen/go",
-				Except:   make([]bufmoduleref.ModuleIdentity, 0),
-				Override: make(map[bufmoduleref.ModuleIdentity]string),
+				Except:   make([]bufmodule.ModuleFullName, 0),
+				Override: make(map[bufmodule.ModuleFullName]string),
 			},
 		},
 	}
@@ -671,15 +671,15 @@ func assertContainsReadConfigError(t *testing.T, logger *zap.Logger, provider Pr
 	assert.Contains(t, err.Error(), message)
 }
 
-func mustCreateModuleIdentity(
+func mustCreateModuleFullName(
 	t *testing.T,
 	remote string,
 	owner string,
 	repository string,
-) bufmoduleref.ModuleIdentity {
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(remote, owner, repository)
+) bufmodule.ModuleFullName {
+	moduleFullName, err := bufmodule.NewModuleFullName(remote, owner, repository)
 	require.NoError(t, err)
-	return moduleIdentity
+	return moduleFullName
 }
 
 func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *Config, config *Config) {
@@ -692,7 +692,7 @@ func assertConfigsWithEqualObjcPrefix(t *testing.T, successConfig *Config, confi
 	objcPrefixConfig := config.ManagedConfig.ObjcClassPrefixConfig
 	require.Equal(t, successObjcPrefixConfig.Default, objcPrefixConfig.Default)
 	require.Equal(t, successObjcPrefixConfig.Except, objcPrefixConfig.Except)
-	assertEqualModuleIdentityKeyedMaps(t, successObjcPrefixConfig.Override, objcPrefixConfig.Override)
+	assertEqualModuleFullNameKeyedMaps(t, successObjcPrefixConfig.Override, objcPrefixConfig.Override)
 }
 
 func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, config *Config) {
@@ -704,7 +704,7 @@ func assertConfigsWithEqualCsharpnamespace(t *testing.T, successConfig *Config, 
 	successCsharpConfig := successConfig.ManagedConfig.CsharpNameSpaceConfig
 	csharpConfig := config.ManagedConfig.CsharpNameSpaceConfig
 	require.Equal(t, successCsharpConfig.Except, csharpConfig.Except)
-	assertEqualModuleIdentityKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
+	assertEqualModuleFullNameKeyedMaps(t, successCsharpConfig.Override, csharpConfig.Override)
 }
 
 func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *Config, config *Config) {
@@ -716,7 +716,7 @@ func assertConfigsWithEqualRubyPackage(t *testing.T, successConfig *Config, conf
 	successRubyConfig := successConfig.ManagedConfig.RubyPackageConfig
 	rubyConfig := config.ManagedConfig.RubyPackageConfig
 	require.Equal(t, successRubyConfig.Except, rubyConfig.Except)
-	assertEqualModuleIdentityKeyedMaps(t, successRubyConfig.Override, rubyConfig.Override)
+	assertEqualModuleFullNameKeyedMaps(t, successRubyConfig.Override, rubyConfig.Override)
 }
 
 func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, config *Config) {
@@ -729,10 +729,10 @@ func assertConfigsWithEqualOptimizeFor(t *testing.T, successConfig *Config, conf
 	require.NotNil(t, optimizeForConfig)
 	require.Equal(t, successOptimizeForConfig.Default, optimizeForConfig.Default)
 	require.Equal(t, successOptimizeForConfig.Except, optimizeForConfig.Except)
-	assertEqualModuleIdentityKeyedMaps(t, optimizeForConfig.Override, optimizeForConfig.Override)
+	assertEqualModuleFullNameKeyedMaps(t, optimizeForConfig.Override, optimizeForConfig.Override)
 }
 
-func assertEqualModuleIdentityKeyedMaps[V any](t *testing.T, m1 map[bufmoduleref.ModuleIdentity]V, m2 map[bufmoduleref.ModuleIdentity]V) {
+func assertEqualModuleFullNameKeyedMaps[V any](t *testing.T, m1 map[bufmodule.ModuleFullName]V, m2 map[bufmodule.ModuleFullName]V) {
 	require.Equal(t, len(m1), len(m2))
 	keyedM1 := make(map[string]V, len(m1))
 	keyedM2 := make(map[string]V, len(m2))

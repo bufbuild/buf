@@ -24,7 +24,7 @@ import (
 	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
@@ -258,46 +258,46 @@ type ManagedConfig struct {
 // JavaPackagePrefixConfig is the java_package prefix configuration.
 type JavaPackagePrefixConfig struct {
 	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> java_package prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Except  []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> java_package prefix.
+	Override map[bufmodule.ModuleFullName]string
 }
 
 type OptimizeForConfig struct {
 	Default descriptorpb.FileOptions_OptimizeMode
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> optimize_for.
-	Override map[bufmoduleref.ModuleIdentity]descriptorpb.FileOptions_OptimizeMode
+	Except  []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> optimize_for.
+	Override map[bufmodule.ModuleFullName]descriptorpb.FileOptions_OptimizeMode
 }
 
 // GoPackagePrefixConfig is the go_package prefix configuration.
 type GoPackagePrefixConfig struct {
 	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> go_package prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Except  []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> go_package prefix.
+	Override map[bufmodule.ModuleFullName]string
 }
 
 // ObjcClassPrefixConfig is the objc_class_prefix configuration.
 type ObjcClassPrefixConfig struct {
 	Default string
-	Except  []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> objc_class_prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Except  []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> objc_class_prefix.
+	Override map[bufmodule.ModuleFullName]string
 }
 
 // RubyPackgeConfig is the ruby_package configuration.
 type RubyPackageConfig struct {
-	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> ruby_package.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Except []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> ruby_package.
+	Override map[bufmodule.ModuleFullName]string
 }
 
 // CsharpNameSpaceConfig is the csharp_namespace configuration.
 type CsharpNameSpaceConfig struct {
-	Except []bufmoduleref.ModuleIdentity
-	// bufmoduleref.ModuleIdentity -> csharp_namespace prefix.
-	Override map[bufmoduleref.ModuleIdentity]string
+	Except []bufmodule.ModuleFullName
+	// bufmodule.ModuleFullName -> csharp_namespace prefix.
+	Override map[bufmodule.ModuleFullName]string
 }
 
 // TypesConfig is a types configuration

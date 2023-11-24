@@ -102,8 +102,8 @@ func testBuildWorkspace(ctx context.Context, workspacePath string) (bufmodule.Wo
 			ctx,
 			moduleBucket,
 			moduleConfig.Build,
-			bufmodulebuild.WithModuleIdentity(
-				moduleConfig.ModuleIdentity,
+			bufmodulebuild.WithModuleFullName(
+				moduleConfig.ModuleFullName,
 			),
 			bufmodulebuild.WithWorkspaceDirectory(
 				directory,
@@ -112,8 +112,8 @@ func testBuildWorkspace(ctx context.Context, workspacePath string) (bufmodule.Wo
 		if err != nil {
 			return nil, err
 		}
-		if moduleConfig.ModuleIdentity != nil {
-			namedModules[moduleConfig.ModuleIdentity.IdentityString()] = module
+		if moduleConfig.ModuleFullName != nil {
+			namedModules[moduleConfig.ModuleFullName.String()] = module
 		}
 		allModules = append(allModules, module)
 	}

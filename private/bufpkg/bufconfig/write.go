@@ -23,7 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"gopkg.in/yaml.v3"
 )
@@ -270,7 +270,7 @@ func writeConfig(
 	}
 	config := &Config{
 		Version:        version,
-		ModuleIdentity: writeConfigOptions.moduleIdentity,
+		ModuleFullName: writeConfigOptions.moduleFullName,
 	}
 	var breakingConfigVersion string
 	breakingConfig := writeConfigOptions.breakingConfig
@@ -317,8 +317,8 @@ func writeExternalConfig(
 	dependencies []string,
 ) error {
 	var name string
-	if config.ModuleIdentity != nil {
-		name = config.ModuleIdentity.IdentityString()
+	if config.ModuleFullName != nil {
+		name = config.ModuleFullName.String()
 	}
 	breakingConfig := config.Breaking
 	lintConfig := config.Lint
@@ -388,8 +388,8 @@ type tmplParam struct {
 func newTmplParam(config *Config, dependencies []string, uncomment bool) *tmplParam {
 	var name string
 	var nameUnset bool
-	if config.ModuleIdentity != nil {
-		name = config.ModuleIdentity.IdentityString()
+	if config.ModuleFullName != nil {
+		name = config.ModuleFullName.String()
 	}
 	if name == "" {
 		name = exampleName
@@ -445,8 +445,8 @@ func writeCommentedConfig(
 type writeConfigOptions struct {
 	documentationComments      bool
 	uncomment                  bool
-	moduleIdentity             bufmoduleref.ModuleIdentity
-	dependencyModuleReferences []bufmoduleref.ModuleReference
+	moduleFullName             bufmodule.ModuleFullName
+	dependencyModuleReferences []bufmodule.ModuleRef
 	breakingConfig             *bufbreakingconfig.Config
 	lintConfig                 *buflintconfig.Config
 	version                    string
@@ -460,7 +460,7 @@ func validateWriteConfigOptions(writeConfigOptions *writeConfigOptions) error {
 	if !writeConfigOptions.documentationComments && writeConfigOptions.uncomment {
 		return errors.New("cannot set uncomment without documentationComments for WriteConfig")
 	}
-	if writeConfigOptions.moduleIdentity == nil && len(writeConfigOptions.dependencyModuleReferences) > 0 {
+	if writeConfigOptions.moduleFullName == nil && len(writeConfigOptions.dependencyModuleReferences) > 0 {
 		return errors.New("cannot set deps without a name for WriteConfig")
 	}
 	return nil

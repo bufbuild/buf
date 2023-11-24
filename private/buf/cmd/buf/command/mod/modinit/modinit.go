@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -118,13 +118,13 @@ func run(
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
 	if container.NumArgs() > 0 {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+		moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 		if err != nil {
 			return err
 		}
 		writeConfigOptions = append(
 			writeConfigOptions,
-			bufconfig.WriteConfigWithModuleIdentity(moduleIdentity),
+			bufconfig.WriteConfigWithModuleFullName(moduleFullName),
 		)
 	}
 	if flags.DocumentationComments {

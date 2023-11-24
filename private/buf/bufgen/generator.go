@@ -23,7 +23,7 @@ import (
 	connect "connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
@@ -489,8 +489,8 @@ func newModifier(
 		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
 	}
 	var (
-		csharpNamespaceExcept   []bufmoduleref.ModuleIdentity
-		csharpNamespaceOverride map[bufmoduleref.ModuleIdentity]string
+		csharpNamespaceExcept   []bufmodule.ModuleFullName
+		csharpNamespaceOverride map[bufmodule.ModuleFullName]string
 	)
 	if csharpNameSpaceConfig := managedConfig.CsharpNameSpaceConfig; csharpNameSpaceConfig != nil {
 		csharpNamespaceExcept = csharpNameSpaceConfig.Except
@@ -540,8 +540,8 @@ func newModifier(
 	}
 	var (
 		objcClassPrefixDefault  string
-		objcClassPrefixExcept   []bufmoduleref.ModuleIdentity
-		objcClassPrefixOverride map[bufmoduleref.ModuleIdentity]string
+		objcClassPrefixExcept   []bufmodule.ModuleFullName
+		objcClassPrefixOverride map[bufmodule.ModuleFullName]string
 	)
 	if objcClassPrefixConfig := managedConfig.ObjcClassPrefixConfig; objcClassPrefixConfig != nil {
 		objcClassPrefixDefault = objcClassPrefixConfig.Default
@@ -561,8 +561,8 @@ func newModifier(
 		objcClassPrefixModifier,
 	)
 	var (
-		rubyPackageExcept    []bufmoduleref.ModuleIdentity
-		rubyPackageOverrides map[bufmoduleref.ModuleIdentity]string
+		rubyPackageExcept    []bufmodule.ModuleFullName
+		rubyPackageOverrides map[bufmodule.ModuleFullName]string
 	)
 	if rubyPackageConfig := managedConfig.RubyPackageConfig; rubyPackageConfig != nil {
 		rubyPackageExcept = rubyPackageConfig.Except

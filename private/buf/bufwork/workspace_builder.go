@@ -61,15 +61,15 @@ func (w *workspaceBuilder) BuildWorkspace(
 	for _, directory := range workspaceConfig.Directories {
 		if cachedModule, ok := w.moduleCache[directory]; ok {
 			// We've already built this module, so we can use the cached-equivalent.
-			if moduleIdentity := cachedModule.moduleConfig.ModuleIdentity; moduleIdentity != nil {
-				if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
+			if moduleFullName := cachedModule.moduleConfig.ModuleFullName; moduleFullName != nil {
+				if _, ok := namedModules[moduleFullName.String()]; ok {
 					return nil, fmt.Errorf(
 						"module %q is provided by multiple workspace directories listed in %s",
-						moduleIdentity.IdentityString(),
+						moduleFullName.String(),
 						workspaceID,
 					)
 				}
-				namedModules[moduleIdentity.IdentityString()] = cachedModule.module
+				namedModules[moduleFullName.String()] = cachedModule.module
 			}
 			allModules = append(allModules, cachedModule.module)
 			continue
@@ -155,15 +155,15 @@ func (w *workspaceBuilder) BuildWorkspace(
 			module,
 			moduleConfig,
 		)
-		if moduleIdentity := moduleConfig.ModuleIdentity; moduleIdentity != nil {
-			if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
+		if moduleFullName := moduleConfig.ModuleFullName; moduleFullName != nil {
+			if _, ok := namedModules[moduleFullName.String()]; ok {
 				return nil, fmt.Errorf(
 					"module %q is provided by multiple workspace directories listed in %s",
-					moduleIdentity.IdentityString(),
+					moduleFullName.String(),
 					workspaceID,
 				)
 			}
-			namedModules[moduleIdentity.IdentityString()] = module
+			namedModules[moduleFullName.String()] = module
 		}
 		allModules = append(allModules, module)
 	}

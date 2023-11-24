@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufsync/bufsynctest"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -67,7 +67,7 @@ func newTestSyncHandler() *testSyncHandler {
 	}
 }
 
-func (c *testSyncHandler) getRepo(identity bufmoduleref.ModuleIdentity) *testRepo {
+func (c *testSyncHandler) getRepo(identity bufmodule.ModuleFullName) *testRepo {
 	fullName := identity.IdentityString()
 	if _, ok := c.repos[fullName]; !ok {
 		c.repos[fullName] = &testRepo{
@@ -80,8 +80,8 @@ func (c *testSyncHandler) getRepo(identity bufmoduleref.ModuleIdentity) *testRep
 	return c.repos[fullName]
 }
 
-func (c *testSyncHandler) getRepoBranch(moduleIdentity bufmoduleref.ModuleIdentity, branchName string) (*testRepo, *testBranch) {
-	repo := c.getRepo(moduleIdentity)
+func (c *testSyncHandler) getRepoBranch(moduleFullName bufmodule.ModuleFullName, branchName string) (*testRepo, *testBranch) {
+	repo := c.getRepo(moduleFullName)
 	if _, ok := repo.branches[branchName]; !ok {
 		repo.branches[branchName] = &testBranch{}
 	}
@@ -109,7 +109,7 @@ func (c *testSyncHandler) SyncModuleTags(
 	moduleTags bufsync.ModuleTags,
 ) error {
 	for _, commit := range moduleTags.TaggedCommitsToSync() {
-		repo := c.getRepo(moduleTags.TargetModuleIdentity())
+		repo := c.getRepo(moduleTags.TargetModuleFullName())
 		c.putTags(repo, commit.Commit().Hash(), commit.Tags())
 	}
 	return nil
@@ -117,10 +117,10 @@ func (c *testSyncHandler) SyncModuleTags(
 
 func (c *testSyncHandler) ResolveSyncPoint(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (git.Hash, error) {
-	_, branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleFullName, branchName)
 	// if we have commits from SyncModuleCommit, prefer that over
 	// manually set sync point
 	if len(branch.commits) > 0 {
@@ -143,7 +143,7 @@ func (c *testSyncHandler) SyncModuleBranch(
 	ctx context.Context,
 	moduleBranch bufsync.ModuleBranch,
 ) error {
-	repo, branch := c.getRepoBranch(moduleBranch.TargetModuleIdentity(), moduleBranch.BranchName())
+	repo, branch := c.getRepoBranch(moduleBranch.TargetModuleFullName(), moduleBranch.BranchName())
 	branch.manualSyncPoint = nil // clear manual sync point
 	for _, commit := range moduleBranch.CommitsToSync() {
 		repo.syncedGitHashes[commit.Commit().Hash().Hex()] = struct{}{}
@@ -164,17 +164,17 @@ func (c *testSyncHandler) SyncModuleBranch(
 
 func (c *testSyncHandler) IsGitCommitSynced(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	hash git.Hash,
 ) (bool, error) {
-	repo := c.getRepo(moduleIdentity)
+	repo := c.getRepo(moduleFullName)
 	_, isSynced := repo.syncedGitHashes[hash.Hex()]
 	return isSynced, nil
 }
 
 func (c *testSyncHandler) IsReleaseBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
 	return branchName == bufsynctest.ReleaseBranchName, nil
@@ -182,7 +182,7 @@ func (c *testSyncHandler) IsReleaseBranch(
 
 func (c *testSyncHandler) IsProtectedBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
 	return branchName == gittest.DefaultBranch ||
@@ -192,10 +192,10 @@ func (c *testSyncHandler) IsProtectedBranch(
 
 func (c *testSyncHandler) GetBranchHead(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (*registryv1alpha1.RepositoryCommit, error) {
-	_, branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleFullName, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
 		if commit.fromDigest != "" {
@@ -221,9 +221,9 @@ func (c *testSyncHandler) GetBranchHead(
 
 func (c *testSyncHandler) GetReleaseHead(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 ) (*registryv1alpha1.RepositoryCommit, error) {
-	repo := c.getRepo(moduleIdentity)
+	repo := c.getRepo(moduleFullName)
 	for i := len(repo.releasedCommits) - 1; i >= 0; i-- {
 		commit := repo.releasedCommits[i]
 		if commit.fromDigest != "" {
@@ -249,10 +249,10 @@ func (c *testSyncHandler) GetReleaseHead(
 
 func (c *testSyncHandler) IsBranchSynced(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
-	_, branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleFullName, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
 		if commit.fromSync != nil {
@@ -264,11 +264,11 @@ func (c *testSyncHandler) IsBranchSynced(
 
 func (c *testSyncHandler) IsGitCommitSyncedToBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 	hash git.Hash,
 ) (bool, error) {
-	_, branch := c.getRepoBranch(moduleIdentity, branchName)
+	_, branch := c.getRepoBranch(moduleFullName, branchName)
 	for i := len(branch.commits) - 1; i >= 0; i-- {
 		commit := branch.commits[i]
 		if commit.fromSync != nil && commit.fromSync.Commit().Hash().String() == hash.String() {
@@ -281,7 +281,7 @@ func (c *testSyncHandler) IsGitCommitSyncedToBranch(
 func (c *testSyncHandler) ManuallyPushModule(
 	ctx context.Context,
 	t *testing.T,
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	branchName string,
 	manifest *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
@@ -290,12 +290,12 @@ func (c *testSyncHandler) ManuallyPushModule(
 	require.NoError(t, err)
 	if branchName == "" {
 		// release commit
-		repo := c.getRepo(targetModuleIdentity)
+		repo := c.getRepo(targetModuleFullName)
 		repo.releasedCommits = append(repo.releasedCommits, &testCommit{
 			fromDigest: digest.String(),
 		})
 	} else {
-		_, branch := c.getRepoBranch(targetModuleIdentity, branchName)
+		_, branch := c.getRepoBranch(targetModuleFullName, branchName)
 		branch.commits = append(branch.commits, &testCommit{
 			fromDigest: digest.String(),
 		})

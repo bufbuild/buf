@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -66,7 +66,7 @@ var (
 // Config is the user config.
 type Config struct {
 	Version        string
-	ModuleIdentity bufmoduleref.ModuleIdentity
+	ModuleFullName bufmodule.ModuleFullName
 	Build          *bufmoduleconfig.Config
 	Breaking       *bufbreakingconfig.Config
 	Lint           *buflintconfig.Config
@@ -119,15 +119,15 @@ func WriteConfigWithUncomment() WriteConfigOption {
 	}
 }
 
-// WriteConfigWithModuleIdentity returns a new WriteConfigOption that sets the name of the
-// module to the given ModuleIdentity.
+// WriteConfigWithModuleFullName returns a new WriteConfigOption that sets the name of the
+// module to the given ModuleFullName.
 //
 // The default is to not set the name.
 //
 // Only use in tests.
-func WriteConfigWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) WriteConfigOption {
+func WriteConfigWithModuleFullName(moduleFullName bufmodule.ModuleFullName) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
-		writeConfigOptions.moduleIdentity = moduleIdentity
+		writeConfigOptions.moduleFullName = moduleFullName
 	}
 }
 
@@ -135,10 +135,10 @@ func WriteConfigWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) W
 // dependencies of the module.
 //
 // The default is to not have any dependencies.
-// If this option is used, WriteConfigWithModuleIdentity must also be used.
+// If this option is used, WriteConfigWithModuleFullName must also be used.
 //
 // Only use in tests.
-func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmoduleref.ModuleReference) WriteConfigOption {
+func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmodule.ModuleRef) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.dependencyModuleReferences = dependencyModuleReferences
 	}

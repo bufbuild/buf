@@ -152,7 +152,7 @@ func BuildOptionsForWorkspaceDirectory(
 		//
 		// This is particularly useful for the GoPackage modifier used in
 		// managed mode, which supports module-specific overrides.
-		bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
+		bufmodulebuild.WithModuleFullName(moduleConfig.ModuleFullName),
 	}
 	if len(externalDirOrFilePaths) == 0 && len(externalExcludeDirOrFilePaths) == 0 {
 		return buildOptions, nil

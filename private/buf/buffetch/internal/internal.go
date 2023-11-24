@@ -345,11 +345,11 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleReference bufmodule.ModuleRef,
+	moduleRef bufmodule.ModuleRef,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
-		moduleReference,
+		moduleRef,
 	)
 }
 

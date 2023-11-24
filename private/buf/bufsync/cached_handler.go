@@ -17,24 +17,24 @@ package bufsync
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 )
 
 type isBranchSyncedCacheKey struct {
-	moduleIdentityString string
+	moduleFullNameString string
 	branchName           string
 }
 
 type isGitCommitSyncedCacheKey struct {
-	moduleIdentityString string
+	moduleFullNameString string
 	branchName           string
 	gitHash              string
 }
 
 type isProtectedBranchCacheKey struct {
-	moduleIdentityString string
+	moduleFullNameString string
 	branchName           string
 }
 
@@ -59,29 +59,29 @@ func newCachedHandler(delegate Handler) *cachedHandler {
 
 func (c *cachedHandler) GetBranchHead(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (*registryv1alpha1.RepositoryCommit, error) {
 	// This cannot be cached as it may change during the lifetime of Sync or across
 	// Sync runs.
-	return c.delegate.GetBranchHead(ctx, moduleIdentity, branchName)
+	return c.delegate.GetBranchHead(ctx, moduleFullName, branchName)
 }
 
 func (c *cachedHandler) IsBranchSynced(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
 	// Only synced branches can be cached, as non-synced branches may become synced
 	// during the lifetime of Sync or across Sync runs.
 	cacheKey := isBranchSyncedCacheKey{
-		moduleIdentityString: moduleIdentity.IdentityString(),
+		moduleFullNameString: moduleFullName.String(),
 		branchName:           branchName,
 	}
 	if _, ok := c.isBranchSyncedCache[cacheKey]; ok {
 		return true, nil
 	}
-	yes, err := c.delegate.IsBranchSynced(ctx, moduleIdentity, branchName)
+	yes, err := c.delegate.IsBranchSynced(ctx, moduleFullName, branchName)
 	if err != nil && yes {
 		c.isBranchSyncedCache[cacheKey] = struct{}{}
 	}
@@ -90,19 +90,19 @@ func (c *cachedHandler) IsBranchSynced(
 
 func (c *cachedHandler) IsGitCommitSynced(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	hash git.Hash,
 ) (bool, error) {
 	// Only synced commits can be cached, as non-synced commits may become synced during
 	// the lifetime of Sync or across Sync runs.
 	cacheKey := isGitCommitSyncedCacheKey{
-		moduleIdentityString: moduleIdentity.IdentityString(),
+		moduleFullNameString: moduleFullName.String(),
 		gitHash:              hash.Hex(),
 	}
 	if _, ok := c.isGitCommitSynedCache[cacheKey]; ok {
 		return true, nil
 	}
-	yes, err := c.delegate.IsGitCommitSynced(ctx, moduleIdentity, hash)
+	yes, err := c.delegate.IsGitCommitSynced(ctx, moduleFullName, hash)
 	if err != nil && yes {
 		c.isGitCommitSynedCache[cacheKey] = struct{}{}
 	}
@@ -111,26 +111,26 @@ func (c *cachedHandler) IsGitCommitSynced(
 
 func (c *cachedHandler) IsGitCommitSyncedToBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 	hash git.Hash,
 ) (bool, error) {
 	// Only synced commits on branches can be cached, as non-synced commits may
 	// become synced to the branch during the lifetime of Sync or across Sync runs.
 	cacheKey := isGitCommitSyncedCacheKey{
-		moduleIdentityString: moduleIdentity.IdentityString(),
+		moduleFullNameString: moduleFullName.String(),
 		branchName:           branchName,
 		gitHash:              hash.Hex(),
 	}
 	if _, ok := c.isGitCommitSynedCache[cacheKey]; ok {
 		return true, nil
 	}
-	yes, err := c.delegate.IsGitCommitSyncedToBranch(ctx, moduleIdentity, branchName, hash)
+	yes, err := c.delegate.IsGitCommitSyncedToBranch(ctx, moduleFullName, branchName, hash)
 	if err != nil && yes {
 		c.isGitCommitSynedCache[cacheKey] = struct{}{}
 		// also cache that the commit is synced in general
 		c.isGitCommitSynedCache[isGitCommitSyncedCacheKey{
-			moduleIdentityString: moduleIdentity.IdentityString(),
+			moduleFullNameString: moduleFullName.String(),
 			gitHash:              hash.Hex(),
 		}] = struct{}{}
 	}
@@ -139,16 +139,16 @@ func (c *cachedHandler) IsGitCommitSyncedToBranch(
 
 func (c *cachedHandler) IsReleaseBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
 	// All branch protection status can be cached, as this is _extremely_ unlikely to change
 	// during the lifetime of Sync or across Sync runs.
-	cacheKey := moduleIdentity.IdentityString()
+	cacheKey := moduleFullName.String()
 	if value, cached := c.isReleaseBranchCache[cacheKey]; cached {
 		return value, nil
 	}
-	yes, err := c.delegate.IsReleaseBranch(ctx, moduleIdentity, branchName)
+	yes, err := c.delegate.IsReleaseBranch(ctx, moduleFullName, branchName)
 	if err != nil {
 		c.isReleaseBranchCache[cacheKey] = yes
 	}
@@ -157,19 +157,19 @@ func (c *cachedHandler) IsReleaseBranch(
 
 func (c *cachedHandler) IsProtectedBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (bool, error) {
 	// All branch protection status can be cached, as this is _extremely_ unlikely to change
 	// during the lifetime of Sync or across Sync runs.
 	cacheKey := isProtectedBranchCacheKey{
-		moduleIdentityString: moduleIdentity.IdentityString(),
+		moduleFullNameString: moduleFullName.String(),
 		branchName:           branchName,
 	}
 	if value, cached := c.isProtectedBranchCache[cacheKey]; cached {
 		return value, nil
 	}
-	isProtected, err := c.delegate.IsProtectedBranch(ctx, moduleIdentity, branchName)
+	isProtected, err := c.delegate.IsProtectedBranch(ctx, moduleFullName, branchName)
 	if err != nil {
 		c.isProtectedBranchCache[cacheKey] = isProtected
 	}
@@ -178,20 +178,20 @@ func (c *cachedHandler) IsProtectedBranch(
 
 func (c *cachedHandler) GetReleaseHead(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 ) (*registryv1alpha1.RepositoryCommit, error) {
 	// This cannot be cached as it may change during the lifetime of Sync or across
 	// Sync runs.
-	return c.delegate.GetReleaseHead(ctx, moduleIdentity)
+	return c.delegate.GetReleaseHead(ctx, moduleFullName)
 }
 
 func (c *cachedHandler) ResolveSyncPoint(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branchName string,
 ) (git.Hash, error) {
 	// This cannot be cached as it may change during the lifetime of Sync or across Sync runs.
-	return c.delegate.ResolveSyncPoint(ctx, moduleIdentity, branchName)
+	return c.delegate.ResolveSyncPoint(ctx, moduleFullName, branchName)
 }
 
 func (c *cachedHandler) SyncModuleBranch(

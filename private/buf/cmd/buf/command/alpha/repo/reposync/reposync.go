@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/buf/bufsync/bufsyncapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -172,7 +172,7 @@ func run(
 func sync(
 	ctx context.Context,
 	container appflag.Container,
-	modules []string, // moduleDir(:moduleIdentityOverride)
+	modules []string, // moduleDir(:moduleFullNameOverride)
 	createWithVisibility *registryv1alpha1.Visibility,
 	allBranches bool,
 	remoteName string,
@@ -214,12 +214,12 @@ func sync(
 			syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(module, nil))
 			continue
 		}
-		moduleIdentityOverride, err := bufmoduleref.ModuleIdentityForString(module[colon+1:])
+		moduleFullNameOverride, err := bufmodule.ParseModuleFullName(module[colon+1:])
 		if err != nil {
 			return fmt.Errorf("module %s invalid module identity: %w", module, err)
 		}
 		moduleDir := normalpath.Normalize(module[:colon])
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleFullNameOverride))
 		modulesDirsWithOverrides[moduleDir] = struct{}{}
 	}
 	syncer, err := bufsync.NewSyncer(

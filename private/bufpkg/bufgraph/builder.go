@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"go.uber.org/zap"
 )
@@ -133,7 +133,7 @@ func (b *builder) buildForModule(
 		if err != nil {
 			return nil, err
 		}
-		// TODO: deal with the case where there are differing commits for a given ModuleIdentity.
+		// TODO: deal with the case where there are differing commits for a given ModuleFullName.
 		fileAnnotations, err := b.buildForModule(
 			ctx,
 			dependencyModule,
@@ -157,10 +157,10 @@ func (b *builder) getModuleForImageModuleDependency(
 	imageModuleDependency bufimage.ImageModuleDependency,
 	workspace bufmodule.Workspace,
 ) (bufmodule.Module, error) {
-	moduleIdentity := imageModuleDependency.ModuleIdentity()
+	moduleFullName := imageModuleDependency.ModuleFullName()
 	commit := imageModuleDependency.Commit()
 	if workspace != nil {
-		module, ok := workspace.GetModule(moduleIdentity)
+		module, ok := workspace.GetModule(moduleFullName)
 		if ok {
 			return module, nil
 		}
@@ -172,12 +172,12 @@ func (b *builder) getModuleForImageModuleDependency(
 		// but it might be better to check our assumptions and figure out if there
 		// are exceptions after the fact, as opposed to resolving a ModulePin for
 		// main when we don't know if main is what we want.
-		return nil, fmt.Errorf("had ModuleIdentity %v with no associated commit, but did not have the module in a workspace", moduleIdentity)
+		return nil, fmt.Errorf("had ModuleFullName %v with no associated commit, but did not have the module in a workspace", moduleFullName)
 	}
-	moduleReference, err := bufmoduleref.NewModuleReference(
-		moduleIdentity.Remote(),
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
+	moduleRef, err := bufmodule.NewModuleRef(
+		moduleFullName.Registry(),
+		moduleFullName.Owner(),
+		moduleFullName.Name(),
 		commit,
 	)
 	if err != nil {
@@ -185,7 +185,7 @@ func (b *builder) getModuleForImageModuleDependency(
 	}
 	modulePin, err := b.moduleResolver.GetModulePin(
 		ctx,
-		moduleReference,
+		moduleRef,
 	)
 	if err != nil {
 		return nil, err
@@ -198,9 +198,9 @@ func (b *builder) getModuleForImageModuleDependency(
 
 func newNodeForImageModuleDependency(imageModuleDependency bufimage.ImageModuleDependency) Node {
 	return Node{
-		Remote:     imageModuleDependency.ModuleIdentity().Remote(),
-		Owner:      imageModuleDependency.ModuleIdentity().Owner(),
-		Repository: imageModuleDependency.ModuleIdentity().Repository(),
+		Remote:     imageModuleDependency.ModuleFullName().Remote(),
+		Owner:      imageModuleDependency.ModuleFullName().Owner(),
+		Repository: imageModuleDependency.ModuleFullName().Repository(),
 		Commit:     imageModuleDependency.Commit(),
 	}
 }
@@ -208,10 +208,10 @@ func newNodeForImageModuleDependency(imageModuleDependency bufimage.ImageModuleD
 func newNodeForModule(module bufmodule.Module) Node {
 	// TODO: deal with unnamed Modules
 	var node Node
-	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
-		node.Remote = moduleIdentity.Remote()
-		node.Owner = moduleIdentity.Owner()
-		node.Repository = moduleIdentity.Repository()
+	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+		node.Remote = moduleFullName.Registry()
+		node.Owner = moduleFullName.Owner()
+		node.Repository = moduleFullName.Name()
 		node.Commit = module.Commit()
 	}
 	return node

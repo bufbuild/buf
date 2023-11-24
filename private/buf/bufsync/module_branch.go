@@ -15,26 +15,26 @@
 package bufsync
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 )
 
 type moduleBranch struct {
 	name                 string
 	moduleDir            string
-	targetModuleIdentity bufmoduleref.ModuleIdentity
+	targetModuleFullName bufmodule.ModuleFullName
 	commitsToSync        []ModuleCommit
 }
 
 func newModuleBranch(
 	name string,
 	dir string,
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	commitsToSync []ModuleCommit,
 ) *moduleBranch {
 	return &moduleBranch{
 		name:                 name,
 		moduleDir:            dir,
-		targetModuleIdentity: targetModuleIdentity,
+		targetModuleFullName: targetModuleFullName,
 		commitsToSync:        commitsToSync,
 	}
 }
@@ -47,8 +47,8 @@ func (b *moduleBranch) Directory() string {
 	return b.moduleDir
 }
 
-func (b *moduleBranch) TargetModuleIdentity() bufmoduleref.ModuleIdentity {
-	return b.targetModuleIdentity
+func (b *moduleBranch) TargetModuleFullName() bufmodule.ModuleFullName {
+	return b.targetModuleFullName
 }
 
 func (b *moduleBranch) CommitsToSync() []ModuleCommit {

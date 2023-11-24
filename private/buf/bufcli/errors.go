@@ -140,11 +140,11 @@ func NewTokenNotFoundError(tokenID string) error {
 	return fmt.Errorf("a token with ID %q does not exist", tokenID)
 }
 
-func NewInvalidRemoteError(err error, remote string, moduleIdentity string) error {
+func NewInvalidRemoteError(err error, remote string, moduleFullName string) error {
 	if connectErr, ok := asConnectError(err); ok {
 		err = connectErr.Unwrap()
 	}
-	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleIdentity)
+	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleFullName)
 }
 
 // wrapError is used when a CLI command fails, regardless of its error code.

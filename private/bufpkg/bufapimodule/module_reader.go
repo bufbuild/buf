@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"go.uber.org/zap"
 )
@@ -52,7 +52,7 @@ func newModuleReader(
 }
 
 func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
-	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
+	moduleFullName, err := bufmodule.NewModuleFullName(
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),
@@ -61,8 +61,8 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 		// malformed pin
 		return nil, err
 	}
-	identityAndCommitOpt := bufmodule.ModuleWithModuleIdentityAndCommit(
-		moduleIdentity,
+	identityAndCommitOpt := bufmodule.ModuleWithModuleFullNameAndCommit(
+		moduleFullName,
 		modulePin.Commit(),
 	)
 	resp, err := m.downloadManifestAndBlobs(ctx, modulePin)

@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
@@ -50,7 +50,7 @@ type TestHandler interface {
 	ManuallyPushModule(
 		ctx context.Context,
 		t *testing.T,
-		targetModuleIdentity bufmoduleref.ModuleIdentity,
+		targetModuleFullName bufmodule.ModuleFullName,
 		branchName string,
 		manifest *modulev1alpha1.Blob,
 		blobs []*modulev1alpha1.Blob,
@@ -205,20 +205,20 @@ func doCommitRandomModule(
 	t *testing.T,
 	repo gittest.Repository,
 	dir string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-) bufmoduleref.ModuleIdentity {
-	if moduleIdentity == nil {
+	moduleFullName bufmodule.ModuleFullName,
+) bufmodule.ModuleFullName {
+	if moduleFullName == nil {
 		moduleName, err := uuidutil.New()
 		require.NoError(t, err)
-		moduleIdentity, err = bufmoduleref.NewModuleIdentity("buf.build", "acme", moduleName.String())
+		moduleFullName, err = bufmodule.NewModuleFullName("buf.build", "acme", moduleName.String())
 		require.NoError(t, err)
 	}
-	repo.Commit(t, "module-"+moduleIdentity.IdentityString(), map[string]string{
-		filepath.Join(dir, "buf.yaml"):  fmt.Sprintf("version: v1\nname: %s\n", moduleIdentity.IdentityString()),
+	repo.Commit(t, "module-"+moduleFullName.String(), map[string]string{
+		filepath.Join(dir, "buf.yaml"):  fmt.Sprintf("version: v1\nname: %s\n", moduleFullName.String()),
 		filepath.Join(dir, "foo.proto"): `syntax="proto3"; package buf;`,
 	})
-	repo.Tag(t, "module/"+moduleIdentity.IdentityString(), "")
-	return moduleIdentity
+	repo.Tag(t, "module/"+moduleFullName.String(), "")
+	return moduleFullName
 }
 
 func doRandomUpdateToModule(t *testing.T, repo gittest.Repository, dir string, counter *int) {
@@ -233,7 +233,7 @@ func doManualPushCommit(
 	t *testing.T,
 	handler TestHandler,
 	repo gittest.Repository,
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	moduleDir string,
 	branch string,
 	commit git.Commit,
@@ -247,7 +247,7 @@ func doManualPushCommit(
 		context.Background(),
 		moduleBucket,
 		sourceConfig.Build,
-		bufmodulebuild.WithModuleIdentity(sourceConfig.ModuleIdentity),
+		bufmodulebuild.WithModuleFullName(sourceConfig.ModuleFullName),
 	)
 	require.NoError(t, err)
 	fileSet, err := bufcas.NewFileSetForBucket(context.Background(), builtModule.Bucket)
@@ -257,7 +257,7 @@ func doManualPushCommit(
 	handler.ManuallyPushModule(
 		context.Background(),
 		t,
-		targetModuleIdentity,
+		targetModuleFullName,
 		branch,
 		bufcasalpha.BlobToAlpha(protoManifestBlob),
 		bufcasalpha.BlobsToAlpha(protoBlobs),
@@ -266,13 +266,13 @@ func doManualPushCommit(
 func doManualPushRandomModule(
 	t *testing.T,
 	handler TestHandler,
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	branch string,
 	counter *int,
 ) {
 	*counter++
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
-		"buf.yaml":                            []byte(fmt.Sprintf("version: v1\nname: %s\n", targetModuleIdentity.IdentityString())),
+		"buf.yaml":                            []byte(fmt.Sprintf("version: v1\nname: %s\n", targetModuleFullName.String())),
 		fmt.Sprintf("foo_%d.proto", *counter): []byte(fmt.Sprintf(`syntax="proto3"; package buf_%d;`, *counter)),
 	})
 	require.NoError(t, err)
@@ -283,7 +283,7 @@ func doManualPushRandomModule(
 	handler.ManuallyPushModule(
 		context.Background(),
 		t,
-		targetModuleIdentity,
+		targetModuleFullName,
 		branch,
 		bufcasalpha.BlobToAlpha(protoManifestBlob),
 		bufcasalpha.BlobsToAlpha(protoBlobs),
@@ -305,7 +305,7 @@ func doEmptyCommits(t *testing.T, repo gittest.Repository, numOfCommits int, cou
 func assertPlanForModuleBranch(
 	t *testing.T,
 	plan bufsync.ExecutionPlan,
-	identity bufmoduleref.ModuleIdentity,
+	identity bufmodule.ModuleFullName,
 	branch string,
 	expectedMessagesOfCommitsToSync ...string,
 ) {
@@ -315,7 +315,7 @@ func assertPlanForModuleBranch(
 		if moduleBranch.BranchName() != branch {
 			continue
 		}
-		if moduleBranch.TargetModuleIdentity().IdentityString() != identity.IdentityString() {
+		if moduleBranch.TargetModuleFullName().IdentityString() != identity.IdentityString() {
 			continue
 		}
 		found = true
@@ -331,13 +331,13 @@ func assertPlanForModuleBranch(
 func assertPlanForModuleTags(
 	t *testing.T,
 	plan bufsync.ExecutionPlan,
-	identity bufmoduleref.ModuleIdentity,
+	identity bufmodule.ModuleFullName,
 	expectedMessagesOfTaggedCommitsToSync ...string,
 ) {
 	t.Helper()
 	var found = false
 	for _, moduleBranch := range plan.ModuleTagsToSync() {
-		if moduleBranch.TargetModuleIdentity().IdentityString() != identity.IdentityString() {
+		if moduleBranch.TargetModuleFullName().IdentityString() != identity.IdentityString() {
 			continue
 		}
 		found = true

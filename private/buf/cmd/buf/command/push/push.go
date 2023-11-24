@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -206,7 +206,7 @@ func run(
 	if err := buflock.CheckDeprecatedDigests(ctx, container.Logger(), sourceBucket); err != nil {
 		return err
 	}
-	moduleIdentity := sourceConfig.ModuleIdentity
+	moduleFullName := sourceConfig.ModuleFullName
 	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
 		ctx,
 		sourceBucket,
@@ -215,7 +215,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	modulePin, err := pushOrCreate(ctx, container, moduleIdentity, builtModule, flags)
+	modulePin, err := pushOrCreate(ctx, container, moduleFullName, builtModule, flags)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
@@ -239,7 +239,7 @@ func run(
 func pushOrCreate(
 	ctx context.Context,
 	container appflag.Container,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	builtModule *bufmodulebuild.BuiltModule,
 	flags *flags,
 ) (*registryv1alpha1.LocalModulePin, error) {
@@ -247,7 +247,7 @@ func pushOrCreate(
 	if err != nil {
 		return nil, err
 	}
-	modulePin, err := push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
+	modulePin, err := push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
 	if err != nil {
 		// We rely on Push* returning a NotFound error to denote the repository is not created.
 		// This technically could be a NotFound error for some other entity than the repository
@@ -256,10 +256,10 @@ func pushOrCreate(
 		// error is because the repository does not exist, and we want to avoid having to do
 		// a GetRepository RPC call for every call to push --create.
 		if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
-			if err := create(ctx, container, clientConfig, moduleIdentity, flags); err != nil {
+			if err := create(ctx, container, clientConfig, moduleFullName, flags); err != nil {
 				return nil, err
 			}
-			return push(ctx, container, clientConfig, moduleIdentity, builtModule, flags)
+			return push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
 		}
 		return nil, err
 	}
@@ -270,11 +270,11 @@ func push(
 	ctx context.Context,
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	builtModule *bufmodulebuild.BuiltModule,
 	flags *flags,
 ) (*registryv1alpha1.LocalModulePin, error) {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewPushServiceClient)
+	service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewPushServiceClient)
 	fileSet, err := bufcas.NewFileSetForBucket(ctx, builtModule.Bucket)
 	if err != nil {
 		return nil, err
@@ -291,8 +291,8 @@ func push(
 	resp, err := service.PushManifestAndBlobs(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-			Owner:      moduleIdentity.Owner(),
-			Repository: moduleIdentity.Repository(),
+			Owner:      moduleFullName.Owner(),
+			Repository: moduleFullName.Name(),
 			Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
 			Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
 			Tags:       flags.Tags,
@@ -309,15 +309,15 @@ func create(
 	ctx context.Context,
 	container appflag.Container,
 	clientConfig *connectclient.Config,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	flags *flags,
 ) error {
-	service := connectclient.Make(clientConfig, moduleIdentity.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
+	service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewRepositoryServiceClient)
 	visiblity, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility)
 	if err != nil {
 		return err
 	}
-	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
+	fullName := moduleFullName.Owner() + "/" + moduleFullName.Name()
 	_, err = service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{

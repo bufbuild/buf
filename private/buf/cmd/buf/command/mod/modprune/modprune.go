@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -94,12 +94,12 @@ func run(
 	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(requestReferences) > 0 {
 		var remote string
-		if config.ModuleIdentity != nil && config.ModuleIdentity.Remote() != "" {
-			remote = config.ModuleIdentity.Remote()
+		if config.ModuleFullName != nil && config.ModuleFullName.Remote() != "" {
+			remote = config.ModuleFullName.Remote()
 		} else {
 			// At this point we know there's at least one dependency. If it's an unnamed module, select
 			// the right remote from the list of dependencies.
-			selectedRef := bufcli.SelectReferenceForRemote(config.Build.DependencyModuleReferences)
+			selectedRef := bufcli.SelectRefForRegistry(config.Build.DependencyModuleReferences)
 			if selectedRef == nil {
 				return fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
 			}
@@ -126,7 +126,7 @@ func run(
 		)
 		if err != nil {
 			if remote != bufconnect.DefaultRemote {
-				return bufcli.NewInvalidRemoteError(err, remote, config.ModuleIdentity.IdentityString())
+				return bufcli.NewInvalidRemoteError(err, remote, config.ModuleFullName.String())
 			}
 			return err
 		}
@@ -141,25 +141,25 @@ func run(
 	return nil
 }
 
-// referencesPinnedByLock takes moduleReferences and a list of pins, then
-// returns a new list of moduleReferences with the same identity, but their
+// referencesPinnedByLock takes moduleRefs and a list of pins, then
+// returns a new list of moduleRefs with the same identity, but their
 // reference set to the commit of the pin with the corresponding identity.
-func referencesPinnedByLock(moduleReferences []bufmoduleref.ModuleReference, modulePins []bufmoduleref.ModulePin) ([]bufmoduleref.ModuleReference, error) {
+func referencesPinnedByLock(moduleRefs []bufmodule.ModuleRef, modulePins []bufmoduleref.ModulePin) ([]bufmodule.ModuleRef, error) {
 	pinsByIdentity := make(map[string]bufmoduleref.ModulePin, len(modulePins))
 	for _, modulePin := range modulePins {
 		pinsByIdentity[modulePin.IdentityString()] = modulePin
 	}
 
-	var pinnedModuleReferences []bufmoduleref.ModuleReference
-	for _, moduleReference := range moduleReferences {
-		pin, ok := pinsByIdentity[moduleReference.IdentityString()]
+	var pinnedModuleReferences []bufmodule.ModuleRef
+	for _, moduleRef := range moduleRefs {
+		pin, ok := pinsByIdentity[moduleRef.IdentityString()]
 		if !ok {
-			return nil, fmt.Errorf(`can't tidy with dependency %q: no corresponding entry found in buf.lock. Use "mod update" first if this is a new dependency`, moduleReference.IdentityString())
+			return nil, fmt.Errorf(`can't tidy with dependency %q: no corresponding entry found in buf.lock. Use "mod update" first if this is a new dependency`, moduleRef.IdentityString())
 		}
-		newModuleReference, err := bufmoduleref.NewModuleReference(
-			moduleReference.Remote(),
-			moduleReference.Owner(),
-			moduleReference.Repository(),
+		newModuleReference, err := bufmodule.NewModuleRef(
+			moduleRef.Registry(),
+			moduleRef.Owner(),
+			moduleRef.Name(),
 			pin.Commit(),
 		)
 		if err != nil {

@@ -545,7 +545,7 @@ type ImageModuleDependency interface {
 // ImageModuleDependencies returns all ImageModuleDependency values for the Image.
 //
 // Does not return any ImageModuleDependency values for non-imports, that is the
-// ModuleIdentities and commits represented by non-imports are not represented
+// ModuleFullNames and commits represented by non-imports are not represented
 // in this list.
 func ImageModuleDependencies(image Image) []ImageModuleDependency {
 	importsOfNonImports := make(map[string]struct{})

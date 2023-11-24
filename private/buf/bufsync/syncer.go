@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -48,7 +48,7 @@ type syncer struct {
 	// flags received on creation
 	gitRemoteName                        string
 	sortedModulesDirsForSync             []string
-	modulesDirsToIdentityOverrideForSync map[string]bufmoduleref.ModuleIdentity // moduleDir:moduleIdentityOverride
+	modulesDirsToIdentityOverrideForSync map[string]bufmodule.ModuleFullName // moduleDir:moduleFullNameOverride
 	syncAllBranches                      bool
 }
 
@@ -64,7 +64,7 @@ func newSyncer(
 		repo:                                 repo,
 		storageGitProvider:                   storageGitProvider,
 		handler:                              newCachedHandler(handler),
-		modulesDirsToIdentityOverrideForSync: make(map[string]bufmoduleref.ModuleIdentity),
+		modulesDirsToIdentityOverrideForSync: make(map[string]bufmodule.ModuleFullName),
 	}
 	for _, opt := range options {
 		if err := opt(s); err != nil {
@@ -111,7 +111,7 @@ func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {
 			return fmt.Errorf(
 				"sync module %s:%s branch %q: %w",
 				moduleBranch.Directory(),
-				moduleBranch.TargetModuleIdentity(),
+				moduleBranch.TargetModuleFullName(),
 				moduleBranch.BranchName(),
 				err,
 			)
@@ -121,7 +121,7 @@ func (s *syncer) executePlan(ctx context.Context, plan ExecutionPlan) error {
 		if err := s.handler.SyncModuleTags(ctx, moduleTags); err != nil {
 			return fmt.Errorf(
 				"sync module %s tags: %w",
-				moduleTags.TargetModuleIdentity(),
+				moduleTags.TargetModuleFullName(),
 				err,
 			)
 		}
@@ -157,7 +157,7 @@ func (s *syncer) readModuleAt(
 		ctx,
 		moduleBucket,
 		sourceConfig.Build,
-		bufmodulebuild.WithModuleIdentity(sourceConfig.ModuleIdentity),
+		bufmodulebuild.WithModuleFullName(sourceConfig.ModuleFullName),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %s", errReadModuleInvalidModule, err)
@@ -198,7 +198,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 		moduleBranches []ModuleBranch
 		// All tagged commits for a module identity. The commits in this set are either already synced or
 		// will be synced in at least one ModuleBranch.
-		taggedCommitsToSyncForModuleIdentity = make(map[bufmoduleref.ModuleIdentity]map[git.Commit][]string)
+		taggedCommitsToSyncForModuleFullName = make(map[bufmodule.ModuleFullName]map[git.Commit][]string)
 	)
 	// Walk branches and collect ModuleBranches and tagged commits to sync. The order of branches here
 	// doesn't matter, everything will be ordered at the end.
@@ -210,7 +210,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 		if err != nil {
 			return nil, nil, fmt.Errorf("reading head commit for branch %s: %w", branch, err)
 		}
-		moduleDirsFoundForModuleIdentity := make(map[string][]string) // moduleIdentity:[]moduleDir
+		moduleDirsFoundForModuleFullName := make(map[string][]string) // moduleFullName:[]moduleDir
 		// Walk all module dirs for a branch. The order of module dirs here doesn't matter, everything will
 		// be ordered at the end.
 		for moduleDir, identityOverride := range s.modulesDirsToIdentityOverrideForSync {
@@ -235,14 +235,14 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				)
 				continue
 			}
-			var targetModuleIdentity bufmoduleref.ModuleIdentity
+			var targetModuleFullName bufmodule.ModuleFullName
 			if identityOverride == nil {
-				targetModuleIdentity = builtModuleAtHEAD.ModuleIdentity()
+				targetModuleFullName = builtModuleAtHEAD.ModuleFullName()
 			} else {
-				targetModuleIdentity = identityOverride
+				targetModuleFullName = identityOverride
 			}
-			moduleDirsFoundForModuleIdentity[targetModuleIdentity.IdentityString()] = append(
-				moduleDirsFoundForModuleIdentity[targetModuleIdentity.IdentityString()],
+			moduleDirsFoundForModuleFullName[targetModuleFullName.String()] = append(
+				moduleDirsFoundForModuleFullName[targetModuleFullName.String()],
 				moduleDir,
 			)
 			// Determine commits to _visit_ since the last sync. Not all commits that are visitable
@@ -250,7 +250,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 			commitsToVisit, err := s.determineCommitsToVisitForModuleBranch(
 				ctx,
 				moduleDir,
-				targetModuleIdentity,
+				targetModuleFullName,
 				branch,
 			)
 			if err != nil {
@@ -284,7 +284,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 					// user try again.
 					return nil, nil, fmt.Errorf(
 						"module %q read failed at commit %q on branch %q: %w",
-						targetModuleIdentity.IdentityString(),
+						targetModuleFullName.String(),
 						commit.Hash().Hex(),
 						branch,
 						err,
@@ -302,14 +302,14 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				// identity. If it doesn't, this is still okay if the user configured an override for this
 				// moduleDir. If the identities don't match, and user didn't configure an override for this
 				// moduleDir, warn and skip the commit.
-				if identityOverride == nil && module.ModuleIdentity().IdentityString() != targetModuleIdentity.IdentityString() {
+				if identityOverride == nil && module.ModuleFullName().IdentityString() != targetModuleFullName.String() {
 					s.logger.Warn(
 						"module identity at commit has a different module identity than branch HEAD; skipping commit",
 						zap.Stringer("commit", commitToVisit),
 						zap.String("moduleDir", moduleDir),
 						zap.String("branch", branch),
-						zap.String("moduleIdentityAtHead", targetModuleIdentity.IdentityString()),
-						zap.String("moduleIdentityAtCommit", module.ModuleIdentity().IdentityString()),
+						zap.String("moduleFullNameAtHead", targetModuleFullName.String()),
+						zap.String("moduleFullNameAtCommit", module.ModuleFullName().IdentityString()),
 					)
 					continue
 				}
@@ -332,23 +332,23 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				))
 				// If the commit is tagged, collect this tagged commit because we _will_ be syncing it.
 				if len(commitHashToTags[commit.Hash().Hex()]) > 0 {
-					if _, ok := taggedCommitsToSyncForModuleIdentity[targetModuleIdentity]; !ok {
-						taggedCommitsToSyncForModuleIdentity[targetModuleIdentity] = make(map[git.Commit][]string)
+					if _, ok := taggedCommitsToSyncForModuleFullName[targetModuleFullName]; !ok {
+						taggedCommitsToSyncForModuleFullName[targetModuleFullName] = make(map[git.Commit][]string)
 					}
-					taggedCommitsToSyncForModuleIdentity[targetModuleIdentity][commit] = commitHashToTags[commit.Hash().Hex()]
+					taggedCommitsToSyncForModuleFullName[targetModuleFullName][commit] = commitHashToTags[commit.Hash().Hex()]
 				}
 			}
 			moduleBranch := newModuleBranch(
 				branch,
 				moduleDir,
-				targetModuleIdentity,
+				targetModuleFullName,
 				commitsToSync,
 			)
 			moduleBranches = append(moduleBranches, moduleBranch)
 			// Collect all previously synced tagged commits for this branch.
 			taggedCommitsOnBranch, err := s.determineSyncedTaggedCommitsReachableFrom(
 				ctx,
-				targetModuleIdentity,
+				targetModuleFullName,
 				// Start walking back from the first commit we'll sync.
 				// There may not be a commit to sync, but there is always at least 1 commit
 				// to visit because there is always at least one commit on a branch.
@@ -359,20 +359,20 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 				return nil, nil, fmt.Errorf("determine tagged commits on branch: %w", err)
 			}
 			for commit, tags := range taggedCommitsOnBranch {
-				if _, ok := taggedCommitsToSyncForModuleIdentity[targetModuleIdentity]; !ok {
-					taggedCommitsToSyncForModuleIdentity[targetModuleIdentity] = make(map[git.Commit][]string)
+				if _, ok := taggedCommitsToSyncForModuleFullName[targetModuleFullName]; !ok {
+					taggedCommitsToSyncForModuleFullName[targetModuleFullName] = make(map[git.Commit][]string)
 				}
-				taggedCommitsToSyncForModuleIdentity[targetModuleIdentity][commit] = tags
+				taggedCommitsToSyncForModuleFullName[targetModuleFullName][commit] = tags
 			}
 		}
 		// If we encountered any duplicated target module identities, fail immediately as that
 		// will wreak havoc on everything.
 		var duplicatedIdentitiesErr error
-		for moduleIdentity, moduleDirs := range moduleDirsFoundForModuleIdentity {
+		for moduleFullName, moduleDirs := range moduleDirsFoundForModuleFullName {
 			if len(moduleDirs) > 1 {
 				duplicatedIdentitiesErr = multierr.Append(duplicatedIdentitiesErr, fmt.Errorf(
 					"module identity %s cannot be synced in branch %s: present in multiple module directories: [%s]",
-					moduleIdentity, branch, strings.Join(moduleDirs, ", "),
+					moduleFullName, branch, strings.Join(moduleDirs, ", "),
 				))
 			}
 		}
@@ -382,13 +382,13 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 	}
 	// Convert all collected tagged commits into ModuleTags.
 	var moduleTags []ModuleTags
-	for targetModuleIdentity, commitsToTags := range taggedCommitsToSyncForModuleIdentity {
+	for targetModuleFullName, commitsToTags := range taggedCommitsToSyncForModuleFullName {
 		var taggedCommits []TaggedCommit
 		for commit, tags := range commitsToTags {
 			taggedCommits = append(taggedCommits, newTaggedCommit(commit, tags))
 		}
 		moduleTags = append(moduleTags, newModuleTags(
-			targetModuleIdentity,
+			targetModuleFullName,
 			taggedCommits,
 		))
 	}
@@ -399,7 +399,7 @@ func (s *syncer) determineEverythingToSync(ctx context.Context) ([]ModuleBranch,
 // are tagged and synced to the target module identity.
 func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 	ctx context.Context,
-	targetModuleIdentity bufmoduleref.ModuleIdentity,
+	targetModuleFullName bufmodule.ModuleFullName,
 	startingGitHash git.Hash,
 	commitHashToTags map[string][]string,
 ) (map[git.Commit][]string, error) {
@@ -411,7 +411,7 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 				return nil
 			}
 			if tags, commitIsTagged := commitHashToTags[commit.Hash().Hex()]; commitIsTagged {
-				if synced, err := s.handler.IsGitCommitSynced(ctx, targetModuleIdentity, commit.Hash()); err != nil {
+				if synced, err := s.handler.IsGitCommitSynced(ctx, targetModuleFullName, commit.Hash()); err != nil {
 					return err
 				} else if synced {
 					taggedCommitsOnBranch[commit] = tags
@@ -419,7 +419,7 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 					s.logger.Debug(
 						"skipping tags because the commit is not synced",
 						zap.String("commit", commit.Hash().Hex()),
-						zap.String("targetModuleIdentity", targetModuleIdentity.IdentityString()),
+						zap.String("targetModuleFullName", targetModuleFullName.String()),
 						zap.Strings("tags", tags),
 					)
 				}
@@ -454,14 +454,14 @@ func (s *syncer) determineSyncedTaggedCommitsReachableFrom(
 func (s *syncer) determineCommitsToVisitForModuleBranch(
 	ctx context.Context,
 	moduleDir string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branch string,
 ) ([]git.Hash, error) {
-	protected, err := s.handler.IsProtectedBranch(ctx, moduleIdentity, branch)
+	protected, err := s.handler.IsProtectedBranch(ctx, moduleFullName, branch)
 	if err != nil {
 		return nil, err
 	}
-	bsrBranchHead, err := s.handler.GetBranchHead(ctx, moduleIdentity, branch)
+	bsrBranchHead, err := s.handler.GetBranchHead(ctx, moduleFullName, branch)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +471,7 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 			// The remote branch is empty and unprotected. Backfill history from any synced place, or sync
 			// the whole branch.
 			found, walkedCommits, err := s.visitAllCommitsOnBranchUntil(branch, func(commit git.Commit) (bool, error) {
-				return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
+				return s.handler.IsGitCommitSynced(ctx, moduleFullName, commit.Hash())
 			})
 			if err != nil {
 				return nil, err
@@ -483,7 +483,7 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 		}
 		// The remote branch is empty but protected. How to respond to this is based on whether this branch
 		// represents the Release branch or not.
-		if isReleaseBranch, err := s.handler.IsReleaseBranch(ctx, moduleIdentity, branch); err != nil {
+		if isReleaseBranch, err := s.handler.IsReleaseBranch(ctx, moduleFullName, branch); err != nil {
 			return nil, err
 		} else if !isReleaseBranch {
 			// The remote branch is empty but protected and does not represent the Release branch. Don't
@@ -494,26 +494,26 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 		// synced from here is going to be released immediately.
 		// As a special case, attempt to content-match to the _Release_ head if there is one. If there isn't,
 		// fallback to syncing the whole branch.
-		bsrReleasedHead, err := s.handler.GetReleaseHead(ctx, moduleIdentity)
+		bsrReleasedHead, err := s.handler.GetReleaseHead(ctx, moduleFullName)
 		if err != nil {
 			return nil, err
 		}
 		if bsrReleasedHead != nil {
 			// This branch is the Release branch, and there is something to content-match with. This is the
 			// typical case of onboarding the Release branch.
-			return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrReleasedHead)
+			return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleFullName, branch, bsrReleasedHead)
 		}
 		// This branch is the Release branch, but there is no released commit. This is the typical case
 		// of a new module.
 		return s.visitAllCommitsOnBranch(branch)
 	}
 	// The remote branch is non-empty.
-	if isSynced, err := s.handler.IsBranchSynced(ctx, moduleIdentity, branch); err != nil {
+	if isSynced, err := s.handler.IsBranchSynced(ctx, moduleFullName, branch); err != nil {
 		return nil, err
 	} else if !isSynced {
 		// The remote branch is non-empty, but unsynced. This is the typical case of onboarding
 		// non-protected branches.
-		return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
+		return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleFullName, branch, bsrBranchHead)
 	}
 	// The remote branch is non-empty and it has been synced at least once.
 	if protected {
@@ -521,11 +521,11 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 		// then resume from the last synced commit for this branch specifically.
 		// If there is no such commit, this is an error. protectSyncedModuleBranch should catch this
 		// but return an error just in case.
-		if err := s.protectSyncedModuleBranch(ctx, moduleIdentity, branch); err != nil {
+		if err := s.protectSyncedModuleBranch(ctx, moduleFullName, branch); err != nil {
 			return nil, err
 		}
 		latestVcsCommitInRemoteBranch, walkedCommits, err := s.visitAllCommitsOnBranchUntil(branch, func(commit git.Commit) (bool, error) {
-			return s.handler.IsGitCommitSyncedToBranch(ctx, moduleIdentity, branch, commit.Hash())
+			return s.handler.IsGitCommitSyncedToBranch(ctx, moduleFullName, branch, commit.Hash())
 		})
 		if err != nil {
 			return nil, err
@@ -540,7 +540,7 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 	// If a synced commit cannot be found, attempt to recover by content matching again, and finally just
 	// syncing the HEAD of the branch.
 	latestVcsCommitInRemote, walkedCommits, err := s.visitAllCommitsOnBranchUntil(branch, func(commit git.Commit) (bool, error) {
-		return s.handler.IsGitCommitSynced(ctx, moduleIdentity, commit.Hash())
+		return s.handler.IsGitCommitSynced(ctx, moduleFullName, commit.Hash())
 	})
 	if err != nil {
 		return nil, err
@@ -551,10 +551,10 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 	s.logger.Warn(
 		"expected to find resume point for synced branch for module, but didn't find one; onboarding branch again",
 		zap.String("moduleDir", moduleDir),
-		zap.String("moduleIdentity", moduleIdentity.IdentityString()),
+		zap.String("moduleFullName", moduleFullName.String()),
 		zap.String("branch", branch),
 	)
-	return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleIdentity, branch, bsrBranchHead)
+	return s.visitAllCommitsOnBranchUntilContentMatchOrHead(ctx, moduleDir, moduleFullName, branch, bsrBranchHead)
 }
 
 // visitAllCommitsOnBranchUntilContentMatchOrHead walks a branch at a module dir finding the first commit that
@@ -565,7 +565,7 @@ func (s *syncer) determineCommitsToVisitForModuleBranch(
 func (s *syncer) visitAllCommitsOnBranchUntilContentMatchOrHead(
 	ctx context.Context,
 	moduleDir string,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	branch string,
 	bsrCommitToMatch *registryv1alpha1.RepositoryCommit,
 ) ([]git.Hash, error) {
@@ -615,7 +615,7 @@ func (s *syncer) visitAllCommitsOnBranchUntilContentMatchOrHead(
 		s.logger.Debug(
 			"content matched to commit",
 			zap.String("moduleDir", moduleDir),
-			zap.String("moduleIdentity", moduleIdentity.IdentityString()),
+			zap.String("moduleFullName", moduleFullName.String()),
 			zap.String("branch", branch),
 			zap.String("gitHash", matched.Hex()),
 			zap.String("bsrCommitID", bsrCommitToMatch.Id),
@@ -634,12 +634,12 @@ func (s *syncer) visitAllCommitsOnBranchUntilContentMatchOrHead(
 // This must only be called for protected branches.
 func (s *syncer) protectSyncedModuleBranch(
 	ctx context.Context,
-	moduleIdentity bufmoduleref.ModuleIdentity,
+	moduleFullName bufmodule.ModuleFullName,
 	protectedBranch string,
 ) error {
-	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleIdentity, protectedBranch)
+	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleFullName, protectedBranch)
 	if err != nil {
-		return fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
+		return fmt.Errorf("resolve sync point for module %s: %w", moduleFullName.String(), err)
 	}
 	if err != nil {
 		return err
@@ -660,7 +660,7 @@ func (s *syncer) protectSyncedModuleBranch(
 	if err != nil {
 		return fmt.Errorf("resolve branch %q head: %w", protectedBranch, err)
 	}
-	if headIsSyncedToRemoteBranch, err := s.handler.IsGitCommitSyncedToBranch(ctx, moduleIdentity, protectedBranch, branchHead.Hash()); err != nil {
+	if headIsSyncedToRemoteBranch, err := s.handler.IsGitCommitSyncedToBranch(ctx, moduleFullName, protectedBranch, branchHead.Hash()); err != nil {
 		return fmt.Errorf("check if branch %q head %q is synced: %w", protectedBranch, branchHead.Hash(), err)
 	} else if headIsSyncedToRemoteBranch {
 		// Branch HEAD is synced, syncPoint is most likely ahead of the local branch and the local

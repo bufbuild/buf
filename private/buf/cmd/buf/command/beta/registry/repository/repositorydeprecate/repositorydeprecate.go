@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -70,7 +70,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -80,14 +80,14 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	if _, err := service.DeprecateRepositoryByName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DeprecateRepositoryByNameRequest{
-			OwnerName:          moduleIdentity.Owner(),
-			RepositoryName:     moduleIdentity.Repository(),
+			OwnerName:          moduleFullName.Owner(),
+			RepositoryName:     moduleFullName.Name(),
 			DeprecationMessage: flags.Message,
 		}),
 	); err != nil {

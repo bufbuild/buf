@@ -74,12 +74,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	var moduleIdentityString string
-	if config.ModuleIdentity != nil {
-		moduleIdentityString = config.ModuleIdentity.IdentityString()
+	var moduleFullNameString string
+	if config.ModuleFullName != nil {
+		moduleFullNameString = config.ModuleFullName.String()
 	}
-	if moduleIdentityString == "" {
+	if moduleFullNameString == "" {
 		return fmt.Errorf("%s has no module name", existingConfigFilePath)
 	}
-	return browser.OpenURL("https://" + moduleIdentityString)
+	return browser.OpenURL("https://" + moduleFullNameString)
 }

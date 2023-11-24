@@ -20,7 +20,7 @@ import (
 	"io/fs"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"go.uber.org/zap"
 )
@@ -40,20 +40,20 @@ func newModuleResolver(
 	}
 }
 
-func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
-	repositoryCommitService := m.repositoryCommitClientFactory(moduleReference.Remote())
+func (m *moduleResolver) GetModulePin(ctx context.Context, moduleRef bufmodule.ModuleRef) (bufmoduleref.ModulePin, error) {
+	repositoryCommitService := m.repositoryCommitClientFactory(moduleRef.Registry())
 	resp, err := repositoryCommitService.GetRepositoryCommitByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
-			RepositoryOwner: moduleReference.Owner(),
-			RepositoryName:  moduleReference.Repository(),
-			Reference:       moduleReference.Reference(),
+			RepositoryOwner: moduleRef.Owner(),
+			RepositoryName:  moduleRef.Name(),
+			Reference:       moduleRef.Reference(),
 		}),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Required by ModuleResolver interface spec
-			return nil, &fs.PathError{Op: "read", Path: moduleReference.String(), Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
@@ -61,9 +61,9 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		return nil, errors.New("empty response")
 	}
 	return bufmoduleref.NewModulePin(
-		moduleReference.Remote(),
-		moduleReference.Owner(),
-		moduleReference.Repository(),
+		moduleRef.Registry(),
+		moduleRef.Owner(),
+		moduleRef.Name(),
 		resp.Msg.RepositoryCommit.Name,
 		resp.Msg.RepositoryCommit.ManifestDigest,
 	)

@@ -587,7 +587,7 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 //if err != nil {
 //return nil, nil, err
 //}
-//if sourceConfig.ModuleIdentity == nil {
+//if sourceConfig.ModuleFullName == nil {
 //return nil, nil, ErrNoModuleName
 //}
 
@@ -681,12 +681,12 @@ Use a specific module version and plugin version.
 `, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
 
-//// SelectReferenceForRemote receives a list of module references and selects one for remote
+//// SelectRefForRegistry receives a list of module references and selects one for remote
 //// operations. In most cases, all references will have the same remote, which will result in the
 //// first reference being selected. In cases in which there is a mix of remotes, the first reference
 //// with a remote different than "buf.build" will be selected. This func is useful for targeting
 //// single-tenant BSR addresses.
-//func SelectReferenceForRemote(references []bufmoduleref.ModuleReference) bufmoduleref.ModuleReference {
+//func SelectRefForRegistry(references []bufmodule.ModuleRef) bufmodule.ModuleRef {
 //if len(references) == 0 {
 //return nil
 //}
