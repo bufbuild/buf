@@ -42,6 +42,7 @@ message EventRequest {
 message EventPayload {
   oneof payload {
     RepositoryPushEvent repository_push = 1;
+    RepositoryReviewRequiredEvent repository_review_required = 2;
   }
 }
 
@@ -55,5 +56,15 @@ message RepositoryPushEvent {
   // The repository commit that was pushed.
   buf.alpha.registry.v1alpha1.RepositoryCommit repository_commit = 2;
   // The repository that was pushed.
+  buf.alpha.registry.v1alpha1.Repository repository = 3;
+}
+
+// Payload for the event WEBHOOK_EVENT_REPOSITORY_REVIEW_REQUIRED.
+message RepositoryReviewRequiredEvent {
+  // The timestamp of the commit that need to be reviewed was push.
+  google.protobuf.Timestamp event_time = 1;
+  // The repository commit that need to be reviewed.
+  buf.alpha.registry.v1alpha1.RepositoryCommit repository_commit = 2;
+  // The repository that was pushed a commit that need to be reviewed.
   buf.alpha.registry.v1alpha1.Repository repository = 3;
 }

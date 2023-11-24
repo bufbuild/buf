@@ -58,6 +58,9 @@ enum WebhookEvent {
   // WEBHOOK_EVENT_REPOSITORY_PUSH is emitted whenever a successful buf push is
   // completed for a specific repository.
   WEBHOOK_EVENT_REPOSITORY_PUSH = 1;
+  // WEBHOOK_EVENT_REPOSITORY_PUSH is emitted whenever a breaking change is pushed
+  // to a specific repository on the BSR, where the governance feature is enabled server-wide .
+  WEBHOOK_EVENT_REPOSITORY_REVIEW_REQUIRED = 2;
 }
 
 // CreateWebhookResponse is the proto response representation
