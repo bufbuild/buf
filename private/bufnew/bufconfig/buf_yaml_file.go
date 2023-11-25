@@ -407,19 +407,23 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Name = moduleFullName.String()
 		}
 		rootToExcludes := moduleConfig.RootToExcludes()
-		roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
-		for _, root := range roots {
-			externalBufYAMLFile.Build.Roots = append(
-				externalBufYAMLFile.Build.Roots,
-				root,
-			)
-			for _, exclude := range rootToExcludes[root] {
-				// Excludes are defined to be sorted.
-				externalBufYAMLFile.Build.Excludes = append(
-					externalBufYAMLFile.Build.Excludes,
-					// Remember, in buf.yaml files, excludes are not relative to roots.
-					normalpath.Join(root, exclude),
+		excludes, ok := rootToExcludes["."]
+		// If "." -> empty, do not add anything.
+		if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
+			roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
+			for _, root := range roots {
+				externalBufYAMLFile.Build.Roots = append(
+					externalBufYAMLFile.Build.Roots,
+					root,
 				)
+				for _, exclude := range rootToExcludes[root] {
+					// Excludes are defined to be sorted.
+					externalBufYAMLFile.Build.Excludes = append(
+						externalBufYAMLFile.Build.Excludes,
+						// Remember, in buf.yaml files, excludes are not relative to roots.
+						normalpath.Join(root, exclude),
+					)
+				}
 			}
 		}
 		// All already sorted.
