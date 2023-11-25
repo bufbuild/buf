@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -125,7 +126,7 @@ func run(
 	}
 	printer, err := bufprint.NewTokenPrinter(container.Stdout(), format)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	// TODO: flag docs say "next_token" field will be present in the output,
 	//  for paging through results but we are actually ignoring that field now.

@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -114,7 +115,7 @@ func run(
 	}
 	printer, err := bufprint.NewTokenPrinter(container.Stdout(), format)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return printer.PrintTokens(ctx, resp.Msg.Token)
 }

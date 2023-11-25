@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +68,7 @@ func run(ctx context.Context, container appflag.Container) error {
 		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -120,7 +121,7 @@ func run(
 		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Draft deleted."); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }

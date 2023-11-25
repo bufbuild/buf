@@ -20,11 +20,11 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -99,11 +100,11 @@ func run(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	if existingConfigFilePath == "" {
 		return bufcli.ErrNoConfigFile
@@ -114,7 +115,7 @@ func run(
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	pinnedRepositories, err := getDependencies(
 		ctx,
@@ -153,13 +154,13 @@ func run(
 		if bufmoduleref.IsDigestChanged(err) {
 			return err
 		}
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	// Before updating buf.lock file, verify that no file path exists in more than one module.
 	pathToModuleFullNameStrings := make(map[string][]string)
 	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	currentModuleFullNameString := "the current module"
 	if currentModuleFullName := currentModule.ModuleFullName(); currentModuleFullName != nil {
@@ -167,7 +168,7 @@ func run(
 	}
 	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	for _, sourceFileInfo := range currentModuleSourceFileInfos {
 		path := sourceFileInfo.Path()
@@ -175,16 +176,16 @@ func run(
 	}
 	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	for _, modulePin := range dependencyModulePins {
 		module, err := moduleReader.GetModule(ctx, modulePin)
 		if err != nil {
-			return bufcli.NewInternalError(err)
+			return syserror.Wrap(err)
 		}
 		sourceFileInfos, err := module.SourceFileInfos(ctx)
 		if err != nil {
-			return bufcli.NewInternalError(err)
+			return syserror.Wrap(err)
 		}
 		for _, sourceFileInfo := range sourceFileInfos {
 			path := sourceFileInfo.Path()
@@ -198,7 +199,7 @@ func run(
 		}
 	}
 	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }
@@ -275,7 +276,7 @@ func getDependencies(
 	}
 	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
 	if err != nil {
-		return nil, bufcli.NewInternalError(err)
+		return nil, syserror.Wrap(err)
 	}
 	// We want to create one repository service per relevant remote.
 	remoteToRepositoryService := make(map[string]registryv1alpha1connect.RepositoryServiceClient)
