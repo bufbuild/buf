@@ -17,6 +17,9 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/bufbuild/buf/private/pkg/netext"
 )
 
 // ModuleFullName represents the full name of the Module, including its registry, owner, and name.
@@ -70,13 +73,22 @@ func newModuleFullName(
 	name string,
 ) (*moduleFullName, error) {
 	if registry == "" {
-		return nil, errors.New("new ModuleFullName: registry is empty")
+		return nil, errors.New("registry is empty")
+	}
+	if _, err := netext.ValidateHostname(registry); err != nil {
+		return nil, fmt.Errorf("registry %q is not a valid hostname: %w", registry, err)
 	}
 	if owner == "" {
-		return nil, errors.New("new ModuleFullName: owner is empty")
+		return nil, errors.New("owner is empty")
+	}
+	if strings.Contains(owner, "/") {
+		return nil, fmt.Errorf("owner %q cannot contain slashes", owner)
 	}
 	if name == "" {
-		return nil, errors.New("new ModuleFullName: name is empty")
+		return nil, errors.New("name is empty")
+	}
+	if strings.Contains(name, "/") {
+		return nil, fmt.Errorf("name %q cannot contain slashes", name)
 	}
 	return &moduleFullName{
 		registry: registry,

@@ -19,12 +19,12 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -85,18 +85,15 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)
-	remote := container.Arg(0)
-	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
-		return err
-	}
-	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
+	registryHostname := container.Arg(0)
+	if _, err := netext.ValidateHostname(registryHostname); err != nil {
 		return err
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
 	}
-	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewTokenServiceClient)
+	service := connectclient.Make(clientConfig, registryHostname, registryv1alpha1connect.NewTokenServiceClient)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "token", flags.TokenID); err != nil {
 			return err
