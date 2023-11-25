@@ -91,15 +91,15 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 	resp, err := service.GetRepositoryCommitByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
-			RepositoryOwner: moduleRef.Owner(),
-			RepositoryName:  moduleRef.Name(),
-			Reference:       moduleRef.Reference(),
+			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+			RepositoryName:  moduleRef.ModuleFullName().Name(),
+			Reference:       moduleRef.Ref(),
 		}),
 	)
 	if err != nil {

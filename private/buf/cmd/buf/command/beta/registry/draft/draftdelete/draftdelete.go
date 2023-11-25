@@ -80,11 +80,13 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	if moduleRef.Reference() == bufmoduleref.Main {
+	// TODO: deal with main
+	if moduleRef.Ref() == "main" {
 		// bufmodule.ParseModuleRef will give a default reference when user did not specify one
 		// we need to check the origin input and return different errors for different cases.
-		if strings.HasSuffix(container.Arg(0), ":"+bufmoduleref.Main) {
-			return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", bufmoduleref.Main)
+		// TODO: deal with main
+		if strings.HasSuffix(container.Arg(0), ":main") {
+			return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", "main")
 		}
 		return appcmd.NewInvalidArgumentError("a valid draft name need to be specified")
 	}
@@ -94,14 +96,14 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(
 			container,
 			"draft",
-			moduleRef.Reference(),
+			moduleRef.Ref(),
 		); err != nil {
 			return err
 		}
@@ -109,9 +111,9 @@ func run(
 	if _, err := service.DeleteRepositoryDraftCommit(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
-			RepositoryOwner: moduleRef.Owner(),
-			RepositoryName:  moduleRef.Name(),
-			DraftName:       moduleRef.Reference(),
+			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+			RepositoryName:  moduleRef.ModuleFullName().Name(),
+			DraftName:       moduleRef.Ref(),
 		}),
 	); err != nil {
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.

@@ -114,20 +114,21 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 
-	reference := moduleRef.Reference()
+	reference := moduleRef.Ref()
 	if reference == "" {
-		reference = bufmoduleref.Main
+		// TODO: deal with main
+		reference = "main"
 	}
 
 	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
-			RepositoryOwner: moduleRef.Owner(),
-			RepositoryName:  moduleRef.Name(),
+			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+			RepositoryName:  moduleRef.ModuleFullName().Name(),
 			Reference:       reference,
 			PageSize:        flags.PageSize,
 			PageToken:       flags.PageToken,

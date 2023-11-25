@@ -130,7 +130,7 @@ func NewRepositoryNotFoundError(name string) error {
 }
 
 // NewModuleRefNotFoundError informs the user that a ModuleRef does not exist.
-func NewModuleRefFoundError(moduleRef bufmodule.ModuleRef) error {
+func NewModuleRefNotFoundError(moduleRef bufmodule.ModuleRef) error {
 	return fmt.Errorf("%q does not exist", moduleRef)
 }
 
