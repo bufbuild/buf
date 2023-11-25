@@ -420,7 +420,7 @@ func run(
 			return err
 		}
 		if flags.ExitCode && diffPresent {
-			return bufcli.ErrFileAnnotation
+			return bufctl.ErrFileAnnotation
 		}
 		return nil
 	}
@@ -441,7 +441,7 @@ func run(
 			return err
 		}
 		if flags.ExitCode && diffPresent {
-			return bufcli.ErrFileAnnotation
+			return bufctl.ErrFileAnnotation
 		}
 	}
 	return nil

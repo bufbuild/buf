@@ -231,7 +231,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	if len(imageConfigs) != len(againstImageConfigs) {
 		// If workspaces are being used as input, the number
@@ -265,7 +265,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	return nil
 }

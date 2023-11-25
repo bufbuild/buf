@@ -148,7 +148,7 @@ func run(
 		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, formatString); err != nil {
 			return err
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageConfig := range imageConfigs {
@@ -170,7 +170,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	return nil
 }

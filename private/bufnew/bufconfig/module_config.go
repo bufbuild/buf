@@ -95,6 +95,8 @@ type moduleConfig struct {
 	breakingConfig BreakingConfig
 }
 
+// If this is ever made public, you have to validate that LintConfig and BreakingConfig
+// have the same FileVersion.
 func newModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,

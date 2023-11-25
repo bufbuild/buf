@@ -272,7 +272,7 @@ func run(
 				); err != nil {
 					return err
 				}
-				return bufcli.ErrFileAnnotation
+				return bufctl.ErrFileAnnotation
 			}
 			images = append(images, image)
 		}

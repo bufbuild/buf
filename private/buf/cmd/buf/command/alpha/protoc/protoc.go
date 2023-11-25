@@ -140,7 +140,7 @@ func run(
 		}
 		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
 		// but this also makes us consistent with the rest of buf
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 
 	if env.PrintFreeFieldNumbers {

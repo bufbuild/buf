@@ -58,11 +58,11 @@ func NewCommand(
 }
 
 type flags struct {
-	DocumentationComments bool
-	OutDirPath            string
+	OutDirPath string
 
 	// Hidden.
-	// Just used for generating docs.buf.build.
+	DocumentationComments bool
+	// Hidden.
 	Uncomment bool
 }
 
@@ -71,12 +71,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(
-		&f.DocumentationComments,
-		documentationCommentsFlagName,
-		false,
-		"Write inline documentation in the form of comments in the resulting configuration file",
-	)
 	flagSet.StringVarP(
 		&f.OutDirPath,
 		outDirPathFlagName,
@@ -84,6 +78,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		".",
 		`The directory to write the configuration file to`,
 	)
+	// TODO: Bring this flag back in future versions if we decide it's important.
+	// We're not breaking anyone by not actually producing comments for now.
+	flagSet.BoolVar(
+		&f.DocumentationComments,
+		documentationCommentsFlagName,
+		false,
+		"Write inline documentation in the form of comments in the resulting configuration file",
+	)
+	_ = flagSet.MarkHidden(documentationCommentsFlagName)
 	flagSet.BoolVar(
 		&f.Uncomment,
 		uncommentFlagName,

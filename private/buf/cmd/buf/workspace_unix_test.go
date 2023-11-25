@@ -30,7 +30,7 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		``,
 		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:read c.proto: file does not exist`),
 		"build",
@@ -62,7 +62,7 @@ func TestWorkspaceSymlink(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/workspace/success/symlink/a/a.proto:3:1:Files with package "a" must be within a directory "a" relative to root but were in directory ".".
         testdata/workspace/success/symlink/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".
         testdata/workspace/success/symlink/b/b.proto:3:1:Files with package "b" must be within a directory "b" relative to root but were in directory ".".
@@ -124,7 +124,7 @@ func TestWorkspaceGit(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
         private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
 		"lint",
@@ -133,7 +133,7 @@ func TestWorkspaceGit(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
         private/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
 		"lint",

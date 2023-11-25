@@ -486,7 +486,7 @@ type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
 // externalBufYAMLFileLintV1Beta1V1V2 represents lint configuation within a v1beta1, v1,
 // or v2 buf.yaml file, which have the same shape.
 //
-// Note that the lint and breaking ids/categories DID change between versiobs, make
+// Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
 type externalBufYAMLFileLintV1Beta1V1V2 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`

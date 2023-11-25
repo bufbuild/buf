@@ -354,7 +354,7 @@ func run(
 		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, flags.ErrorFormat); err != nil {
 			return err
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	images := make([]bufimage.Image, 0, len(imageConfigs))
 	for _, imageConfig := range imageConfigs {
