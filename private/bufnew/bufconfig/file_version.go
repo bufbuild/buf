@@ -29,6 +29,13 @@ const (
 )
 
 var (
+	// AllFileVersions are all FileVersions.
+	AllFileVersions = []FileVersion{
+		FileVersionV1Beta1,
+		FileVersionV1,
+		FileVersionV2,
+	}
+
 	fileVersionToString = map[FileVersion]string{
 		FileVersionV1Beta1: "v1beta1",
 		FileVersionV1:      "v1",

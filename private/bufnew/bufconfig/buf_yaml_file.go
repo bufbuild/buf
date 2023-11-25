@@ -16,6 +16,7 @@ package bufconfig
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -188,6 +189,9 @@ func newBufYAMLFile(
 		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
 	}
 	for _, moduleConfig := range moduleConfigs {
+		if moduleConfig == nil {
+			return nil, errors.New("ModuleConfig was nil in NewBufYAMLFile")
+		}
 		if fileVersion != moduleConfig.LintConfig().FileVersion() {
 			return nil, fmt.Errorf("FileVersion %v was passed to NewBufYAMLFile but had LintConfig FileVersion %v", fileVersion, moduleConfig.LintConfig().FileVersion())
 		}
@@ -383,6 +387,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	}
 }
 
+// TODO: port tests from bufconfig
 func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:

@@ -15,13 +15,51 @@
 package bufcli
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
+	"os"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
+
+// GetBufYAMLFileForOverrideOrPrefix get the buf.yaml file for either the usually-flag-based
+// override, or if the override is not set, the directory path.
+//
+//   - If the override is set and ends in .json, .yaml, or .yml, the override is treated as a
+//     **direct file path on disk** and read (ie not via buckets).
+//   - If the override is otherwise non-empty, it is treated as raw data.
+//   - Otherwise, the prefix is read.
+//
+// This function is the result of the endlessly annoying and shortsighted design decision that the
+// original author of this repository made to allow overriding configuration files on the command line.
+// Of course, the original author never envisioned buf.work.yamls, merging buf.work.yamls into buf.yamls,
+// buf.gen.yamls, or anything of the like, and was very concentrated on "because Bazel."
+func GetBufYAMLFileForOverrideOrDirPath(
+	ctx context.Context,
+	dirPath string,
+	override string,
+) (bufconfig.BufYAMLFile, error) {
+	if override != "" {
+		var data []byte
+		var err error
+		switch filepath.Ext(override) {
+		case ".json", ".yaml", ".yml":
+			data, err = os.ReadFile(override)
+			if err != nil {
+				return nil, fmt.Errorf("could not read file: %v", err)
+			}
+		default:
+			data = []byte(override)
+		}
+		return bufconfig.ReadBufYAMLFile(bytes.NewReader(data))
+	}
+	return GetBufYAMLFileForDirPath(ctx, dirPath)
+}
 
 // GetBufYAMLFileForDirPath gets the buf.yaml file for the directory path.
 func GetBufYAMLFileForDirPath(
