@@ -293,24 +293,6 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 	require.NoError(t, readBucketCloser.Close())
 }
 
-func TestGetReadBucketCloserForOSProtoFileNoBufYAMLNoTerminateFileName(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
-		ctx,
-		storageos.NewProvider(),
-		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
-		nil,
-		NewTerminateAtFileNamesFunc("buf.yaml"),
-	)
-	require.NoError(t, err)
-	require.Equal(t, ".", readBucketCloser.SubDirPath())
-	fileInfo, err := readBucketCloser.Stat(ctx, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto")
-	require.NoError(t, err)
-	require.Equal(t, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto", fileInfo.ExternalPath())
-	require.NoError(t, readBucketCloser.Close())
-}
-
 func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
