@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/testingext"
-	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -240,6 +239,7 @@ func TestCustomOptionsError1(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"customoptionserror1",
+		true,
 		filepath.FromSlash("testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist"),
 	)
 }
@@ -249,6 +249,7 @@ func TestNotAMessageType(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"notamessagetype",
+		true,
 		filepath.FromSlash("testdata/notamessagetype/a.proto:9:11:method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message"),
 	)
 }
@@ -258,6 +259,7 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"spacebetweennumberandid",
+		true,
 		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:invalid syntax in integer value: 10to"),
 		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:14:syntax error: unexpected error, expecting int literal"),
 	)
@@ -268,6 +270,7 @@ func TestCyclicImport(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"cyclicimport",
+		false,
 		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
 		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"
 				|| %s:5:8:cycle found in imports: "b/b.proto" -> "a/a.proto" -> "b/b.proto"`,
@@ -284,6 +287,7 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 		t,
 		"duplicatesyntheticoneofs",
 		// Since the compiler is multi-threaded, order of file compilation can happen one of two ways
+		false,
 		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:5:9:symbol "a.Foo" already defined at a2.proto:5:9
 				|| testdata/duplicatesyntheticoneofs/a2.proto:5:9:symbol "a.Foo" already defined at a1.proto:5:9`),
 		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a1.proto:6:19:symbol "a.Foo._bar" already defined at a2.proto:6:19
@@ -314,7 +318,7 @@ func TestCompareSemicolons(t *testing.T) {
 
 func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
-	image, fileAnnotations := testBuild(t, false, dirPath)
+	image, fileAnnotations := testBuild(t, false, dirPath, false)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
@@ -325,17 +329,20 @@ func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath, true)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	return image
 }
 
-func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
+func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism bool) (bufimage.Image, []bufanalysis.FileAnnotation) {
 	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
 	require.NoError(t, err)
 	var options []BuildOption
 	if !includeSourceInfo {
 		options = append(options, WithExcludeSourceCodeInfo())
+	}
+	if !parallelism {
+		options = append(options, withNoParallelism())
 	}
 	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
@@ -366,17 +373,10 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 	return importNames
 }
 
-func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
+func testFileAnnotations(t *testing.T, relDirPath string, parallelism bool, want ...string) {
 	t.Helper()
 
-	// Allowing real parallelism makes some test expectations too complicated to express and assert
-	previousParallelism := thread.Parallelism()
-	thread.SetParallelism(1)
-	defer func() {
-		thread.SetParallelism(previousParallelism)
-	}()
-
-	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)), parallelism)
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
 		got[i] = annotation.String()

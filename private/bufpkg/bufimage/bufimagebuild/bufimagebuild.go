@@ -57,3 +57,14 @@ func WithExcludeSourceCodeInfo() BuildOption {
 		buildOptions.excludeSourceCodeInfo = true
 	}
 }
+
+// withNoParallelism turns off parallelism for this specific build.
+//
+// The default is to use thread.Parallelism().
+//
+// Used for testing.
+func withNoParallelism() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.noParallelism = true
+	}
+}

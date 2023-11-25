@@ -67,6 +67,7 @@ func (b *builder) Build(
 		ctx,
 		moduleSet,
 		buildOptions.excludeSourceCodeInfo,
+		buildOptions.noParallelism,
 	)
 }
 
@@ -74,6 +75,7 @@ func (b *builder) build(
 	ctx context.Context,
 	moduleSet bufmodule.ModuleSet,
 	excludeSourceCodeInfo bool,
+	noParallelism bool,
 ) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := b.tracer.Start(ctx, "build")
 	defer span.End()
@@ -101,6 +103,7 @@ func (b *builder) build(
 		parserAccessorHandler,
 		paths,
 		excludeSourceCodeInfo,
+		noParallelism,
 	)
 	if buildResult.Err != nil {
 		return nil, nil, buildResult.Err
@@ -133,6 +136,7 @@ func getBuildResult(
 	parserAccessorHandler *parserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
+	noParallelism bool,
 ) *buildResult {
 	var errorsWithPos []reporter.ErrorWithPos
 	var warningErrorsWithPos []reporter.ErrorWithPos
@@ -140,8 +144,12 @@ func getBuildResult(
 	if excludeSourceCodeInfo {
 		sourceInfoMode = protocompile.SourceInfoNone
 	}
+	parallelism := thread.Parallelism()
+	if noParallelism {
+		parallelism = 1
+	}
 	compiler := protocompile.Compiler{
-		MaxParallelism: thread.Parallelism(),
+		MaxParallelism: parallelism,
 		SourceInfoMode: sourceInfoMode,
 		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
 		Reporter: reporter.NewReporter(
@@ -540,6 +548,7 @@ func newBuildResult(
 
 type buildOptions struct {
 	excludeSourceCodeInfo bool
+	noParallelism         bool
 }
 
 func newBuildOptions() *buildOptions {
