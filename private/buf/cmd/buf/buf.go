@@ -65,7 +65,8 @@ import (
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
+
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
@@ -73,8 +74,8 @@ import (
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -118,19 +119,19 @@ func NewRootCommand(name string) *appcmd.Command {
 			//modprune.NewCommand("prune", builder),
 			//modupdate.NewCommand("update", builder),
 			//modopen.NewCommand("open", builder),
-			//modclearcache.NewCommand("clear-cache", builder, "cc"),
+			modclearcache.NewCommand("clear-cache", builder, "cc"),
 			//modlslintrules.NewCommand("ls-lint-rules", builder),
 			//modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 			//},
 			//},
-			//{
-			//Use:   "registry",
-			//Short: "Manage assets on the Buf Schema Registry",
-			//SubCommands: []*appcmd.Command{
-			//registrylogin.NewCommand("login", builder),
-			//registrylogout.NewCommand("logout", builder),
-			//},
-			//},
+			{
+				Use:   "registry",
+				Short: "Manage assets on the Buf Schema Registry",
+				SubCommands: []*appcmd.Command{
+					registrylogin.NewCommand("login", builder),
+					registrylogout.NewCommand("logout", builder),
+				},
+			},
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",

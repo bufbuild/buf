@@ -38,7 +38,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:     name,
 		Aliases: aliases,
-		Short:   "Clear Buf module cache",
+		Short:   "Clear the BSR module cache",
 		Args:    cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
