@@ -59,7 +59,7 @@ import (
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
@@ -109,7 +109,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			lsfiles.NewCommand("ls-files", builder),
 			//push.NewCommand("push", builder),
 			//convert.NewCommand("convert", builder),
-			//curl.NewCommand("curl", builder),
+			curl.NewCommand("curl", builder),
 			//{
 			//Use:   "mod",
 			//Short: "Manage Buf modules",
