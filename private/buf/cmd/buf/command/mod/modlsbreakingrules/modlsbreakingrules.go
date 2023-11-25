@@ -16,15 +16,18 @@ package modlsbreakingrules
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -84,46 +87,63 @@ func run(
 		flags.Config = ""
 	}
 	if flags.Version != "" {
-		// If version is set, all is implied, and we use the config override to specify the
-		// version that bufconfig.ReadConfig will return.
+		// If version is set, all is implied, and we use the config override to specify the version.
 		flags.All = true
 		// This also results in config being ignored per the documentation.
 		flags.Config = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
+	bufYAMLFile, err := bufcli.GetBufYAMLFileForOverrideOrDirPath(ctx, ".", flags.Config)
 	if err != nil {
-		return err
-	}
-	config, err := bufconfig.ReadConfigOS(
-		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(flags.Config),
-	)
-	if err != nil {
-		return err
+		if !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		bufYAMLFile, err = bufconfig.NewBufYAMLFile(
+			bufconfig.FileVersionV1,
+			[]bufconfig.ModuleConfig{
+				bufconfig.DefaultModuleConfig,
+			},
+			nil,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	var rules []bufcheck.Rule
 	if flags.All {
-		switch config.Version {
-		case bufconfig.V1Beta1Version:
+		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+		case bufconfig.FileVersionV1Beta1:
 			rules, err = bufbreaking.GetAllRulesV1Beta1()
 			if err != nil {
 				return err
 			}
-		case bufconfig.V1Version:
+		case bufconfig.FileVersionV1:
 			rules, err = bufbreaking.GetAllRulesV1()
 			if err != nil {
 				return err
 			}
+		case bufconfig.FileVersionV2:
+			rules, err = bufbreaking.GetAllRulesV2()
+			if err != nil {
+				return err
+			}
+		default:
+			return syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 	} else {
-		rules, err = bufbreaking.RulesForConfig(config.Breaking)
-		if err != nil {
-			return err
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		switch len(moduleConfigs) {
+		case 0:
+			return fmt.Errorf("no modules specified in buf.yaml")
+		case 1:
+			rules, err = bufbreaking.RulesForConfig(moduleConfigs[0].BreakingConfig())
+			if err != nil {
+				return err
+			}
+		default:
+			if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+				return errors.New("buf mod ls-breaking-rules does not work for buf.yaml v2 yet")
+			}
+			return syserror.New("multiple ModuleConfigs for a non-v2 buf.yaml")
 		}
 	}
 	return bufcheck.PrintRules(

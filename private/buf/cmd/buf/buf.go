@@ -72,8 +72,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
-
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 
@@ -129,7 +128,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					modopen.NewCommand("open", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
 					modlslintrules.NewCommand("ls-lint-rules", builder),
-					//modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},
 			},
 			{
