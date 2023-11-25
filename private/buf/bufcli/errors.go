@@ -27,7 +27,7 @@ var (
 	ErrNotATTY = errors.New("reader was not a TTY as expected")
 
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
-	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf mod init"`)
+	ErrNoConfigFile = errors.New(`no buf.yaml file discovered in the specified directory`)
 )
 
 // NewTooManyEmptyAnswersError is used when the user does not answer a prompt in

@@ -309,7 +309,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			return nil, err
 		}
 		moduleConfig, err := newModuleConfig(
-			".",
+			"",
 			moduleFullName,
 			rootToExcludes,
 			getLintConfigForExternalLint(
@@ -339,6 +339,9 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalBufYAMLFile.Modules {
 			dirPath := externalModule.Directory
+			if dirPath == "" {
+				dirPath = "."
+			}
 			var moduleFullName bufmodule.ModuleFullName
 			if externalModule.Name != "" {
 				moduleFullName, err = bufmodule.ParseModuleFullName(externalModule.Name)
