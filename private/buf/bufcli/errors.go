@@ -20,26 +20,9 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app"
-)
-
-const (
-	// ExitCodeFileAnnotation is the exit code used when we print file annotations.
-	//
-	// We use a different exit code to be able to distinguish user-parsable errors from system errors.
-	ExitCodeFileAnnotation = 100
 )
 
 var (
-	// ErrFileAnnotation is used when we print file annotations and want to return an error.
-	//
-	// The app package works on the concept that an error results in a non-zero exit
-	// code, and we already print the messages with PrintFileAnnotations, so we do
-	// not want to print any additional error message.
-	//
-	// We also exit with 100 to be able to distinguish user-parsable errors from system errors.
-	ErrFileAnnotation = app.NewError(ExitCodeFileAnnotation, "")
-
 	// ErrNotATTY is returned when an input io.Reader is not a TTY where it is expected.
 	ErrNotATTY = errors.New("reader was not a TTY as expected")
 
