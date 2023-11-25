@@ -100,7 +100,7 @@ func run(
 	controller, err := bufcli.NewController(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
-		bufctl.WithErrorFormat(flags.ErrorFormat),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err

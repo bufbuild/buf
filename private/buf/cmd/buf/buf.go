@@ -19,19 +19,19 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/workspace/workspacepush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
@@ -53,8 +53,9 @@ import (
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
+
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
@@ -130,133 +131,127 @@ func NewRootCommand(name string) *appcmd.Command {
 			//registrylogout.NewCommand("logout", builder),
 			//},
 			//},
-			//{
-			//Use:   "beta",
-			//Short: "Beta commands. Unstable and likely to change",
-			//SubCommands: []*appcmd.Command{
-			graph.NewCommand("graph", builder),
-			//price.NewCommand("price", builder),
-			//stats.NewCommand("stats", builder),
-			//migratev1beta1.NewCommand("migrate-v1beta1", builder),
-			//studioagent.NewCommand("studio-agent", builder),
-			//{
-			//Use:   "registry",
-			//Short: "Manage assets on the Buf Schema Registry",
-			//SubCommands: []*appcmd.Command{
-			//{
-			//Use:   "organization",
-			//Short: "Manage organizations",
-			//SubCommands: []*appcmd.Command{
-			//organizationcreate.NewCommand("create", builder),
-			//organizationget.NewCommand("get", builder),
-			//organizationdelete.NewCommand("delete", builder),
-			//},
-			//},
-			//{
-			//Use:   "repository",
-			//Short: "Manage repositories",
-			//SubCommands: []*appcmd.Command{
-			//repositorycreate.NewCommand("create", builder),
-			//repositoryget.NewCommand("get", builder),
-			//repositorylist.NewCommand("list", builder),
-			//repositorydelete.NewCommand("delete", builder),
-			//repositorydeprecate.NewCommand("deprecate", builder),
-			//repositoryundeprecate.NewCommand("undeprecate", builder),
-			//repositoryupdate.NewCommand("update", builder),
-			//},
-			//},
-			//{
-			//Use:   "tag",
-			//Short: "Manage a repository's tags",
-			//SubCommands: []*appcmd.Command{
-			//tagcreate.NewCommand("create", builder),
-			//taglist.NewCommand("list", builder),
-			//},
-			//},
-			//{
-			//Use:   "commit",
-			//Short: "Manage a repository's commits",
-			//SubCommands: []*appcmd.Command{
-			//commitget.NewCommand("get", builder),
-			//commitlist.NewCommand("list", builder),
-			//},
-			//},
-			//{
-			//Use:   "draft",
-			//Short: "Manage a repository's drafts",
-			//SubCommands: []*appcmd.Command{
-			//draftdelete.NewCommand("delete", builder),
-			//draftlist.NewCommand("list", builder),
-			//},
-			//},
-			//{
-			//Use:   "webhook",
-			//Short: "Manage webhooks for a repository on the Buf Schema Registry",
-			//SubCommands: []*appcmd.Command{
-			//webhookcreate.NewCommand("create", builder),
-			//webhookdelete.NewCommand("delete", builder),
-			//webhooklist.NewCommand("list", builder),
-			//},
-			//},
-			//{
-			//Use:   "plugin",
-			//Short: "Manage plugins on the Buf Schema Registry",
-			//SubCommands: []*appcmd.Command{
-			//pluginpush.NewCommand("push", builder),
-			//plugindelete.NewCommand("delete", builder),
-			//},
-			//},
-			//},
-			//},
-			//},
-			//},
-			//{
-			//Use:    "alpha",
-			//Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
-			//Hidden: true,
-			//SubCommands: []*appcmd.Command{
-			//protoc.NewCommand("protoc", builder),
-			//{
-			//Use:   "registry",
-			//Short: "Manage assets on the Buf Schema Registry",
-			//SubCommands: []*appcmd.Command{
-			//{
-			//Use:   "token",
-			//Short: "Manage user tokens",
-			//SubCommands: []*appcmd.Command{
-			//tokenget.NewCommand("get", builder),
-			//tokenlist.NewCommand("list", builder),
-			//tokendelete.NewCommand("delete", builder),
-			//},
-			//},
-			//},
-			//},
-			//{
-			//Use:   "sdk",
-			//Short: "Manage Generated SDKs",
-			//SubCommands: []*appcmd.Command{
-			//goversion.NewCommand("go-version", builder),
-			//mavenversion.NewCommand("maven-version", builder),
-			//npmversion.NewCommand("npm-version", builder),
-			//swiftversion.NewCommand("swift-version", builder),
-			//},
-			//},
-			//{
-			//Use:   "repo",
-			//Short: "Manage Git repositories",
-			//SubCommands: []*appcmd.Command{
-			//reposync.NewCommand("sync", builder),
-			//},
-			//},
-			//{
-			//Use:   "workspace",
-			//Short: "Manage workspaces",
-			//SubCommands: []*appcmd.Command{
-			//workspacepush.NewCommand("push", builder),
-			//},
-			//},
-			//},
-			//},
+			{
+				Use:   "beta",
+				Short: "Beta commands. Unstable and likely to change",
+				SubCommands: []*appcmd.Command{
+					graph.NewCommand("graph", builder),
+					price.NewCommand("price", builder),
+					stats.NewCommand("stats", builder),
+					//migratev1beta1.NewCommand("migrate-v1beta1", builder),
+					studioagent.NewCommand("studio-agent", builder),
+					//{
+					//Use:   "registry",
+					//Short: "Manage assets on the Buf Schema Registry",
+					//SubCommands: []*appcmd.Command{
+					//{
+					//Use:   "organization",
+					//Short: "Manage organizations",
+					//SubCommands: []*appcmd.Command{
+					//organizationcreate.NewCommand("create", builder),
+					//organizationget.NewCommand("get", builder),
+					//organizationdelete.NewCommand("delete", builder),
+					//},
+					//},
+					//{
+					//Use:   "repository",
+					//Short: "Manage repositories",
+					//SubCommands: []*appcmd.Command{
+					//repositorycreate.NewCommand("create", builder),
+					//repositoryget.NewCommand("get", builder),
+					//repositorylist.NewCommand("list", builder),
+					//repositorydelete.NewCommand("delete", builder),
+					//repositorydeprecate.NewCommand("deprecate", builder),
+					//repositoryundeprecate.NewCommand("undeprecate", builder),
+					//repositoryupdate.NewCommand("update", builder),
+					//},
+					//},
+					//{
+					//Use:   "tag",
+					//Short: "Manage a repository's tags",
+					//SubCommands: []*appcmd.Command{
+					//tagcreate.NewCommand("create", builder),
+					//taglist.NewCommand("list", builder),
+					//},
+					//},
+					//{
+					//Use:   "commit",
+					//Short: "Manage a repository's commits",
+					//SubCommands: []*appcmd.Command{
+					//commitget.NewCommand("get", builder),
+					//commitlist.NewCommand("list", builder),
+					//},
+					//},
+					//{
+					//Use:   "draft",
+					//Short: "Manage a repository's drafts",
+					//SubCommands: []*appcmd.Command{
+					//draftdelete.NewCommand("delete", builder),
+					//draftlist.NewCommand("list", builder),
+					//},
+					//},
+					//{
+					//Use:   "webhook",
+					//Short: "Manage webhooks for a repository on the Buf Schema Registry",
+					//SubCommands: []*appcmd.Command{
+					//webhookcreate.NewCommand("create", builder),
+					//webhookdelete.NewCommand("delete", builder),
+					//webhooklist.NewCommand("list", builder),
+					//},
+					//},
+					//{
+					//Use:   "plugin",
+					//Short: "Manage plugins on the Buf Schema Registry",
+					//SubCommands: []*appcmd.Command{
+					//pluginpush.NewCommand("push", builder),
+					//plugindelete.NewCommand("delete", builder),
+					//},
+					//},
+					//},
+					//},
+					//},
+				},
+			},
+			{
+				Use:    "alpha",
+				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
+				Hidden: true,
+				SubCommands: []*appcmd.Command{
+					protoc.NewCommand("protoc", builder),
+					{
+						Use:   "registry",
+						Short: "Manage assets on the Buf Schema Registry",
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "token",
+								Short: "Manage user tokens",
+								SubCommands: []*appcmd.Command{
+									tokenget.NewCommand("get", builder),
+									tokenlist.NewCommand("list", builder),
+									tokendelete.NewCommand("delete", builder),
+								},
+							},
+						},
+					},
+					{
+						Use:   "sdk",
+						Short: "Manage Generated SDKs",
+						SubCommands: []*appcmd.Command{
+							goversion.NewCommand("go-version", builder),
+							mavenversion.NewCommand("maven-version", builder),
+							npmversion.NewCommand("npm-version", builder),
+							swiftversion.NewCommand("swift-version", builder),
+						},
+					},
+					//{
+					//Use:   "repo",
+					//Short: "Manage Git repositories",
+					//SubCommands: []*appcmd.Command{
+					//reposync.NewCommand("sync", builder),
+					//},
+					//},
+				},
+			},
 		},
 	}
 }
