@@ -15,11 +15,16 @@
 package bufconfig
 
 import (
-	"errors"
 	"fmt"
+	"os"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"go.uber.org/zap/zapcore"
 )
+
+// TODO: *** REMOVE THIS WHEN V2 COMPLETE ***
+var v2WarningLogger = zaputil.NewLogger(os.Stderr, zapcore.WarnLevel, zaputil.NewColortextEncoder())
 
 // fileName is a supported file name for a given file type, along with the FileVersions
 // that this file name supports.
@@ -63,7 +68,8 @@ func newUnsupportedFileVersionError(name string, fileVersion FileVersion) error 
 // TODO: Remove when V2 is supported.
 func checkV2SupportedYet(fileVersion FileVersion) error {
 	if !isV2Allowed() && fileVersion == FileVersionV2 {
-		return errors.New("v2 is not supported yet")
+		//return errors.New("v2 is not supported yet")
+		v2WarningLogger.Sugar().Warn("v2 configuration files are not yet stable! Use at your own risk.\n")
 	}
 	return nil
 }
