@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 type workspace struct {
@@ -308,7 +309,7 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			moduleConfig, ok := bucketIDToModuleConfig[bucketID]
 			if !ok {
 				// This is a system error.
-				return nil, fmt.Errorf("could not get ModuleConfig for BucketID %q", bucketID)
+				return nil, syserror.Newf("could not get ModuleConfig for BucketID %q", bucketID)
 			}
 			opaqueIDToLintConfig[module.OpaqueID()] = moduleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = moduleConfig.BreakingConfig()
@@ -365,12 +366,12 @@ func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 	}
 	// Just a sanity check. This should have already been validated, but let's make sure.
 	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
-		return nil, nil, fmt.Errorf("buf.yaml at %s did not have version v1beta1 or v1", moduleDirPath)
+		return nil, nil, syserror.Newf("buf.yaml at %s did not have version v1beta1 or v1", moduleDirPath)
 	}
 	moduleConfigs := bufYAMLFile.ModuleConfigs()
 	if len(moduleConfigs) != 1 {
 		// This is a system error. This should never happen.
-		return nil, nil, fmt.Errorf("received %d ModuleConfigs from a v1beta1 or v1 BufYAMLFIle", len(moduleConfigs))
+		return nil, nil, syserror.Newf("received %d ModuleConfigs from a v1beta1 or v1 BufYAMLFIle", len(moduleConfigs))
 	}
 	return moduleConfigs[0], bufYAMLFile.ConfiguredDepModuleRefs(), nil
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -343,7 +344,7 @@ func (b *moduleReadBucket) getFileInfoUncached(objectInfo storage.ObjectInfo) (F
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
 		// A lack of classification is a system error.
-		return nil, err
+		return nil, syserror.Wrap(err)
 	}
 	return newFileInfo(objectInfo, b.module, fileType, b.getIsTargetedFileForPath(objectInfo.Path())), nil
 }

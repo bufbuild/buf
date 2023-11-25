@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -152,7 +153,7 @@ func readBufWorkYAMLFile(reader io.Reader, allowJSON bool) (BufWorkYAMLFile, err
 	}
 	if fileVersion != FileVersionV1 {
 		// This is effectively a system error.
-		return nil, newUnsupportedFileVersionError("", fileVersion)
+		return nil, syserror.Wrap(newUnsupportedFileVersionError("", fileVersion))
 	}
 	var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
@@ -165,7 +166,7 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	fileVersion := bufWorkYAMLFile.FileVersion()
 	if fileVersion != FileVersionV1 {
 		// This is effectively a system error.
-		return newUnsupportedFileVersionError("", fileVersion)
+		return syserror.Wrap(newUnsupportedFileVersionError("", fileVersion))
 	}
 	externalBufWorkYAMLFile := externalBufWorkYAMLFileV1{
 		Version: fileVersion.String(),

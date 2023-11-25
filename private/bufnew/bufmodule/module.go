@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
 )
 
@@ -208,11 +209,11 @@ func newModule(
 ) (*module, error) {
 	if bucketID == "" && moduleFullName == nil {
 		// This is a system error.
-		return nil, errors.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
+		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
 	if !isLocal && (moduleFullName == nil || commitID == "") {
 		// This is a system error.
-		return nil, errors.New("moduleFullName or commitID not present when constructing a remote Module, both of these must be set")
+		return nil, syserror.New("moduleFullName or commitID not present when constructing a remote Module, both of these must be set")
 	}
 	module := &module{
 		bucketID:       bucketID,

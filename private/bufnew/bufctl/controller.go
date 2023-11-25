@@ -17,7 +17,6 @@ package bufctl
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -35,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
 )
@@ -117,7 +117,7 @@ func (c *controller) GetWorkspace(
 		return c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 	default:
 		// This is a system error.
-		return nil, fmt.Errorf("invalid SourceOrModuleRef: %T", sourceOrModuleRef)
+		return nil, syserror.Newf("invalid SourceOrModuleRef: %T", sourceOrModuleRef)
 	}
 }
 
@@ -153,7 +153,7 @@ func (c *controller) GetImage(
 		return c.getImageForMessageRef(ctx, t, functionOptions)
 	default:
 		// This is a system error.
-		return nil, fmt.Errorf("invalid Ref: %T", ref)
+		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
 }
 
@@ -413,7 +413,7 @@ func (c *controller) marshalImage(
 		return newYAMLMarshaler(resolver, messageRef).Marshal(message)
 	default:
 		// This is a system error.
-		return nil, fmt.Errorf("unknown MessageEncoding: %v", messageEncoding)
+		return nil, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
 	}
 }
 

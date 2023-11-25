@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package syncext
+package syserror
 
 import _ "github.com/bufbuild/buf/private/usage"

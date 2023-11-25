@@ -93,8 +93,6 @@ func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]stri
 }
 
 // Exists returns true if the path exists, false otherwise.
-//
-// Returns error on system error.
 func Exists(ctx context.Context, readBucket ReadBucket, path string) (bool, error) {
 	_, err := readBucket.Stat(ctx, path)
 	if err != nil {

@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 const (
@@ -95,7 +96,7 @@ func newConfigForRuleBuilders(
 	// which would be a system error
 	idToRuleBuilder, err := getIDToRuleBuilder(ruleBuilders)
 	if err != nil {
-		return nil, err
+		return nil, syserror.Wrap(err)
 	}
 	categoryToIDs := getCategoryToIDs(idToCategories)
 	useIDMap, err := transformToIDMap(configBuilder.Use, idToCategories, categoryToIDs)

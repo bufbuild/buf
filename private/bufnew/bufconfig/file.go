@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
 )
 
@@ -110,7 +111,7 @@ func putFileForPrefix[F File](
 ) (retErr error) {
 	if err := fileName.CheckSupportedFile(f); err != nil {
 		// This is effectively a system error. We should be able to write with whatever file name we have.
-		return newEncodeError(fileName.Name(), err)
+		return syserror.Wrap(newEncodeError(fileName.Name(), err))
 	}
 	path := normalpath.Join(prefix, fileName.Name())
 	writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())

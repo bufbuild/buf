@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -287,7 +288,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		)
 	default:
 		// This is a system error since we've already parsed.
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 
@@ -301,7 +302,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		return errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 

@@ -30,7 +30,6 @@ type Builder interface {
 	// The FileRefs are assumed to have been created by a FileRefProvider, that is
 	// they are unique relative to the roots.
 	//
-	// If an error is returned, it is a system error.
 	// Only one of Image and FileAnnotations will be returned.
 	//
 	// FileAnnotations will use external file paths.

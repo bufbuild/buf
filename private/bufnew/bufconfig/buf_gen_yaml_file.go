@@ -17,10 +17,10 @@ package bufconfig
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -124,7 +124,7 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 		return nil, errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 
@@ -138,6 +138,6 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 		return errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }

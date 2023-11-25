@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -274,7 +275,7 @@ func readBufLockFile(
 		return newBufLockFile(fileVersion, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
-		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 
@@ -337,7 +338,7 @@ func writeBufLockFile(
 		return err
 	default:
 		// This is a system error since we've already parsed.
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 
@@ -359,7 +360,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
 			if depModuleKey.CommitID() == "" {
 				// This is a system error.
-				return fmt.Errorf(
+				return syserror.Newf(
 					"%s lock files require commits, however we did not have a commit for module %q",
 					fileVersion.String(),
 					depModuleKey.ModuleFullName().String(),
@@ -372,7 +373,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 		return nil
 	default:
 		// This is a system error since we've already parsed.
-		return fmt.Errorf("unknown FileVersion: %v", fileVersion)
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 }
 

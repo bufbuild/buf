@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -547,7 +548,7 @@ func newProcessRawRefMessage(defaultMessageEncoding MessageEncoding) func(*inter
 		defaultFormat, ok := messageEncodingToFormat[defaultMessageEncoding]
 		if !ok {
 			// This is a system error.
-			return fmt.Errorf("unknown MessageEncoding: %v", defaultMessageEncoding)
+			return syserror.Newf("unknown MessageEncoding: %v", defaultMessageEncoding)
 		}
 		// if format option is not set and path is "-", default to bin
 		var format string

@@ -27,13 +27,20 @@ import (
 	"fmt"
 )
 
-// New returns a new system error for the underlying error.
-func New(err error) error {
+// Wrap returns a new system error for the underlying error.
+func Wrap(err error) error {
 	if Is(err) {
 		return err
 	}
 	return &sysError{
 		err: err,
+	}
+}
+
+// New is a convenience function that returns a new system error by calling errors.new.
+func New(text string) error {
+	return &sysError{
+		err: errors.New(text),
 	}
 }
 

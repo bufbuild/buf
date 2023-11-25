@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
@@ -95,7 +96,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 			rootToExcludes[root] = append(rootToExcludes[root], exclude)
 		default:
 			// this should never happen, but just in case
-			return nil, fmt.Errorf("exclude %q was in multiple roots %v (system error)", fullExclude, matchingRoots)
+			return nil, syserror.Newf("exclude %q was in multiple roots %v", fullExclude, matchingRoots)
 		}
 	}
 
@@ -103,7 +104,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 		uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
 		if len(excludes) != len(uniqueSortedExcludes) {
 			// this should never happen, but just in case
-			return nil, fmt.Errorf("excludes %v are not unique (system error)", excludes)
+			return nil, syserror.Newf("excludes %v are not unique", excludes)
 		}
 		rootToExcludes[root] = uniqueSortedExcludes
 	}
@@ -131,7 +132,7 @@ func newConfigV1(externalConfig ExternalConfigV1, deps ...string) (*Config, erro
 	uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
 	if len(excludes) != len(uniqueSortedExcludes) {
 		// this should never happen, but just in case
-		return nil, fmt.Errorf("excludes %v are not unique (system error)", excludes)
+		return nil, syserror.Newf("excludes %v are not unique", excludes)
 	}
 	rootToExcludes := map[string][]string{
 		".": excludes, // all excludes are relative to the root

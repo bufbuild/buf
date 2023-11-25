@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // ModuleData is the data needed to construct a Module in test.
@@ -174,7 +175,7 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 		commitID := module.CommitID()
 		if commitID == "" {
 			// This is a system error, we should have done this during omniProvider construction.
-			return nil, fmt.Errorf("no commitID for TestModuleData with name %q", moduleFullName.String())
+			return nil, syserror.Newf("no commitID for TestModuleData with name %q", moduleFullName.String())
 		}
 		moduleKey, err := bufmodule.NewModuleKey(
 			moduleFullName,
