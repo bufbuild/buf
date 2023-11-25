@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // DefaultModuleConfig is the default ModuleConfig.
@@ -155,17 +156,20 @@ func newModuleConfig(
 	}
 	if fileVersion == FileVersionV1 || fileVersion == FileVersionV2 {
 		if len(rootToExcludes) != 1 {
-			// This is a system error - we'll never read this.
 			return nil, fmt.Errorf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
 		}
 		if _, ok := rootToExcludes["."]; !ok {
 			return nil, fmt.Errorf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 		}
 	}
+	newRootToExcludes := make(map[string][]string)
+	for root, excludes := range rootToExcludes {
+		newRootToExcludes[root] = slicesext.ToUniqueSorted(excludes)
+	}
 	return &moduleConfig{
 		dirPath:        dirPath,
 		moduleFullName: moduleFullName,
-		rootToExcludes: rootToExcludes,
+		rootToExcludes: newRootToExcludes,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
 	}, nil

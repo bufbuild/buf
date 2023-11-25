@@ -16,13 +16,13 @@ package bufconfig
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -46,6 +46,7 @@ type BufYAMLFile interface {
 	// ModuleConfigs returns the ModuleConfigs for the File.
 	//
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
+	// Sorted by DirPath.
 	ModuleConfigs() []ModuleConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
@@ -239,6 +240,12 @@ func newBufYAMLFile(
 		)
 	}
 	sort.Slice(
+		moduleConfigs,
+		func(i int, j int) bool {
+			return moduleConfigs[i].DirPath() < moduleConfigs[j].DirPath()
+		},
+	)
+	sort.Slice(
 		configuredDepModuleRefs,
 		func(i int, j int) bool {
 			return configuredDepModuleRefs[i].ModuleFullName().String() <
@@ -375,12 +382,122 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 
 func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
-	case FileVersionV1Beta1:
-		return errors.New("TODO")
-	case FileVersionV1:
-		return errors.New("TODO")
+	case FileVersionV1Beta1, FileVersionV1:
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		// Just some extra sanity checking that we've properly validated.
+		if len(moduleConfigs) != 1 {
+			return syserror.Newf("expected 1 ModuleConfig, got %d", len(moduleConfigs))
+		}
+		moduleConfig := moduleConfigs[0]
+		// Just some extra sanity checking that we've properly validated.
+		if moduleConfig.DirPath() != "" {
+			return syserror.Newf("expected ModuleConfig DirPath to be empty but was %q", moduleConfig.DirPath())
+		}
+		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
+			Version: fileVersion.String(),
+		}
+		// Alredy sorted.
+		externalBufYAMLFile.Deps = slicesext.Map(
+			bufYAMLFile.ConfiguredDepModuleRefs(),
+			func(moduleRef bufmodule.ModuleRef) string {
+				return moduleRef.String()
+			},
+		)
+		if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+			externalBufYAMLFile.Name = moduleFullName.String()
+		}
+		rootToExcludes := moduleConfig.RootToExcludes()
+		roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
+		for _, root := range roots {
+			externalBufYAMLFile.Build.Roots = append(
+				externalBufYAMLFile.Build.Roots,
+				root,
+			)
+			for _, exclude := range rootToExcludes[root] {
+				// Excludes are defined to be sorted.
+				externalBufYAMLFile.Build.Excludes = append(
+					externalBufYAMLFile.Build.Excludes,
+					// Remember, in buf.yaml files, excludes are not relative to roots.
+					normalpath.Join(root, exclude),
+				)
+			}
+		}
+		// All already sorted.
+		lintConfig := moduleConfig.LintConfig()
+		externalBufYAMLFile.Lint.Use = lintConfig.UseIDsAndCategories()
+		externalBufYAMLFile.Lint.Except = lintConfig.ExceptIDsAndCategories()
+		externalBufYAMLFile.Lint.Ignore = lintConfig.IgnorePaths()
+		externalBufYAMLFile.Lint.IgnoreOnly = lintConfig.IgnoreIDOrCategoryToPaths()
+		externalBufYAMLFile.Lint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
+		externalBufYAMLFile.Lint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
+		externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
+		externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
+		externalBufYAMLFile.Lint.ServiceSuffix = lintConfig.ServiceSuffix()
+		externalBufYAMLFile.Lint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+		breakingConfig := moduleConfig.BreakingConfig()
+		externalBufYAMLFile.Breaking.Use = breakingConfig.UseIDsAndCategories()
+		externalBufYAMLFile.Breaking.Except = breakingConfig.ExceptIDsAndCategories()
+		externalBufYAMLFile.Breaking.Ignore = breakingConfig.IgnorePaths()
+		externalBufYAMLFile.Breaking.IgnoreOnly = breakingConfig.IgnoreIDOrCategoryToPaths()
+		externalBufYAMLFile.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write(data)
+		return err
 	case FileVersionV2:
-		return errors.New("TODO")
+		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
+			Version: fileVersion.String(),
+		}
+		// Alredy sorted.
+		externalBufYAMLFile.Deps = slicesext.Map(
+			bufYAMLFile.ConfiguredDepModuleRefs(),
+			func(moduleRef bufmodule.ModuleRef) string {
+				return moduleRef.String()
+			},
+		)
+		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			externalModule := externalBufYAMLFileModuleV2{
+				Directory: moduleConfig.DirPath(),
+			}
+			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
+				externalModule.Name = moduleFullName.String()
+			}
+			rootToExcludes := moduleConfig.RootToExcludes()
+			if len(rootToExcludes) != 1 {
+				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
+			}
+			excludes, ok := rootToExcludes["."]
+			if !ok {
+				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+			}
+			externalModule.Excludes = excludes
+			// All already sorted.
+			lintConfig := moduleConfig.LintConfig()
+			externalModule.Lint.Use = lintConfig.UseIDsAndCategories()
+			externalModule.Lint.Except = lintConfig.ExceptIDsAndCategories()
+			externalModule.Lint.Ignore = lintConfig.IgnorePaths()
+			externalModule.Lint.IgnoreOnly = lintConfig.IgnoreIDOrCategoryToPaths()
+			externalModule.Lint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
+			externalModule.Lint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
+			externalModule.Lint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
+			externalModule.Lint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
+			externalModule.Lint.ServiceSuffix = lintConfig.ServiceSuffix()
+			externalModule.Lint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+			breakingConfig := moduleConfig.BreakingConfig()
+			externalModule.Breaking.Use = breakingConfig.UseIDsAndCategories()
+			externalModule.Breaking.Except = breakingConfig.ExceptIDsAndCategories()
+			externalModule.Breaking.Ignore = breakingConfig.IgnorePaths()
+			externalModule.Breaking.IgnoreOnly = breakingConfig.IgnoreIDOrCategoryToPaths()
+			externalModule.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+		}
+		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write(data)
+		return err
 	default:
 		// This is a system error since we've already parsed.
 		return syserror.Newf("unknown FileVersion: %v", fileVersion)
@@ -550,21 +667,6 @@ type externalBufYAMLFileBuildV1Beta1V1 struct {
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
-// externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
-// or v2 buf.yaml file, which have the same shape.
-//
-// Note that the lint and breaking ids/categories DID change between versions, make
-// sure to deal with this when parsing what to set as defaults, or how to interpret categories.
-type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
-	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
-	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
-	// Ignore are the paths to ignore.
-	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
-	/// IgnoreOnly are the ID/category to paths to ignore.
-	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
-	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
-}
-
 // externalBufYAMLFileLintV1Beta1V1V2 represents lint configuation within a v1beta1, v1,
 // or v2 buf.yaml file, which have the same shape.
 //
@@ -583,4 +685,19 @@ type externalBufYAMLFileLintV1Beta1V1V2 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+}
+
+// externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
+// or v2 buf.yaml file, which have the same shape.
+//
+// Note that the lint and breaking ids/categories DID change between versions, make
+// sure to deal with this when parsing what to set as defaults, or how to interpret categories.
+type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// Ignore are the paths to ignore.
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	/// IgnoreOnly are the ID/category to paths to ignore.
+	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }

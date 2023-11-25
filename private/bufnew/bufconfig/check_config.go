@@ -14,7 +14,11 @@
 
 package bufconfig
 
-import "github.com/bufbuild/buf/private/pkg/slicesext"
+import (
+	"sort"
+
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+)
 
 var (
 	defaultCheckConfigV1Beta1 = NewCheckConfig(
@@ -50,15 +54,19 @@ type CheckConfig interface {
 	// of the IDs and categories.
 	FileVersion() FileVersion
 
+	// Sorted.
 	UseIDsAndCategories() []string
+	// Sorted
 	ExceptIDsAndCategories() []string
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
+	// Sorted
 	// TODO: should we make these now relative to root of workspace in v2?
 	IgnorePaths() []string
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
 	// TODO: should we make these now relative to root of workspace in v2?
+	// Paths sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
 
 	isCheckConfig()
@@ -98,12 +106,19 @@ func newCheckConfig(
 	ignore []string,
 	ignoreOnly map[string][]string,
 ) *checkConfig {
+	sort.Strings(use)
+	sort.Strings(except)
+	newIgnoreOnly := make(map[string][]string, len(ignoreOnly))
+	for k, v := range ignoreOnly {
+		v = slicesext.ToUniqueSorted(v)
+		newIgnoreOnly[k] = v
+	}
 	return &checkConfig{
 		fileVersion: fileVersion,
-		use:         use,
-		except:      except,
-		ignore:      ignore,
-		ignoreOnly:  ignoreOnly,
+		use:         slicesext.ToUniqueSorted(use),
+		except:      slicesext.ToUniqueSorted(except),
+		ignore:      slicesext.ToUniqueSorted(ignore),
+		ignoreOnly:  newIgnoreOnly,
 	}
 }
 
