@@ -24,43 +24,13 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
 	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf mod init"`)
 )
-
-// errInternal is returned when the user encounters an unexpected internal buf error.
-type errInternal struct {
-	cause error
-}
-
-// NewInternalError represents an internal error encountered by the buf CLI.
-// These errors should not happen and therefore warrant a bug report.
-func NewInternalError(err error) error {
-	if isInternalError(err) {
-		return err
-	}
-	return &errInternal{cause: err}
-}
-
-// isInternalError returns whether the error provided, or
-// any error wrapped by that error, is an internal error.
-func isInternalError(err error) bool {
-	asErr := &errInternal{}
-	return errors.As(err, &asErr)
-}
-
-func (e *errInternal) Error() string {
-	message := "it looks like you have found a bug in buf. " +
-		"Please file an issue at https://github.com/bufbuild/buf/issues " +
-		"and provide the command you ran"
-	if e.cause == nil {
-		return message
-	}
-	return message + ", as well as the following message: " + e.cause.Error()
-}
 
 // NewErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
 func NewErrorInterceptor() appflag.Interceptor {
@@ -132,14 +102,13 @@ func wrapError(err error) error {
 	if err == nil {
 		return nil
 	}
-	connectErr, ok := asConnectError(err)
-
-	// If error is empty and not a Connect error, we return it as-is.
-	if !ok && err.Error() == "" {
+	connectErr, isConnectError := asConnectError(err)
+	// If error is empty and not a system error or Connect error, we return it as-is.
+	if !isConnectError && err.Error() == "" {
 		return err
 	}
-	// If the error is a Connect error, then interpret it and return an intuitive message
-	if ok {
+
+	if isConnectError {
 		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
@@ -164,7 +133,16 @@ func wrapError(err error) error {
 		err = connectErr.Unwrap()
 	}
 
-	// Error was not a known Connect error, so return it as-is.
+	sysError, isSysError := syserror.As(err)
+	if isSysError {
+		err = fmt.Errorf(
+			"it looks like you have found a bug in buf. "+
+				"Please file an issue at https://github.com/bufbuild/buf/issues "+
+				"and provide the command you ran, as well as the following message: %w",
+			sysError.Unwrap(),
+		)
+	}
+
 	return fmt.Errorf("Failure: %w", err)
 }
 

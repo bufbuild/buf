@@ -53,6 +53,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -701,7 +702,7 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 			container.Stdout(),
 			prompt,
 		); err != nil {
-			return "", NewInternalError(err)
+			return "", syserror.Wrap(err)
 		}
 		var value string
 		if isPassword {
@@ -714,7 +715,7 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 				if errors.Is(err, io.EOF) {
 					return "", err
 				}
-				return "", NewInternalError(err)
+				return "", syserror.Wrap(err)
 			}
 			value = string(data)
 		} else {
@@ -722,13 +723,13 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 			if !scanner.Scan() {
 				// scanner.Err() returns nil on EOF.
 				if err := scanner.Err(); err != nil {
-					return "", NewInternalError(err)
+					return "", syserror.Wrap(err)
 				}
 				return "", io.EOF
 			}
 			value = scanner.Text()
 			if err := scanner.Err(); err != nil {
-				return "", NewInternalError(err)
+				return "", syserror.Wrap(err)
 			}
 		}
 		if len(strings.TrimSpace(value)) != 0 {
@@ -743,7 +744,7 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 				container.Stdout(),
 				"No answer was provided. Please try again.",
 			); err != nil {
-				return "", NewInternalError(err)
+				return "", syserror.Wrap(err)
 			}
 		}
 	}

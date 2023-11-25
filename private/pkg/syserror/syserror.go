@@ -27,57 +27,66 @@ import (
 	"fmt"
 )
 
-// Wrap returns a new system error for the underlying error.
-func Wrap(err error) error {
-	if Is(err) {
-		return err
+// Error is a system error.
+type Error struct {
+	Underlying error
+}
+
+// Error implements error.
+func (e *Error) Error() string {
+	if e == nil {
+		return ""
 	}
-	return &sysError{
-		err: err,
+	if e.Underlying == nil {
+		return ""
 	}
+	return "system error: " + e.Underlying.Error()
+}
+
+// Unwrap implements errors.Unwrap for Error.
+func (e *Error) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Underlying
 }
 
 // New is a convenience function that returns a new system error by calling errors.new.
-func New(text string) error {
-	return &sysError{
-		err: errors.New(text),
+func New(text string) *Error {
+	return &Error{
+		Underlying: errors.New(text),
 	}
 }
 
 // Newf is a convenience function that returns a new system error by calling fmt.Errorf.
-func Newf(format string, args ...any) error {
-	return &sysError{
-		err: fmt.Errorf(format, args...),
+func Newf(format string, args ...any) *Error {
+	return &Error{
+		Underlying: fmt.Errorf(format, args...),
 	}
 }
 
-// Is returns true if the error is a system error.
+// Wrap returns a new system error for err.
+//
+// If err is already a system error, this returns err.
+func Wrap(err error) error {
+	if Is(err) {
+		return err
+	}
+	return &Error{
+		Underlying: err,
+	}
+}
+
+// Is is a convenience function that returns true if err is a system error.
 func Is(err error) bool {
-	if err == nil {
-		return false
-	}
-	target := &sysError{}
-	return errors.As(err, &target)
-
+	_, ok := As(err)
+	return ok
 }
 
-type sysError struct {
-	err error
-}
-
-func (e *sysError) Error() string {
-	if e == nil {
-		return ""
-	}
-	if e.err == nil {
-		return ""
-	}
-	return "system error: " + e.err.Error()
-}
-
-func (e *sysError) Unwrap() error {
-	if e == nil {
-		return nil
-	}
-	return e.err
+// As is a convenience function that returns err as an Error and true if err is an Error,
+// and err and false otherwise.
+func As(err error) (*Error, bool) {
+	target := &Error{}
+	ok := errors.As(err, &target)
+	return target, ok
 }
