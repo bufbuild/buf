@@ -36,11 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -56,7 +52,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 	"golang.org/x/term"
 )
 
@@ -531,25 +526,6 @@ func PromptUser(container app.Container, prompt string) (string, error) {
 // ErrNotATTY is returned if the input containers Stdin is not a terminal.
 func PromptUserForPassword(container app.Container, prompt string) (string, error) {
 	return promptUser(container, prompt, true)
-}
-
-// WellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
-func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownTypeName string) (bufimage.Image, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
-	moduleSetBuilder.AddLocalModule(
-		datawkt.ReadBucket,
-		".",
-		true,
-	)
-	moduleSet, err := moduleSetBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
-	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, moduleSet)
-	if err != nil {
-		return nil, err
-	}
-	return bufimageutil.ImageFilteredByTypes(image, wellKnownTypeName)
 }
 
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.

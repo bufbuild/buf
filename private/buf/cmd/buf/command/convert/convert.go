@@ -21,7 +21,10 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -30,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -184,7 +188,7 @@ func run(
 	if resolveWellKnownType {
 		if _, ok := datawkt.MessageFilePath(flags.Type); ok {
 			var wktErr error
-			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), flags.Type)
+			image, wktErr = wellKnownTypeImage(ctx, container.Logger(), flags.Type)
 			if wktErr != nil {
 				return wktErr
 			}
@@ -257,4 +261,27 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}
+}
+
+// wellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
+func wellKnownTypeImage(
+	ctx context.Context,
+	logger *zap.Logger,
+	wellKnownTypeName string,
+) (bufimage.Image, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		datawkt.ReadBucket,
+		".",
+		true,
+	)
+	moduleSet, err := moduleSetBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimagebuild.NewBuilder(logger).Build(ctx, moduleSet)
+	if err != nil {
+		return nil, err
+	}
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownTypeName)
 }
