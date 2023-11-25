@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.20
+//go:build !go1.20
 
-package bufcli
+package buf
 
 import (
-	"crypto/tls"
 	"errors"
+	"strings"
 )
 
 // wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
+// This method is a workaround until we can switch to use errors.As(err, *tls.CertificateVerificationError),
+// which is a new error type introduced in Go 1.20. This can be removed when we upgrade to support Go 1.20/1.21+.
 func wrappedTLSError(err error) error {
-	if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
-		return tlsErr
+	wrapped := errors.Unwrap(err)
+	if wrapped == nil {
+		return nil
+	}
+	if strings.HasPrefix(wrapped.Error(), "x509:") && strings.HasSuffix(wrapped.Error(), "certificate is not trusted") {
+		return wrapped
 	}
 	return nil
 }

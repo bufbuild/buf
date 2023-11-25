@@ -16,8 +16,12 @@ package buf
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
@@ -27,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
@@ -78,6 +83,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // Main is the entrypoint to the buf CLI.
@@ -93,7 +99,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		name,
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
-		appflag.BuilderWithInterceptor(bufcli.NewErrorInterceptor()),
+		appflag.BuilderWithInterceptor(newErrorInterceptor()),
 	)
 	return &appcmd.Command{
 		Use:                 name,
@@ -256,4 +262,82 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 		},
 	}
+}
+
+// newErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
+func newErrorInterceptor() appflag.Interceptor {
+	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
+		return func(ctx context.Context, container appflag.Container) error {
+			return wrapError(next(ctx, container))
+		}
+	}
+}
+
+// wrapError is used when a CLI command fails, regardless of its error code.
+// Note that this function will wrap the error so that the underlying error
+// can be recovered via 'errors.Is'.
+func wrapError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var connectErr *connect.Error
+	isConnectError := errors.As(err, &connectErr)
+	// If error is empty and not a system error or Connect error, we return it as-is.
+	if !isConnectError && err.Error() == "" {
+		return err
+	}
+
+	if isConnectError {
+		connectCode := connectErr.Code()
+		switch {
+		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
+			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
+				return fmt.Errorf(`Failure: the %[1]s environment variable is set, but is not valid. " +
+				"Set %[1]s to a valid Buf API key, or unset it. For details, " +
+				"visit https://docs.buf.build/bsr/authentication`, authErr.TokenEnvKey())
+			}
+			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, " +
+			"using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
+		case connectCode == connect.CodeUnavailable:
+			msg := `Failure: the server hosted at that remote is unavailable.`
+			// If the returned error is Unavailable, then determine if this is a DNS error.  If so,
+			// get the address usedso that we can display a more helpful error message.
+			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
+				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
+			}
+			// If the unavailable error wraps a tls.CertificateVerificationError, show a more specific
+			// error message to the user to aid in troubleshooting.
+			if tlsErr := wrappedTLSError(err); tlsErr != nil {
+				return fmt.Errorf("tls certificate verification: %w", tlsErr)
+			}
+			return errors.New(msg)
+		}
+		err = connectErr.Unwrap()
+	}
+
+	sysError, isSysError := syserror.As(err)
+	if isSysError {
+		err = fmt.Errorf(
+			"it looks like you have found a bug in buf. "+
+				"Please file an issue at https://github.com/bufbuild/buf/issues "+
+				"and provide the command you ran, as well as the following message: %w",
+			sysError.Unwrap(),
+		)
+	}
+
+	return fmt.Errorf("Failure: %w", err)
+}
+
+// isEmptyUnknownError returns true if the given
+// error is non-nil, but has an empty message
+// and an unknown error code.
+//
+// This is relevant for errors returned by
+// envoyauthd when the client does not provide
+// an authentication header.
+func isEmptyUnknownError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return err.Error() == "" && connect.CodeOf(err) == connect.CodeUnknown
 }
