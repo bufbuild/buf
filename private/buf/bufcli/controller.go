@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufctl
+package bufcli
 
 import (
 	"context"
@@ -21,14 +21,18 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufnew/bufapi"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -36,11 +40,117 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
+type Controller interface {
+	GetWorkspace(
+		ctx context.Context,
+		sourceOrModuleInput string,
+		options ...FunctionOption,
+	) (bufworkspace.Workspace, error)
+	GetImage(
+		ctx context.Context,
+		input string,
+		options ...FunctionOption,
+	) (bufimage.Image, error)
+	PutImage(
+		ctx context.Context,
+		imageOutput string,
+		image bufimage.Image,
+		options ...FunctionOption,
+	) error
+}
+
+// NewController returns a new Controller.
+func NewController(
+	container appflag.Container,
+	options ...ControllerOption,
+) (Controller, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	clientProvider := bufapi.NewClientProvider(clientConfig)
+	moduleDataProvider, err := newModuleDataProvider(container, clientProvider)
+	if err != nil {
+		return nil, err
+	}
+	return newController(
+		container.Logger(),
+		container,
+		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
+		moduleDataProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		defaultGitClonerOptions,
+		options...,
+	)
+}
+
+type ControllerOption func(*controller)
+
+func WithDisableSymlinks(disableSymlinks bool) ControllerOption {
+	return func(controller *controller) {
+		controller.disableSymlinks = disableSymlinks
+	}
+}
+
+func WithFileAnnotationErrorFormat(fileAnnotationErrorFormat string) ControllerOption {
+	return func(controller *controller) {
+		controller.fileAnnotationErrorFormat = fileAnnotationErrorFormat
+	}
+}
+
+func WithFileAnnotationsToStdout() ControllerOption {
+	return func(controller *controller) {
+		controller.fileAnnotationsToStdout = true
+	}
+}
+
+type FunctionOption func(*functionOptions)
+
+func WithTargetPaths(targetPaths []string, targetExcludePaths []string) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.targetPaths = targetPaths
+		functionOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+func WithImageExcludeSourceInfo(imageExcludeSourceInfo bool) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageExcludeSourceInfo = imageExcludeSourceInfo
+	}
+}
+
+func WithImageExcludeImports(imageExcludeImports bool) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageExcludeImports = imageExcludeImports
+	}
+}
+
+func WithImageTypes(imageTypes []string) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageTypes = imageTypes
+	}
+}
+
+func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet
+	}
+}
+
+/// *** PRIVATE ***
+
+// In theory, we want to keep this separate from our global variables in bufcli.
+//
+// Originally, this was in a different package, and we want to keep the option to split
+// it out again. The separation of concerns here is that the controller doesnt itself
+// deal in the global variables.
 type controller struct {
-	container          Container
+	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 
 	disableSymlinks           bool
@@ -56,7 +166,8 @@ type controller struct {
 }
 
 func newController(
-	container Container,
+	logger *zap.Logger,
+	container app.EnvStdioContainer,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	httpClient *http.Client,
@@ -76,22 +187,22 @@ func newController(
 	}
 	controller.commandRunner = command.NewRunner()
 	controller.storageosProvider = newStorageosProvider(controller.disableSymlinks)
-	controller.buffetchRefParser = buffetch.NewRefParser(container.Logger())
+	controller.buffetchRefParser = buffetch.NewRefParser(logger)
 	controller.buffetchReader = buffetch.NewReader(
-		container.Logger(),
+		logger,
 		controller.storageosProvider,
 		httpClient,
 		httpauthAuthenticator,
 		git.NewCloner(
-			container.Logger(),
+			logger,
 			controller.storageosProvider,
 			controller.commandRunner,
 			gitClonerOptions,
 		),
 		moduleKeyProvider,
 	)
-	controller.buffetchWriter = buffetch.NewWriter(container.Logger())
-	controller.bufimagebuildBuilder = bufimagebuild.NewBuilder(container.Logger())
+	controller.buffetchWriter = buffetch.NewWriter(logger)
+	controller.bufimagebuildBuilder = bufimagebuild.NewBuilder(logger)
 	return controller, nil
 }
 

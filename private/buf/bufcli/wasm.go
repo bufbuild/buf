@@ -12,8 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package bufcli
 
-package bufctl
+import "github.com/bufbuild/buf/private/pkg/app"
 
-import _ "github.com/bufbuild/buf/private/usage"
+const (
+	// WASMCompilationCacheDir compiled WASM plugin cache directory
+	WASMCompilationCacheDir = "wasmplugin-bin"
+
+	alphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
+)
+
+// IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
+func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
+	return app.EnvBool(container, alphaEnableWASMEnvKey, false)
+}
