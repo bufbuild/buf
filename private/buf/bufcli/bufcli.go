@@ -536,64 +536,6 @@ func PromptUserForPassword(container app.Container, prompt string) (string, erro
 	return promptUser(container, prompt, true)
 }
 
-//// BucketAndConfigForSource returns a bucket and config. The bucket contains
-//// just the files that constitute a module. It also checks if config
-//// exists and defines a module identity, returning ErrNoConfigFile and
-//// ErrNoModuleName respectfully.
-////
-//// Workspaces are disabled when fetching the source.
-//func BucketAndConfigForSource(
-//ctx context.Context,
-//logger *zap.Logger,
-//container app.EnvStdinContainer,
-//storageosProvider storageos.Provider,
-//runner command.Runner,
-//source string,
-//) (storage.ReadBucketCloser, *bufconfig.Config, error) {
-//sourceRef, err := buffetch.NewSourceRefParser(
-//logger,
-//).GetSourceRef(
-//ctx,
-//source,
-//)
-//if err != nil {
-//return nil, nil, err
-//}
-//sourceBucket, err := newFetchSourceReader(
-//logger,
-//storageosProvider,
-//runner,
-//).GetSourceBucket(
-//ctx,
-//container,
-//sourceRef,
-//buffetch.GetSourceBucketWithWorkspacesDisabled(),
-//)
-//if err != nil {
-//return nil, nil, err
-//}
-//existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, sourceBucket)
-//if err != nil {
-//return nil, nil, NewInternalError(err)
-//}
-//if existingConfigFilePath == "" {
-//return nil, nil, ErrNoConfigFile
-//}
-//// TODO: This should just read a lock file
-//sourceConfig, err := bufconfig.GetConfigForBucket(
-//ctx,
-//sourceBucket,
-//)
-//if err != nil {
-//return nil, nil, err
-//}
-//if sourceConfig.ModuleFullName == nil {
-//return nil, nil, ErrNoModuleName
-//}
-
-//return sourceBucket, sourceConfig, nil
-//}
-
 // WellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
 func WellKnownTypeImage(ctx context.Context, logger *zap.Logger, wellKnownTypeName string) (bufimage.Image, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)

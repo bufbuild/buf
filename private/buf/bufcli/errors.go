@@ -23,34 +23,12 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
 
-const (
-	// ExitCodeFileAnnotation is the exit code used when we print file annotations.
-	//
-	// We use a different exit code to be able to distinguish user-parsable errors from
-	// system errors.
-	ExitCodeFileAnnotation = 100
-)
-
 var (
-	// ErrNoModuleName is used when the user does not specify a module name in their configuration file.
-	ErrNoModuleName = errors.New(`please specify a module name in your configuration file with the "name" key`)
-
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
 	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf mod init"`)
-
-	// ErrFileAnnotation is used when we print file annotations and want to return an error.
-	//
-	// The app package works on the concept that an error results in a non-zero exit
-	// code, and we already print the messages with PrintFileAnnotations, so we do
-	// not want to print any additional error message.
-	//
-	// We also exit with 100 to be able to distinguish user-parsable errors from
-	// system errors.
-	ErrFileAnnotation = app.NewError(ExitCodeFileAnnotation, "")
 )
 
 // errInternal is returned when the user encounters an unexpected internal buf error.
@@ -76,7 +54,7 @@ func isInternalError(err error) bool {
 
 func (e *errInternal) Error() string {
 	message := "it looks like you have found a bug in buf. " +
-		"Please file an issue at https://github.com/bufbuild/buf/issues/ " +
+		"Please file an issue at https://github.com/bufbuild/buf/issues " +
 		"and provide the command you ran"
 	if e.cause == nil {
 		return message
