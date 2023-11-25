@@ -31,12 +31,12 @@ import (
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+func NewCommand(name string, builder appflag.SubCommandBuilder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Undeprecate a BSR repository",
 		Args:  cobra.ExactArgs(1),
-		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
+		Run:   builder.NewRunFunc(run),
 	}
 }
 

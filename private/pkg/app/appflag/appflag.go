@@ -37,10 +37,15 @@ type Container interface {
 // Interceptor intercepts and adapts the request or response of run functions.
 type Interceptor func(func(context.Context, Container) error) func(context.Context, Container) error
 
-// Builder builds run functions.
+// SubCommandBuilder builds run functions for sub-commands.
+type SubCommandBuilder interface {
+	NewRunFunc(func(context.Context, Container) error) func(context.Context, app.Container) error
+}
+
+// Builder builds run functions for both top-level commands and sub-commands.
 type Builder interface {
 	BindRoot(flagSet *pflag.FlagSet)
-	NewRunFunc(func(context.Context, Container) error, ...Interceptor) func(context.Context, app.Container) error
+	SubCommandBuilder
 }
 
 // NewBuilder returns a new Builder.
@@ -62,5 +67,12 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 func BuilderWithTracing() BuilderOption {
 	return func(builder *builder) {
 		builder.tracing = true
+	}
+}
+
+// BuilderWithInterceptor adds the given interceptor for all run functions.
+func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
+	return func(builder *builder) {
+		builder.interceptors = append(builder.interceptors, interceptor)
 	}
 }

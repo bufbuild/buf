@@ -31,7 +31,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 	aliases ...string,
 ) *appcmd.Command {
 	flags := newFlags()

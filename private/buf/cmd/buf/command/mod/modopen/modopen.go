@@ -30,7 +30,7 @@ import (
 // NewCommand returns a new open Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
@@ -41,7 +41,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 	}
 }

@@ -93,6 +93,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		name,
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
+		appflag.BuilderWithInterceptor(bufcli.NewErrorInterceptor()),
 	)
 	return &appcmd.Command{
 		Use:                 name,
