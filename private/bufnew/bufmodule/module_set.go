@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
 )
@@ -267,21 +268,21 @@ func newModuleSet(
 			moduleFullNameString := moduleFullName.String()
 			if _, ok := moduleFullNameStringToModule[moduleFullNameString]; ok {
 				// This should never happen.
-				return nil, fmt.Errorf("duplicate ModuleFullName %q when constructing ModuleSet", moduleFullNameString)
+				return nil, syserror.Newf("duplicate ModuleFullName %q when constructing ModuleSet", moduleFullNameString)
 			}
 			moduleFullNameStringToModule[moduleFullNameString] = module
 		}
 		opaqueID := module.OpaqueID()
 		if _, ok := opaqueIDToModule[opaqueID]; ok {
 			// This should never happen.
-			return nil, fmt.Errorf("duplicate OpaqueID %q when constructing ModuleSet", opaqueID)
+			return nil, syserror.Newf("duplicate OpaqueID %q when constructing ModuleSet", opaqueID)
 		}
 		opaqueIDToModule[opaqueID] = module
 		bucketID := module.BucketID()
 		if bucketID != "" {
 			if _, ok := bucketIDToModule[bucketID]; ok {
 				// This should never happen.
-				return nil, fmt.Errorf("duplicate BucketID %q when constructing ModuleSet", bucketID)
+				return nil, syserror.Newf("duplicate BucketID %q when constructing ModuleSet", bucketID)
 			}
 			bucketIDToModule[bucketID] = module
 		}

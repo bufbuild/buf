@@ -18,13 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -99,74 +97,72 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if flags.OutDirPath == "" {
-		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outDirPathFlagName)
+	if err := bufcli.ValidateRequiredFlag(outDirPathFlagName, flags.OutDirPath); err != nil {
+		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		flags.OutDirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
+	exists, err := bufcli.BufYAMLFileExistsForDirPath(ctx, flags.OutDirPath)
 	if err != nil {
 		return err
 	}
-	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
-	if err != nil {
-		return err
+	if exists {
+		return fmt.Errorf("buf.yaml already exists in directory %s, will not overwrite", flags.OutDirPath)
 	}
-	if existingConfigFilePath != "" {
-		return fmt.Errorf("%s already exists, not overwriting", existingConfigFilePath)
-	}
-	var writeConfigOptions []bufconfig.WriteConfigOption
+
+	// TODO: what about v2?
+	fileVersion := bufconfig.FileVersionV1
+	var moduleFullName bufmodule.ModuleFullName
 	if container.NumArgs() > 0 {
-		moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
+		moduleFullName, err = bufmodule.ParseModuleFullName(container.Arg(0))
 		if err != nil {
 			return err
 		}
-		writeConfigOptions = append(
-			writeConfigOptions,
-			bufconfig.WriteConfigWithModuleFullName(moduleFullName),
-		)
 	}
-	if flags.DocumentationComments {
-		writeConfigOptions = append(
-			writeConfigOptions,
-			bufconfig.WriteConfigWithDocumentationComments(),
-		)
-	}
-	if flags.Uncomment {
-		writeConfigOptions = append(
-			writeConfigOptions,
-			bufconfig.WriteConfigWithUncomment(),
-		)
-	}
-	// Need to include the default version (v1), lint config, and breaking config.
-	version := bufconfig.V1Version
-	writeConfigOptions = append(
-		writeConfigOptions,
-		bufconfig.WriteConfigWithVersion(version),
-	)
-	writeConfigOptions = append(
-		writeConfigOptions,
-		bufconfig.WriteConfigWithBreakingConfig(
-			&bufbreakingconfig.Config{
-				Version: version,
-				Use:     []string{"FILE"},
-			},
+
+	moduleConfig, err := bufconfig.NewModuleConfig(
+		"",
+		moduleFullName,
+		map[string][]string{
+			".": []string{},
+		},
+		bufconfig.NewLintConfig(
+			bufconfig.NewCheckConfig(
+				fileVersion,
+				[]string{"DEFAULT"},
+				nil,
+				nil,
+				nil,
+			),
+			"",
+			false,
+			false,
+			false,
+			"",
+			false,
+		),
+		bufconfig.NewBreakingConfig(
+			bufconfig.NewCheckConfig(
+				fileVersion,
+				[]string{"FILE"},
+				nil,
+				nil,
+				nil,
+			),
+			false,
 		),
 	)
-	writeConfigOptions = append(
-		writeConfigOptions,
-		bufconfig.WriteConfigWithLintConfig(
-			&buflintconfig.Config{
-				Version: version,
-				Use:     []string{"DEFAULT"},
-			},
-		),
+	if err != nil {
+		return err
+	}
+	bufYAMLFile, err := bufconfig.NewBufYAMLFile(
+		fileVersion,
+		[]bufconfig.ModuleConfig{
+			moduleConfig,
+		},
+		nil,
 	)
-	return bufconfig.WriteConfig(
-		ctx,
-		readWriteBucket,
-		writeConfigOptions...,
-	)
+	if err != nil {
+		return err
+	}
+
+	return bufcli.PutBufYAMLFileForDirPath(ctx, flags.OutDirPath, bufYAMLFile)
 }

@@ -60,7 +60,7 @@ type BufWorkYAMLFile interface {
 	isBufWorkYAMLFile()
 }
 
-// NewBufWorkYAMLFile returns a new BufWorkYAMLFile.
+// NewBufWorkYAMLFile returns a new validated BufWorkYAMLFile.
 func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
 	return newBufWorkYAMLFile(fileVersion, dirPaths)
 }

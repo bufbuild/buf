@@ -66,7 +66,7 @@ type BufLockFile interface {
 	isBufLockFile()
 }
 
-// NewBufLockFile returns a new BufLockFile.
+// NewBufLockFile returns a new validated BufLockFile.
 //
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().

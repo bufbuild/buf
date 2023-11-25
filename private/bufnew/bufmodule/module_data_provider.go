@@ -16,7 +16,7 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
+	"io/fs"
 )
 
 var (
@@ -43,5 +43,5 @@ type ModuleDataProvider interface {
 type nopModuleDataProvider struct{}
 
 func (nopModuleDataProvider) GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error) {
-	return nil, errors.New("nopModuleDataProvider")
+	return nil, fs.ErrNotExist
 }

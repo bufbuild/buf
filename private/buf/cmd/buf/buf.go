@@ -71,8 +71,8 @@ import (
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
@@ -118,19 +118,19 @@ func NewRootCommand(name string) *appcmd.Command {
 			//push.NewCommand("push", builder),
 			//convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
-			//{
-			//Use:   "mod",
-			//Short: "Manage Buf modules",
-			//SubCommands: []*appcmd.Command{
-			//modinit.NewCommand("init", builder),
-			//modprune.NewCommand("prune", builder),
-			//modupdate.NewCommand("update", builder),
-			//modopen.NewCommand("open", builder),
-			modclearcache.NewCommand("clear-cache", builder, "cc"),
-			//modlslintrules.NewCommand("ls-lint-rules", builder),
-			//modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
-			//},
-			//},
+			{
+				Use:   "mod",
+				Short: "Manage Buf modules",
+				SubCommands: []*appcmd.Command{
+					modinit.NewCommand("init", builder),
+					//modprune.NewCommand("prune", builder),
+					//modupdate.NewCommand("update", builder),
+					//modopen.NewCommand("open", builder),
+					modclearcache.NewCommand("clear-cache", builder, "cc"),
+					//modlslintrules.NewCommand("ls-lint-rules", builder),
+					//modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
+				},
+			},
 			{
 				Use:   "registry",
 				Short: "Manage assets on the Buf Schema Registry",

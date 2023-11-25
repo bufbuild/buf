@@ -409,7 +409,7 @@ func getModuleDepsRec(
 	moduleSet := module.ModuleSet()
 	if moduleSet == nil {
 		// This should never happen.
-		return errors.New("moduleSet never set on module")
+		return syserror.New("moduleSet never set on module")
 	}
 	// Doing this BFS so we add all the direct deps to the map first, then if we
 	// see a dep later, it will still be a direct dep in the map, but will be ignored

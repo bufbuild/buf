@@ -58,6 +58,73 @@ type BufYAMLFile interface {
 	isBufYAMLFile()
 }
 
+// NewBufYAMLFile returns a new validated BufYAMLFile.
+//
+// This should generally not be used outside of testing - use GetBufYAMLFileForPrefix instead.
+func NewBufYAMLFile(
+	fileVersion FileVersion,
+	moduleConfigs []ModuleConfig,
+	configuredDepModuleRefs []bufmodule.ModuleRef,
+) (BufYAMLFile, error) {
+	bufYAMLFile, err := newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkV2SupportedYet(bufYAMLFile.FileVersion()); err != nil {
+		return nil, err
+	}
+	return bufYAMLFile, nil
+}
+
+// NewBufYAMLFileWithOnlyModuleFullName returns a new BufYAMLFile with only the ModuleFullName
+// value set to a non-default.
+//
+// Even ModuleFullName is actually optional here.
+//
+// This is used when initializing configurations.
+func NewBufYAMLFileWithOnlyModuleFullName(
+	fileVersion FileVersion,
+	moduleFullName bufmodule.ModuleFullName,
+) (BufYAMLFile, error) {
+	checkConfig := newCheckConfig(
+		fileVersion,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+	moduleConfig, err := newModuleConfig(
+		"",
+		moduleFullName,
+		map[string][]string{
+			".": []string{},
+		},
+		newLintConfig(
+			checkConfig,
+			"",
+			false,
+			false,
+			false,
+			"",
+			false,
+		),
+		newBreakingConfig(
+			checkConfig,
+			false,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return NewBufYAMLFile(
+		fileVersion,
+		[]ModuleConfig{
+			moduleConfig,
+		},
+		nil,
+	)
+}
+
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
 //
 // The buf.yaml file will be attempted to be read at prefix/buf.yaml.
@@ -116,6 +183,17 @@ func newBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
+	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
+		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
+	}
+	for _, moduleConfig := range moduleConfigs {
+		if fileVersion != moduleConfig.LintConfig().FileVersion() {
+			return nil, fmt.Errorf("FileVersion %v was passed to NewBufYAMLFile but had LintConfig FileVersion %v", fileVersion, moduleConfig.LintConfig().FileVersion())
+		}
+		if fileVersion != moduleConfig.BreakingConfig().FileVersion() {
+			return nil, fmt.Errorf("FileVersion %v was passed to NewBufYAMLFile but had BreakingConfig FileVersion %v", fileVersion, moduleConfig.BreakingConfig().FileVersion())
+		}
+	}
 	// Zero values are not added to duplicates.
 	duplicateModuleConfigDirPaths := slicesext.Duplicates(
 		slicesext.Map(
@@ -223,22 +301,26 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if err != nil {
 			return nil, err
 		}
+		moduleConfig, err := newModuleConfig(
+			".",
+			moduleFullName,
+			rootToExcludes,
+			getLintConfigForExternalLint(
+				fileVersion,
+				externalBufYAMLFile.Lint,
+			),
+			getBreakingConfigForExternalBreaking(
+				fileVersion,
+				externalBufYAMLFile.Breaking,
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
 		return newBufYAMLFile(
 			fileVersion,
 			[]ModuleConfig{
-				newModuleConfig(
-					".",
-					moduleFullName,
-					rootToExcludes,
-					getLintConfigForExternalLint(
-						fileVersion,
-						externalBufYAMLFile.Lint,
-					),
-					getBreakingConfigForExternalBreaking(
-						fileVersion,
-						externalBufYAMLFile.Breaking,
-					),
-				),
+				moduleConfig,
 			},
 			configuredDepModuleRefs,
 		)
@@ -261,21 +343,20 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			if err != nil {
 				return nil, err
 			}
-			moduleConfigs = append(
-				moduleConfigs, newModuleConfig(
-					dirPath,
-					moduleFullName,
-					rootToExcludes,
-					getLintConfigForExternalLint(
-						fileVersion,
-						externalModule.Lint,
-					),
-					getBreakingConfigForExternalBreaking(
-						fileVersion,
-						externalModule.Breaking,
-					),
+			moduleConfig, err := newModuleConfig(
+				dirPath,
+				moduleFullName,
+				rootToExcludes,
+				getLintConfigForExternalLint(
+					fileVersion,
+					externalModule.Lint,
+				),
+				getBreakingConfigForExternalBreaking(
+					fileVersion,
+					externalModule.Breaking,
 				),
 			)
+			moduleConfigs = append(moduleConfigs, moduleConfig)
 		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)
 		if err != nil {
@@ -438,8 +519,8 @@ type externalBufYAMLFileV1Beta1V1 struct {
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Build    externalBufYAMLFileBuildV1Beta1V1      `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
 // externalBufYAMLFileV2 represents the v2 buf.yaml file.
@@ -457,8 +538,8 @@ type externalBufYAMLFileModuleV2 struct {
 	Directory string                                 `json:"directory,omitempty" yaml:"directory,omitempty"`
 	Name      string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Excludes  []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
-	Breaking  externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint      externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Breaking  externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
 // externalBufYAMLFileBuildV1Beta1V1 represents build configuation within a v1 or

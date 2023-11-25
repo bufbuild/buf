@@ -15,18 +15,30 @@
 package bufconfig
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 )
 
-var DefaultModuleConfig ModuleConfig = newModuleConfig(
-	"",
-	nil,
-	map[string][]string{
-		".": []string{},
-	},
-	DefaultLintConfig,
-	DefaultBreakingConfig,
-)
+// DefaultModuleConfig is the default ModuleConfig.
+var DefaultModuleConfig ModuleConfig
+
+func init() {
+	var err error
+	DefaultModuleConfig, err = newModuleConfig(
+		"",
+		nil,
+		map[string][]string{
+			".": []string{},
+		},
+		DefaultLintConfig,
+		DefaultBreakingConfig,
+	)
+	if err != nil {
+		panic(err.Error())
+	}
+}
 
 // ModuleConfig is configuration for a specific Module.
 //
@@ -85,6 +97,23 @@ type ModuleConfig interface {
 	isModuleConfig()
 }
 
+// NewModuleConfig returns a new ModuleConfig.
+func NewModuleConfig(
+	dirPath string,
+	moduleFullName bufmodule.ModuleFullName,
+	rootToExcludes map[string][]string,
+	lintConfig LintConfig,
+	breakingConfig BreakingConfig,
+) (ModuleConfig, error) {
+	return newModuleConfig(
+		dirPath,
+		moduleFullName,
+		rootToExcludes,
+		lintConfig,
+		breakingConfig,
+	)
+}
+
 // *** PRIVATE ***
 
 type moduleConfig struct {
@@ -95,23 +124,51 @@ type moduleConfig struct {
 	breakingConfig BreakingConfig
 }
 
-// If this is ever made public, you have to validate that LintConfig and BreakingConfig
-// have the same FileVersion.
+// All validations are syserrors as we only ever read ModuleConfigs.
 func newModuleConfig(
 	dirPath string,
 	moduleFullName bufmodule.ModuleFullName,
 	rootToExcludes map[string][]string,
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
-) *moduleConfig {
-	// TODO: validation (maybe outside of config construction)
+) (*moduleConfig, error) {
+	if lintConfig == nil {
+		return nil, errors.New("LintConfig was nil")
+	}
+	if breakingConfig == nil {
+		return nil, errors.New("BreakingConfig was nil")
+	}
+	lintFileVersion := lintConfig.FileVersion()
+	breakingFileVersion := breakingConfig.FileVersion()
+	if lintFileVersion != breakingFileVersion {
+		return nil, fmt.Errorf(
+			"LintConfig FileVersion %v did not match BreakingConfig FileVersion %v",
+			lintFileVersion,
+			breakingFileVersion,
+		)
+	}
+	fileVersion := lintFileVersion
+	if fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1 {
+		if dirPath != "" {
+			return nil, fmt.Errorf("had dirPath %q for NewModuleConfig with FileVersion %v", dirPath, fileVersion)
+		}
+	}
+	if fileVersion == FileVersionV1 || fileVersion == FileVersionV2 {
+		if len(rootToExcludes) != 1 {
+			// This is a system error - we'll never read this.
+			return nil, fmt.Errorf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
+		}
+		if _, ok := rootToExcludes["."]; !ok {
+			return nil, fmt.Errorf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+		}
+	}
 	return &moduleConfig{
 		dirPath:        dirPath,
 		moduleFullName: moduleFullName,
 		rootToExcludes: rootToExcludes,
 		lintConfig:     lintConfig,
 		breakingConfig: breakingConfig,
-	}
+	}, nil
 }
 
 func (m *moduleConfig) DirPath() string {

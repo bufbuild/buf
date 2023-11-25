@@ -40,6 +40,7 @@ type BreakingConfig interface {
 	isBreakingConfig()
 }
 
+// NewBreakingConfig returns a new BreakingConfig.
 func NewBreakingConfig(
 	checkConfig CheckConfig,
 	ignoreUnstablePackages bool,

@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
 )
 
@@ -378,7 +379,7 @@ func getUniqueModulesByOpaqueID(ctx context.Context, modules []Module) ([]Module
 	for _, module := range modules {
 		opaqueID := module.OpaqueID()
 		if opaqueID == "" {
-			return nil, errors.New("OpaqueID was empty which should never happen")
+			return nil, syserror.New("OpaqueID was empty which should never happen")
 		}
 		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
 			alreadySeenOpaqueIDs[opaqueID] = struct{}{}

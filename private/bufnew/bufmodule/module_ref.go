@@ -86,7 +86,7 @@ func newModuleRef(
 	ref string,
 ) (*moduleRef, error) {
 	if moduleFullName == nil {
-		return nil, errors.New("new ModuleRef: ModuleFullName is nil")
+		return nil, errors.New("nil ModuleFullName when constructing ModuleRef")
 	}
 	return &moduleRef{
 		moduleFullName: moduleFullName,
