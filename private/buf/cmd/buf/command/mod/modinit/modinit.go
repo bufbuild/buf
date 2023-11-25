@@ -19,10 +19,10 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -45,7 +45,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " [buf.build/owner/foobar]",
-		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1FilePath),
+		Short: "Initializes and writes a new buf.yaml file.",
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
