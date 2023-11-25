@@ -64,6 +64,9 @@ const (
 	// Version is the CLI version of buf.
 	Version = "1.28.2-dev"
 
+	// WASMCompilationCacheDir compiled WASM plugin cache directory
+	WASMCompilationCacheDir = "wasmplugin-bin"
+
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
@@ -72,8 +75,7 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
-	// AlphaEnableWASMEnvKey is an env var to enable WASM local plugin execution
-	AlphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
+	alphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -82,9 +84,6 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
-
-	// WASMCompilationCacheDir compiled WASM plugin cache directory
-	WASMCompilationCacheDir = "wasmplugin-bin"
 )
 
 var (
@@ -123,9 +122,6 @@ var (
 		v1CacheModuleSumRelDirPath,
 		v2CacheModuleRelDirPath,
 	}
-
-	// ErrNotATTY is returned when an input io.Reader is not a TTY where it is expected.
-	ErrNotATTY = errors.New("reader was not a TTY as expected")
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
 	// was stored in v1beta1.
@@ -585,7 +581,7 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 
 // IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
 func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
-	return app.EnvBool(container, AlphaEnableWASMEnvKey, false)
+	return app.EnvBool(container, alphaEnableWASMEnvKey, false)
 }
 
 // ValidateRequiredFlag validates that the required flag is set.
@@ -623,26 +619,6 @@ Use a specific module version and plugin version.
         v1.0.0-20230609151053-e682db0d9918.1
 `, registryName, registryName, examplePlugin, registryName, commandName, examplePlugin, commandName, examplePlugin)
 }
-
-//// SelectRefForRegistry receives a list of module references and selects one for remote
-//// operations. In most cases, all references will have the same remote, which will result in the
-//// first reference being selected. In cases in which there is a mix of remotes, the first reference
-//// with a remote different than "buf.build" will be selected. This func is useful for targeting
-//// single-tenant BSR addresses.
-//func SelectRefForRegistry(references []bufmodule.ModuleRef) bufmodule.ModuleRef {
-//if len(references) == 0 {
-//return nil
-//}
-//for _, ref := range references {
-//if ref == nil {
-//continue
-//}
-//if ref.Remote() != bufconnect.DefaultRemote {
-//return ref
-//}
-//}
-//return references[0]
-//}
 
 // newConfig creates a new Config.
 func newConfig(container appflag.Container) (*bufapp.Config, error) {
