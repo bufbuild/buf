@@ -56,6 +56,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
@@ -97,7 +98,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			build.NewCommand("build", builder),
 			//export.NewCommand("export", builder),
 			//format.NewCommand("format", builder),
-			//lint.NewCommand("lint", builder),
+			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
 			//generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
