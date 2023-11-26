@@ -211,6 +211,8 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 // All returned Modules will be unique.
 //
 // Sorted by ModuleFullName.
+//
+// TODO: This needs a LOT of testing.
 func ModuleSetRemoteDepsOfLocalModules(
 	moduleSet ModuleSet,
 	options ...ModuleSetRemoteDepsOfLocalModulesOption,
@@ -234,12 +236,14 @@ func ModuleSetRemoteDepsOfLocalModules(
 			if moduleDep.IsLocal() {
 				continue
 			}
-			moduleFullName := moduleDep.ModuleFullName()
-			if moduleFullName == nil {
+			moduleDepFullName := moduleDep.ModuleFullName()
+			if moduleDepFullName == nil {
 				// Just a sanity check.
 				return nil, syserror.New("remote module did not have a ModuleFullName")
 			}
-			remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleFullName.String()] = struct{}{}
+			if moduleDep.IsDirect() {
+				remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleDepFullName.String()] = struct{}{}
+			}
 			iRemoteDeps, err := moduleSetRemoteDepsRec(
 				moduleDep,
 				visitedOpaqueIDs,

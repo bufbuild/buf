@@ -300,6 +300,15 @@ func TestBasic(t *testing.T) {
 		},
 		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
 	)
+	remoteDeps, err = bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet, bufmodule.WithOnlyTransitiveRemoteDeps())
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep4",
+		},
+		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
+	)
 }
 
 func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) storage.ReadBucket {
