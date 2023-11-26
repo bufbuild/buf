@@ -50,6 +50,47 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
 
+# TODO: remove when done with refactor
+.PHONY: testbufnew
+testbufnew: installbuf
+	go test \
+		./private/buf/bufapp/... \
+		./private/buf/bufcli/... \
+		./private/buf/bufctl/... \
+		./private/buf/bufcurl/... \
+		./private/buf/buffetch/... \
+		./private/buf/bufformat/... \
+		./private/buf/bufprint/... \
+		./private/buf/bufworkspace/... \
+		./private/buf/cmd/buf/command/alpha/package/... \
+		./private/buf/cmd/buf/command/alpha/protoc/... \
+		./private/buf/cmd/buf/command/alpha/registry/... \
+		./private/buf/cmd/buf/command/beta/graph/... \
+		./private/buf/cmd/buf/command/beta/price/... \
+		./private/buf/cmd/buf/command/beta/stats/... \
+		./private/buf/cmd/buf/command/beta/studioagent/... \
+		./private/buf/cmd/buf/command/build/... \
+		./private/buf/cmd/buf/command/lsfiles/... \
+		./private/buf/cmd/buf/command/mod/... \
+		./private/buf/cmd/buf/command/registry/... \
+		./private/buf/cmd/buf-digest/... \
+		./private/bufpkg/bufanalysis/... \
+		./private/bufpkg/bufapi/... \
+		./private/bufpkg/bufcas/... \
+		./private/bufpkg/bufcheck/... \
+		./private/bufpkg/bufconfig/... \
+		./private/bufpkg/bufconnect/... \
+		./private/bufpkg/bufimage/... \
+		./private/bufpkg/bufplugin/... \
+		./private/bufpkg/bufpluginexec/... \
+		./private/bufpkg/bufreflect/... \
+		./private/bufpkg/bufremoteplugin/... \
+		./private/bufpkg/bufstudioagent/... \
+		./private/bufpkg/bufstyle/... \
+		./private/bufpkg/buftesting/... \
+		./private/bufpkg/buftransport/... \
+		./private/bufpkg/bufwasm/...
+
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
 .PHONY: bufstyle
