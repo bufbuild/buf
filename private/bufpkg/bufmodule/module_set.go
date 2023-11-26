@@ -102,6 +102,7 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 				return ModuleReadBucketWithOnlyProtoFiles(module)
 			},
 		),
+		true,
 	)
 }
 

@@ -60,6 +60,22 @@ type ModuleReadBucket interface {
 	// exist within a Module (currently, only one of each is allowed).
 	WalkFileInfos(ctx context.Context, f func(FileInfo) error, options ...WalkFileInfosOption) error
 
+	// ShouldBeSelfContained returns true if the ModuleReadBucket was constructed with the intention
+	// that it would be self-contained with respect to its .proto files. That is, every .proto
+	// file in the ModuleReadBucket only imports other files from the ModuleReadBucket.
+	//
+	// It is possible for a bucket to be marked as ShouldBeSelfContained without it actually
+	// being self-contained.
+	//
+	// A ModuleReadBucket is self-contained if it was constructed from
+	// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
+	// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles.
+	//
+	// A ModuleReadBucket as inherited from a Module is not self-contained.
+	//
+	// A ModuleReadBucket filtered to anything but FileTypeProto is not self-contained.
+	ShouldBeSelfContained() bool
+
 	isModuleReadBucket()
 }
 
@@ -213,7 +229,7 @@ type moduleReadBucket struct {
 
 // module cannot be assumed to be functional yet.
 // Do not call any functions on module.
-func newModuleReadBucket(
+func newModuleReadBucketForModule(
 	ctx context.Context,
 	getBucket func() (storage.ReadBucket, error),
 	module Module,
@@ -325,6 +341,10 @@ func (b *moduleReadBucket) WalkFileInfos(
 	return bucket.Walk(ctx, "", targetFileWalkFunc)
 }
 
+func (b *moduleReadBucket) ShouldBeSelfContained() bool {
+	return false
+}
+
 func (*moduleReadBucket) isModuleReadBucket() {}
 
 func (b *moduleReadBucket) getFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
@@ -377,17 +397,24 @@ func (b *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
 // filteredModuleReadBucket
 
 type filteredModuleReadBucket struct {
-	delegate    ModuleReadBucket
-	fileTypeMap map[FileType]struct{}
+	delegate              ModuleReadBucket
+	fileTypeMap           map[FileType]struct{}
+	shouldBeSelfContained bool
 }
 
 func newFilteredModuleReadBucket(
 	delegate ModuleReadBucket,
 	fileTypes []FileType,
 ) *filteredModuleReadBucket {
+	if len(fileTypes) == 0 && fileTypes[0] == FileTypeProto {
+
+	}
+	fileTypeMap := slicesext.ToStructMap(fileTypes)
+	_, containsFileTypeProto := fileTypeMap[FileTypeProto]
 	return &filteredModuleReadBucket{
-		delegate:    delegate,
-		fileTypeMap: fileTypeSliceToMap(fileTypes),
+		delegate:              delegate,
+		fileTypeMap:           fileTypeMap,
+		shouldBeSelfContained: delegate.ShouldBeSelfContained() && containsFileTypeProto,
 	}
 }
 
@@ -427,19 +454,26 @@ func (f *filteredModuleReadBucket) WalkFileInfos(
 	)
 }
 
+func (f *filteredModuleReadBucket) ShouldBeSelfContained() bool {
+	return f.shouldBeSelfContained
+}
+
 func (*filteredModuleReadBucket) isModuleReadBucket() {}
 
 // multiModuleReadBucket
 
 type multiModuleReadBucket struct {
-	delegates []ModuleReadBucket
+	delegates             []ModuleReadBucket
+	shouldBeSelfContained bool
 }
 
 func newMultiModuleReadBucket(
 	delegates []ModuleReadBucket,
+	shouldBeSelfContained bool,
 ) *multiModuleReadBucket {
 	return &multiModuleReadBucket{
-		delegates: delegates,
+		delegates:             delegates,
+		shouldBeSelfContained: shouldBeSelfContained,
 	}
 }
 
@@ -482,6 +516,10 @@ func (m *multiModuleReadBucket) WalkFileInfos(
 		}
 	}
 	return nil
+}
+
+func (m *multiModuleReadBucket) ShouldBeSelfContained() bool {
+	return m.shouldBeSelfContained
 }
 
 func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(

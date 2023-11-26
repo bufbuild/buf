@@ -149,6 +149,37 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	)
 }
 
+// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles converts the Module to a
+// ModuleReadBucket that contains all the .proto files of the Module and its dependencies.
+//
+// Targeting information will remain the same.
+//
+// *** THIS IS PROBABLY NOT THE FUNCTION YOU ARE LOOKING FOR. *** You probably want
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles to convert a ModuleSet/Workspace to a
+// ModuleReadBucket. This function is used for cases where we want to create an Image
+// specifically for one Module, such as when we need to associate LintConfig and BreakingConfig
+// on a per-Module basis for buf lint and buf breaking. See bufctl.Controller, which is likely
+// the only place this should be used outside of testing.
+func ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module Module) (ModuleReadBucket, error) {
+	modules := []Module{module}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	for _, moduleDep := range moduleDeps {
+		modules = append(modules, moduleDep)
+	}
+	return newMultiModuleReadBucket(
+		slicesext.Map(
+			modules,
+			func(module Module) ModuleReadBucket {
+				return ModuleReadBucketWithOnlyProtoFiles(module)
+			},
+		),
+		true,
+	), nil
+}
+
 // ModuleDirectModuleDeps is a convenience function that returns only the direct dependencies of the Module.
 func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 	moduleDeps, err := module.ModuleDeps()
@@ -222,7 +253,7 @@ func newModule(
 		isTarget:       isTarget,
 		isLocal:        isLocal,
 	}
-	module.ModuleReadBucket = newModuleReadBucket(
+	module.ModuleReadBucket = newModuleReadBucketForModule(
 		ctx,
 		getBucket,
 		module,
