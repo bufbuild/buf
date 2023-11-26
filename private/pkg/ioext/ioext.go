@@ -34,6 +34,12 @@ var (
 	NopCloser = nopCloser{}
 )
 
+// ReadAllAndClose reads all the data and then closes the ReadCloser.
+func ReadAllAndClose(readCloser io.ReadCloser) ([]byte, error) {
+	data, err := io.ReadAll(readCloser)
+	return data, multierr.Append(err, readCloser.Close())
+}
+
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
 func NopWriteCloser(writer io.Writer) io.WriteCloser {
 	return nopWriteCloser{Writer: writer}

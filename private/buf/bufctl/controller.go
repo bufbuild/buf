@@ -17,6 +17,7 @@ package bufctl
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -26,12 +27,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -60,6 +63,21 @@ type Controller interface {
 		ctx context.Context,
 		imageOutput string,
 		image bufimage.Image,
+		options ...FunctionOption,
+	) error
+	GetMessage(
+		ctx context.Context,
+		schemaImage bufimage.Image,
+		messageInput string,
+		typeName string,
+		options ...FunctionOption,
+	) (proto.Message, buffetch.MessageEncoding, error)
+	PutMessage(
+		ctx context.Context,
+		schemaImage bufimage.Image,
+		messageOutput string,
+		message proto.Message,
+		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) error
 }
@@ -106,6 +124,7 @@ func WithFileAnnotationsToStdout() ControllerOption {
 	}
 }
 
+// TODO: split up to per-function.
 type FunctionOption func(*functionOptions)
 
 func WithTargetPaths(targetPaths []string, targetExcludePaths []string) FunctionOption {
@@ -169,6 +188,7 @@ func WithConfigOverride(configOverride string) FunctionOption {
 // it out again. The separation of concerns here is that the controller doesnt itself
 // deal in the global variables.
 type controller struct {
+	logger             *zap.Logger
 	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 
@@ -194,6 +214,7 @@ func newController(
 	options ...ControllerOption,
 ) (*controller, error) {
 	controller := &controller{
+		logger:             logger,
 		container:          container,
 		moduleDataProvider: moduleDataProvider,
 	}
@@ -319,17 +340,21 @@ func (c *controller) PutImage(
 	if messageRef.IsNull() {
 		return nil
 	}
+	marshaler, err := newProtoencodingMarshaler(image, messageRef)
+	if err != nil {
+		return err
+	}
 	putImage, err := filterImage(image, functionOptions)
 	if err != nil {
 		return err
 	}
-	var message proto.Message
+	var putMessage proto.Message
 	if functionOptions.imageAsFileDescriptorSet {
-		message = bufimage.ImageToFileDescriptorSet(putImage)
+		putMessage = bufimage.ImageToFileDescriptorSet(putImage)
 	} else {
-		message = bufimage.ImageToProtoImage(putImage)
+		putMessage = bufimage.ImageToProtoImage(putImage)
 	}
-	data, err := c.marshalImage(ctx, message, image, messageRef)
+	data, err := marshaler.Marshal(putMessage)
 	if err != nil {
 		return err
 	}
@@ -342,6 +367,110 @@ func (c *controller) PutImage(
 	}()
 	_, err = writeCloser.Write(data)
 	return err
+}
+
+func (c *controller) GetMessage(
+	ctx context.Context,
+	schemaImage bufimage.Image,
+	messageInput string,
+	typeName string,
+	options ...FunctionOption,
+) (proto.Message, buffetch.MessageEncoding, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	messageRef, err := c.buffetchRefParser.GetMessageRef(ctx, messageInput)
+	if err != nil {
+		return nil, 0, err
+	}
+	messageEncoding := messageRef.MessageEncoding()
+	if messageRef.IsNull() {
+		return nil, messageEncoding, nil
+	}
+	resolver, err := protoencoding.NewResolver(
+		bufimage.ImageToFileDescriptorProtos(schemaImage)...,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	var unmarshaler protoencoding.Unmarshaler
+	switch messageEncoding {
+	case buffetch.MessageEncodingBinpb:
+		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
+	case buffetch.MessageEncodingJSON:
+		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
+	case buffetch.MessageEncodingTxtpb:
+		unmarshaler = protoencoding.NewTxtpbUnmarshaler(resolver)
+	case buffetch.MessageEncodingYAML:
+		unmarshaler = protoencoding.NewYAMLUnmarshaler(
+			resolver,
+			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
+		)
+	default:
+		// This is a system error.
+		return nil, 0, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
+	}
+	readCloser, err := c.buffetchReader.GetMessageFile(ctx, c.container, messageRef)
+	if err != nil {
+		return nil, 0, err
+	}
+	data, err := ioext.ReadAllAndClose(readCloser)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(data) == 0 {
+		return nil, 0, fmt.Errorf("length of data read from %q was zero", messageInput)
+	}
+	message, err := bufreflect.NewMessage(ctx, schemaImage, typeName)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := unmarshaler.Unmarshal(data, message); err != nil {
+		return nil, 0, err
+	}
+	return message, messageEncoding, nil
+}
+
+func (c *controller) PutMessage(
+	ctx context.Context,
+	schemaImage bufimage.Image,
+	messageOutput string,
+	message proto.Message,
+	defaultMessageEncoding buffetch.MessageEncoding,
+	options ...FunctionOption,
+) error {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	messageRefParser := buffetch.NewMessageRefParser(
+		c.logger,
+		buffetch.MessageRefParserWithDefaultMessageEncoding(
+			defaultMessageEncoding,
+		),
+	)
+	messageRef, err := messageRefParser.GetMessageRef(ctx, messageOutput)
+	if err != nil {
+		return err
+	}
+	if messageRef.IsNull() {
+		return nil
+	}
+	marshaler, err := newProtoencodingMarshaler(schemaImage, messageRef)
+	if err != nil {
+		return err
+	}
+	data, err := marshaler.Marshal(message)
+	if err != nil {
+		return err
+	}
+	writeCloser, err := c.buffetchWriter.PutMessageFile(ctx, c.container, messageRef)
+	if err != nil {
+		return err
+	}
+	_, err = writeCloser.Write(data)
+	return multierr.Append(err, writeCloser.Close())
 }
 
 func (c *controller) getWorkspaceForSourceRef(
@@ -440,6 +569,7 @@ func (c *controller) getImageForMessageRef(
 
 	protoImage := &imagev1.Image{}
 	var imageFromProtoOptions []bufimage.NewImageForProtoOption
+
 	switch messageEncoding := messageRef.MessageEncoding(); messageEncoding {
 	// we have to double parse due to custom options
 	// See https://github.com/golang/protobuf/issues/1123
@@ -448,7 +578,7 @@ func (c *controller) getImageForMessageRef(
 			return nil, err
 		}
 	case buffetch.MessageEncodingJSON:
-		resolver, err := c.bootstrapResolver(ctx, protoencoding.NewJSONUnmarshaler(nil), data)
+		resolver, err := bootstrapResolver(protoencoding.NewJSONUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
@@ -458,7 +588,7 @@ func (c *controller) getImageForMessageRef(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.MessageEncodingTxtpb:
-		resolver, err := c.bootstrapResolver(ctx, protoencoding.NewTxtpbUnmarshaler(nil), data)
+		resolver, err := bootstrapResolver(protoencoding.NewTxtpbUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
@@ -468,7 +598,7 @@ func (c *controller) getImageForMessageRef(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.MessageEncodingYAML:
-		resolver, err := c.bootstrapResolver(ctx, protoencoding.NewYAMLUnmarshaler(nil), data)
+		resolver, err := bootstrapResolver(protoencoding.NewYAMLUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
 		}
@@ -478,8 +608,10 @@ func (c *controller) getImageForMessageRef(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	default:
-		return nil, err
+		// This is a system error.
+		return nil, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
 	}
+
 	if functionOptions.imageExcludeSourceInfo {
 		for _, fileDescriptorProto := range protoImage.File {
 			fileDescriptorProto.SourceCodeInfo = nil
@@ -536,51 +668,15 @@ func (c *controller) buildImage(
 	return filterImage(image, functionOptions)
 }
 
-func (c *controller) bootstrapResolver(
-	ctx context.Context,
-	unresolving protoencoding.Unmarshaler,
+func bootstrapResolver(
+	unmarshaler protoencoding.Unmarshaler,
 	data []byte,
 ) (protoencoding.Resolver, error) {
 	firstProtoImage := &imagev1.Image{}
-	if err := unresolving.Unmarshal(data, firstProtoImage); err != nil {
+	if err := unmarshaler.Unmarshal(data, firstProtoImage); err != nil {
 		return nil, err
 	}
 	return protoencoding.NewResolver(firstProtoImage.File...)
-}
-
-func (c *controller) marshalImage(
-	ctx context.Context,
-	message proto.Message,
-	image bufimage.Image,
-	messageRef buffetch.MessageRef,
-) ([]byte, error) {
-	switch messageEncoding := messageRef.MessageEncoding(); messageEncoding {
-	case buffetch.MessageEncodingBinpb:
-		return protoencoding.NewWireMarshaler().Marshal(message)
-	case buffetch.MessageEncodingJSON:
-		// TODO: verify that image is complete
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return newJSONMarshaler(resolver, messageRef).Marshal(message)
-	case buffetch.MessageEncodingTxtpb:
-		// TODO: verify that image is complete
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return protoencoding.NewTxtpbMarshaler(resolver).Marshal(message)
-	case buffetch.MessageEncodingYAML:
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return newYAMLMarshaler(resolver, messageRef).Marshal(message)
-	default:
-		// This is a system error.
-		return nil, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
-	}
 }
 
 func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufimage.Image, error) {
@@ -604,6 +700,39 @@ func newStorageosProvider(disableSymlinks bool) storageos.Provider {
 		options = append(options, storageos.ProviderWithSymlinks())
 	}
 	return storageos.NewProvider(options...)
+}
+
+func newProtoencodingMarshaler(
+	image bufimage.Image,
+	messageRef buffetch.MessageRef,
+) (protoencoding.Marshaler, error) {
+	switch messageEncoding := messageRef.MessageEncoding(); messageEncoding {
+	case buffetch.MessageEncodingBinpb:
+		return protoencoding.NewWireMarshaler(), nil
+	case buffetch.MessageEncodingJSON:
+		// TODO: verify that image is complete
+		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
+		if err != nil {
+			return nil, err
+		}
+		return newJSONMarshaler(resolver, messageRef), nil
+	case buffetch.MessageEncodingTxtpb:
+		// TODO: verify that image is complete
+		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
+		if err != nil {
+			return nil, err
+		}
+		return protoencoding.NewTxtpbMarshaler(resolver), nil
+	case buffetch.MessageEncodingYAML:
+		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
+		if err != nil {
+			return nil, err
+		}
+		return newYAMLMarshaler(resolver, messageRef), nil
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
+	}
 }
 
 func newJSONMarshaler(
