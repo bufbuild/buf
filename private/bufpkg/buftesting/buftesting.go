@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"

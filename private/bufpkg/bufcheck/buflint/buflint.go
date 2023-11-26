@@ -21,7 +21,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1"

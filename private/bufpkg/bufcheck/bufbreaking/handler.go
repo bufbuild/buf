@@ -17,7 +17,7 @@ package bufbreaking
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"

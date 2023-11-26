@@ -22,7 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"

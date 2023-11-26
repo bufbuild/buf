@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"

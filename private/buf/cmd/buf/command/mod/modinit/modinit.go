@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/spf13/cobra"

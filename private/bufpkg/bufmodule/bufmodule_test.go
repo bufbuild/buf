@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"

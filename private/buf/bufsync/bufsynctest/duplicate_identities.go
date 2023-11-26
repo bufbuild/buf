@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/git/gittest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

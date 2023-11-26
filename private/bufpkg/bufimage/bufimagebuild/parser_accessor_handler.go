@@ -22,7 +22,7 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"go.uber.org/multierr"
 )

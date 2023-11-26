@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"

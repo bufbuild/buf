@@ -14,7 +14,7 @@
 
 package bufsync
 
-import "github.com/bufbuild/buf/private/bufnew/bufmodule"
+import "github.com/bufbuild/buf/private/bufpkg/bufmodule"
 
 type moduleTags struct {
 	targetModuleFullName bufmodule.ModuleFullName

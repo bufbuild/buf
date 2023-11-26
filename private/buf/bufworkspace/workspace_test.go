@@ -20,9 +20,9 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"

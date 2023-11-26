@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"

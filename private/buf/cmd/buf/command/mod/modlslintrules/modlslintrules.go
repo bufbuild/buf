@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"

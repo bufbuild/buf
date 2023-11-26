@@ -19,10 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
@@ -475,7 +474,7 @@ func getFileAnnotation(
 	parserAccessorHandler *parserAccessorHandler,
 	errorWithPos reporter.ErrorWithPos,
 ) (bufanalysis.FileAnnotation, error) {
-	var fileInfo bufmoduleref.FileInfo
+	var fileInfo bufanalysis.FileInfo
 	var startLine int
 	var startColumn int
 	var endLine int
@@ -493,15 +492,10 @@ func getFileAnnotation(
 		if err != nil {
 			return nil, err
 		}
-		fileInfo, err = bufmoduleref.NewFileInfo(
+		fileInfo = newFileInfo(
 			path,
 			parserAccessorHandler.ExternalPath(path),
-			nil,
-			"",
 		)
-		if err != nil {
-			return nil, err
-		}
 	}
 	if sourcePos.Line > 0 {
 		startLine = sourcePos.Line
@@ -544,6 +538,26 @@ func newBuildResult(
 		FileAnnotations:                     fileAnnotations,
 		Err:                                 err,
 	}
+}
+
+type fileInfo struct {
+	path         string
+	externalPath string
+}
+
+func newFileInfo(path string, externalPath string) *fileInfo {
+	return &fileInfo{
+		path:         path,
+		externalPath: externalPath,
+	}
+}
+
+func (f *fileInfo) Path() string {
+	return f.path
+}
+
+func (f *fileInfo) ExternalPath() string {
+	return f.externalPath
 }
 
 type buildOptions struct {

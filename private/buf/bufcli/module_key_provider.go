@@ -15,9 +15,9 @@
 package bufcli
 
 import (
-	"github.com/bufbuild/buf/private/bufnew/bufapi"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
 

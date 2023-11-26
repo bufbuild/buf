@@ -17,7 +17,7 @@ package internal
 import (
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 

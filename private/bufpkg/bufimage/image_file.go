@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )

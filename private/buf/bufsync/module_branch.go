@@ -15,7 +15,7 @@
 package bufsync
 
 import (
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
 type moduleBranch struct {
