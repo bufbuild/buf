@@ -5,3 +5,4 @@
 - new digest format
 - ImageWorkspace
 - workspace with no file searching (wkt)
+- buf-digest and workspace code to make generate
