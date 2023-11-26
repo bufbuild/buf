@@ -21,8 +21,8 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
+	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -92,7 +92,7 @@ func run(
 		// This also results in config being ignored per the documentation.
 		flags.Config = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
 	}
-	bufYAMLFile, err := bufcli.GetBufYAMLFileForOverrideOrDirPath(ctx, ".", flags.Config)
+	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPathOrOverride(ctx, ".", flags.Config)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			return err

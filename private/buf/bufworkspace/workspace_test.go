@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 		ctx,
 		bucket,
 		bsrProvider,
-		WorkspaceWithTargetSubDirPath(
+		WithTargetSubDirPath(
 			"finance/portfolio/proto",
 		),
 	)
@@ -127,10 +127,10 @@ func TestBasic(t *testing.T) {
 		ctx,
 		bucket,
 		bsrProvider,
-		WorkspaceWithTargetSubDirPath(
+		WithTargetSubDirPath(
 			"common/money/proto",
 		),
-		WorkspaceWithTargetPaths(
+		WithTargetPaths(
 			[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
 			nil,
 		),

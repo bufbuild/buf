@@ -45,7 +45,7 @@ func NewUpdateableWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadWriteBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceOption,
+	options ...WorkspaceBucketOption,
 ) (UpdateableWorkspace, error) {
 	return newUpdateableWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
 }
@@ -62,7 +62,7 @@ func newUpdateableWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadWriteBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceOption,
+	options ...WorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
 	workspace, err := newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
 	if err != nil {

@@ -139,6 +139,12 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 	}
 }
 
+func WithConfigOverride(configOverride string) FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.configOverride = configOverride
+	}
+}
+
 /// *** PRIVATE ***
 
 // In theory, we want to keep this separate from our global variables in bufcli.
@@ -342,10 +348,10 @@ func (c *controller) getWorkspaceForSourceRef(
 		ctx,
 		readBucketCloser,
 		c.moduleDataProvider,
-		bufworkspace.WorkspaceWithTargetSubDirPath(
+		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
-		bufworkspace.WorkspaceWithTargetPaths(
+		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
 		),
@@ -369,10 +375,10 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		ctx,
 		readWriteBucket,
 		c.moduleDataProvider,
-		bufworkspace.WorkspaceWithTargetSubDirPath(
+		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
 		),
-		bufworkspace.WorkspaceWithTargetPaths(
+		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
 		),
@@ -388,20 +394,15 @@ func (c *controller) getWorkspaceForModuleRef(
 	if err != nil {
 		return nil, err
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, c.moduleDataProvider)
-	moduleSetBuilder.AddRemoteModule(
+	return bufworkspace.NewWorkspaceForModuleKey(
+		ctx,
 		moduleKey,
-		true,
-		bufmodule.RemoteModuleWithTargetPaths(
+		c.moduleDataProvider,
+		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
 		),
 	)
-	moduleSet, err := moduleSetBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
-	return bufworkspace.NewWorkspaceForModuleSet(moduleSet)
 }
 
 func (c *controller) getImageForMessageRef(
@@ -654,6 +655,7 @@ type functionOptions struct {
 	imageExcludeImports      bool
 	imageTypes               []string
 	imageAsFileDescriptorSet bool
+	configOverride           string
 }
 
 func newFunctionOptions() *functionOptions {

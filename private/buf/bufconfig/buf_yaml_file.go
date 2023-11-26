@@ -15,10 +15,13 @@
 package bufconfig
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -78,55 +81,6 @@ func NewBufYAMLFile(
 	return bufYAMLFile, nil
 }
 
-// NewBufYAMLFileWithOnlyModuleFullName returns a new BufYAMLFile with only the ModuleFullName
-// value set to a non-default.
-//
-// Even ModuleFullName is actually optional here.
-//
-// This is used when initializing configurations.
-func NewBufYAMLFileWithOnlyModuleFullName(
-	fileVersion FileVersion,
-	moduleFullName bufmodule.ModuleFullName,
-) (BufYAMLFile, error) {
-	checkConfig := newCheckConfig(
-		fileVersion,
-		nil,
-		nil,
-		nil,
-		nil,
-	)
-	moduleConfig, err := newModuleConfig(
-		"",
-		moduleFullName,
-		map[string][]string{
-			".": []string{},
-		},
-		newLintConfig(
-			checkConfig,
-			"",
-			false,
-			false,
-			false,
-			"",
-			false,
-		),
-		newBreakingConfig(
-			checkConfig,
-			false,
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return NewBufYAMLFile(
-		fileVersion,
-		[]ModuleConfig{
-			moduleConfig,
-		},
-		nil,
-	)
-}
-
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
 //
 // The buf.yaml file will be attempted to be read at prefix/buf.yaml.
@@ -136,6 +90,41 @@ func GetBufYAMLFileForPrefix(
 	prefix string,
 ) (BufYAMLFile, error) {
 	return getFileForPrefix(ctx, bucket, prefix, bufYAMLFileNames, readBufYAMLFile)
+}
+
+// GetBufYAMLFileForPrefixOrOverride get the buf.yaml file for either the usually-flag-based
+// override, or if the override is not set, the bucket prefix.
+//
+//   - If the override is set and ends in .json, .yaml, or .yml, the override is treated as a
+//     **direct file path on disk** and read (ie not via buckets).
+//   - If the override is otherwise non-empty, it is treated as raw data.
+//   - Otherwise, the prefix is read.
+//
+// This function is the result of the endlessly annoying and shortsighted design decision that the
+// original author of this repository made to allow overriding configuration files on the command line.
+// Of course, the original author never envisioned buf.work.yamls, merging buf.work.yamls into buf.yamls,
+// buf.gen.yamls, or anything of the like, and was very concentrated on "because Bazel."
+func GetBufYAMLFileForPrefixOrOverride(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	override string,
+) (BufYAMLFile, error) {
+	if override != "" {
+		var data []byte
+		var err error
+		switch filepath.Ext(override) {
+		case ".json", ".yaml", ".yml":
+			data, err = os.ReadFile(override)
+			if err != nil {
+				return nil, fmt.Errorf("could not read file: %v", err)
+			}
+		default:
+			data = []byte(override)
+		}
+		return ReadBufYAMLFile(bytes.NewReader(data))
+	}
+	return GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file version at the given bucket prefix.

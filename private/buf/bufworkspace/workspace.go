@@ -107,18 +107,23 @@ func NewWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceOption,
+	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
 	return newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
 }
 
-// NewWorkspaceForModuleSet wraps the ModuleSet into a workspace, returning defaults
+// NewWorkspaceForModuleKey wraps the ModuleKey into a workspace, returning defaults
 // for config values, and empty ConfiguredDepModuleRefs.
 //
-// This is useful for when ModuleSets are created from remotes, but you still need
+// This is useful for getting Workspaces for remote modules, but you still need
 // associated configuration.
-func NewWorkspaceForModuleSet(moduleSet bufmodule.ModuleSet) (Workspace, error) {
-	return newWorkspaceForModuleSet(moduleSet)
+func NewWorkspaceForModuleKey(
+	ctx context.Context,
+	moduleKey bufmodule.ModuleKey,
+	moduleDataProvider bufmodule.ModuleDataProvider,
+	options ...WorkspaceModuleKeyOption,
+) (Workspace, error) {
+	return newWorkspaceForModuleKey(ctx, moduleKey, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -135,44 +140,7 @@ func NewWorkspaceForProtoc(
 	includeDirPaths []string,
 	filePaths []string,
 ) (Workspace, error) {
-	return newWorkspaceForProtoc(
-		ctx,
-		storageosProvider,
-		includeDirPaths,
-		filePaths,
-	)
-}
-
-// WorkspaceOption is an option for a new Workspace.
-type WorkspaceOption func(*workspaceOptions)
-
-// This selects the specific directory within the Workspace bucket to target.
-//
-// Example: We have modules at foo/bar, foo/baz. "." will result in both
-// modules being selected, so will "foo", but "foo/bar" will result in only
-// the foo/bar module.
-//
-// A subDirPath of "." is equivalent of not setting this option.
-func WorkspaceWithTargetSubDirPath(subDirPath string) WorkspaceOption {
-	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.subDirPath = subDirPath
-	}
-}
-
-// Note these paths need to have the path/to/module stripped, and then each new path
-// filtered to the specific module it applies to. If some modules do not have any
-// target paths, but we specified WorkspaceWithTargetPaths, then those modules
-// need to be built as non-targeted.
-//
-// Theese paths have to  be within the subDirPath, if it exists.
-func WorkspaceWithTargetPaths(
-	targetPaths []string,
-	targetExcludePaths []string,
-) WorkspaceOption {
-	return func(workspaceOptions *workspaceOptions) {
-		workspaceOptions.targetPaths = targetPaths
-		workspaceOptions.targetExcludePaths = targetExcludePaths
-	}
+	return newWorkspaceForProtoc(ctx, storageosProvider, includeDirPaths, filePaths)
 }
 
 // *** PRIVATE ***
@@ -215,23 +183,19 @@ func newWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceOption,
+	options ...WorkspaceBucketOption,
 ) (*workspace, error) {
-	workspaceOptions := newWorkspaceOptions()
-	for _, option := range options {
-		option(workspaceOptions)
-	}
-	if err := normalizeAndValidateWorkspaceOptions(workspaceOptions); err != nil {
-		return nil, err
-	}
-
-	// Both of these functions validate that we're in v1beta1/v1 world. When we add v2, we will likely
-	// need to significantly rework all of newWorkspaceForBucket.
-	bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, workspaceOptions.subDirPath)
+	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err
 	}
-	bufYAMLExists, err := bufYAMLExistsAtPrefix(ctx, bucket, workspaceOptions.subDirPath)
+	// Both of these functions validate that we're in v1beta1/v1 world. When we add v2, we will likely
+	// need to significantly rework all of newWorkspaceForBucket.
+	bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, config.subDirPath)
+	if err != nil {
+		return nil, err
+	}
+	bufYAMLExists, err := bufYAMLExistsAtPrefix(ctx, bucket, config.subDirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -242,25 +206,25 @@ func newWorkspaceForBucket(
 			// TODO: better error message, potentially take into account the location of the bucket via an option
 			return nil, errors.New("both buf.yaml and buf.work.yaml discovered at input directory")
 		}
-		moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, workspaceOptions.subDirPath)
+		moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, config.subDirPath)
 		if err != nil {
 			return nil, err
 		}
-		//fmt.Println("buf.work.yaml found at", workspaceOptions.subDirPath, "moduleDirPaths", moduleDirPaths)
+		//fmt.Println("buf.work.yaml found at", config.subDirPath, "moduleDirPaths", moduleDirPaths)
 		return newWorkspaceForBucketAndModuleDirPaths(
 			ctx,
 			bucket,
 			moduleDataProvider,
 			moduleDirPaths,
-			workspaceOptions,
+			config,
 		)
 	}
 
 	// We did not find a buf.work.yaml at subDirPath, we will search for one.
 	//
 	// We skip this if we're already at "." before first iteration.
-	if workspaceOptions.subDirPath != "." {
-		curDirPath := normalpath.Dir(workspaceOptions.subDirPath)
+	if config.subDirPath != "." {
+		curDirPath := normalpath.Dir(config.subDirPath)
 		// We can't just do a normal for-loop, we want to run this condition even if curDirPath == ".", this is a do...while loop
 		for {
 			bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, curDirPath)
@@ -280,8 +244,8 @@ func newWorkspaceForBucket(
 						ctx,
 						bucket,
 						moduleDataProvider,
-						[]string{workspaceOptions.subDirPath},
-						workspaceOptions,
+						[]string{config.subDirPath},
+						config,
 					)
 				}
 				//fmt.Println("buf.work.yaml found at", curDirPath, "moduleDirPaths", moduleDirPaths)
@@ -290,7 +254,7 @@ func newWorkspaceForBucket(
 					bucket,
 					moduleDataProvider,
 					moduleDirPaths,
-					workspaceOptions,
+					config,
 				)
 			}
 			if curDirPath == "." {
@@ -306,12 +270,34 @@ func newWorkspaceForBucket(
 		ctx,
 		bucket,
 		moduleDataProvider,
-		[]string{workspaceOptions.subDirPath},
-		workspaceOptions,
+		[]string{config.subDirPath},
+		config,
 	)
 }
 
-func newWorkspaceForModuleSet(moduleSet bufmodule.ModuleSet) (*workspace, error) {
+func newWorkspaceForModuleKey(
+	ctx context.Context,
+	moduleKey bufmodule.ModuleKey,
+	moduleDataProvider bufmodule.ModuleDataProvider,
+	options ...WorkspaceModuleKeyOption,
+) (*workspace, error) {
+	config, err := newWorkspaceModuleKeyConfig(options)
+	if err != nil {
+		return nil, err
+	}
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder.AddRemoteModule(
+		moduleKey,
+		true,
+		bufmodule.RemoteModuleWithTargetPaths(
+			config.targetPaths,
+			config.targetExcludePaths,
+		),
+	)
+	moduleSet, err := moduleSetBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
 	for _, module := range moduleSet.Modules() {
@@ -394,7 +380,7 @@ func newWorkspaceForBucketAndModuleDirPaths(
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	moduleDirPaths []string,
-	workspaceOptions *workspaceOptions,
+	config *workspaceBucketConfig,
 ) (*workspace, error) {
 	// subDirPath is the input subDirPath. We only want to target modules that are inside
 	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
@@ -406,7 +392,7 @@ func newWorkspaceForBucketAndModuleDirPaths(
 	//
 	// We need to verify that at least one module is targeted.
 	isTargetFunc := func(moduleDirPath string) bool {
-		return normalpath.EqualsOrContainsPath(workspaceOptions.subDirPath, moduleDirPath, normalpath.Relative)
+		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
@@ -440,7 +426,7 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			moduleBucket,
 			moduleDirPath,
 			moduleConfig,
-			workspaceOptions,
+			config,
 		)
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
@@ -537,7 +523,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleBucket storage.ReadBucket,
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
-	workspaceOptions *workspaceOptions,
+	config *workspaceBucketConfig,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	rootToExcludes := moduleConfig.RootToExcludes()
 	var rootBuckets []storage.ReadBucket
@@ -583,7 +569,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleTargeting, err := newModuleTargeting(
 		moduleDirPath,
 		slicesext.MapKeysToSlice(rootToExcludes),
-		workspaceOptions,
+		config,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -621,40 +607,6 @@ func bufYAMLExistsAtPrefix(ctx context.Context, bucket storage.ReadBucket, prefi
 	return true, nil
 }
 
-type workspaceOptions struct {
-	subDirPath         string
-	targetPaths        []string
-	targetExcludePaths []string
-}
-
-func newWorkspaceOptions() *workspaceOptions {
-	return &workspaceOptions{}
-}
-
-// this is so we can rely on all paths in workspaceOptions being normalized and validated everywhere
-func normalizeAndValidateWorkspaceOptions(workspaceOptions *workspaceOptions) error {
-	var err error
-	workspaceOptions.subDirPath, err = normalpath.NormalizeAndValidate(workspaceOptions.subDirPath)
-	if err != nil {
-		return err
-	}
-	for i, targetPath := range workspaceOptions.targetPaths {
-		targetPath, err = normalpath.NormalizeAndValidate(targetPath)
-		if err != nil {
-			return err
-		}
-		workspaceOptions.targetPaths[i] = targetPath
-	}
-	for i, targetExcludePath := range workspaceOptions.targetExcludePaths {
-		targetExcludePath, err = normalpath.NormalizeAndValidate(targetExcludePath)
-		if err != nil {
-			return err
-		}
-		workspaceOptions.targetExcludePaths[i] = targetExcludePath
-	}
-	return nil
-}
-
 // TODO: All the module_bucket_builder_test.go stuff needs to be copied over
 
 type moduleTargeting struct {
@@ -667,12 +619,12 @@ type moduleTargeting struct {
 func newModuleTargeting(
 	moduleDirPath string,
 	roots []string,
-	workspaceOptions *workspaceOptions,
+	config *workspaceBucketConfig,
 ) (*moduleTargeting, error) {
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 
-	for _, targetPath := range workspaceOptions.targetPaths {
+	for _, targetPath := range config.targetPaths {
 		if targetPath == moduleDirPath {
 			// We're just going to be realists in our error messages here.
 			// TODO: Do we error here currently? If so, this error remains. For extra credit in the future,
@@ -687,7 +639,7 @@ func newModuleTargeting(
 			moduleTargetPaths = append(moduleTargetPaths, moduleTargetPath)
 		}
 	}
-	for _, targetExcludePath := range workspaceOptions.targetExcludePaths {
+	for _, targetExcludePath := range config.targetExcludePaths {
 		if targetExcludePath == moduleDirPath {
 			// We're just going to be realists in our error messages here.
 			// TODO: Do we error here currently? If so, this error remains. For extra credit in the future,
