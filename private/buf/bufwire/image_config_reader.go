@@ -152,12 +152,12 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			// an image for it.
 			continue
 		}
-		buildOpts := []bufimagebuild.BuildOption{
+		buildOpts := []bufimage.BuildImageOption{
 			bufimagebuild.WithExpectedDirectDependencies(moduleConfig.Module().DeclaredDirectDependencies()),
 			bufimagebuild.WithWorkspace(moduleConfigSet.Workspace()),
 		}
 		if excludeSourceCodeInfo {
-			buildOpts = append(buildOpts, bufimagebuild.WithExcludeSourceCodeInfo())
+			buildOpts = append(buildOpts, bufimage.WithExcludeSourceCodeInfo())
 		}
 		imageConfig, fileAnnotations, err := i.buildModule(
 			ctx,
@@ -234,7 +234,7 @@ func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	config *bufconfig.Config,
 	module bufmodule.Module,
-	buildOpts ...bufimagebuild.BuildOption,
+	buildOpts ...bufimage.BuildImageOption,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	image, fileAnnotations, err := i.imageBuilder.Build(
 		ctx,

@@ -788,7 +788,7 @@ func testBreaking(
 	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		ctx,
 		previousWorkspace,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousFileAnnotations)

@@ -18,12 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 const (
@@ -76,13 +74,11 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 		},
 	)
 	require.NoError(t, err)
-	var options []bufimagebuild.BuildOption
+	var options []bufimage.BuildImageOption
 	if !includeSourceInfo {
-		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
+		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-	).Build(
+	image, annotations, err := bufimage.BuildImage(
 		context.Background(),
 		moduleSet,
 		options...,

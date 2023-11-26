@@ -493,9 +493,9 @@ func (c *controller) buildImage(
 	moduleSet bufmodule.ModuleSet,
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
-	var options []bufimagebuild.BuildOption
+	var options []bufimage.BuildImageOption
 	if functionOptions.imageExcludeSourceInfo {
-		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
+		options = append(options, bufimage.WithExcludeSourceCodeInfo())
 	}
 	image, fileAnnotations, err := c.bufimagebuildBuilder.Build(
 		ctx,

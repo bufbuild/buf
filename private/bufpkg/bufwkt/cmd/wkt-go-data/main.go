@@ -164,7 +164,7 @@ func getProtosourceFiles(
 	).Build(
 		ctx,
 		module,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
 		return nil, err

@@ -258,7 +258,7 @@ func run(
 			image, fileAnnotations, err := imageBuilder.Build(
 				ctx,
 				moduleFileSet,
-				bufimagebuild.WithExcludeSourceCodeInfo(),
+				bufimage.WithExcludeSourceCodeInfo(),
 			)
 			if err != nil {
 				return err

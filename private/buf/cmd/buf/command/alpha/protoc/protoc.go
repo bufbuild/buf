@@ -117,10 +117,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	var buildOptions []bufimagebuild.BuildOption
+	var buildOptions []bufimage.BuildImageOption
 	// we always need source code info if we are doing generation
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
-		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
+		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
 	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger()).Build(
 		ctx,
