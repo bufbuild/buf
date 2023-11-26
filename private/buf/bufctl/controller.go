@@ -322,18 +322,6 @@ func (c *controller) GetImage(
 		if err != nil {
 			return nil, err
 		}
-		//fileInfos, err := bufmodule.GetTargetFileInfos(
-		//ctx,
-		//bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
-		//workspace,
-		//),
-		//)
-		//if err != nil {
-		//return nil, err
-		//}
-		//for _, fileInfo := range fileInfos {
-		//fmt.Println("FILE_INFO: ", fileInfo.Path(), " : ", fileInfo.ExternalPath())
-		//}
 		return c.buildImage(
 			ctx,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),

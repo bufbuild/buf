@@ -205,8 +205,8 @@ func run(
 		fileAnnotations, err := bufbreaking.NewHandler(container.Logger()).Check(
 			ctx,
 			imageWithConfig.BreakingConfig(),
-			imageWithConfig,
 			againstImageWithConfigs[i],
+			imageWithConfig,
 		)
 		if err != nil {
 			return err
