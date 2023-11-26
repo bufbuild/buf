@@ -50,10 +50,11 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
 
-# TODO: remove when done with refactor
+CMD ?= test
 .PHONY: testbufnew
 testbufnew: installbuf
-	go test \
+	# TODO: remove when done with refactor
+	go $(CMD) \
 		./private/buf/bufapp/... \
 		./private/buf/bufcli/... \
 		./private/buf/bufctl/... \
