@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -559,7 +559,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		"mod",
 		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -709,7 +709,7 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 		"mod",
 		"ls-breaking-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -2526,7 +2526,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 		args = append(args, "--name", name)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
+	data, err := os.ReadFile(filepath.Join(tempDir, "buf.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }
