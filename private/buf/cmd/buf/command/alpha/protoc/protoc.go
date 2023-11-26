@@ -123,7 +123,7 @@ func run(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		workspace,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
 	if err != nil {

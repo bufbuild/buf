@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -171,7 +172,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -206,7 +207,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -241,7 +242,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	}
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	if err != nil {

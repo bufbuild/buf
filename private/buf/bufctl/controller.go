@@ -644,7 +644,7 @@ func (c *controller) buildImage(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	if err != nil {

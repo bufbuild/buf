@@ -146,9 +146,16 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // Only one of Image and FileAnnotations will be returned.
 //
 // FileAnnotations will use external file paths.
+//
+// The given ModuleReadBucket must be self-contained.
+//
+// A ModuleReadBucket is self-contained if it was constructed from
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
+// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles. These are likely
+// the only two ways you should have a ModuleReadBucket that you pass to BuildImage.
 func BuildImage(
 	ctx context.Context,
-	moduleSet bufmodule.ModuleSet,
+	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
 ) (Image, []bufanalysis.FileAnnotation, error) {
 	buildImageOptions := newBuildImageOptions()
@@ -157,7 +164,7 @@ func BuildImage(
 	}
 	return buildImage(
 		ctx,
-		moduleSet,
+		moduleReadBucket,
 		buildImageOptions.excludeSourceCodeInfo,
 		buildImageOptions.noParallelism,
 	)

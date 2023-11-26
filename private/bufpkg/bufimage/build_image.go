@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
@@ -37,7 +38,7 @@ const tracerName = "bufbuild/buf"
 
 func buildImage(
 	ctx context.Context,
-	moduleSet bufmodule.ModuleSet,
+	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
 ) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
@@ -50,9 +51,10 @@ func buildImage(
 			span.SetStatus(codes.Error, retErr.Error())
 		}
 	}()
-	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
-	//  TODO: need to provide a function to go from Module to a ModuleReadBucket with
-	//  all *.proto files,  including deps.
+	if !moduleReadBucket.ShouldBeSelfContained() {
+		return nil, nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
+	}
+	moduleReadBucket = bufmodule.ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket)
 	parserAccessorHandler := newParserAccessorHandler(ctx, moduleReadBucket)
 	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 	if err != nil {

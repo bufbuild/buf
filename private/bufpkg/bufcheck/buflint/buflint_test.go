@@ -1113,7 +1113,7 @@ func testLintWithOptions(
 
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		workspace,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)

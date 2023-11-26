@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -91,7 +92,11 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalys
 	if err != nil {
 		return nil, nil, err
 	}
-	return bufimage.BuildImage(ctx, moduleSet, bufimage.WithExcludeSourceCodeInfo())
+	return bufimage.BuildImage(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
 }
 
 // txtarParse is a wrapper around txtar.Parse that will turn panics into errors.

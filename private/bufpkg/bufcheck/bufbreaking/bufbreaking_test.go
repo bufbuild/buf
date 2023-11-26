@@ -786,7 +786,7 @@ func testBreaking(
 
 	previousImage, previousFileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		previousWorkspace,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
@@ -795,7 +795,7 @@ func testBreaking(
 
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		workspace,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
