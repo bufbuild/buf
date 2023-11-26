@@ -95,11 +95,13 @@ func run(
 	)
 	resp, err := service.GetRepositoryCommitByReference(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
-			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
-			RepositoryName:  moduleRef.ModuleFullName().Name(),
-			Reference:       moduleRef.Ref(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.GetRepositoryCommitByReferenceRequest{
+				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+				RepositoryName:  moduleRef.ModuleFullName().Name(),
+				Reference:       moduleRef.Ref(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

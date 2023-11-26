@@ -120,9 +120,11 @@ func run(
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	resp, err := repositoryService.GetRepositoryByFullName(ctx,
-		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.GetRepositoryByFullNameRequest{
+				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
@@ -133,12 +135,14 @@ func run(
 	repositoryTagService := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewRepositoryTagServiceClient)
 	tagsResp, err := repositoryTagService.ListRepositoryTags(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListRepositoryTagsRequest{
-			RepositoryId: resp.Msg.Repository.Id,
-			PageSize:     flags.PageSize,
-			PageToken:    flags.PageToken,
-			Reverse:      flags.Reverse,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.ListRepositoryTagsRequest{
+				RepositoryId: resp.Msg.Repository.Id,
+				PageSize:     flags.PageSize,
+				PageToken:    flags.PageToken,
+				Reverse:      flags.Reverse,
+			},
+		),
 	)
 	if err != nil {
 		return err

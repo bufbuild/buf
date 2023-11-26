@@ -125,14 +125,16 @@ func run(
 
 	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
-			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
-			RepositoryName:  moduleRef.ModuleFullName().Name(),
-			Reference:       reference,
-			PageSize:        flags.PageSize,
-			PageToken:       flags.PageToken,
-			Reverse:         flags.Reverse,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
+				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+				RepositoryName:  moduleRef.ModuleFullName().Name(),
+				Reference:       reference,
+				PageSize:        flags.PageSize,
+				PageToken:       flags.PageToken,
+				Reverse:         flags.Reverse,
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

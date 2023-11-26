@@ -91,9 +91,11 @@ func run(
 	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
 	if _, err := service.DeleteWebhook(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteWebhookRequest{
-			WebhookId: flags.WebhookID,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteWebhookRequest{
+				WebhookId: flags.WebhookID,
+			},
+		),
 	); err != nil {
 		return err
 	}

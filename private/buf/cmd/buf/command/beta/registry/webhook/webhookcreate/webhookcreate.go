@@ -124,12 +124,14 @@ func run(
 	}
 	resp, err := service.CreateWebhook(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateWebhookRequest{
-			WebhookEvent:   registryv1alpha1.WebhookEvent(event),
-			OwnerName:      flags.OwnerName,
-			RepositoryName: flags.RepositoryName,
-			CallbackUrl:    flags.CallbackURL,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateWebhookRequest{
+				WebhookEvent:   registryv1alpha1.WebhookEvent(event),
+				OwnerName:      flags.OwnerName,
+				RepositoryName: flags.RepositoryName,
+				CallbackUrl:    flags.CallbackURL,
+			},
+		),
 	)
 	if err != nil {
 		return err

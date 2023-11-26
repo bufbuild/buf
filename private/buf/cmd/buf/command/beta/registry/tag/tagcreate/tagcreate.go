@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -76,14 +75,9 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleRef, err := bufmodule.ParseModuleRef(
-		container.Arg(0),
-	)
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	if !bufmoduleref.IsCommitModuleReference(moduleRef) {
-		return fmt.Errorf("commit is required, but a tag was given: %q", container.Arg(0))
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
@@ -96,34 +90,38 @@ func run(
 	}
 	repositoryService := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	repositoryTagService := connectclient.Make(
 		clientConfig,
-		moduleRef.Registry(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryTagServiceClient,
 	)
-	resp, err := repositoryService.GetRepositoryByFullName(ctx,
-		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: moduleRef.Owner() + "/" + moduleRef.Name(),
-		}),
+	resp, err := repositoryService.GetRepositoryByFullName(
+		ctx,
+		connect.NewRequest(
+			&registryv1alpha1.GetRepositoryByFullNameRequest{
+				FullName: moduleRef.ModuleFullName().Owner() + "/" + moduleRef.ModuleFullName().Name(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(moduleRef.Registry() + "/" + moduleRef.Owner() + "/" + moduleRef.Name())
+			return bufcli.NewRepositoryNotFoundError(moduleRef.ModuleFullName().Registry() + "/" + moduleRef.ModuleFullName().Owner() + "/" + moduleRef.ModuleFullName().Name())
 		}
 		return err
 	}
 	tag := container.Arg(1)
-	commit := moduleRef.Reference()
 	tagResp, err := repositoryTagService.CreateRepositoryTag(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryTagRequest{
-			RepositoryId: resp.Msg.Repository.Id,
-			Name:         tag,
-			CommitName:   commit,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateRepositoryTagRequest{
+				RepositoryId: resp.Msg.Repository.Id,
+				Name:         tag,
+				CommitName:   moduleRef.Ref(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {

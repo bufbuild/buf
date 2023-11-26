@@ -31,44 +31,29 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/repo/reposync"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhookdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
-
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
@@ -77,10 +62,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
-
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -148,76 +132,75 @@ func NewRootCommand(name string) *appcmd.Command {
 					stats.NewCommand("stats", builder),
 					//migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", builder),
-					//{
-					//Use:   "registry",
-					//Short: "Manage assets on the Buf Schema Registry",
-					//SubCommands: []*appcmd.Command{
-					//{
-					//Use:   "organization",
-					//Short: "Manage organizations",
-					//SubCommands: []*appcmd.Command{
-					//organizationcreate.NewCommand("create", builder),
-					//organizationget.NewCommand("get", builder),
-					//organizationdelete.NewCommand("delete", builder),
-					//},
-					//},
-					//{
-					//Use:   "repository",
-					//Short: "Manage repositories",
-					//SubCommands: []*appcmd.Command{
-					//repositorycreate.NewCommand("create", builder),
-					//repositoryget.NewCommand("get", builder),
-					//repositorylist.NewCommand("list", builder),
-					//repositorydelete.NewCommand("delete", builder),
-					//repositorydeprecate.NewCommand("deprecate", builder),
-					//repositoryundeprecate.NewCommand("undeprecate", builder),
-					//repositoryupdate.NewCommand("update", builder),
-					//},
-					//},
-					//{
-					//Use:   "tag",
-					//Short: "Manage a repository's tags",
-					//SubCommands: []*appcmd.Command{
-					//tagcreate.NewCommand("create", builder),
-					//taglist.NewCommand("list", builder),
-					//},
-					//},
-					//{
-					//Use:   "commit",
-					//Short: "Manage a repository's commits",
-					//SubCommands: []*appcmd.Command{
-					//commitget.NewCommand("get", builder),
-					//commitlist.NewCommand("list", builder),
-					//},
-					//},
-					//{
-					//Use:   "draft",
-					//Short: "Manage a repository's drafts",
-					//SubCommands: []*appcmd.Command{
-					//draftdelete.NewCommand("delete", builder),
-					//draftlist.NewCommand("list", builder),
-					//},
-					//},
-					//{
-					//Use:   "webhook",
-					//Short: "Manage webhooks for a repository on the Buf Schema Registry",
-					//SubCommands: []*appcmd.Command{
-					//webhookcreate.NewCommand("create", builder),
-					//webhookdelete.NewCommand("delete", builder),
-					//webhooklist.NewCommand("list", builder),
-					//},
-					//},
-					//{
-					//Use:   "plugin",
-					//Short: "Manage plugins on the Buf Schema Registry",
-					//SubCommands: []*appcmd.Command{
-					//pluginpush.NewCommand("push", builder),
-					//plugindelete.NewCommand("delete", builder),
-					//},
-					//},
-					//},
-					//},
-					//},
+					{
+						Use:   "registry",
+						Short: "Manage assets on the Buf Schema Registry",
+						SubCommands: []*appcmd.Command{
+							//{
+							//Use:   "organization",
+							//Short: "Manage organizations",
+							//SubCommands: []*appcmd.Command{
+							//organizationcreate.NewCommand("create", builder),
+							//organizationget.NewCommand("get", builder),
+							//organizationdelete.NewCommand("delete", builder),
+							//},
+							//},
+							{
+								Use:   "repository",
+								Short: "Manage repositories",
+								SubCommands: []*appcmd.Command{
+									repositorycreate.NewCommand("create", builder),
+									repositoryget.NewCommand("get", builder),
+									repositorylist.NewCommand("list", builder),
+									repositorydelete.NewCommand("delete", builder),
+									repositorydeprecate.NewCommand("deprecate", builder),
+									repositoryundeprecate.NewCommand("undeprecate", builder),
+									repositoryupdate.NewCommand("update", builder),
+								},
+							},
+							{
+								Use:   "tag",
+								Short: "Manage a repository's tags",
+								SubCommands: []*appcmd.Command{
+									tagcreate.NewCommand("create", builder),
+									taglist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "commit",
+								Short: "Manage a repository's commits",
+								SubCommands: []*appcmd.Command{
+									commitget.NewCommand("get", builder),
+									commitlist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "draft",
+								Short: "Manage a repository's drafts",
+								SubCommands: []*appcmd.Command{
+									draftdelete.NewCommand("delete", builder),
+									draftlist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "webhook",
+								Short: "Manage webhooks for a repository on the Buf Schema Registry",
+								SubCommands: []*appcmd.Command{
+									webhookcreate.NewCommand("create", builder),
+									webhookdelete.NewCommand("delete", builder),
+									webhooklist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "plugin",
+								Short: "Manage plugins on the Buf Schema Registry",
+								SubCommands: []*appcmd.Command{
+									//pluginpush.NewCommand("push", builder),
+									plugindelete.NewCommand("delete", builder),
+								},
+							},
+						},
+					},
 				},
 			},
 			{

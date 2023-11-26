@@ -105,10 +105,12 @@ func run(
 	)
 	resp, err := service.CreateRepositoryByFullName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   moduleFullName.Owner() + "/" + moduleFullName.Name(),
-			Visibility: visibility,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateRepositoryByFullNameRequest{
+				FullName:   moduleFullName.Owner() + "/" + moduleFullName.Name(),
+				Visibility: visibility,
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {

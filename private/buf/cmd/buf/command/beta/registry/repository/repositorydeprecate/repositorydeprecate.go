@@ -85,11 +85,13 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	)
 	if _, err := service.DeprecateRepositoryByName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeprecateRepositoryByNameRequest{
-			OwnerName:          moduleFullName.Owner(),
-			RepositoryName:     moduleFullName.Name(),
-			DeprecationMessage: flags.Message,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeprecateRepositoryByNameRequest{
+				OwnerName:          moduleFullName.Owner(),
+				RepositoryName:     moduleFullName.Name(),
+				DeprecationMessage: flags.Message,
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

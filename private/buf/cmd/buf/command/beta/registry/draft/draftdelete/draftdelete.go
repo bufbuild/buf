@@ -110,11 +110,13 @@ func run(
 	}
 	if _, err := service.DeleteRepositoryDraftCommit(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
-			RepositoryOwner: moduleRef.ModuleFullName().Owner(),
-			RepositoryName:  moduleRef.ModuleFullName().Name(),
-			DraftName:       moduleRef.Ref(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteRepositoryDraftCommitRequest{
+				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+				RepositoryName:  moduleRef.ModuleFullName().Name(),
+				DraftName:       moduleRef.Ref(),
+			},
+		),
 	); err != nil {
 		// not explicitly handling error with connect.CodeNotFound as it can be repository not found or draft not found.
 		return err

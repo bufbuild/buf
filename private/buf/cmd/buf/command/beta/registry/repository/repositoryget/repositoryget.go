@@ -95,9 +95,11 @@ func run(
 	)
 	resp, err := service.GetRepositoryByFullName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetRepositoryByFullNameRequest{
-			FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.GetRepositoryByFullNameRequest{
+				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {

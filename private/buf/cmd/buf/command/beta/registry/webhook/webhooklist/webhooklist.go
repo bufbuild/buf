@@ -101,12 +101,14 @@ func run(
 	service := connectclient.Make(clientConfig, flags.Remote, registryv1alpha1connect.NewWebhookServiceClient)
 	resp, err := service.ListWebhooks(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListWebhooksRequest{
-			RepositoryName: flags.RepositoryName,
-			OwnerName:      flags.OwnerName,
-			// TODO: this should probably be in a loop so we can get page token from
-			//   response and query for the next page
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.ListWebhooksRequest{
+				RepositoryName: flags.RepositoryName,
+				OwnerName:      flags.OwnerName,
+				// TODO: this should probably be in a loop so we can get page token from
+				//   response and query for the next page
+			},
+		),
 	)
 	if err != nil {
 		return err

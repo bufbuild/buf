@@ -89,12 +89,14 @@ func run(
 	)
 	if _, err := service.UpdateRepositorySettingsByName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
-			OwnerName:      moduleFullName.Owner(),
-			RepositoryName: moduleFullName.Name(),
-			Visibility:     visibility,
-			// TODO: pass description and url
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
+				OwnerName:      moduleFullName.Owner(),
+				RepositoryName: moduleFullName.Name(),
+				Visibility:     visibility,
+				// TODO: pass description and url
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

@@ -85,11 +85,13 @@ func run(
 	)
 	if _, err := service.DeleteCuratedPlugin(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteCuratedPluginRequest{
-			Owner:   pluginIdentity.Owner(),
-			Name:    pluginIdentity.Plugin(),
-			Version: version,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteCuratedPluginRequest{
+				Owner:   pluginIdentity.Owner(),
+				Name:    pluginIdentity.Plugin(),
+				Version: version,
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return fmt.Errorf("the plugin %s does not exist", container.Arg(0))

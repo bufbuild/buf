@@ -95,9 +95,11 @@ func run(
 	}
 	if _, err := service.DeleteRepositoryByFullName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteRepositoryByFullNameRequest{
-			FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteRepositoryByFullNameRequest{
+				FullName: moduleFullName.Owner() + "/" + moduleFullName.Name(),
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
