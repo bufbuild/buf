@@ -28,9 +28,10 @@ import (
 	"go.uber.org/multierr"
 )
 
-// FormatModule formats and writes the target module files into a read bucket.
-func FormatModule(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket, retErr error) {
-	fileInfos, err := module.TargetFileInfos(ctx)
+// FormatModuleSet formats and writes the target files into a read bucket.
+func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ storage.ReadBucket, retErr error) {
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	fileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func FormatModule(ctx context.Context, module bufmodule.Module) (_ storage.ReadB
 	for i, fileInfo := range fileInfos {
 		fileInfo := fileInfo
 		jobs[i] = func(ctx context.Context) (retErr error) {
-			moduleFile, err := module.GetModuleFile(ctx, fileInfo.Path())
+			moduleFile, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
 			if err != nil {
 				return err
 			}
