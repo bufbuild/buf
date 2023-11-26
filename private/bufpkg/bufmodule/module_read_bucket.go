@@ -169,6 +169,30 @@ func GetTargetFileInfos(ctx context.Context, moduleReadBucket ModuleReadBucket) 
 	return fileInfos, nil
 }
 
+// GetFilePaths is a convenience function that gets all the target and non-target
+// file paths for the ModuleReadBucket.
+//
+// Sorted.
+func GetFilePaths(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]string, error) {
+	fileInfos, err := GetFileInfos(ctx, moduleReadBucket)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
+}
+
+// GetTargerFilePaths is a convenience function that gets all the target
+// file paths for the ModuleReadBucket.
+//
+// Sorted.
+func GetTargetFilePaths(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]string, error) {
+	fileInfos, err := GetTargetFileInfos(ctx, moduleReadBucket)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
+}
+
 // GetDocFile gets the singular documentation File for the Module, if it exists.
 //
 // When creating a Module from a Bucket, we check the file paths buf.md, README.md, and README.markdown

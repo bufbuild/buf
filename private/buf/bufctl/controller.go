@@ -322,6 +322,18 @@ func (c *controller) GetImage(
 		if err != nil {
 			return nil, err
 		}
+		//fileInfos, err := bufmodule.GetTargetFileInfos(
+		//ctx,
+		//bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+		//workspace,
+		//),
+		//)
+		//if err != nil {
+		//return nil, err
+		//}
+		//for _, fileInfo := range fileInfos {
+		//fmt.Println("FILE_INFO: ", fileInfo.Path(), " : ", fileInfo.ExternalPath())
+		//}
 		return c.buildImage(
 			ctx,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
@@ -451,7 +463,7 @@ func (c *controller) PutImage(
 	if err != nil {
 		return err
 	}
-	putImage, err := filterImage(image, functionOptions)
+	putImage, err := filterImage(image, functionOptions, false)
 	if err != nil {
 		return err
 	}
@@ -736,7 +748,7 @@ func (c *controller) getImageForMessageRef(
 	if err != nil {
 		return nil, err
 	}
-	return filterImage(image, functionOptions)
+	return filterImage(image, functionOptions, false)
 }
 
 func (c *controller) buildImage(
@@ -770,7 +782,7 @@ func (c *controller) buildImage(
 		}
 		return nil, ErrFileAnnotation
 	}
-	return filterImage(image, functionOptions)
+	return filterImage(image, functionOptions, true)
 }
 
 func (c *controller) buildImageWithConfigs(
@@ -813,7 +825,14 @@ func bootstrapResolver(
 	return protoencoding.NewResolver(firstProtoImage.File...)
 }
 
-func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufimage.Image, error) {
+// WE DO NOT FILTER IF WE ALREADY FILTERED ON BUILDING OF A WORKSPACE
+// Also, paths are still external paths at this point if this came from a workspace
+// TODO: redo functionOptions, this is a mess
+func filterImage(
+	image bufimage.Image,
+	functionOptions *functionOptions,
+	imageCameFromAWorkspace bool,
+) (bufimage.Image, error) {
 	newImage := image
 	var err error
 	if functionOptions.imageExcludeImports {
@@ -825,17 +844,18 @@ func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufima
 			return nil, err
 		}
 	}
-	if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
-		// TODO: allowNotExist?
-		// TODO: are we double-filtering here? We already filter if we do this with a workspace,
-		// then we do this again. Also, does this affect lint or breaking?
-		newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
-			newImage,
-			functionOptions.targetPaths,
-			functionOptions.targetExcludePaths,
-		)
-		if err != nil {
-			return nil, err
+	if !imageCameFromAWorkspace {
+		if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
+			// TODO: allowNotExist?
+			// TODO: Also, does this affect lint or breaking?
+			newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
+				newImage,
+				functionOptions.targetPaths,
+				functionOptions.targetExcludePaths,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return newImage, nil
