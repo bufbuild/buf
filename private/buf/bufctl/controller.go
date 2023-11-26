@@ -19,11 +19,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -43,6 +45,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// ImageWithConfig pairs an Image with lint and breaking configuration.
+type ImageWithConfig interface {
+	bufimage.Image
+	LintConfig() bufconfig.LintConfig
+	BreakingConfig() bufconfig.BreakingConfig
+}
+
 type Controller interface {
 	GetWorkspace(
 		ctx context.Context,
@@ -59,6 +68,11 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
+	GetImageWithConfigs(
+		ctx context.Context,
+		input string,
+		options ...FunctionOption,
+	) ([]ImageWithConfig, error)
 	PutImage(
 		ctx context.Context,
 		imageOutput string,
@@ -308,15 +322,107 @@ func (c *controller) GetImage(
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImage(ctx, workspace, functionOptions)
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImage(ctx, workspace, functionOptions)
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
 	case buffetch.MessageRef:
 		return c.getImageForMessageRef(ctx, t, functionOptions)
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
+	}
+}
+
+func (c *controller) GetImageWithConfigs(
+	ctx context.Context,
+	input string,
+	options ...FunctionOption,
+) ([]ImageWithConfig, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	ref, err := c.buffetchRefParser.GetRef(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		return nil, errors.New("TODO")
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+	case buffetch.MessageRef:
+		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		bucket, err := c.storageosProvider.NewReadWriteBucket(
+			".",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		lintConfig := bufconfig.DefaultLintConfig
+		breakingConfig := bufconfig.DefaultBreakingConfig
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefixOrOverride(
+			ctx,
+			bucket,
+			".",
+			functionOptions.configOverride,
+		)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
+			// We did not find a buf.yaml in our current directory, and there was no config override.
+			// Use the defaults.
+		} else {
+			switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+			case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+				moduleConfigs := bufYAMLFile.ModuleConfigs()
+				if len(moduleConfigs) != 1 {
+					return nil, fmt.Errorf("expected 1 ModuleConfig for FileVersion %v, got %d", len(moduleConfigs), fileVersion)
+				}
+				lintConfig = moduleConfigs[0].LintConfig()
+				breakingConfig = moduleConfigs[0].BreakingConfig()
+			case bufconfig.FileVersionV2:
+				// Do nothing. Use the default LintConfig and BreakingConfig. With
+				// the new buf.yamls with multiple modules, we don't know what lint or
+				// breaking config to apply. TODO is this right?
+			default:
+				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+			}
+		}
+		return []ImageWithConfig{
+			newImageWithConfig(
+				image,
+				lintConfig,
+				breakingConfig,
+			),
+		}, nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
@@ -635,7 +741,7 @@ func (c *controller) getImageForMessageRef(
 
 func (c *controller) buildImage(
 	ctx context.Context,
-	moduleSet bufmodule.ModuleSet,
+	moduleReadBucket bufmodule.ModuleReadBucket,
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
 	var options []bufimage.BuildImageOption
@@ -644,7 +750,7 @@ func (c *controller) buildImage(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		moduleReadBucket,
 		options...,
 	)
 	if err != nil {
@@ -665,6 +771,35 @@ func (c *controller) buildImage(
 		return nil, ErrFileAnnotation
 	}
 	return filterImage(image, functionOptions)
+}
+
+func (c *controller) buildImageWithConfigs(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	functionOptions *functionOptions,
+) ([]ImageWithConfig, error) {
+	modules := bufmodule.ModuleSetTargetModules(workspace)
+	imageWithConfigs := make([]ImageWithConfig, len(modules))
+	for i, module := range modules {
+		moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
+		if err != nil {
+			return nil, err
+		}
+		image, err := c.buildImage(
+			ctx,
+			moduleReadBucket,
+			functionOptions,
+		)
+		if err != nil {
+			return nil, err
+		}
+		imageWithConfigs[i] = newImageWithConfig(
+			image,
+			workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
+			workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+		)
+	}
+	return imageWithConfigs, nil
 }
 
 func bootstrapResolver(
@@ -692,6 +827,8 @@ func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufima
 	}
 	if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
 		// TODO: allowNotExist?
+		// TODO: are we double-filtering here? We already filter if we do this with a workspace,
+		// then we do this again. Also, does this affect lint or breaking?
 		newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
 			newImage,
 			functionOptions.targetPaths,
@@ -801,6 +938,33 @@ func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
 	// TODO: get standard flag names and bindings into this package.
 	fileAnnotationErrorFormatFlagName := "error-format"
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", fileAnnotationErrorFormatFlagName, fileAnnotationErrorFormat)
+}
+
+type imageWithConfig struct {
+	bufimage.Image
+
+	lintConfig     bufconfig.LintConfig
+	breakingConfig bufconfig.BreakingConfig
+}
+
+func newImageWithConfig(
+	image bufimage.Image,
+	lintConfig bufconfig.LintConfig,
+	breakingConfig bufconfig.BreakingConfig,
+) *imageWithConfig {
+	return &imageWithConfig{
+		Image:          image,
+		lintConfig:     lintConfig,
+		breakingConfig: breakingConfig,
+	}
+}
+
+func (i *imageWithConfig) LintConfig() bufconfig.LintConfig {
+	return i.lintConfig
+}
+
+func (i *imageWithConfig) BreakingConfig() bufconfig.BreakingConfig {
+	return i.breakingConfig
 }
 
 type functionOptions struct {
