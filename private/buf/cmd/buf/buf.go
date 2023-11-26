@@ -52,6 +52,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/webhook/webhooklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
@@ -97,7 +98,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			//export.NewCommand("export", builder),
 			//format.NewCommand("format", builder),
 			//lint.NewCommand("lint", builder),
-			//breaking.NewCommand("breaking", builder),
+			breaking.NewCommand("breaking", builder),
 			//generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			//push.NewCommand("push", builder),
