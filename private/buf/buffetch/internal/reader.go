@@ -37,9 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -60,7 +57,6 @@ type reader struct {
 
 	moduleEnabled     bool
 	moduleKeyProvider bufmodule.ModuleKeyProvider
-	tracer            trace.Tracer
 }
 
 func newReader(
@@ -71,7 +67,6 @@ func newReader(
 	reader := &reader{
 		logger:            logger,
 		storageosProvider: storageosProvider,
-		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 	for _, option := range options {
 		option(reader)
@@ -229,15 +224,6 @@ func (r *reader) getArchiveBucket(
 		return nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	ctx, span := r.tracer.Start(ctx, "unarchive")
-	defer span.End()
-	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(
