@@ -1,0 +1,7 @@
+- v2 buf.yaml parsing in new workspace
+- ProtoFileRef
+- convert (bufwire)
+- How to deal with commands that need refs
+- new digest format
+- ImageWorkspace
+- workspace with no file searching (wkt)
