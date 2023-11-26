@@ -21,12 +21,11 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -155,12 +154,11 @@ type controller struct {
 	fileAnnotationErrorFormat string
 	fileAnnotationsToStdout   bool
 
-	commandRunner        command.Runner
-	storageosProvider    storageos.Provider
-	buffetchRefParser    buffetch.RefParser
-	buffetchReader       buffetch.Reader
-	buffetchWriter       buffetch.Writer
-	bufimagebuildBuilder bufimagebuild.Builder
+	commandRunner     command.Runner
+	storageosProvider storageos.Provider
+	buffetchRefParser buffetch.RefParser
+	buffetchReader    buffetch.Reader
+	buffetchWriter    buffetch.Writer
 }
 
 func newController(
@@ -200,7 +198,6 @@ func newController(
 		moduleKeyProvider,
 	)
 	controller.buffetchWriter = buffetch.NewWriter(logger)
-	controller.bufimagebuildBuilder = bufimagebuild.NewBuilder(logger)
 	return controller, nil
 }
 
@@ -497,7 +494,7 @@ func (c *controller) buildImage(
 	if functionOptions.imageExcludeSourceInfo {
 		options = append(options, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := c.bufimagebuildBuilder.Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		moduleSet,
 		options...,

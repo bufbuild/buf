@@ -20,13 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -785,7 +784,7 @@ func testBreaking(
 	)
 	require.NoError(t, err)
 
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+	previousImage, previousFileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		previousWorkspace,
 		bufimage.WithExcludeSourceCodeInfo(),
@@ -794,7 +793,7 @@ func testBreaking(
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		workspace,
 	)

@@ -20,11 +20,10 @@ import (
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -244,7 +243,6 @@ func run(
 			images = append(images, imageConfig.Image())
 		}
 	} else {
-		imageBuilder := bufimagebuild.NewBuilder(container.Logger(), moduleReader)
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {
@@ -255,7 +253,7 @@ func run(
 				// an image for it.
 				continue
 			}
-			image, fileAnnotations, err := imageBuilder.Build(
+			image, fileAnnotations, err := bufimage.BuildImage(
 				ctx,
 				moduleFileSet,
 				bufimage.WithExcludeSourceCodeInfo(),

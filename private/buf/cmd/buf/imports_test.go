@@ -87,7 +87,6 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		t, nil, 0,
 		[]string{
 			"WARN",
-			"bufimagebuild",
 			// school1 -> people1
 			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
 			// school1 -> people2
@@ -104,7 +103,6 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		t, nil, 0,
 		[]string{
 			"WARN",
-			"bufimagebuild",
 			// a -> c
 			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
 		},

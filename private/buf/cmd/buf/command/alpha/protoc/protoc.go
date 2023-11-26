@@ -22,12 +22,11 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -122,7 +121,7 @@ func run(
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger()).Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		workspace,
 		buildOptions...,
@@ -239,7 +238,7 @@ func run(
 		ctx,
 		env.Output,
 		image,
-		// Actually redundant with bufimagebuild right now.
+		// Actually redundant with bufimage.BuildImageOptions right now.
 		bufctl.WithImageExcludeSourceInfo(!env.IncludeSourceInfo),
 		bufctl.WithImageExcludeImports(!env.IncludeImports),
 		bufctl.WithImageAsFileDescriptorSet(true),
