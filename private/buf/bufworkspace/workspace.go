@@ -439,6 +439,9 @@ func newWorkspaceForBucketAndModuleDirPaths(
 			moduleConfig,
 			config,
 		)
+		if err != nil {
+			return nil, err
+		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
@@ -634,7 +637,6 @@ func newModuleTargeting(
 ) (*moduleTargeting, error) {
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
-
 	for _, targetPath := range config.targetPaths {
 		if targetPath == moduleDirPath {
 			// We're just going to be realists in our error messages here.

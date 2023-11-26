@@ -986,19 +986,19 @@ func (f *functionOptions) withPathsForBucketExtender(
 ) (*functionOptions, error) {
 	deref := *f
 	c := &deref
-	for _, targetPath := range c.targetPaths {
+	for i, targetPath := range c.targetPaths {
 		targetPath, err := bucketExtender.PathForExternalPath(targetPath)
 		if err != nil {
 			return nil, err
 		}
-		c.targetPaths = append(c.targetPaths, targetPath)
+		c.targetPaths[i] = targetPath
 	}
-	for _, targetExcludePath := range c.targetExcludePaths {
+	for i, targetExcludePath := range c.targetExcludePaths {
 		targetExcludePath, err := bucketExtender.PathForExternalPath(targetExcludePath)
 		if err != nil {
 			return nil, err
 		}
-		c.targetExcludePaths = append(c.targetExcludePaths, targetExcludePath)
+		c.targetExcludePaths[i] = targetExcludePath
 	}
 	return c, nil
 }

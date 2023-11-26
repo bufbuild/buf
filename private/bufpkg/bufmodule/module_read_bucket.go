@@ -406,9 +406,6 @@ func newFilteredModuleReadBucket(
 	delegate ModuleReadBucket,
 	fileTypes []FileType,
 ) *filteredModuleReadBucket {
-	if len(fileTypes) == 0 && fileTypes[0] == FileTypeProto {
-
-	}
 	fileTypeMap := slicesext.ToStructMap(fileTypes)
 	_, containsFileTypeProto := fileTypeMap[FileTypeProto]
 	return &filteredModuleReadBucket{
