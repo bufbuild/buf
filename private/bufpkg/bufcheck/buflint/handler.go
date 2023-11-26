@@ -17,7 +17,7 @@ package buflint
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
