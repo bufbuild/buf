@@ -205,7 +205,10 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 // and there could be multiple parents for a given ModuleDep. Technically, could determine
 // if a Module is a direct dependency of the ModuleSet, but this is not what IsDirect() means currently.
 //
-// Sorted by OpaqueID.
+// All returned Modules will have a ModuleFullName, as they are remote.
+// All returned Modules will be unique.
+//
+// Sorted by ModuleFullName.
 func ModuleSetRemoteDepsOfLocalModules(moduleSet ModuleSet) ([]Module, error) {
 	visitedOpaqueIDs := make(map[string]struct{})
 	var remoteDeps []Module
@@ -465,6 +468,10 @@ func moduleSetRemoteDepsRec(
 	// Need to make a new slice since for ModuleDep -> Module
 	recDeps := make([]Module, len(recModuleDeps))
 	for i, recModuleDep := range recModuleDeps {
+		if recModuleDep.ModuleFullName() == nil {
+			// Just a sanity check.
+			return nil, syserror.New("ModuleFullName is nil for a remote Module")
+		}
 		recDeps[i] = recModuleDep
 	}
 	for _, recDep := range recDeps {
