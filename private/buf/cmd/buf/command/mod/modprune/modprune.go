@@ -37,7 +37,7 @@ func NewCommand(
 		Long: `The first argument is the directory of your buf.yaml configuration file.
 Defaults to "." if no argument is specified.
 
-Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to update to v2.`,
+Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
