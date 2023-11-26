@@ -368,7 +368,7 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// ReadBucketCloser is a bucket returned from GetBucket.
+// ReadBucketCloser is a bucket returned from GetReadBucketCloser.
 type ReadBucketCloser interface {
 	storage.ReadBucketCloser
 
@@ -386,6 +386,12 @@ type ReadBucketCloser interface {
 	PathForExternalPath(externalPath string) (string, error)
 }
 
+// ReadWriteBucketCloser is a bucket returned from GetReadWriteBucketCloser.
+type ReadWriteBucketCloser interface {
+	ReadBucketCloser
+	storage.WriteBucket
+}
+
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
@@ -397,17 +403,24 @@ type Reader interface {
 		fileRef FileRef,
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
-	// GetBucket gets the bucket.
+	// GetReadBucketCloser gets the bucket.
 	//
 	// If done for a ProtoFileRef, the Bucket will be for the enclosing module or workspace via
 	// terminateFileNames or protoFileTerminateFileNames. No filtering of the Bucket is performed, this is
 	// the responsibility of the caller.
-	GetBucket(
+	GetReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
 	) (ReadBucketCloser, error)
+	// GetReadWriteBucketCloser gets the bucket.
+	GetReadWriteBucketCloser(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		dirRef DirRef,
+		options ...GetBucketOption,
+	) (ReadWriteBucketCloser, error)
 	// GetModuleKey gets the ModuleKey.
 	GetModuleKey(
 		ctx context.Context,

@@ -106,6 +106,19 @@ func newSourceReader(
 	}
 }
 
+func newDirReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) *reader {
+	return &reader{
+		internalReader: internal.NewReader(
+			logger,
+			storageosProvider,
+			internal.WithReaderLocal(),
+		),
+	}
+}
+
 func newModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
@@ -130,17 +143,30 @@ func (a *reader) GetMessageFile(
 	return a.internalReader.GetFile(ctx, container, messageRef.internalSingleRef())
 }
 
-func (a *reader) GetSourceBucket(
+func (a *reader) GetSourceReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
 ) (ReadBucketCloser, error) {
-	return a.internalReader.GetBucket(
+	return a.internalReader.GetReadBucketCloser(
 		ctx,
 		container,
 		sourceRef.internalBucketRef(),
 		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
 		internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
+	)
+}
+
+func (a *reader) GetDirReadWriteBucketCloser(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	dirRef DirRef,
+) (ReadWriteBucketCloser, error) {
+	return a.internalReader.GetReadWriteBucketCloser(
+		ctx,
+		container,
+		dirRef.internalDirRef(),
+		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
 	)
 }
 
