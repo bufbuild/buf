@@ -1,3 +1,4 @@
+- config flag
 - v2 buf.yaml parsing in new workspace
 - ProtoFileRef
 - convert (bufwire)
