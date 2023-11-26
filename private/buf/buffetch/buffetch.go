@@ -221,17 +221,14 @@ func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
 	return newSourceOrModuleRefParser(logger)
 }
 
-// ReadBucketCloser is a bucket returned from GetBucket.
-// We need to surface the internal.ReadBucketCloser
-// interface to other packages, so we use a type
-// declaration to do so.
+// BucketExtender matches the internal type.
+type BucketExtender internal.BucketExtender
+
+// ReadBucketCloser matches the internal type.
 type ReadBucketCloser internal.ReadBucketCloser
 
-// ReadWriteBucketCloser is a bucket returned from GetBucket.
-// We need to surface the internal.ReadWriteBucketCloser
-// interface to other packages, so we use a type
-// declaration to do so.
-type ReadWriteBucketCloser internal.ReadWriteBucketCloser
+// ReadWriteBucket matches the internal type.
+type ReadWriteBucket internal.ReadWriteBucket
 
 // MessageReader is a message reader.
 type MessageReader interface {
@@ -257,12 +254,12 @@ type SourceReader interface {
 
 // DirReader is a dir reader.
 type DirReader interface {
-	// GetDirReadWriteBucketCloser gets the dir bucket.
-	GetDirReadWriteBucketCloser(
+	// GetDirReadWriteBucket gets the dir bucket.
+	GetDirReadWriteBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
-	) (ReadWriteBucketCloser, error)
+	) (ReadWriteBucket, error)
 }
 
 // ModuleFetcher is a module fetcher.

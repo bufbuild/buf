@@ -19,35 +19,35 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-var _ ReadWriteBucketCloser = &readWriteBucketCloser{}
+var _ ReadWriteBucket = &readWriteBucket{}
 
-type readWriteBucketCloser struct {
-	storage.ReadWriteBucketCloser
+type readWriteBucket struct {
+	storage.ReadWriteBucket
 
 	subDirPath          string
 	pathForExternalPath func(string) (string, error)
 }
 
-func newReadWriteBucketCloser(
-	storageReadWriteBucketCloser storage.ReadWriteBucketCloser,
+func newReadWriteBucket(
+	storageReadWriteBucket storage.ReadWriteBucket,
 	subDirPath string,
 	pathForExternalPath func(string) (string, error),
-) (*readWriteBucketCloser, error) {
+) (*readWriteBucket, error) {
 	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
 	if err != nil {
 		return nil, err
 	}
-	return &readWriteBucketCloser{
-		ReadWriteBucketCloser: storageReadWriteBucketCloser,
-		subDirPath:            normalizedSubDirPath,
-		pathForExternalPath:   pathForExternalPath,
+	return &readWriteBucket{
+		ReadWriteBucket:     storageReadWriteBucket,
+		subDirPath:          normalizedSubDirPath,
+		pathForExternalPath: pathForExternalPath,
 	}, nil
 }
 
-func (r *readWriteBucketCloser) SubDirPath() string {
+func (r *readWriteBucket) SubDirPath() string {
 	return r.subDirPath
 }
 
-func (r *readWriteBucketCloser) PathForExternalPath(externalPath string) (string, error) {
+func (r *readWriteBucket) PathForExternalPath(externalPath string) (string, error) {
 	return r.pathForExternalPath(externalPath)
 }

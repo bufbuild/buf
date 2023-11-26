@@ -157,12 +157,12 @@ func (a *reader) GetSourceReadBucketCloser(
 	)
 }
 
-func (a *reader) GetDirReadWriteBucketCloser(
+func (a *reader) GetDirReadWriteBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-) (ReadWriteBucketCloser, error) {
-	return a.internalReader.GetReadWriteBucketCloser(
+) (ReadWriteBucket, error) {
+	return a.internalReader.GetReadWriteBucket(
 		ctx,
 		container,
 		dirRef.internalDirRef(),

@@ -337,7 +337,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	functionOptions, err = functionOptions.withPathsForReadBucketCloser(readBucketCloser)
+	functionOptions, err = functionOptions.withPathsForBucketExtender(readBucketCloser)
 	if err != nil {
 		return nil, err
 	}
@@ -360,20 +360,20 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.UpdateableWorkspace, retErr error) {
-	readWriteBucketCloser, err := c.buffetchReader.GetDirReadWriteBucketCloser(ctx, c.container, dirRef)
+	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(ctx, c.container, dirRef)
 	if err != nil {
 		return nil, err
 	}
-	functionOptions, err = functionOptions.withPathsForReadBucketCloser(readWriteBucketCloser)
+	functionOptions, err = functionOptions.withPathsForBucketExtender(readWriteBucket)
 	if err != nil {
 		return nil, err
 	}
 	return bufworkspace.NewUpdateableWorkspaceForBucket(
 		ctx,
-		readWriteBucketCloser,
+		readWriteBucket,
 		c.moduleDataProvider,
 		bufworkspace.WorkspaceWithTargetSubDirPath(
-			readWriteBucketCloser.SubDirPath(),
+			readWriteBucket.SubDirPath(),
 		),
 		bufworkspace.WorkspaceWithTargetPaths(
 			functionOptions.targetPaths,
@@ -663,20 +663,20 @@ func newFunctionOptions() *functionOptions {
 	return &functionOptions{}
 }
 
-func (f *functionOptions) withPathsForReadBucketCloser(
-	readBucketCloser buffetch.ReadBucketCloser,
+func (f *functionOptions) withPathsForBucketExtender(
+	bucketExtender buffetch.BucketExtender,
 ) (*functionOptions, error) {
 	deref := *f
 	c := &deref
 	for _, targetPath := range c.targetPaths {
-		targetPath, err := readBucketCloser.PathForExternalPath(targetPath)
+		targetPath, err := bucketExtender.PathForExternalPath(targetPath)
 		if err != nil {
 			return nil, err
 		}
 		c.targetPaths = append(c.targetPaths, targetPath)
 	}
 	for _, targetExcludePath := range c.targetExcludePaths {
-		targetExcludePath, err := readBucketCloser.PathForExternalPath(targetExcludePath)
+		targetExcludePath, err := bucketExtender.PathForExternalPath(targetExcludePath)
 		if err != nil {
 			return nil, err
 		}

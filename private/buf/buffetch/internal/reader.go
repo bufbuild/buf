@@ -128,12 +128,16 @@ func (r *reader) GetReadBucketCloser(
 			getBucketOptions.terminateFunc,
 		)
 	case DirRef:
-		return r.getDirBucket(
+		readWriteBucket, err := r.getDirBucket(
 			ctx,
 			container,
 			t,
 			getBucketOptions.terminateFunc,
 		)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloserForReadWriteBucket(readWriteBucket), nil
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
@@ -154,12 +158,12 @@ func (r *reader) GetReadBucketCloser(
 	}
 }
 
-func (r *reader) GetReadWriteBucketCloser(
+func (r *reader) GetReadWriteBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	options ...GetBucketOption,
-) (ReadWriteBucketCloser, error) {
+) (ReadWriteBucket, error) {
 	getBucketOptions := newGetBucketOptions()
 	for _, option := range options {
 		option(getBucketOptions)
@@ -281,11 +285,11 @@ func (r *reader) getDirBucket(
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	terminateFunc TerminateFunc,
-) (ReadWriteBucketCloser, error) {
+) (ReadWriteBucket, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	return getReadWriteBucketCloserForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFunc)
+	return getReadWriteBucketForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFunc)
 }
 
 func (r *reader) getProtoFileBucket(
@@ -542,12 +546,12 @@ func getReadBucketCloserForBucket(
 }
 
 // Use for directory-based buckets.
-func getReadWriteBucketCloserForOS(
+func getReadWriteBucketForOS(
 	ctx context.Context,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
 	terminateFunc TerminateFunc,
-) (ReadWriteBucketCloser, error) {
+) (ReadWriteBucket, error) {
 	inputDirPath = normalpath.Normalize(inputDirPath)
 	absInputDirPath, err := normalpath.NormalizeAndAbsolute(inputDirPath)
 	if err != nil {
@@ -607,8 +611,8 @@ func getReadWriteBucketCloserForOS(
 	if err != nil {
 		return nil, err
 	}
-	return newReadWriteBucketCloser(
-		storage.NopReadWriteBucketCloser(bucket),
+	return newReadWriteBucket(
+		bucket,
 		subDirPath,
 		func(externalPath string) (string, error) {
 			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketPath))
@@ -700,7 +704,11 @@ func getReadBucketCloserForOSProtoFile(
 	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
 	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
 	// add as targeting files when constructing a Workspace.
-	return getReadWriteBucketCloserForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
+	readWriteBucket, err := getReadWriteBucketForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserForReadWriteBucket(readWriteBucket), nil
 }
 
 // Gets two values:

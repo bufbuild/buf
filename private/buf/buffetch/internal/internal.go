@@ -368,10 +368,8 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// ReadBucketCloser is a bucket returned from GetReadBucketCloser.
-type ReadBucketCloser interface {
-	storage.ReadBucketCloser
-
+// BucketExtender has extra methods we attach to buckets.
+type BucketExtender interface {
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
 	// This will be set if a terminate file was found. If so, the actual Bucket will be
@@ -386,10 +384,16 @@ type ReadBucketCloser interface {
 	PathForExternalPath(externalPath string) (string, error)
 }
 
-// ReadWriteBucketCloser is a bucket returned from GetReadWriteBucketCloser.
-type ReadWriteBucketCloser interface {
-	ReadBucketCloser
-	storage.WriteBucket
+// ReadBucketCloser is a bucket returned from GetReadBucketCloser.
+type ReadBucketCloser interface {
+	storage.ReadBucketCloser
+	BucketExtender
+}
+
+// ReadWriteBucket is a bucket returned from GetReadWriteBucket.
+type ReadWriteBucket interface {
+	storage.ReadWriteBucket
+	BucketExtender
 }
 
 // Reader is a reader.
@@ -414,13 +418,13 @@ type Reader interface {
 		bucketRef BucketRef,
 		options ...GetBucketOption,
 	) (ReadBucketCloser, error)
-	// GetReadWriteBucketCloser gets the bucket.
-	GetReadWriteBucketCloser(
+	// GetReadWriteBucket gets the bucket.
+	GetReadWriteBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
 		options ...GetBucketOption,
-	) (ReadWriteBucketCloser, error)
+	) (ReadWriteBucket, error)
 	// GetModuleKey gets the ModuleKey.
 	GetModuleKey(
 		ctx context.Context,

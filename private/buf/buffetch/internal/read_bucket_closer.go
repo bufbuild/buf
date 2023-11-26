@@ -44,6 +44,16 @@ func newReadBucketCloser(
 	}, nil
 }
 
+func newReadBucketCloserForReadWriteBucket(
+	readWriteBucket ReadWriteBucket,
+) *readBucketCloser {
+	return &readBucketCloser{
+		ReadBucketCloser:    storage.NopReadBucketCloser(readWriteBucket),
+		subDirPath:          readWriteBucket.SubDirPath(),
+		pathForExternalPath: readWriteBucket.PathForExternalPath,
+	}
+}
+
 func (r *readBucketCloser) SubDirPath() string {
 	return r.subDirPath
 }
