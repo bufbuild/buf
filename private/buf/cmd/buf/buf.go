@@ -41,6 +41,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
@@ -201,7 +202,7 @@ func NewRootCommand(name string) *appcmd.Command {
 								Use:   "plugin",
 								Short: "Manage plugins on the Buf Schema Registry",
 								SubCommands: []*appcmd.Command{
-									//pluginpush.NewCommand("push", builder),
+									pluginpush.NewCommand("push", builder),
 									plugindelete.NewCommand("delete", builder),
 								},
 							},

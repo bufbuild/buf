@@ -68,6 +68,7 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/alpha/registry/... \
 		./private/buf/cmd/buf/command/beta/graph/... \
 		./private/buf/cmd/buf/command/beta/price/... \
+		./private/buf/cmd/buf/command/beta/registry/... \
 		./private/buf/cmd/buf/command/beta/stats/... \
 		./private/buf/cmd/buf/command/beta/studioagent/... \
 		./private/buf/cmd/buf/command/build/... \
