@@ -76,8 +76,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 
-	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	//"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -124,7 +124,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					modinit.NewCommand("init", builder),
 					modprune.NewCommand("prune", builder),
-					//modupdate.NewCommand("update", builder),
+					modupdate.NewCommand("update", builder),
 					modopen.NewCommand("open", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
 					modlslintrules.NewCommand("ls-lint-rules", builder),

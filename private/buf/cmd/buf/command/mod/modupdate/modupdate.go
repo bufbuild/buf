@@ -16,6 +16,7 @@ package modupdate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
@@ -119,6 +120,12 @@ func run(
 	if err != nil {
 		return err
 	}
+	depNameToModuleKey := slicesext.ToValuesMap(
+		depModuleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().String()
+		},
+	)
 	// All the ModuleKeys we get back from buf.yaml.
 	bufYAMLModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
@@ -129,12 +136,6 @@ func run(
 	}
 	bufYAMLNameToModuleKey := slicesext.ToValuesMap(
 		bufYAMLModuleKeys,
-		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().String()
-		},
-	)
-	depNameToModuleKey := slicesext.ToValuesMap(
-		depModuleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.ModuleFullName().String()
 		},
@@ -157,6 +158,23 @@ func run(
 			}
 		}
 	}
+	transitiveDepModules, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(
+		updateableWorkspace,
+		bufmodule.WithOnlyTransitiveRemoteDeps(),
+	)
+	if err != nil {
+		return err
+	}
+	transitiveDepModuleKeys, err := slicesext.MapError(transitiveDepModules, bufmodule.ModuleToModuleKey)
+	if err != nil {
+		return err
+	}
+	transitiveDepNameToModuleKey := slicesext.ToValuesMap(
+		transitiveDepModuleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().String()
+		},
+	)
 	// Our result buf.lock needs to have everyting in deps. We will only use the new values from bufYAMLNameToModuleKey
 	// if either (1) onlyNameMap is empty (2) they are within onlyNameMap, AND they are a remote dependency.
 	//
@@ -180,7 +198,9 @@ func run(
 			//
 			// Note if something wasn't PREVIOUSLY specified in our buf.lock, we would have failed on the building
 			// of the workspace, as we just wouldn't have a dep.
-			// TODO
+			if _, ok := transitiveDepNameToModuleKey[depName]; !ok {
+				return fmt.Errorf("previously present dependency %q is not longer specified in buf.yaml but is still depended on", depName)
+			}
 		}
 	}
 	// NewBufLockFile will sort the deps.
