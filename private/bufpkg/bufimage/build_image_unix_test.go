@@ -15,7 +15,7 @@
 //go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
 
-package bufimagebuild
+package bufimage_test
 
 import (
 	"testing"

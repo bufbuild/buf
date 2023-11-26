@@ -15,9 +15,11 @@
 package bufimage
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -137,6 +139,49 @@ type Image interface {
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
 	return newImage(imageFiles, false)
+}
+
+// BuildImage runs compilation.
+//
+// Only one of Image and FileAnnotations will be returned.
+//
+// FileAnnotations will use external file paths.
+func BuildImage(
+	ctx context.Context,
+	moduleSet bufmodule.ModuleSet,
+	options ...BuildImageOption,
+) (Image, []bufanalysis.FileAnnotation, error) {
+	buildImageOptions := newBuildImageOptions()
+	for _, option := range options {
+		option(buildImageOptions)
+	}
+	return buildImage(
+		ctx,
+		moduleSet,
+		buildImageOptions.excludeSourceCodeInfo,
+		buildImageOptions.noParallelism,
+	)
+}
+
+// BuildImageOption is an option for BuildImage.
+type BuildImageOption func(*buildImageOptions)
+
+// WithExcludeSourceCodeInfo returns a new BuildImageOption that excludes sourceCodeInfo.
+func WithExcludeSourceCodeInfo() BuildImageOption {
+	return func(buildImageOptions *buildImageOptions) {
+		buildImageOptions.excludeSourceCodeInfo = true
+	}
+}
+
+// WithNoParallelism turns off parallelism for a build.
+//
+// The default is to use thread.Parallelism().
+//
+// Used for testing.
+func WithNoParallelism() BuildImageOption {
+	return func(buildImageOptions *buildImageOptions) {
+		buildImageOptions.noParallelism = true
+	}
 }
 
 // MergeImages returns a new Image for the given Images. ImageFiles

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagebuild
+package bufimage_test
 
 import (
 	"context"
@@ -23,10 +23,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -35,11 +35,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/testingext"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 var buftestingDirPath = filepath.Join(
-	"..",
 	"..",
 	"buftesting",
 )
@@ -302,7 +300,7 @@ func TestOptionPanic(t *testing.T) {
 	require.NotPanics(t, func() {
 		moduleSet, err := bufmoduletest.NewModuleSetForDirPath(filepath.Join("testdata", "optionpanic"))
 		require.NoError(t, err)
-		_, _, err = NewBuilder(zap.NewNop()).Build(
+		_, _, err = bufimage.BuildImage(
 			context.Background(),
 			moduleSet,
 		)
@@ -337,14 +335,14 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism bool) (bufimage.Image, []bufanalysis.FileAnnotation) {
 	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
 	require.NoError(t, err)
-	var options []BuildOption
+	var options []bufimage.BuildImageOption
 	if !includeSourceInfo {
-		options = append(options, WithExcludeSourceCodeInfo())
+		options = append(options, bufimage.WithExcludeSourceCodeInfo())
 	}
 	if !parallelism {
-		options = append(options, withNoParallelism())
+		options = append(options, bufimage.WithNoParallelism())
 	}
-	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		context.Background(),
 		moduleSet,
 		options...,

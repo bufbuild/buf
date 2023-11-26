@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagebuild
+package bufimage
 
 import (
 	"context"
@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/thread"
@@ -31,52 +30,19 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const (
-	loggerName = "bufimagebuild"
-	tracerName = "bufbuild/buf"
-)
+const tracerName = "bufbuild/buf"
 
-type builder struct {
-	logger *zap.Logger
-	tracer trace.Tracer
-}
-
-func newBuilder(logger *zap.Logger) *builder {
-	return &builder{
-		logger: logger.Named(loggerName),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
-	}
-}
-
-func (b *builder) Build(
-	ctx context.Context,
-	moduleSet bufmodule.ModuleSet,
-	options ...BuildOption,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	buildOptions := newBuildOptions()
-	for _, option := range options {
-		option(buildOptions)
-	}
-	return b.build(
-		ctx,
-		moduleSet,
-		buildOptions.excludeSourceCodeInfo,
-		buildOptions.noParallelism,
-	)
-}
-
-func (b *builder) build(
+func buildImage(
 	ctx context.Context,
 	moduleSet bufmodule.ModuleSet,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
-) (_ bufimage.Image, _ []bufanalysis.FileAnnotation, retErr error) {
-	ctx, span := b.tracer.Start(ctx, "build")
+) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
+	tracer := otel.GetTracerProvider().Tracer(tracerName)
+	ctx, span := tracer.Start(ctx, "build_image")
 	defer span.End()
 	defer func() {
 		if retErr != nil {
@@ -122,7 +88,6 @@ func (b *builder) build(
 		parserAccessorHandler,
 		buildResult.SyntaxUnspecifiedFilenames,
 		buildResult.FilenameToUnusedDependencyFilenames,
-		b.tracer,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -295,11 +260,7 @@ func getImage(
 	parserAccessorHandler *parserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
-	tracer trace.Tracer,
-) (bufimage.Image, error) {
-	ctx, span := tracer.Start(ctx, "get_image")
-	defer span.End()
-
+) (Image, error) {
 	// if we aren't including imports, then we need a set of file names that
 	// are included so we can create a topologically sorted list w/out
 	// including imports that should not be present.
@@ -313,7 +274,7 @@ func getImage(
 		nonImportFilenames[fileDescriptor.Path()] = struct{}{}
 	}
 
-	var imageFiles []bufimage.ImageFile
+	var imageFiles []ImageFile
 	var err error
 	alreadySeen := map[string]struct{}{}
 	for _, fileDescriptor := range sortedFileDescriptors {
@@ -329,17 +290,10 @@ func getImage(
 			imageFiles,
 		)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
 			return nil, err
 		}
 	}
-	image, err := bufimage.NewImage(imageFiles)
-	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-	}
-	return image, err
+	return NewImage(imageFiles)
 }
 
 func getImageFilesRec(
@@ -351,8 +305,8 @@ func getImageFilesRec(
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	alreadySeen map[string]struct{},
 	nonImportFilenames map[string]struct{},
-	imageFiles []bufimage.ImageFile,
-) ([]bufimage.ImageFile, error) {
+	imageFiles []ImageFile,
+) ([]ImageFile, error) {
 	if fileDescriptor == nil {
 		return nil, errors.New("nil FileDescriptor")
 	}
@@ -404,7 +358,7 @@ func getImageFilesRec(
 	}
 	_, isNotImport := nonImportFilenames[path]
 	_, syntaxUnspecified := syntaxUnspecifiedFilenames[path]
-	imageFile, err := bufimage.NewImageFile(
+	imageFile, err := NewImageFile(
 		fileDescriptorProto,
 		parserAccessorHandler.ModuleFullName(path),
 		parserAccessorHandler.CommitID(path),
@@ -560,11 +514,11 @@ func (f *fileInfo) ExternalPath() string {
 	return f.externalPath
 }
 
-type buildOptions struct {
+type buildImageOptions struct {
 	excludeSourceCodeInfo bool
 	noParallelism         bool
 }
 
-func newBuildOptions() *buildOptions {
-	return &buildOptions{}
+func newBuildImageOptions() *buildImageOptions {
+	return &buildImageOptions{}
 }

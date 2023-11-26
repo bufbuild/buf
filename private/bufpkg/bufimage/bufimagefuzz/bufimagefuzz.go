@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagebuildtesting
+package bufimagefuzz
 
 import (
 	"context"
@@ -21,16 +21,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -93,9 +91,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalys
 	if err != nil {
 		return nil, nil, err
 	}
-	builder := bufimagebuild.NewBuilder(zap.NewNop())
-	opt := bufimagebuild.WithExcludeSourceCodeInfo()
-	return builder.Build(ctx, moduleSet, opt)
+	return bufimage.BuildImage(ctx, moduleSet, bufimage.WithExcludeSourceCodeInfo())
 }
 
 // txtarParse is a wrapper around txtar.Parse that will turn panics into errors.

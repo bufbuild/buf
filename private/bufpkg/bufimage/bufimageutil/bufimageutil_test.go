@@ -22,9 +22,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -207,12 +207,10 @@ func TestTypesFromMainModule(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(
-		zaptest.NewLogger(t),
-	).Build(
+	image, analysis, err := bufimage.BuildImage(
 		ctx,
 		moduleSet,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, analysis)
