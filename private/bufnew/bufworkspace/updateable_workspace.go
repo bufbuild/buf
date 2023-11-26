@@ -17,6 +17,8 @@ package bufworkspace
 import (
 	"context"
 	"errors"
+	"io"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
@@ -24,8 +26,11 @@ import (
 )
 
 // UpdateableWorkspace is a workspace that can be updated.
+//
+// An UpdateableWorkspace must be closed when all updates are complete.
 type UpdateableWorkspace interface {
 	Workspace
+	io.Closer
 
 	// PutBufLockFile updates the lock file that backs this Workspace.
 	//
@@ -43,7 +48,7 @@ type UpdateableWorkspace interface {
 // This function can only read v2 buf.yamls.
 func NewUpdateableWorkspaceForBucket(
 	ctx context.Context,
-	bucket storage.ReadWriteBucket,
+	bucket storage.ReadWriteBucketCloser,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceOption,
 ) (UpdateableWorkspace, error) {
@@ -55,12 +60,13 @@ func NewUpdateableWorkspaceForBucket(
 type updateableWorkspace struct {
 	*workspace
 
-	bucket storage.WriteBucket
+	bucket storage.WriteBucketCloser
+	closed atomic.Bool
 }
 
 func newUpdateableWorkspaceForBucket(
 	ctx context.Context,
-	bucket storage.ReadWriteBucket,
+	bucket storage.ReadWriteBucketCloser,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceOption,
 ) (*updateableWorkspace, error) {
@@ -75,6 +81,9 @@ func newUpdateableWorkspaceForBucket(
 }
 
 func (w *updateableWorkspace) PutBufLockFile(ctx context.Context, bufLockFile bufconfig.BufLockFile) error {
+	if w.closed.Load() {
+		return errors.New("workspace already closed")
+	}
 	if !w.isV2BufYAMLWorkspace {
 		// TODO: better error message
 		return errors.New(`migrate to v2 buf.yaml via "buf migrate" to update your buf.lock file`)
@@ -85,6 +94,13 @@ func (w *updateableWorkspace) PutBufLockFile(ctx context.Context, bufLockFile bu
 		return errors.New(`can only update to v2 buf.locks`)
 	}
 	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.bufLockDirPath, bufLockFile)
+}
+
+func (w *updateableWorkspace) Close() error {
+	if !w.closed.CompareAndSwap(false, true) {
+		return errors.New("workspace already closed")
+	}
+	return w.bucket.Close()
 }
 
 func (*updateableWorkspace) isUpdateableWorkspace() {}

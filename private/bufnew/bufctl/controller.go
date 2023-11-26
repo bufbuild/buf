@@ -47,6 +47,11 @@ type Controller interface {
 		sourceOrModuleInput string,
 		options ...FunctionOption,
 	) (bufworkspace.Workspace, error)
+	GetUpdateableWorkspace(
+		ctx context.Context,
+		dirPath string,
+		options ...FunctionOption,
+	) (bufworkspace.UpdateableWorkspace, error)
 	GetImage(
 		ctx context.Context,
 		input string,
@@ -225,6 +230,22 @@ func (c *controller) GetWorkspace(
 	}
 }
 
+func (c *controller) GetUpdateableWorkspace(
+	ctx context.Context,
+	dirPath string,
+	options ...FunctionOption,
+) (bufworkspace.UpdateableWorkspace, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	dirRef, err := c.buffetchRefParser.GetDirRef(ctx, dirPath)
+	if err != nil {
+		return nil, err
+	}
+	return c.getUpdateableWorkspaceForDirRef(ctx, dirRef, functionOptions)
+}
+
 func (c *controller) GetImage(
 	ctx context.Context,
 	input string,
@@ -309,7 +330,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	sourceRef buffetch.SourceRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.Workspace, retErr error) {
-	readBucketCloser, err := c.buffetchReader.GetSourceBucket(ctx, c.container, sourceRef)
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(ctx, c.container, sourceRef)
 	if err != nil {
 		return nil, err
 	}
@@ -326,6 +347,33 @@ func (c *controller) getWorkspaceForSourceRef(
 		c.moduleDataProvider,
 		bufworkspace.WorkspaceWithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
+		),
+		bufworkspace.WorkspaceWithTargetPaths(
+			functionOptions.targetPaths,
+			functionOptions.targetExcludePaths,
+		),
+	)
+}
+
+func (c *controller) getUpdateableWorkspaceForDirRef(
+	ctx context.Context,
+	dirRef buffetch.DirRef,
+	functionOptions *functionOptions,
+) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+	readWriteBucketCloser, err := c.buffetchReader.GetDirReadWriteBucketCloser(ctx, c.container, dirRef)
+	if err != nil {
+		return nil, err
+	}
+	functionOptions, err = functionOptions.withPathsForReadBucketCloser(readWriteBucketCloser)
+	if err != nil {
+		return nil, err
+	}
+	return bufworkspace.NewUpdateableWorkspaceForBucket(
+		ctx,
+		readWriteBucketCloser,
+		c.moduleDataProvider,
+		bufworkspace.WorkspaceWithTargetSubDirPath(
+			readWriteBucketCloser.SubDirPath(),
 		),
 		bufworkspace.WorkspaceWithTargetPaths(
 			functionOptions.targetPaths,
