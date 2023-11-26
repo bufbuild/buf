@@ -71,6 +71,7 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/beta/stats/... \
 		./private/buf/cmd/buf/command/beta/studioagent/... \
 		./private/buf/cmd/buf/command/build/... \
+		./private/buf/cmd/buf/command/convert/... \
 		./private/buf/cmd/buf/command/lsfiles/... \
 		./private/buf/cmd/buf/command/mod/... \
 		./private/buf/cmd/buf/command/registry/... \

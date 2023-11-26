@@ -198,6 +198,7 @@ func run(
 		schemaImage,
 		flags.From,
 		flags.Type,
+		buffetch.MessageEncodingBinpb,
 	)
 	if err != nil {
 		return fmt.Errorf("--%s: %w", fromFlagName, err)

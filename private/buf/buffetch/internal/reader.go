@@ -753,7 +753,7 @@ func getMapPathAndSubDirPath(
 		return inputSubDirPath, ".", false, nil
 	}
 	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-		terminate, err := terminateFunc(ctx, inputBucket, curPath)
+		terminate, err := terminateFunc(ctx, inputBucket, curPath, inputSubDirPath)
 		if err != nil {
 			return "", "", false, err
 		}
@@ -774,12 +774,13 @@ func newMultiTerminateFunc(terminateFuncs ...TerminateFunc) TerminateFunc {
 			ctx context.Context,
 			bucket storage.ReadBucket,
 			prefix string,
+			originalSubDirPath string,
 		) (bool, error) {
 			for _, terminateFunc := range terminateFuncs {
 				if terminateFunc == nil {
 					continue
 				}
-				terminate, err := terminateFunc(ctx, bucket, prefix)
+				terminate, err := terminateFunc(ctx, bucket, prefix, originalSubDirPath)
 				if err != nil {
 					return false, err
 				}

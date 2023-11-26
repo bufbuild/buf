@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -46,9 +48,19 @@ func prefixContainsWorkspaceFile(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
+	originalSubDirPath string,
 ) (bool, error) {
-	if _, err := GetBufWorkYAMLFileVersionForPrefix(ctx, bucket, prefix); err == nil {
-		return true, nil
+	bufWorkYAMLFile, err := GetBufWorkYAMLFileForPrefix(ctx, bucket, prefix)
+	bufWorkYAMLFileExists := err == nil
+	if bufWorkYAMLFileExists {
+		relSubDirPath, err := normalpath.Rel(prefix, originalSubDirPath)
+		if err != nil {
+			return false, err
+		}
+		// If the buf.work.yaml contains the subDirPath, then we have found a workspace file for this subdirectory.
+		if _, ok := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relSubDirPath]; ok {
+			return true, nil
+		}
 	}
 	fileVersion, err := GetBufYAMLFileVersionForPrefix(ctx, bucket, prefix)
 	if err != nil {
@@ -57,6 +69,10 @@ func prefixContainsWorkspaceFile(
 		}
 		return false, err
 	}
+	if bufWorkYAMLFileExists {
+		// Not a great way to surface this to the user.
+		return false, fmt.Errorf("cannot have buf.work.yaml and buf.yaml in the same directory %q", prefix)
+	}
 	return fileVersion == FileVersionV2, nil
 }
 
@@ -64,6 +80,7 @@ func prefixContainsModuleFile(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
+	originalSubDirPath string,
 ) (bool, error) {
 	bufYAMLFile, err := GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 	if err != nil {

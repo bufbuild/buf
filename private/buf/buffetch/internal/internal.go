@@ -764,6 +764,10 @@ type GetBucketOption func(*getBucketOptions)
 // potentially terminate the search for the workspace file. This will result in the
 // given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
+// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
+// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
+// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
+//
 // See NewTerminateAtFileNamesFunc as an example that would work in the pre-buf.yaml-v2 world
 // where we just wanted to terminate at file names buf.work.yaml, buf.work.
 func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
@@ -785,8 +789,22 @@ func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) G
 
 // TerminateFunc is a termination function.
 //
-// See with WithGetBucketTerminateFunc for documentation.
-type TerminateFunc func(ctx context.Context, bucket storage.ReadBucket, prefix string) (terminate bool, err error)
+// This function should return true if the search should terminate at the prefix, that is
+// the prefix should be where the bucket is mapped onto.
+//
+// The original subDirPath is also given to the TerminateFunc.
+//
+// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
+// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
+// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
+//
+// See with WithGetBucketTerminateFunc more documentation.
+type TerminateFunc func(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalSubDirPath string,
+) (terminate bool, err error)
 
 // NewTerminateAtFileNamesFunc returns a new terminate function that terminates at the
 // given file names.
@@ -799,6 +817,7 @@ func NewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
 			ctx context.Context,
 			bucket storage.ReadBucket,
 			prefix string,
+			originalSubDirPath string,
 		) (bool, error) {
 			for _, terminateFileName := range terminateFileNames {
 				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {

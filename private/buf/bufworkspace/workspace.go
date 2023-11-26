@@ -210,11 +210,12 @@ func newWorkspaceForBucket(
 			// TODO: better error message, potentially take into account the location of the bucket via an option
 			return nil, errors.New("both buf.yaml and buf.work.yaml discovered at input directory")
 		}
+		// TODO: We don't actually verify that the config.subDirPath is listed in the buf.work.yaml, which we should,
+		// and if not, we should continue. This is the logic we apply in buffetch.
 		moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, config.subDirPath)
 		if err != nil {
 			return nil, err
 		}
-		//fmt.Println("buf.work.yaml found at", config.subDirPath, "moduleDirPaths", moduleDirPaths)
 		return newWorkspaceForBucketAndModuleDirPaths(
 			ctx,
 			bucket,
@@ -236,6 +237,8 @@ func newWorkspaceForBucket(
 				return nil, err
 			}
 			if bufWorkYAMLExists {
+				// TODO: We don't actually verify that the config.subDirPath is listed in the buf.work.yaml, which we should,
+				// and if not, we should continue. This is the logic we apply in buffetch.
 				moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, curDirPath)
 				if err != nil {
 					return nil, err

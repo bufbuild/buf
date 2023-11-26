@@ -70,6 +70,7 @@ type Controller interface {
 		schemaImage bufimage.Image,
 		messageInput string,
 		typeName string,
+		defaultMessageEncoding buffetch.MessageEncoding,
 		options ...FunctionOption,
 	) (proto.Message, buffetch.MessageEncoding, error)
 	PutMessage(
@@ -374,13 +375,20 @@ func (c *controller) GetMessage(
 	schemaImage bufimage.Image,
 	messageInput string,
 	typeName string,
+	defaultMessageEncoding buffetch.MessageEncoding,
 	options ...FunctionOption,
 ) (proto.Message, buffetch.MessageEncoding, error) {
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
 	}
-	messageRef, err := c.buffetchRefParser.GetMessageRef(ctx, messageInput)
+	messageRefParser := buffetch.NewMessageRefParser(
+		c.logger,
+		buffetch.MessageRefParserWithDefaultMessageEncoding(
+			defaultMessageEncoding,
+		),
+	)
+	messageRef, err := messageRefParser.GetMessageRef(ctx, messageInput)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -622,16 +630,7 @@ func (c *controller) getImageForMessageRef(
 	if err != nil {
 		return nil, err
 	}
-	image, err = filterImage(image, functionOptions)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: allowNotExist?
-	return bufimage.ImageWithOnlyPathsAllowNotExist(
-		image,
-		functionOptions.targetPaths,
-		functionOptions.targetExcludePaths,
-	)
+	return filterImage(image, functionOptions)
 }
 
 func (c *controller) buildImage(
@@ -687,6 +686,17 @@ func filterImage(image bufimage.Image, functionOptions *functionOptions) (bufima
 	}
 	if len(functionOptions.imageTypes) > 0 {
 		newImage, err = bufimageutil.ImageFilteredByTypes(newImage, functionOptions.imageTypes...)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
+		// TODO: allowNotExist?
+		newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
+			newImage,
+			functionOptions.targetPaths,
+			functionOptions.targetExcludePaths,
+		)
 		if err != nil {
 			return nil, err
 		}
