@@ -151,6 +151,7 @@ func run(
 		bufctl.WithImageExcludeSourceInfo(flags.ExcludeSourceInfo),
 		bufctl.WithImageExcludeImports(flags.ExcludeImports),
 		bufctl.WithImageTypes(flags.Types),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err

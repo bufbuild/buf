@@ -189,6 +189,10 @@ func newWorkspaceForBucket(
 	if err != nil {
 		return nil, err
 	}
+	if config.configOverride != "" {
+		// TODO
+		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForBucket")
+	}
 	// Both of these functions validate that we're in v1beta1/v1 world. When we add v2, we will likely
 	// need to significantly rework all of newWorkspaceForBucket.
 	bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, config.subDirPath)
@@ -284,6 +288,10 @@ func newWorkspaceForModuleKey(
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
 		return nil, err
+	}
+	if config.configOverride != "" {
+		// TODO
+		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForModuleKey")
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	moduleSetBuilder.AddRemoteModule(

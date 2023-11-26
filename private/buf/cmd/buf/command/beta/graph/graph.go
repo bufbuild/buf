@@ -20,8 +20,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -31,7 +31,6 @@ import (
 
 const (
 	errorFormatFlagName     = "error-format"
-	configFlagName          = "config"
 	disableSymlinksFlagName = "disable-symlinks"
 )
 
@@ -57,7 +56,6 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat     string
-	Config          string
 	DisableSymlinks bool
 	// special
 	InputHashtag string
@@ -78,12 +76,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors printed to stderr. Must be one of %s",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
-	)
-	flagSet.StringVar(
-		&f.Config,
-		configFlagName,
-		"",
-		`The file or data to use to use for configuration`,
 	)
 }
 
