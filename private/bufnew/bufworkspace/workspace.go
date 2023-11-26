@@ -93,12 +93,8 @@ type Workspace interface {
 	//
 	// Sorted.
 	// TODO: rename to AllConfiguredDepModuleRefs, to differentiate from BufYAMLFile?
+	// TODO: use to warn on unused deps.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
-
-	// GenerateConfigs returns the GenerateConfigs for the workspace, if they exist.
-	//
-	// v1 buf.yamls do not have GenerateConfigs. These need to be read from buf.gen.yaml files.
-	//GenerateConfigs() []GenerateConfig
 
 	isWorkspace()
 }
@@ -233,6 +229,16 @@ type workspace struct {
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
+
+	// Set if this workspace is a buf.yaml-v2-backed workspace.
+	//
+	// This may also be set if there was no buf.yaml in the future, depending on our defaults.
+	// Do not depend on this actually having a v2 buf.yaml
+	isV2BufYAMLWorkspace bool
+	// The path where buf.lock files should be written.
+	//
+	// Only and always set if isV2BufYAMLWorkspace is set.
+	bufLockDirPath string
 }
 
 func (w *workspace) GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig {
