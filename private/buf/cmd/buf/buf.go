@@ -37,6 +37,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/draft/draftlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
@@ -139,15 +142,15 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",
 						SubCommands: []*appcmd.Command{
-							//{
-							//Use:   "organization",
-							//Short: "Manage organizations",
-							//SubCommands: []*appcmd.Command{
-							//organizationcreate.NewCommand("create", builder),
-							//organizationget.NewCommand("get", builder),
-							//organizationdelete.NewCommand("delete", builder),
-							//},
-							//},
+							{
+								Use:   "organization",
+								Short: "Manage organizations",
+								SubCommands: []*appcmd.Command{
+									organizationcreate.NewCommand("create", builder),
+									organizationget.NewCommand("get", builder),
+									organizationdelete.NewCommand("delete", builder),
+								},
+							},
 							{
 								Use:   "repository",
 								Short: "Manage repositories",
