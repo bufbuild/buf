@@ -175,52 +175,6 @@ func WorkspaceWithTargetPaths(
 	}
 }
 
-// WorkspaceUnreferencedConfiguredDepModuleRefs returns those configured ModuleRefs that do not
-// reference any Module within the workspace. These can be pruned from the buf.lock
-// in both v1 and v2 buf.yamls.
-//
-// A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
-//
-// TODO: This logic may be broken for pruning. Consider what happens when we add remotes we shouldnt to the ModuleSet.
-func WorkspaceUnreferencedConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
-	var resultDepModuleRefs []bufmodule.ModuleRef
-	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
-		module := workspace.GetModuleForModuleFullName(configuredDepModuleRef.ModuleFullName())
-		// Workspaces are self-contained and have all dependencies, therefore
-		// this check is all that is needed.
-		if module == nil {
-			resultDepModuleRefs = append(resultDepModuleRefs, configuredDepModuleRef)
-		}
-	}
-	return resultDepModuleRefs
-}
-
-// WorkspaceUnreferencedOrLocalConfiguredDepModuleRefs returns those configured dependency ModuleRefs that
-// do not reference any Module in the workspace, or reference local Modules within the Workspace.
-// In theory, these can be pruned from v2 buf.yamls.
-//
-// Local modules are present in v1 buf.yaml, but they are not used by buf anymore. A note
-// that this means that if we prune these, ***upgrading buf is a one-way door*** - if a buf.lock
-// is pruned based on a newer version of buf, it will no longer be useable by
-// old versions of buf, if we prune these. We should discuss what we want to do here - perhaps
-// these should be pruned depending on v1 vs v2.
-//
-// A ModuleRef is considered to reference a Module if it has the same ModuleFullName.
-//
-// TODO: This logic may be broken for pruning. Consider what happens when we add remotes we shouldnt to the ModuleSet.
-func WorkspaceUnreferencedOrLocalConfiguredDepModuleRefs(workspace Workspace) []bufmodule.ModuleRef {
-	var resultDepModuleRefs []bufmodule.ModuleRef
-	for _, configuredDepModuleRef := range workspace.ConfiguredDepModuleRefs() {
-		module := workspace.GetModuleForModuleFullName(configuredDepModuleRef.ModuleFullName())
-		// Workspaces are self-contained and have all dependencies, therefore
-		// this check is all that is needed.
-		if module == nil || module.IsLocal() {
-			resultDepModuleRefs = append(resultDepModuleRefs, configuredDepModuleRef)
-		}
-	}
-	return resultDepModuleRefs
-}
-
 // *** PRIVATE ***
 
 type workspace struct {

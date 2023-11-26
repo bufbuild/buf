@@ -16,23 +16,13 @@ package modupdate
 
 import (
 	"context"
-	"fmt"
 
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -81,7 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Only,
 		onlyFlagName,
 		nil,
-		"The name of the dependency to update. When set, only this dependency is updated (along with any of its sub-dependencies). May be passed multiple times",
+		"The name of the dependency to update. When set, only this dependency and its transitive dependencies are updated. May be passed multiple times",
 	)
 }
 
@@ -91,233 +81,146 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	directoryInput, err := bufcli.GetInputValue(container, "", ".")
+	dirPath := "."
+	if container.NumArgs() > 0 {
+		dirPath = container.Arg(0)
+	}
+	onlyModuleFullNames := make([]bufmodule.ModuleFullName, len(flags.Only))
+	for i, only := range flags.Only {
+		onlyModuleFullName, err := bufmodule.ParseModuleFullName(only)
+		if err != nil {
+			return appcmd.NewInvalidArgumentErrorf("--%s value %q is not a valid module name", onlyFlagName, only)
+		}
+		onlyModuleFullNames[i] = onlyModuleFullName
+	}
+	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		directoryInput,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return syserror.Wrap(err)
-	}
-	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
-	if err != nil {
-		return syserror.Wrap(err)
-	}
-	if existingConfigFilePath == "" {
-		return bufcli.ErrNoConfigFile
-	}
-	moduleConfig, err := bufconfig.GetConfigForBucket(ctx, readWriteBucket)
+	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
 	if err != nil {
 		return err
 	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	updateableWorkspace, err := controller.GetUpdateableWorkspace(ctx, dirPath)
 	if err != nil {
-		return syserror.Wrap(err)
+		return err
 	}
-	pinnedRepositories, err := getDependencies(
+	onlyNameMap, err := getOnlyNameMap(updateableWorkspace, onlyModuleFullNames)
+	if err != nil {
+		return err
+	}
+	depModules, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(updateableWorkspace)
+	if err != nil {
+		return err
+	}
+	// All the ModuleKeys we get from the current dependency list in the workspace.
+	// This includes transitive dependencies.
+	depModuleKeys, err := slicesext.MapError(depModules, bufmodule.ModuleToModuleKey)
+	if err != nil {
+		return err
+	}
+	// All the ModuleKeys we get back from buf.yaml.
+	bufYAMLModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		clientConfig,
-		container,
-		flags,
-		moduleConfig,
-		readWriteBucket,
-		existingConfigFilePath,
+		updateableWorkspace.ConfiguredDepModuleRefs()...,
 	)
 	if err != nil {
 		return err
 	}
-
-	dependencyModulePins := make([]bufmoduleref.ModulePin, len(pinnedRepositories))
-	for i := range pinnedRepositories {
-		dependencyModulePins[i] = pinnedRepositories[i].modulePin
-		modulePin := pinnedRepositories[i].modulePin
-		repository := pinnedRepositories[i].repository
-		if !repository.Deprecated {
-			continue
+	bufYAMLNameToModuleKey := slicesext.ToValuesMap(
+		bufYAMLModuleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().String()
+		},
+	)
+	depNameToModuleKey := slicesext.ToValuesMap(
+		depModuleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().String()
+		},
+	)
+	for bufYAMLName, bufYAMLModuleKey := range bufYAMLNameToModuleKey {
+		if _, ok := depNameToModuleKey[bufYAMLName]; !ok {
+			// In updated list from buf.yaml, but not in dependency list.
+			//
+			// This is an unused module.
+			//
+			// Delete from our update map, we won't write this to buf.lock
+			delete(bufYAMLNameToModuleKey, bufYAMLName)
+			// We determine if its unused because its local, or if because it is not
+			// a dependency at all.
+			module := updateableWorkspace.GetModuleForModuleFullName(bufYAMLModuleKey.ModuleFullName())
+			if module == nil || !module.IsLocal() {
+				container.Logger().Sugar().Warnf("%s is specified in buf.yaml but is not used", bufYAMLName)
+			} else { // module.IsLocal()
+				container.Logger().Sugar().Warnf("%s is specified in buf.yaml but is within the workspace, so does not need to be specified in your deps", bufYAMLName)
+			}
 		}
-		warnMsg := fmt.Sprintf(
-			`Repository "%s/%s/%s" is deprecated`,
-			modulePin.Remote(),
-			modulePin.Owner(),
-			modulePin.Repository(),
-		)
-		if repository.DeprecationMessage != "" {
-			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
-		}
-		container.Logger().Warn(warnMsg)
 	}
-	// Before updating buf.lock file, verify that existing dependency digests didn't change for the same commit.
-	if err := bufmoduleref.ValidateModulePinsConsistentDigests(ctx, readWriteBucket, dependencyModulePins); err != nil {
-		if bufmoduleref.IsDigestChanged(err) {
-			return err
+	// Our result buf.lock needs to have everyting in deps. We will only use the new values from bufYAMLNameToModuleKey
+	// if either (1) onlyNameMap is empty (2) they are within onlyNameMap, AND they are a remote dependency.
+	//
+	// Note we deleted unused dependencies from bufYAMLNameToModuleKey above.
+	for depName := range depNameToModuleKey {
+		bufYAMLModuleKey, ok := bufYAMLNameToModuleKey[depName]
+		if ok {
+			if len(onlyNameMap) > 0 {
+				if _, ok := onlyNameMap[depName]; ok {
+					// This was a dependency (or transitive dependency) in --only. Update.
+					depNameToModuleKey[depName] = bufYAMLModuleKey
+				}
+			} else {
+				// We didn't specify --only. Update indiscriminately.
+				depNameToModuleKey[depName] = bufYAMLModuleKey
+			}
+		} else {
+			// This was in our deps list but was not specified in buf.yaml. Check if it was only transitive dependency.
+			// If so, we're fine. If not, we should error, as this means it was unspecified in buf.yaml as of now (but
+			// was at some point in the past), but we require it.
+			//
+			// Note if something wasn't PREVIOUSLY specified in our buf.lock, we would have failed on the building
+			// of the workspace, as we just wouldn't have a dep.
+			// TODO
 		}
-		return syserror.Wrap(err)
 	}
-	// Before updating buf.lock file, verify that no file path exists in more than one module.
-	pathToModuleFullNameStrings := make(map[string][]string)
-	currentModule, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	// NewBufLockFile will sort the deps.
+	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, slicesext.MapValuesToSlice(depNameToModuleKey))
 	if err != nil {
-		return syserror.Wrap(err)
+		return err
 	}
-	currentModuleFullNameString := "the current module"
-	if currentModuleFullName := currentModule.ModuleFullName(); currentModuleFullName != nil {
-		currentModuleFullNameString = currentModuleFullName.String()
-	}
-	currentModuleSourceFileInfos, err := currentModule.SourceFileInfos(ctx)
-	if err != nil {
-		return syserror.Wrap(err)
-	}
-	for _, sourceFileInfo := range currentModuleSourceFileInfos {
-		path := sourceFileInfo.Path()
-		pathToModuleFullNameStrings[path] = append(pathToModuleFullNameStrings[path], currentModuleFullNameString)
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return syserror.Wrap(err)
-	}
-	for _, modulePin := range dependencyModulePins {
-		module, err := moduleReader.GetModule(ctx, modulePin)
-		if err != nil {
-			return syserror.Wrap(err)
-		}
-		sourceFileInfos, err := module.SourceFileInfos(ctx)
-		if err != nil {
-			return syserror.Wrap(err)
-		}
-		for _, sourceFileInfo := range sourceFileInfos {
-			path := sourceFileInfo.Path()
-			pathToModuleFullNameStrings[path] = append(pathToModuleFullNameStrings[path], modulePin.IdentityString())
-		}
-	}
-	for path, moduleFullNameStrings := range pathToModuleFullNameStrings {
-		if len(moduleFullNameStrings) > 1 {
-			explanation := "Multiple files with the same path are not allowed because Protobuf files import each other by their paths, and each import path must uniquely identify a file."
-			return fmt.Errorf("%s is found in multiple modules: %s\n%s", path, stringutil.SliceToHumanString(moduleFullNameStrings), explanation)
-		}
-	}
-	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
-		return syserror.Wrap(err)
-	}
-	return nil
+	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
 }
 
-func getDependencies(
-	ctx context.Context,
-	clientConfig *connectclient.Config,
-	container appflag.Container,
-	flags *flags,
-	moduleConfig *bufconfig.Config,
-	readWriteBucket storage.ReadWriteBucket,
-	existingConfigFilePath string,
-) ([]*pinnedRepository, error) {
-	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
+// Returns the dependencies and transitive dependencies to be updated.
+//
+// Returns nil if onlyModuleFullNames was empty.
+func getOnlyNameMap(
+	moduleSet bufmodule.ModuleSet,
+	onlyModuleFullNames []bufmodule.ModuleFullName,
+) (map[string]struct{}, error) {
+	if len(onlyModuleFullNames) == 0 {
 		return nil, nil
 	}
-	var remote string
-	if moduleConfig.ModuleFullName != nil && moduleConfig.ModuleFullName.Remote() != "" {
-		remote = moduleConfig.ModuleFullName.Remote()
-	} else {
-		// At this point we know there's at least one dependency. If it's an unnamed module, select
-		// the right remote from the list of dependencies.
-		selectedRef := bufcli.SelectRefForRegistry(moduleConfig.Build.DependencyModuleReferences)
-		if selectedRef == nil {
-			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
+	onlyNameMap := make(map[string]struct{})
+	for _, onlyModuleFullName := range onlyModuleFullNames {
+		module := moduleSet.GetModuleForModuleFullName(onlyModuleFullName)
+		if module == nil {
+			return nil, appcmd.NewInvalidArgumentErrorf("--%s value %q does not represent a dependency of this workspace", onlyFlagName, onlyModuleFullName.String())
 		}
-		remote = selectedRef.Remote()
-		container.Logger().Debug(fmt.Sprintf(
-			`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
-			existingConfigFilePath,
-			selectedRef.IdentityString(),
-			remote,
-			remote,
-			existingConfigFilePath,
-		))
-	}
-	service := connectclient.Make(clientConfig, remote, registryv1alpha1connect.NewResolveServiceClient)
-	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
-	var currentProtoModulePins []*modulev1alpha1.ModulePin
-	if len(flags.Only) > 0 {
-		referencesByIdentity := map[string]bufmodule.ModuleRef{}
-		for _, reference := range moduleConfig.Build.DependencyModuleReferences {
-			referencesByIdentity[reference.IdentityString()] = reference
-		}
-		for _, only := range flags.Only {
-			moduleRef, ok := referencesByIdentity[only]
-			if !ok {
-				return nil, fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
-			}
-			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleRef))
-		}
-		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't read current dependencies: %w", err)
-		}
-		currentProtoModulePins = bufmoduleref.NewProtoModulePinsForModulePins(currentModulePins...)
-	} else {
-		protoDependencyModuleReferences = bufmoduleref.NewProtoModuleReferencesForModuleReferences(
-			moduleConfig.Build.DependencyModuleReferences...,
-		)
-	}
-	resp, err := service.GetModulePins(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.GetModulePinsRequest{
-			ModuleReferences:  protoDependencyModuleReferences,
-			CurrentModulePins: currentProtoModulePins,
-		}),
-	)
-	if err != nil {
-		if remote != bufconnect.DefaultRemote {
-			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleConfig.ModuleFullName.String())
-		}
-		return nil, err
-	}
-	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(resp.Msg.ModulePins...)
-	if err != nil {
-		return nil, syserror.Wrap(err)
-	}
-	// We want to create one repository service per relevant remote.
-	remoteToRepositoryService := make(map[string]registryv1alpha1connect.RepositoryServiceClient)
-	remoteToDependencyModulePins := make(map[string][]bufmoduleref.ModulePin)
-	for _, pin := range dependencyModulePins {
-		if _, ok := remoteToRepositoryService[pin.Remote()]; !ok {
-			remoteToRepositoryService[pin.Remote()] = connectclient.Make(clientConfig, pin.Remote(), registryv1alpha1connect.NewRepositoryServiceClient)
-		}
-		remoteToDependencyModulePins[pin.Remote()] = append(remoteToDependencyModulePins[pin.Remote()], pin)
-	}
-	var allPinnedRepositories []*pinnedRepository
-	for dependencyRemote, dependencyModulePins := range remoteToDependencyModulePins {
-		repositoryService, ok := remoteToRepositoryService[dependencyRemote]
-		if !ok {
-			return nil, fmt.Errorf("a repository service is not available for %s", dependencyRemote)
-		}
-		dependencyFullNames := make([]string, len(dependencyModulePins))
-		for i, pin := range dependencyModulePins {
-			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
-		}
-		resp, err := repositoryService.GetRepositoriesByFullName(ctx,
-			connect.NewRequest(&registryv1alpha1.GetRepositoriesByFullNameRequest{
-				FullNames: dependencyFullNames,
-			}))
+		onlyNameMap[onlyModuleFullName.String()] = struct{}{}
+		moduleDeps, err := module.ModuleDeps()
 		if err != nil {
 			return nil, err
 		}
-		pinnedRepositories := make([]*pinnedRepository, len(dependencyModulePins))
-		for i, modulePin := range dependencyModulePins {
-			pinnedRepositories[i] = &pinnedRepository{
-				modulePin:  modulePin,
-				repository: resp.Msg.Repositories[i],
+		// ModuleDeps are transitive.
+		for _, moduleDep := range moduleDeps {
+			if depModuleFullName := moduleDep.ModuleFullName(); depModuleFullName != nil {
+				onlyNameMap[depModuleFullName.String()] = struct{}{}
+			} else if !moduleDep.IsLocal() {
+				// This is a system error, this should not happen. This is just a sanity check.
+				return nil, syserror.Newf("module %s was remote but did not have a name", moduleDep.OpaqueID())
 			}
 		}
-		allPinnedRepositories = append(allPinnedRepositories, pinnedRepositories...)
 	}
-	return allPinnedRepositories, nil
-}
-
-type pinnedRepository struct {
-	modulePin  bufmoduleref.ModulePin
-	repository *registryv1alpha1.Repository
+	return onlyNameMap, nil
 }

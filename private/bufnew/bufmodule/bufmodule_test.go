@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufnew/bufmodule"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,16 @@ func TestBasic(t *testing.T) {
 			Name: "buf.build/foo/extdep3",
 			PathToData: map[string][]byte{
 				"extdep3.proto": []byte(
-					`syntax = proto3; package extdep3;`,
+					`syntax = proto3; package extdep3; import "extdep4.proto";`,
+				),
+			},
+		},
+		// This module is only a transitive remote dependency. It is only depended on by extdep3.
+		bufmoduletest.ModuleData{
+			Name: "buf.build/foo/extdep4",
+			PathToData: map[string][]byte{
+				"extdep4.proto": []byte(
+					`syntax = proto3; package extdep4;`,
 				),
 			},
 		},
@@ -86,6 +96,8 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleRefExtdep3, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep3", "")
 	require.NoError(t, err)
+	moduleRefExtdep4, err := bufmodule.NewModuleRef("buf.build", "foo", "extdep4", "")
+	require.NoError(t, err)
 	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
@@ -93,6 +105,7 @@ func TestBasic(t *testing.T) {
 		moduleRefExtdep1,
 		moduleRefExtdep2,
 		moduleRefExtdep3,
+		moduleRefExtdep4,
 		moduleRefModule2,
 	)
 	require.NoError(t, err)
@@ -156,6 +169,7 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep1",
 			"buf.build/foo/extdep2",
 			"buf.build/foo/extdep3",
+			"buf.build/foo/extdep4",
 			"path/to/module1",
 		},
 		bufmodule.ModuleSetOpaqueIDs(moduleSet),
@@ -179,6 +193,7 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep1": true,
 			"buf.build/foo/extdep2": false,
 			"buf.build/foo/extdep3": true,
+			"buf.build/foo/extdep4": false,
 			"path/to/module1":       true,
 		},
 		testGetDepOpaqueIDToDirect(t, module2),
@@ -235,7 +250,13 @@ func TestBasic(t *testing.T) {
 				Outbound: []string{},
 			},
 			{
-				Key:      "buf.build/foo/extdep3",
+				Key: "buf.build/foo/extdep3",
+				Outbound: []string{
+					"buf.build/foo/extdep4",
+				},
+			},
+			{
+				Key:      "buf.build/foo/extdep4",
 				Outbound: []string{},
 			},
 			{
@@ -259,12 +280,25 @@ func TestBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep4",
 			"buf.build/foo/extdep3",
 			"buf.build/foo/extdep2",
 			"path/to/module1",
 			"buf.build/bar/module2",
 		},
 		topoSort,
+	)
+	remoteDeps, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/extdep1",
+			"buf.build/foo/extdep2",
+			"buf.build/foo/extdep3",
+			"buf.build/foo/extdep4",
+		},
+		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
 	)
 }
 
