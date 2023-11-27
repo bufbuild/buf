@@ -22,6 +22,7 @@
   - bufconfig
 
 - lots of QA, especially around workspace file searching, target paths
+- figure out what to do about AllowNotExist and how it fits in
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
