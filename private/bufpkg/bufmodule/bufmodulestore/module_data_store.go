@@ -42,10 +42,23 @@ func NewModuleDataStore(bucket storage.ReadWriteBucket) ModuleDataStore {
 	return newModuleDataStore(bucket)
 }
 
+// ModuleDataStoreOption is an option for a new ModuleDataStore.
+type ModuleDataStoreOption func(*moduleDataStore)
+
+// ModuleDataStoreWithZip returns a new ModuleDataStoreOption that reads and stores
+// zip files instead of storing individual files in the bucket.
+func ModuleDataStoreWithZip() ModuleDataStoreOption {
+	return func(moduleDataStore *moduleDataStore) {
+		moduleDataStore.zip = true
+	}
+}
+
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
 	bucket storage.ReadWriteBucket
+
+	zip bool
 }
 
 func newModuleDataStore(
@@ -95,16 +108,16 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		return nil, err
 	}
 	moduleStorePrefix := getModuleStorePrefix(moduleFullName, digest)
-	// We rely on the buf.lock file being the last file to be written in putMissedModuleData.
-	// If the buf.lock does not exist, we act as if there is no value in the store, which will
-	// result in bad data being overwritten.
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, p.bucket, moduleStorePrefix)
-	if err != nil {
-		return nil, err
-	}
 	// It is OK that this ReadBucket contains the buf.lock; the buf.lock will be ignored. See
 	// comments on ModuleData.Bucket().
 	moduleDataBucket := storage.MapReadBucket(p.bucket, storage.MapOnPrefix(moduleStorePrefix))
+	// We rely on the buf.lock file being the last file to be written in putMissedModuleData.
+	// If the buf.lock does not exist, we act as if there is no value in the store, which will
+	// result in bad data being overwritten.
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, moduleDataBucket, ".")
+	if err != nil {
+		return nil, err
+	}
 	return bufmodule.NewModuleData(
 		moduleKey,
 		func() (storage.ReadBucket, error) {
@@ -142,10 +155,11 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
+	putBucket := storage.MapWriteBucket(p.bucket, storage.MapOnPrefix(moduleStorePrefix))
 	if _, err := storage.Copy(
 		ctx,
 		moduleDataBucket,
-		storage.MapWriteBucket(p.bucket, storage.MapOnPrefix(moduleStorePrefix)),
+		putBucket,
 		storage.CopyWithAtomic(),
 	); err != nil {
 		return err
@@ -153,7 +167,7 @@ func (p *moduleDataStore) putModuleData(
 	// Put the buf.lock last, so that we only have a buf.lock if the cache is finished writing.
 	// We can use the existence of the buf.lock file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
-	return bufconfig.PutBufLockFileForPrefix(ctx, p.bucket, moduleStorePrefix, bufLockFile)
+	return bufconfig.PutBufLockFileForPrefix(ctx, putBucket, ".", bufLockFile)
 }
 
 // Returns the module's path within the store. This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
