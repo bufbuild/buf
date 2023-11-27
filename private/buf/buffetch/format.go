@@ -88,6 +88,14 @@ var (
 		formatZip,
 	}
 	// sorted
+	dirFormats = []string{
+		formatDir,
+	}
+	// sorted
+	dirFormatsNotDeprecated = []string{
+		formatDir,
+	}
+	// sorted
 	moduleFormats = []string{
 		formatMod,
 	}

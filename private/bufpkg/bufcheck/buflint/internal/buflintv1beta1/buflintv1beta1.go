@@ -17,10 +17,14 @@
 // It uses buflintcheck and buflintbuild.
 package buflintv1beta1
 
-import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+import (
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+)
 
 // VersionSpec is the version specification for v1beta1.
 var VersionSpec = &internal.VersionSpec{
+	FileVersion:       bufconfig.FileVersionV1Beta1,
 	RuleBuilders:      v1beta1RuleBuilders,
 	DefaultCategories: v1beta1DefaultCategories,
 	IDToCategories:    v1beta1IDToCategories,

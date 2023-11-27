@@ -24,34 +24,40 @@ var _ ReadBucketCloser = &readBucketCloser{}
 type readBucketCloser struct {
 	storage.ReadBucketCloser
 
-	relativeRootPath string
-	subDirPath       string
+	subDirPath          string
+	pathForExternalPath func(string) (string, error)
 }
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	relativeRootPath string,
 	subDirPath string,
+	pathForExternalPath func(string) (string, error),
 ) (*readBucketCloser, error) {
 	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
 	if err != nil {
 		return nil, err
 	}
 	return &readBucketCloser{
-		ReadBucketCloser: storageReadBucketCloser,
-		relativeRootPath: normalpath.Normalize(relativeRootPath),
-		subDirPath:       normalizedSubDirPath,
+		ReadBucketCloser:    storageReadBucketCloser,
+		subDirPath:          normalizedSubDirPath,
+		pathForExternalPath: pathForExternalPath,
 	}, nil
 }
 
-func (r *readBucketCloser) RelativeRootPath() string {
-	return r.relativeRootPath
+func newReadBucketCloserForReadWriteBucket(
+	readWriteBucket ReadWriteBucket,
+) *readBucketCloser {
+	return &readBucketCloser{
+		ReadBucketCloser:    storage.NopReadBucketCloser(readWriteBucket),
+		subDirPath:          readWriteBucket.SubDirPath(),
+		pathForExternalPath: readWriteBucket.PathForExternalPath,
+	}
 }
 
 func (r *readBucketCloser) SubDirPath() string {
 	return r.subDirPath
 }
 
-func (r *readBucketCloser) SetSubDirPath(subDirPath string) {
-	r.subDirPath = subDirPath
+func (r *readBucketCloser) PathForExternalPath(externalPath string) (string, error) {
+	return r.pathForExternalPath(externalPath)
 }

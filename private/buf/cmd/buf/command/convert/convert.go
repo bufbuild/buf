@@ -20,30 +20,33 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
 	errorFormatFlagName     = "error-format"
 	typeFlagName            = "type"
 	fromFlagName            = "from"
-	outputFlagName          = "to"
+	toFlagName              = "to"
 	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -85,7 +88,6 @@ Use a module on the bsr:
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -135,7 +137,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	flagSet.StringVar(
 		&f.To,
-		outputFlagName,
+		toFlagName,
 		"-",
 		fmt.Sprintf(
 			`The output location of the conversion. Supported formats are %s`,
@@ -149,33 +151,30 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	image, inputErr := bufcli.NewImageForSource(
-		ctx,
+	controller, err := bufcli.NewController(
 		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
+	)
+	if err != nil {
+		return err
+	}
+	schemaImage, schemaImageErr := controller.GetImage(
+		ctx,
 		input,
-		flags.ErrorFormat,
-		false, // disableSymlinks
-		"",    // configOverride
-		nil,   // externalDirOrFilePaths
-		nil,   // externalExcludeDirOrFilePaths
-		false, // externalDirOrFilePathsAllowNotExist
-		false, // excludeSourceCodeInfo
 	)
 	var resolveWellKnownType bool
 	// only resolve wkts if input was not set.
 	if container.NumArgs() == 0 {
-		if inputErr != nil {
+		if schemaImageErr != nil {
 			resolveWellKnownType = true
 		}
-		if image != nil {
-			_, filterErr := bufimageutil.ImageFilteredByTypes(image, flags.Type)
+		if schemaImage != nil {
+			_, filterErr := bufimageutil.ImageFilteredByTypes(schemaImage, flags.Type)
 			if errors.Is(filterErr, bufimageutil.ErrImageFilterTypeNotFound) {
 				resolveWellKnownType = true
 			}
@@ -184,62 +183,40 @@ func run(
 	if resolveWellKnownType {
 		if _, ok := datawkt.MessageFilePath(flags.Type); ok {
 			var wktErr error
-			image, wktErr = bufcli.WellKnownTypeImage(ctx, container.Logger(), flags.Type)
+			schemaImage, wktErr = wellKnownTypeImage(ctx, container.Logger(), flags.Type)
 			if wktErr != nil {
 				return wktErr
 			}
 		}
 	}
-	if inputErr != nil && image == nil {
-		return inputErr
+	if schemaImageErr != nil && schemaImage == nil {
+		return schemaImageErr
 	}
-	fromMessageRef, err := buffetch.NewMessageRefParser(
-		container.Logger(),
-		buffetch.MessageRefParserWithDefaultMessageEncoding(
-			buffetch.MessageEncodingBinpb,
-		),
-	).GetMessageRef(ctx, flags.From)
-	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	message, err := bufcli.NewWireProtoEncodingReader(
-		container.Logger(),
-		storageosProvider,
-		runner,
-	).GetMessage(
+
+	fromMessage, fromMessageEncoding, err := controller.GetMessage(
 		ctx,
-		container,
-		image,
+		schemaImage,
+		flags.From,
 		flags.Type,
-		fromMessageRef,
+		buffetch.MessageEncodingBinpb,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("--%s: %w", fromFlagName, err)
 	}
-	defaultToEncoding, err := inverseEncoding(fromMessageRef.MessageEncoding())
+	defaultToMessageEncoding, err := inverseEncoding(fromMessageEncoding)
 	if err != nil {
 		return err
 	}
-	toMessageRef, err := buffetch.NewMessageRefParser(
-		container.Logger(),
-		buffetch.MessageRefParserWithDefaultMessageEncoding(
-			defaultToEncoding,
-		),
-	).GetMessageRef(ctx, flags.To)
-	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
-	}
-	return bufcli.NewWireProtoEncodingWriter(
-		container.Logger(),
-	).PutMessage(
+	if err := controller.PutMessage(
 		ctx,
-		container,
-		image,
-		message,
-		toMessageRef,
-	)
+		schemaImage,
+		flags.To,
+		fromMessage,
+		defaultToMessageEncoding,
+	); err != nil {
+		return fmt.Errorf("--%s: %w", toFlagName, err)
+	}
+	return nil
 }
 
 // inverseEncoding returns the opposite encoding of the provided encoding,
@@ -257,4 +234,30 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
 	}
+}
+
+// wellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
+func wellKnownTypeImage(
+	ctx context.Context,
+	logger *zap.Logger,
+	wellKnownTypeName string,
+) (bufimage.Image, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		datawkt.ReadBucket,
+		".",
+		true,
+	)
+	moduleSet, err := moduleSetBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	image, _, err := bufimage.BuildImage(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufimageutil.ImageFilteredByTypes(image, wellKnownTypeName)
 }

@@ -33,14 +33,11 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -101,7 +98,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -189,7 +186,6 @@ exit code that is the gRPC code, shifted three bits to the left.
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -906,51 +902,12 @@ func run(ctx context.Context, container appflag.Container, f *flags) (err error)
 		defer closeRes()
 		resolvers = append(resolvers, res)
 	}
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return err
+	}
 	for _, schema := range f.Schemas {
-		ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, schema)
-		if err != nil {
-			return err
-		}
-		storageosProvider := bufcli.NewStorageosProvider(false)
-		// TODO: Ideally, we'd use our verbose client for this Connect client, so we can see the same
-		//   kind of output in verbose mode as we see for reflection requests.
-		clientConfig, err := bufcli.NewConnectClientConfig(container)
-		if err != nil {
-			return err
-		}
-		imageConfigReader, err := bufcli.NewWireImageConfigReader(
-			container,
-			storageosProvider,
-			command.NewRunner(),
-			clientConfig,
-		)
-		if err != nil {
-			return err
-		}
-		imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-			ctx,
-			container,
-			ref,
-			"",
-			nil,
-			nil,
-			false, // input files must exist
-			false, // we must include source info for generation
-		)
-		if err != nil {
-			return err
-		}
-		if len(fileAnnotations) > 0 {
-			if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, bufanalysis.FormatText.String()); err != nil {
-				return err
-			}
-			return bufcli.ErrFileAnnotation
-		}
-		images := make([]bufimage.Image, 0, len(imageConfigs))
-		for _, imageConfig := range imageConfigs {
-			images = append(images, imageConfig.Image())
-		}
-		image, err := bufimage.MergeImages(images...)
+		image, err := controller.GetImage(ctx, schema)
 		if err != nil {
 			return err
 		}

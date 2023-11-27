@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -178,7 +178,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
@@ -196,7 +196,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
@@ -209,7 +209,7 @@ func TestFail6(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
@@ -257,7 +257,7 @@ func TestFail7(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
@@ -271,7 +271,7 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
@@ -287,7 +287,7 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
@@ -300,7 +300,7 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		filepath.Join("testdata", "fail2"),
@@ -347,7 +347,7 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		fmt.Sprintf("%v:5:8:read buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
 		"--path",
@@ -357,7 +357,7 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -369,7 +369,7 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		`version: v1
 lint:
   ignore_only:
@@ -391,7 +391,7 @@ func TestFail13(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail_buf_mod/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".`),
 		"lint",
 		filepath.Join("testdata", "fail_buf_mod"),
@@ -403,7 +403,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
@@ -425,7 +425,7 @@ func TestFailCheckBreaking2(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
 		"breaking",
 		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
@@ -439,7 +439,7 @@ func TestFailCheckBreaking3(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		<input>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -456,7 +456,7 @@ func TestFailCheckBreaking4(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -473,7 +473,7 @@ func TestFailCheckBreaking5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
     <input>:1:1:Previously present file "bar.proto" was deleted.
 		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
@@ -559,7 +559,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		"mod",
 		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -709,7 +709,7 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 		"mod",
 		"ls-breaking-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -1479,7 +1479,7 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/paths/a/v3/a.proto:7:10:Field name "Value" should be lower_snake_case, such as "value".`),
 		"",
 		"lint",
@@ -1492,7 +1492,7 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(
 			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
 testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
@@ -1523,7 +1523,7 @@ func TestBreakingWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
 a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
 a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
@@ -2214,7 +2214,7 @@ func TestFormatExitCode(t *testing.T) {
 	stdout := bytes.NewBuffer(nil)
 	testRun(
 		t,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		nil,
 		stdout,
 		"format",
@@ -2225,7 +2225,7 @@ func TestFormatExitCode(t *testing.T) {
 	stdout = bytes.NewBuffer(nil)
 	testRun(
 		t,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		nil,
 		stdout,
 		"format",
@@ -2526,7 +2526,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 		args = append(args, "--name", name)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
+	data, err := os.ReadFile(filepath.Join(tempDir, "buf.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }

@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -40,8 +39,7 @@ func newReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
@@ -57,8 +55,7 @@ func newReader(
 			internal.WithReaderLocal(),
 			internal.WithReaderStdio(),
 			internal.WithReaderModule(
-				moduleResolver,
-				moduleReader,
+				moduleKeyProvider,
 			),
 		),
 	}
@@ -109,19 +106,30 @@ func newSourceReader(
 	}
 }
 
+func newDirReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) *reader {
+	return &reader{
+		internalReader: internal.NewReader(
+			logger,
+			storageosProvider,
+			internal.WithReaderLocal(),
+		),
+	}
+}
+
 func newModuleFetcher(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
 			storageosProvider,
 			internal.WithReaderModule(
-				moduleResolver,
-				moduleReader,
+				moduleKeyProvider,
 			),
 		),
 	}
@@ -135,35 +143,37 @@ func (a *reader) GetMessageFile(
 	return a.internalReader.GetFile(ctx, container, messageRef.internalSingleRef())
 }
 
-func (a *reader) GetSourceBucket(
+func (a *reader) GetSourceReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
-	options ...GetSourceBucketOption,
-) (ReadBucketCloserWithTerminateFileProvider, error) {
-	getSourceBucketOptions := &getSourceBucketOptions{}
-	for _, option := range options {
-		option(getSourceBucketOptions)
-	}
-	var getBucketOptions []internal.GetBucketOption
-	if !getSourceBucketOptions.workspacesDisabled {
-		getBucketOptions = append(
-			getBucketOptions,
-			internal.WithGetBucketTerminateFileNames([][]string{bufwork.AllConfigFilePaths, bufconfig.AllConfigFilePaths}),
-		)
-	}
-	return a.internalReader.GetBucket(
+) (ReadBucketCloser, error) {
+	return a.internalReader.GetReadBucketCloser(
 		ctx,
 		container,
 		sourceRef.internalBucketRef(),
-		getBucketOptions...,
+		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+		internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
 	)
 }
 
-func (a *reader) GetModule(
+func (a *reader) GetDirReadWriteBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	dirRef DirRef,
+) (ReadWriteBucket, error) {
+	return a.internalReader.GetReadWriteBucket(
+		ctx,
+		container,
+		dirRef.internalDirRef(),
+		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+	)
+}
+
+func (a *reader) GetModuleKey(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	moduleRef ModuleRef,
-) (bufmodule.Module, error) {
-	return a.internalReader.GetModule(ctx, container, moduleRef.internalModuleRef())
+) (bufmodule.ModuleKey, error) {
+	return a.internalReader.GetModuleKey(ctx, container, moduleRef.internalModuleRef())
 }

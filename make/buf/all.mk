@@ -50,6 +50,52 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
 
+CMD ?= test
+.PHONY: testbufnew
+testbufnew: installbuf
+	# TODO: remove when done with refactor
+	go $(CMD) \
+		./private/buf/bufapp/... \
+		./private/buf/bufcli/... \
+		./private/buf/bufctl/... \
+		./private/buf/bufcurl/... \
+		./private/buf/buffetch/... \
+		./private/buf/bufformat/... \
+		./private/buf/bufprint/... \
+		./private/buf/bufworkspace/... \
+		./private/buf/cmd/buf/command/alpha/package/... \
+		./private/buf/cmd/buf/command/alpha/protoc/... \
+		./private/buf/cmd/buf/command/alpha/registry/... \
+		./private/buf/cmd/buf/command/beta/graph/... \
+		./private/buf/cmd/buf/command/beta/price/... \
+		./private/buf/cmd/buf/command/beta/registry/... \
+		./private/buf/cmd/buf/command/beta/stats/... \
+		./private/buf/cmd/buf/command/beta/studioagent/... \
+		./private/buf/cmd/buf/command/build/... \
+		./private/buf/cmd/buf/command/breaking/... \
+		./private/buf/cmd/buf/command/convert/... \
+		./private/buf/cmd/buf/command/lint/... \
+		./private/buf/cmd/buf/command/lsfiles/... \
+		./private/buf/cmd/buf/command/mod/... \
+		./private/buf/cmd/buf/command/registry/... \
+		./private/buf/cmd/buf-digest/... \
+		./private/bufpkg/bufanalysis/... \
+		./private/bufpkg/bufapi/... \
+		./private/bufpkg/bufcas/... \
+		./private/bufpkg/bufcheck/... \
+		./private/bufpkg/bufconfig/... \
+		./private/bufpkg/bufconnect/... \
+		./private/bufpkg/bufimage/... \
+		./private/bufpkg/bufplugin/... \
+		./private/bufpkg/bufpluginexec/... \
+		./private/bufpkg/bufreflect/... \
+		./private/bufpkg/bufremoteplugin/... \
+		./private/bufpkg/bufstudioagent/... \
+		./private/bufpkg/bufstyle/... \
+		./private/bufpkg/buftesting/... \
+		./private/bufpkg/buftransport/... \
+		./private/bufpkg/bufwasm/...
+
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
 .PHONY: bufstyle
@@ -74,6 +120,12 @@ godata: installspdx-go-data installwkt-go-data $(PROTOC)
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 
 prepostgenerate:: godata
+
+.PHONY: bufworkspacebuflocks
+bufworkspacebuflocks: installbuf-digest
+	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
+
+prepostgenerate:: bufworkspacebuflocks
 
 .PHONY: licenseheader
 licenseheader: installlicense-header installgit-ls-files-unstaged

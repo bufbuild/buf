@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -63,14 +62,12 @@ func NewImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	imageBuilder bufimagebuild.Builder,
 ) ImageConfigReader {
 	return newImageConfigReader(
 		logger,
 		storageosProvider,
 		fetchReader,
 		moduleBucketBuilder,
-		imageBuilder,
 	)
 }
 
@@ -143,14 +140,12 @@ func NewFileLister(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	imageBuilder bufimagebuild.Builder,
 ) FileLister {
 	return newFileLister(
 		logger,
 		storageosProvider,
 		fetchReader,
 		moduleBucketBuilder,
-		imageBuilder,
 	)
 }
 

@@ -17,7 +17,7 @@ package storage
 import (
 	"context"
 	"io"
-	"sync"
+	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.uber.org/multierr"
@@ -42,6 +42,7 @@ func Copy(
 		from,
 		to,
 		copyOptions.externalPaths,
+		copyOptions.atomic,
 	)
 }
 
@@ -58,9 +59,11 @@ func CopyReadObject(
 	}
 	return copyReadObject(
 		ctx,
-		writeBucket,
 		readObject,
+		writeBucket,
+		readObject.Path(),
 		copyOptions.externalPaths,
+		copyOptions.atomic,
 	)
 }
 
@@ -82,6 +85,30 @@ func CopyReader(
 	return err
 }
 
+// CopyPath copies the fromPath from the ReadBucket to the toPath on the WriteBucket.
+func CopyPath(
+	ctx context.Context,
+	from ReadBucket,
+	fromPath string,
+	to WriteBucket,
+	toPath string,
+	options ...CopyOption,
+) error {
+	copyOptions := newCopyOptions()
+	for _, option := range options {
+		option(copyOptions)
+	}
+	return copyPath(
+		ctx,
+		from,
+		fromPath,
+		to,
+		toPath,
+		copyOptions.externalPaths,
+		copyOptions.atomic,
+	)
+}
+
 // CopyOption is an option for Copy.
 type CopyOption func(*copyOptions)
 
@@ -94,33 +121,40 @@ func CopyWithExternalPaths() CopyOption {
 	}
 }
 
+// CopyWithAtomic returns a new CopyOption that says to set PutWithAtomic when copying each file.
+//
+// See the documentation on PutWithAtomic for more details.
+func CopyWithAtomic() CopyOption {
+	return func(copyOptions *copyOptions) {
+		copyOptions.atomic = true
+	}
+}
+
 func copyPaths(
 	ctx context.Context,
 	from ReadBucket,
 	to WriteBucket,
 	copyExternalPaths bool,
+	atomicOpt bool,
 ) (int, error) {
 	paths, err := AllPaths(ctx, from, "")
 	if err != nil {
 		return 0, err
 	}
-	var count int
-	var lock sync.Mutex
+	var count atomic.Int64
 	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
 		path := path
 		jobs[i] = func(ctx context.Context) error {
-			if err := copyPath(ctx, from, to, path, copyExternalPaths); err != nil {
+			if err := copyPath(ctx, from, path, to, path, copyExternalPaths, atomicOpt); err != nil {
 				return err
 			}
-			lock.Lock()
-			count++
-			lock.Unlock()
+			count.Add(1)
 			return nil
 		}
 	}
 	err = thread.Parallelize(ctx, jobs)
-	return count, err
+	return int(count.Load()), err
 }
 
 // copyPath copies the path from the bucket at from to the bucket at to using the given paths.
@@ -129,27 +163,35 @@ func copyPaths(
 func copyPath(
 	ctx context.Context,
 	from ReadBucket,
+	fromPath string,
 	to WriteBucket,
-	path string,
+	toPath string,
 	copyExternalPaths bool,
+	atomic bool,
 ) (retErr error) {
-	readObjectCloser, err := from.Get(ctx, path)
+	readObjectCloser, err := from.Get(ctx, fromPath)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(err, readObjectCloser.Close())
 	}()
-	return copyReadObject(ctx, to, readObjectCloser, copyExternalPaths)
+	return copyReadObject(ctx, readObjectCloser, to, toPath, copyExternalPaths, atomic)
 }
 
 func copyReadObject(
 	ctx context.Context,
-	writeBucket WriteBucket,
 	readObject ReadObject,
+	to WriteBucket,
+	toPath string,
 	copyExternalPaths bool,
+	atomic bool,
 ) (retErr error) {
-	writeObjectCloser, err := writeBucket.Put(ctx, readObject.Path())
+	var putOptions []PutOption
+	if atomic {
+		putOptions = append(putOptions, PutWithAtomic())
+	}
+	writeObjectCloser, err := to.Put(ctx, toPath, putOptions...)
 	if err != nil {
 		return err
 	}
@@ -167,6 +209,7 @@ func copyReadObject(
 
 type copyOptions struct {
 	externalPaths bool
+	atomic        bool
 }
 
 func newCopyOptions() *copyOptions {

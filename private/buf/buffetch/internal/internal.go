@@ -20,10 +20,10 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -205,15 +205,8 @@ func NewGitRef(
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleReference() bufmoduleref.ModuleReference
+	ModuleRef() bufmodule.ModuleRef
 	moduleRef()
-}
-
-// NewModuleRef returns a new ModuleRef.
-//
-// The path must be in the form server/owner/repository/branch[:digest].
-func NewModuleRef(path string) (ModuleRef, error) {
-	return newModuleRef("", path)
 }
 
 // HasFormat is an object that has a format.
@@ -352,11 +345,11 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleReference bufmoduleref.ModuleReference,
+	moduleRef bufmodule.ModuleRef,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
-		moduleReference,
+		moduleRef,
 	)
 }
 
@@ -375,62 +368,38 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// TerminateFileProvider provides TerminateFiles.
-type TerminateFileProvider interface {
-	// GetTerminateFiles returns the list of terminate files in priority order.
-	GetTerminateFiles() []TerminateFile
-}
-
-// TerminateFile is a terminate file.
-type TerminateFile interface {
-	// Name returns the name of the TerminateFile (i.e. the base of the fully-qualified file paths).
-	Name() string
-	// Path returns the normalized directory path where the TemrinateFile is located.
-	Path() string
-}
-
-// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
-type ReadBucketCloserWithTerminateFileProvider interface {
-	ReadBucketCloser
-
-	// TerminateFileProvider returns a TerminateFileProvider.
-	TerminateFileProvider() TerminateFileProvider
-}
-
-// ReadBucketCloser is a bucket returned from GetBucket.
-type ReadBucketCloser interface {
-	storage.ReadBucketCloser
-
-	// RelativeRootPath is the relative path to the root of the bucket
-	// based on the current working directory.
-	//
-	// This will be set if a terminate filename was specified and found.
-	RelativeRootPath() string
+// BucketExtender has extra methods we attach to buckets.
+type BucketExtender interface {
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
-	// This will be set if a terminate filename was specified and found.
-	// If so, the actual Bucket will be the directory that contained
-	// this terminate file, and the subdir will be the subdir of
+	// This will be set if a terminate file was found. If so, the actual Bucket will be
+	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-	// SetSubDirPath sets the value of `SubDirPath`.
+
+	// PathForExternalPath takes a path external to the asset and converts it to
+	// a path that is relative to the asset.
 	//
-	// This should only be called if a terminate file name was specified and found outside of
-	// a workspace where the bucket is originally closed.
-	SetSubDirPath(string)
+	// The returned path will be normalized and validated.
+	PathForExternalPath(externalPath string) (string, error)
 }
 
-// ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
-//
-// The returned ReadBucketCloser may be upgradeable to a ReadWriteBucketCloser.
-type ReadWriteBucketCloser interface {
-	ReadBucketCloser
-	storage.WriteBucket
+// ReadBucketCloser is a bucket returned from GetReadBucketCloser.
+type ReadBucketCloser interface {
+	storage.ReadBucketCloser
+	BucketExtender
+}
+
+// ReadWriteBucket is a bucket returned from GetReadWriteBucket.
+type ReadWriteBucket interface {
+	storage.ReadWriteBucket
+	BucketExtender
 }
 
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
+	//
 	// SingleRefs and ArchiveRefs will result in decompressed files unless KeepFileCompression is set.
 	GetFile(
 		ctx context.Context,
@@ -438,22 +407,31 @@ type Reader interface {
 		fileRef FileRef,
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
-	// GetBucket gets the bucket.
+	// GetReadBucketCloser gets the bucket.
 	//
-	// The returned ReadBucketCloser may actually be upgradeable to a ReadWriteBucketCloser.
-	GetBucket(
+	// If done for a ProtoFileRef, the Bucket will be for the enclosing module or workspace via
+	// terminateFileNames or protoFileTerminateFileNames. No filtering of the Bucket is performed, this is
+	// the responsibility of the caller.
+	GetReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (ReadBucketCloserWithTerminateFileProvider, error)
-	// GetModule gets the module.
-	GetModule(
+	) (ReadBucketCloser, error)
+	// GetReadWriteBucket gets the bucket.
+	GetReadWriteBucket(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		dirRef DirRef,
+		options ...GetBucketOption,
+	) (ReadWriteBucket, error)
+	// GetModuleKey gets the ModuleKey.
+	GetModuleKey(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
-	) (bufmodule.Module, error)
+	) (bufmodule.ModuleKey, error)
 }
 
 // NewReader returns a new Reader.
@@ -718,13 +696,11 @@ func WithReaderGit(gitCloner git.Cloner) ReaderOption {
 
 // WithReaderModule enables modules.
 func WithReaderModule(
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) ReaderOption {
 	return func(reader *reader) {
 		reader.moduleEnabled = true
-		reader.moduleResolver = moduleResolver
-		reader.moduleReader = moduleReader
+		reader.moduleKeyProvider = moduleKeyProvider
 	}
 }
 
@@ -784,33 +760,73 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
 
-// WithGetBucketTerminateFileNames only applies if subdir is specified.
+// WithGetBucketTerminateFunc says to check the bucket at the given prefix, and
+// potentially terminate the search for the workspace file. This will result in the
+// given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
-// The terminate files are organized as a slice of slices of file names.
-// Priority will be given to the first slice of terminate file names, which will be workspace
-// configuration files. The second layer of priority will be given to modules.
+// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
+// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
+// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
 //
-// This says that for a given subdir, ascend directories until you reach
-// a file with one of these names, and if you do, the returned bucket will be
-// for the directory with this filename, while SubDirPath on the
-// returned bucket will be set to the original subdir relative
-// to the terminate file.
-//
-// This is used for workspaces and modules. So if you have i.e. "proto/foo"
-// subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
-// be for "proto", and the SubDirPath will be "foo".
-//
-// The terminateFileNames are expected to be valid and have no slashes.
-// Example of terminateFileNames:
-//
-//	[][]string{
-//		[]string{"buf.work.yaml", "buf.work"},
-//		[]string{"buf.yaml", "buf.mod"},
-//	}.
-func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
+// See NewTerminateAtFileNamesFunc as an example that would work in the pre-buf.yaml-v2 world
+// where we just wanted to terminate at file names buf.work.yaml, buf.work.
+func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.terminateFileNames = terminateFileNames
+		getBucketOptions.terminateFunc = terminateFunc
 	}
+}
+
+// WithGetBucketProtoFileTerminateFunc is like WithGetBucketTerminateFunc, but determines
+// where to stop searching when given a ProtoFileRef, to determine what prefix is the enclosing
+// module.
+//
+// In pre-buf.yaml-v2 world, this would be NewTerminateAtFilesNamesFunc("buf.yaml", "buf.mod").
+func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetBucketOption {
+	return func(getBucketOptions *getBucketOptions) {
+		getBucketOptions.protoFileTerminateFunc = protoFileTerminateFunc
+	}
+}
+
+// TerminateFunc is a termination function.
+//
+// This function should return true if the search should terminate at the prefix, that is
+// the prefix should be where the bucket is mapped onto.
+//
+// The original subDirPath is also given to the TerminateFunc.
+//
+// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
+// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
+// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
+//
+// See with WithGetBucketTerminateFunc more documentation.
+type TerminateFunc func(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalSubDirPath string,
+) (terminate bool, err error)
+
+// NewTerminateAtFileNamesFunc returns a new terminate function that terminates at the
+// given file names.
+//
+// This is mostly left here as an example and for simple testing. Our actual logic takes
+// the version of configs into account.
+func NewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
+	return TerminateFunc(
+		func(
+			ctx context.Context,
+			bucket storage.ReadBucket,
+			prefix string,
+			originalSubDirPath string,
+		) (bool, error) {
+			for _, terminateFileName := range terminateFileNames {
+				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {
+					return true, nil
+				}
+			}
+			return false, nil
+		},
+	)
 }
 
 // PutFileOption is a PutFile option.

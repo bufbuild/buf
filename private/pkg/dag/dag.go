@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // Largely adopted from https://github.com/stevenle/topsort, with modifications.
@@ -260,7 +262,7 @@ func (g *Graph[Key]) DOTString(keyToString func(Key) string) (string, error) {
 				return nil
 			}
 			// This is a system error.
-			return fmt.Errorf("got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges", key, len(inboundEdges), len(outboundEdges))
+			return syserror.Newf("got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges", key, len(inboundEdges), len(outboundEdges))
 		},
 	); err != nil {
 		return "", err

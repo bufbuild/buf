@@ -1,0 +1,28 @@
+- last commands:
+  - export
+  - format
+  - generate
+  - push
+  - sync
+
+- config override flag (finish, mostly in bufworkspace)
+- v2 buf.yaml parsing in NewWorkspaceForBucket
+- ProtoFileRef support
+- new digest format - figure out with API
+- option to create workspace with no file searching (wkt)
+- new buf migrate command
+
+- port tests from:
+  - bufmodule
+  - bufmoduleref
+  - bufmoduletesting
+  - bufmodulebuild
+  - bufmoduleconfig
+  - buflock
+  - bufconfig
+
+- lots of QA, especially around workspace file searching, target paths
+- figure out what to do about AllowNotExist and how it fits in
+- document behavior of file searching, config override
+- fix tamper-proofing
+- go through all todos

@@ -31,14 +31,14 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 	aliases ...string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:     name,
 		Aliases: aliases,
-		Short:   "Clear Buf module cache",
+		Short:   "Clear the BSR module cache",
 		Args:    cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

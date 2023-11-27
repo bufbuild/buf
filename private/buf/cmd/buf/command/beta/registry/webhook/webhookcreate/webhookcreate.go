@@ -41,7 +41,7 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -52,7 +52,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -125,12 +124,14 @@ func run(
 	}
 	resp, err := service.CreateWebhook(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateWebhookRequest{
-			WebhookEvent:   registryv1alpha1.WebhookEvent(event),
-			OwnerName:      flags.OwnerName,
-			RepositoryName: flags.RepositoryName,
-			CallbackUrl:    flags.CallbackURL,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateWebhookRequest{
+				WebhookEvent:   registryv1alpha1.WebhookEvent(event),
+				OwnerName:      flags.OwnerName,
+				RepositoryName: flags.RepositoryName,
+				CallbackUrl:    flags.CallbackURL,
+			},
+		),
 	)
 	if err != nil {
 		return err

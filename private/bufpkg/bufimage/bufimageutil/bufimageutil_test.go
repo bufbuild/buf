@@ -22,9 +22,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -170,12 +170,10 @@ func TestTransitivePublic(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(
-		zaptest.NewLogger(t),
-	).Build(
+	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, analysis)
@@ -207,12 +205,10 @@ func TestTypesFromMainModule(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	image, analysis, err := bufimagebuild.NewBuilder(
-		zaptest.NewLogger(t),
-	).Build(
+	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
 	require.Empty(t, analysis)
@@ -235,7 +231,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
-func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimagebuild.BuildOption) (storage.ReadWriteBucket, bufimage.Image, error) {
+func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, options ...bufimage.BuildImageOption) (storage.ReadWriteBucket, bufimage.Image, error) {
 	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
 	if err != nil {
 		return nil, nil, err
@@ -244,9 +240,9 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	if err != nil {
 		return nil, nil, err
 	}
-	image, analysis, err := bufimagebuild.NewBuilder(logger).Build(
+	image, analysis, err := bufimage.BuildImage(
 		ctx,
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	if err != nil {
@@ -260,7 +256,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string, opts ...ImageFilterOption) {
 	ctx := context.Background()
-	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimagebuild.WithExcludeSourceCodeInfo())
+	bucket, image, err := getImage(ctx, zaptest.NewLogger(t), testdataDir, bufimage.WithExcludeSourceCodeInfo())
 	require.NoError(t, err)
 
 	filteredImage, err := ImageFilteredByTypesWithOptions(image, typenames, opts...)
@@ -425,14 +421,14 @@ func examineComment(t *testing.T, file protoreflect.FileDescriptor, descriptor p
 }
 
 func BenchmarkFilterImage_WithoutSourceCodeInfo(b *testing.B) {
-	benchmarkFilterImage(b, bufimagebuild.WithExcludeSourceCodeInfo())
+	benchmarkFilterImage(b, bufimage.WithExcludeSourceCodeInfo())
 }
 
 func BenchmarkFilterImage_WithSourceCodeInfo(b *testing.B) {
 	benchmarkFilterImage(b)
 }
 
-func benchmarkFilterImage(b *testing.B, opts ...bufimagebuild.BuildOption) {
+func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 	benchmarkCases := []*struct {
 		folder string
 		image  bufimage.Image

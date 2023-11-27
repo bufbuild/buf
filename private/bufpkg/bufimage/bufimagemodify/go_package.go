@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"

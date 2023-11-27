@@ -22,11 +22,15 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufsync"
+	"github.com/bufbuild/buf/private/buf/bufsync/bufsyncapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storagegit"
@@ -47,7 +51,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -65,7 +69,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -139,14 +142,17 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
+	var createWithVisibility *registryv1alpha1.Visibility
 	if flags.CreateVisibility != "" {
 		if !flags.Create {
 			return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
 		}
 		// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
 		// we expect validation to be handled here.
-		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
+		if parsed, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
 			return appcmd.NewInvalidArgumentError(err.Error())
+		} else {
+			createWithVisibility = &parsed
 		}
 	} else if flags.Create {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
@@ -156,7 +162,7 @@ func run(
 		container,
 		flags.Modules,
 		// No need to pass `flags.Create`, this is not empty iff `flags.Create`
-		flags.CreateVisibility,
+		createWithVisibility,
 		flags.AllBranches,
 		flags.Remote,
 	)
@@ -165,8 +171,8 @@ func run(
 func sync(
 	ctx context.Context,
 	container appflag.Container,
-	modules []string, // moduleDir(:moduleIdentityOverride)
-	createWithVisibility string,
+	modules []string, // moduleDir(:moduleFullNameOverride)
+	createWithVisibility *registryv1alpha1.Visibility,
 	allBranches bool,
 	remoteName string,
 ) error {
@@ -207,24 +213,41 @@ func sync(
 			syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(module, nil))
 			continue
 		}
-		moduleIdentityOverride, err := bufmoduleref.ModuleIdentityForString(module[colon+1:])
+		moduleFullNameOverride, err := bufmodule.ParseModuleFullName(module[colon+1:])
 		if err != nil {
 			return fmt.Errorf("module %s invalid module identity: %w", module, err)
 		}
 		moduleDir := normalpath.Normalize(module[:colon])
-		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleIdentityOverride))
+		syncerOptions = append(syncerOptions, bufsync.SyncerWithModule(moduleDir, moduleFullNameOverride))
 		modulesDirsWithOverrides[moduleDir] = struct{}{}
 	}
 	syncer, err := bufsync.NewSyncer(
 		container.Logger(),
 		repo,
 		storageProvider,
-		newSyncHandler(
+		bufsyncapi.NewHandler(
 			container.Logger(),
-			clientConfig,
 			container,
 			repo,
 			createWithVisibility,
+			func(address string) registryv1alpha1connect.SyncServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewSyncServiceClient)
+			},
+			func(address string) registryv1alpha1connect.ReferenceServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewReferenceServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryBranchServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryBranchServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryTagServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryTagServiceClient)
+			},
+			func(address string) registryv1alpha1connect.RepositoryCommitServiceClient {
+				return connectclient.Make(clientConfig, address, registryv1alpha1connect.NewRepositoryCommitServiceClient)
+			},
 		),
 		syncerOptions...,
 	)

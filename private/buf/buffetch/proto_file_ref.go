@@ -15,11 +15,7 @@
 package buffetch
 
 import (
-	"fmt"
-	"path/filepath"
-
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var _ ProtoFileRef = &protoFileRef{}
@@ -32,25 +28,6 @@ func newProtoFileRef(internalProtoFileRef internal.ProtoFileRef) *protoFileRef {
 	return &protoFileRef{
 		protoFileRef: internalProtoFileRef,
 	}
-}
-
-// PathForExternalPath for a proto file ref will only ever have one successful case, which
-// is `".", <nil>` and will error on all other paths. The `Path()` of the internal.ProtoFileRef
-// will always point to a specific proto file, e.g. `foo/bar/baz.proto`, thus the function
-// errors against inputs that are not matching to the proto file ref input.
-func (r *protoFileRef) PathForExternalPath(externalPath string) (string, error) {
-	externalPathAbs, err := filepath.Abs(normalpath.Unnormalize(externalPath))
-	if err != nil {
-		return "", err
-	}
-	internalRefPathAbs, err := filepath.Abs(normalpath.Unnormalize(r.protoFileRef.Path()))
-	if err != nil {
-		return "", err
-	}
-	if externalPathAbs != internalRefPathAbs {
-		return "", fmt.Errorf(`path provided "%s" does not match ref path "%s"`, externalPath, r.protoFileRef.Path())
-	}
-	return ".", nil
 }
 
 func (r *protoFileRef) IncludePackageFiles() bool {

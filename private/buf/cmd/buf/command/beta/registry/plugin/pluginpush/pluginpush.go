@@ -26,7 +26,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
@@ -39,7 +38,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -52,7 +53,6 @@ import (
 
 const (
 	formatFlagName          = "format"
-	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
 	overrideRemoteFlagName  = "override-remote"
 	imageFlagName           = "image"
@@ -70,7 +70,7 @@ var allVisibiltyStrings = []string{
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -82,7 +82,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -90,7 +89,6 @@ func NewCommand(
 
 type flags struct {
 	Format          string
-	ErrorFormat     string
 	DisableSymlinks bool
 	OverrideRemote  string
 	Image           string
@@ -108,15 +106,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
-	)
-	flagSet.StringVar(
-		&f.ErrorFormat,
-		errorFormatFlagName,
-		"text",
-		fmt.Sprintf(
-			"The format for build errors printed to stderr. Must be one of %s",
-			stringutil.SliceToString(bufanalysis.AllFormatStrings),
-		),
 	)
 	flagSet.StringVar(
 		&f.OverrideRemote,
@@ -145,9 +134,6 @@ func run(
 	flags *flags,
 ) (retErr error) {
 	bufcli.WarnBetaCommand(ctx, container)
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
 	if len(flags.OverrideRemote) > 0 {
 		if _, err := netext.ValidateHostname(flags.OverrideRemote); err != nil {
 			return fmt.Errorf("%s: %w", overrideRemoteFlagName, err)
@@ -161,7 +147,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+	storageProvider := newStorageosProvider(flags.DisableSymlinks)
 	sourceStat, err := os.Stat(source)
 	if err != nil {
 		return err
@@ -193,7 +179,7 @@ func run(
 	}
 	existingConfigFilePath, err := bufpluginconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	if existingConfigFilePath == "" {
 		return fmt.Errorf("please define a %s configuration file in the target directory", bufpluginconfig.ExternalConfigFilePath)
@@ -253,12 +239,14 @@ func run(
 	)
 	latestPluginResp, err := service.GetLatestCuratedPlugin(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.GetLatestCuratedPluginRequest{
-			Owner:    pluginConfig.Name.Owner(),
-			Name:     pluginConfig.Name.Plugin(),
-			Version:  pluginConfig.PluginVersion,
-			Revision: 0, // get latest revision for the plugin version.
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.GetLatestCuratedPluginRequest{
+				Owner:    pluginConfig.Name.Owner(),
+				Name:     pluginConfig.Name.Plugin(),
+				Version:  pluginConfig.PluginVersion,
+				Revision: 0, // get latest revision for the plugin version.
+			},
+		),
 	)
 	var currentImageDigest string
 	var nextRevision uint32
@@ -492,4 +480,12 @@ func visibilityFlagToVisibility(visibility string) (registryv1alpha1.CuratedPlug
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
 	}
+}
+
+func newStorageosProvider(disableSymlinks bool) storageos.Provider {
+	var options []storageos.ProviderOption
+	if !disableSymlinks {
+		options = append(options, storageos.ProviderWithSymlinks())
+	}
+	return storageos.NewProvider(options...)
 }

@@ -27,7 +27,7 @@ import (
 	"golang.org/x/exp/constraints"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -158,13 +158,10 @@ func getProtosourceFiles(
 	if err != nil {
 		return nil, err
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		container.Logger(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		module,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
 		return nil, err

@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -37,7 +36,6 @@ type fileLister struct {
 	logger              *zap.Logger
 	fetchReader         buffetch.Reader
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
-	imageBuilder        bufimagebuild.Builder
 	// imageReaders require ImageRefs, we only use this in the withoutImports flow
 	// the imageConfigReader is used when we need to build an image
 	imageReader       *imageReader
@@ -49,13 +47,11 @@ func newFileLister(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	imageBuilder bufimagebuild.Builder,
 ) *fileLister {
 	return &fileLister{
 		logger:              logger.Named("bufwire"),
 		fetchReader:         fetchReader,
 		moduleBucketBuilder: moduleBucketBuilder,
-		imageBuilder:        imageBuilder,
 		imageReader: newImageReader(
 			logger,
 			fetchReader,
@@ -65,7 +61,6 @@ func newFileLister(
 			storageosProvider,
 			fetchReader,
 			moduleBucketBuilder,
-			imageBuilder,
 		),
 	}
 }
