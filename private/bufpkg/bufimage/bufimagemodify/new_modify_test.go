@@ -15,33 +15,765 @@
 package bufimagemodify
 
 import (
+	"context"
+	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/bufnew/bufconfig/bufconfigtest"
+	"github.com/bufbuild/buf/private/bufnew/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func TestModify(t *testing.T) {
+func TestModifyImage(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		description           string
-		moduleNameToDirpath   string
-		config                bufconfig.Config
-		pathToExpectedOptions map[string]*descriptorpb.FileOptions
-	}{}
+		description               string
+		dirPathToModuleFullName   map[string]string
+		config                    bufconfig.GenerateManagedConfig
+		filePathToExpectedOptions map[string]*descriptorpb.FileOptions
+	}{
+		{
+			description: "nil_config",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: nil,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/with_package.proto": nil,
+				"bar_all/with_package.proto": {
+					CcEnableArenas:       proto.Bool(false),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(false),
+					JavaOuterClassname:   proto.String("bar"),
+					JavaPackage:          proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String("bar"),
+					PhpNamespace:         proto.String("bar"),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+			},
+		},
+		{
+			description: "empty_config",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{},
+			),
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/with_package.proto": {
+					// CcEnableArena's default value is true
+					CsharpNamespace: proto.String("Foo.Empty"),
+					// GoPackage is not modified by default
+					JavaMultipleFiles:  proto.Bool(true),
+					JavaOuterClassname: proto.String("WithPackageProto"),
+					JavaPackage:        proto.String("com.foo.empty"),
+					// JavaStringCheckUtf8 is not modified by default
+					ObjcClassPrefix: proto.String("FEX"),
+					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+					// Empty is a keyword in php
+					PhpMetadataNamespace: proto.String(`Foo\Empty_\GPBMetadata`),
+					PhpNamespace:         proto.String(`Foo\Empty_`),
+					RubyPackage:          proto.String("Foo::Empty"),
+				},
+				"foo_empty/without_package.proto": {
+					// CcEnableArena's default value is true
+					// GoPackage is not modified by default
+					JavaMultipleFiles:  proto.Bool(true),
+					JavaOuterClassname: proto.String("WithoutPackageProto"),
+					// JavaStringCheckUtf8 is not modified by default
+					// OptimizeFor tries to modifiy this value to SPEED, which is already the default
+				},
+				"bar_all/with_package.proto": {
+					CcEnableArenas:       proto.Bool(true),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("Bar.All"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(true),
+					JavaOuterClassname:   proto.String("WithPackageProto"),
+					JavaPackage:          proto.String("com.bar.all"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("BAX"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String(`Bar\All\GPBMetadata`),
+					PhpNamespace:         proto.String(`Bar\All`),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("Bar::All"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+				"bar_all/without_package.proto": {
+					CcEnableArenas:       proto.Bool(true),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(true),
+					JavaOuterClassname:   proto.String("WithoutPackageProto"),
+					JavaPackage:          proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String(`bar`),
+					PhpNamespace:         proto.String(`bar`),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		for _, includeSourceInfo := range []bool{true, false} {
+			includeSourceInfo := includeSourceInfo
+			t.Run(testcase.description, func(t *testing.T) {
+				t.Parallel()
+				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
+				err := Modify(
+					context.Background(),
+					image,
+					testcase.config,
+				)
+				require.NoError(t, err)
+				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
+					imageFile := image.GetFile(filePath)
+					require.NotNil(t, imageFile)
+					require.Empty(
+						t,
+						cmp.Diff(expectedOptions, imageFile.FileDescriptorProto().GetOptions(), protocmp.Transform()),
+						imageFile.FileDescriptorProto().GetOptions(),
+					)
+				}
+			})
+		}
+	}
+}
+
+func TestModifyImageFile(
+	t *testing.T,
+) {
+	t.Parallel()
+	testcases := []struct {
+		description                           string
+		dirPathToModuleFullName               map[string]string
+		config                                bufconfig.GenerateManagedConfig
+		modifyFunc                            func(Sweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error
+		filePathToExpectedOptions             map[string]*descriptorpb.FileOptions
+		filePathToExpectedMarkedLocationPaths map[string][][]int32
+	}{
+		{
+			description: "cc_enable_arena",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
+				},
+			),
+			modifyFunc: modifyCcEnableArenas,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/without_package.proto": nil,
+				"bar_empty/without_package.proto": {
+					CcEnableArenas: proto.Bool(false),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"bar_empty/without_package.proto": {ccEnableArenasPath},
+			},
+		},
+		{
+			description: "csharp_namespace",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionCsharpNamespacePrefix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespacePrefix, "BarPrefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespace, "BarValue"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespace, "FooValue"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespacePrefix, "FooPrefix"),
+				},
+			),
+			modifyFunc: modifyCsharpNamespace,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"bar_empty/with_package.proto": {
+					CsharpNamespace: proto.String("BarPrefix.Bar.Empty"),
+				},
+				"bar_empty/without_package.proto": {
+					CsharpNamespace: proto.String("BarValue"),
+				},
+				"foo_empty/with_package.proto": {
+					CsharpNamespace: proto.String("FooValue"),
+				},
+				"foo_empty/without_package.proto": nil,
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"bar_empty/with_package.proto":    {csharpNamespacePath},
+				"bar_empty/without_package.proto": {csharpNamespacePath},
+				"foo_empty/with_package.proto":    {csharpNamespacePath},
+			},
+		},
+		{
+			description: "go_package",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionGoPackagePrefix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionGoPackagePrefix, "barprefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionGoPackage, "barvalue"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty/with_package.proto", "buf.build/acme/foo", bufconfig.FileOptionGoPackage, "foovalue"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionGoPackagePrefix, "fooprefix"),
+				},
+			),
+			modifyFunc: modifyGoPackage,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"bar_empty/with_package.proto": {
+					GoPackage: proto.String("barprefix/bar_empty"),
+				},
+				"bar_empty/without_package.proto": {
+					GoPackage: proto.String("barvalue"),
+				},
+				"foo_empty/with_package.proto": {
+					GoPackage: proto.String("foovalue"),
+				},
+				"foo_empty/without_package.proto": {
+					GoPackage: proto.String("fooprefix/foo_empty"),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"bar_empty/with_package.proto":    {goPackagePath},
+				"bar_empty/without_package.proto": {goPackagePath},
+				"foo_empty/with_package.proto":    {goPackagePath},
+				"foo_empty/without_package.proto": {goPackagePath},
+			},
+		},
+		{
+			description: "java_package_prefix",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackagePrefix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackagePrefix, "barprefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackageSuffix, "foosuffix"),
+				},
+			),
+			modifyFunc: modifyJavaPackage,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/with_package.proto": {
+					// default prefix and override suffix
+					JavaPackage: proto.String("com.foo.empty.foosuffix"),
+				},
+				// prefix is disabled
+				"bar_empty/with_package.proto": nil,
+				// prefix is overridden
+				"bar_all/with_package.proto": {
+					JavaPackage: proto.String("barprefix.bar.all"),
+					// below this point are the values from the file
+					CcEnableArenas:       proto.Bool(false),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(false),
+					JavaOuterClassname:   proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String("bar"),
+					PhpNamespace:         proto.String("bar"),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+				// not modified because it doesn't have a package
+				"foo_empty/without_package.proto": nil,
+				"bar_empty/without_package.proto": nil,
+				"foo_all/without_package.proto": {
+					// values are from the file
+					CcEnableArenas:       proto.Bool(true),
+					CcGenericServices:    proto.Bool(true),
+					CsharpNamespace:      proto.String("foo"),
+					GoPackage:            proto.String("foo"),
+					JavaGenericServices:  proto.Bool(true),
+					JavaMultipleFiles:    proto.Bool(true),
+					JavaOuterClassname:   proto.String("foo"),
+					JavaPackage:          proto.String("foo"),
+					JavaStringCheckUtf8:  proto.Bool(true),
+					ObjcClassPrefix:      proto.String("foo"),
+					OptimizeFor:          descriptorpb.FileOptions_CODE_SIZE.Enum(),
+					PhpClassPrefix:       proto.String("foo"),
+					PhpGenericServices:   proto.Bool(true),
+					PhpMetadataNamespace: proto.String("foo"),
+					PhpNamespace:         proto.String("foo"),
+					PyGenericServices:    proto.Bool(true),
+					RubyPackage:          proto.String("foo"),
+					SwiftPrefix:          proto.String("foo"),
+				},
+				"bar_all/without_package.proto": {
+					// values are from the file
+					CcEnableArenas:       proto.Bool(false),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(false),
+					JavaOuterClassname:   proto.String("bar"),
+					JavaPackage:          proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String("bar"),
+					PhpNamespace:         proto.String("bar"),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"foo_empty/with_package.proto": {javaPackagePath},
+				"bar_all/with_package.proto":   {javaPackagePath},
+			},
+		},
+		{
+			description: "java_package_suffix",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackageSuffix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+				},
+			),
+			modifyFunc: modifyJavaPackage,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"foo_empty/with_package.proto": {
+					// only suffix matches, but apply both prefix and suffix
+					JavaPackage: proto.String("com.foo.empty.suffix"),
+				},
+				"bar_empty/with_package.proto": {
+					// only prefix because suffix is disabled
+					JavaPackage: proto.String("com.bar.empty"),
+				},
+				"bar_all/with_package.proto": {
+					JavaPackage: proto.String("com.bar.all.suffix"),
+					// below this point are the values from the file
+					CcEnableArenas:       proto.Bool(false),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(false),
+					JavaOuterClassname:   proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String("bar"),
+					PhpNamespace:         proto.String("bar"),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+				// not modified
+				"foo_empty/without_package.proto": nil,
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"foo_empty/with_package.proto": {javaPackagePath},
+				"bar_empty/with_package.proto": {javaPackagePath},
+				"bar_all/with_package.proto":   {javaPackagePath},
+			},
+		},
+		{
+			description: "java_package",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackage, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackage, "bar.value"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackage, "foo.value"),
+				},
+			),
+			modifyFunc: modifyJavaPackage,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				// bar_empty disabled
+				"bar_empty/with_package.proto":    nil,
+				"bar_empty/without_package.proto": nil,
+				"bar_all/with_package.proto": {
+					JavaPackage:          proto.String("bar.value"),
+					CcEnableArenas:       proto.Bool(false),
+					CcGenericServices:    proto.Bool(false),
+					CsharpNamespace:      proto.String("bar"),
+					GoPackage:            proto.String("bar"),
+					JavaGenericServices:  proto.Bool(false),
+					JavaMultipleFiles:    proto.Bool(false),
+					JavaOuterClassname:   proto.String("bar"),
+					JavaStringCheckUtf8:  proto.Bool(false),
+					ObjcClassPrefix:      proto.String("bar"),
+					OptimizeFor:          descriptorpb.FileOptions_SPEED.Enum(),
+					PhpClassPrefix:       proto.String("bar"),
+					PhpGenericServices:   proto.Bool(false),
+					PhpMetadataNamespace: proto.String("bar"),
+					PhpNamespace:         proto.String("bar"),
+					PyGenericServices:    proto.Bool(false),
+					RubyPackage:          proto.String("bar"),
+					SwiftPrefix:          proto.String("bar"),
+				},
+				"foo_empty/with_package.proto": {
+					JavaPackage: proto.String("foo.value"),
+				},
+				"foo_empty/without_package.proto": {
+					JavaPackage: proto.String("foo.value"),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"foo_empty/with_package.proto":    {javaPackagePath},
+				"foo_empty/without_package.proto": {javaPackagePath},
+				"bar_all/with_package.proto":      {javaPackagePath},
+			},
+		},
+		{
+			description: "objc_class_prefix",
+			dirPathToModuleFullName: map[string]string{
+				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
+				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
+			},
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{
+					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionObjcClassPrefix, bufconfig.FieldOptionUnspecified),
+				},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionObjcClassPrefix, "BAR"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOO"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_all", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOOALL"),
+				},
+			),
+			modifyFunc: modifyObjcClassPrefix,
+			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
+				"bar_empty/with_package.proto": {
+					ObjcClassPrefix: proto.String("BAR"),
+				},
+				"bar_empty/without_package.proto": {
+					ObjcClassPrefix: proto.String("BAR"),
+				},
+				// disabled
+				"foo_empty/with_package.proto": nil,
+				// no package
+				"foo_empty/without_package.proto": {
+					ObjcClassPrefix: proto.String("FOO"),
+				},
+				"foo_all/with_package.proto": {
+					ObjcClassPrefix:      proto.String("FOOALL"),
+					CcEnableArenas:       proto.Bool(true),
+					CcGenericServices:    proto.Bool(true),
+					CsharpNamespace:      proto.String("foo"),
+					GoPackage:            proto.String("foo"),
+					JavaGenericServices:  proto.Bool(true),
+					JavaMultipleFiles:    proto.Bool(true),
+					JavaOuterClassname:   proto.String("foo"),
+					JavaPackage:          proto.String("foo"),
+					JavaStringCheckUtf8:  proto.Bool(true),
+					OptimizeFor:          descriptorpb.FileOptions_CODE_SIZE.Enum(),
+					PhpClassPrefix:       proto.String("foo"),
+					PhpGenericServices:   proto.Bool(true),
+					PhpMetadataNamespace: proto.String("foo"),
+					PhpNamespace:         proto.String("foo"),
+					PyGenericServices:    proto.Bool(true),
+					RubyPackage:          proto.String("foo"),
+					SwiftPrefix:          proto.String("foo"),
+				},
+			},
+			filePathToExpectedMarkedLocationPaths: map[string][][]int32{
+				"bar_empty/with_package.proto":    {objcClassPrefixPath},
+				"bar_empty/without_package.proto": {objcClassPrefixPath},
+				"foo_empty/without_package.proto": {objcClassPrefixPath},
+				"foo_all/without_package.proto":   {objcClassPrefixPath},
+				"foo_all/with_package.proto":      {objcClassPrefixPath},
+			},
+		},
+	}
+	for _, testcase := range testcases {
+		testcase := testcase
+		for _, includeSourceInfo := range []bool{true, false} {
+			// TODO: we are only testing sweep here, no need to test both include and exclude source info
+			includeSourceInfo := includeSourceInfo
+			t.Run(testcase.description, func(t *testing.T) {
+				t.Parallel()
+				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
+				sweeper := newFileOptionSweeper()
+				// TODO: check include source code info
+				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
+					imageFile := image.GetFile(filePath)
+					testcase.modifyFunc(
+						sweeper,
+						imageFile,
+						testcase.config,
+					)
+					require.NotNil(t, imageFile)
+					require.Empty(
+						t,
+						cmp.Diff(expectedOptions, imageFile.FileDescriptorProto().GetOptions(), protocmp.Transform()),
+						"incorrect options result for %s",
+						filePath,
+					)
+					// TODO: full map compare
+					require.Equal(
+						t,
+						slicesext.Map(testcase.filePathToExpectedMarkedLocationPaths[filePath], getPathKey),
+						slicesext.MapKeysToSortedSlice(sweeper.sourceCodeInfoPaths[filePath]),
+					)
+				}
+			})
+		}
+	}
+}
+
+// TODO: add default values
+func TestGetStringOverrideFromConfig(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		description            string
+		config                 bufconfig.GenerateManagedConfig
+		imageFile              bufimage.ImageFile
+		defaultOverrideOptions stringOverrideOptions
+		expectedOverride       stringOverrideOptions
+		expectedDisable        bool
+	}{
+		{
+			description: "only_value",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{value: "value"},
+		},
+		{
+			description: "only_prefix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{prefix: "prefix"},
+		},
+		{
+			description: "only_suffix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{suffix: "suffix"},
+		},
+		{
+			description: "prefix_then_value",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{value: "value"},
+		},
+		{
+			description: "value_then_prefix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{prefix: "prefix"},
+		},
+		{
+			description: "prefix_then_suffix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+				},
+			),
+			imageFile: testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{
+				prefix: "prefix",
+				suffix: "suffix",
+			},
+		},
+		{
+			description: "value_prefix_then_suffix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+				},
+			),
+			imageFile: testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{
+				prefix: "prefix",
+				suffix: "suffix",
+			},
+		},
+		{
+			description: "prefix_value_then_suffix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{suffix: "suffix"},
+		},
+		{
+			description: "prefix_then_prefix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix2"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{prefix: "prefix2"},
+		},
+		{
+			description: "suffix_then_suffix",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix2"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{suffix: "suffix2"},
+		},
+		{
+			description: "value_then_value",
+			config: bufconfig.NewGenerateManagedConfig(
+				[]bufconfig.ManagedDisableRule{},
+				[]bufconfig.ManagedOverrideRule{
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value2"),
+				},
+			),
+			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
+			expectedOverride: stringOverrideOptions{value: "value2"},
+		},
+	}
 	for _, testcase := range testcases {
 		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+			override, err := stringOverrideFromConfig(
+				testcase.imageFile,
+				testcase.config,
+				testcase.defaultOverrideOptions,
+				bufconfig.FileOptionJavaPackage,
+				bufconfig.FileOptionJavaPackagePrefix,
+				bufconfig.FileOptionJavaPackageSuffix,
+			)
+			require.NoError(t, err)
+			require.Equal(t, testcase.expectedOverride, override)
 		})
 	}
 }
 
-func TestSweepFileOption(t *testing.T) {
-	t.Parallel()
-	// TODO
-}
-
-func TestSweepFieldOption(t *testing.T) {
+func TestModifyFieldOption(t *testing.T) {
 	t.Parallel()
 	// TODO in v2
+}
+
+func testGetImageFile(
+	t *testing.T,
+	path string,
+	moduleFullName string,
+) bufimage.ImageFile {
+	parsedModuleFullName, err := bufmodule.ParseModuleFullName(moduleFullName)
+	require.NoError(t, err)
+	return bufimagetesting.NewImageFile(
+		t,
+		&descriptorpb.FileDescriptorProto{
+			Name:   proto.String(path),
+			Syntax: proto.String("proto3"),
+		},
+		parsedModuleFullName,
+		"",
+		path,
+		false,
+		false,
+		nil,
+	)
 }

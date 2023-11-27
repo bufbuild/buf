@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
 	"github.com/bufbuild/buf/private/bufnew/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
@@ -93,19 +92,35 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	return image
 }
 
-type testDisable struct {
-	path           string
-	moduleFullName string
-	fieldName      string
-	fileOption     bufconfig.FileOption
-	fieldOption    bufconfig.FieldOption
-}
-
-type testOverride struct {
-	path           string
-	moduleFullName string
-	fieldName      string
-	fileOption     bufconfig.FileOption
-	fieldOption    bufconfig.FieldOption
-	value          interface{}
+func testGetImageFromDirs(
+	t *testing.T,
+	dirPathToModuleFullName map[string]string,
+	includeSourceInfo bool,
+) bufimage.Image {
+	moduleDatas := make([]bufmoduletest.ModuleData, 0, len(dirPathToModuleFullName))
+	for dirPath, moduleFullName := range dirPathToModuleFullName {
+		moduleDatas = append(
+			moduleDatas,
+			bufmoduletest.ModuleData{
+				Name:    moduleFullName,
+				DirPath: dirPath,
+			},
+		)
+	}
+	moduleSet, err := bufmoduletest.NewModuleSet(moduleDatas...)
+	require.NoError(t, err)
+	var options []bufimagebuild.BuildOption
+	if !includeSourceInfo {
+		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
+	}
+	image, annotations, err := bufimagebuild.NewBuilder(
+		zap.NewNop(),
+	).Build(
+		context.Background(),
+		moduleSet,
+		options...,
+	)
+	require.NoError(t, err)
+	require.Empty(t, annotations)
+	return image
 }
