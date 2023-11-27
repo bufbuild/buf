@@ -12,3 +12,6 @@
   - bufmoduleconfig
   - buflock
   - bufconfig
+
+- lots of QA, especially around file searching, target paths
+- fix tamper-proofing
