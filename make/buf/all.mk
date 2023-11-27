@@ -121,6 +121,12 @@ godata: installspdx-go-data installwkt-go-data $(PROTOC)
 
 prepostgenerate:: godata
 
+.PHONY: bufworkspacebuflocks
+bufworkspacebuflocks: installbuf-digest
+	bash private/buf/bufworkspace/testdata/basic/scripts/fakebuflock.bash
+
+prepostgenerate:: bufworkspacebuflocks
+
 .PHONY: licenseheader
 licenseheader: installlicense-header installgit-ls-files-unstaged
 	@echo license-header \

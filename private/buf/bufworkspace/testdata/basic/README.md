@@ -31,3 +31,5 @@
 ```
 bash scripts/fakebuflock.bash
 ```
+
+This is automatically run by `make generate`.
