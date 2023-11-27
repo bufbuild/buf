@@ -1,8 +1,8 @@
-- config flag (finish)
-- v2 buf.yaml parsing in new workspace
-- ProtoFileRef
-- new digest format
-- workspace with no file searching (wkt)
+- config override flag (finish, mostly in bufworkspace)
+- v2 buf.yaml parsing in NewWorkspaceForBucket
+- ProtoFileRef support
+- new digest format - figure out with API
+- option to create workspace with no file searching (wkt)
 
 - port tests from:
   - bufmodule
@@ -13,5 +13,6 @@
   - buflock
   - bufconfig
 
-- lots of QA, especially around file searching, target paths
+- lots of QA, especially around workspace file searching, target paths
 - fix tamper-proofing
+- go through all todos
