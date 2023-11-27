@@ -46,7 +46,9 @@ func NewModuleDataStore(bucket storage.ReadWriteBucket) ModuleDataStore {
 type ModuleDataStoreOption func(*moduleDataStore)
 
 // ModuleDataStoreWithZip returns a new ModuleDataStoreOption that reads and stores
-// zip files instead of storing individual files in the bucket.
+// zip files instead of storing individual files in a directory in the bucket.
+//
+// The default is to store individual files in a directory.
 func ModuleDataStoreWithZip() ModuleDataStoreOption {
 	return func(moduleDataStore *moduleDataStore) {
 		moduleDataStore.zip = true
@@ -107,21 +109,20 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	moduleStorePrefix := getModuleStorePrefix(moduleFullName, digest)
-	// It is OK that this ReadBucket contains the buf.lock; the buf.lock will be ignored. See
-	// comments on ModuleData.Bucket().
-	moduleDataBucket := storage.MapReadBucket(p.bucket, storage.MapOnPrefix(moduleStorePrefix))
-	// We rely on the buf.lock file being the last file to be written in putMissedModuleData.
+	bucket := p.getReadBucketForDir(moduleFullName, digest)
+	// We rely on the buf.lock file being the last file to be written in the store.
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
 	// result in bad data being overwritten.
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, moduleDataBucket, ".")
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
 	if err != nil {
 		return nil, err
 	}
 	return bufmodule.NewModuleData(
 		moduleKey,
 		func() (storage.ReadBucket, error) {
-			return moduleDataBucket, nil
+			// It is OK that this ReadBucket contains the buf.lock; the buf.lock will be ignored. See
+			// comments on ModuleData.Bucket().
+			return bucket, nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
 			return bufLockFile.DepModuleKeys(), nil
@@ -129,6 +130,21 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		// This will do tamper-proofing.
 		// TODO: No it won't.
 		bufmodule.ModuleDataWithActualDigest(digest),
+	)
+}
+
+func (p *moduleDataStore) getReadBucketForDir(
+	moduleFullName bufmodule.ModuleFullName,
+	digest bufcas.Digest,
+) storage.ReadWriteBucket {
+	return storage.MapReadWriteBucket(
+		p.bucket,
+		storage.MapOnPrefix(
+			getModuleStoreDir(
+				moduleFullName,
+				digest,
+			),
+		),
 	)
 }
 
@@ -142,7 +158,7 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
-	moduleStorePrefix := getModuleStorePrefix(moduleFullName, digest)
+	bucket := p.getWriteBucketForDir(moduleFullName, digest)
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
 		return err
@@ -155,11 +171,10 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
-	putBucket := storage.MapWriteBucket(p.bucket, storage.MapOnPrefix(moduleStorePrefix))
 	if _, err := storage.Copy(
 		ctx,
 		moduleDataBucket,
-		putBucket,
+		bucket,
 		storage.CopyWithAtomic(),
 	); err != nil {
 		return err
@@ -167,13 +182,30 @@ func (p *moduleDataStore) putModuleData(
 	// Put the buf.lock last, so that we only have a buf.lock if the cache is finished writing.
 	// We can use the existence of the buf.lock file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
-	return bufconfig.PutBufLockFileForPrefix(ctx, putBucket, ".", bufLockFile)
+	return bufconfig.PutBufLockFileForPrefix(ctx, bucket, ".", bufLockFile)
 }
 
-// Returns the module's path within the store. This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
+func (p *moduleDataStore) getWriteBucketForDir(
+	moduleFullName bufmodule.ModuleFullName,
+	digest bufcas.Digest,
+) storage.WriteBucket {
+	return storage.MapWriteBucket(
+		p.bucket,
+		storage.MapOnPrefix(
+			getModuleStoreDir(
+				moduleFullName,
+				digest,
+			),
+		),
+	)
+}
+
+// Returns the module's path within the store if storing individual files.
+//
+// This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
 // e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
 // "buf.build/acme/weather/shake256/12345".
-func getModuleStorePrefix(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
+func getModuleStoreDir(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
 		moduleFullName.Owner(),
