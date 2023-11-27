@@ -17,6 +17,7 @@ package bufconfig
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"

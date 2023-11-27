@@ -106,15 +106,13 @@ func testGetImageFromDirs(
 	}
 	moduleSet, err := bufmoduletest.NewModuleSet(moduleDatas...)
 	require.NoError(t, err)
-	var options []bufimagebuild.BuildOption
+	var options []bufimage.BuildImageOption
 	if !includeSourceInfo {
-		options = []bufimagebuild.BuildOption{bufimagebuild.WithExcludeSourceCodeInfo()}
+		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-	).Build(
+	image, annotations, err := bufimage.BuildImage(
 		context.Background(),
-		moduleSet,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	require.NoError(t, err)

@@ -17,7 +17,7 @@ package bufconfigtest
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/stretchr/testify/require"
 )
 
