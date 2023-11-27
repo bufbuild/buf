@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -116,7 +117,9 @@ func newModuleDataProvider(
 	}
 	return bufmodulecache.NewModuleDataProvider(
 		delegateReader,
-		cacheBucket,
+		bufmodulestore.NewModuleDataStore(
+			cacheBucket,
+		),
 	), nil
 }
 

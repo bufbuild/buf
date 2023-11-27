@@ -138,34 +138,36 @@ func newOmniProvider(
 	}, nil
 }
 
-func (o *omniProvider) GetModuleKeysForModuleRefs(
+func (o *omniProvider) GetOptionalModuleKeysForModuleRefs(
 	ctx context.Context,
 	moduleRefs ...bufmodule.ModuleRef,
-) ([]bufmodule.ModuleKey, error) {
-	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+) ([]bufmodule.OptionalModuleKey, error) {
+	optionalModuleKeys := make([]bufmodule.OptionalModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
 		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 		if module == nil {
-			return nil, fmt.Errorf("no test ModuleKey with name %q", moduleRef.ModuleFullName().String())
+			optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(nil)
+			continue
 		}
 		moduleKey, err := bufmodule.ModuleToModuleKey(module)
 		if err != nil {
 			return nil, err
 		}
-		moduleKeys[i] = moduleKey
+		optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(moduleKey)
 	}
-	return moduleKeys, nil
+	return optionalModuleKeys, nil
 }
 
-func (o *omniProvider) GetModuleDatasForModuleKeys(
+func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.ModuleData, error) {
-	moduleDatas := make([]bufmodule.ModuleData, len(moduleKeys))
+) ([]bufmodule.OptionalModuleData, error) {
+	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
 		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
 		if module == nil {
-			return nil, fmt.Errorf("no test ModuleData with name %q", moduleKey.ModuleFullName().String())
+			optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(nil)
+			continue
 		}
 		// Need to use moduleKey from module, as we need CommitID if present.
 		moduleFullName := module.ModuleFullName()
@@ -206,9 +208,9 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 		if err != nil {
 			return nil, err
 		}
-		moduleDatas[i] = moduleData
+		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
-	return moduleDatas, nil
+	return optionalModuleDatas, nil
 }
 
 func newModuleSet(moduleDatas []ModuleData, requireName bool) (bufmodule.ModuleSet, error) {

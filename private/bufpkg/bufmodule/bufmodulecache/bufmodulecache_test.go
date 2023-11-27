@@ -6,6 +6,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -46,7 +47,12 @@ func TestCacheBasic(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	cacheProvider := newModuleDataProvider(bsrProvider, storagemem.NewReadWriteBucket())
+	cacheProvider := newModuleDataProvider(
+		bsrProvider,
+		bufmodulestore.NewModuleDataStore(
+			storagemem.NewReadWriteBucket(),
+		),
+	)
 
 	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
 	require.NoError(t, err)
@@ -54,8 +60,9 @@ func TestCacheBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
-	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
+	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
 		ctx,
+		bsrProvider,
 		moduleRefMod1,
 		// Switching order on purpose.
 		moduleRefMod3,
@@ -63,7 +70,11 @@ func TestCacheBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys...)
+	moduleDatas, err := bufmodule.GetModuleDatasForModuleKeys(
+		ctx,
+		cacheProvider,
+		moduleKeys...,
+	)
 	require.NoError(t, err)
 	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
 	require.Equal(t, 0, cacheProvider.getModuleKeysHit())
@@ -83,7 +94,11 @@ func TestCacheBasic(t *testing.T) {
 	)
 
 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(ctx, moduleKeys...)
+	moduleDatas, err = bufmodule.GetModuleDatasForModuleKeys(
+		ctx,
+		cacheProvider,
+		moduleKeys...,
+	)
 	require.NoError(t, err)
 	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
 	require.Equal(t, 3, cacheProvider.getModuleKeysHit())

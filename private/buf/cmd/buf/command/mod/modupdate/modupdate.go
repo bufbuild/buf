@@ -127,8 +127,9 @@ func run(
 		},
 	)
 	// All the ModuleKeys we get back from buf.yaml.
-	bufYAMLModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
+	bufYAMLModuleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
 		ctx,
+		moduleKeyProvider,
 		updateableWorkspace.ConfiguredDepModuleRefs()...,
 	)
 	if err != nil {

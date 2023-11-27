@@ -245,7 +245,11 @@ func (b *moduleSetBuilder) AddRemoteModule(
 		return b
 	}
 	// TODO: we could defer all this work to build, and coalesce ModuleKeys into a single call.
-	moduleDatas, err := b.moduleDataProvider.GetModuleDatasForModuleKeys(b.ctx, moduleKey)
+	moduleDatas, err := GetModuleDatasForModuleKeys(
+		b.ctx,
+		b.moduleDataProvider,
+		moduleKey,
+	)
 	if err != nil {
 		b.errs = append(b.errs, err)
 		return b

@@ -100,8 +100,9 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
-	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
+	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
 		ctx,
+		bsrProvider,
 		moduleRefExtdep1,
 		moduleRefExtdep2,
 		moduleRefExtdep3,

@@ -30,18 +30,40 @@ type ModuleDataProvider interface {
 	//
 	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeys.
 	// If there is an error, no ModuleDatas will be returned.
-	// An error with fs.ErrNotExist will be returned if a ModuleKey is not found.
+	// If a ModuleData is not found, the OptionalModuleData will have Found() equal to false, otherwise
+	// the OptionalModuleData will have Found() equal to true with non-nil ModuleData.
 	//
 	// If the input ModuleKey had a CommitID set, this the returned ModuleData will also have a CommitID
 	// set. This is important for i.e. v1beta1 and v1 buf.lock files, where we want to make sure we keep
 	// the reference to the CommitID, even if we did not have it stored in our cache.
-	GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error)
+	GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error)
+}
+
+// GetModuleDatasForModuleKeys calls GetOptionalModuleDatasForModuleKeys, returning an error
+// with fs.ErrNotExist if any ModuleData is not found.
+func GetModuleDatasForModuleKeys(
+	ctx context.Context,
+	moduleDataProvider ModuleDataProvider,
+	moduleKeys ...ModuleKey,
+) ([]ModuleData, error) {
+	optionalModuleDatas, err := moduleDataProvider.GetOptionalModuleDatasForModuleKeys(ctx, moduleKeys...)
+	if err != nil {
+		return nil, err
+	}
+	moduleDatas := make([]ModuleData, len(optionalModuleDatas))
+	for i, optionalModuleData := range optionalModuleDatas {
+		if !optionalModuleData.Found() {
+			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].ModuleFullName().String(), Err: fs.ErrNotExist}
+		}
+		moduleDatas[i] = optionalModuleData.ModuleData()
+	}
+	return moduleDatas, nil
 }
 
 // nopModuleDataProvider
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]ModuleData, error) {
-	return nil, fs.ErrNotExist
+func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error) {
+	return nil, nil
 }

@@ -16,6 +16,7 @@ package bufmoduleapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 
@@ -24,8 +25,8 @@ import (
 	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -59,22 +60,24 @@ func newModuleDataProvider(
 	}
 }
 
-func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
+func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.ModuleData, error) {
+) ([]bufmodule.OptionalModuleData, error) {
 	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
 	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
 	// Make sure to respect 250 max.
-	moduleDatas := make([]bufmodule.ModuleData, len(moduleKeys))
+	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
 		moduleData, err := a.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
-		moduleDatas[i] = moduleData
+		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
-	return moduleDatas, nil
+	return optionalModuleDatas, nil
 }
 
 func (a *moduleDataProvider) getModuleDataForModuleKey(
@@ -132,7 +135,6 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Required by ModuleDataProvider documentation
 			return nil, &fs.PathError{Op: "read", Path: moduleKey.ModuleFullName().String(), Err: fs.ErrNotExist}
 		}
 		return nil, err

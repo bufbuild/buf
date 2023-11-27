@@ -345,7 +345,11 @@ func (r *reader) getModuleKey(
 	if r.moduleKeyProvider == nil {
 		return nil, errors.New("module key provider is nil")
 	}
-	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRef.ModuleRef())
+	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+		ctx,
+		r.moduleKeyProvider,
+		moduleRef.ModuleRef(),
+	)
 	if err != nil {
 		return nil, err
 	}

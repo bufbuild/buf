@@ -16,14 +16,15 @@ package bufmoduleapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
 )
 
@@ -52,26 +53,28 @@ func newModuleKeyProvider(
 	}
 }
 
-func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(ctx context.Context, moduleRefs ...bufmodule.ModuleRef) ([]bufmodule.ModuleKey, error) {
+func (a *moduleKeyProvider) GetOptionalModuleKeysForModuleRefs(
+	ctx context.Context,
+	moduleRefs ...bufmodule.ModuleRef,
+) ([]bufmodule.OptionalModuleKey, error) {
 	// TODO: Do the work to coalesce ModuleRefs by registry hostname, make calls out to the CommitService
 	// per registry, then get back the resulting data, and order it in the same order as the input ModuleRefs.
 	// Make sure to respect 250 max.
-	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	optionalModuleKeys := make([]bufmodule.OptionalModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
 		moduleKey, err := a.getModuleKeyForModuleRef(ctx, moduleRef)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
-		moduleKeys[i] = moduleKey
+		optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(moduleKey)
 	}
-	return moduleKeys, nil
+	return optionalModuleKeys, nil
 }
 
 func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, moduleRef bufmodule.ModuleRef) (bufmodule.ModuleKey, error) {
 	protoCommit, err := a.getProtoCommitForModuleRef(ctx, moduleRef)
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +112,6 @@ func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, modu
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Required by ModuleKeyProvider documentation
 			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
 		return nil, err
