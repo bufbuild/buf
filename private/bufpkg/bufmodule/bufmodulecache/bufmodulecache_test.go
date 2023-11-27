@@ -17,7 +17,15 @@ func init() {
 	bufconfig.AllowV2ForTesting()
 }
 
-func TestCacheBasic(t *testing.T) {
+func TestCacheBasicDir(t *testing.T) {
+	testCacheBasic(t, false)
+}
+
+func TestCacheBasicTar(t *testing.T) {
+	testCacheBasic(t, true)
+}
+
+func testCacheBasic(t *testing.T, tar bool) {
 	ctx := context.Background()
 
 	bsrProvider, err := bufmoduletest.NewOmniProvider(
@@ -47,10 +55,18 @@ func TestCacheBasic(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	var moduleDataStoreOptions []bufmodulestore.ModuleDataStoreOption
+	if tar {
+		moduleDataStoreOptions = append(
+			moduleDataStoreOptions,
+			bufmodulestore.ModuleDataStoreWithTar(),
+		)
+	}
 	cacheProvider := newModuleDataProvider(
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
 			storagemem.NewReadWriteBucket(),
+			moduleDataStoreOptions...,
 		),
 	)
 
