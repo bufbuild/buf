@@ -54,7 +54,7 @@ type syncHandler struct {
 
 	moduleIdentityToRepositoryIDCache  map[string]string
 	moduleIdentityToDefaultBranchCache map[string]string
-	existingRepositoriesCache          map[string]struct{}
+	existingModuleIdentityCache        map[string]struct{}
 }
 
 func newSyncHandler(
@@ -76,7 +76,7 @@ func newSyncHandler(
 		createWithVisibility:                 createWithVisibility,
 		moduleIdentityToRepositoryIDCache:    make(map[string]string),
 		moduleIdentityToDefaultBranchCache:   make(map[string]string),
-		existingRepositoriesCache:            make(map[string]struct{}),
+		existingModuleIdentityCache:          make(map[string]struct{}),
 		syncServiceClientFactory:             syncServiceClientFactory,
 		referenceServiceClientFactory:        referenceServiceClientFactory,
 		repositoryServiceClientFactory:       repositoryServiceClientFactory,
@@ -480,7 +480,7 @@ func (h *syncHandler) createRepository(
 	ctx context.Context,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 ) error {
-	if _, alreadyExists := h.existingRepositoriesCache[moduleIdentity.IdentityString()]; alreadyExists {
+	if _, alreadyExists := h.existingModuleIdentityCache[moduleIdentity.IdentityString()]; alreadyExists {
 		return nil
 	}
 	service := h.repositoryServiceClientFactory(moduleIdentity.Remote())
@@ -496,6 +496,6 @@ func (h *syncHandler) createRepository(
 		return err
 	}
 	// if created successfully or if it already existed, cache it
-	h.existingRepositoriesCache[moduleIdentity.IdentityString()] = struct{}{}
+	h.existingModuleIdentityCache[moduleIdentity.IdentityString()] = struct{}{}
 	return nil
 }
