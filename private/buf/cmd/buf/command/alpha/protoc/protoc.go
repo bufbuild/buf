@@ -21,12 +21,12 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -45,7 +45,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
@@ -105,36 +105,25 @@ func run(
 		)
 	}
 
-	var buildOption bufmodulebuild.BuildOption
-	if len(env.FilePaths) > 0 {
-		buildOption = bufmodulebuild.WithPaths(env.FilePaths)
-	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	runner := command.NewRunner()
-	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
+	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
+		storageosProvider,
 		env.IncludeDirPaths,
-		buildOption,
+		env.FilePaths,
 	)
 	if err != nil {
 		return err
 	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	var buildOptions []bufimagebuild.BuildOption
+	var buildOptions []bufimage.BuildImageOption
 	// we always need source code info if we are doing generation
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
-		buildOptions = append(buildOptions, bufimagebuild.WithExcludeSourceCodeInfo())
+		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(container.Logger(), moduleReader).Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
-		module,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
 	if err != nil {
@@ -150,14 +139,16 @@ func run(
 		}
 		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
 		// but this also makes us consistent with the rest of buf
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 
 	if env.PrintFreeFieldNumbers {
-		fileInfos, err := module.TargetFileInfos(ctx)
-		if err != nil {
-			return err
-		}
+		fileInfos, err := bufmodule.GetTargetFileInfos(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+				workspace,
+			),
+		)
 		var filePaths []string
 		for _, fileInfo := range fileInfos {
 			filePaths = append(filePaths, fileInfo.Path())
@@ -239,15 +230,17 @@ func run(
 	if env.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
-	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, env.Output)
+	controller, err := bufcli.NewController(container)
 	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
+		return err
 	}
-	return bufcli.NewWireImageWriter(container.Logger()).PutImage(ctx,
-		container,
-		messageRef,
+	return controller.PutImage(
+		ctx,
+		env.Output,
 		image,
-		true,
-		!env.IncludeImports,
+		// Actually redundant with bufimage.BuildImageOptions right now.
+		bufctl.WithImageExcludeSourceInfo(!env.IncludeSourceInfo),
+		bufctl.WithImageExcludeImports(!env.IncludeImports),
+		bufctl.WithImageAsFileDescriptorSet(true),
 	)
 }

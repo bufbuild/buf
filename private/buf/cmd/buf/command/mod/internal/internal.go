@@ -17,8 +17,9 @@ package internal
 import (
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -69,7 +70,12 @@ func BindLSRulesVersion(flagSet *pflag.FlagSet, addr *string, flagName string, a
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. Implies --%s. Must be one of %s",
 			allFlagName,
-			stringutil.SliceToString(bufconfig.AllVersions),
+			slicesext.Map(
+				bufconfig.AllFileVersions,
+				func(fileVersion bufconfig.FileVersion) string {
+					return fileVersion.String()
+				},
+			),
 		),
 	)
 }

@@ -152,7 +152,7 @@ func ToStructMap[T comparable](s []T) map[T]struct{} {
 // If f(V) is the zero value of K, nothing is added to the map.
 //
 // Duplicate values of type K will result in a single map entry.
-func ToValuesMapV[K comparable, V any](s []V, f func(V) K) map[K]V {
+func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K]V {
 	var zero K
 	m := make(map[K]V)
 	for _, v := range s {
@@ -180,8 +180,20 @@ func MapKeysToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
 // MapKeysToSlice converts the map's keys to a slice.
 func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 	s := make([]K, 0, len(m))
-	for e := range m {
-		s = append(s, e)
+	for k := range m {
+		s = append(s, k)
+	}
+	return s
+}
+
+// MapValuesToSlice converts the map's values to a slice.
+//
+// Duplicate values will be added. This should generally be used
+// in cases where you know there is a 1-1 mapping from K to V.
+func MapValuesToSlice[K comparable, V any](m map[K]V) []V {
+	s := make([]V, 0, len(m))
+	for _, v := range m {
+		s = append(s, v)
 	}
 	return s
 }

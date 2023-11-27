@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -36,7 +35,6 @@ type imageConfigReader struct {
 	storageosProvider   storageos.Provider
 	fetchReader         buffetch.Reader
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
-	imageBuilder        bufimagebuild.Builder
 	moduleConfigReader  *moduleConfigReader
 	imageReader         *imageReader
 }
@@ -46,14 +44,12 @@ func newImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	imageBuilder bufimagebuild.Builder,
 ) *imageConfigReader {
 	return &imageConfigReader{
 		logger:              logger.Named("bufwire"),
 		storageosProvider:   storageosProvider,
 		fetchReader:         fetchReader,
 		moduleBucketBuilder: moduleBucketBuilder,
-		imageBuilder:        imageBuilder,
 		moduleConfigReader: newModuleConfigReader(
 			logger,
 			storageosProvider,
@@ -152,12 +148,9 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			// an image for it.
 			continue
 		}
-		buildOpts := []bufimagebuild.BuildOption{
-			bufimagebuild.WithExpectedDirectDependencies(moduleConfig.Module().DeclaredDirectDependencies()),
-			bufimagebuild.WithWorkspace(moduleConfigSet.Workspace()),
-		}
+		buildOpts := []bufimage.BuildImageOption{}
 		if excludeSourceCodeInfo {
-			buildOpts = append(buildOpts, bufimagebuild.WithExcludeSourceCodeInfo())
+			buildOpts = append(buildOpts, bufimage.WithExcludeSourceCodeInfo())
 		}
 		imageConfig, fileAnnotations, err := i.buildModule(
 			ctx,
@@ -234,9 +227,9 @@ func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	config *bufconfig.Config,
 	module bufmodule.Module,
-	buildOpts ...bufimagebuild.BuildOption,
+	buildOpts ...bufimage.BuildImageOption,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
-	image, fileAnnotations, err := i.imageBuilder.Build(
+	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		module,
 		buildOpts...,

@@ -16,7 +16,6 @@ package buffetch
 
 import (
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var _ MessageRef = &messageRef{}
@@ -46,10 +45,6 @@ func newMessageRef(
 		useEnumNumbers:  useEnumNumbers,
 		messageEncoding: messageEncoding,
 	}, nil
-}
-
-func (r *messageRef) PathForExternalPath(externalPath string) (string, error) {
-	return normalpath.NormalizeAndValidate(externalPath)
 }
 
 func (r *messageRef) MessageEncoding() MessageEncoding {

@@ -19,13 +19,11 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -42,7 +40,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -54,7 +52,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -104,73 +101,68 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlagLint(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
+	// Parse out if this is config-ignore-yaml.
+	// This is messed.
+	controllerErrorFormat := flags.ErrorFormat
+	if controllerErrorFormat == "config-ignore-yaml" {
+		controllerErrorFormat = "text"
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	imageConfigReader, err := bufcli.NewWireImageConfigReader(
+	controller, err := bufcli.NewController(
 		container,
-		storageosProvider,
-		runner,
-		clientConfig,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(controllerErrorFormat),
+		bufctl.WithFileAnnotationsToStdout(),
 	)
 	if err != nil {
 		return err
 	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+	imageWithConfigs, err := controller.GetImageWithConfigs(
 		ctx,
-		container,
-		ref,
-		flags.Config,
-		flags.Paths,        // we filter checks for files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for linting
+		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		formatString := flags.ErrorFormat
-		if formatString == "config-ignore-yaml" {
-			formatString = "text"
-		}
-		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, formatString); err != nil {
-			return err
-		}
-		return bufcli.ErrFileAnnotation
+	if err != nil {
+		return err
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
-	for _, imageConfig := range imageConfigs {
+	for _, imageWithConfig := range imageWithConfigs {
 		fileAnnotations, err := buflint.NewHandler(container.Logger()).Check(
 			ctx,
-			imageConfig.Config().Lint,
-			imageConfig.Image(),
+			imageWithConfig.LintConfig(),
+			imageWithConfig,
 		)
 		if err != nil {
 			return err
 		}
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
+	allFileAnnotations = bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
 	if len(allFileAnnotations) > 0 {
-		if err := buflintconfig.PrintFileAnnotations(
-			container.Stdout(),
-			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
-			flags.ErrorFormat,
-		); err != nil {
-			return err
+		if flags.ErrorFormat == "config-ignore-yaml" {
+			if err := buflint.PrintFileAnnotationsConfigIgnoreYAMLV1(
+				container.Stdout(),
+				allFileAnnotations,
+			); err != nil {
+				return err
+			}
+		} else {
+			if err := bufanalysis.PrintFileAnnotations(
+				container.Stdout(),
+				allFileAnnotations,
+				flags.ErrorFormat,
+			); err != nil {
+				return err
+			}
 		}
-		return bufcli.ErrFileAnnotation
+		return bufctl.ErrFileAnnotation
 	}
 	return nil
 }

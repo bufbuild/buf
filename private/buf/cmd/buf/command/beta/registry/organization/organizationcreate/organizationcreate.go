@@ -21,7 +21,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -36,7 +35,7 @@ const formatFlagName = "format"
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -47,7 +46,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -76,7 +74,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleOwner, err := bufmoduleref.ModuleOwnerForString(container.Arg(0))
+	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -91,14 +89,16 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleOwner.Remote(),
+		moduleOwner.Registry(),
 		registryv1alpha1connect.NewOrganizationServiceClient,
 	)
 	resp, err := service.CreateOrganization(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateOrganizationRequest{
-			Name: moduleOwner.Owner(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateOrganizationRequest{
+				Name: moduleOwner.Owner(),
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -107,7 +107,7 @@ func run(
 		return err
 	}
 	return bufprint.NewOrganizationPrinter(
-		moduleOwner.Remote(),
+		moduleOwner.Registry(),
 		container.Stdout(),
 	).PrintOrganization(ctx, format, resp.Msg.Organization)
 }

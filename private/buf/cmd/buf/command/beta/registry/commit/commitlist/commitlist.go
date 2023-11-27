@@ -21,7 +21,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -41,7 +41,7 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -52,7 +52,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -99,7 +98,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
+	moduleRef, err := bufmodule.ParseModuleRef(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -114,29 +113,32 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleReference.Remote(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 
-	reference := moduleReference.Reference()
+	reference := moduleRef.Ref()
 	if reference == "" {
-		reference = bufmoduleref.Main
+		// TODO: deal with main
+		reference = "main"
 	}
 
 	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
-			RepositoryOwner: moduleReference.Owner(),
-			RepositoryName:  moduleReference.Repository(),
-			Reference:       reference,
-			PageSize:        flags.PageSize,
-			PageToken:       flags.PageToken,
-			Reverse:         flags.Reverse,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
+				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
+				RepositoryName:  moduleRef.ModuleFullName().Name(),
+				Reference:       reference,
+				PageSize:        flags.PageSize,
+				PageToken:       flags.PageToken,
+				Reverse:         flags.Reverse,
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return bufcli.NewModuleReferenceNotFoundError(moduleReference)
+			return bufcli.NewModuleRefNotFoundError(moduleRef)
 		}
 		return err
 	}

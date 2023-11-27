@@ -19,12 +19,13 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufprint"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protostat"
+	"github.com/bufbuild/buf/private/pkg/protostat/protostatstorage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -37,7 +38,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -49,7 +50,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -91,53 +91,30 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
+	controller, err := bufcli.NewController(
 		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-		moduleReader,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 	)
 	if err != nil {
 		return err
 	}
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
+	workspace, err := controller.GetWorkspace(
 		ctx,
-		container,
-		sourceOrModuleRef,
-		"",
-		nil,
-		nil,
-		false,
+		input,
 	)
-	if err != nil {
-		return err
-	}
-	moduleConfigs := moduleConfigSet.ModuleConfigs()
-	statsSlice := make([]*protostat.Stats, len(moduleConfigs))
-	for i, moduleConfig := range moduleConfigs {
-		// TODO: convert to use protostatstorage.NewFileWalker with bufmodule.ModuleReadBucketToStorageReadBucket.
-		//stats, err := protostat.GetStats(ctx, bufmodulestat.NewFileWalker(moduleConfig.Module()))
-		//if err != nil {
-		//return err
-		//}
-		//statsSlice[i] = stats
-		statsSlice[i] = nil
-	}
-	return bufprint.NewStatsPrinter(container.Stdout()).
-		PrintStats(ctx, format, protostat.MergeStats(statsSlice...))
+	stats, err := protostat.GetStats(
+		ctx,
+		protostatstorage.NewFileWalker(
+			bufmodule.ModuleReadBucketToStorageReadBucket(
+				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+					workspace,
+				),
+			),
+		),
+	)
+	return bufprint.NewStatsPrinter(container.Stdout()).PrintStats(
+		ctx,
+		format,
+		stats,
+	)
 }

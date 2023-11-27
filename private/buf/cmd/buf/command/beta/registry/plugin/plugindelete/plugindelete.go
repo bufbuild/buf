@@ -34,7 +34,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -45,7 +45,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -86,11 +85,13 @@ func run(
 	)
 	if _, err := service.DeleteCuratedPlugin(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteCuratedPluginRequest{
-			Owner:   pluginIdentity.Owner(),
-			Name:    pluginIdentity.Plugin(),
-			Version: version,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteCuratedPluginRequest{
+				Owner:   pluginIdentity.Owner(),
+				Name:    pluginIdentity.Plugin(),
+				Version: version,
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return fmt.Errorf("the plugin %s does not exist", container.Arg(0))

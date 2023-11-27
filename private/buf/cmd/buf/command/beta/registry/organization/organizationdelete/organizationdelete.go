@@ -20,12 +20,12 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -35,7 +35,7 @@ const forceFlagName = "force"
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appflag.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -46,7 +46,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -75,7 +74,7 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleOwner, err := bufmoduleref.ModuleOwnerForString(container.Arg(0))
+	moduleOwner, err := bufcli.ParseModuleOwner(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -85,7 +84,7 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleOwner.Remote(),
+		moduleOwner.Registry(),
 		registryv1alpha1connect.NewOrganizationServiceClient,
 	)
 	if !flags.Force {
@@ -95,9 +94,11 @@ func run(
 	}
 	if _, err := service.DeleteOrganizationByName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.DeleteOrganizationByNameRequest{
-			Name: moduleOwner.Owner(),
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.DeleteOrganizationByNameRequest{
+				Name: moduleOwner.Owner(),
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
@@ -105,7 +106,7 @@ func run(
 		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Organization deleted."); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }

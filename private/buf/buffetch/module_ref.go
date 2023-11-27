@@ -16,7 +16,6 @@ package buffetch
 
 import (
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var _ ModuleRef = &moduleRef{}
@@ -29,10 +28,6 @@ func newModuleRef(iModuleRef internal.ModuleRef) *moduleRef {
 	return &moduleRef{
 		iModuleRef: iModuleRef,
 	}
-}
-
-func (r *moduleRef) PathForExternalPath(externalPath string) (string, error) {
-	return normalpath.NormalizeAndValidate(externalPath)
 }
 
 func (r *moduleRef) internalRef() internal.Ref {

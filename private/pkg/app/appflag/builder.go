@@ -49,6 +49,8 @@ type builder struct {
 	defaultTimeout time.Duration
 
 	tracing bool
+
+	interceptors []Interceptor
 }
 
 func newBuilder(appName string, options ...BuilderOption) *builder {
@@ -87,9 +89,8 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 
 func (b *builder) NewRunFunc(
 	f func(context.Context, Container) error,
-	interceptors ...Interceptor,
 ) func(context.Context, app.Container) error {
-	interceptor := chainInterceptors(interceptors...)
+	interceptor := chainInterceptors(b.interceptors...)
 	return func(ctx context.Context, appContainer app.Container) error {
 		if interceptor != nil {
 			return b.run(ctx, appContainer, interceptor(f))
@@ -217,13 +218,16 @@ func getLogLevel(debugFlag bool, noWarnFlag bool) (string, error) {
 // chainInterceptors consolidates the given interceptors into one.
 // The interceptors are applied in the order they are declared.
 func chainInterceptors(interceptors ...Interceptor) Interceptor {
+	if len(interceptors) == 0 {
+		return nil
+	}
 	filtered := make([]Interceptor, 0, len(interceptors))
 	for _, interceptor := range interceptors {
 		if interceptor != nil {
 			filtered = append(filtered, interceptor)
 		}
 	}
-	switch n := len(filtered); n {
+	switch len(filtered) {
 	case 0:
 		return nil
 	case 1:
