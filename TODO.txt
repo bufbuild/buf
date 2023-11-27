@@ -3,3 +3,12 @@
 - ProtoFileRef
 - new digest format
 - workspace with no file searching (wkt)
+
+- port tests from:
+  - bufmodule
+  - bufmoduleref
+  - bufmoduletesting
+  - bufmodulebuild
+  - bufmoduleconfig
+  - buflock
+  - bufconfig
