@@ -737,10 +737,10 @@ func assertEqualModuleFullNameKeyedMaps[V any](t *testing.T, m1 map[bufmodule.Mo
 	keyedM1 := make(map[string]V, len(m1))
 	keyedM2 := make(map[string]V, len(m2))
 	for k, v := range m1 {
-		keyedM1[k.IdentityString()] = v
+		keyedM1[k.String()] = v
 	}
 	for k, v := range m2 {
-		keyedM2[k.IdentityString()] = v
+		keyedM2[k.String()] = v
 	}
 	require.Equal(t, keyedM1, keyedM2)
 }

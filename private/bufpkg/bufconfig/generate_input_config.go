@@ -20,6 +20,10 @@ type GenerateInputConfig interface {
 	// Exactly one of Module, Directory, ProtoFile, Tarball, ZipArchive, BinaryImage,
 	// JSONImage or GitRepo is not empty, indicating the input format.
 
+	// TODO:
+	// Type() InputType
+	// Location() string
+
 	// Module returns the module name.
 	Module() string
 	// Direcotry returns the path to the directory, relative or absolute.

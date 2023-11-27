@@ -19,9 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 
 	connect "connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
@@ -42,8 +44,11 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+const defaultInput = "."
+
 type generator struct {
 	logger              *zap.Logger
+	controller          bufctl.Controller
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufpluginexec.Generator
 	clientConfig        *connectclient.Config
@@ -51,6 +56,7 @@ type generator struct {
 
 func newGenerator(
 	logger *zap.Logger,
+	controller bufctl.Controller,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -58,6 +64,7 @@ func newGenerator(
 ) *generator {
 	return &generator{
 		logger:              logger,
+		controller:          controller,
 		storageosProvider:   storageosProvider,
 		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
 		clientConfig:        clientConfig,
@@ -85,46 +92,62 @@ func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	config bufconfig.GenerateConfig,
-	image bufimage.Image,
 	options ...GenerateOption,
 ) error {
 	generateOptions := newGenerateOptions()
 	for _, option := range options {
 		option(generateOptions)
 	}
-	return g.generate(
+	inputImages, err := getInputImages(
 		ctx,
-		container,
+		g.logger,
+		g.controller,
+		generateOptions.input,
 		config,
-		image,
-		generateOptions.baseOutDirPath,
-		generateOptions.includeImports,
-		generateOptions.includeWellKnownTypes,
-		generateOptions.wasmEnabled,
+		generateOptions.moduleConfigPath,
+		generateOptions.includePaths,
+		generateOptions.excludePaths,
+		generateOptions.includeTypes,
 	)
-}
-
-func (g *generator) generate(
-	ctx context.Context,
-	container app.EnvStdioContainer,
-	config bufconfig.GenerateConfig,
-	image bufimage.Image,
-	baseOutDirPath string,
-	includeImports bool,
-	includeWellKnownTypes bool,
-	wasmEnabled bool,
-) error {
-	if err := modifyImage(ctx, g.logger, config.GenerateManagedConfig(), image); err != nil {
+	if err != nil {
 		return err
 	}
+	for _, inputImage := range inputImages {
+		if err := bufimagemodify.Modify(ctx, inputImage, config.GenerateManagedConfig()); err != nil {
+			return err
+		}
+		if err := g.generateCode(
+			ctx,
+			container,
+			inputImage,
+			generateOptions.baseOutDirPath,
+			config.GeneratePluginConfigs(),
+			generateOptions.includeImports,
+			generateOptions.includeWellKnownTypes,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *generator) generateCode(
+	ctx context.Context,
+	container app.EnvStdioContainer,
+	inputImage bufimage.Image,
+	baseOutDir string,
+	pluginConfigs []bufconfig.GeneratePluginConfig,
+	alwaysIncludeImports bool,
+	alwaysIncludeWKT bool,
+) error {
 	responses, err := g.execPlugins(
 		ctx,
 		container,
-		config.GeneratePluginConfigs(),
-		image,
-		includeImports,
-		includeWellKnownTypes,
-		wasmEnabled,
+		pluginConfigs,
+		inputImage,
+		alwaysIncludeImports,
+		alwaysIncludeWKT,
+		false, // wasm enabled is false
 	)
 	if err != nil {
 		return err
@@ -135,10 +158,10 @@ func (g *generator) generate(
 		g.storageosProvider,
 		appprotoos.ResponseWriterWithCreateOutDirIfNotExists(),
 	)
-	for i, pluginConfig := range config.GeneratePluginConfigs() {
+	for i, pluginConfig := range pluginConfigs {
 		out := pluginConfig.Out()
-		if baseOutDirPath != "" && baseOutDirPath != "." {
-			out = filepath.Join(baseOutDirPath, out)
+		if baseOutDir != "" && baseOutDir != "." {
+			out = filepath.Join(baseOutDir, out)
 		}
 		response := responses[i]
 		if response == nil {
@@ -158,13 +181,151 @@ func (g *generator) generate(
 	return nil
 }
 
+// TODO: this is a very temporary solution, although it would be nice if buffetch exposes function that parses ref from a map
+func refStringForInputConfig(
+	ctx context.Context,
+	logger *zap.Logger,
+	inputConfig bufconfig.GenerateInputConfig,
+) string {
+	var refString string
+	var refOptionKeyToValue map[string]string
+	switch {
+	case inputConfig.Module() != "":
+		refString = inputConfig.Module()
+	case inputConfig.Directory() != "":
+		refString = inputConfig.Directory()
+	case inputConfig.ProtoFile() != "":
+		refString = inputConfig.ProtoFile()
+	case inputConfig.Tarball() != "":
+		refString = inputConfig.Tarball()
+	case inputConfig.ZipArchive() != "":
+		refString = inputConfig.ZipArchive()
+	case inputConfig.BinaryImage() != "":
+		refString = inputConfig.BinaryImage()
+	case inputConfig.JSONImage() != "":
+		refString = inputConfig.JSONImage()
+	case inputConfig.TextImage() != "":
+		refString = inputConfig.TextImage()
+	case inputConfig.GitRepo() != "":
+		refString = inputConfig.GitRepo()
+	}
+	if inputConfig.Compression() != "" {
+		refOptionKeyToValue["compression"] = inputConfig.Compression()
+	}
+	if inputConfig.StripComponent() != 0 {
+		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(inputConfig.StripComponent()), 10)
+	}
+	if inputConfig.Subdir() != "" {
+		refOptionKeyToValue["subdir"] = inputConfig.Subdir()
+	}
+	if inputConfig.Branch() != "" {
+		refOptionKeyToValue["branch"] = inputConfig.Branch()
+	}
+	if inputConfig.Tag() != "" {
+		refOptionKeyToValue["tag"] = inputConfig.Tag()
+	}
+	if inputConfig.Ref() != "" {
+		refOptionKeyToValue["ref"] = inputConfig.Ref()
+	}
+	// TODO: != 0
+	if inputConfig.Depth() != "" {
+		refOptionKeyToValue["depth"] = inputConfig.Depth()
+	}
+	if inputConfig.RecurseSubmodules() {
+		refOptionKeyToValue["recurse_submodules"] = "true"
+	}
+	if inputConfig.IncludePackageFiles() {
+		refOptionKeyToValue["include_package_files"] = "true"
+	}
+	if len(refOptionKeyToValue) == 0 {
+		return refString
+	}
+	refString += "#"
+	for key, value := range refOptionKeyToValue {
+		refString += key + "=" + value
+	}
+	return refString
+}
+
+func getInputImages(
+	ctx context.Context,
+	logger *zap.Logger,
+	controller bufctl.Controller,
+	inputSpecified string,
+	config bufconfig.GenerateConfig,
+	moduleConfigOverride string,
+	includePathsOverride []string,
+	excludePathsOverride []string,
+	includeTypesOverride []string,
+) ([]bufimage.Image, error) {
+	var inputImages []bufimage.Image
+	// If input is specified on the command line, we use that. If input is not
+	// specified on the command line, but the config has no inputs, use the default input.
+	if inputSpecified != "" || len(config.GenerateInputConfigs()) == 0 {
+		input := defaultInput
+		if inputSpecified != "" {
+			input = inputSpecified
+		}
+		var includeTypes []string
+		if typesConfig := config.GenerateTypeConfig().IncludeTypes(); typesConfig != nil {
+			includeTypes = typesConfig
+		}
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImage(
+			ctx,
+			input,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(includePathsOverride, excludePathsOverride),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		inputImages = []bufimage.Image{inputImage}
+	} else {
+		for _, inputConfig := range config.GenerateInputConfigs() {
+			includePaths := inputConfig.IncludePaths()
+			if len(includePathsOverride) > 0 {
+				includePaths = includePathsOverride
+			}
+			excludePaths := inputConfig.ExcludePaths()
+			if len(excludePathsOverride) > 0 {
+				excludePaths = excludePathsOverride
+			}
+			// In V2 we do not need to look at inputConfig.GenerateTypeConfig().IncludeTypes()
+			// because inputConfig.GenerateTypeConfig() is always nil.
+			// TODO: document the above in godoc
+			includeTypes := inputConfig.Types()
+			if len(includeTypesOverride) > 0 {
+				includeTypes = includeTypesOverride
+			}
+			input := refStringForInputConfig(ctx, logger, inputConfig)
+			inputImage, err := controller.GetImage(
+				ctx,
+				input,
+				bufctl.WithConfigOverride(moduleConfigOverride),
+				bufctl.WithTargetPaths(includePaths, excludePaths),
+				bufctl.WithImageTypes(includeTypes),
+			)
+			if err != nil {
+				return nil, err
+			}
+			inputImages = append(inputImages, inputImage)
+		}
+	}
+	return inputImages, nil
+}
+
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
 	image bufimage.Image,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
+	// TODO: perhaps clean this up
 	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
@@ -192,8 +353,9 @@ func (g *generator) execPlugins(
 					container,
 					imageProvider,
 					currentPluginConfig,
-					includeImports,
-					includeWellKnownTypes,
+					// TODO: can the user override this to false on the command line? i.e. is `buf generate --include-imports=false` possible?
+					alwaysIncludeImports || currentPluginConfig.IncludeImports(),
+					alwaysIncludeWellKnownTypes || currentPluginConfig.IncludeWKT(),
 					wasmEnabled,
 				)
 				if err != nil {
@@ -224,8 +386,8 @@ func (g *generator) execPlugins(
 					image,
 					remote,
 					v2Args,
-					includeImports,
-					includeWellKnownTypes,
+					alwaysIncludeImports,
+					alwaysIncludeWellKnownTypes,
 				)
 				if err != nil {
 					return err
@@ -326,12 +488,16 @@ func (g *generator) execRemotePluginsV2(
 	image bufimage.Image,
 	remote string,
 	pluginConfigs []*remotePluginExecArgs,
-	includeImports bool,
-	includeWellKnownTypes bool,
+	alwaysIncludeImports bool,
+	alwaysIncludeWellKnownTypes bool,
 ) ([]*remotePluginExecutionResult, error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
 	for i, pluginConfig := range pluginConfigs {
-		request, err := getPluginGenerationRequest(pluginConfig.PluginConfig)
+		request, err := getPluginGenerationRequest(
+			pluginConfig.PluginConfig,
+			alwaysIncludeImports || pluginConfig.PluginConfig.IncludeImports(),
+			alwaysIncludeWellKnownTypes || pluginConfig.PluginConfig.IncludeWKT(),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -344,8 +510,8 @@ func (g *generator) execRemotePluginsV2(
 			&registryv1alpha1.GenerateCodeRequest{
 				Image:                 bufimage.ImageToProtoImage(image),
 				Requests:              requests,
-				IncludeImports:        includeImports,
-				IncludeWellKnownTypes: includeWellKnownTypes,
+				IncludeImports:        alwaysIncludeImports,
+				IncludeWellKnownTypes: alwaysIncludeWellKnownTypes,
 			},
 		),
 	)
@@ -372,6 +538,8 @@ func (g *generator) execRemotePluginsV2(
 
 func getPluginGenerationRequest(
 	pluginConfig bufconfig.GeneratePluginConfig,
+	includeImports bool,
+	includeWKT bool,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
 	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Name(), pluginConfig.Revision()); err == nil {
@@ -390,23 +558,11 @@ func getPluginGenerationRequest(
 		options = []string{pluginConfig.Opt()}
 	}
 	return &registryv1alpha1.PluginGenerationRequest{
-		PluginReference: curatedPluginReference,
-		Options:         options,
+		PluginReference:       curatedPluginReference,
+		Options:               options,
+		IncludeImports:        &includeImports,
+		IncludeWellKnownTypes: &includeWKT,
 	}, nil
-}
-
-// modifyImage modifies the image according to the given configuration (i.e. managed mode).
-func modifyImage(
-	ctx context.Context,
-	logger *zap.Logger,
-	config bufconfig.GenerateManagedConfig,
-	image bufimage.Image,
-) error {
-	return bufimagemodify.Modify(
-		ctx,
-		image,
-		config,
-	)
 }
 
 // validateResponses verifies that a response is set for each of the
@@ -441,10 +597,18 @@ func validateResponses(
 }
 
 type generateOptions struct {
+	// plugin specific options:
 	baseOutDirPath        string
 	includeImports        bool
 	includeWellKnownTypes bool
 	wasmEnabled           bool
+	// image/input specific options:
+	input            string
+	moduleConfigPath string
+	// TODO: unify naming: includePaths / pathsIncluded / pathSpecified
+	includePaths []string
+	excludePaths []string
+	includeTypes []string
 }
 
 func newGenerateOptions() *generateOptions {

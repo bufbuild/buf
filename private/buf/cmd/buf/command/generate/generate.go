@@ -17,15 +17,16 @@ package generate
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -294,33 +295,26 @@ func run(
 		// in the context of including imports.
 		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s", includeWKTFlagName, includeImportsFlagName)
 	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
+	var storageosProvider storageos.Provider
+	if flags.DisableSymlinks {
+		storageosProvider = storageos.NewProvider()
+	} else {
+		storageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	genConfig, err := bufgen.ReadConfig(
-		ctx,
-		logger,
-		bufgen.NewProvider(logger),
-		readWriteBucket,
-		bufgen.ReadConfigWithOverride(flags.Template),
-	)
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
 	if err != nil {
 		return err
 	}
@@ -328,44 +322,27 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageConfigReader, err := bufcli.NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-	)
-	if err != nil {
-		return err
-	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-		ctx,
-		container,
-		ref,
-		flags.Config,
-		flags.Paths,        // we filter on files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for generation
-	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, flags.ErrorFormat); err != nil {
+	var configReader io.Reader
+	templatePathExtension := filepath.Ext(flags.Template)
+	if flags.Template == "" || templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json" {
+		configReader, err = os.Open(flags.Template)
+		if err != nil {
 			return err
 		}
-		return bufctl.ErrFileAnnotation
+	} else {
+		configReader = strings.NewReader(flags.Template)
 	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	image, err := bufimage.MergeImages(images...)
+	config, err := bufconfig.ReadBufGenYAMLFile(configReader)
 	if err != nil {
 		return err
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+		bufgen.GenerateWithIncludePaths(flags.Paths),
+		bufgen.GenerateWithExcludePaths(flags.ExcludePaths),
+		bufgen.GenerateWithIncludeTypes(flags.Types),
+		bufgen.GenerateWithInputOverride(input),
+		bufgen.GenerateWithModuleConfigPath(flags.Config),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
@@ -389,35 +366,17 @@ func run(
 			bufgen.GenerateWithWASMEnabled(),
 		)
 	}
-	var includedTypes []string
-	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
-		// command-line flags take precedence
-		includedTypes = append(flags.Types, flags.TypesDeprecated...)
-	} else if genConfig.TypesConfig != nil {
-		includedTypes = genConfig.TypesConfig.Include
-	}
-	if len(includedTypes) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
-		if err != nil {
-			return err
-		}
-	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
-	if err != nil {
-		return err
-	}
 	return bufgen.NewGenerator(
 		logger,
+		controller,
 		storageosProvider,
-		runner,
+		command.NewRunner(),
 		wasmPluginExecutor,
 		clientConfig,
 	).Generate(
 		ctx,
 		container,
-		genConfig,
-		image,
+		config,
 		generateOptions...,
 	)
 }

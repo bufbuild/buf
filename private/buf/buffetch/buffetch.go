@@ -41,7 +41,14 @@ const (
 
 	useProtoNamesKey  = "use_proto_names"
 	useEnumNumbersKey = "use_enum_numbers"
+
+	// TODO:
+	// SubDirKey Key = "subdir"
 )
+
+// TODO:
+// type Key struct
+// GetModuleRef(context.Context, string, map[Key]string)
 
 var (
 	// MessageFormatsString is the string representation of all message formats.

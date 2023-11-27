@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -108,7 +108,6 @@ type Generator interface {
 		ctx context.Context,
 		container app.EnvStdioContainer,
 		config bufconfig.GenerateConfig,
-		image bufimage.Image,
 		options ...GenerateOption,
 	) error
 }
@@ -116,6 +115,7 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
+	controller bufctl.Controller,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -123,6 +123,7 @@ func NewGenerator(
 ) Generator {
 	return newGenerator(
 		logger,
+		controller,
 		storageosProvider,
 		runner,
 		wasmPluginExecutor,
@@ -166,6 +167,42 @@ func GenerateWithIncludeWellKnownTypes() GenerateOption {
 func GenerateWithWASMEnabled() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.wasmEnabled = true
+	}
+}
+
+// GenerateWithInputOverride says to generate for this input only, ignoring inputs
+// from the config.
+func GenerateWithInputOverride(input string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.input = input
+	}
+}
+
+// GenerateWithModuleConfigPath says to build the image with a module config at this path.
+func GenerateWithModuleConfigPath(moduleConfigPath string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.moduleConfigPath = moduleConfigPath
+	}
+}
+
+// GenerateWithIncludePaths says to only generate code for these paths.
+func GenerateWithIncludePaths(includePaths []string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includePaths = includePaths
+	}
+}
+
+// GenerateWithExcludePaths says to not generate code for these paths.
+func GenerateWithExcludePaths(excludePaths []string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.excludePaths = excludePaths
+	}
+}
+
+// GenerateWithIncludeTypes says to only generate code for these types.
+func GenerateWithIncludeTypes(includeTypes []string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeTypes = includeTypes
 	}
 }
 

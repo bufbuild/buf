@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufnew/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"google.golang.org/protobuf/types/descriptorpb"
