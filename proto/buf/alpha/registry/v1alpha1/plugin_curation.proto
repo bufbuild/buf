@@ -56,6 +56,7 @@ enum PluginLanguage {
   PLUGIN_LANGUAGE_PHP = 13;
   PLUGIN_LANGUAGE_CSHARP = 14;
   PLUGIN_LANGUAGE_SCALA = 15;
+  PLUGIN_LANGUAGE_C = 16;
 }
 
 // NPMImportStyle is used to specify the import style the plugin supports.

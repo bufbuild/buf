@@ -203,12 +203,13 @@ func TestLanguagesToProtoLanguages(t *testing.T) {
 		},
 		protoLanguages,
 	)
-	protoLanguages, err = OutputLanguagesToProtoLanguages([]string{"java", "kotlin"})
+	protoLanguages, err = OutputLanguagesToProtoLanguages([]string{"java", "kotlin", "c"})
 	require.NoError(t, err)
 	assert.Equal(t,
 		[]registryv1alpha1.PluginLanguage{
 			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_JAVA,
 			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_KOTLIN,
+			registryv1alpha1.PluginLanguage_PLUGIN_LANGUAGE_C,
 		},
 		protoLanguages,
 	)
