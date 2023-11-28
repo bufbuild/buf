@@ -73,24 +73,20 @@ type generateConfig struct {
 	inputConfigs  []GenerateInputConfig
 }
 
-func newGenerateConfig() *generateConfig {
-	return &generateConfig{}
+func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
+	return g.pluginConfigs
 }
 
-func (*generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
-	return nil
+func (g *generateConfig) GenerateManagedConfig() GenerateManagedConfig {
+	return g.managedConfig
 }
 
-func (*generateConfig) GenerateManagedConfig() GenerateManagedConfig {
-	return nil
+func (g *generateConfig) GenerateTypeConfig() GenerateTypeConfig {
+	return g.typeConfig
 }
 
-func (*generateConfig) GenerateTypeConfig() GenerateTypeConfig {
-	return nil
-}
-
-func (*generateConfig) GenerateInputConfigs() []GenerateInputConfig {
-	return nil
+func (g *generateConfig) GenerateInputConfigs() []GenerateInputConfig {
+	return g.inputConfigs
 }
 
 func (*generateConfig) isGenerateConfig() {}
