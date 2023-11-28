@@ -31,7 +31,7 @@ import (
 var jsTypeSubPath = []int32{8, 6}
 
 func modifyJsType(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -105,7 +105,7 @@ func modifyJsType(
 			fieldDescriptor.Options.Jstype = jsType
 			if len(path) > 0 {
 				jsTypeOptionPath := append(path, jsTypeSubPath...)
-				sweeper.mark(imageFile.Path(), jsTypeOptionPath)
+				sweeper.Mark(imageFile, jsTypeOptionPath)
 			}
 			return nil
 		},

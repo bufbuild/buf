@@ -24,7 +24,7 @@ import (
 )
 
 func modifyOption[T bool | descriptorpb.FileOptions_OptimizeMode](
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 	fileOption bufconfig.FileOption,
@@ -62,7 +62,7 @@ func modifyOption[T bool | descriptorpb.FileOptions_OptimizeMode](
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	setOptionFunc(descriptor.Options, value)
-	sweeper.mark(imageFile.Path(), sourceLocationPath)
+	sweeper.Mark(imageFile, sourceLocationPath)
 	return nil
 }
 
@@ -91,7 +91,7 @@ func overrideFromConfig[T bool | descriptorpb.FileOptions_OptimizeMode](
 }
 
 func modifyStringOption(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 	valueOption bufconfig.FileOption,
@@ -138,7 +138,7 @@ func modifyStringOption(
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	setOptionFunc(descriptor.Options, value)
-	sweeper.mark(imageFile.Path(), sourceLocationPath)
+	sweeper.Mark(imageFile, sourceLocationPath)
 	return nil
 }
 

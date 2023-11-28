@@ -183,7 +183,7 @@ func TestModifyImageFile(
 		description                           string
 		dirPathToModuleFullName               map[string]string
 		config                                bufconfig.GenerateManagedConfig
-		modifyFunc                            func(Sweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error
+		modifyFunc                            func(*markSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error
 		filePathToExpectedOptions             map[string]*descriptorpb.FileOptions
 		filePathToExpectedMarkedLocationPaths map[string][][]int32
 	}{
@@ -556,7 +556,7 @@ func TestModifyImageFile(
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
-				sweeper := newFileOptionSweeper()
+				sweeper := newMarkSweeper(image)
 				// TODO: check include source code info
 				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
 					imageFile := image.GetFile(filePath)

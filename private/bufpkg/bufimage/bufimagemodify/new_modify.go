@@ -34,12 +34,12 @@ func Modify(
 		return nil
 	}
 	// TODO: in v2 modify field options as well
-	sweeper := NewFileOptionSweeper()
+	sweeper := newMarkSweeper(image)
 	for _, imageFile := range image.Files() {
 		if isWellKnownType(ctx, imageFile) {
 			continue
 		}
-		modifyFuncs := []func(Sweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
+		modifyFuncs := []func(*markSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
 			modifyCcEnableArenas,
 			modifyCsharpNamespace,
 			modifyGoPackage,
@@ -64,7 +64,7 @@ func Modify(
 }
 
 func modifyJavaOuterClass(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -92,7 +92,7 @@ func modifyJavaOuterClass(
 }
 
 func modifyJavaPackage(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -118,7 +118,7 @@ func modifyJavaPackage(
 }
 
 func modifyGoPackage(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -149,7 +149,7 @@ func modifyGoPackage(
 }
 
 func modifyObjcClassPrefix(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -177,7 +177,7 @@ func modifyObjcClassPrefix(
 }
 
 func modifyCsharpNamespace(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -205,7 +205,7 @@ func modifyCsharpNamespace(
 }
 
 func modifyPhpNamespace(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -233,7 +233,7 @@ func modifyPhpNamespace(
 }
 
 func modifyPhpMetadataNamespace(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -261,7 +261,7 @@ func modifyPhpMetadataNamespace(
 }
 
 func modifyRubyPackage(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -289,7 +289,7 @@ func modifyRubyPackage(
 }
 
 func modifyCcEnableArenas(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -310,7 +310,7 @@ func modifyCcEnableArenas(
 }
 
 func modifyJavaMultipleFiles(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -331,7 +331,7 @@ func modifyJavaMultipleFiles(
 }
 
 func modifyJavaStringCheckUtf8(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -352,7 +352,7 @@ func modifyJavaStringCheckUtf8(
 }
 
 func modifyOptmizeFor(
-	sweeper Sweeper,
+	sweeper *markSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
