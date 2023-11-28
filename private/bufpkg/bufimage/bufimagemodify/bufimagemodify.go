@@ -308,8 +308,14 @@ func RubyPackage(
 	)
 }
 
+// TODO: delete this one
 // isWellKnownType returns true if the given path is one of the well-known types.
 func isWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
+	return datawkt.Exists(imageFile.Path())
+}
+
+// TODO: rename this one
+func isWellKnownTypeNoCtx(imageFile bufimage.ImageFile) bool {
 	return datawkt.Exists(imageFile.Path())
 }
 

@@ -52,6 +52,7 @@ func Modify(
 			modifyPhpMetadataNamespace,
 			modifyPhpNamespace,
 			modifyRubyPackage,
+			modifyJsType,
 		}
 		for _, modifyFunc := range modifyFuncs {
 			if err := modifyFunc(sweeper, imageFile, config); err != nil {
