@@ -52,8 +52,9 @@ type syncHandler struct {
 	repositoryTagServiceClientFactory    RepositoryTagServiceClientFactory
 	repositoryCommitServiceClientFactory RepositoryCommitServiceClientFactory
 
-	moduleFullNameToRepositoryIDCache  map[string]string
-	moduleFullNameToDefaultBranchCache map[string]string
+	moduleIdentityToRepositoryIDCache  map[string]string
+	moduleIdentityToDefaultBranchCache map[string]string
+	existingModuleIdentityCache        map[string]struct{}
 }
 
 func newSyncHandler(
@@ -73,8 +74,9 @@ func newSyncHandler(
 		container:                            container,
 		repo:                                 repo,
 		createWithVisibility:                 createWithVisibility,
-		moduleFullNameToRepositoryIDCache:    make(map[string]string),
-		moduleFullNameToDefaultBranchCache:   make(map[string]string),
+		moduleIdentityToRepositoryIDCache:    make(map[string]string),
+		moduleIdentityToDefaultBranchCache:   make(map[string]string),
+		existingModuleIdentityCache:          make(map[string]struct{}),
 		syncServiceClientFactory:             syncServiceClientFactory,
 		referenceServiceClientFactory:        referenceServiceClientFactory,
 		repositoryServiceClientFactory:       repositoryServiceClientFactory,
@@ -244,7 +246,12 @@ func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync
 		if err != nil {
 			return fmt.Errorf("read bucket for commit %q: %w", moduleCommit.Commit().Hash(), err)
 		}
-		syncPoint, err := h.pushOrCreate(
+		if h.createWithVisibility != nil {
+			if err := h.createRepository(ctx, moduleBranch.TargetModuleIdentity()); err != nil {
+				return fmt.Errorf("create repo %s: %w", moduleBranch.TargetModuleIdentity(), err)
+			}
+		}
+		syncPoint, err := h.syncCommitModule(
 			ctx,
 			moduleCommit.Commit(),
 			moduleBranch.BranchName(),
@@ -253,26 +260,26 @@ func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync
 			bucket,
 		)
 		if err != nil {
-			// We failed to push. We fail hard on this because the error may be recoverable
+			// We failed to sync. We fail hard on this because the error may be recoverable
 			// (i.e., the BSR may be down) and we should re-attempt this commit.
 			return fmt.Errorf(
-				"failed to push or create %s at %s: %w",
-				moduleBranch.TargetModuleFullName().IdentityString(),
+				"sync module %s at branch %s commit %s directory %s: %w",
+				moduleBranch.TargetModuleIdentity().IdentityString(),
+				moduleBranch.BranchName(),
 				moduleCommit.Commit().Hash(),
+				moduleBranch.Directory(),
 				err,
 			)
 		}
-		_, err = h.container.Stderr().Write([]byte(
+		syncMsg := fmt.Sprintf(
 			// from local                                        -> to remote
 			// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
-			fmt.Sprintf(
-				"%s:%s:%s -> %s:%s\n",
-				moduleBranch.Directory(), moduleBranch.BranchName(), moduleCommit.Commit().Hash().Hex(),
-				moduleBranch.TargetModuleFullName().IdentityString(), syncPoint.BsrCommitName,
-			)),
+			"%s:%s:%s -> %s:%s\n",
+			moduleBranch.Directory(), moduleBranch.BranchName(), moduleCommit.Commit().Hash().Hex(),
+			moduleBranch.TargetModuleIdentity().IdentityString(), syncPoint.BsrCommitName,
 		)
-		if err != nil {
-			return err
+		if _, err := h.container.Stderr().Write([]byte(syncMsg)); err != nil {
+			return fmt.Errorf("write %q to stderr: %w", syncMsg, err)
 		}
 	}
 	return nil
@@ -427,48 +434,7 @@ func (h *syncHandler) bsrTagExists(
 	return true, nil
 }
 
-func (h *syncHandler) pushOrCreate(
-	ctx context.Context,
-	commit git.Commit,
-	branchName string,
-	tags []string,
-	moduleFullName bufmodule.ModuleFullName,
-	moduleBucket storage.ReadBucket,
-) (*registryv1alpha1.GitSyncPoint, error) {
-	modulePin, err := h.push(
-		ctx,
-		commit,
-		branchName,
-		tags,
-		moduleFullName,
-		moduleBucket,
-	)
-	if err != nil {
-		// We rely on Push* returning a NotFound error to denote the repository is not created.
-		// This technically could be a NotFound error for some other entity than the repository
-		// in question, however if it is, then this Create call will just fail as the repository
-		// is already created, and there is no side effect. The 99% case is that a NotFound
-		// error is because the repository does not exist, and we want to avoid having to do
-		// a GetRepository RPC call for every call to push --create.
-		if h.createWithVisibility != nil && connect.CodeOf(err) == connect.CodeNotFound {
-			if err := h.create(ctx, moduleFullName); err != nil {
-				return nil, fmt.Errorf("create repo: %w", err)
-			}
-			return h.push(
-				ctx,
-				commit,
-				branchName,
-				tags,
-				moduleFullName,
-				moduleBucket,
-			)
-		}
-		return nil, fmt.Errorf("push: %w", err)
-	}
-	return modulePin, nil
-}
-
-func (h *syncHandler) push(
+func (h *syncHandler) syncCommitModule(
 	ctx context.Context,
 	commit git.Commit,
 	branchName string,
@@ -510,12 +476,15 @@ func (h *syncHandler) push(
 	return resp.Msg.SyncPoint, nil
 }
 
-func (h *syncHandler) create(
+func (h *syncHandler) createRepository(
 	ctx context.Context,
 	moduleFullName bufmodule.ModuleFullName,
 ) error {
-	service := h.repositoryServiceClientFactory(moduleFullName.Registry())
-	fullName := moduleFullName.Owner() + "/" + moduleFullName.Name()
+	if _, alreadyExists := h.existingModuleIdentityCache[moduleIdentity.IdentityString()]; alreadyExists {
+		return nil
+	}
+	service := h.repositoryServiceClientFactory(moduleIdentity.Remote())
+	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
 	_, err := service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
@@ -523,8 +492,10 @@ func (h *syncHandler) create(
 			Visibility: *h.createWithVisibility,
 		}),
 	)
-	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("expected repository %s to be missing but found the repository to already exist", fullName))
+	if err != nil && connect.CodeOf(err) != connect.CodeAlreadyExists {
+		return err
 	}
-	return err
+	// if created successfully or if it already existed, cache it
+	h.existingModuleIdentityCache[moduleIdentity.IdentityString()] = struct{}{}
+	return nil
 }
