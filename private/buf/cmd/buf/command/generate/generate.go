@@ -17,7 +17,6 @@ package generate
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -322,19 +321,33 @@ func run(
 	if err != nil {
 		return err
 	}
-	var configReader io.Reader
+	var config bufconfig.GenerateConfig
 	templatePathExtension := filepath.Ext(flags.Template)
-	if flags.Template == "" || templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json" {
-		configReader, err = os.Open(flags.Template)
+	switch {
+	case flags.Template == "":
+		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
 		if err != nil {
 			return err
 		}
-	} else {
-		configReader = strings.NewReader(flags.Template)
-	}
-	config, err := bufconfig.ReadBufGenYAMLFile(configReader)
-	if err != nil {
-		return err
+		config, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+		if err != nil {
+			return err
+		}
+	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
+		// We should not read from a bucket at "." because this path can jump context.
+		configReader, err := os.Open(flags.Template)
+		if err != nil {
+			return err
+		}
+		config, err = bufconfig.ReadBufGenYAMLFile(configReader)
+		if err != nil {
+			return err
+		}
+	default:
+		config, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
+		if err != nil {
+			return err
+		}
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),

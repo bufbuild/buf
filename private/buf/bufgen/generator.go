@@ -187,33 +187,13 @@ func refStringForInputConfig(
 	logger *zap.Logger,
 	inputConfig bufconfig.GenerateInputConfig,
 ) string {
-	var refString string
-	var refOptionKeyToValue map[string]string
-	switch {
-	case inputConfig.Module() != "":
-		refString = inputConfig.Module()
-	case inputConfig.Directory() != "":
-		refString = inputConfig.Directory()
-	case inputConfig.ProtoFile() != "":
-		refString = inputConfig.ProtoFile()
-	case inputConfig.Tarball() != "":
-		refString = inputConfig.Tarball()
-	case inputConfig.ZipArchive() != "":
-		refString = inputConfig.ZipArchive()
-	case inputConfig.BinaryImage() != "":
-		refString = inputConfig.BinaryImage()
-	case inputConfig.JSONImage() != "":
-		refString = inputConfig.JSONImage()
-	case inputConfig.TextImage() != "":
-		refString = inputConfig.TextImage()
-	case inputConfig.GitRepo() != "":
-		refString = inputConfig.GitRepo()
-	}
+	var refString = inputConfig.Location()
+	refOptionKeyToValue := map[string]string{}
 	if inputConfig.Compression() != "" {
 		refOptionKeyToValue["compression"] = inputConfig.Compression()
 	}
-	if inputConfig.StripComponent() != 0 {
-		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(inputConfig.StripComponent()), 10)
+	if inputConfig.StripComponents() != nil {
+		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(*inputConfig.StripComponents()), 10)
 	}
 	if inputConfig.Subdir() != "" {
 		refOptionKeyToValue["subdir"] = inputConfig.Subdir()
@@ -228,8 +208,8 @@ func refStringForInputConfig(
 		refOptionKeyToValue["ref"] = inputConfig.Ref()
 	}
 	// TODO: != 0
-	if inputConfig.Depth() != "" {
-		refOptionKeyToValue["depth"] = inputConfig.Depth()
+	if inputConfig.Depth() != nil {
+		refOptionKeyToValue["depth"] = strconv.FormatUint(uint64(*inputConfig.Depth()), 10)
 	}
 	if inputConfig.RecurseSubmodules() {
 		refOptionKeyToValue["recurse_submodules"] = "true"
@@ -267,8 +247,8 @@ func getInputImages(
 			input = inputSpecified
 		}
 		var includeTypes []string
-		if typesConfig := config.GenerateTypeConfig().IncludeTypes(); typesConfig != nil {
-			includeTypes = typesConfig
+		if typesConfig := config.GenerateTypeConfig(); typesConfig != nil {
+			includeTypes = typesConfig.IncludeTypes()
 		}
 		if len(includeTypesOverride) > 0 {
 			includeTypes = includeTypesOverride
@@ -297,7 +277,7 @@ func getInputImages(
 			// In V2 we do not need to look at inputConfig.GenerateTypeConfig().IncludeTypes()
 			// because inputConfig.GenerateTypeConfig() is always nil.
 			// TODO: document the above in godoc
-			includeTypes := inputConfig.Types()
+			includeTypes := inputConfig.IncludeTypes()
 			if len(includeTypesOverride) > 0 {
 				includeTypes = includeTypesOverride
 			}
@@ -325,7 +305,6 @@ func (g *generator) execPlugins(
 	image bufimage.Image,
 	alwaysIncludeImports bool,
 	alwaysIncludeWellKnownTypes bool,
-	// TODO: perhaps clean this up
 	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
@@ -370,22 +349,14 @@ func (g *generator) execPlugins(
 	for remote, indexedPluginConfigs := range remotePluginConfigTable {
 		remote := remote
 		indexedPluginConfigs := indexedPluginConfigs
-		v2Args := make([]*remotePluginExecArgs, 0, len(indexedPluginConfigs))
-		for _, param := range indexedPluginConfigs {
-			// TODO: check that it's ok to skip it. It's fine because remote is not a thing anymore.
-			// if param.PluginConfig.Remote != "" {
-			// 	return nil, fmt.Errorf("invalid plugin reference: %s", param.PluginConfig.Remote)
-			// }
-			v2Args = append(v2Args, param)
-		}
-		if len(v2Args) > 0 {
+		if len(indexedPluginConfigs) > 0 {
 			jobs = append(jobs, func(ctx context.Context) error {
 				results, err := g.execRemotePluginsV2(
 					ctx,
 					container,
 					image,
 					remote,
-					v2Args,
+					indexedPluginConfigs,
 					alwaysIncludeImports,
 					alwaysIncludeWellKnownTypes,
 				)
