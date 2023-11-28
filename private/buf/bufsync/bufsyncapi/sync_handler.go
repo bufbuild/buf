@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -52,9 +53,9 @@ type syncHandler struct {
 	repositoryTagServiceClientFactory    RepositoryTagServiceClientFactory
 	repositoryCommitServiceClientFactory RepositoryCommitServiceClientFactory
 
-	moduleIdentityToRepositoryIDCache  map[string]string
-	moduleIdentityToDefaultBranchCache map[string]string
-	existingModuleIdentityCache        map[string]struct{}
+	moduleFullNameToRepositoryIDCache  map[string]string
+	moduleFullNameToDefaultBranchCache map[string]string
+	existingModuleFullNameCache        map[string]struct{}
 }
 
 func newSyncHandler(
@@ -74,9 +75,9 @@ func newSyncHandler(
 		container:                            container,
 		repo:                                 repo,
 		createWithVisibility:                 createWithVisibility,
-		moduleIdentityToRepositoryIDCache:    make(map[string]string),
-		moduleIdentityToDefaultBranchCache:   make(map[string]string),
-		existingModuleIdentityCache:          make(map[string]struct{}),
+		moduleFullNameToRepositoryIDCache:    make(map[string]string),
+		moduleFullNameToDefaultBranchCache:   make(map[string]string),
+		existingModuleFullNameCache:          make(map[string]struct{}),
 		syncServiceClientFactory:             syncServiceClientFactory,
 		referenceServiceClientFactory:        referenceServiceClientFactory,
 		repositoryServiceClientFactory:       repositoryServiceClientFactory,
@@ -186,11 +187,11 @@ func (h *syncHandler) SyncModuleTags(
 		if err != nil {
 			return err
 		}
-		referenceService := h.referenceServiceClientFactory(moduleTags.TargetModuleFullName().Remote())
-		repositoryTagService := h.repositoryTagServiceClientFactory(moduleTags.TargetModuleFullName().Remote())
+		referenceService := h.referenceServiceClientFactory(moduleTags.TargetModuleFullName().Registry())
+		repositoryTagService := h.repositoryTagServiceClientFactory(moduleTags.TargetModuleFullName().Registry())
 		commitRes, err := referenceService.GetReferenceByName(ctx, connect.NewRequest(&registryv1alpha1.GetReferenceByNameRequest{
 			Owner:          moduleTags.TargetModuleFullName().Owner(),
-			RepositoryName: moduleTags.TargetModuleFullName().Repository(),
+			RepositoryName: moduleTags.TargetModuleFullName().Name(),
 			Name:           commit.Commit().Hash().Hex(),
 		}))
 		if err != nil {
@@ -198,7 +199,7 @@ func (h *syncHandler) SyncModuleTags(
 				return fmt.Errorf(
 					"git commit %q is not known to module %q",
 					commit.Commit().Hash(),
-					moduleTags.TargetModuleFullName().IdentityString(),
+					moduleTags.TargetModuleFullName().String(),
 				)
 			}
 			return fmt.Errorf("get reference by name %q: %w", commit.Commit().Hash(), err)
@@ -207,7 +208,7 @@ func (h *syncHandler) SyncModuleTags(
 			return fmt.Errorf(
 				"git commit %q is not synced to module %q",
 				commit.Commit().Hash(),
-				moduleTags.TargetModuleFullName().IdentityString(),
+				moduleTags.TargetModuleFullName().String(),
 			)
 		}
 		for _, tag := range commit.Tags() {
@@ -222,7 +223,7 @@ func (h *syncHandler) SyncModuleTags(
 					CommitName:   commitRes.Msg.Reference.GetVcsCommit().CommitName,
 				}))
 				if err != nil {
-					return fmt.Errorf("create new tag %q on module %q: %w", tag, moduleTags.TargetModuleFullName().IdentityString(), err)
+					return fmt.Errorf("create new tag %q on module %q: %w", tag, moduleTags.TargetModuleFullName().String(), err)
 				}
 			} else {
 				// TODO: don't do this unless we need to
@@ -232,7 +233,7 @@ func (h *syncHandler) SyncModuleTags(
 					CommitName:   &commitRes.Msg.Reference.GetVcsCommit().CommitName,
 				}))
 				if err != nil {
-					return fmt.Errorf("update existing tag %q on module %q: %w", tag, moduleTags.TargetModuleFullName().IdentityString(), err)
+					return fmt.Errorf("update existing tag %q on module %q: %w", tag, moduleTags.TargetModuleFullName().String(), err)
 				}
 			}
 		}
@@ -247,8 +248,8 @@ func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync
 			return fmt.Errorf("read bucket for commit %q: %w", moduleCommit.Commit().Hash(), err)
 		}
 		if h.createWithVisibility != nil {
-			if err := h.createRepository(ctx, moduleBranch.TargetModuleIdentity()); err != nil {
-				return fmt.Errorf("create repo %s: %w", moduleBranch.TargetModuleIdentity(), err)
+			if err := h.createRepository(ctx, moduleBranch.TargetModuleFullName()); err != nil {
+				return fmt.Errorf("create repo %s: %w", moduleBranch.TargetModuleFullName().String(), err)
 			}
 		}
 		syncPoint, err := h.syncCommitModule(
@@ -264,7 +265,7 @@ func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync
 			// (i.e., the BSR may be down) and we should re-attempt this commit.
 			return fmt.Errorf(
 				"sync module %s at branch %s commit %s directory %s: %w",
-				moduleBranch.TargetModuleIdentity().IdentityString(),
+				moduleBranch.TargetModuleFullName().String(),
 				moduleBranch.BranchName(),
 				moduleCommit.Commit().Hash(),
 				moduleBranch.Directory(),
@@ -276,7 +277,7 @@ func (h *syncHandler) SyncModuleBranch(ctx context.Context, moduleBranch bufsync
 			// <module-directory>:<git-branch>:<git-commit-hash> -> <module-identity>:<bsr-commit-name>
 			"%s:%s:%s -> %s:%s\n",
 			moduleBranch.Directory(), moduleBranch.BranchName(), moduleCommit.Commit().Hash().Hex(),
-			moduleBranch.TargetModuleIdentity().IdentityString(), syncPoint.BsrCommitName,
+			moduleBranch.TargetModuleFullName().String(), syncPoint.BsrCommitName,
 		)
 		if _, err := h.container.Stderr().Write([]byte(syncMsg)); err != nil {
 			return fmt.Errorf("write %q to stderr: %w", syncMsg, err)
@@ -480,11 +481,11 @@ func (h *syncHandler) createRepository(
 	ctx context.Context,
 	moduleFullName bufmodule.ModuleFullName,
 ) error {
-	if _, alreadyExists := h.existingModuleIdentityCache[moduleIdentity.IdentityString()]; alreadyExists {
+	if _, alreadyExists := h.existingModuleFullNameCache[moduleFullName.String()]; alreadyExists {
 		return nil
 	}
-	service := h.repositoryServiceClientFactory(moduleIdentity.Remote())
-	fullName := moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
+	service := h.repositoryServiceClientFactory(moduleFullName.Registry())
+	fullName := moduleFullName.Owner() + "/" + moduleFullName.Name()
 	_, err := service.CreateRepositoryByFullName(
 		ctx,
 		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
@@ -496,6 +497,6 @@ func (h *syncHandler) createRepository(
 		return err
 	}
 	// if created successfully or if it already existed, cache it
-	h.existingModuleIdentityCache[moduleIdentity.IdentityString()] = struct{}{}
+	h.existingModuleFullNameCache[moduleFullName.String()] = struct{}{}
 	return nil
 }
