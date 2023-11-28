@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -108,6 +108,7 @@ type Generator interface {
 		ctx context.Context,
 		container app.EnvStdioContainer,
 		config bufconfig.GenerateConfig,
+		images []bufimage.Image,
 		options ...GenerateOption,
 	) error
 }
@@ -115,7 +116,7 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
-	controller bufctl.Controller,
+	//controller bufctl.Controller,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -123,7 +124,7 @@ func NewGenerator(
 ) Generator {
 	return newGenerator(
 		logger,
-		controller,
+		//controller,
 		storageosProvider,
 		runner,
 		wasmPluginExecutor,

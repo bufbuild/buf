@@ -1,4 +1,4 @@
-// GenerateInputConfig is an input configuration.
+// InputConfig is an input configuration.
 // Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -113,8 +113,8 @@ var inputConfigTypeToString = map[InputConfigType]string{
 	InputConfigTypeTextImage:   formatTextImage,
 }
 
-// GenerateInputConfig is an input configuration for code generation.
-type GenerateInputConfig interface {
+// InputConfig is an input configuration for code generation.
+type InputConfig interface {
 	// Type returns the input type.
 	Type() InputConfigType
 	// Location returns the location for the input.
@@ -150,10 +150,12 @@ type GenerateInputConfig interface {
 	// returns a non-empty list of types.
 	IncludeTypes() []string
 
-	isGenerateInputConfig()
+	isInputConfig()
 }
 
-type generateInputConfig struct {
+// *** PRIVATE ***
+
+type inputConfig struct {
 	inputType           InputConfigType
 	location            string
 	compression         string
@@ -170,66 +172,8 @@ type generateInputConfig struct {
 	includePaths        []string
 }
 
-func (g *generateInputConfig) Type() InputConfigType {
-	return g.inputType
-}
-
-func (g *generateInputConfig) Location() string {
-	return g.location
-}
-
-func (g *generateInputConfig) Compression() string {
-	return g.compression
-}
-
-func (g *generateInputConfig) StripComponents() *uint32 {
-	return g.stripComponents
-}
-
-func (g *generateInputConfig) Subdir() string {
-	return g.subdir
-}
-
-func (g *generateInputConfig) Branch() string {
-	return g.branch
-}
-
-func (g *generateInputConfig) Tag() string {
-	return g.tag
-}
-
-func (g *generateInputConfig) Ref() string {
-	return g.ref
-}
-
-func (g *generateInputConfig) Depth() *uint32 {
-	return g.depth
-}
-
-func (g *generateInputConfig) RecurseSubmodules() bool {
-	return g.recurseSubmodules
-}
-
-func (g *generateInputConfig) IncludePackageFiles() bool {
-	return g.includePackageFiles
-}
-
-func (g *generateInputConfig) ExcludePaths() []string {
-	return g.excludePaths
-}
-
-func (g *generateInputConfig) IncludePaths() []string {
-	return g.includePaths
-}
-
-func (g *generateInputConfig) IncludeTypes() []string {
-	return g.includeTypes
-}
-
-func (g *generateInputConfig) isGenerateInputConfig() {}
-
-func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV2) (GenerateInputConfig, error) {
-	inputConfig := &generateInputConfig{}
+func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV2) (InputConfig, error) {
+	inputConfig := &inputConfig{}
 	var inputTypes []InputConfigType
 	var options []string
 	if externalConfig.Module != nil {
@@ -324,3 +268,61 @@ func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV
 	}
 	return inputConfig, nil
 }
+
+func (g *inputConfig) Type() InputConfigType {
+	return g.inputType
+}
+
+func (g *inputConfig) Location() string {
+	return g.location
+}
+
+func (g *inputConfig) Compression() string {
+	return g.compression
+}
+
+func (g *inputConfig) StripComponents() *uint32 {
+	return g.stripComponents
+}
+
+func (g *inputConfig) Subdir() string {
+	return g.subdir
+}
+
+func (g *inputConfig) Branch() string {
+	return g.branch
+}
+
+func (g *inputConfig) Tag() string {
+	return g.tag
+}
+
+func (g *inputConfig) Ref() string {
+	return g.ref
+}
+
+func (g *inputConfig) Depth() *uint32 {
+	return g.depth
+}
+
+func (g *inputConfig) RecurseSubmodules() bool {
+	return g.recurseSubmodules
+}
+
+func (g *inputConfig) IncludePackageFiles() bool {
+	return g.includePackageFiles
+}
+
+func (g *inputConfig) ExcludePaths() []string {
+	return g.excludePaths
+}
+
+func (g *inputConfig) IncludePaths() []string {
+	return g.includePaths
+}
+
+func (g *inputConfig) IncludeTypes() []string {
+	return g.includeTypes
+}
+
+func (g *inputConfig) isInputConfig() {}

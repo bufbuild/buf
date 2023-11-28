@@ -361,6 +361,7 @@ type RefParser interface {
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
 	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
+	GetParsedRefForInputConfig(ctx context.Context, bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.

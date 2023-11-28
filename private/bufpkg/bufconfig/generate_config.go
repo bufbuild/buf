@@ -32,8 +32,6 @@ type GenerateConfig interface {
 	// filters from input configurations, which exist in v2.
 	// This will always be nil in v2
 	GenerateTypeConfig() GenerateTypeConfig
-	// GenerateInputConfigs returns the input config.
-	GenerateInputConfigs() []GenerateInputConfig
 
 	isGenerateConfig()
 }

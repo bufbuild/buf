@@ -68,6 +68,11 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
+	GetImageForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+		options ...FunctionOption,
+	) (bufimage.Image, error)
 	GetImageWithConfigs(
 		ctx context.Context,
 		input string,
@@ -314,35 +319,23 @@ func (c *controller) GetImage(
 	if err != nil {
 		return nil, err
 	}
-	switch t := ref.(type) {
-	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
-	case buffetch.SourceRef:
-		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.ModuleRef:
-		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.MessageRef:
-		return c.getImageForMessageRef(ctx, t, functionOptions)
-	default:
-		// This is a system error.
-		return nil, syserror.Newf("invalid Ref: %T", ref)
+	return c.getImage(ctx, ref, functionOptions)
+}
+
+func (c *controller) GetImageForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	options ...FunctionOption,
+) (bufimage.Image, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
 	}
+	ref, err := c.buffetchRefParser.GetRefForInputConfig(ctx, inputConfig)
+	if err != nil {
+		return nil, err
+	}
+	return c.getImage(ctx, ref, functionOptions)
 }
 
 func (c *controller) GetImageWithConfigs(
@@ -585,6 +578,42 @@ func (c *controller) PutMessage(
 	}
 	_, err = writeCloser.Write(data)
 	return multierr.Append(err, writeCloser.Close())
+}
+
+func (c *controller) getImage(
+	ctx context.Context,
+	ref buffetch.Ref,
+	functionOptions *functionOptions,
+) (bufimage.Image, error) {
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		return nil, errors.New("TODO")
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.MessageRef:
+		return c.getImageForMessageRef(ctx, t, functionOptions)
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
+	}
 }
 
 func (c *controller) getWorkspaceForSourceRef(
