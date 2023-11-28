@@ -17,6 +17,8 @@ package bufconfig
 import (
 	"errors"
 	"fmt"
+	"math"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
@@ -271,6 +273,146 @@ func newPluginConfigFromExternalV1(
 	)
 }
 
+// TODO: move this up, maybe let v1 use this as well
+const (
+	typeRemote        = "remote"
+	typeBinary        = "binary"
+	typeProtocBuiltin = "protoc_builtin"
+)
+
+const (
+	optionRevision   = "revision"
+	optionProtocPath = "protoc_path"
+	optionStrategy   = "strategy"
+)
+
+var allowedOptionsForType = map[string](map[string]bool){
+	typeRemote: {
+		optionRevision: true,
+	},
+	typeBinary: {
+		optionStrategy: true,
+	},
+	typeProtocBuiltin: {
+		optionProtocPath: true,
+		optionStrategy:   true,
+	},
+}
+
+func getTypesAndOptions(externalConfig externalGeneratePluginConfigV2) ([]string, []string, error) {
+	var (
+		types   []string
+		options []string
+	)
+	if externalConfig.Remote != nil {
+		types = append(types, typeRemote)
+	}
+	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(path) > 0 {
+		types = append(types, typeBinary)
+	}
+	if externalConfig.ProtocBuiltin != nil {
+		types = append(types, typeProtocBuiltin)
+	}
+	if externalConfig.Revision != nil {
+		options = append(options, optionRevision)
+	}
+	if externalConfig.ProtocPath != nil {
+		options = append(options, optionProtocPath)
+	}
+	if externalConfig.Strategy != nil {
+		options = append(options, optionStrategy)
+	}
+	return types, options, nil
+}
+
+func newPluginConfigFromExternalV2(
+	externalConfig externalGeneratePluginConfigV2,
+) (GeneratePluginConfig, error) {
+	pluginTypes, options, err := getTypesAndOptions(externalConfig)
+	if err != nil {
+		return nil, err
+	}
+	if len(pluginTypes) == 0 {
+		return nil, fmt.Errorf("must specify one of %s, %s and %s", typeRemote, typeBinary, typeProtocBuiltin)
+	}
+	if len(pluginTypes) > 1 {
+		return nil, fmt.Errorf("only one of %s, %s and %s is allowed", typeRemote, typeBinary, typeProtocBuiltin)
+	}
+	pluginType := pluginTypes[0]
+	allowedOptions := allowedOptionsForType[pluginType]
+	for _, option := range options {
+		if !allowedOptions[option] {
+			return nil, fmt.Errorf("%s is not allowed for %s plugin", option, pluginType)
+		}
+	}
+	var strategy string
+	if externalConfig.Strategy != nil {
+		strategy = *externalConfig.Strategy
+	}
+	parsedStrategy, err := parseStrategy(strategy)
+	if err != nil {
+		return nil, err
+	}
+	opt, err := encoding.InterfaceSliceOrStringToCommaSepString(externalConfig.Opt)
+	if err != nil {
+		return nil, err
+	}
+	switch pluginType {
+	case typeRemote:
+		var revision int
+		if externalConfig.Revision != nil {
+			revision = *externalConfig.Revision
+		}
+		if revision < 0 || revision > math.MaxInt32 {
+			return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
+		}
+		return newRemotePluginConfig(
+			*externalConfig.Remote,
+			revision,
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+		)
+	case typeBinary:
+		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
+		if err != nil {
+			return nil, err
+		}
+		return newBinaryPluginConfig(
+			strings.Join(path, ""),
+			path,
+			parsedStrategy,
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+		)
+	case typeProtocBuiltin:
+		var protocPath string
+		if externalConfig.ProtocPath != nil {
+			protocPath = *externalConfig.ProtocPath
+		}
+		return newProtocBuiltinPluginConfig(
+			*externalConfig.ProtocBuiltin,
+			protocPath,
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+			parsedStrategy,
+		)
+	default:
+		// this should not happen
+		return nil, fmt.Errorf("must specify one of %s, %s and %s", typeRemote, typeBinary, typeProtocBuiltin)
+	}
+}
+
+// TODO: unify parameter order
 func newLocalPluginConfig(
 	name string,
 	strategy GenerateStrategy,

@@ -38,10 +38,11 @@ type GenerateConfig interface {
 	isGenerateConfig()
 }
 
+// TODO: check if this is consistent with the rest of bufconfig (esp. its name and whether it should exist)
 func newGenerateConfigFromExternalFileV1(
 	externalFile externalBufGenYAMLFileV1,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedOverrideRuleFromExternalV1(externalFile.Managed)
+	managedConfig, err := newManagedConfigFromExternalV1(externalFile.Managed)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +60,34 @@ func newGenerateConfigFromExternalFileV1(
 		pluginConfigs: pluginConfigs,
 		managedConfig: managedConfig,
 		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
-		// TODO for v2
-		inputConfigs: nil,
+	}, nil
+}
+
+func newGenerateConfigFromExternalFileV2(
+	externalFile externalBufGenYAMLFileV2,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV2(externalFile.Managed)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	inputConfigs, err := slicesext.MapError(
+		externalFile.Inputs,
+		newInputConfigFromExternalInputConfigV2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		managedConfig: managedConfig,
+		pluginConfigs: pluginConfigs,
+		inputConfigs:  inputConfigs,
 	}, nil
 }
 

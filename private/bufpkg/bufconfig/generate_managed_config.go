@@ -223,7 +223,7 @@ type generateManagedConfig struct {
 	overrides []ManagedOverrideRule
 }
 
-func newManagedOverrideRuleFromExternalV1(
+func newManagedConfigFromExternalV1(
 	externalConfig externalGenerateManagedConfigV1,
 ) (GenerateManagedConfig, error) {
 	if !externalConfig.Enabled {
@@ -406,6 +406,94 @@ func newManagedOverrideRuleFromExternalV1(
 		return nil, err
 	}
 	overrides = append(overrides, perFileOverrides...)
+	return &generateManagedConfig{
+		disables:  disables,
+		overrides: overrides,
+	}, nil
+}
+
+func newManagedConfigFromExternalV2(
+	externalConfig externalGenerateManagedConfigV2,
+) (GenerateManagedConfig, error) {
+	if externalConfig.isEmpty() {
+		return nil, nil
+	}
+	// TODO: log warning if disabled but non-empty
+	var disables []ManagedDisableRule
+	var overrides []ManagedOverrideRule
+	for _, externalDisableConfig := range externalConfig.Disable {
+		var (
+			fileOption  FileOption
+			fieldOption FieldOption
+			err         error
+		)
+		if externalDisableConfig.FileOption != "" {
+			fileOption, err = parseFileOption(externalDisableConfig.FileOption)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if externalDisableConfig.FieldOption != "" {
+			fieldOption, err = parseFieldOption(externalDisableConfig.FieldOption)
+			if err != nil {
+				return nil, err
+			}
+		}
+		disable, err := NewDisableRule(
+			externalDisableConfig.Path,
+			externalDisableConfig.Module,
+			externalDisableConfig.Field,
+			fileOption,
+			fieldOption,
+		)
+		if err != nil {
+			return nil, err
+		}
+		disables = append(disables, disable)
+	}
+	for _, externalOverrideConfig := range externalConfig.Override {
+		if externalOverrideConfig.FileOption == "" && externalOverrideConfig.FieldOption == "" {
+			return nil, errors.New("must set file_option or field_option for an override")
+		}
+		if externalOverrideConfig.FileOption != "" && externalOverrideConfig.FieldOption != "" {
+			return nil, errors.New("exactly one of file_option and field_option must be set for an override")
+		}
+		if externalOverrideConfig.Value == nil {
+			return nil, errors.New("must set value for an override")
+		}
+		if externalOverrideConfig.FieldOption != "" {
+			fieldOption, err := parseFieldOption(externalOverrideConfig.FieldOption)
+			if err != nil {
+				return nil, err
+			}
+			override, err := NewFieldOptionOverrideRule(
+				externalOverrideConfig.Path,
+				externalOverrideConfig.Module,
+				externalOverrideConfig.Field,
+				fieldOption,
+				externalOverrideConfig.Value,
+			)
+			if err != nil {
+				return nil, err
+			}
+			overrides = append(overrides, override)
+			continue
+		}
+		fileOption, err := parseFileOption(externalOverrideConfig.FileOption)
+		if err != nil {
+			return nil, err
+		}
+		override, err := NewFileOptionOverrideRule(
+			externalOverrideConfig.Path,
+			externalOverrideConfig.Module,
+			fileOption,
+			externalOverrideConfig.Value,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
 	return &generateManagedConfig{
 		disables:  disables,
 		overrides: overrides,

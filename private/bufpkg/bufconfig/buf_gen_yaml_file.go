@@ -133,7 +133,18 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 			GenerateConfig: generateConfig,
 		}, nil
 	case FileVersionV2:
-		return nil, errors.New("TODO")
+		var externalGenYAMLFile externalBufGenYAMLFileV2
+		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		generateConfig, err := newGenerateConfigFromExternalFileV2(externalGenYAMLFile)
+		if err != nil {
+			return nil, err
+		}
+		return &bufGenYAMLFile{
+			fileVersion:    fileVersion,
+			GenerateConfig: generateConfig,
+		}, nil
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)

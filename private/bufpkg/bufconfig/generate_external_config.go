@@ -240,13 +240,6 @@ type externalOptionsConfigV1Beta1 struct {
 	OptimizeFor       string `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 }
 
-// TODO: remove this
-// externalConfigVersion defines the subset of all config
-// file versions that is used to determine the configuration version.
-type externalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
 // externalTypesConfigV1 is an external types configuration.
 type externalTypesConfigV1 struct {
 	Include []string `json:"include,omitempty" yaml:"include"`
@@ -255,4 +248,110 @@ type externalTypesConfigV1 struct {
 // isEmpty returns true if e is empty.
 func (e externalTypesConfigV1) isEmpty() bool {
 	return len(e.Include) == 0
+}
+
+// externalBufGenYAMLFileV2 is an external configuration.
+type externalBufGenYAMLFileV2 struct {
+	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
+	Managed externalGenerateManagedConfigV2  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Inputs  []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+}
+
+// externalGenerateManagedConfigV2 is an external managed mode configuration.
+type externalGenerateManagedConfigV2 struct {
+	Enabled  bool                              `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Disable  []externalManagedDisableConfigV2  `json:"disable,omitempty" yaml:"disable,omitempty"`
+	Override []externalManagedOverrideConfigV2 `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// isEmpty returns true if the config is empty.
+func (m externalGenerateManagedConfigV2) isEmpty() bool {
+	return !m.Enabled && len(m.Disable) == 0 && len(m.Override) == 0
+}
+
+// externalManagedDisableConfigV2 is an external configuration that disables file options in
+// managed mode.
+type externalManagedDisableConfigV2 struct {
+	// At most one of FileOption and FieldOption can be set
+	// Must be validated to be a valid FileOption
+	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
+	// Must be validated to be a valid FieldOption
+	FieldOption string `json:"field_option,omitempty" yaml:"field_option,omitempty"`
+	// Must be validated to be a valid module path
+	Module string `json:"module,omitempty" yaml:"module,omitempty"`
+	// Must be normalized and validated
+	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	// Must be validated to be a valid to be a valid field name.
+	Field string `json:"field,omitempty" yaml:"field,omitempty"`
+}
+
+// externalManagedOverrideConfigV2 is an external configuration that overrides file options in
+// managed mode.
+type externalManagedOverrideConfigV2 struct {
+	// Must set exactly one of FileOption and FieldOption
+	// Must be validated to be a valid FileOption
+	FileOption string `json:"file_option,omitempty" yaml:"file_option,omitempty"`
+	// Must be validated to be a valid FieldOption
+	FieldOption string `json:"field_option,omitempty" yaml:"field_option,omitempty"`
+	// Must be validated to be a valid module path
+	Module string `json:"module,omitempty" yaml:"module,omitempty"`
+	// Must be normalized and validated
+	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	// Must be validated to be a valid field name
+	Field string `json:"field,omitempty" yaml:"field,omitempty"`
+	// Required
+	Value interface{} `json:"value,omitempty" yaml:"value,omitempty"`
+}
+
+// externalGeneratePluginConfigV2 is an external plugin configuration.
+type externalGeneratePluginConfigV2 struct {
+	// Only one of Remote, Binary, Wasm, ProtocBuiltin can be set
+	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	// Can be multiple arguments
+	// All arguments must be strings
+	Binary        interface{} `json:"binary,omitempty" yaml:"binary,omitempty"`
+	ProtocBuiltin *string     `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
+	// Only valid with Remote
+	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
+	// Only valid with ProtocBuiltin
+	ProtocPath *string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	// Required
+	Out string `json:"out,omitempty" yaml:"out,omitempty"`
+	// Can be one string or multiple strings
+	Opt            interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
+	IncludeImports bool        `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`
+	IncludeWKT     bool        `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
+	// Must be a valid Strategy, only valid with ProtoBuiltin and Binary
+	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+}
+
+// externalInputConfigV2 is an external input configuration.
+type externalInputConfigV2 struct {
+	// One and only one of Module, Directory, ProtoFile, Tarball, ZipArchive, BinaryImage,
+	// JSONImage and GitRepo must be specified as the format.
+	Module      *string `json:"module,omitempty" yaml:"module,omitempty"`
+	Directory   *string `json:"directory,omitempty" yaml:"directory,omitempty"`
+	ProtoFile   *string `json:"proto_file,omitempty" yaml:"proto_file,omitempty"`
+	Tarball     *string `json:"tarball,omitempty" yaml:"tarball,omitempty"`
+	ZipArchive  *string `json:"zip_archive,omitempty" yaml:"zip_archive,omitempty"`
+	BinaryImage *string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
+	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
+	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
+	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
+	// Compression, StripComponents, Subdir, Branch, Tag, Ref, Depth, RecurseSubmodules
+	// and IncludePackageFils are available for only some formats.
+	Compression         *string `json:"compression,omitempty" yaml:"compression,omitempty"`
+	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
+	Subdir              *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
+	Branch              *string `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Tag                 *string `json:"tag,omitempty" yaml:"tag,omitempty"`
+	Ref                 *string `json:"ref,omitempty" yaml:"ref,omitempty"`
+	Depth               *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`
+	RecurseSubmodules   *bool   `json:"recurse_submodules,omitempty" yaml:"recurse_submodules,omitempty"`
+	IncludePackageFiles *bool   `json:"include_package_files,omitempty" yaml:"include_package_files,omitempty"`
+	// Types, IncludePaths and ExcludePaths are available for all formats.
+	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
+	IncludePaths []string `json:"include_paths,omitempty" yaml:"include_paths,omitempty"`
+	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 }
