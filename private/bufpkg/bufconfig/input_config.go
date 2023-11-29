@@ -269,60 +269,60 @@ func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV
 	return inputConfig, nil
 }
 
-func (g *inputConfig) Type() InputConfigType {
-	return g.inputType
+func (i *inputConfig) Type() InputConfigType {
+	return i.inputType
 }
 
-func (g *inputConfig) Location() string {
-	return g.location
+func (i *inputConfig) Location() string {
+	return i.location
 }
 
-func (g *inputConfig) Compression() string {
-	return g.compression
+func (i *inputConfig) Compression() string {
+	return i.compression
 }
 
-func (g *inputConfig) StripComponents() *uint32 {
-	return g.stripComponents
+func (i *inputConfig) StripComponents() *uint32 {
+	return i.stripComponents
 }
 
-func (g *inputConfig) Subdir() string {
-	return g.subdir
+func (i *inputConfig) Subdir() string {
+	return i.subdir
 }
 
-func (g *inputConfig) Branch() string {
-	return g.branch
+func (i *inputConfig) Branch() string {
+	return i.branch
 }
 
-func (g *inputConfig) Tag() string {
-	return g.tag
+func (i *inputConfig) Tag() string {
+	return i.tag
 }
 
-func (g *inputConfig) Ref() string {
-	return g.ref
+func (i *inputConfig) Ref() string {
+	return i.ref
 }
 
-func (g *inputConfig) Depth() *uint32 {
-	return g.depth
+func (i *inputConfig) Depth() *uint32 {
+	return i.depth
 }
 
-func (g *inputConfig) RecurseSubmodules() bool {
-	return g.recurseSubmodules
+func (i *inputConfig) RecurseSubmodules() bool {
+	return i.recurseSubmodules
 }
 
-func (g *inputConfig) IncludePackageFiles() bool {
-	return g.includePackageFiles
+func (i *inputConfig) IncludePackageFiles() bool {
+	return i.includePackageFiles
 }
 
-func (g *inputConfig) ExcludePaths() []string {
-	return g.excludePaths
+func (i *inputConfig) ExcludePaths() []string {
+	return i.excludePaths
 }
 
-func (g *inputConfig) IncludePaths() []string {
-	return g.includePaths
+func (i *inputConfig) IncludePaths() []string {
+	return i.includePaths
 }
 
-func (g *inputConfig) IncludeTypes() []string {
-	return g.includeTypes
+func (i *inputConfig) IncludeTypes() []string {
+	return i.includeTypes
 }
 
-func (g *inputConfig) isInputConfig() {}
+func (i *inputConfig) isInputConfig() {}

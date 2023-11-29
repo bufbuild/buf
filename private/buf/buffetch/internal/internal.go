@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -361,7 +362,12 @@ type RefParser interface {
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
 	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
-	GetParsedRefForInputConfig(ctx context.Context, bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
+	// GetParsedRefForInputConfig gets the ParsedRef for the input config.
+	//
+	// The returned ParsedRef will be either a ParsedSingleRef, ParsedArchiveRef, ParsedDirRef, ParsedGitRef, or ParsedModuleRef.
+	//
+	// The options should be used to validate that you are getting one of the correct formats.
+	GetParsedRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.

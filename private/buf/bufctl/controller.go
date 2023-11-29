@@ -63,6 +63,7 @@ type Controller interface {
 		dirPath string,
 		options ...FunctionOption,
 	) (bufworkspace.UpdateableWorkspace, error)
+	// TODO: rename to GetImageForInputString, but in a separate PR to minimize merge conflicts
 	GetImage(
 		ctx context.Context,
 		input string,

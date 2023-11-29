@@ -75,17 +75,9 @@ func newGenerateConfigFromExternalFileV2(
 	if err != nil {
 		return nil, err
 	}
-	inputConfigs, err := slicesext.MapError(
-		externalFile.Inputs,
-		newInputConfigFromExternalInputConfigV2,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &generateConfig{
 		managedConfig: managedConfig,
 		pluginConfigs: pluginConfigs,
-		inputConfigs:  inputConfigs,
 	}, nil
 }
 
@@ -95,7 +87,6 @@ type generateConfig struct {
 	pluginConfigs []GeneratePluginConfig
 	managedConfig GenerateManagedConfig
 	typeConfig    GenerateTypeConfig
-	inputConfigs  []GenerateInputConfig
 }
 
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
@@ -108,10 +99,6 @@ func (g *generateConfig) GenerateManagedConfig() GenerateManagedConfig {
 
 func (g *generateConfig) GenerateTypeConfig() GenerateTypeConfig {
 	return g.typeConfig
-}
-
-func (g *generateConfig) GenerateInputConfigs() []GenerateInputConfig {
-	return g.inputConfigs
 }
 
 func (*generateConfig) isGenerateConfig() {}

@@ -116,15 +116,16 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
-	//controller bufctl.Controller,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
+	// Pass a clientConfig instead of a CodeGenerationServiceClient because the
+	// plugins' remotes/registries is not known at this time, and remotes/registries
+	// may be different for different plugins.
 	clientConfig *connectclient.Config,
 ) Generator {
 	return newGenerator(
 		logger,
-		//controller,
 		storageosProvider,
 		runner,
 		wasmPluginExecutor,
@@ -168,42 +169,6 @@ func GenerateWithIncludeWellKnownTypes() GenerateOption {
 func GenerateWithWASMEnabled() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.wasmEnabled = true
-	}
-}
-
-// GenerateWithInputOverride says to generate for this input only, ignoring inputs
-// from the config.
-func GenerateWithInputOverride(input string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.input = input
-	}
-}
-
-// GenerateWithModuleConfigPath says to build the image with a module config at this path.
-func GenerateWithModuleConfigPath(moduleConfigPath string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.moduleConfigPath = moduleConfigPath
-	}
-}
-
-// GenerateWithIncludePaths says to only generate code for these paths.
-func GenerateWithIncludePaths(includePaths []string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.includePaths = includePaths
-	}
-}
-
-// GenerateWithExcludePaths says to not generate code for these paths.
-func GenerateWithExcludePaths(excludePaths []string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.excludePaths = excludePaths
-	}
-}
-
-// GenerateWithIncludeTypes says to only generate code for these types.
-func GenerateWithIncludeTypes(includeTypes []string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.includeTypes = includeTypes
 	}
 }
 

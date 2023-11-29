@@ -61,6 +61,7 @@ testbufnew: installbuf
 		./private/buf/bufcurl/... \
 		./private/buf/buffetch/... \
 		./private/buf/bufformat/... \
+		./private/buf/bufgen/... \
 		./private/buf/bufprint/... \
 		./private/buf/bufworkspace/... \
 		./private/buf/cmd/buf/command/alpha/package/... \
@@ -74,6 +75,7 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/build/... \
 		./private/buf/cmd/buf/command/breaking/... \
 		./private/buf/cmd/buf/command/convert/... \
+		./private/buf/cmd/buf/command/generate/... \
 		./private/buf/cmd/buf/command/lint/... \
 		./private/buf/cmd/buf/command/lsfiles/... \
 		./private/buf/cmd/buf/command/mod/... \

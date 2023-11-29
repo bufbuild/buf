@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -34,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -321,7 +323,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	var config bufconfig.GenerateConfig
+	var bufGenYAMLFile bufconfig.BufGenYAMLFile
 	templatePathExtension := filepath.Ext(flags.Template)
 	switch {
 	case flags.Template == "":
@@ -329,7 +331,7 @@ func run(
 		if err != nil {
 			return err
 		}
-		config, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+		bufGenYAMLFile, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
 		if err != nil {
 			return err
 		}
@@ -339,23 +341,37 @@ func run(
 		if err != nil {
 			return err
 		}
-		config, err = bufconfig.ReadBufGenYAMLFile(configReader)
+		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configReader)
 		if err != nil {
 			return err
 		}
 	default:
-		config, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
+		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
 		if err != nil {
 			return err
 		}
 	}
+	images, err := getInputImages(
+		ctx,
+		logger,
+		controller,
+		input,
+		bufGenYAMLFile,
+		flags.Config,
+		flags.Paths,
+		flags.ExcludePaths,
+		flags.Types,
+	)
+	if err != nil {
+		return err
+	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
-		bufgen.GenerateWithIncludePaths(flags.Paths),
-		bufgen.GenerateWithExcludePaths(flags.ExcludePaths),
-		bufgen.GenerateWithIncludeTypes(flags.Types),
-		bufgen.GenerateWithInputOverride(input),
-		bufgen.GenerateWithModuleConfigPath(flags.Config),
+		// bufgen.GenerateWithIncludePaths(flags.Paths),
+		// bufgen.GenerateWithExcludePaths(flags.ExcludePaths),
+		// bufgen.GenerateWithIncludeTypes(flags.Types),
+		// bufgen.GenerateWithInputOverride(input),
+		// bufgen.GenerateWithModuleConfigPath(flags.Config),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
@@ -381,7 +397,6 @@ func run(
 	}
 	return bufgen.NewGenerator(
 		logger,
-		controller,
 		storageosProvider,
 		command.NewRunner(),
 		wasmPluginExecutor,
@@ -389,7 +404,78 @@ func run(
 	).Generate(
 		ctx,
 		container,
-		config,
+		bufGenYAMLFile.GenerateConfig(),
+		images,
 		generateOptions...,
 	)
+}
+
+func getInputImages(
+	ctx context.Context,
+	logger *zap.Logger,
+	controller bufctl.Controller,
+	inputSpecified string,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	moduleConfigOverride string,
+	includePathsOverride []string,
+	excludePathsOverride []string,
+	includeTypesOverride []string,
+) ([]bufimage.Image, error) {
+	var inputImages []bufimage.Image
+	// If input is specified on the command line, we use that. If input is not
+	// specified on the command line, but the config has no inputs, use the default input.
+	if inputSpecified != "" || len(bufGenYAMLFile.InputConfigs()) == 0 {
+		input := "."
+		if inputSpecified != "" {
+			input = inputSpecified
+		}
+		var includeTypes []string
+		if typesConfig := bufGenYAMLFile.GenerateConfig().GenerateTypeConfig(); typesConfig != nil {
+			includeTypes = typesConfig.IncludeTypes()
+		}
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImage(
+			ctx,
+			input,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(includePathsOverride, excludePathsOverride),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		inputImages = []bufimage.Image{inputImage}
+	} else {
+		for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
+			includePaths := inputConfig.IncludePaths()
+			if len(includePathsOverride) > 0 {
+				includePaths = includePathsOverride
+			}
+			excludePaths := inputConfig.ExcludePaths()
+			if len(excludePathsOverride) > 0 {
+				excludePaths = excludePathsOverride
+			}
+			// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
+			// because it is always nil.
+			// TODO: document the above in godoc
+			includeTypes := inputConfig.IncludeTypes()
+			if len(includeTypesOverride) > 0 {
+				includeTypes = includeTypesOverride
+			}
+			inputImage, err := controller.GetImageForInputConfig(
+				ctx,
+				inputConfig,
+				bufctl.WithConfigOverride(moduleConfigOverride),
+				bufctl.WithTargetPaths(includePaths, excludePaths),
+				bufctl.WithImageTypes(includeTypes),
+			)
+			if err != nil {
+				return nil, err
+			}
+			inputImages = append(inputImages, inputImage)
+		}
+	}
+	return inputImages, nil
 }

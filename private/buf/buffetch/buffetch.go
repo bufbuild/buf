@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -41,14 +42,7 @@ const (
 
 	useProtoNamesKey  = "use_proto_names"
 	useEnumNumbersKey = "use_enum_numbers"
-
-	// TODO:
-	// SubDirKey Key = "subdir"
 )
-
-// TODO:
-// type Key struct
-// GetModuleRef(context.Context, string, map[Key]string)
 
 var (
 	// MessageFormatsString is the string representation of all message formats.
@@ -178,6 +172,7 @@ type RefParser interface {
 
 	// GetRef gets the reference for the message file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
+	GetRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig) (Ref, error)
 }
 
 // NewRefParser returns a new RefParser.

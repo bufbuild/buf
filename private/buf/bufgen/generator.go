@@ -19,10 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	connect "connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
@@ -44,11 +42,8 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-const defaultInput = "."
-
 type generator struct {
 	logger              *zap.Logger
-	controller          bufctl.Controller
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufpluginexec.Generator
 	clientConfig        *connectclient.Config
@@ -56,7 +51,6 @@ type generator struct {
 
 func newGenerator(
 	logger *zap.Logger,
-	controller bufctl.Controller,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -64,7 +58,6 @@ func newGenerator(
 ) *generator {
 	return &generator{
 		logger:              logger,
-		controller:          controller,
 		storageosProvider:   storageosProvider,
 		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
 		clientConfig:        clientConfig,
@@ -92,34 +85,21 @@ func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	config bufconfig.GenerateConfig,
+	images []bufimage.Image,
 	options ...GenerateOption,
 ) error {
 	generateOptions := newGenerateOptions()
 	for _, option := range options {
 		option(generateOptions)
 	}
-	inputImages, err := getInputImages(
-		ctx,
-		g.logger,
-		g.controller,
-		generateOptions.input,
-		config,
-		generateOptions.moduleConfigPath,
-		generateOptions.includePaths,
-		generateOptions.excludePaths,
-		generateOptions.includeTypes,
-	)
-	if err != nil {
-		return err
-	}
-	for _, inputImage := range inputImages {
-		if err := bufimagemodify.Modify(ctx, inputImage, config.GenerateManagedConfig()); err != nil {
+	for _, image := range images {
+		if err := bufimagemodify.Modify(ctx, image, config.GenerateManagedConfig()); err != nil {
 			return err
 		}
 		if err := g.generateCode(
 			ctx,
 			container,
-			inputImage,
+			image,
 			generateOptions.baseOutDirPath,
 			config.GeneratePluginConfigs(),
 			generateOptions.includeImports,
@@ -179,123 +159,6 @@ func (g *generator) generateCode(
 		return err
 	}
 	return nil
-}
-
-// TODO: this is a very temporary solution, although it would be nice if buffetch exposes function that parses ref from a map
-func refStringForInputConfig(
-	ctx context.Context,
-	logger *zap.Logger,
-	inputConfig bufconfig.GenerateInputConfig,
-) string {
-	var refString = inputConfig.Location()
-	refOptionKeyToValue := map[string]string{}
-	if inputConfig.Compression() != "" {
-		refOptionKeyToValue["compression"] = inputConfig.Compression()
-	}
-	if inputConfig.StripComponents() != nil {
-		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(*inputConfig.StripComponents()), 10)
-	}
-	if inputConfig.Subdir() != "" {
-		refOptionKeyToValue["subdir"] = inputConfig.Subdir()
-	}
-	if inputConfig.Branch() != "" {
-		refOptionKeyToValue["branch"] = inputConfig.Branch()
-	}
-	if inputConfig.Tag() != "" {
-		refOptionKeyToValue["tag"] = inputConfig.Tag()
-	}
-	if inputConfig.Ref() != "" {
-		refOptionKeyToValue["ref"] = inputConfig.Ref()
-	}
-	// TODO: != 0
-	if inputConfig.Depth() != nil {
-		refOptionKeyToValue["depth"] = strconv.FormatUint(uint64(*inputConfig.Depth()), 10)
-	}
-	if inputConfig.RecurseSubmodules() {
-		refOptionKeyToValue["recurse_submodules"] = "true"
-	}
-	if inputConfig.IncludePackageFiles() {
-		refOptionKeyToValue["include_package_files"] = "true"
-	}
-	if len(refOptionKeyToValue) == 0 {
-		return refString
-	}
-	refString += "#"
-	for key, value := range refOptionKeyToValue {
-		refString += key + "=" + value
-	}
-	return refString
-}
-
-func getInputImages(
-	ctx context.Context,
-	logger *zap.Logger,
-	controller bufctl.Controller,
-	inputSpecified string,
-	config bufconfig.GenerateConfig,
-	moduleConfigOverride string,
-	includePathsOverride []string,
-	excludePathsOverride []string,
-	includeTypesOverride []string,
-) ([]bufimage.Image, error) {
-	var inputImages []bufimage.Image
-	// If input is specified on the command line, we use that. If input is not
-	// specified on the command line, but the config has no inputs, use the default input.
-	if inputSpecified != "" || len(config.GenerateInputConfigs()) == 0 {
-		input := defaultInput
-		if inputSpecified != "" {
-			input = inputSpecified
-		}
-		var includeTypes []string
-		if typesConfig := config.GenerateTypeConfig(); typesConfig != nil {
-			includeTypes = typesConfig.IncludeTypes()
-		}
-		if len(includeTypesOverride) > 0 {
-			includeTypes = includeTypesOverride
-		}
-		inputImage, err := controller.GetImage(
-			ctx,
-			input,
-			bufctl.WithConfigOverride(moduleConfigOverride),
-			bufctl.WithTargetPaths(includePathsOverride, excludePathsOverride),
-			bufctl.WithImageTypes(includeTypes),
-		)
-		if err != nil {
-			return nil, err
-		}
-		inputImages = []bufimage.Image{inputImage}
-	} else {
-		for _, inputConfig := range config.GenerateInputConfigs() {
-			includePaths := inputConfig.IncludePaths()
-			if len(includePathsOverride) > 0 {
-				includePaths = includePathsOverride
-			}
-			excludePaths := inputConfig.ExcludePaths()
-			if len(excludePathsOverride) > 0 {
-				excludePaths = excludePathsOverride
-			}
-			// In V2 we do not need to look at inputConfig.GenerateTypeConfig().IncludeTypes()
-			// because inputConfig.GenerateTypeConfig() is always nil.
-			// TODO: document the above in godoc
-			includeTypes := inputConfig.IncludeTypes()
-			if len(includeTypesOverride) > 0 {
-				includeTypes = includeTypesOverride
-			}
-			input := refStringForInputConfig(ctx, logger, inputConfig)
-			inputImage, err := controller.GetImage(
-				ctx,
-				input,
-				bufctl.WithConfigOverride(moduleConfigOverride),
-				bufctl.WithTargetPaths(includePaths, excludePaths),
-				bufctl.WithImageTypes(includeTypes),
-			)
-			if err != nil {
-				return nil, err
-			}
-			inputImages = append(inputImages, inputImage)
-		}
-	}
-	return inputImages, nil
 }
 
 func (g *generator) execPlugins(
@@ -573,13 +436,6 @@ type generateOptions struct {
 	includeImports        bool
 	includeWellKnownTypes bool
 	wasmEnabled           bool
-	// image/input specific options:
-	input            string
-	moduleConfigPath string
-	// TODO: unify naming: includePaths / pathsIncluded / pathSpecified
-	includePaths []string
-	excludePaths []string
-	includeTypes []string
 }
 
 func newGenerateOptions() *generateOptions {

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -89,20 +90,34 @@ func WriteBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 // *** PRIVATE ***
 
 type bufGenYAMLFile struct {
-	GenerateConfig
+	generateConfig GenerateConfig
+	inputConfigs   []InputConfig
 
 	fileVersion FileVersion
 }
 
-func newBufGenYAMLFile(fileVersion FileVersion, generateConfig GenerateConfig) (*bufGenYAMLFile, error) {
+func newBufGenYAMLFile(
+	fileVersion FileVersion,
+	generateConfig GenerateConfig,
+	inputConfigs []InputConfig,
+) *bufGenYAMLFile {
 	return &bufGenYAMLFile{
-		GenerateConfig: generateConfig,
 		fileVersion:    fileVersion,
-	}, errors.New("TODO")
+		generateConfig: generateConfig,
+		inputConfigs:   inputConfigs,
+	}
 }
 
 func (g *bufGenYAMLFile) FileVersion() FileVersion {
 	return g.fileVersion
+}
+
+func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
+	return g.generateConfig
+}
+
+func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
+	return g.inputConfigs
 }
 
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
@@ -129,10 +144,11 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 		if err != nil {
 			return nil, err
 		}
-		return &bufGenYAMLFile{
-			fileVersion:    fileVersion,
-			GenerateConfig: generateConfig,
-		}, nil
+		return newBufGenYAMLFile(
+			fileVersion,
+			generateConfig,
+			nil,
+		), nil
 	case FileVersionV2:
 		var externalGenYAMLFile externalBufGenYAMLFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
@@ -142,10 +158,18 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 		if err != nil {
 			return nil, err
 		}
-		return &bufGenYAMLFile{
-			fileVersion:    fileVersion,
-			GenerateConfig: generateConfig,
-		}, nil
+		inputConfigs, err := slicesext.MapError(
+			externalGenYAMLFile.Inputs,
+			newInputConfigFromExternalInputConfigV2,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return newBufGenYAMLFile(
+			fileVersion,
+			generateConfig,
+			inputConfigs,
+		), nil
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)

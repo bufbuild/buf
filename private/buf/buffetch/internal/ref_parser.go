@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -62,18 +63,54 @@ func (a *refParser) GetParsedRef(
 	for _, option := range options {
 		option(getParsedRefOptions)
 	}
-	return a.getParsedRef(ctx, value, getParsedRefOptions.allowedFormats)
+	return a.getParsedRefForInputString(ctx, value, getParsedRefOptions.allowedFormats)
 }
 
-func (a *refParser) getParsedRef(
+func (a *refParser) GetParsedRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	options ...GetParsedRefOption,
+) (ParsedRef, error) {
+	getParsedRefOptions := newGetParsedRefOptions()
+	for _, option := range options {
+		option(getParsedRefOptions)
+	}
+	return a.getParsedRefForInputConfig(ctx, inputConfig, getParsedRefOptions.allowedFormats)
+}
+
+func (a *refParser) getParsedRefForInputString(
 	ctx context.Context,
 	value string,
 	allowedFormats map[string]struct{},
 ) (ParsedRef, error) {
-	rawRef, err := a.getRawRef(value)
+	// path is never empty after returning from this function
+	path, options, err := getRawPathAndOptionsForInputString(value)
 	if err != nil {
 		return nil, err
 	}
+	rawRef, err := a.getRawRefFromInputString(path, value, options)
+	if err != nil {
+		return nil, err
+	}
+	return a.parseRawRef(rawRef, allowedFormats)
+}
+
+func (a *refParser) getParsedRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	allowedFormats map[string]struct{},
+) (ParsedRef, error) {
+	rawRef, err := a.getRawRefFromInputConfig(inputConfig)
+	if err != nil {
+		return nil, err
+	}
+	return a.parseRawRef(rawRef, allowedFormats)
+}
+
+func (a *refParser) parseRawRef(
+	rawRef *RawRef,
+	allowedFormats map[string]struct{},
+) (ParsedRef, error) {
 	singleFormatInfo, singleOK := a.singleFormatToInfo[rawRef.Format]
 	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
 	_, dirOK := a.dirFormatToInfo[rawRef.Format]
@@ -120,13 +157,12 @@ func (a *refParser) getParsedRef(
 	return nil, NewFormatUnknownError(rawRef.Format)
 }
 
-// validated per rules on rawRef
-func (a *refParser) getRawRef(value string) (*RawRef, error) {
-	// path is never empty after returning from this function
-	path, options, err := getRawPathAndOptions(value)
-	if err != nil {
-		return nil, err
-	}
+func (a *refParser) getRawRefFromInputString(
+	path string,
+	// TODO: need a better name
+	displayName string,
+	options map[string]string,
+) (*RawRef, error) {
 	rawRef := &RawRef{
 		Path:                path,
 		UnrecognizedOptions: make(map[string]string),
@@ -144,37 +180,23 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			}
 			rawRef.Format = value
 		case "compression":
-			switch value {
-			case "none":
-				rawRef.CompressionType = CompressionTypeNone
-			case "gzip":
-				rawRef.CompressionType = CompressionTypeGzip
-			case "zstd":
-				rawRef.CompressionType = CompressionTypeZstd
-			default:
-				return nil, NewCompressionUnknownError(value)
+			compressionType, err := parseCompressionType(value)
+			if err != nil {
+				return nil, err
 			}
+			rawRef.CompressionType = compressionType
 		case "branch":
-			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, NewCannotSpecifyGitBranchAndTagError()
-			}
 			rawRef.GitBranch = value
 		case "tag":
-			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, NewCannotSpecifyGitBranchAndTagError()
-			}
 			rawRef.GitTag = value
 		case "ref":
 			rawRef.GitRef = value
 		case "depth":
-			depth, err := strconv.ParseUint(value, 10, 32)
+			depth, err := parseGitDepth(value)
 			if err != nil {
-				return nil, NewDepthParseError(value)
+				return nil, err
 			}
-			if depth == 0 {
-				return nil, NewDepthZeroError()
-			}
-			rawRef.GitDepth = uint32(depth)
+			rawRef.GitDepth = depth
 		case "recurse_submodules":
 			// TODO: need to refactor to make sure this is not set for any non-git input
 			// ie right now recurse_submodules=false will not error
@@ -194,17 +216,16 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			}
 			rawRef.ArchiveStripComponents = uint32(stripComponents)
 		case "subdir":
-			subDirPath, err := normalpath.NormalizeAndValidate(value)
+			subDirPath, err := parseSubDirPath(value)
 			if err != nil {
 				return nil, err
 			}
-			if subDirPath != "." {
-				rawRef.SubDirPath = subDirPath
-			}
+			rawRef.SubDirPath = subDirPath
 		case "include_package_files":
 			switch value {
 			case "true":
 				rawRef.IncludePackageFiles = true
+			// TODO: perhaps empty values should not be accepted
 			case "false", "":
 				rawRef.IncludePackageFiles = false
 			default:
@@ -214,57 +235,176 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			rawRef.UnrecognizedOptions[key] = value
 		}
 	}
-
-	if rawRef.Format == "" {
-		return nil, NewFormatCannotBeDeterminedError(value)
+	// This cannot be set ahead of time, it can only happen after all options are read.
+	if rawRef.Format == "git" && rawRef.GitDepth == 0 {
+		// Default to 1
+		rawRef.GitDepth = 1
+		if rawRef.GitRef != "" {
+			// Default to 50 when using ref
+			rawRef.GitDepth = 50
+		}
 	}
+	if err := a.validateRawRef(displayName, rawRef); err != nil {
+		return nil, err
+	}
+	return rawRef, nil
+}
 
+func (a *refParser) getRawRefFromInputConfig(
+	inputConfig bufconfig.InputConfig,
+) (*RawRef, error) {
+	rawRef := &RawRef{
+		Path:                inputConfig.Location(),
+		UnrecognizedOptions: make(map[string]string),
+	}
+	if a.rawRefProcessor != nil {
+		if err := a.rawRefProcessor(rawRef); err != nil {
+			return nil, err
+		}
+	}
+	switch inputConfig.Type() {
+	case bufconfig.InputConfigTypeModule:
+		rawRef.Format = "mod"
+	case bufconfig.InputConfigTypeDirectory:
+		rawRef.Format = "dir"
+	case bufconfig.InputConfigTypeGitRepo:
+		rawRef.Format = "git"
+	case bufconfig.InputConfigTypeProtoFile:
+		rawRef.Format = "protofile"
+	case bufconfig.InputConfigTypeTarball:
+		rawRef.Format = "tar"
+	case bufconfig.InputConfigTypeZipArchive:
+		rawRef.Format = "zip"
+	case bufconfig.InputConfigTypeBinaryImage:
+		rawRef.Format = "binpb"
+	case bufconfig.InputConfigTypeJSONImage:
+		rawRef.Format = "jsonpb"
+	case bufconfig.InputConfigTypeTextImage:
+		rawRef.Format = "txtpb"
+	}
+	// This cannot be set ahead of time, it can only happen after all options are read.
+	if rawRef.GitDepth == 0 {
+		// Default to 1
+		rawRef.GitDepth = 1
+		if rawRef.GitRef != "" {
+			// Default to 50 when using ref
+			rawRef.GitDepth = 50
+		}
+	}
+	var err error
+	rawRef.CompressionType, err = parseCompressionType(inputConfig.Compression())
+	if err != nil {
+		return nil, err
+	}
+	rawRef.GitBranch = inputConfig.Branch()
+	rawRef.GitTag = inputConfig.Tag()
+	if err := a.validateRawRef(inputConfig.Location(), rawRef); err != nil {
+		return nil, err
+	}
+	rawRef.GitRef = inputConfig.Ref()
+	// TODO: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
+	if inputConfig.Depth() != nil {
+		if *inputConfig.Depth() == 0 {
+			return nil, NewDepthZeroError()
+		}
+	}
+	rawRef.GitRecurseSubmodules = inputConfig.RecurseSubmodules()
+	rawRef.IncludePackageFiles = inputConfig.IncludePackageFiles()
+	rawRef.SubDirPath, err = parseSubDirPath(inputConfig.Subdir())
+	if err != nil {
+		return nil, err
+	}
+	if err := a.validateRawRef(inputConfig.Location(), rawRef); err != nil {
+		return nil, err
+	}
+	return rawRef, nil
+}
+
+func (a *refParser) validateRawRef(
+	displayName string,
+	rawRef *RawRef,
+) error {
+	// probably move everything below this point to a new function, perhaps called validateRawRef
+	if rawRef.Format == "" {
+		return NewFormatCannotBeDeterminedError(displayName)
+	}
 	_, gitOK := a.gitFormatToInfo[rawRef.Format]
 	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
 	_, singleOK := a.singleFormatToInfo[rawRef.Format]
 	if gitOK {
-		if rawRef.GitRef != "" && rawRef.GitTag != "" {
-			return nil, NewCannotSpecifyTagWithRefError()
+		if rawRef.GitBranch != "" && rawRef.GitTag != "" {
+			return NewCannotSpecifyGitBranchAndTagError()
 		}
-		if rawRef.GitDepth == 0 {
-			// Default to 1
-			rawRef.GitDepth = 1
-			if rawRef.GitRef != "" {
-				// Default to 50 when using ref
-				rawRef.GitDepth = 50
-			}
+		if rawRef.GitRef != "" && rawRef.GitTag != "" {
+			return NewCannotSpecifyTagWithRefError()
 		}
 	} else {
 		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
-			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
 		}
 	}
 	// not an archive format
 	if !archiveOK {
 		if rawRef.ArchiveStripComponents > 0 {
-			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
 		}
 	} else {
 		if archiveFormatInfo.archiveType == ArchiveTypeZip && rawRef.CompressionType != 0 {
-			return nil, NewCannotSpecifyCompressionForZipError()
+			return NewCannotSpecifyCompressionForZipError()
 		}
 	}
 	if !singleOK && !archiveOK {
 		if rawRef.CompressionType != 0 {
-			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
 		}
 	}
 	if !archiveOK && !gitOK {
 		if rawRef.SubDirPath != "" {
-			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
 		}
 	}
-	return rawRef, nil
+	return nil
 }
 
-// getRawPathAndOptions returns the raw path and options from the value provided,
+// empty value is an error
+func parseCompressionType(value string) (CompressionType, error) {
+	switch value {
+	case "none":
+		return CompressionTypeNone, nil
+	case "gzip":
+		return CompressionTypeGzip, nil
+	case "zstd":
+		return CompressionTypeZstd, nil
+	default:
+		return 0, NewCompressionUnknownError(value)
+	}
+}
+
+func parseGitDepth(value string) (uint32, error) {
+	depth, err := strconv.ParseUint(value, 10, 32)
+	if err != nil {
+		return 0, NewDepthParseError(value)
+	}
+	if depth == 0 {
+		return 0, NewDepthZeroError()
+	}
+	return uint32(depth), nil
+}
+
+func parseSubDirPath(value string) (string, error) {
+	subDirPath, err := normalpath.NormalizeAndValidate(value)
+	if err != nil {
+		return "", err
+	}
+	if subDirPath == "." {
+		return "", nil
+	}
+	return subDirPath, nil
+}
+
+// getRawPathAndOptionsForInputString returns the raw path and options from the value provided,
 // the rawPath will be non-empty when returning without error here.
-func getRawPathAndOptions(value string) (string, map[string]string, error) {
+func getRawPathAndOptionsForInputString(value string) (string, map[string]string, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return "", nil, newValueEmptyError()
@@ -303,6 +443,41 @@ func getRawPathAndOptions(value string) (string, map[string]string, error) {
 		return "", nil, newValueMultipleHashtagsError(value)
 	}
 }
+
+// // TODO: this is a very temporary (and not clean) solution.
+// // To be deleted shortly
+// func getRawPathAndOptionsForInputConfig(inputConfig bufconfig.InputConfig) (string, map[string]string, error) {
+// 	var refString = inputConfig.Location()
+// 	refOptionKeyToValue := map[string]string{}
+// 	if inputConfig.Compression() != "" {
+// 		refOptionKeyToValue["compression"] = inputConfig.Compression()
+// 	}
+// 	if inputConfig.StripComponents() != nil {
+// 		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(*inputConfig.StripComponents()), 10)
+// 	}
+// 	if inputConfig.Subdir() != "" {
+// 		refOptionKeyToValue["subdir"] = inputConfig.Subdir()
+// 	}
+// 	if inputConfig.Branch() != "" {
+// 		refOptionKeyToValue["branch"] = inputConfig.Branch()
+// 	}
+// 	if inputConfig.Tag() != "" {
+// 		refOptionKeyToValue["tag"] = inputConfig.Tag()
+// 	}
+// 	if inputConfig.Ref() != "" {
+// 		refOptionKeyToValue["ref"] = inputConfig.Ref()
+// 	}
+// 	if inputConfig.Depth() != nil {
+// 		refOptionKeyToValue["depth"] = strconv.FormatUint(uint64(*inputConfig.Depth()), 10)
+// 	}
+// 	if inputConfig.RecurseSubmodules() {
+// 		refOptionKeyToValue["recurse_submodules"] = "true"
+// 	}
+// 	if inputConfig.IncludePackageFiles() {
+// 		refOptionKeyToValue["include_package_files"] = "true"
+// 	}
+// 	return refString, refOptionKeyToValue, nil
+// }
 
 func getSingleRef(
 	rawRef *RawRef,

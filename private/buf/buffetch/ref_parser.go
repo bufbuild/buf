@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -204,11 +205,42 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
+// TODO: rename to GetRefForString
 func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,
 ) (_ Ref, retErr error) {
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		messageEncoding, err := parseMessageEncoding(t.Format())
+		if err != nil {
+			return nil, err
+		}
+		return newMessageRef(t, messageEncoding)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newSourceRef(t), nil
+	case internal.ParsedGitRef:
+		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (_ Ref, retErr error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, allFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -327,6 +359,7 @@ func (a *refParser) GetModuleRef(
 	return newModuleRef(parsedModuleRef), nil
 }
 
+// TODO: rename to getParsedRefForString
 func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
@@ -335,6 +368,23 @@ func (a *refParser) getParsedRef(
 	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
+		internal.WithAllowedFormats(allowedFormats...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	a.checkDeprecated(parsedRef)
+	return parsedRef, nil
+}
+
+func (a *refParser) getParsedRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	allowedFormats []string,
+) (internal.ParsedRef, error) {
+	parsedRef, err := a.fetchRefParser.GetParsedRefForInputConfig(
+		ctx,
+		inputConfig,
 		internal.WithAllowedFormats(allowedFormats...),
 	)
 	if err != nil {
