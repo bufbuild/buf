@@ -25,6 +25,7 @@ type messageRef struct {
 	singleRef       internal.SingleRef
 	useProtoNames   bool
 	useEnumNumbers  bool
+	validate        bool
 	messageEncoding MessageEncoding
 }
 
@@ -40,10 +41,15 @@ func newMessageRef(
 	if err != nil {
 		return nil, err
 	}
+	validate, err := getTrueOrFalseForSingleRef(singleRef, validateKey)
+	if err != nil {
+		return nil, err
+	}
 	return &messageRef{
 		singleRef:       singleRef,
 		useProtoNames:   useProtoNames,
 		useEnumNumbers:  useEnumNumbers,
+		validate:        validate,
 		messageEncoding: messageEncoding,
 	}, nil
 }
@@ -66,6 +72,10 @@ func (r *messageRef) UseProtoNames() bool {
 
 func (r *messageRef) UseEnumNumbers() bool {
 	return r.useEnumNumbers
+}
+
+func (r *messageRef) Validate() bool {
+	return r.validate
 }
 
 func (r *messageRef) IsNull() bool {
