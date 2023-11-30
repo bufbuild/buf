@@ -113,7 +113,7 @@ type MessageRef interface {
 	Path() string
 	// UseProtoNames indicates if the message should use proto names when encoding.
 	//
-	// )nly applies for MessageEncodingYAML at this time.
+	// Only applies for MessageEncodingYAML at this time.
 	UseProtoNames() bool
 	// UseEnumNumbers indicates if the message should use enum numbers when encoding.
 	//
