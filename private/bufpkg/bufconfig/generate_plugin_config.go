@@ -190,6 +190,45 @@ func (p *pluginConfig) Revision() int {
 
 func (p *pluginConfig) isGeneratePluginConfig() {}
 
+// TODO: compare with the old implementation
+func newPluginConfigFromExternalV1Beta1(
+	externalConfig externalGeneratePluginConfigV1Beta1,
+) (GeneratePluginConfig, error) {
+	if externalConfig.Name == "" {
+		return nil, errors.New("plugin name is required")
+	}
+	if externalConfig.Out == "" {
+		return nil, fmt.Errorf("out is required for plugin %s", externalConfig.Name)
+	}
+	strategy, err := parseStrategy(externalConfig.Strategy)
+	if err != nil {
+		return nil, err
+	}
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
+	if err != nil {
+		return nil, err
+	}
+	if externalConfig.Path != "" {
+		return newBinaryPluginConfig(
+			externalConfig.Name,
+			[]string{externalConfig.Path},
+			strategy,
+			externalConfig.Out,
+			opt,
+			false,
+			false,
+		)
+	}
+	return newLocalPluginConfig(
+		externalConfig.Name,
+		strategy,
+		externalConfig.Out,
+		opt,
+		false,
+		false,
+	)
+}
+
 // TODO: figure out where is the best place to do parameter validation, here or in new*plugin.
 func newPluginConfigFromExternalV1(
 	externalConfig externalGeneratePluginConfigV1,

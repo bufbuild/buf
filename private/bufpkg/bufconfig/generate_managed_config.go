@@ -412,10 +412,58 @@ func newManagedConfigFromExternalV1(
 	}, nil
 }
 
+func newManagedConfigFromExternalV1Beta1(
+	externalConfig externalOptionsConfigV1Beta1,
+) (GenerateManagedConfig, error) {
+	var (
+		overrides []ManagedOverrideRule
+	)
+	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
+		override, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionCcEnableArenas,
+			*externalCCEnableArenas,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
+		override, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaMultipleFiles,
+			*externalJavaMultipleFiles,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalOptimizeFor := externalConfig.OptimizeFor; externalOptimizeFor != "" {
+		defaultOverride, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionOptimizeFor,
+			externalOptimizeFor,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, defaultOverride)
+	}
+	return &generateManagedConfig{
+		overrides: overrides,
+	}, nil
+}
+
 func newManagedConfigFromExternalV2(
 	externalConfig externalGenerateManagedConfigV2,
 ) (GenerateManagedConfig, error) {
-	if externalConfig.isEmpty() {
+	// TODO: add test case for non-empty config but disabled
+	if !externalConfig.Enabled {
 		return nil, nil
 	}
 	// TODO: log warning if disabled but non-empty

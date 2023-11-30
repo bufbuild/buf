@@ -36,6 +36,29 @@ type GenerateConfig interface {
 	isGenerateConfig()
 }
 
+func newGenerateConfigFromExternalFileV1Beta1(
+	externalFile externalBufGenYAMLV1Beta1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Options)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, errors.New("must specifiy at least one plugin")
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1Beta1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+	}, nil
+}
+
 // TODO: check if this is consistent with the rest of bufconfig (esp. its name and whether it should exist)
 func newGenerateConfigFromExternalFileV1(
 	externalFile externalBufGenYAMLFileV1,

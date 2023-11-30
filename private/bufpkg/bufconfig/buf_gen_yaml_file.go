@@ -16,7 +16,6 @@ package bufconfig
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -135,7 +134,19 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 	}
 	switch fileVersion {
 	case FileVersionV1Beta1:
-		return nil, errors.New("TODO")
+		var externalGenYAMLFile externalBufGenYAMLV1Beta1
+		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
+			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		generateConfig, err := newGenerateConfigFromExternalFileV1Beta1(externalGenYAMLFile)
+		if err != nil {
+			return nil, err
+		}
+		return newBufGenYAMLFile(
+			fileVersion,
+			generateConfig,
+			nil,
+		), nil
 	case FileVersionV1:
 		var externalGenYAMLFile externalBufGenYAMLFileV1
 		if err := getUnmarshalStrict(allowJSON)(data, &externalGenYAMLFile); err != nil {
