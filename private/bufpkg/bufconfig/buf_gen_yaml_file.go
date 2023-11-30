@@ -42,6 +42,20 @@ type BufGenYAMLFile interface {
 	isBufGenYAMLFile()
 }
 
+// NewBufGenYAMLFile returns a new BufGenYAMLFile. It is validated given each
+// parameter is validated.
+func NewBufGenYAMLFile(
+	version FileVersion,
+	generateConfig GenerateConfig,
+	inputConfigs []InputConfig,
+) BufGenYAMLFile {
+	return newBufGenYAMLFile(
+		version,
+		generateConfig,
+		inputConfigs,
+	)
+}
+
 // GetBufGenYAMLFileForPrefix gets the buf.gen.yaml file at the given bucket prefix.
 //
 // The buf.gen.yaml file will be attempted to be read at prefix/buf.gen.yaml.

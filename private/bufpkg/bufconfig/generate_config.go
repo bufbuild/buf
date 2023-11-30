@@ -36,6 +36,31 @@ type GenerateConfig interface {
 	isGenerateConfig()
 }
 
+// NewGenerateConfig returns a validated GenerateConfig.
+func NewGenerateConfig(
+	pluginConfigs []GeneratePluginConfig,
+	managedConfig GenerateManagedConfig,
+	typeConfig GenerateTypeConfig,
+) (GenerateConfig, error) {
+	if len(pluginConfigs) == 0 {
+		// TODO: make sure this message is consistent with other cases where there is 0 plugin
+		return nil, errors.New("a plugin is required")
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+		typeConfig:    typeConfig,
+	}, nil
+}
+
+// *** PRIVATE ***
+
+type generateConfig struct {
+	pluginConfigs []GeneratePluginConfig
+	managedConfig GenerateManagedConfig
+	typeConfig    GenerateTypeConfig
+}
+
 func newGenerateConfigFromExternalFileV1Beta1(
 	externalFile externalBufGenYAMLV1Beta1,
 ) (GenerateConfig, error) {
@@ -102,14 +127,6 @@ func newGenerateConfigFromExternalFileV2(
 		managedConfig: managedConfig,
 		pluginConfigs: pluginConfigs,
 	}, nil
-}
-
-// *** PRIVATE ***
-
-type generateConfig struct {
-	pluginConfigs []GeneratePluginConfig
-	managedConfig GenerateManagedConfig
-	typeConfig    GenerateTypeConfig
 }
 
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {

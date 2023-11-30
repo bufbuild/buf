@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -550,19 +549,20 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgen.ExternalConfigV1{
-		Version: "v1",
-	}
+	externalConfig := make(map[string]interface{})
+	externalConfig["version"] = "v1"
+	pluginConfigs := []map[string]string{}
 	for _, plugin := range plugins {
-		externalConfig.Plugins = append(
-			externalConfig.Plugins,
-			bufgen.ExternalPluginConfigV1{
-				Name: plugin.name,
-				Out:  out,
-				Opt:  plugin.opt,
+		pluginConfigs = append(
+			pluginConfigs,
+			map[string]string{
+				"name": plugin.name,
+				"opt":  plugin.opt,
+				"out":  out,
 			},
 		)
 	}
+	externalConfig["plugins"] = pluginConfigs
 	data, err := json.Marshal(externalConfig)
 	require.NoError(t, err)
 	return string(data)
