@@ -125,9 +125,9 @@ type InputConfig interface {
 	// StripComponents returns the number of directories to strip for tar or zip
 	// inputs, not empty only if format is tarball or zip archive.
 	StripComponents() *uint32
-	// Subdir returns the subdirectory to use, not empty only if format is one
+	// SubDir returns the subdirectory to use, not empty only if format is one
 	// git repo, tarball and zip archive.
-	Subdir() string
+	SubDir() string
 	// Branch returns the git branch to checkout out, not empty only if format is git.
 	Branch() string
 	// Tag returns the git tag to checkout, not empty only if format is git.
@@ -142,10 +142,10 @@ type InputConfig interface {
 	// IncludePackageFiles returns other files in the same package as the proto file,
 	// not empty only if format is proto file.
 	IncludePackageFiles() bool
-	// ExcludePaths returns paths not to generate for.
-	ExcludePaths() []string
 	// IncludePaths returns paths to generate for.
 	IncludePaths() []string
+	// ExcludePaths returns paths not to generate for.
+	ExcludePaths() []string
 	// IncludeTypes returns the types to generate. If GenerateConfig.GenerateTypeConfig()
 	// returns a non-empty list of types.
 	IncludeTypes() []string
@@ -153,14 +153,168 @@ type InputConfig interface {
 	isInputConfig()
 }
 
+// NewInputConfig returns a new input config.
+func NewInputConfig(
+	inputType InputConfigType,
+	location string,
+	compression string,
+	stripComponents *uint32,
+	subDir string,
+	branch string,
+	tag string,
+	ref string,
+	depth *uint32,
+	recurseSubmodules bool,
+	includePackageFiles bool,
+	includePaths []string,
+	excludePaths []string,
+	includeTypes []string,
+) InputConfig {
+	return &inputConfig{
+		inputType:           inputType,
+		location:            location,
+		compression:         compression,
+		stripComponents:     stripComponents,
+		subDir:              subDir,
+		branch:              branch,
+		tag:                 tag,
+		ref:                 ref,
+		depth:               depth,
+		recurseSubmodules:   recurseSubmodules,
+		includePackageFiles: includePackageFiles,
+		includePaths:        includePaths,
+		excludePaths:        excludePaths,
+		includeTypes:        includeTypes,
+	}
+}
+
+// NewGitRepoInputConfig returns an input config for a git repo.
+func NewGitRepoInputConfig(
+	location string,
+	subDir string,
+	branch string,
+	tag string,
+	ref string,
+	depth *uint32,
+	recurseSubModules bool,
+) InputConfig {
+	return &inputConfig{
+		inputType:         InputConfigTypeGitRepo,
+		location:          location,
+		subDir:            subDir,
+		branch:            branch,
+		tag:               tag,
+		ref:               ref,
+		depth:             depth,
+		recurseSubmodules: recurseSubModules,
+	}
+}
+
+// NewModuleInputConfig returns an input config for a module.
+func NewModuleInputConfig(
+	location string,
+) InputConfig {
+	return &inputConfig{
+		inputType: InputConfigTypeModule,
+		location:  location,
+	}
+}
+
+// NewDirectoryInputConfig returns an input config for a directory.
+func NewDirectoryInputConfig(
+	location string,
+) InputConfig {
+	return &inputConfig{
+		inputType: InputConfigTypeDirectory,
+		location:  location,
+	}
+}
+
+// NewProtoFileInputConfig returns an input config for a proto file.
+func NewProtoFileInputConfig(
+	location string,
+) InputConfig {
+	return &inputConfig{
+		inputType: InputConfigTypeProtoFile,
+		location:  location,
+	}
+}
+
+// NewTarballInputConfig returns an input config for a tarball.
+func NewTarballInputConfig(
+	location string,
+	subDir string,
+	compression string,
+	stripComponents *uint32,
+) InputConfig {
+	return &inputConfig{
+		inputType:       InputConfigTypeTarball,
+		location:        location,
+		subDir:          subDir,
+		compression:     compression,
+		stripComponents: stripComponents,
+	}
+}
+
+// NewZipArchiveInputConfig returns an input config for a zip archive.
+func NewZipArchiveInputConfig(
+	location string,
+	subDir string,
+	stripComponents *uint32,
+) InputConfig {
+	return &inputConfig{
+		inputType:       InputConfigTypeZipArchive,
+		location:        location,
+		subDir:          subDir,
+		stripComponents: stripComponents,
+	}
+}
+
+// NewBinaryImageInputConfig returns an input config for a binary image.
+func NewBinaryImageInputConfig(
+	location string,
+	compression string,
+) InputConfig {
+	return &inputConfig{
+		inputType:   InputConfigTypeBinaryImage,
+		location:    location,
+		compression: compression,
+	}
+}
+
+// NewJSONImageInputConfig returns an input config for a JSON image.
+func NewJSONImageInputConfig(
+	location string,
+	compression string,
+) InputConfig {
+	return &inputConfig{
+		inputType:   InputConfigTypeJSONImage,
+		location:    location,
+		compression: compression,
+	}
+}
+
+// NewTextImageInputConfig returns an input config for a text image.
+func NewTextImageInputConfig(
+	location string,
+	compression string,
+) InputConfig {
+	return &inputConfig{
+		inputType:   InputConfigTypeTextImage,
+		location:    location,
+		compression: compression,
+	}
+}
+
 // *** PRIVATE ***
 
 type inputConfig struct {
-	inputType           InputConfigType
-	location            string
-	compression         string
+	inputType   InputConfigType
+	location    string
+	compression string
+	// TODO: does it make sense to be a pointer?
 	stripComponents     *uint32
-	subdir              string
+	subDir              string
 	branch              string
 	tag                 string
 	ref                 string
@@ -222,7 +376,7 @@ func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV
 	}
 	if externalConfig.Subdir != nil {
 		options = append(options, optionSubdir)
-		inputConfig.subdir = *externalConfig.Subdir
+		inputConfig.subDir = *externalConfig.Subdir
 	}
 	if externalConfig.Branch != nil {
 		options = append(options, optionBranch)
@@ -285,8 +439,8 @@ func (i *inputConfig) StripComponents() *uint32 {
 	return i.stripComponents
 }
 
-func (i *inputConfig) Subdir() string {
-	return i.subdir
+func (i *inputConfig) SubDir() string {
+	return i.subDir
 }
 
 func (i *inputConfig) Branch() string {

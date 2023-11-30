@@ -26,3 +26,5 @@
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
+
+- update behavior of --path and --exclude-path to make it match what's on main, esp. --path a/b.proto --exclude-path a

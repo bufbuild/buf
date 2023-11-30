@@ -16,6 +16,7 @@ package buffetch
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -377,4 +378,32 @@ func NewWriter(
 	return newWriter(
 		logger,
 	)
+}
+
+// GetInputConfigForRef returns the input config for the ref.
+func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
+	switch t := ref.(type) {
+	case MessageRef:
+		switch t.MessageEncoding() {
+		case MessageEncodingBinpb:
+			return bufconfig.NewBinaryImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			), nil
+		case MessageEncodingJSON:
+			return bufconfig.NewJSONImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			), nil
+		case MessageEncodingTxtpb:
+			return bufconfig.NewBinaryImageInputConfig(
+				t.Path(),
+				t.internalSingleRef().CompressionType().String(),
+			), nil
+		default:
+			// TODO: handle the YAML cas
+			return nil, fmt.Errorf("unknown encoding: %v", t.MessageEncoding())
+		}
+	}
+	return internal.GetInputConfigForRef(ref.internalRef())
 }

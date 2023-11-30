@@ -177,12 +177,9 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 }
 
 func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error {
+	// TODO: is this check necessary?
 	switch fileVersion := bufGenYAMLFile.FileVersion(); fileVersion {
-	case FileVersionV1Beta1:
-		return errors.New("TODO")
-	case FileVersionV1:
-		return errors.New("TODO")
-	case FileVersionV2:
+	case FileVersionV1Beta1, FileVersionV1, FileVersionV2:
 		return errors.New("TODO")
 	default:
 		// This is a system error since we've already parsed.

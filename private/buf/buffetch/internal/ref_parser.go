@@ -310,7 +310,7 @@ func (a *refParser) getRawRefFromInputConfig(
 	}
 	rawRef.GitRecurseSubmodules = inputConfig.RecurseSubmodules()
 	rawRef.IncludePackageFiles = inputConfig.IncludePackageFiles()
-	rawRef.SubDirPath, err = parseSubDirPath(inputConfig.Subdir())
+	rawRef.SubDirPath, err = parseSubDirPath(inputConfig.SubDir())
 	if err != nil {
 		return nil, err
 	}
@@ -366,6 +366,7 @@ func (a *refParser) validateRawRef(
 	return nil
 }
 
+// TODO: these functions may not be necessary
 // empty value is an error
 func parseCompressionType(value string) (CompressionType, error) {
 	switch value {
@@ -443,41 +444,6 @@ func getRawPathAndOptionsForInputString(value string) (string, map[string]string
 		return "", nil, newValueMultipleHashtagsError(value)
 	}
 }
-
-// // TODO: this is a very temporary (and not clean) solution.
-// // To be deleted shortly
-// func getRawPathAndOptionsForInputConfig(inputConfig bufconfig.InputConfig) (string, map[string]string, error) {
-// 	var refString = inputConfig.Location()
-// 	refOptionKeyToValue := map[string]string{}
-// 	if inputConfig.Compression() != "" {
-// 		refOptionKeyToValue["compression"] = inputConfig.Compression()
-// 	}
-// 	if inputConfig.StripComponents() != nil {
-// 		refOptionKeyToValue["strip_components"] = strconv.FormatUint(uint64(*inputConfig.StripComponents()), 10)
-// 	}
-// 	if inputConfig.Subdir() != "" {
-// 		refOptionKeyToValue["subdir"] = inputConfig.Subdir()
-// 	}
-// 	if inputConfig.Branch() != "" {
-// 		refOptionKeyToValue["branch"] = inputConfig.Branch()
-// 	}
-// 	if inputConfig.Tag() != "" {
-// 		refOptionKeyToValue["tag"] = inputConfig.Tag()
-// 	}
-// 	if inputConfig.Ref() != "" {
-// 		refOptionKeyToValue["ref"] = inputConfig.Ref()
-// 	}
-// 	if inputConfig.Depth() != nil {
-// 		refOptionKeyToValue["depth"] = strconv.FormatUint(uint64(*inputConfig.Depth()), 10)
-// 	}
-// 	if inputConfig.RecurseSubmodules() {
-// 		refOptionKeyToValue["recurse_submodules"] = "true"
-// 	}
-// 	if inputConfig.IncludePackageFiles() {
-// 		refOptionKeyToValue["include_package_files"] = "true"
-// 	}
-// 	return refString, refOptionKeyToValue, nil
-// }
 
 func getSingleRef(
 	rawRef *RawRef,

@@ -51,6 +51,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	migrateFlagName             = "migrate"
 )
 
 // NewCommand returns a new Command.
@@ -211,6 +212,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
+	Migrate         bool
 	// special
 	InputHashtag string
 }
@@ -279,6 +281,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.BoolVar(
+		&f.Migrate,
+		migrateFlagName,
+		false,
+		"Migrate the generation template to the latest version",
+	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -335,20 +343,36 @@ func run(
 		if err != nil {
 			return err
 		}
+		if flags.Migrate {
+			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", bufGenYAMLFile); err != nil {
+				return err
+			}
+		}
 	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
 		// We should not read from a bucket at "." because this path can jump context.
-		configReader, err := os.Open(flags.Template)
+		configFile, err := os.Open(flags.Template)
 		if err != nil {
 			return err
 		}
-		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configReader)
+		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configFile)
 		if err != nil {
 			return err
+		}
+		if flags.Migrate {
+			if err := bufconfig.WriteBufGenYAMLFile(configFile, bufGenYAMLFile); err != nil {
+				return err
+			}
 		}
 	default:
 		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
 		if err != nil {
 			return err
+		}
+		if flags.Migrate {
+			return fmt.Errorf(
+				"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
+				flags.Template,
+			)
 		}
 	}
 	images, err := getInputImages(

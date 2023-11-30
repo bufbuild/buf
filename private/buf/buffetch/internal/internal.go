@@ -16,8 +16,11 @@ package internal
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -84,6 +87,20 @@ type ArchiveType int
 
 // CompressionType is a compression type.
 type CompressionType int
+
+// String implements fmt.Stringer
+func (c CompressionType) String() string {
+	switch c {
+	case CompressionTypeNone:
+		return "none"
+	case CompressionTypeGzip:
+		return "gzip"
+	case CompressionTypeZstd:
+		return "zstd"
+	default:
+		return strconv.Itoa(int(c))
+	}
+}
 
 // Ref is a reference.
 type Ref interface {
@@ -848,3 +865,48 @@ func WithPutFileNoFileCompression() PutFileOption {
 
 // GetModuleOption is a GetModule option.
 type GetModuleOption func(*getModuleOptions)
+
+// TODO: delete this -- this cannot handle git
+// GetInputConfigForRef returns the input config for the ref.
+func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
+	switch t := ref.(type) {
+	case ArchiveRef:
+		switch t.ArchiveType() {
+		case ArchiveTypeZip:
+			return bufconfig.NewZipArchiveInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				uint32ToPointer(t.StripComponents()),
+			), nil
+		case ArchiveTypeTar:
+			return bufconfig.NewTarballInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.CompressionType().String(),
+				uint32ToPointer(t.StripComponents()),
+			), nil
+		default:
+			return nil, fmt.Errorf("invalid archive type: %v", t.ArchiveType())
+		}
+	case DirRef:
+		return bufconfig.NewDirectoryInputConfig(
+			t.Path(),
+		), nil
+	case ModuleRef:
+		return bufconfig.NewModuleInputConfig(
+			t.ModuleRef().String(),
+		), nil
+	case ProtoFileRef:
+		return bufconfig.NewProtoFileInputConfig(
+			t.Path(),
+		), nil
+	case GitRef:
+		return nil, errors.New("TODO: git")
+	default:
+		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
+	}
+}
+
+func uint32ToPointer(value uint32) *uint32 {
+	return &value
+}
