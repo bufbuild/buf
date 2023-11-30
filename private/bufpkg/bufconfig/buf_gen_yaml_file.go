@@ -235,7 +235,7 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 		if err != nil {
 			return err
 		}
-		_, err = writer.Write(append(bufLockFileHeader, data...))
+		_, err = writer.Write(data)
 		return err
 	default:
 		// This is a system error since we've already parsed.

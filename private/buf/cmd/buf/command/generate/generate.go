@@ -533,6 +533,9 @@ func getBufGenYAMLFileWithFlagEquivalence(
 	input string,
 	flags flags,
 ) (bufconfig.BufGenYAMLFile, error) {
+	if input == "" {
+		input = "."
+	}
 	inputConfig, err := buffetch.GetInputConfigForString(
 		ctx,
 		buffetch.NewRefParser(logger),

@@ -130,20 +130,7 @@ func NewGeneratePluginWithIncludeImportsAndWKT(
 	return &pluginConfig, nil
 }
 
-func parseStrategy(s string) (*GenerateStrategy, error) {
-	var strategy GenerateStrategy
-	switch s {
-	case "":
-		return nil, nil
-	case "directory":
-		strategy = GenerateStrategyDirectory
-	case "all":
-		strategy = GenerateStrategyAll
-	default:
-		return nil, fmt.Errorf("unknown strategy: %s", s)
-	}
-	return &strategy, nil
-}
+// *** PRIVATE ***
 
 type pluginConfig struct {
 	// TODO: perhaps make some of these pointers so that whether a field is
@@ -348,6 +335,21 @@ func newPluginConfigFromExternalV1(
 		false,
 		false,
 	)
+}
+
+func parseStrategy(s string) (*GenerateStrategy, error) {
+	var strategy GenerateStrategy
+	switch s {
+	case "":
+		return nil, nil
+	case "directory":
+		strategy = GenerateStrategyDirectory
+	case "all":
+		strategy = GenerateStrategyAll
+	default:
+		return nil, fmt.Errorf("unknown strategy: %s", s)
+	}
+	return &strategy, nil
 }
 
 // TODO: move this up, maybe let v1 use this as well
