@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -31,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
@@ -344,9 +346,20 @@ func run(
 			return err
 		}
 		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", bufGenYAMLFile); err != nil {
+			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
+				ctx,
+				logger,
+				bufGenYAMLFile,
+				input,
+				*flags,
+			)
+			if err != nil {
 				return err
 			}
+			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", migratedBufGenYAMLFile); err != nil {
+				return err
+			}
+			// TODO: perhaps print a message
 		}
 	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
 		// We should not read from a bucket at "." because this path can jump context.
@@ -359,9 +372,20 @@ func run(
 			return err
 		}
 		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			if err := bufconfig.WriteBufGenYAMLFile(configFile, bufGenYAMLFile); err != nil {
+			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
+				ctx,
+				logger,
+				bufGenYAMLFile,
+				input,
+				*flags,
+			)
+			if err != nil {
 				return err
 			}
+			if err := bufconfig.WriteBufGenYAMLFile(configFile, migratedBufGenYAMLFile); err != nil {
+				return err
+			}
+			// TODO: perhaps print a message
 		}
 	default:
 		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
@@ -391,11 +415,6 @@ func run(
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
-		// bufgen.GenerateWithIncludePaths(flags.Paths),
-		// bufgen.GenerateWithExcludePaths(flags.ExcludePaths),
-		// bufgen.GenerateWithIncludeTypes(flags.Types),
-		// bufgen.GenerateWithInputOverride(input),
-		// bufgen.GenerateWithModuleConfigPath(flags.Config),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
@@ -502,4 +521,66 @@ func getInputImages(
 		}
 	}
 	return inputImages, nil
+}
+
+// getBufGenYAMLFileWithFlagEquivalence returns a buf gen yaml file the same as
+// the given one, except that it is overriden by flags.
+// This is called only for migration. Input will be used regardless if it's empty.
+func getBufGenYAMLFileWithFlagEquivalence(
+	ctx context.Context,
+	logger *zap.Logger,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	input string,
+	flags flags,
+) (bufconfig.BufGenYAMLFile, error) {
+	inputConfig, err := buffetch.GetInputConfigForString(
+		ctx,
+		buffetch.NewRefParser(logger),
+		input,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var includeTypes []string
+	if bufGenYAMLFile.GenerateConfig().GenerateTypeConfig() != nil {
+		includeTypes = bufGenYAMLFile.GenerateConfig().GenerateTypeConfig().IncludeTypes()
+	}
+	if len(flags.Types) > 0 {
+		includeTypes = flags.Types
+	}
+	inputConfig, err = bufconfig.NewInputConfigWithTargets(
+		inputConfig,
+		flags.Paths,
+		flags.ExcludePaths,
+		includeTypes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := slicesext.MapError(
+		bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
+		func(pluginConfig bufconfig.GeneratePluginConfig) (bufconfig.GeneratePluginConfig, error) {
+			return bufconfig.NewGeneratePluginWithIncludeImportsAndWKT(
+				pluginConfig,
+				flags.IncludeImports,
+				flags.IncludeWKT,
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	generateConfig, err := bufconfig.NewGenerateConfig(
+		pluginConfigs,
+		bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewBufGenYAMLFile(
+		bufconfig.FileVersionV2,
+		generateConfig,
+		[]bufconfig.InputConfig{inputConfig},
+	), nil
 }

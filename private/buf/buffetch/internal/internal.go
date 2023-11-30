@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -866,9 +865,10 @@ func WithPutFileNoFileCompression() PutFileOption {
 // GetModuleOption is a GetModule option.
 type GetModuleOption func(*getModuleOptions)
 
-// TODO: delete this -- this cannot handle git
-// GetInputConfigForRef returns the input config for the ref.
-func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
+// GetInputConfigForRef returns the input config for the ref. A string is also
+// passed because if the ref is a git ref, it would only have a git.Name, instead
+// of a git branch, a git ref and a git tag. Therefore the original string is passed.
+func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
 	switch t := ref.(type) {
 	case ArchiveRef:
 		switch t.ArchiveType() {
@@ -901,7 +901,19 @@ func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
 			t.Path(),
 		), nil
 	case GitRef:
-		return nil, errors.New("TODO: git")
+		_, options, err := getRawPathAndOptionsForInputString(value)
+		if err != nil {
+			return nil, err
+		}
+		return bufconfig.NewGitRepoInputConfig(
+			t.Path(),
+			t.SubDirPath(),
+			options["branch"],
+			options["tag"],
+			options["ref"],
+			uint32ToPointer(t.Depth()),
+			t.RecurseSubmodules(),
+		), nil
 	default:
 		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
 	}

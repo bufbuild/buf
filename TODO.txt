@@ -30,3 +30,5 @@
 - Un-skip relevant tests in generate_test.go and generate_unix_test.go, when
   - the behavior of --path and --exclude-path is updated to match what's on main
   - proto file ref is implemented
+
+- Use syserror when possible.

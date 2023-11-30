@@ -190,6 +190,32 @@ func NewInputConfig(
 	}
 }
 
+// NewInputConfigWithTargets returns an input config with include paths, exclude
+// paths and include types overriden.
+func NewInputConfigWithTargets(
+	config InputConfig,
+	includePaths []string,
+	excludePaths []string,
+	includeTypes []string,
+) (InputConfig, error) {
+	originalConfig, ok := config.(*inputConfig)
+	if !ok {
+		return nil, syserror.Newf("unknown implementation of InputConfig: %T", config)
+	}
+	// targetConfig is a copy of the original config.
+	targetConfig := *originalConfig
+	if len(includePaths) > 0 {
+		targetConfig.includePaths = includePaths
+	}
+	if len(excludePaths) > 0 {
+		targetConfig.excludePaths = excludePaths
+	}
+	if len(includeTypes) > 0 {
+		targetConfig.includeTypes = includeTypes
+	}
+	return &targetConfig, nil
+}
+
 // NewGitRepoInputConfig returns an input config for a git repo.
 func NewGitRepoInputConfig(
 	location string,

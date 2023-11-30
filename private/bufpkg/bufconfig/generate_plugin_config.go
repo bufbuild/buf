@@ -28,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+// TODO: move private methods below /* private */
+
 const remoteAlphaPluginDeprecationMessage = "the remote field no longer works as " +
 	"the remote generation alpha has been deprecated, see the migration guide to " +
 	"now-stable remote plugins: https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins"
@@ -105,6 +107,27 @@ type GeneratePluginConfig interface {
 	Revision() int
 
 	isGeneratePluginConfig()
+}
+
+// NewGeneratePluginWithIncludeImportsAndWKT returns a GeneratePluginConfig the
+// same as the input, with include imports and include wkt overriden.
+func NewGeneratePluginWithIncludeImportsAndWKT(
+	config GeneratePluginConfig,
+	includeImports bool,
+	includeWKT bool,
+) (GeneratePluginConfig, error) {
+	originalConfig, ok := config.(*pluginConfig)
+	if !ok {
+		return nil, syserror.Newf("unknown implementation of GeneratePluginConfig: %T", config)
+	}
+	pluginConfig := *originalConfig
+	if includeImports {
+		pluginConfig.includeImports = true
+	}
+	if includeWKT {
+		pluginConfig.includeWKT = true
+	}
+	return &pluginConfig, nil
 }
 
 func parseStrategy(s string) (*GenerateStrategy, error) {

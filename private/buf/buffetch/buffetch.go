@@ -402,8 +402,16 @@ func NewWriter(
 	)
 }
 
-// GetInputConfigForRef returns the input config for the ref.
-func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
+// GetInputConfigForString returns the input config for the input string.
+func GetInputConfigForString(
+	ctx context.Context,
+	refParser RefParser,
+	value string,
+) (bufconfig.InputConfig, error) {
+	ref, err := refParser.GetRef(ctx, value)
+	if err != nil {
+		return nil, err
+	}
 	switch t := ref.(type) {
 	case MessageRef:
 		switch t.MessageEncoding() {
@@ -423,9 +431,9 @@ func GetInputConfigForRef(ref Ref) (bufconfig.InputConfig, error) {
 				t.internalSingleRef().CompressionType().String(),
 			), nil
 		default:
-			// TODO: handle the YAML cas
+			// TODO: handle refs with YAML type
 			return nil, fmt.Errorf("unknown encoding: %v", t.MessageEncoding())
 		}
 	}
-	return internal.GetInputConfigForRef(ref.internalRef())
+	return internal.GetInputConfigForRef(ref.internalRef(), value)
 }
