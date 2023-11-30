@@ -21,7 +21,7 @@ import (
 	"strconv"
 )
 
-// TODO: InputFormat?
+// TODO: input type?
 type InputConfigType int
 
 const (

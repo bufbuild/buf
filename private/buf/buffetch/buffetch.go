@@ -133,18 +133,33 @@ type ProtoFileRef interface {
 type MessageRefParser interface {
 	// GetMessageRef gets the reference for the message file.
 	GetMessageRef(ctx context.Context, value string) (MessageRef, error)
+	// GetMessageRefForInputConfig gets the reference for the message file.
+	GetMessageRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (MessageRef, error)
 }
 
 // SourceRefParser is a source ref parser for Buf.
 type SourceRefParser interface {
 	// GetSourceRef gets the reference for the source file.
 	GetSourceRef(ctx context.Context, value string) (SourceRef, error)
+	// GetSourceRef gets the reference for the source file.
+	GetSourceRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (SourceRef, error)
 }
 
 // DirRefParser is a dif ref parser for Buf.
 type DirRefParser interface {
 	// GetDirRef gets the reference for the source file.
 	GetDirRef(ctx context.Context, value string) (DirRef, error)
+	// GetDirRefForInputConfig gets the reference for the source file.
+	GetDirRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (DirRef, error)
 }
 
 // ModuleRefParser is a source ref parser for Buf.
@@ -162,6 +177,11 @@ type SourceOrModuleRefParser interface {
 
 	// GetSourceOrModuleRef gets the reference for the message file or source bucket.
 	GetSourceOrModuleRef(ctx context.Context, value string) (SourceOrModuleRef, error)
+	// GetSourceOrModuleRefForInputConfig gets the reference for the message file or source bucket.
+	GetSourceOrModuleRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (SourceOrModuleRef, error)
 }
 
 // RefParser is a ref parser for Buf.
@@ -173,6 +193,7 @@ type RefParser interface {
 
 	// GetRef gets the reference for the message file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
+	// GetRefForInputConfig gets the reference for the message file, source bucket, or module.
 	GetRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig) (Ref, error)
 }
 
