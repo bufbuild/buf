@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -180,7 +181,37 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	// TODO: is this check necessary?
 	switch fileVersion := bufGenYAMLFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1, FileVersionV2:
-		return errors.New("TODO")
+		// Regardless of version, we write the file as v2:
+		// TODO name external..config
+		pluginConfigs, err := slicesext.MapError(
+			bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
+			newExternalGeneratePluginConfigV2FromPluginConfig,
+		)
+		if err != nil {
+			return err
+		}
+		managedConfig := newExternalManagedConfigV2FromGenerateManagedConfig(
+			bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
+		)
+		inputConfigs, err := slicesext.MapError(
+			bufGenYAMLFile.InputConfigs(),
+			newExternalInputConfigV2FromInputConfig,
+		)
+		if err != nil {
+			return err
+		}
+		externalBufGenYAMLFileV2 := externalBufGenYAMLFileV2{
+			Version: "v2",
+			Plugins: pluginConfigs,
+			Managed: managedConfig,
+			Inputs:  inputConfigs,
+		}
+		data, err := encoding.MarshalYAML(&externalBufGenYAMLFileV2)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write(append(bufLockFileHeader, data...))
+		return err
 	default:
 		// This is a system error since we've already parsed.
 		return syserror.Newf("unknown FileVersion: %v", fileVersion)

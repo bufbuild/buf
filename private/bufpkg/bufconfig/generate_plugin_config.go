@@ -18,11 +18,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os/exec"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 const remoteAlphaPluginDeprecationMessage = "the remote field no longer works as " +
@@ -104,25 +107,34 @@ type GeneratePluginConfig interface {
 	isGeneratePluginConfig()
 }
 
-func parseStrategy(s string) (GenerateStrategy, error) {
+func parseStrategy(s string) (*GenerateStrategy, error) {
+	var strategy GenerateStrategy
 	switch s {
-	case "", "directory":
-		return GenerateStrategyDirectory, nil
+	case "":
+		return nil, nil
+	case "directory":
+		strategy = GenerateStrategyDirectory
 	case "all":
-		return GenerateStrategyAll, nil
+		strategy = GenerateStrategyAll
 	default:
-		return 0, fmt.Errorf("unknown strategy: %s", s)
+		return nil, fmt.Errorf("unknown strategy: %s", s)
 	}
+	return &strategy, nil
 }
 
 type pluginConfig struct {
+	// TODO: perhaps make some of these pointers so that whether a field is
+	// specified in external config is preserved. This way, we can migrate more
+	// accurately.
+	// But what do we do about opt and path? Opt() and Path() could then return an error.
+	// Or define Migrate(templateOverride) error, which probably works better.
 	pluginConfigType PluginConfigType
 	name             string
 	out              string
-	opt              string
+	opts             []string
 	includeImports   bool
 	includeWKT       bool
-	strategy         GenerateStrategy
+	strategy         *GenerateStrategy
 	path             []string
 	protocPath       string
 	remoteHost       string
@@ -142,7 +154,7 @@ func (p *pluginConfig) Out() string {
 }
 
 func (p *pluginConfig) Opt() string {
-	return p.opt
+	return strings.Join(p.opts, ",")
 }
 
 func (p *pluginConfig) IncludeImports() bool {
@@ -154,7 +166,10 @@ func (p *pluginConfig) IncludeWKT() bool {
 }
 
 func (p *pluginConfig) Strategy() GenerateStrategy {
-	return p.strategy
+	if p.strategy == nil {
+		return GenerateStrategyDirectory
+	}
+	return *p.strategy
 }
 
 func (p *pluginConfig) Path() []string {
@@ -215,7 +230,7 @@ func newPluginConfigFromExternalV1(
 	if err != nil {
 		return nil, err
 	}
-	opt, err := encoding.InterfaceSliceOrStringToCommaSepString(externalConfig.Opt)
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +372,7 @@ func newPluginConfigFromExternalV2(
 	if err != nil {
 		return nil, err
 	}
-	opt, err := encoding.InterfaceSliceOrStringToCommaSepString(externalConfig.Opt)
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
 	if err != nil {
 		return nil, err
 	}
@@ -415,24 +430,21 @@ func newPluginConfigFromExternalV2(
 // TODO: unify parameter order
 func newLocalPluginConfig(
 	name string,
-	strategy GenerateStrategy,
+	strategy *GenerateStrategy,
 	out string,
-	opt string,
+	opt []string,
 	includeImports bool,
 	includeWKT bool,
 ) (*pluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
-	if strategy == 0 {
-		strategy = GenerateStrategyDirectory
-	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeLocal,
 		name:             name,
 		strategy:         strategy,
 		out:              out,
-		opt:              opt,
+		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
 	}, nil
@@ -441,9 +453,9 @@ func newLocalPluginConfig(
 func newBinaryPluginConfig(
 	name string,
 	path []string,
-	strategy GenerateStrategy,
+	strategy *GenerateStrategy,
 	out string,
-	opt string,
+	opt []string,
 	includeImports bool,
 	includeWKT bool,
 ) (*pluginConfig, error) {
@@ -453,16 +465,13 @@ func newBinaryPluginConfig(
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
-	if strategy == 0 {
-		strategy = GenerateStrategyDirectory
-	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeBinary,
 		name:             name,
 		path:             path,
 		strategy:         strategy,
 		out:              out,
-		opt:              opt,
+		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
 	}, nil
@@ -472,23 +481,20 @@ func newProtocBuiltinPluginConfig(
 	name string,
 	protocPath string,
 	out string,
-	opt string,
+	opt []string,
 	includeImports bool,
 	includeWKT bool,
-	strategy GenerateStrategy,
+	strategy *GenerateStrategy,
 ) (*pluginConfig, error) {
 	if includeWKT && !includeImports {
 		return nil, errors.New("cannot include well-known types without including imports")
-	}
-	if strategy == 0 {
-		strategy = GenerateStrategyDirectory
 	}
 	return &pluginConfig{
 		pluginConfigType: PluginConfigTypeProtocBuiltin,
 		name:             name,
 		protocPath:       protocPath,
 		out:              out,
-		opt:              opt,
+		opts:             opt,
 		strategy:         strategy,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
@@ -499,7 +505,7 @@ func newRemotePluginConfig(
 	name string,
 	revision int,
 	out string,
-	opt string,
+	opt []string,
 	includeImports bool,
 	includeWKT bool,
 ) (*pluginConfig, error) {
@@ -517,10 +523,71 @@ func newRemotePluginConfig(
 		remoteHost:       remoteHost,
 		revision:         revision,
 		out:              out,
-		opt:              opt,
+		opts:             opt,
 		includeImports:   includeImports,
 		includeWKT:       includeWKT,
 	}, nil
+}
+
+func newExternalGeneratePluginConfigV2FromPluginConfig(
+	generatePluginConfig GeneratePluginConfig,
+) (externalGeneratePluginConfigV2, error) {
+	pluginConfig, ok := generatePluginConfig.(*pluginConfig)
+	if !ok {
+		return externalGeneratePluginConfigV2{}, syserror.Newf("unknown implementation of GeneratePluginConfig: %T", generatePluginConfig)
+	}
+	externalPluginConfigV2 := externalGeneratePluginConfigV2{
+		Out:            generatePluginConfig.Out(),
+		IncludeImports: generatePluginConfig.IncludeImports(),
+		IncludeWKT:     generatePluginConfig.IncludeWKT(),
+	}
+	opts := pluginConfig.opts
+	switch {
+	case len(opts) == 1:
+		externalPluginConfigV2.Opt = opts[0]
+	case len(opts) > 1:
+		externalPluginConfigV2.Opt = opts
+	}
+	strategy := pluginConfig.strategy
+	switch {
+	case strategy != nil && *strategy == GenerateStrategyDirectory:
+		externalPluginConfigV2.Strategy = toPointer("directory")
+	case strategy != nil && *strategy == GenerateStrategyAll:
+		externalPluginConfigV2.Strategy = toPointer("all")
+	}
+	switch generatePluginConfig.Type() {
+	case PluginConfigTypeRemote:
+		externalPluginConfigV2.Remote = toPointer(generatePluginConfig.Name())
+		if revision := generatePluginConfig.Revision(); revision != 0 {
+			externalPluginConfigV2.Revision = &revision
+		}
+	case PluginConfigTypeBinary:
+		path := generatePluginConfig.Path()
+		switch {
+		case len(path) == 1:
+			externalPluginConfigV2.Binary = path[0]
+		case len(path) > 1:
+			externalPluginConfigV2.Binary = path
+		}
+	case PluginConfigTypeProtocBuiltin:
+		externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
+		if protocPath := generatePluginConfig.ProtocPath(); protocPath != "" {
+			externalPluginConfigV2.ProtocPath = &protocPath
+		}
+	case PluginConfigTypeLocal:
+		binaryName := "protoc-gen-" + generatePluginConfig.Name()
+		_, err := exec.LookPath(binaryName)
+		if err == nil || errors.Is(err, exec.ErrDot) {
+			externalPluginConfigV2.Binary = binaryName
+			break
+		}
+		if _, isProtocBuiltin := bufpluginexec.ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
+			externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
+			break
+		}
+		return externalGeneratePluginConfigV2{}, fmt.Errorf("plugin %s is not found locally and %s is not built-in to protoc", binaryName, generatePluginConfig.Name())
+	}
+	return externalPluginConfigV2, nil
 }
 
 func parseRemoteHostName(fullName string) (string, error) {
@@ -545,4 +612,8 @@ func checkPathAndStrategyUnset(plugin externalGeneratePluginConfigV1, pluginIden
 		return fmt.Errorf("remote plugin %s cannot specify a protoc path", pluginIdentifier)
 	}
 	return nil
+}
+
+func toPointer[T any](value T) *T {
+	return &value
 }

@@ -191,6 +191,7 @@ type RefParser interface {
 	DirRefParser
 	SourceOrModuleRefParser
 
+	// TODO: should this be renamed to GetRefForString?
 	// GetRef gets the reference for the message file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
 	// GetRefForInputConfig gets the reference for the message file, source bucket, or module.

@@ -343,6 +343,7 @@ func run(
 		if err != nil {
 			return err
 		}
+		// TODO: Call a bufconfig.MigrateBufGenYAML instead
 		if flags.Migrate {
 			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", bufGenYAMLFile); err != nil {
 				return err
@@ -358,6 +359,7 @@ func run(
 		if err != nil {
 			return err
 		}
+		// TODO: Call a bufconfig.MigrateBufGenYAML instead
 		if flags.Migrate {
 			if err := bufconfig.WriteBufGenYAMLFile(configFile, bufGenYAMLFile); err != nil {
 				return err
@@ -368,6 +370,7 @@ func run(
 		if err != nil {
 			return err
 		}
+		// TODO: Call a bufconfig.MigrateBufGenYAML instead
 		if flags.Migrate {
 			return fmt.Errorf(
 				"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",

@@ -682,3 +682,59 @@ func overrideRulesForPerFileOverridesV1(
 	}
 	return overrideRules, nil
 }
+
+func newExternalManagedConfigV2FromGenerateManagedConfig(
+	managedConfig GenerateManagedConfig,
+) externalGenerateManagedConfigV2 {
+	if managedConfig == nil {
+		return externalGenerateManagedConfigV2{}
+	}
+	var externalDisables []externalManagedDisableConfigV2
+	for _, disable := range managedConfig.Disables() {
+		var fileOptionName string
+		if disable.FileOption() != FileOptionUnspecified {
+			fileOptionName = disable.FileOption().String()
+		}
+		var fieldOptionName string
+		if disable.FieldOption() != FieldOptionUnspecified {
+			fieldOptionName = disable.FieldOption().String()
+		}
+		externalDisables = append(
+			externalDisables,
+			externalManagedDisableConfigV2{
+				FileOption:  fileOptionName,
+				FieldOption: fieldOptionName,
+				Module:      disable.ModuleFullName(),
+				Path:        disable.Path(),
+				Field:       disable.FieldName(),
+			},
+		)
+	}
+	var externalOverrides []externalManagedOverrideConfigV2
+	for _, override := range managedConfig.Overrides() {
+		var fileOptionName string
+		if override.FileOption() != FileOptionUnspecified {
+			fileOptionName = override.FileOption().String()
+		}
+		var fieldOptionName string
+		if override.FieldOption() != FieldOptionUnspecified {
+			fieldOptionName = override.FieldOption().String()
+		}
+		externalOverrides = append(
+			externalOverrides,
+			externalManagedOverrideConfigV2{
+				FileOption:  fileOptionName,
+				FieldOption: fieldOptionName,
+				Module:      override.ModuleFullName(),
+				Path:        override.Path(),
+				Field:       override.FieldName(),
+				Value:       override.Value(),
+			},
+		)
+	}
+	return externalGenerateManagedConfigV2{
+		Enabled:  true,
+		Disable:  externalDisables,
+		Override: externalOverrides,
+	}
+}

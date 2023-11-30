@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // TODO: input type?
@@ -421,6 +423,63 @@ func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV
 		}
 	}
 	return inputConfig, nil
+}
+
+func newExternalInputConfigV2FromInputConfig(
+	inputConfig InputConfig,
+) (externalInputConfigV2, error) {
+	externalInputConfigV2 := externalInputConfigV2{}
+	switch inputConfig.Type() {
+	case InputConfigTypeGitRepo:
+		externalInputConfigV2.GitRepo = toPointer(inputConfig.Location())
+	case InputConfigTypeDirectory:
+		externalInputConfigV2.Directory = toPointer(inputConfig.Location())
+	case InputConfigTypeModule:
+		externalInputConfigV2.Module = toPointer(inputConfig.Location())
+	case InputConfigTypeProtoFile:
+		externalInputConfigV2.ProtoFile = toPointer(inputConfig.Location())
+	case InputConfigTypeZipArchive:
+		externalInputConfigV2.ZipArchive = toPointer(inputConfig.Location())
+	case InputConfigTypeTarball:
+		externalInputConfigV2.Tarball = toPointer(inputConfig.Location())
+	case InputConfigTypeBinaryImage:
+		externalInputConfigV2.BinaryImage = toPointer(inputConfig.Location())
+	case InputConfigTypeJSONImage:
+		externalInputConfigV2.JSONImage = toPointer(inputConfig.Location())
+	case InputConfigTypeTextImage:
+		externalInputConfigV2.TextImage = toPointer(inputConfig.Location())
+	default:
+		return externalInputConfigV2, syserror.Newf("unknown input config type: %v", inputConfig.Type())
+	}
+	if inputConfig.Branch() != "" {
+		externalInputConfigV2.Branch = toPointer(inputConfig.Branch())
+	}
+	if inputConfig.Ref() != "" {
+		externalInputConfigV2.Ref = toPointer(inputConfig.Ref())
+	}
+	if inputConfig.Tag() != "" {
+		externalInputConfigV2.Tag = toPointer(inputConfig.Tag())
+	}
+	externalInputConfigV2.Depth = inputConfig.Depth()
+	// TODO: make RecurseSubmodules return a pointer for more accurate representation
+	if inputConfig.RecurseSubmodules() {
+		externalInputConfigV2.RecurseSubmodules = toPointer(inputConfig.RecurseSubmodules())
+	}
+	if inputConfig.Compression() != "" {
+		externalInputConfigV2.Compression = toPointer(inputConfig.Compression())
+	}
+	externalInputConfigV2.StripComponents = inputConfig.StripComponents()
+	if inputConfig.SubDir() != "" {
+		externalInputConfigV2.Subdir = toPointer(inputConfig.SubDir())
+	}
+	// TODO: make IncludePackageFiles return a pointer for more accurate representation
+	if inputConfig.IncludePackageFiles() {
+		externalInputConfigV2.IncludePackageFiles = toPointer(inputConfig.IncludePackageFiles())
+	}
+	externalInputConfigV2.IncludePaths = inputConfig.IncludePaths()
+	externalInputConfigV2.ExcludePaths = inputConfig.ExcludePaths()
+	externalInputConfigV2.Types = inputConfig.IncludeTypes()
+	return externalInputConfigV2, nil
 }
 
 func (i *inputConfig) Type() InputConfigType {
