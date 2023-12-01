@@ -413,7 +413,7 @@ func newManagedConfigFromExternalV1(
 }
 
 func newManagedConfigFromExternalV1Beta1(
-	externalConfig externalOptionsConfigV1Beta1,
+	externalConfig externalGenerateManagedConfigV1Beta1,
 ) (GenerateManagedConfig, error) {
 	var (
 		overrides []ManagedOverrideRule

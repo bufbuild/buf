@@ -105,7 +105,7 @@ func newGenerateConfigFromExternalFileV1(
 }
 
 func newGenerateConfigFromExternalFileV1Beta1(
-	externalFile externalBufGenYAMLV1Beta1,
+	externalFile externalBufGenYAMLFileV1Beta1,
 ) (GenerateConfig, error) {
 	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Options)
 	if err != nil {

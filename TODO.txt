@@ -30,4 +30,7 @@
   - the behavior of --path and --exclude-path is updated to match what's on main
   - proto file ref is implemented
 - Use syserror when possible (especially in buf gen related code).
+- Add Enabled() bool to GenerateManagedConfig: this is useful for printing the warning for the
+  case where managed mode external config is not empty but the user forgot to set enable: true.
+  Otherwise we would need to pass a logger to many functions, breaking the uniformity.
 - Fix the issue where reading a buf.lock with empty digest errors. Run `buf mod update` to reproduce.
