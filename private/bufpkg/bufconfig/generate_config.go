@@ -43,8 +43,7 @@ func NewGenerateConfig(
 	typeConfig GenerateTypeConfig,
 ) (GenerateConfig, error) {
 	if len(pluginConfigs) == 0 {
-		// TODO: make sure this message is consistent with other cases where there is 0 plugin
-		return nil, errors.New("a plugin is required")
+		return nil, newNoPluginsError()
 	}
 	return &generateConfig{
 		pluginConfigs: pluginConfigs,
@@ -59,54 +58,6 @@ type generateConfig struct {
 	pluginConfigs []GeneratePluginConfig
 	managedConfig GenerateManagedConfig
 	typeConfig    GenerateTypeConfig
-}
-
-func newGenerateConfigFromExternalFileV1Beta1(
-	externalFile externalBufGenYAMLV1Beta1,
-) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Options)
-	if err != nil {
-		return nil, err
-	}
-	if len(externalFile.Plugins) == 0 {
-		return nil, errors.New("must specifiy at least one plugin")
-	}
-	pluginConfigs, err := slicesext.MapError(
-		externalFile.Plugins,
-		newPluginConfigFromExternalV1Beta1,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &generateConfig{
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
-	}, nil
-}
-
-// TODO: check if this is consistent with the rest of bufconfig (esp. its name and whether it should exist)
-func newGenerateConfigFromExternalFileV1(
-	externalFile externalBufGenYAMLFileV1,
-) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV1(externalFile.Managed)
-	if err != nil {
-		return nil, err
-	}
-	if len(externalFile.Plugins) == 0 {
-		return nil, errors.New("must specifiy at least one plugin")
-	}
-	pluginConfigs, err := slicesext.MapError(
-		externalFile.Plugins,
-		newPluginConfigFromExternalV1,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &generateConfig{
-		pluginConfigs: pluginConfigs,
-		managedConfig: managedConfig,
-		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
-	}, nil
 }
 
 func newGenerateConfigFromExternalFileV2(
@@ -129,6 +80,53 @@ func newGenerateConfigFromExternalFileV2(
 	}, nil
 }
 
+func newGenerateConfigFromExternalFileV1(
+	externalFile externalBufGenYAMLFileV1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV1(externalFile.Managed)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, newNoPluginsError()
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
+	}, nil
+}
+
+func newGenerateConfigFromExternalFileV1Beta1(
+	externalFile externalBufGenYAMLV1Beta1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Options)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, newNoPluginsError()
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1Beta1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+	}, nil
+}
+
 func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
 	return g.pluginConfigs
 }
@@ -142,3 +140,7 @@ func (g *generateConfig) GenerateTypeConfig() GenerateTypeConfig {
 }
 
 func (*generateConfig) isGenerateConfig() {}
+
+func newNoPluginsError() error {
+	return errors.New("must specify at least one plugin")
+}

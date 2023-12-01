@@ -186,7 +186,7 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 		}
 		inputConfigs, err := slicesext.MapError(
 			externalGenYAMLFile.Inputs,
-			newInputConfigFromExternalInputConfigV2,
+			newInputConfigFromExternalV2,
 		)
 		if err != nil {
 			return nil, err

@@ -354,7 +354,7 @@ type inputConfig struct {
 	includePaths        []string
 }
 
-func newInputConfigFromExternalInputConfigV2(externalConfig externalInputConfigV2) (InputConfig, error) {
+func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputConfig, error) {
 	inputConfig := &inputConfig{}
 	var inputTypes []InputConfigType
 	var options []string
