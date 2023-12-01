@@ -172,32 +172,31 @@ var (
 func parseFileOption(s string) (FileOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
-		return 0, errors.New("empty fileOption")
+		return 0, errors.New("empty file_option")
 	}
 	f, ok := stringToFileOption[s]
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown fileOption: %q", s)
+	return 0, fmt.Errorf("unknown file_option: %q", s)
 }
 
 func parseFieldOption(s string) (FieldOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
-		return 0, errors.New("empty field option")
+		return 0, errors.New("empty field_option")
 	}
 	f, ok := stringToFieldOption[s]
 	if ok {
 		return f, nil
 	}
-	return 0, fmt.Errorf("unknown field option: %q", s)
+	return 0, fmt.Errorf("unknown field_option: %q", s)
 }
 
 func parseOverrideValue[T string | bool](overrideValue interface{}) (interface{}, error) {
 	parsedValue, ok := overrideValue.(T)
 	if !ok {
-		// TODO: test out this message
-		return nil, fmt.Errorf("must be a %T", overrideValue)
+		return nil, fmt.Errorf("expected a %T, got %T", parsedValue, overrideValue)
 	}
 	return parsedValue, nil
 }
