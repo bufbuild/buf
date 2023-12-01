@@ -26,7 +26,7 @@ type GenerateConfig interface {
 	// non-empty. Zero plugin configs will cause an error at construction time.
 	GeneratePluginConfigs() []GeneratePluginConfig
 	// GenerateManagedConfig returns the managed mode configuration.
-	// This may be nil.
+	// This may will never be nil.
 	GenerateManagedConfig() GenerateManagedConfig
 	// GenerateTypeConfig returns the types to generate code for. This overrides other type
 	// filters from input configurations, which exist in v2.
@@ -60,23 +60,26 @@ type generateConfig struct {
 	typeConfig    GenerateTypeConfig
 }
 
-func newGenerateConfigFromExternalFileV2(
-	externalFile externalBufGenYAMLFileV2,
+func newGenerateConfigFromExternalFileV1Beta1(
+	externalFile externalBufGenYAMLFileV1Beta1,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV2(externalFile.Managed)
+	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Managed, externalFile.Options)
 	if err != nil {
 		return nil, err
 	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, newNoPluginsError()
+	}
 	pluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
-		newPluginConfigFromExternalV2,
+		newPluginConfigFromExternalV1Beta1,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &generateConfig{
-		managedConfig: managedConfig,
 		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
 	}, nil
 }
 
@@ -104,26 +107,23 @@ func newGenerateConfigFromExternalFileV1(
 	}, nil
 }
 
-func newGenerateConfigFromExternalFileV1Beta1(
-	externalFile externalBufGenYAMLFileV1Beta1,
+func newGenerateConfigFromExternalFileV2(
+	externalFile externalBufGenYAMLFileV2,
 ) (GenerateConfig, error) {
-	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Options)
+	managedConfig, err := newManagedConfigFromExternalV2(externalFile.Managed)
 	if err != nil {
 		return nil, err
 	}
-	if len(externalFile.Plugins) == 0 {
-		return nil, newNoPluginsError()
-	}
 	pluginConfigs, err := slicesext.MapError(
 		externalFile.Plugins,
-		newPluginConfigFromExternalV1Beta1,
+		newPluginConfigFromExternalV2,
 	)
 	if err != nil {
 		return nil, err
 	}
 	return &generateConfig{
-		pluginConfigs: pluginConfigs,
 		managedConfig: managedConfig,
+		pluginConfigs: pluginConfigs,
 	}, nil
 }
 

@@ -27,6 +27,8 @@ import (
 
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
+	// Enabled returns whether managed mode is enabled.
+	Enabled() bool
 	// Disables returns the disable rules in the configuration.
 	Disables() []ManagedDisableRule
 	// Overrides returns the override rules in the configuration.
@@ -37,10 +39,12 @@ type GenerateManagedConfig interface {
 
 // NewGenerateManagedConfig returns a new GenerateManagedConfig.
 func NewGenerateManagedConfig(
+	enabled bool,
 	disables []ManagedDisableRule,
 	overrides []ManagedOverrideRule,
 ) GenerateManagedConfig {
 	return &generateManagedConfig{
+		enabled:   enabled,
 		disables:  disables,
 		overrides: overrides,
 	}
@@ -156,11 +160,13 @@ func NewFieldOptionOverrideRule(
 // *** PRIVATE ***
 
 type generateManagedConfig struct {
+	enabled   bool
 	disables  []ManagedDisableRule
 	overrides []ManagedOverrideRule
 }
 
 func newManagedConfigFromExternalV1Beta1(
+	enabled bool,
 	externalConfig externalGenerateManagedConfigV1Beta1,
 ) (GenerateManagedConfig, error) {
 	var (
@@ -203,6 +209,7 @@ func newManagedConfigFromExternalV1Beta1(
 		overrides = append(overrides, defaultOverride)
 	}
 	return &generateManagedConfig{
+		enabled:   enabled,
 		overrides: overrides,
 	}, nil
 }
@@ -210,9 +217,6 @@ func newManagedConfigFromExternalV1Beta1(
 func newManagedConfigFromExternalV1(
 	externalConfig externalGenerateManagedConfigV1,
 ) (GenerateManagedConfig, error) {
-	if !externalConfig.Enabled {
-		return nil, nil
-	}
 	var (
 		disables  []ManagedDisableRule
 		overrides []ManagedOverrideRule
@@ -389,6 +393,7 @@ func newManagedConfigFromExternalV1(
 	}
 	overrides = append(overrides, perFileOverrides...)
 	return &generateManagedConfig{
+		enabled:   externalConfig.Enabled,
 		disables:  disables,
 		overrides: overrides,
 	}, nil
@@ -397,9 +402,6 @@ func newManagedConfigFromExternalV1(
 func newManagedConfigFromExternalV2(
 	externalConfig externalGenerateManagedConfigV2,
 ) (GenerateManagedConfig, error) {
-	if !externalConfig.Enabled {
-		return nil, nil
-	}
 	var disables []ManagedDisableRule
 	var overrides []ManagedOverrideRule
 	for _, externalDisableConfig := range externalConfig.Disable {
@@ -476,9 +478,14 @@ func newManagedConfigFromExternalV2(
 		overrides = append(overrides, override)
 	}
 	return &generateManagedConfig{
+		enabled:   externalConfig.Enabled,
 		disables:  disables,
 		overrides: overrides,
 	}, nil
+}
+
+func (g *generateManagedConfig) Enabled() bool {
+	return g.enabled
 }
 
 func (g *generateManagedConfig) Disables() []ManagedDisableRule {

@@ -46,7 +46,7 @@ func TestModifyImage(t *testing.T) {
 				filepath.Join("testdata", "foo"): "buf.build/acme/foo",
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
-			config: nil,
+			config: bufconfig.NewGenerateManagedConfig(false, nil, nil),
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"foo_empty/with_package.proto": nil,
 				"bar_all/with_package.proto": {
@@ -78,6 +78,7 @@ func TestModifyImage(t *testing.T) {
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{},
 			),
@@ -194,6 +195,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
@@ -217,6 +219,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionCsharpNamespacePrefix, bufconfig.FieldOptionUnspecified),
 				},
@@ -253,6 +256,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionGoPackagePrefix, bufconfig.FieldOptionUnspecified),
 				},
@@ -292,6 +296,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackagePrefix, bufconfig.FieldOptionUnspecified),
 				},
@@ -388,6 +393,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackageSuffix, bufconfig.FieldOptionUnspecified),
 				},
@@ -442,6 +448,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackage, bufconfig.FieldOptionUnspecified),
 				},
@@ -495,6 +502,7 @@ func TestModifyImageFile(
 				filepath.Join("testdata", "bar"): "buf.build/acme/bar",
 			},
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{
 					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionObjcClassPrefix, bufconfig.FieldOptionUnspecified),
 				},
@@ -598,6 +606,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "only_value",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
@@ -609,6 +618,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "only_prefix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
@@ -620,6 +630,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "only_suffix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
@@ -631,6 +642,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "prefix_then_value",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
@@ -643,6 +655,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "value_then_prefix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
@@ -655,6 +668,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "prefix_then_suffix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
@@ -670,6 +684,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "value_prefix_then_suffix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
@@ -686,6 +701,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "prefix_value_then_suffix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
@@ -699,6 +715,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "prefix_then_prefix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
@@ -711,6 +728,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "suffix_then_suffix",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
@@ -723,6 +741,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 		{
 			description: "value_then_value",
 			config: bufconfig.NewGenerateManagedConfig(
+				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
 					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),

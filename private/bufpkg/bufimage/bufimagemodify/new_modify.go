@@ -30,7 +30,7 @@ func Modify(
 	image bufimage.Image,
 	config bufconfig.GenerateManagedConfig,
 ) error {
-	if config == nil {
+	if !config.Enabled() {
 		return nil
 	}
 	// TODO: in v2 modify field options as well

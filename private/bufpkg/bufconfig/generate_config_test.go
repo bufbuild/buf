@@ -44,6 +44,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeLocal,
@@ -70,6 +71,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeLocal,
@@ -96,6 +98,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeBinary,
@@ -123,6 +126,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeBinary,
@@ -148,6 +152,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeBinary,
@@ -171,6 +176,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeBinary,
@@ -194,6 +200,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeProtocBuiltin,
@@ -217,6 +224,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeProtocBuiltin,
@@ -240,6 +248,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeRemote,
@@ -264,6 +273,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				},
 			},
 			expectedConfig: &generateConfig{
+				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
 						pluginConfigType: PluginConfigTypeRemote,
@@ -297,7 +307,9 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 						out:              "go/out",
 					},
 				},
-				managedConfig: &generateManagedConfig{},
+				managedConfig: &generateManagedConfig{
+					enabled: true,
+				},
 			},
 		},
 		{
@@ -335,6 +347,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					disables: []ManagedDisableRule{
 						&managedDisableRule{
 							fileOption:     FileOptionJavaPackage,
@@ -413,6 +426,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					disables: []ManagedDisableRule{
 						&managedDisableRule{
 							fileOption:     FileOptionOptimizeFor,
@@ -468,6 +482,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					disables: []ManagedDisableRule{
 						&managedDisableRule{
 							fileOption:     FileOptionGoPackage,
@@ -518,6 +533,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					disables: []ManagedDisableRule{
 						&managedDisableRule{
 							fileOption:     FileOptionObjcClassPrefix,
@@ -567,6 +583,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					disables: []ManagedDisableRule{
 						&managedDisableRule{
 							fileOption:     FileOptionRubyPackage,
@@ -622,6 +639,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 					},
 				},
 				managedConfig: &generateManagedConfig{
+					enabled: true,
 					overrides: []ManagedOverrideRule{
 						// ordered by file option names and then by file paths
 						&managedOverrideRule{
