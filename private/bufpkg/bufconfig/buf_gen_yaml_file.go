@@ -124,6 +124,21 @@ func newBufGenYAMLFile(
 	}
 }
 
+func (g *bufGenYAMLFile) FileVersion() FileVersion {
+	return g.fileVersion
+}
+
+func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
+	return g.generateConfig
+}
+
+func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
+	return g.inputConfigs
+}
+
+func (*bufGenYAMLFile) isBufGenYAMLFile() {}
+func (*bufGenYAMLFile) isFile()           {}
+
 func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -221,18 +236,3 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	_, err = writer.Write(data)
 	return err
 }
-
-func (g *bufGenYAMLFile) FileVersion() FileVersion {
-	return g.fileVersion
-}
-
-func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
-	return g.generateConfig
-}
-
-func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
-	return g.inputConfigs
-}
-
-func (*bufGenYAMLFile) isBufGenYAMLFile() {}
-func (*bufGenYAMLFile) isFile()           {}
