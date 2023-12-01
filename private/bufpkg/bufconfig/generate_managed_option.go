@@ -67,6 +67,15 @@ const (
 	FileOptionRubyPackageSuffix
 )
 
+// String implements fmt.Stringer.
+func (f FileOption) String() string {
+	s, ok := fileOptionToString[f]
+	if !ok {
+		return strconv.Itoa(int(f))
+	}
+	return s
+}
+
 // FieldOption is a field option.
 type FieldOption int
 
@@ -76,6 +85,17 @@ const (
 	// FieldOptionJSType is the field option js_type.
 	FieldOptionJSType
 )
+
+// String implements fmt.Stringer.
+func (f FieldOption) String() string {
+	s, ok := fieldOptionToString[f]
+	if !ok {
+		return strconv.Itoa(int(f))
+	}
+	return s
+}
+
+// *** PRIVATE ***
 
 var (
 	fileOptionToString = map[FileOption]string{
@@ -138,9 +158,6 @@ var (
 		FileOptionRubyPackage:                parseOverrideValue[string],
 		FileOptionRubyPackageSuffix:          parseOverrideValue[string],
 	}
-	allFieldOptions = []FieldOption{
-		FieldOptionJSType,
-	}
 	fieldOptionToString = map[FieldOption]string{
 		FieldOptionJSType: "jstype",
 	}
@@ -152,15 +169,6 @@ var (
 	}
 )
 
-// String implements fmt.Stringer.
-func (f FileOption) String() string {
-	s, ok := fileOptionToString[f]
-	if !ok {
-		return strconv.Itoa(int(f))
-	}
-	return s
-}
-
 func parseFileOption(s string) (FileOption, error) {
 	s = strings.ToLower(strings.TrimSpace(s))
 	if s == "" {
@@ -171,15 +179,6 @@ func parseFileOption(s string) (FileOption, error) {
 		return f, nil
 	}
 	return 0, fmt.Errorf("unknown fileOption: %q", s)
-}
-
-// String implements fmt.Stringer.
-func (f FieldOption) String() string {
-	s, ok := fieldOptionToString[f]
-	if !ok {
-		return strconv.Itoa(int(f))
-	}
-	return s
 }
 
 func parseFieldOption(s string) (FieldOption, error) {
