@@ -36,7 +36,9 @@ var (
 type BufGenYAMLFile interface {
 	File
 
+	// GenerateConfig returns the generate config.
 	GenerateConfig() GenerateConfig
+	// InputConfigs returns the input configs, which can be empty.
 	InputConfigs() []InputConfig
 
 	isBufGenYAMLFile()
@@ -122,21 +124,6 @@ func newBufGenYAMLFile(
 	}
 }
 
-func (g *bufGenYAMLFile) FileVersion() FileVersion {
-	return g.fileVersion
-}
-
-func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
-	return g.generateConfig
-}
-
-func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
-	return g.inputConfigs
-}
-
-func (*bufGenYAMLFile) isBufGenYAMLFile() {}
-func (*bufGenYAMLFile) isFile()           {}
-
 func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -203,42 +190,49 @@ func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error
 }
 
 func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error {
-	// TODO: is this check necessary?
-	switch fileVersion := bufGenYAMLFile.FileVersion(); fileVersion {
-	case FileVersionV1Beta1, FileVersionV1, FileVersionV2:
-		// Regardless of version, we write the file as v2:
-		// TODO name external..config
-		pluginConfigs, err := slicesext.MapError(
-			bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
-			newExternalGeneratePluginConfigV2FromPluginConfig,
-		)
-		if err != nil {
-			return err
-		}
-		managedConfig := newExternalManagedConfigV2FromGenerateManagedConfig(
-			bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
-		)
-		inputConfigs, err := slicesext.MapError(
-			bufGenYAMLFile.InputConfigs(),
-			newExternalInputConfigV2FromInputConfig,
-		)
-		if err != nil {
-			return err
-		}
-		externalBufGenYAMLFileV2 := externalBufGenYAMLFileV2{
-			Version: "v2",
-			Plugins: pluginConfigs,
-			Managed: managedConfig,
-			Inputs:  inputConfigs,
-		}
-		data, err := encoding.MarshalYAML(&externalBufGenYAMLFileV2)
-		if err != nil {
-			return err
-		}
-		_, err = writer.Write(data)
+	// Regardless of version, we write the file as v2:
+	externalPluginConfigsV2, err := slicesext.MapError(
+		bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
+		newExternalGeneratePluginConfigV2FromPluginConfig,
+	)
+	if err != nil {
 		return err
-	default:
-		// This is a system error since we've already parsed.
-		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
+	externalManagedConfigV2 := newExternalManagedConfigV2FromGenerateManagedConfig(
+		bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
+	)
+	externalInputConfigsV2, err := slicesext.MapError(
+		bufGenYAMLFile.InputConfigs(),
+		newExternalInputConfigV2FromInputConfig,
+	)
+	if err != nil {
+		return err
+	}
+	externalBufGenYAMLFileV2 := externalBufGenYAMLFileV2{
+		Version: FileVersionV2.String(),
+		Plugins: externalPluginConfigsV2,
+		Managed: externalManagedConfigV2,
+		Inputs:  externalInputConfigsV2,
+	}
+	data, err := encoding.MarshalYAML(&externalBufGenYAMLFileV2)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(data)
+	return err
 }
+
+func (g *bufGenYAMLFile) FileVersion() FileVersion {
+	return g.fileVersion
+}
+
+func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
+	return g.generateConfig
+}
+
+func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
+	return g.inputConfigs
+}
+
+func (*bufGenYAMLFile) isBufGenYAMLFile() {}
+func (*bufGenYAMLFile) isFile()           {}
