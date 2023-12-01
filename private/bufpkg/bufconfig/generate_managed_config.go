@@ -25,8 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-// TODO: check normalize(path) == path for disable and override paths.
-
 // GenerateManagedConfig is a managed mode configuration.
 type GenerateManagedConfig interface {
 	// Disables returns the disable rules in the configuration.
@@ -86,33 +84,13 @@ func NewDisableRule(
 	fileOption FileOption,
 	fieldOption FieldOption,
 ) (ManagedDisableRule, error) {
-	if path != "" && normalpath.Normalize(path) != path {
-		// TODO: do we want to show words like 'normalized' to users?
-		return nil, fmt.Errorf("path must be normalized: %s", path)
-	}
-	if path == "" && moduleFullName == "" && fieldName == "" && fileOption == FileOptionUnspecified && fieldOption == FieldOptionUnspecified {
-		// This should never happen to parsing configs from provided by users.
-		return nil, errors.New("empty disable rule is not allowed")
-	}
-	if fieldName != "" && fileOption != FileOptionUnspecified {
-		return nil, errors.New("cannot disable a file option for a field")
-	}
-	if fileOption != FileOptionUnspecified && fieldOption != FieldOptionUnspecified {
-		return nil, errors.New("at most one of file_option and field_option can be specified")
-	}
-	// TODO: validate path here? Was it validated in v1/main?
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	return &managedDisableRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fieldName:      fieldName,
-		fileOption:     fileOption,
-		fieldOption:    fieldOption,
-	}, nil
+	return newDisableRule(
+		path,
+		moduleFullName,
+		fieldName,
+		fileOption,
+		fieldOption,
+	)
 }
 
 // ManagedOverrideRule is an override rule. An override describes:
@@ -150,33 +128,12 @@ func NewFileOptionOverrideRule(
 	fileOption FileOption,
 	value interface{},
 ) (*managedOverrideRule, error) {
-	if path != "" && normalpath.Normalize(path) != path {
-		// TODO: do we want to show words like 'normalized' to users?
-		return nil, fmt.Errorf("path must be normalized: %s", path)
-	}
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	// All valid file options have a parse func. This lookup implicitly validates the option.
-	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
-	if !ok {
-		return nil, fmt.Errorf("invalid fileOption: %v", fileOption)
-	}
-	if value == nil {
-		return nil, fmt.Errorf("value must be specified for override")
-	}
-	parsedValue, err := parseOverrideValueFunc(value)
-	if err != nil {
-		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
-	}
-	return &managedOverrideRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fileOption:     fileOption,
-		value:          parsedValue,
-	}, nil
+	return newFileOptionOverrideRule(
+		path,
+		moduleFullName,
+		fileOption,
+		value,
+	)
 }
 
 // NewFieldOptionOverrideRule returns an OverrideRule for a field option.
@@ -187,40 +144,67 @@ func NewFieldOptionOverrideRule(
 	fieldOption FieldOption,
 	value interface{},
 ) (ManagedOverrideRule, error) {
-	if path != "" && normalpath.Normalize(path) != path {
-		// TODO: do we want to show words like 'normalized' to users?
-		return nil, fmt.Errorf("path must be normalized: %s", path)
-	}
-	// TODO: validate path here? Was it validated in v1/main?
-	if moduleFullName != "" {
-		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
-			return nil, err
-		}
-	}
-	// All valid field options have a parse func. This lookup implicitly validates the option.
-	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
-	if !ok {
-		return nil, fmt.Errorf("invalid fieldOption: %v", fieldOption)
-	}
-	if value == nil {
-		return nil, fmt.Errorf("value must be specified for override")
-	}
-	parsedValue, err := parseOverrideValueFunc(value)
-	if err != nil {
-		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
-	}
-	return &managedOverrideRule{
-		path:           path,
-		moduleFullName: moduleFullName,
-		fieldName:      fieldName,
-		fieldOption:    fieldOption,
-		value:          parsedValue,
-	}, nil
+	return newFieldOptionOverrideRule(
+		path,
+		moduleFullName,
+		fieldName,
+		fieldOption,
+		value,
+	)
 }
+
+// *** PRIVATE ***
 
 type generateManagedConfig struct {
 	disables  []ManagedDisableRule
 	overrides []ManagedOverrideRule
+}
+
+func newManagedConfigFromExternalV1Beta1(
+	externalConfig externalGenerateManagedConfigV1Beta1,
+) (GenerateManagedConfig, error) {
+	var (
+		overrides []ManagedOverrideRule
+	)
+	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
+		override, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionCcEnableArenas,
+			*externalCCEnableArenas,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
+		override, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionJavaMultipleFiles,
+			*externalJavaMultipleFiles,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, override)
+	}
+	if externalOptimizeFor := externalConfig.OptimizeFor; externalOptimizeFor != "" {
+		defaultOverride, err := NewFileOptionOverrideRule(
+			"",
+			"",
+			FileOptionOptimizeFor,
+			externalOptimizeFor,
+		)
+		if err != nil {
+			return nil, err
+		}
+		overrides = append(overrides, defaultOverride)
+	}
+	return &generateManagedConfig{
+		overrides: overrides,
+	}, nil
 }
 
 func newManagedConfigFromExternalV1(
@@ -271,9 +255,7 @@ func newManagedConfigFromExternalV1(
 	}
 	if externalJavaPackagePrefix := externalConfig.JavaPackagePrefix; !externalJavaPackagePrefix.isEmpty() {
 		if externalJavaPackagePrefix.Default == "" {
-			// TODO: resolve this: this message has been updated, compared to the one in bufgen/config.go:
-			// "java_package_prefix setting requires a default value"
-			return nil, errors.New("java_package_prefix must have a default value")
+			return nil, errors.New("java_package_prefix requires a default value")
 		}
 		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
@@ -312,7 +294,7 @@ func newManagedConfigFromExternalV1(
 	}
 	if externalOptimizeFor := externalConfig.OptimizeFor; !externalOptimizeFor.isEmpty() {
 		if externalOptimizeFor.Default == "" {
-			return nil, errors.New("optimize_for must have a default value")
+			return nil, errors.New("optimize_for requires a default value")
 		}
 		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
@@ -338,7 +320,7 @@ func newManagedConfigFromExternalV1(
 	}
 	if externalGoPackagePrefix := externalConfig.GoPackagePrefix; !externalGoPackagePrefix.isEmpty() {
 		if externalGoPackagePrefix.Default == "" {
-			return nil, errors.New("go_package_prefix must have a default value")
+			return nil, errors.New("go_package_prefix requires a default value")
 		}
 		defaultOverride, err := NewFileOptionOverrideRule(
 			"",
@@ -412,61 +394,12 @@ func newManagedConfigFromExternalV1(
 	}, nil
 }
 
-func newManagedConfigFromExternalV1Beta1(
-	externalConfig externalGenerateManagedConfigV1Beta1,
-) (GenerateManagedConfig, error) {
-	var (
-		overrides []ManagedOverrideRule
-	)
-	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-		override, err := NewFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionCcEnableArenas,
-			*externalCCEnableArenas,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, override)
-	}
-	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-		override, err := NewFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionJavaMultipleFiles,
-			*externalJavaMultipleFiles,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, override)
-	}
-	if externalOptimizeFor := externalConfig.OptimizeFor; externalOptimizeFor != "" {
-		defaultOverride, err := NewFileOptionOverrideRule(
-			"",
-			"",
-			FileOptionOptimizeFor,
-			externalOptimizeFor,
-		)
-		if err != nil {
-			return nil, err
-		}
-		overrides = append(overrides, defaultOverride)
-	}
-	return &generateManagedConfig{
-		overrides: overrides,
-	}, nil
-}
-
 func newManagedConfigFromExternalV2(
 	externalConfig externalGenerateManagedConfigV2,
 ) (GenerateManagedConfig, error) {
-	// TODO: add test case for non-empty config but disabled
 	if !externalConfig.Enabled {
 		return nil, nil
 	}
-	// TODO: log warning if disabled but non-empty
 	var disables []ManagedDisableRule
 	var overrides []ManagedOverrideRule
 	for _, externalDisableConfig := range externalConfig.Disable {
@@ -487,7 +420,7 @@ func newManagedConfigFromExternalV2(
 				return nil, err
 			}
 		}
-		disable, err := NewDisableRule(
+		disable, err := newDisableRule(
 			externalDisableConfig.Path,
 			externalDisableConfig.Module,
 			externalDisableConfig.Field,
@@ -566,6 +499,41 @@ type managedDisableRule struct {
 	fieldOption    FieldOption
 }
 
+func newDisableRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fileOption FileOption,
+	fieldOption FieldOption,
+) (ManagedDisableRule, error) {
+	if path == "" && moduleFullName == "" && fieldName == "" && fileOption == FileOptionUnspecified && fieldOption == FieldOptionUnspecified {
+		return nil, errors.New("empty disable rule is not allowed")
+	}
+	if fieldName != "" && fileOption != FileOptionUnspecified {
+		return nil, errors.New("cannot disable a file option for a field")
+	}
+	if fileOption != FileOptionUnspecified && fieldOption != FieldOptionUnspecified {
+		return nil, errors.New("at most one of file_option and field_option can be specified")
+	}
+	if path != "" {
+		if err := validatePath(path); err != nil {
+			return nil, fmt.Errorf("invalid path for disable rule: %w", err)
+		}
+	}
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, err
+		}
+	}
+	return &managedDisableRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fileOption:     fileOption,
+		fieldOption:    fieldOption,
+	}, nil
+}
+
 func (m *managedDisableRule) Path() string {
 	return m.path
 }
@@ -595,6 +563,80 @@ type managedOverrideRule struct {
 	fileOption     FileOption
 	fieldOption    FieldOption
 	value          interface{}
+}
+
+func newFileOptionOverrideRule(
+	path string,
+	moduleFullName string,
+	fileOption FileOption,
+	value interface{},
+) (*managedOverrideRule, error) {
+	// All valid file options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fileOptionToParseOverrideValueFunc[fileOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fileOption: %v", fileOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fileOption, err)
+	}
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, fmt.Errorf("invalid module name for %v override: %w", fileOption, err)
+		}
+	}
+	if path != "" {
+		if err := validatePath(path); err != nil {
+			return nil, fmt.Errorf("invalid path for %v override: %w", fileOption, err)
+		}
+	}
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fileOption:     fileOption,
+		value:          parsedValue,
+	}, nil
+}
+
+func newFieldOptionOverrideRule(
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fieldOption FieldOption,
+	value interface{},
+) (ManagedOverrideRule, error) {
+	// All valid field options have a parse func. This lookup implicitly validates the option.
+	parseOverrideValueFunc, ok := fieldOptionToParseOverrideValueFunc[fieldOption]
+	if !ok {
+		return nil, fmt.Errorf("invalid fieldOption: %v", fieldOption)
+	}
+	if value == nil {
+		return nil, fmt.Errorf("value must be specified for override")
+	}
+	parsedValue, err := parseOverrideValueFunc(value)
+	if err != nil {
+		return nil, fmt.Errorf("invalid value %v for %v: %w", value, fieldOption, err)
+	}
+	if moduleFullName != "" {
+		if _, err := bufmodule.ParseModuleFullName(moduleFullName); err != nil {
+			return nil, fmt.Errorf("invalid module name for %v override: %w", fieldOption, err)
+		}
+	}
+	if path != "" {
+		if err := validatePath(path); err != nil {
+			return nil, fmt.Errorf("invalid path for %v override: %w", fieldOption, err)
+		}
+	}
+	return &managedOverrideRule{
+		path:           path,
+		moduleFullName: moduleFullName,
+		fieldName:      fieldName,
+		fieldOption:    fieldOption,
+		value:          parsedValue,
+	}, nil
 }
 
 func (m *managedOverrideRule) Path() string {
@@ -642,7 +684,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 			return nil, nil, fmt.Errorf("%q is defined multiple times in except", exceptModuleFullName)
 		}
 		seenExceptModuleFullNames[exceptModuleFullName] = struct{}{}
-		disable, err := NewDisableRule(
+		disable, err := newDisableRule(
 			"",
 			exceptModuleFullName,
 			"",
@@ -690,22 +732,9 @@ func overrideRulesForPerFileOverridesV1(
 		filePathToOverride := fileOptionToFilePathToOverride[fileOptionString]
 		sortedFilePaths := slicesext.MapKeysToSortedSlice(filePathToOverride)
 		for _, filePath := range sortedFilePaths {
-			normalizedFilePath, err := normalpath.NormalizeAndValidate(filePath)
+			err := validatePath(filePath)
 			if err != nil {
-				return nil, fmt.Errorf(
-					"%s for override %s is not a valid import path: %w",
-					filePath,
-					fileOptionString,
-					err,
-				)
-			}
-			if filePath != normalizedFilePath {
-				return nil, fmt.Errorf(
-					"import path %s for override %s is not normalized, use %s instead",
-					filePath,
-					fileOptionString,
-					normalizedFilePath,
-				)
+				return nil, fmt.Errorf("invalid import path for override %s: %w", fileOptionString, err)
 			}
 			overrideString := filePathToOverride[filePath]
 			var overrideValue interface{} = overrideString
@@ -785,4 +814,20 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		Disable:  externalDisables,
 		Override: externalOverrides,
 	}
+}
+
+func validatePath(path string) error {
+	normalizedPath, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return err
+	}
+	if path != normalizedPath {
+		return fmt.Errorf(
+			// TODO: do we want to show the word 'normalized' to users?
+			"%q is not normalized, use %q instead",
+			path,
+			normalizedPath,
+		)
+	}
+	return nil
 }
