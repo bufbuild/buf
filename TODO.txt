@@ -26,9 +26,8 @@
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
-
 - Un-skip relevant tests in generate_test.go and generate_unix_test.go, when
   - the behavior of --path and --exclude-path is updated to match what's on main
   - proto file ref is implemented
-
-- Use syserror when possible.
+- Use syserror when possible (especially in buf gen related code).
+- Fix the issue where reading a buf.lock with empty digest errors. Run `buf mod update` to reproduce.
