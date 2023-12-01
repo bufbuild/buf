@@ -1,9 +1,0 @@
-version: v2
-plugins:
-  - binary: protoc-gen-go
-    out: gogogo
-managed:
-  enabled: true
-  override:
-    - file_option: go_package
-      value: 20
