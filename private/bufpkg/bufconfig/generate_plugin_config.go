@@ -28,16 +28,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// TODO: move private methods below /* private */
-
-const remoteAlphaPluginDeprecationMessage = "the remote field no longer works as " +
-	"the remote generation alpha has been deprecated, see the migration guide to " +
-	"now-stable remote plugins: https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins"
+const (
+	remoteAlphaPluginDeprecationMessage = "the remote field no longer works as " +
+		"the remote generation alpha has been deprecated, see the migration guide to " +
+		"now-stable remote plugins: https://buf.build/docs/migration-guides/migrate-remote-generation-alpha/#migrate-to-remote-plugins"
+)
 
 // GenerateStrategy is the generation strategy for a protoc plugin.
-//
-// TODO: Should this type live in this package? Perhaps it should live in the package that handles generation?
-// TODO: The same question can be asked for FieldOption and FileOption.
 type GenerateStrategy int
 
 const (
@@ -133,11 +130,6 @@ func NewGeneratePluginWithIncludeImportsAndWKT(
 // *** PRIVATE ***
 
 type pluginConfig struct {
-	// TODO: perhaps make some of these pointers so that whether a field is
-	// specified in external config is preserved. This way, we can migrate more
-	// accurately.
-	// But what do we do about opt and path? Opt() and Path() could then return an error.
-	// Or define Migrate(templateOverride) error, which probably works better.
 	pluginConfigType PluginConfigType
 	name             string
 	out              string
@@ -149,6 +141,343 @@ type pluginConfig struct {
 	protocPath       string
 	remoteHost       string
 	revision         int
+}
+
+func newPluginConfigFromExternalV1Beta1(
+	externalConfig externalGeneratePluginConfigV1Beta1,
+) (GeneratePluginConfig, error) {
+	if externalConfig.Name == "" {
+		return nil, errors.New("plugin name is required")
+	}
+	if externalConfig.Out == "" {
+		return nil, fmt.Errorf("out is required for plugin %s", externalConfig.Name)
+	}
+	strategy, err := parseStrategy(externalConfig.Strategy)
+	if err != nil {
+		return nil, err
+	}
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
+	if err != nil {
+		return nil, err
+	}
+	if externalConfig.Path != "" {
+		return newBinaryPluginConfig(
+			externalConfig.Name,
+			externalConfig.Out,
+			opt,
+			false,
+			false,
+			strategy,
+			[]string{externalConfig.Path},
+		)
+	}
+	return newLocalPluginConfig(
+		externalConfig.Name,
+		externalConfig.Out,
+		opt,
+		false,
+		false,
+		strategy,
+	)
+}
+
+func newPluginConfigFromExternalV1(
+	externalConfig externalGeneratePluginConfigV1,
+) (GeneratePluginConfig, error) {
+	if externalConfig.Remote != "" {
+		return nil, errors.New(remoteAlphaPluginDeprecationMessage)
+	}
+	// In v1 config, only plugin and name are allowed, since remote alpha plugin
+	// has been deprecated.
+	if externalConfig.Plugin == "" && externalConfig.Name == "" {
+		return nil, fmt.Errorf("one of plugin or name is required")
+	}
+	if externalConfig.Plugin != "" && externalConfig.Name != "" {
+		return nil, fmt.Errorf("only one of plugin or name can be set")
+	}
+	var pluginIdentifier string
+	switch {
+	case externalConfig.Plugin != "":
+		pluginIdentifier = externalConfig.Plugin
+		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+			// A remote alpha plugin name is not a valid remote plugin reference.
+			return nil, fmt.Errorf("invalid remote plugin reference: %s", pluginIdentifier)
+		}
+	case externalConfig.Name != "":
+		pluginIdentifier = externalConfig.Name
+		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+			return nil, fmt.Errorf("invalid plugin name %s, did you mean to use a remote plugin?", pluginIdentifier)
+		}
+		if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+			// A remote alpha plugin name is not a valid local plugin name.
+			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
+		}
+	}
+	if externalConfig.Out == "" {
+		return nil, fmt.Errorf("out is required for plugin %s", pluginIdentifier)
+	}
+	strategy, err := parseStrategy(externalConfig.Strategy)
+	if err != nil {
+		return nil, err
+	}
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
+	if err != nil {
+		return nil, err
+	}
+	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Path)
+	if err != nil {
+		return nil, err
+	}
+	if externalConfig.Plugin != "" && bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+		if externalConfig.Path != nil {
+			return nil, fmt.Errorf("cannot specify path for remote plugin %s", externalConfig.Plugin)
+		}
+		if externalConfig.Strategy != "" {
+			return nil, fmt.Errorf("cannot specify strategy for remote plugin %s", externalConfig.Plugin)
+		}
+		if externalConfig.ProtocPath != "" {
+			return nil, fmt.Errorf("cannot specify protoc_path for remote plugin %s", externalConfig.Plugin)
+		}
+		return newRemotePluginConfig(
+			externalConfig.Plugin,
+			externalConfig.Out,
+			opt,
+			false,
+			false,
+			externalConfig.Revision,
+		)
+	}
+	// At this point the plugin must be local, regardless whehter it's specified
+	// by key 'plugin' or 'name'.
+	if len(path) > 0 {
+		return newBinaryPluginConfig(
+			pluginIdentifier,
+			externalConfig.Out,
+			opt,
+			false,
+			false,
+			strategy,
+			path,
+		)
+	}
+	if externalConfig.ProtocPath != "" {
+		return newProtocBuiltinPluginConfig(
+			pluginIdentifier,
+			externalConfig.Out,
+			opt,
+			false,
+			false,
+			strategy,
+			externalConfig.ProtocPath,
+		)
+	}
+	// It could be either binary or protoc built-in. We defer to the plugin executor
+	// to decide whether the plugin is protoc-builtin or binary.
+	return newLocalPluginConfig(
+		pluginIdentifier,
+		externalConfig.Out,
+		opt,
+		false,
+		false,
+		strategy,
+	)
+}
+
+func newPluginConfigFromExternalV2(
+	externalConfig externalGeneratePluginConfigV2,
+) (GeneratePluginConfig, error) {
+	var pluginTypeCount int
+	if externalConfig.Remote != nil {
+		pluginTypeCount++
+	}
+	if externalConfig.Binary != nil {
+		pluginTypeCount++
+	}
+	if externalConfig.ProtocBuiltin != nil {
+		pluginTypeCount++
+	}
+	if pluginTypeCount == 0 {
+		return nil, errors.New("must specify one of remote, binary and protoc_builtin")
+	}
+	if pluginTypeCount > 1 {
+		return nil, errors.New("only one of remote, binary and protoc_builtin")
+	}
+	var strategy string
+	if externalConfig.Strategy != nil {
+		strategy = *externalConfig.Strategy
+	}
+	parsedStrategy, err := parseStrategy(strategy)
+	if err != nil {
+		return nil, err
+	}
+	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case externalConfig.Remote != nil:
+		var revision int
+		if externalConfig.Revision != nil {
+			revision = *externalConfig.Revision
+		}
+		if externalConfig.Strategy != nil {
+			return nil, fmt.Errorf("cannot specify strategy for remote plugin %s", *externalConfig.Remote)
+		}
+		if externalConfig.ProtocPath != nil {
+			return nil, fmt.Errorf("cannot specify protoc_path for remote plugin %s", *externalConfig.Remote)
+		}
+		return newRemotePluginConfig(
+			*externalConfig.Remote,
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+			revision,
+		)
+	case externalConfig.Binary != nil:
+		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
+		if err != nil {
+			return nil, err
+		}
+		binaryPluginName := strings.Join(path, " ")
+		if externalConfig.Revision != nil {
+			return nil, fmt.Errorf("cannot specify revision for binary plugin %s", binaryPluginName)
+		}
+		if externalConfig.ProtocPath != nil {
+			return nil, fmt.Errorf("cannot specify protoc_path for binary plugin %s", binaryPluginName)
+		}
+		return newBinaryPluginConfig(
+			strings.Join(path, " "),
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+			parsedStrategy,
+			path,
+		)
+	case externalConfig.ProtocBuiltin != nil:
+		var protocPath string
+		if externalConfig.ProtocPath != nil {
+			protocPath = *externalConfig.ProtocPath
+		}
+		if externalConfig.Revision != nil {
+			return nil, fmt.Errorf("cannot specify revision for protoc built-in plugin %s", *externalConfig.ProtocBuiltin)
+		}
+		return newProtocBuiltinPluginConfig(
+			*externalConfig.ProtocBuiltin,
+			externalConfig.Out,
+			opt,
+			externalConfig.IncludeImports,
+			externalConfig.IncludeWKT,
+			parsedStrategy,
+			protocPath,
+		)
+	default:
+		return nil, syserror.Newf("must specify one of remote, binary and protoc_builtin")
+	}
+}
+
+func newRemotePluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	revision int,
+) (*pluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	remoteHost, err := parseRemoteHostName(name)
+	if err != nil {
+		return nil, err
+	}
+	if revision < 0 || revision > math.MaxInt32 {
+		return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
+	}
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeRemote,
+		name:             name,
+		remoteHost:       remoteHost,
+		revision:         revision,
+		out:              out,
+		opts:             opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
+	}, nil
+}
+
+func newLocalPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+) (*pluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeLocal,
+		name:             name,
+		strategy:         strategy,
+		out:              out,
+		opts:             opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
+	}, nil
+}
+
+func newBinaryPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+	path []string,
+) (*pluginConfig, error) {
+	if len(path) == 0 {
+		return nil, errors.New("must specify a path to the plugin")
+	}
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeBinary,
+		name:             name,
+		path:             path,
+		strategy:         strategy,
+		out:              out,
+		opts:             opt,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
+	}, nil
+}
+
+func newProtocBuiltinPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+	protocPath string,
+) (*pluginConfig, error) {
+	if includeWKT && !includeImports {
+		return nil, errors.New("cannot include well-known types without including imports")
+	}
+	return &pluginConfig{
+		pluginConfigType: PluginConfigTypeProtocBuiltin,
+		name:             name,
+		protocPath:       protocPath,
+		out:              out,
+		opts:             opt,
+		strategy:         strategy,
+		includeImports:   includeImports,
+		includeWKT:       includeWKT,
+	}, nil
 }
 
 func (p *pluginConfig) Type() PluginConfigType {
@@ -199,399 +528,6 @@ func (p *pluginConfig) Revision() int {
 }
 
 func (p *pluginConfig) isGeneratePluginConfig() {}
-
-// TODO: compare with the old implementation
-func newPluginConfigFromExternalV1Beta1(
-	externalConfig externalGeneratePluginConfigV1Beta1,
-) (GeneratePluginConfig, error) {
-	if externalConfig.Name == "" {
-		return nil, errors.New("plugin name is required")
-	}
-	if externalConfig.Out == "" {
-		return nil, fmt.Errorf("out is required for plugin %s", externalConfig.Name)
-	}
-	strategy, err := parseStrategy(externalConfig.Strategy)
-	if err != nil {
-		return nil, err
-	}
-	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
-	if err != nil {
-		return nil, err
-	}
-	if externalConfig.Path != "" {
-		return newBinaryPluginConfig(
-			externalConfig.Name,
-			[]string{externalConfig.Path},
-			strategy,
-			externalConfig.Out,
-			opt,
-			false,
-			false,
-		)
-	}
-	return newLocalPluginConfig(
-		externalConfig.Name,
-		strategy,
-		externalConfig.Out,
-		opt,
-		false,
-		false,
-	)
-}
-
-// TODO: figure out where is the best place to do parameter validation, here or in new*plugin.
-func newPluginConfigFromExternalV1(
-	externalConfig externalGeneratePluginConfigV1,
-) (GeneratePluginConfig, error) {
-	if externalConfig.Remote != "" {
-		return nil, errors.New(remoteAlphaPluginDeprecationMessage)
-	}
-	// In v1 config, only plugin and name are allowed, since remote alpha plugin
-	// has been deprecated.
-	if externalConfig.Plugin == "" && externalConfig.Name == "" {
-		return nil, fmt.Errorf("one of plugin or name is required")
-	}
-	if externalConfig.Plugin != "" && externalConfig.Name != "" {
-		return nil, fmt.Errorf("only one of plugin or name can be set")
-	}
-	var pluginIdentifier string
-	switch {
-	case externalConfig.Plugin != "":
-		pluginIdentifier = externalConfig.Plugin
-		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-			// A remote alpha plugin name is not a valid remote plugin reference.
-			return nil, fmt.Errorf("invalid remote plugin reference: %s", pluginIdentifier)
-		}
-	case externalConfig.Name != "":
-		pluginIdentifier = externalConfig.Name
-		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
-			return nil, fmt.Errorf("invalid plugin name %s, did you mean to use a remote plugin?", pluginIdentifier)
-		}
-		if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-			// A remote alpha plugin name is not a valid local plugin name.
-			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
-		}
-	}
-	if externalConfig.Out == "" {
-		return nil, fmt.Errorf("out is required for plugin %s", pluginIdentifier)
-	}
-	strategy, err := parseStrategy(externalConfig.Strategy)
-	if err != nil {
-		return nil, err
-	}
-	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
-	if err != nil {
-		return nil, err
-	}
-	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Path)
-	if err != nil {
-		return nil, err
-	}
-	if externalConfig.Plugin != "" && bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-		// TODO: Is checkPathAndStrategyUnset the best way to validate this?
-		if err := checkPathAndStrategyUnset(externalConfig, pluginIdentifier); err != nil {
-			return nil, err
-		}
-		return newRemotePluginConfig(
-			externalConfig.Plugin,
-			externalConfig.Revision,
-			externalConfig.Out,
-			opt,
-			false,
-			false,
-		)
-	}
-	// At this point the plugin must be local, regardless whehter it's specified
-	// by key 'plugin' or 'name'.
-	if len(path) > 0 {
-		return newBinaryPluginConfig(
-			pluginIdentifier,
-			path,
-			strategy,
-			externalConfig.Out,
-			opt,
-			false,
-			false,
-		)
-	}
-	if externalConfig.ProtocPath != "" {
-		return newProtocBuiltinPluginConfig(
-			pluginIdentifier,
-			externalConfig.ProtocPath,
-			externalConfig.Out,
-			opt,
-			false,
-			false,
-			strategy,
-		)
-	}
-	// It could be either binary or protoc built-in. We defer to the plugin executor
-	// to decide whether the plugin is protoc-builtin or binary.
-	return newLocalPluginConfig(
-		pluginIdentifier,
-		strategy,
-		externalConfig.Out,
-		opt,
-		false,
-		false,
-	)
-}
-
-func parseStrategy(s string) (*GenerateStrategy, error) {
-	var strategy GenerateStrategy
-	switch s {
-	case "":
-		return nil, nil
-	case "directory":
-		strategy = GenerateStrategyDirectory
-	case "all":
-		strategy = GenerateStrategyAll
-	default:
-		return nil, fmt.Errorf("unknown strategy: %s", s)
-	}
-	return &strategy, nil
-}
-
-// TODO: move this up, maybe let v1 use this as well
-const (
-	typeRemote        = "remote"
-	typeBinary        = "binary"
-	typeProtocBuiltin = "protoc_builtin"
-)
-
-const (
-	optionRevision   = "revision"
-	optionProtocPath = "protoc_path"
-	optionStrategy   = "strategy"
-)
-
-var allowedOptionsForType = map[string](map[string]bool){
-	typeRemote: {
-		optionRevision: true,
-	},
-	typeBinary: {
-		optionStrategy: true,
-	},
-	typeProtocBuiltin: {
-		optionProtocPath: true,
-		optionStrategy:   true,
-	},
-}
-
-func getTypesAndOptions(externalConfig externalGeneratePluginConfigV2) ([]string, []string, error) {
-	var (
-		types   []string
-		options []string
-	)
-	if externalConfig.Remote != nil {
-		types = append(types, typeRemote)
-	}
-	path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(path) > 0 {
-		types = append(types, typeBinary)
-	}
-	if externalConfig.ProtocBuiltin != nil {
-		types = append(types, typeProtocBuiltin)
-	}
-	if externalConfig.Revision != nil {
-		options = append(options, optionRevision)
-	}
-	if externalConfig.ProtocPath != nil {
-		options = append(options, optionProtocPath)
-	}
-	if externalConfig.Strategy != nil {
-		options = append(options, optionStrategy)
-	}
-	return types, options, nil
-}
-
-func newPluginConfigFromExternalV2(
-	externalConfig externalGeneratePluginConfigV2,
-) (GeneratePluginConfig, error) {
-	pluginTypes, options, err := getTypesAndOptions(externalConfig)
-	if err != nil {
-		return nil, err
-	}
-	if len(pluginTypes) == 0 {
-		return nil, fmt.Errorf("must specify one of %s, %s and %s", typeRemote, typeBinary, typeProtocBuiltin)
-	}
-	if len(pluginTypes) > 1 {
-		return nil, fmt.Errorf("only one of %s, %s and %s is allowed", typeRemote, typeBinary, typeProtocBuiltin)
-	}
-	pluginType := pluginTypes[0]
-	allowedOptions := allowedOptionsForType[pluginType]
-	for _, option := range options {
-		if !allowedOptions[option] {
-			return nil, fmt.Errorf("%s is not allowed for %s plugin", option, pluginType)
-		}
-	}
-	var strategy string
-	if externalConfig.Strategy != nil {
-		strategy = *externalConfig.Strategy
-	}
-	parsedStrategy, err := parseStrategy(strategy)
-	if err != nil {
-		return nil, err
-	}
-	opt, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Opt)
-	if err != nil {
-		return nil, err
-	}
-	switch pluginType {
-	case typeRemote:
-		var revision int
-		if externalConfig.Revision != nil {
-			revision = *externalConfig.Revision
-		}
-		if revision < 0 || revision > math.MaxInt32 {
-			return nil, fmt.Errorf("revision %d is out of accepted range %d-%d", revision, 0, math.MaxInt32)
-		}
-		return newRemotePluginConfig(
-			*externalConfig.Remote,
-			revision,
-			externalConfig.Out,
-			opt,
-			externalConfig.IncludeImports,
-			externalConfig.IncludeWKT,
-		)
-	case typeBinary:
-		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
-		if err != nil {
-			return nil, err
-		}
-		return newBinaryPluginConfig(
-			strings.Join(path, ""),
-			path,
-			parsedStrategy,
-			externalConfig.Out,
-			opt,
-			externalConfig.IncludeImports,
-			externalConfig.IncludeWKT,
-		)
-	case typeProtocBuiltin:
-		var protocPath string
-		if externalConfig.ProtocPath != nil {
-			protocPath = *externalConfig.ProtocPath
-		}
-		return newProtocBuiltinPluginConfig(
-			*externalConfig.ProtocBuiltin,
-			protocPath,
-			externalConfig.Out,
-			opt,
-			externalConfig.IncludeImports,
-			externalConfig.IncludeWKT,
-			parsedStrategy,
-		)
-	default:
-		// this should not happen
-		return nil, fmt.Errorf("must specify one of %s, %s and %s", typeRemote, typeBinary, typeProtocBuiltin)
-	}
-}
-
-// TODO: unify parameter order
-func newLocalPluginConfig(
-	name string,
-	strategy *GenerateStrategy,
-	out string,
-	opt []string,
-	includeImports bool,
-	includeWKT bool,
-) (*pluginConfig, error) {
-	if includeWKT && !includeImports {
-		return nil, errors.New("cannot include well-known types without including imports")
-	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeLocal,
-		name:             name,
-		strategy:         strategy,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
-	}, nil
-}
-
-func newBinaryPluginConfig(
-	name string,
-	path []string,
-	strategy *GenerateStrategy,
-	out string,
-	opt []string,
-	includeImports bool,
-	includeWKT bool,
-) (*pluginConfig, error) {
-	if len(path) == 0 {
-		return nil, errors.New("must specify a path to the plugin")
-	}
-	if includeWKT && !includeImports {
-		return nil, errors.New("cannot include well-known types without including imports")
-	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeBinary,
-		name:             name,
-		path:             path,
-		strategy:         strategy,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
-	}, nil
-}
-
-func newProtocBuiltinPluginConfig(
-	name string,
-	protocPath string,
-	out string,
-	opt []string,
-	includeImports bool,
-	includeWKT bool,
-	strategy *GenerateStrategy,
-) (*pluginConfig, error) {
-	if includeWKT && !includeImports {
-		return nil, errors.New("cannot include well-known types without including imports")
-	}
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeProtocBuiltin,
-		name:             name,
-		protocPath:       protocPath,
-		out:              out,
-		opts:             opt,
-		strategy:         strategy,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
-	}, nil
-}
-
-func newRemotePluginConfig(
-	name string,
-	revision int,
-	out string,
-	opt []string,
-	includeImports bool,
-	includeWKT bool,
-) (*pluginConfig, error) {
-	if includeWKT && !includeImports {
-		return nil, errors.New("cannot include well-known types without including imports")
-	}
-	remoteHost, err := parseRemoteHostName(name)
-	if err != nil {
-		return nil, err
-	}
-	// TODO: validate revision
-	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeRemote,
-		name:             name,
-		remoteHost:       remoteHost,
-		revision:         revision,
-		out:              out,
-		opts:             opt,
-		includeImports:   includeImports,
-		includeWKT:       includeWKT,
-	}, nil
-}
 
 func newExternalGeneratePluginConfigV2FromPluginConfig(
 	generatePluginConfig GeneratePluginConfig,
@@ -654,6 +590,21 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 	return externalPluginConfigV2, nil
 }
 
+func parseStrategy(s string) (*GenerateStrategy, error) {
+	var strategy GenerateStrategy
+	switch s {
+	case "":
+		return nil, nil
+	case "directory":
+		strategy = GenerateStrategyDirectory
+	case "all":
+		strategy = GenerateStrategyAll
+	default:
+		return nil, fmt.Errorf("unknown strategy: %s", s)
+	}
+	return &strategy, nil
+}
+
 func parseRemoteHostName(fullName string) (string, error) {
 	if identity, err := bufpluginref.PluginIdentityForString(fullName); err == nil {
 		return identity.Remote(), nil
@@ -665,19 +616,7 @@ func parseRemoteHostName(fullName string) (string, error) {
 	return "", err
 }
 
-func checkPathAndStrategyUnset(plugin externalGeneratePluginConfigV1, pluginIdentifier string) error {
-	if plugin.Path != nil {
-		return fmt.Errorf("remote plugin %s cannot specify a path", pluginIdentifier)
-	}
-	if plugin.Strategy != "" {
-		return fmt.Errorf("remote plugin %s cannot specify a strategy", pluginIdentifier)
-	}
-	if plugin.ProtocPath != "" {
-		return fmt.Errorf("remote plugin %s cannot specify a protoc path", pluginIdentifier)
-	}
-	return nil
-}
-
+// TODO: where to put this?
 func toPointer[T any](value T) *T {
 	return &value
 }
