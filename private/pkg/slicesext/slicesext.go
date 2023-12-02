@@ -186,6 +186,22 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 	return s
 }
 
+// MapValuesToSlice converts the map's values to a sorted slice.
+//
+// Duplicate values will be added. This should generally be used
+// in cases where you know there is a 1-1 mapping from K to V.
+func MapValuesToSortedSlice[K comparable, V Ordered](m map[K]V) []V {
+	s := MapValuesToSlice(m)
+	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	sort.Slice(
+		s,
+		func(i int, j int) bool {
+			return s[i] < s[j]
+		},
+	)
+	return s
+}
+
 // MapValuesToSlice converts the map's values to a slice.
 //
 // Duplicate values will be added. This should generally be used

@@ -20,25 +20,36 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// TODO: input type?
+// InputConfigType is an input config's type.
 type InputConfigType int
 
 const (
+	// InputConfigTypeModule is the module input type.
 	InputConfigTypeModule InputConfigType = iota + 1
+	// InputConfigTypeDirectory is the directory input type.
 	InputConfigTypeDirectory
+	// InputConfigTypeGitRepo is the git repository input type.
 	InputConfigTypeGitRepo
+	// InputConfigTypeProtoFile is the proto file input type.
 	InputConfigTypeProtoFile
+	// InputConfigTypeTarball is the tarball input type.
 	InputConfigTypeTarball
+	// InputConfigTypeZipArchive is the zip archive input type.
 	InputConfigTypeZipArchive
+	// InputConfigTypeBinaryImage is the binary image input type.
 	InputConfigTypeBinaryImage
+	// InputConfigTypeJSONImage is the JSON image input type.
 	InputConfigTypeJSONImage
+	// InputConfigTypeTextImage is the text image input type.
 	InputConfigTypeTextImage
 )
 
-// Implements fmt.Stringer
+// String implements fmt.Stringer.
 func (i InputConfigType) String() string {
 	s, ok := inputConfigTypeToString[i]
 	if !ok {
@@ -48,85 +59,79 @@ func (i InputConfigType) String() string {
 }
 
 const (
-	// TODO: move string literal to maps
-	formatGitRepo             = "git_repo"
-	formatModule              = "module"
-	formatDirectory           = "directory"
-	formatProtoFile           = "proto_file"
-	formatBinaryImage         = "binary_image"
-	formatTarball             = "tarball"
-	formatZipArchive          = "zip_archive"
-	formatJSONImage           = "json_image"
-	formatTextImage           = "text_image"
-	optionCompression         = "compression"
-	optionBranch              = "branch"
-	optionTag                 = "tag"
-	optionRef                 = "ref"
-	optionDepth               = "depth"
-	optionRecurseSubmodules   = "recurse_submodules"
-	optionStripComponents     = "strip_components"
-	optionSubdir              = "subdir"
-	optionIncludePackageFiles = "include_package_files"
+	compressionKey         = "compression"
+	branchKey              = "branch"
+	tagKey                 = "tag"
+	refKey                 = "ref"
+	depthKey               = "depth"
+	recurseSubmodulesKey   = "recurse_submodules"
+	stripComponentsKey     = "strip_components"
+	subDirKey              = "subdir"
+	includePackageFilesKey = "include_package_files"
 )
 
-var allowedOptionsForFormat = map[InputConfigType](map[string]bool){
-	InputConfigTypeGitRepo: {
-		optionBranch:            true,
-		optionTag:               true,
-		optionRef:               true,
-		optionDepth:             true,
-		optionRecurseSubmodules: true,
-		optionSubdir:            true,
-	},
-	InputConfigTypeModule:    {},
-	InputConfigTypeDirectory: {},
-	InputConfigTypeProtoFile: {
-		optionIncludePackageFiles: true,
-	},
-	InputConfigTypeTarball: {
-		optionCompression:     true,
-		optionStripComponents: true,
-		optionSubdir:          true,
-	},
-	InputConfigTypeZipArchive: {
-		optionStripComponents: true,
-		optionSubdir:          true,
-	},
-	InputConfigTypeBinaryImage: {
-		optionCompression: true,
-	},
-	InputConfigTypeJSONImage: {
-		optionCompression: true,
-	},
-	InputConfigTypeTextImage: {
-		optionCompression: true,
-	},
-}
-
-var inputConfigTypeToString = map[InputConfigType]string{
-	InputConfigTypeGitRepo:     formatGitRepo,
-	InputConfigTypeModule:      formatModule,
-	InputConfigTypeDirectory:   formatDirectory,
-	InputConfigTypeProtoFile:   formatProtoFile,
-	InputConfigTypeTarball:     formatTarball,
-	InputConfigTypeZipArchive:  formatZipArchive,
-	InputConfigTypeBinaryImage: formatBinaryImage,
-	InputConfigTypeJSONImage:   formatJSONImage,
-	InputConfigTypeTextImage:   formatTextImage,
-}
+var (
+	allowedOptionsForFormat = map[InputConfigType](map[string]struct{}){
+		InputConfigTypeGitRepo: {
+			branchKey:            {},
+			tagKey:               {},
+			refKey:               {},
+			depthKey:             {},
+			recurseSubmodulesKey: {},
+			subDirKey:            {},
+		},
+		InputConfigTypeModule:    {},
+		InputConfigTypeDirectory: {},
+		InputConfigTypeProtoFile: {
+			includePackageFilesKey: {},
+		},
+		InputConfigTypeTarball: {
+			compressionKey:     {},
+			stripComponentsKey: {},
+			subDirKey:          {},
+		},
+		InputConfigTypeZipArchive: {
+			stripComponentsKey: {},
+			subDirKey:          {},
+		},
+		InputConfigTypeBinaryImage: {
+			compressionKey: {},
+		},
+		InputConfigTypeJSONImage: {
+			compressionKey: {},
+		},
+		InputConfigTypeTextImage: {
+			compressionKey: {},
+		},
+	}
+	inputConfigTypeToString = map[InputConfigType]string{
+		InputConfigTypeGitRepo:     "git_repo",
+		InputConfigTypeModule:      "module",
+		InputConfigTypeDirectory:   "directory",
+		InputConfigTypeProtoFile:   "proto_file",
+		InputConfigTypeTarball:     "tarball",
+		InputConfigTypeZipArchive:  "zip_archive",
+		InputConfigTypeBinaryImage: "binary_image",
+		InputConfigTypeJSONImage:   "json_image",
+		InputConfigTypeTextImage:   "text_image",
+	}
+	allInputConfigTypeString = stringutil.SliceToHumanString(
+		slicesext.MapValuesToSortedSlice(inputConfigTypeToString),
+	)
+)
 
 // InputConfig is an input configuration for code generation.
 type InputConfig interface {
-	// Type returns the input type.
+	// Type returns the input type. This is never the zero value.
 	Type() InputConfigType
-	// Location returns the location for the input.
+	// Location returns the location for the input. This is never empty.
 	Location() string
 	// Compression returns the compression scheme, not empty only if format is
 	// one of tarball, binary image, json image or text image.
 	Compression() string
 	// StripComponents returns the number of directories to strip for tar or zip
 	// inputs, not empty only if format is tarball or zip archive.
-	StripComponents() *uint32
+	StripComponents() uint32
 	// SubDir returns the subdirectory to use, not empty only if format is one
 	// git repo, tarball and zip archive.
 	SubDir() string
@@ -155,43 +160,155 @@ type InputConfig interface {
 	isInputConfig()
 }
 
-// NewInputConfig returns a new input config.
-func NewInputConfig(
-	inputType InputConfigType,
+// NewGitRepoInputConfig returns an input config for a git repo.
+func NewGitRepoInputConfig(
 	location string,
-	compression string,
-	stripComponents *uint32,
 	subDir string,
 	branch string,
 	tag string,
 	ref string,
 	depth *uint32,
-	recurseSubmodules bool,
-	includePackageFiles bool,
-	includePaths []string,
-	excludePaths []string,
-	includeTypes []string,
-) InputConfig {
-	return &inputConfig{
-		inputType:           inputType,
-		location:            location,
-		compression:         compression,
-		stripComponents:     stripComponents,
-		subDir:              subDir,
-		branch:              branch,
-		tag:                 tag,
-		ref:                 ref,
-		depth:               depth,
-		recurseSubmodules:   recurseSubmodules,
-		includePackageFiles: includePackageFiles,
-		includePaths:        includePaths,
-		excludePaths:        excludePaths,
-		includeTypes:        includeTypes,
+	recurseSubModules bool,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for git repository")
 	}
+	return &inputConfig{
+		inputType:         InputConfigTypeGitRepo,
+		location:          location,
+		subDir:            subDir,
+		branch:            branch,
+		tag:               tag,
+		ref:               ref,
+		depth:             depth,
+		recurseSubmodules: recurseSubModules,
+	}, nil
 }
 
-// NewInputConfigWithTargets returns an input config with include paths, exclude
-// paths and include types overriden.
+// NewModuleInputConfig returns an input config for a module.
+func NewModuleInputConfig(
+	location string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for module")
+	}
+	return &inputConfig{
+		inputType: InputConfigTypeModule,
+		location:  location,
+	}, nil
+}
+
+// NewDirectoryInputConfig returns an input config for a directory.
+func NewDirectoryInputConfig(
+	location string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for directory")
+	}
+	return &inputConfig{
+		inputType: InputConfigTypeDirectory,
+		location:  location,
+	}, nil
+}
+
+// NewProtoFileInputConfig returns an input config for a proto file.
+func NewProtoFileInputConfig(
+	location string,
+	includePackageFiles bool,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for proto file")
+	}
+	return &inputConfig{
+		inputType:           InputConfigTypeProtoFile,
+		location:            location,
+		includePackageFiles: includePackageFiles,
+	}, nil
+}
+
+// NewTarballInputConfig returns an input config for a tarball.
+func NewTarballInputConfig(
+	location string,
+	subDir string,
+	compression string,
+	stripComponents uint32,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for tarball")
+	}
+	return &inputConfig{
+		inputType:       InputConfigTypeTarball,
+		location:        location,
+		subDir:          subDir,
+		compression:     compression,
+		stripComponents: stripComponents,
+	}, nil
+}
+
+// NewZipArchiveInputConfig returns an input config for a zip archive.
+func NewZipArchiveInputConfig(
+	location string,
+	subDir string,
+	stripComponents uint32,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for zip archive")
+	}
+	return &inputConfig{
+		inputType:       InputConfigTypeZipArchive,
+		location:        location,
+		subDir:          subDir,
+		stripComponents: stripComponents,
+	}, nil
+}
+
+// NewBinaryImageInputConfig returns an input config for a binary image.
+func NewBinaryImageInputConfig(
+	location string,
+	compression string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for binary image")
+	}
+	return &inputConfig{
+		inputType:   InputConfigTypeBinaryImage,
+		location:    location,
+		compression: compression,
+	}, nil
+}
+
+// NewJSONImageInputConfig returns an input config for a JSON image.
+func NewJSONImageInputConfig(
+	location string,
+	compression string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for JSON image")
+	}
+	return &inputConfig{
+		inputType:   InputConfigTypeJSONImage,
+		location:    location,
+		compression: compression,
+	}, nil
+}
+
+// NewTextImageInputConfig returns an input config for a text image.
+func NewTextImageInputConfig(
+	location string,
+	compression string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for binary image")
+	}
+	return &inputConfig{
+		inputType:   InputConfigTypeTextImage,
+		location:    location,
+		compression: compression,
+	}, nil
+}
+
+// NewInputConfigWithTargets returns an input config the same as the passed config,
+// but with include paths, exclude paths and include types overriden.
 func NewInputConfigWithTargets(
 	config InputConfig,
 	includePaths []string,
@@ -216,132 +333,13 @@ func NewInputConfigWithTargets(
 	return &targetConfig, nil
 }
 
-// NewGitRepoInputConfig returns an input config for a git repo.
-func NewGitRepoInputConfig(
-	location string,
-	subDir string,
-	branch string,
-	tag string,
-	ref string,
-	depth *uint32,
-	recurseSubModules bool,
-) InputConfig {
-	return &inputConfig{
-		inputType:         InputConfigTypeGitRepo,
-		location:          location,
-		subDir:            subDir,
-		branch:            branch,
-		tag:               tag,
-		ref:               ref,
-		depth:             depth,
-		recurseSubmodules: recurseSubModules,
-	}
-}
-
-// NewModuleInputConfig returns an input config for a module.
-func NewModuleInputConfig(
-	location string,
-) InputConfig {
-	return &inputConfig{
-		inputType: InputConfigTypeModule,
-		location:  location,
-	}
-}
-
-// NewDirectoryInputConfig returns an input config for a directory.
-func NewDirectoryInputConfig(
-	location string,
-) InputConfig {
-	return &inputConfig{
-		inputType: InputConfigTypeDirectory,
-		location:  location,
-	}
-}
-
-// NewProtoFileInputConfig returns an input config for a proto file.
-func NewProtoFileInputConfig(
-	location string,
-) InputConfig {
-	return &inputConfig{
-		inputType: InputConfigTypeProtoFile,
-		location:  location,
-	}
-}
-
-// NewTarballInputConfig returns an input config for a tarball.
-func NewTarballInputConfig(
-	location string,
-	subDir string,
-	compression string,
-	stripComponents *uint32,
-) InputConfig {
-	return &inputConfig{
-		inputType:       InputConfigTypeTarball,
-		location:        location,
-		subDir:          subDir,
-		compression:     compression,
-		stripComponents: stripComponents,
-	}
-}
-
-// NewZipArchiveInputConfig returns an input config for a zip archive.
-func NewZipArchiveInputConfig(
-	location string,
-	subDir string,
-	stripComponents *uint32,
-) InputConfig {
-	return &inputConfig{
-		inputType:       InputConfigTypeZipArchive,
-		location:        location,
-		subDir:          subDir,
-		stripComponents: stripComponents,
-	}
-}
-
-// NewBinaryImageInputConfig returns an input config for a binary image.
-func NewBinaryImageInputConfig(
-	location string,
-	compression string,
-) InputConfig {
-	return &inputConfig{
-		inputType:   InputConfigTypeBinaryImage,
-		location:    location,
-		compression: compression,
-	}
-}
-
-// NewJSONImageInputConfig returns an input config for a JSON image.
-func NewJSONImageInputConfig(
-	location string,
-	compression string,
-) InputConfig {
-	return &inputConfig{
-		inputType:   InputConfigTypeJSONImage,
-		location:    location,
-		compression: compression,
-	}
-}
-
-// NewTextImageInputConfig returns an input config for a text image.
-func NewTextImageInputConfig(
-	location string,
-	compression string,
-) InputConfig {
-	return &inputConfig{
-		inputType:   InputConfigTypeTextImage,
-		location:    location,
-		compression: compression,
-	}
-}
-
 // *** PRIVATE ***
 
 type inputConfig struct {
-	inputType   InputConfigType
-	location    string
-	compression string
-	// TODO: does it make sense to be a pointer?
-	stripComponents     *uint32
+	inputType           InputConfigType
+	location            string
+	compression         string
+	stripComponents     uint32
 	subDir              string
 	branch              string
 	tag                 string
@@ -395,117 +393,58 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		inputConfig.location = *externalConfig.GitRepo
 	}
 	if externalConfig.Compression != nil {
-		options = append(options, optionCompression)
+		options = append(options, compressionKey)
 		inputConfig.compression = *externalConfig.Compression
 	}
 	if externalConfig.StripComponents != nil {
-		options = append(options, optionStripComponents)
-		inputConfig.stripComponents = externalConfig.StripComponents
+		options = append(options, stripComponentsKey)
+		inputConfig.stripComponents = *externalConfig.StripComponents
 	}
 	if externalConfig.Subdir != nil {
-		options = append(options, optionSubdir)
+		options = append(options, subDirKey)
 		inputConfig.subDir = *externalConfig.Subdir
 	}
 	if externalConfig.Branch != nil {
-		options = append(options, optionBranch)
+		options = append(options, branchKey)
 		inputConfig.branch = *externalConfig.Branch
 	}
 	if externalConfig.Tag != nil {
-		options = append(options, optionTag)
+		options = append(options, tagKey)
 		inputConfig.tag = *externalConfig.Tag
 	}
 	if externalConfig.Ref != nil {
-		options = append(options, optionRef)
+		options = append(options, refKey)
 		inputConfig.ref = *externalConfig.Ref
 	}
 	if externalConfig.Depth != nil {
-		options = append(options, optionDepth)
+		options = append(options, depthKey)
 		inputConfig.depth = externalConfig.Depth
 	}
 	if externalConfig.RecurseSubmodules != nil {
-		options = append(options, optionRecurseSubmodules)
+		options = append(options, recurseSubmodulesKey)
 		inputConfig.recurseSubmodules = *externalConfig.RecurseSubmodules
 	}
 	if externalConfig.IncludePackageFiles != nil {
-		options = append(options, optionIncludePackageFiles)
+		options = append(options, includePackageFilesKey)
 		inputConfig.includePackageFiles = *externalConfig.IncludePackageFiles
 	}
 	if len(inputTypes) == 0 {
-		return nil, errors.New("must specify input type")
+		return nil, fmt.Errorf("must specify one of %s", allInputConfigTypeString)
 	}
 	if len(inputTypes) > 1 {
-		// TODO: print out all types allowed
-		return nil, fmt.Errorf("exactly one input type can be specified")
+		return nil, fmt.Errorf("exactly one of %s must be specified", allInputConfigTypeString)
 	}
 	format := inputTypes[0]
 	allowedOptions, ok := allowedOptionsForFormat[format]
 	if !ok {
-		// this should not happen
-		return nil, fmt.Errorf("unable to find allowed options for format %v", format)
+		return nil, syserror.Newf("unable to find allowed options for format %v", format)
 	}
 	for _, option := range options {
-		if !allowedOptions[option] {
+		if _, ok := allowedOptions[option]; !ok {
 			return nil, fmt.Errorf("option %s is not allowed for format %v", option, format)
 		}
 	}
 	return inputConfig, nil
-}
-
-func newExternalInputConfigV2FromInputConfig(
-	inputConfig InputConfig,
-) (externalInputConfigV2, error) {
-	externalInputConfigV2 := externalInputConfigV2{}
-	switch inputConfig.Type() {
-	case InputConfigTypeGitRepo:
-		externalInputConfigV2.GitRepo = toPointer(inputConfig.Location())
-	case InputConfigTypeDirectory:
-		externalInputConfigV2.Directory = toPointer(inputConfig.Location())
-	case InputConfigTypeModule:
-		externalInputConfigV2.Module = toPointer(inputConfig.Location())
-	case InputConfigTypeProtoFile:
-		externalInputConfigV2.ProtoFile = toPointer(inputConfig.Location())
-	case InputConfigTypeZipArchive:
-		externalInputConfigV2.ZipArchive = toPointer(inputConfig.Location())
-	case InputConfigTypeTarball:
-		externalInputConfigV2.Tarball = toPointer(inputConfig.Location())
-	case InputConfigTypeBinaryImage:
-		externalInputConfigV2.BinaryImage = toPointer(inputConfig.Location())
-	case InputConfigTypeJSONImage:
-		externalInputConfigV2.JSONImage = toPointer(inputConfig.Location())
-	case InputConfigTypeTextImage:
-		externalInputConfigV2.TextImage = toPointer(inputConfig.Location())
-	default:
-		return externalInputConfigV2, syserror.Newf("unknown input config type: %v", inputConfig.Type())
-	}
-	if inputConfig.Branch() != "" {
-		externalInputConfigV2.Branch = toPointer(inputConfig.Branch())
-	}
-	if inputConfig.Ref() != "" {
-		externalInputConfigV2.Ref = toPointer(inputConfig.Ref())
-	}
-	if inputConfig.Tag() != "" {
-		externalInputConfigV2.Tag = toPointer(inputConfig.Tag())
-	}
-	externalInputConfigV2.Depth = inputConfig.Depth()
-	// TODO: make RecurseSubmodules return a pointer for more accurate representation
-	if inputConfig.RecurseSubmodules() {
-		externalInputConfigV2.RecurseSubmodules = toPointer(inputConfig.RecurseSubmodules())
-	}
-	if inputConfig.Compression() != "" {
-		externalInputConfigV2.Compression = toPointer(inputConfig.Compression())
-	}
-	externalInputConfigV2.StripComponents = inputConfig.StripComponents()
-	if inputConfig.SubDir() != "" {
-		externalInputConfigV2.Subdir = toPointer(inputConfig.SubDir())
-	}
-	// TODO: make IncludePackageFiles return a pointer for more accurate representation
-	if inputConfig.IncludePackageFiles() {
-		externalInputConfigV2.IncludePackageFiles = toPointer(inputConfig.IncludePackageFiles())
-	}
-	externalInputConfigV2.IncludePaths = inputConfig.IncludePaths()
-	externalInputConfigV2.ExcludePaths = inputConfig.ExcludePaths()
-	externalInputConfigV2.Types = inputConfig.IncludeTypes()
-	return externalInputConfigV2, nil
 }
 
 func (i *inputConfig) Type() InputConfigType {
@@ -520,7 +459,7 @@ func (i *inputConfig) Compression() string {
 	return i.compression
 }
 
-func (i *inputConfig) StripComponents() *uint32 {
+func (i *inputConfig) StripComponents() uint32 {
 	return i.stripComponents
 }
 
@@ -565,3 +504,60 @@ func (i *inputConfig) IncludeTypes() []string {
 }
 
 func (i *inputConfig) isInputConfig() {}
+
+func newExternalInputConfigV2FromInputConfig(
+	inputConfig InputConfig,
+) (externalInputConfigV2, error) {
+	externalInputConfigV2 := externalInputConfigV2{}
+	switch inputConfig.Type() {
+	case InputConfigTypeGitRepo:
+		externalInputConfigV2.GitRepo = toPointer(inputConfig.Location())
+	case InputConfigTypeDirectory:
+		externalInputConfigV2.Directory = toPointer(inputConfig.Location())
+	case InputConfigTypeModule:
+		externalInputConfigV2.Module = toPointer(inputConfig.Location())
+	case InputConfigTypeProtoFile:
+		externalInputConfigV2.ProtoFile = toPointer(inputConfig.Location())
+	case InputConfigTypeZipArchive:
+		externalInputConfigV2.ZipArchive = toPointer(inputConfig.Location())
+	case InputConfigTypeTarball:
+		externalInputConfigV2.Tarball = toPointer(inputConfig.Location())
+	case InputConfigTypeBinaryImage:
+		externalInputConfigV2.BinaryImage = toPointer(inputConfig.Location())
+	case InputConfigTypeJSONImage:
+		externalInputConfigV2.JSONImage = toPointer(inputConfig.Location())
+	case InputConfigTypeTextImage:
+		externalInputConfigV2.TextImage = toPointer(inputConfig.Location())
+	default:
+		return externalInputConfigV2, syserror.Newf("unknown input config type: %v", inputConfig.Type())
+	}
+	if inputConfig.Branch() != "" {
+		externalInputConfigV2.Branch = toPointer(inputConfig.Branch())
+	}
+	if inputConfig.Ref() != "" {
+		externalInputConfigV2.Ref = toPointer(inputConfig.Ref())
+	}
+	if inputConfig.Tag() != "" {
+		externalInputConfigV2.Tag = toPointer(inputConfig.Tag())
+	}
+	externalInputConfigV2.Depth = inputConfig.Depth()
+	if inputConfig.RecurseSubmodules() {
+		externalInputConfigV2.RecurseSubmodules = toPointer(inputConfig.RecurseSubmodules())
+	}
+	if inputConfig.Compression() != "" {
+		externalInputConfigV2.Compression = toPointer(inputConfig.Compression())
+	}
+	if inputConfig.StripComponents() != 0 {
+		externalInputConfigV2.StripComponents = toPointer(inputConfig.StripComponents())
+	}
+	if inputConfig.SubDir() != "" {
+		externalInputConfigV2.Subdir = toPointer(inputConfig.SubDir())
+	}
+	if inputConfig.IncludePackageFiles() {
+		externalInputConfigV2.IncludePackageFiles = toPointer(inputConfig.IncludePackageFiles())
+	}
+	externalInputConfigV2.IncludePaths = inputConfig.IncludePaths()
+	externalInputConfigV2.ExcludePaths = inputConfig.ExcludePaths()
+	externalInputConfigV2.Types = inputConfig.IncludeTypes()
+	return externalInputConfigV2, nil
+}

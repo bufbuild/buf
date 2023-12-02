@@ -23,11 +23,12 @@ type GenerateTypeConfig interface {
 	isGenerateTypeConfig()
 }
 
+// *** PRIVATE ***
+
 type generateTypeConfig struct {
 	includeTypes []string
 }
 
-// TODO: it seems like this isn't validated in main, but we should do some validation
 func newGenerateTypeConfig(includeTypes []string) GenerateTypeConfig {
 	if len(includeTypes) == 0 {
 		return nil

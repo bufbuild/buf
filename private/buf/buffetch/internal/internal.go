@@ -869,6 +869,10 @@ type GetModuleOption func(*getModuleOptions)
 // passed because if the ref is a git ref, it would only have a git.Name, instead
 // of a git branch, a git ref and a git tag. Therefore the original string is passed.
 func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
+	_, options, err := getRawPathAndOptionsForInputString(value)
+	if err != nil {
+		return nil, err
+	}
 	switch t := ref.(type) {
 	case ArchiveRef:
 		switch t.ArchiveType() {
@@ -876,49 +880,47 @@ func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) 
 			return bufconfig.NewZipArchiveInputConfig(
 				t.Path(),
 				t.SubDirPath(),
-				uint32ToPointer(t.StripComponents()),
-			), nil
+				t.StripComponents(),
+			)
 		case ArchiveTypeTar:
 			return bufconfig.NewTarballInputConfig(
 				t.Path(),
 				t.SubDirPath(),
 				t.CompressionType().String(),
-				uint32ToPointer(t.StripComponents()),
-			), nil
+				t.StripComponents(),
+			)
 		default:
 			return nil, fmt.Errorf("invalid archive type: %v", t.ArchiveType())
 		}
 	case DirRef:
 		return bufconfig.NewDirectoryInputConfig(
 			t.Path(),
-		), nil
+		)
 	case ModuleRef:
 		return bufconfig.NewModuleInputConfig(
 			t.ModuleRef().String(),
-		), nil
+		)
 	case ProtoFileRef:
 		return bufconfig.NewProtoFileInputConfig(
 			t.Path(),
-		), nil
+			t.IncludePackageFiles(),
+		)
 	case GitRef:
-		_, options, err := getRawPathAndOptionsForInputString(value)
-		if err != nil {
-			return nil, err
-		}
+
 		return bufconfig.NewGitRepoInputConfig(
 			t.Path(),
 			t.SubDirPath(),
 			options["branch"],
 			options["tag"],
 			options["ref"],
-			uint32ToPointer(t.Depth()),
+			toPointer(t.Depth()),
 			t.RecurseSubmodules(),
-		), nil
+		)
 	default:
 		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
 	}
 }
 
-func uint32ToPointer(value uint32) *uint32 {
+func toPointer[T any](value T) *T {
 	return &value
 }

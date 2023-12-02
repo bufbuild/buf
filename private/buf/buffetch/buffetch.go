@@ -419,17 +419,17 @@ func GetInputConfigForString(
 			return bufconfig.NewBinaryImageInputConfig(
 				t.Path(),
 				t.internalSingleRef().CompressionType().String(),
-			), nil
+			)
 		case MessageEncodingJSON:
 			return bufconfig.NewJSONImageInputConfig(
 				t.Path(),
 				t.internalSingleRef().CompressionType().String(),
-			), nil
+			)
 		case MessageEncodingTxtpb:
 			return bufconfig.NewBinaryImageInputConfig(
 				t.Path(),
 				t.internalSingleRef().CompressionType().String(),
-			), nil
+			)
 		default:
 			// TODO: handle refs with YAML type
 			return nil, fmt.Errorf("unknown encoding: %v", t.MessageEncoding())
