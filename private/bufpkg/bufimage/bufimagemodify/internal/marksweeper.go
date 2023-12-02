@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagemodify
+package internal
 
 import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -97,7 +98,7 @@ func removeLocationsFromSourceCodeInfo(
 			return fmt.Errorf("path %v must have a preceding parent path", location.Path)
 		}
 		if isPathForFileOption(location.Path) {
-			if !Int32SliceIsEqual(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
+			if !slicesext.ElementsEqual(sourceCodeInfo.Location[i-1].Path, fileOptionPath) {
 				return fmt.Errorf("file option path %v must have a preceding parent path equal to %v", location.Path, fileOptionPath)
 			}
 			// Add the target path and its parent.
@@ -158,19 +159,6 @@ func isPathForFileOption(path []int32) bool {
 	// a file option's path is {8, x}
 	fileOptionPathLen := 2
 	return len(path) == fileOptionPathLen && path[0] == fileOptionPath[0]
-}
-
-// Int32SliceIsEqual returns true if x and y contain the same elements.
-func Int32SliceIsEqual(x []int32, y []int32) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	for i, elem := range x {
-		if elem != y[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // getPathKey returns a unique key for the given path.

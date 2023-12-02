@@ -15,54 +15,50 @@
 package bufimagemodify
 
 import (
-	"fmt"
-	"strconv"
+	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// TODO: remove code dealing with the old config (maps)
+// TODO: move this package into bufgen/internal
 
-// TODO: rename this one
-func isWellKnownType(imageFile bufimage.ImageFile) bool {
-	return datawkt.Exists(imageFile.Path())
-}
-
-// int32SliceIsEqual returns true if x and y contain the same elements.
-func int32SliceIsEqual(x []int32, y []int32) bool {
-	if len(x) != len(y) {
-		return false
+// Modify modifies the image according to the managed config.
+func Modify(
+	ctx context.Context,
+	image bufimage.Image,
+	config bufconfig.GenerateManagedConfig,
+) error {
+	if !config.Enabled() {
+		return nil
 	}
-	for i, elem := range x {
-		if elem != y[i] {
-			return false
+	sweeper := internal.NewMarkSweeper(image)
+	for _, imageFile := range image.Files() {
+		if datawkt.Exists(imageFile.Path()) {
+			continue
+		}
+		modifyFuncs := []func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
+			modifyCcEnableArenas,
+			modifyCsharpNamespace,
+			modifyGoPackage,
+			modifyJavaMultipleFiles,
+			modifyJavaOuterClass,
+			modifyJavaPackage,
+			modifyJavaStringCheckUtf8,
+			modifyObjcClassPrefix,
+			modifyOptmizeFor,
+			modifyPhpMetadataNamespace,
+			modifyPhpNamespace,
+			modifyRubyPackage,
+			modifyJsType,
+		}
+		for _, modifyFunc := range modifyFuncs {
+			if err := modifyFunc(sweeper, imageFile, config); err != nil {
+				return err
+			}
 		}
 	}
-	return true
-}
-
-func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
-	validatedOverrides := make(map[string]bool, len(stringOverrides))
-	for fileImportPath, overrideString := range stringOverrides {
-		overrideBool, err := strconv.ParseBool(overrideString)
-		if err != nil {
-			return nil, fmt.Errorf("non-boolean override %s set for file %s", overrideString, fileImportPath)
-		}
-		validatedOverrides[fileImportPath] = overrideBool
-	}
-	return validatedOverrides, nil
-}
-
-func stringOverridesToOptimizeModeOverrides(stringOverrides map[string]string) (map[string]descriptorpb.FileOptions_OptimizeMode, error) {
-	validatedOverrides := make(map[string]descriptorpb.FileOptions_OptimizeMode, len(stringOverrides))
-	for fileImportPath, stringOverride := range stringOverrides {
-		optimizeMode, ok := descriptorpb.FileOptions_OptimizeMode_value[stringOverride]
-		if !ok {
-			return nil, fmt.Errorf("invalid optimize mode %s set for file %s", stringOverride, fileImportPath)
-		}
-		validatedOverrides[fileImportPath] = descriptorpb.FileOptions_OptimizeMode(optimizeMode)
-	}
-	return validatedOverrides, nil
+	return nil
 }

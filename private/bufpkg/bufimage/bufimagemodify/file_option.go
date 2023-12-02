@@ -15,55 +15,55 @@
 package bufimagemodify
 
 import (
-	"context"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// TODO: this is a temporary file, although it might stay. Need to rename the file at least. (The rest of the package can be deleted, except for )
-// TODO: move this package into bufgen/internal
-func Modify(
-	ctx context.Context,
-	image bufimage.Image,
-	config bufconfig.GenerateManagedConfig,
-) error {
-	if !config.Enabled() {
-		return nil
-	}
-	sweeper := newMarkSweeper(image)
-	for _, imageFile := range image.Files() {
-		if isWellKnownType(imageFile) {
-			continue
-		}
-		modifyFuncs := []func(*markSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
-			modifyCcEnableArenas,
-			modifyCsharpNamespace,
-			modifyGoPackage,
-			modifyJavaMultipleFiles,
-			modifyJavaOuterClass,
-			modifyJavaPackage,
-			modifyJavaStringCheckUtf8,
-			modifyObjcClassPrefix,
-			modifyOptmizeFor,
-			modifyPhpMetadataNamespace,
-			modifyPhpNamespace,
-			modifyRubyPackage,
-			modifyJsType,
-		}
-		for _, modifyFunc := range modifyFuncs {
-			if err := modifyFunc(sweeper, imageFile, config); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+var (
+	// ccEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
+	// https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
+	ccEnableArenasPath = []int32{8, 31}
+	// csharpNamespacePath is the SourceCodeInfo path for the csharp_namespace option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428
+	csharpNamespacePath = []int32{8, 37}
+	// goPackagePath is the SourceCodeInfo path for the go_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L392
+	goPackagePath = []int32{8, 11}
+	// javaMultipleFilesPath is the SourceCodeInfo path for the java_multiple_files option.
+	// https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L364
+	javaMultipleFilesPath = []int32{8, 10}
+	// javaOuterClassnamePath is the SourceCodeInfo path for the java_outer_classname option.
+	// https://github.com/protocolbuffers/protobuf/blob/87d140f851131fb8a6e8a80449cf08e73e568259/src/google/protobuf/descriptor.proto#L356
+	javaOuterClassnamePath = []int32{8, 8}
+	// javaPackagePath is the SourceCodeInfo path for the java_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L348
+	javaPackagePath = []int32{8, 1}
+	// javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
+	javaStringCheckUtf8Path = []int32{8, 27}
+	// objcClassPrefixPath is the SourceCodeInfo path for the objc_class_prefix option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425
+	objcClassPrefixPath = []int32{8, 36}
+	// optimizeFor is the SourceCodeInfo path for the optimize_for option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
+	optimizeForPath = []int32{8, 9}
+	// phpMetadataNamespacePath is the SourceCodeInfo path for the php_metadata_namespace option.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L448
+	phpMetadataNamespacePath = []int32{8, 44}
+	// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
+	phpNamespacePath = []int32{8, 41}
+
+	// rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
+	// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
+	rubyPackagePath = []int32{8, 45}
+)
 
 func modifyJavaOuterClass(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -91,7 +91,7 @@ func modifyJavaOuterClass(
 }
 
 func modifyJavaPackage(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -117,7 +117,7 @@ func modifyJavaPackage(
 }
 
 func modifyGoPackage(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -131,11 +131,11 @@ func modifyGoPackage(
 		func(bufimage.ImageFile) stringOverrideOptions {
 			return stringOverrideOptions{}
 		},
-		func(imageFile bufimage.ImageFile, stringOverride stringOverrideOptions) string {
-			if stringOverride.prefix == "" {
+		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
+			if stringOverrideOptions.prefix == "" {
 				return ""
 			}
-			return GoPackageImportPathForFile(imageFile, stringOverride.prefix)
+			return goPackageImportPathForFile(imageFile, stringOverrideOptions.prefix)
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetGoPackage()
@@ -148,7 +148,7 @@ func modifyGoPackage(
 }
 
 func modifyObjcClassPrefix(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -176,7 +176,7 @@ func modifyObjcClassPrefix(
 }
 
 func modifyCsharpNamespace(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -190,8 +190,8 @@ func modifyCsharpNamespace(
 		func(bufimage.ImageFile) stringOverrideOptions {
 			return stringOverrideOptions{value: csharpNamespaceValue(imageFile)}
 		},
-		func(imageFile bufimage.ImageFile, stringOverride stringOverrideOptions) string {
-			return getCsharpNamespaceValue(imageFile, stringOverride.prefix)
+		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
+			return getCsharpNamespaceValue(imageFile, stringOverrideOptions.prefix)
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetCsharpNamespace()
@@ -204,7 +204,7 @@ func modifyCsharpNamespace(
 }
 
 func modifyPhpNamespace(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -232,7 +232,7 @@ func modifyPhpNamespace(
 }
 
 func modifyPhpMetadataNamespace(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -246,8 +246,8 @@ func modifyPhpMetadataNamespace(
 		func(bufimage.ImageFile) stringOverrideOptions {
 			return stringOverrideOptions{value: phpMetadataNamespaceValue(imageFile)}
 		},
-		func(imageFile bufimage.ImageFile, stringOverride stringOverrideOptions) string {
-			return getPhpMetadataNamespaceValue(imageFile, stringOverride.suffix)
+		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
+			return getPhpMetadataNamespaceValue(imageFile, stringOverrideOptions.suffix)
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetPhpMetadataNamespace()
@@ -260,7 +260,7 @@ func modifyPhpMetadataNamespace(
 }
 
 func modifyRubyPackage(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -274,8 +274,8 @@ func modifyRubyPackage(
 		func(bufimage.ImageFile) stringOverrideOptions {
 			return stringOverrideOptions{value: rubyPackageValue(imageFile)}
 		},
-		func(imageFile bufimage.ImageFile, stringOverride stringOverrideOptions) string {
-			return getRubyPackageValue(imageFile, stringOverride.suffix)
+		func(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
+			return getRubyPackageValue(imageFile, stringOverrideOptions.suffix)
 		},
 		func(options *descriptorpb.FileOptions) string {
 			return options.GetRubyPackage()
@@ -288,11 +288,11 @@ func modifyRubyPackage(
 }
 
 func modifyCcEnableArenas(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
-	return modifyOption[bool](
+	return modifyFileOption[bool](
 		sweeper,
 		imageFile,
 		config,
@@ -309,11 +309,11 @@ func modifyCcEnableArenas(
 }
 
 func modifyJavaMultipleFiles(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
-	return modifyOption[bool](
+	return modifyFileOption[bool](
 		sweeper,
 		imageFile,
 		config,
@@ -330,11 +330,11 @@ func modifyJavaMultipleFiles(
 }
 
 func modifyJavaStringCheckUtf8(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
-	return modifyOption[bool](
+	return modifyFileOption[bool](
 		sweeper,
 		imageFile,
 		config,
@@ -351,11 +351,11 @@ func modifyJavaStringCheckUtf8(
 }
 
 func modifyOptmizeFor(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
-	return modifyOption[descriptorpb.FileOptions_OptimizeMode](
+	return modifyFileOption[descriptorpb.FileOptions_OptimizeMode](
 		sweeper,
 		imageFile,
 		config,
@@ -369,4 +369,98 @@ func modifyOptmizeFor(
 		},
 		optimizeForPath,
 	)
+}
+
+func modifyFileOption[T bool | descriptorpb.FileOptions_OptimizeMode](
+	sweeper internal.MarkSweeper,
+	imageFile bufimage.ImageFile,
+	config bufconfig.GenerateManagedConfig,
+	fileOption bufconfig.FileOption,
+	// You can set this value to the same as protobuf default, in order to not modify a value by default.
+	defaultValue T,
+	getOptionFunc func(*descriptorpb.FileOptions) T,
+	setOptionFunc func(*descriptorpb.FileOptions, T),
+	sourceLocationPath []int32,
+) error {
+	value := defaultValue
+	if isFileOptionDisabledForFile(
+		imageFile,
+		fileOption,
+		config,
+	) {
+		return nil
+	}
+	override, err := overrideFromConfig[T](
+		imageFile,
+		config,
+		fileOption,
+	)
+	if err != nil {
+		return err
+	}
+	if override != nil {
+		value = *override
+	}
+	descriptor := imageFile.FileDescriptorProto()
+	if getOptionFunc(descriptor.Options) == value {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	setOptionFunc(descriptor.Options, value)
+	sweeper.Mark(imageFile, sourceLocationPath)
+	return nil
+}
+
+func modifyStringOption(
+	sweeper internal.MarkSweeper,
+	imageFile bufimage.ImageFile,
+	config bufconfig.GenerateManagedConfig,
+	valueOption bufconfig.FileOption,
+	prefixOption bufconfig.FileOption,
+	suffixOption bufconfig.FileOption,
+	defaultOptionsFunc func(bufimage.ImageFile) stringOverrideOptions,
+	valueFunc func(bufimage.ImageFile, stringOverrideOptions) string,
+	getOptionFunc func(*descriptorpb.FileOptions) string,
+	setOptionFunc func(*descriptorpb.FileOptions, string),
+	sourceLocationPath []int32,
+) error {
+	overrideOptions, err := stringOverrideFromConfig(
+		imageFile,
+		config,
+		defaultOptionsFunc(imageFile),
+		valueOption,
+		prefixOption,
+		suffixOption,
+	)
+	if err != nil {
+		return err
+	}
+	var emptyOverrideOptions stringOverrideOptions
+	// This means the options are all disabled.
+	if overrideOptions == emptyOverrideOptions {
+		return nil
+	}
+	// Now either value is set or prefix and/or suffix is set.
+	value := overrideOptions.value
+	if value == "" {
+		// TODO: pass in prefix and suffix, instead of just override options
+		value = valueFunc(imageFile, overrideOptions)
+	}
+	if value == "" {
+		return nil
+	}
+	descriptor := imageFile.FileDescriptorProto()
+	if getOptionFunc(descriptor.Options) == value {
+		// The option is already set to the same value, don't modify or mark it.
+		return nil
+	}
+	if descriptor.Options == nil {
+		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	setOptionFunc(descriptor.Options, value)
+	sweeper.Mark(imageFile, sourceLocationPath)
+	return nil
 }

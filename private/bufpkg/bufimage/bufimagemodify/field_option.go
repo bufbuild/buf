@@ -19,6 +19,8 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/protocompile/walk"
 	"google.golang.org/protobuf/proto"
@@ -26,12 +28,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// JSTypeSubPath is the SourceCodeInfo sub path for the jstype field option.
+// jsTypeSubPath is the SourceCodeInfo sub path for the jstype field option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L567
+// TODO: where does the 8 come from?????
 var jsTypeSubPath = []int32{8, 6}
 
 func modifyJsType(
-	sweeper *markSweeper,
+	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
 ) error {
@@ -53,7 +56,7 @@ func modifyJsType(
 			return nil
 		}
 	}
-	if isWellKnownType(imageFile) {
+	if datawkt.Exists(imageFile.Path()) {
 		return nil
 	}
 	return walk.DescriptorProtosWithPath(
