@@ -172,3 +172,17 @@ func Int32SliceIsEqual(x []int32, y []int32) bool {
 	}
 	return true
 }
+
+// getPathKey returns a unique key for the given path.
+func getPathKey(path []int32) string {
+	key := make([]byte, len(path)*4)
+	j := 0
+	for _, elem := range path {
+		key[j] = byte(elem)
+		key[j+1] = byte(elem >> 8)
+		key[j+2] = byte(elem >> 16)
+		key[j+3] = byte(elem >> 24)
+		j += 4
+	}
+	return string(key)
+}

@@ -53,8 +53,7 @@ func modifyJsType(
 			return nil
 		}
 	}
-	// TODO: this check might not be needed
-	if isWellKnownTypeNoCtx(imageFile) {
+	if isWellKnownType(imageFile) {
 		return nil
 	}
 	return walk.DescriptorProtosWithPath(

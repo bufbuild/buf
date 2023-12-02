@@ -33,10 +33,9 @@ func Modify(
 	if !config.Enabled() {
 		return nil
 	}
-	// TODO: in v2 modify field options as well
 	sweeper := newMarkSweeper(image)
 	for _, imageFile := range image.Files() {
-		if isWellKnownType(ctx, imageFile) {
+		if isWellKnownType(imageFile) {
 			continue
 		}
 		modifyFuncs := []func(*markSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
