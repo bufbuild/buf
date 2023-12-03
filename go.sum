@@ -15,6 +15,8 @@ github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migc
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
+github.com/bufbuild/protocompile v0.6.1-0.20231121142655-f7f6094708c9 h1:hI9mUUJiMW4FroWMjiKFbd+RgMjKDRz8H8BA9yDiRx4=
+github.com/bufbuild/protocompile v0.6.1-0.20231121142655-f7f6094708c9/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
 github.com/bufbuild/protocompile v0.7.0 h1:ZfJAqcMG5okLzemO016O1BByzTJx2k32hBAby5nYE8k=
 github.com/bufbuild/protocompile v0.7.0/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
 github.com/bufbuild/protocompile v0.7.1-0.20231201175310-fc56311202fe h1:fjh2wRmiS20n0pVTvgnNRK5Cta5leLZPI46GNI64y1c=

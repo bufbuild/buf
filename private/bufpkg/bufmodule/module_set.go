@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protocompile/parser/fastscan"
+	"github.com/bufbuild/protocompile/parser/imports"
 	"go.uber.org/multierr"
 )
 
@@ -469,11 +469,11 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	fastscanResult, err := fastscan.Scan(file)
+	imports, err := imports.ScanForImports(file)
 	if err != nil {
 		return nil, fmt.Errorf("%s had import parsing error: %w", filePath, err)
 	}
-	return slicesext.ToStructMap(fastscanResult.Imports), nil
+	return slicesext.ToStructMap(imports), nil
 }
 
 func (*moduleSet) isModuleSet() {}
