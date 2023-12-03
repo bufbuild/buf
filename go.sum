@@ -17,6 +17,8 @@ github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
 github.com/bufbuild/protocompile v0.7.0 h1:ZfJAqcMG5okLzemO016O1BByzTJx2k32hBAby5nYE8k=
 github.com/bufbuild/protocompile v0.7.0/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
+github.com/bufbuild/protocompile v0.7.1-0.20231201175310-fc56311202fe h1:fjh2wRmiS20n0pVTvgnNRK5Cta5leLZPI46GNI64y1c=
+github.com/bufbuild/protocompile v0.7.1-0.20231201175310-fc56311202fe/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
 github.com/bufbuild/protovalidate-go v0.4.2 h1:rh34FFVIJ2pQ/vPnkiQK+Y5pMQ6W4POmHkqHFZLfPWA=
 github.com/bufbuild/protovalidate-go v0.4.2/go.mod h1:+p5FXfOjSEgLz5WBDTOMPMdQPXqALEERbJZU7huDCtA=
 github.com/bufbuild/protoyaml-go v0.1.7 h1:3uKIoNb/l5zrZ93u+Xzsg6cdAO06lveZE/K7UUbUQLw=
