@@ -175,11 +175,12 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 
 // WithConfigOverride applies the config override.
 //
-// This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml.
-// This flag will not work if a buf.work.yaml is detected, or a v2 buf.yaml is detected.
+// This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a
+// v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml. This flag will not work if a buf.work.yaml
+// is detected, or a v2 buf.yaml is detected.
 //
-// If used with an image or module ref, this has no effect on the build, i.e. excludes are not respected, and the module name
-// is ignored. This matches old behavior.
+// If used with an image or module ref, this has no effect on the build, i.e. excludes are
+// not respected, and the module name is ignored. This matches old behavior.
 //
 // This implements the soon-to-be-deprected --config flag.
 //
@@ -188,7 +189,8 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 // *** DO NOT USE THIS OUTSIDE OF THE CLI AND/OR IF YOU DON'T UNDERSTAND IT. ***
 // *** DO NOT ADD THIS TO ANY NEW COMMANDS. ***
 //
-// Current comments that use this: build, breaking, lint, generate, format, export, ls-breaking-rules, ls-lint-rules.
+// Current comments that use this: build, breaking, lint, generate, format,
+// export, ls-breaking-rules, ls-lint-rules.
 func WithConfigOverride(configOverride string) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.configOverride = configOverride
