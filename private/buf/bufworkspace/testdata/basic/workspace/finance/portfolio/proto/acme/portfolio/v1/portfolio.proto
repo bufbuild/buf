@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package acme.portfolio.v1;
 
-import "acme/bond/v2/bond.proto":
-import "acme/extension/v1/extension.proto":
+import "acme/bond/v2/bond.proto";
+import "acme/extension/v1/extension.proto";
 
 message Portfolio {
   option (acme.extension.v1.experimental) = true;
