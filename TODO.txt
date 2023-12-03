@@ -10,6 +10,7 @@
 - ProtoFileRef support
 - new digest format - figure out with API
 - option to create workspace with no file searching (wkt)
+  - Also use for when --config is used - force the current directory as the found directory
 - new buf migrate command
 
 - port tests from:
