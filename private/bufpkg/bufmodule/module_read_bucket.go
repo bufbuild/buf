@@ -303,7 +303,7 @@ func (b *moduleReadBucket) StatFileInfo(ctx context.Context, path string) (FileI
 	if err != nil {
 		return nil, err
 	}
-	return b.getFileInfo(objectInfo)
+	return b.getFileInfo(ctx, objectInfo)
 }
 
 func (b *moduleReadBucket) WalkFileInfos(
@@ -325,7 +325,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 			ctx,
 			"",
 			func(objectInfo storage.ObjectInfo) error {
-				fileInfo, err := b.getFileInfo(objectInfo)
+				fileInfo, err := b.getFileInfo(ctx, objectInfo)
 				if err != nil {
 					return err
 				}
@@ -335,7 +335,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
-		fileInfo, err := b.getFileInfo(objectInfo)
+		fileInfo, err := b.getFileInfo(ctx, objectInfo)
 		if err != nil {
 			return err
 		}
@@ -371,26 +371,46 @@ func (b *moduleReadBucket) ShouldBeSelfContained() bool {
 
 func (*moduleReadBucket) isModuleReadBucket() {}
 
-func (b *moduleReadBucket) getFileInfo(objectInfo storage.ObjectInfo) (FileInfo, error) {
+func (b *moduleReadBucket) getFileInfo(ctx context.Context, objectInfo storage.ObjectInfo) (FileInfo, error) {
 	return b.pathToFileInfoCache.GetOrAdd(
 		// We know that storage.ObjectInfo will always have the same values for the same
 		// ObjectInfo returned from a common bucket, this is documented. Therefore, we
 		// can cache based on just the path.
 		objectInfo.Path(),
 		func() (FileInfo, error) {
-			return b.getFileInfoUncached(objectInfo)
+			return b.getFileInfoUncached(ctx, objectInfo)
 		},
 	)
 }
 
-func (b *moduleReadBucket) getFileInfoUncached(objectInfo storage.ObjectInfo) (FileInfo, error) {
+func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo storage.ObjectInfo) (FileInfo, error) {
 	fileType, err := classifyPathFileType(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
 		// A lack of classification is a system error.
 		return nil, syserror.Wrap(err)
 	}
-	return newFileInfo(objectInfo, b.module, fileType, b.getIsTargetedFileForPath(objectInfo.Path())), nil
+	return newFileInfo(
+		objectInfo,
+		b.module,
+		fileType,
+		b.getIsTargetedFileForPath(objectInfo.Path()),
+		func() ([]string, error) {
+			fastscanResult, err := b.module.ModuleSet().getFastscanResultForFilePath(ctx, objectInfo.Path())
+			if err != nil {
+				return nil, err
+			}
+			// This also has the effect of copying the slice.
+			return slicesext.ToUniqueSorted(fastscanResult.Imports), nil
+		},
+		func() (string, error) {
+			fastscanResult, err := b.module.ModuleSet().getFastscanResultForFilePath(ctx, objectInfo.Path())
+			if err != nil {
+				return "", err
+			}
+			return fastscanResult.PackageName, nil
+		},
+	), nil
 }
 
 func (b *moduleReadBucket) getIsTargetedFileForPath(path string) bool {

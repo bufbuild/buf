@@ -32,7 +32,7 @@ import (
 	"go.uber.org/multierr"
 )
 
-// errIsWKT is the error returned by getImportsForFilePath or getModuleForFilePath if the
+// errIsWKT is the error returned by getFastscanResultForFilePath or getModuleForFilePath if the
 // input filePath is a well-known type.
 var errIsWKT = errors.New("wkt")
 
@@ -79,13 +79,13 @@ type ModuleSet interface {
 	// returns errIsWKT if the filePath is a WKT.
 	// returns an error with fs.ErrNotExist if the file is not found.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
-	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet.
+	// getModuleForFilePath gets the fastscan.Result for the File path of a File within the ModuleSet.
 	//
-	// This should only be used by Modules, and only for dependency calculations.
+	// This should only be used by Modules and FileInfos.
 	//
 	// returns errIsWKT if the filePath is a WKT.
 	// returns an error with fs.ErrNotExist if the file is not found.
-	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
+	getFastscanResultForFilePath(ctx context.Context, filePath string) (fastscan.Result, error)
 	isModuleSet()
 }
 
@@ -300,13 +300,13 @@ type moduleSet struct {
 	bucketIDToModule             map[string]Module
 	getDigestStringToModule      func() (map[string]Module, error)
 
-	// filePathToModule is a cache of filePath -> module, used for calculating dependencies.
+	// filePathToModule is a cache of filePath -> module.
 	//
 	// If you are calling both the imports and module caches, you must call the imports cache first,
 	// i.e. lock ordering.
 	filePathToModuleCache cache.Cache[string, Module]
-	// filePathToImports is a cache of filePath -> imports, used for calculating dependencies.
-	filePathToImportsCache cache.Cache[string, map[string]struct{}]
+	// filePathToFastscanResult is a cache of filePath -> fastscan.Result.
+	filePathToFastscanResultCache cache.Cache[string, fastscan.Result]
 }
 
 func newModuleSet(
@@ -393,7 +393,7 @@ func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
 	return digestStringToModule[digest.String()], nil
 }
 
-// This should only be used by Modules, and only for dependency calculations.
+// This should only be used by Modules and FileInfos.
 func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
 	return m.filePathToModuleCache.GetOrAdd(
 		filePath,
@@ -403,12 +403,12 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 	)
 }
 
-// This should only be used by Modules, and only for dependency calculations.
-func (m *moduleSet) getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
-	return m.filePathToImportsCache.GetOrAdd(
+// This should only be used by Modules and FileInfos.
+func (m *moduleSet) getFastscanResultForFilePath(ctx context.Context, filePath string) (fastscan.Result, error) {
+	return m.filePathToFastscanResultCache.GetOrAdd(
 		filePath,
-		func() (map[string]struct{}, error) {
-			return m.getImportsForFilePathUncached(ctx, filePath)
+		func() (fastscan.Result, error) {
+			return m.getFastscanResultForFilePathUncached(ctx, filePath)
 		},
 	)
 }
@@ -448,7 +448,10 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 
 // Assumed to be called within cacheLock.
 // Only call from within *moduleSet.
-func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath string) (_ map[string]struct{}, retErr error) {
+func (m *moduleSet) getFastscanResultForFilePathUncached(
+	ctx context.Context,
+	filePath string,
+) (_ fastscan.Result, retErr error) {
 	// Even when we know the file we want to get the imports for, we want to make sure the file
 	// is not duplicated across multiple modules. By calling getModuleForFilePath,
 	// we implicitly get this check for now.
@@ -460,20 +463,20 @@ func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath 
 	// the cheapest to load (ie not remote).
 	module, err := m.getModuleForFilePath(ctx, filePath)
 	if err != nil {
-		return nil, err
+		return fastscan.Result{}, err
 	}
 	file, err := module.GetFile(ctx, filePath)
 	if err != nil {
-		return nil, err
+		return fastscan.Result{}, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
 	fastscanResult, err := fastscan.Scan(file)
 	if err != nil {
-		return nil, fmt.Errorf("%s had import parsing error: %w", filePath, err)
+		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", filePath, err)
 	}
-	return slicesext.ToStructMap(fastscanResult.Imports), nil
+	return fastscanResult, nil
 }
 
 func (*moduleSet) isModuleSet() {}

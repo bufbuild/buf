@@ -452,7 +452,7 @@ func getModuleDepsRec(
 			if fileInfo.FileType() != FileTypeProto {
 				return nil
 			}
-			imports, err := moduleSet.getImportsForFilePath(ctx, fileInfo.Path())
+			fastscanResult, err := moduleSet.getFastscanResultForFilePath(ctx, fileInfo.Path())
 			if err != nil {
 				if errors.Is(err, fs.ErrNotExist) {
 					// Strip any PathError and just get to the point.
@@ -460,7 +460,7 @@ func getModuleDepsRec(
 				}
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
-			for imp := range imports {
+			for _, imp := range fastscanResult.Imports {
 				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
 				if err != nil {
 					if errors.Is(err, errIsWKT) {

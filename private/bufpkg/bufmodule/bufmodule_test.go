@@ -210,6 +210,15 @@ func TestBasic(t *testing.T) {
 		},
 		bufmodule.FileInfoPaths(module2FileInfos),
 	)
+	module2ProtoFileInfo, err := module2.StatFileInfo(ctx, "module2.proto")
+	require.NoError(t, err)
+	imports, err := module2ProtoFileInfo.Imports()
+	require.NoError(t, err)
+	require.Equal(t, []string{"extdep1.proto", "module1.proto"}, imports)
+	pkg, err := module2ProtoFileInfo.Package()
+	require.NoError(t, err)
+	require.Equal(t, "module2", pkg)
+
 	module2TargetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module2)
 	require.NoError(t, err)
 	// These are the target files. We excluded foo, so we only have module2.proto.

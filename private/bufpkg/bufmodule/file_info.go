@@ -15,6 +15,8 @@
 package bufmodule
 
 import (
+	"sync"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -33,7 +35,6 @@ type FileInfo interface {
 	//
 	// This denotes if the File is a .proto file, documentation file, or license file.
 	FileType() FileType
-
 	// IsTargetFile returns true if the File is targeted.
 	//
 	// Files are either targets or imports.
@@ -42,6 +43,14 @@ type FileInfo interface {
 	// If specific Files were not targeted but Module.IsTarget() is true, all Files in
 	// the Module will have IsTargetFile() set to true.
 	IsTargetFile() bool
+	// Imports returns the file's declared .proto imports, if any.
+	//
+	// Returns error if computing the imports results in an error.
+	Imports() ([]string, error)
+	// Package returns the file's declared Protobuf package, if any.
+	//
+	// Returns error if computing the package results in an error.
+	Package() (string, error)
 
 	isFileInfo()
 }
@@ -59,6 +68,8 @@ type fileInfo struct {
 	module       Module
 	fileType     FileType
 	isTargetFile bool
+	getImports   func() ([]string, error)
+	getPackage   func() (string, error)
 }
 
 func newFileInfo(
@@ -66,12 +77,16 @@ func newFileInfo(
 	module Module,
 	fileType FileType,
 	isTargetFile bool,
+	getImports func() ([]string, error),
+	getPackage func() (string, error),
 ) *fileInfo {
 	return &fileInfo{
 		ObjectInfo:   objectInfo,
 		module:       module,
 		fileType:     fileType,
 		isTargetFile: isTargetFile,
+		getImports:   sync.OnceValues(getImports),
+		getPackage:   sync.OnceValues(getPackage),
 	}
 }
 
@@ -85,6 +100,14 @@ func (f *fileInfo) FileType() FileType {
 
 func (f *fileInfo) IsTargetFile() bool {
 	return f.isTargetFile
+}
+
+func (f *fileInfo) Imports() ([]string, error) {
+	return f.getImports()
+}
+
+func (f *fileInfo) Package() (string, error) {
+	return f.getPackage()
 }
 
 func (*fileInfo) isFileInfo() {}
