@@ -284,9 +284,9 @@ func wrapError(err error) error {
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
 			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
-				return fmt.Errorf(`Failure: the %[1]s environment variable is set, but is not valid. " +
-				"Set %[1]s to a valid Buf API key, or unset it. For details, " +
-				"visit https://docs.buf.build/bsr/authentication`, authErr.TokenEnvKey())
+				return fmt.Errorf("Failure: the %[1]s environment variable is set, but is not valid. "+
+					"Set %[1]s to a valid Buf API key, or unset it. For details, "+
+					"visit https://docs.buf.build/bsr/authentication", authErr.TokenEnvKey())
 			}
 			return errors.New("Failure: you are not authenticated. Create a new entry in your netrc, " +
 				"using a Buf API Key as the password. If you already have an entry in your netrc, check " +
