@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -77,26 +76,4 @@ func classifyPathFileType(path string) (FileType, error) {
 		return FileTypeDoc, nil
 	}
 	return 0, fmt.Errorf("could not classify FileType for path %q", path)
-}
-
-func fileTypeSliceToMap(fileTypes []FileType) map[FileType]struct{} {
-	fileTypeMap := make(map[FileType]struct{})
-	for _, fileType := range fileTypes {
-		fileTypeMap[fileType] = struct{}{}
-	}
-	return fileTypeMap
-}
-
-func fileTypeMapToSortedSlice(fileTypeMap map[FileType]struct{}) []FileType {
-	fileTypes := make([]FileType, 0, len(fileTypeMap))
-	for fileType := range fileTypeMap {
-		fileTypes = append(fileTypes, fileType)
-	}
-	sort.Slice(
-		fileTypes,
-		func(i int, j int) bool {
-			return fileTypes[i] < fileTypes[j]
-		},
-	)
-	return fileTypes
 }

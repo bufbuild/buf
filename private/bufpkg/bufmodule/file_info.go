@@ -87,8 +87,4 @@ func (f *fileInfo) IsTargetFile() bool {
 	return f.isTargetFile
 }
 
-//func (f *fileInfo) setIsTargetFile(isTargetFile bool) {
-//f.isTargetFile = isTargetFile
-//}
-
 func (*fileInfo) isFileInfo() {}
