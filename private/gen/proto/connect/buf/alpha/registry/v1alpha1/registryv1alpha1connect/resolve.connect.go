@@ -64,6 +64,9 @@ const (
 	// ResolveServiceGetNPMVersionProcedure is the fully-qualified name of the ResolveService's
 	// GetNPMVersion RPC.
 	ResolveServiceGetNPMVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetNPMVersion"
+	// ResolveServiceGetPythonVersionProcedure is the fully-qualified name of the ResolveService's
+	// GetPythonVersion RPC.
+	ResolveServiceGetPythonVersionProcedure = "/buf.alpha.registry.v1alpha1.ResolveService/GetPythonVersion"
 	// LocalResolveServiceGetLocalModulePinsProcedure is the fully-qualified name of the
 	// LocalResolveService's GetLocalModulePins RPC.
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
@@ -87,6 +90,8 @@ type ResolveServiceClient interface {
 	GetMavenVersion(context.Context, *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
 	GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error)
+	// GetPythonVersion resolves the given plugin and module references to a version.
+	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
@@ -129,16 +134,23 @@ func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
+		getPythonVersion: connect.NewClient[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse](
+			httpClient,
+			baseURL+ResolveServiceGetPythonVersionProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // resolveServiceClient implements ResolveServiceClient.
 type resolveServiceClient struct {
-	getModulePins   *connect.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
-	getGoVersion    *connect.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
-	getSwiftVersion *connect.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
-	getMavenVersion *connect.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
-	getNPMVersion   *connect.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
+	getModulePins    *connect.Client[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse]
+	getGoVersion     *connect.Client[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse]
+	getSwiftVersion  *connect.Client[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse]
+	getMavenVersion  *connect.Client[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse]
+	getNPMVersion    *connect.Client[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse]
+	getPythonVersion *connect.Client[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse]
 }
 
 // GetModulePins calls buf.alpha.registry.v1alpha1.ResolveService.GetModulePins.
@@ -166,6 +178,11 @@ func (c *resolveServiceClient) GetNPMVersion(ctx context.Context, req *connect.R
 	return c.getNPMVersion.CallUnary(ctx, req)
 }
 
+// GetPythonVersion calls buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion.
+func (c *resolveServiceClient) GetPythonVersion(ctx context.Context, req *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error) {
+	return c.getPythonVersion.CallUnary(ctx, req)
+}
+
 // ResolveServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.ResolveService
 // service.
 type ResolveServiceHandler interface {
@@ -185,6 +202,8 @@ type ResolveServiceHandler interface {
 	GetMavenVersion(context.Context, *connect.Request[v1alpha1.GetMavenVersionRequest]) (*connect.Response[v1alpha1.GetMavenVersionResponse], error)
 	// GetNPMVersion resolves the given plugin and module references to a version.
 	GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error)
+	// GetPythonVersion resolves the given plugin and module references to a version.
+	GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error)
 }
 
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -223,6 +242,12 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
+	resolveServiceGetPythonVersionHandler := connect.NewUnaryHandler(
+		ResolveServiceGetPythonVersionProcedure,
+		svc.GetPythonVersion,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/buf.alpha.registry.v1alpha1.ResolveService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ResolveServiceGetModulePinsProcedure:
@@ -235,6 +260,8 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 			resolveServiceGetMavenVersionHandler.ServeHTTP(w, r)
 		case ResolveServiceGetNPMVersionProcedure:
 			resolveServiceGetNPMVersionHandler.ServeHTTP(w, r)
+		case ResolveServiceGetPythonVersionProcedure:
+			resolveServiceGetPythonVersionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -262,6 +289,10 @@ func (UnimplementedResolveServiceHandler) GetMavenVersion(context.Context, *conn
 
 func (UnimplementedResolveServiceHandler) GetNPMVersion(context.Context, *connect.Request[v1alpha1.GetNPMVersionRequest]) (*connect.Response[v1alpha1.GetNPMVersionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetNPMVersion is not implemented"))
+}
+
+func (UnimplementedResolveServiceHandler) GetPythonVersion(context.Context, *connect.Request[v1alpha1.GetPythonVersionRequest]) (*connect.Response[v1alpha1.GetPythonVersionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.ResolveService.GetPythonVersion is not implemented"))
 }
 
 // LocalResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.LocalResolveService
