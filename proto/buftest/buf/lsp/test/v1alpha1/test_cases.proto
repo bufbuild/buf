@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package buf.lsp.test.v1;
+package buf.lsp.test.v1alpha1;
 
-import "buf/lsp/test/v1/source.proto";
+import "buf/lsp/test/v1alpha1/source.proto";
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -46,9 +46,9 @@ message TestMessage {
     TEST_NESTED_ENUM_BAR = 1;
   }
 
-  map<int32, buf.lsp.test.v1.TestMessage> test_map = 1;
-  buf.lsp.test.v1.TestMessage.TestNestedMessage test_nested_message = 2;
-  buf.lsp.test.v1.CodeInfo test_code_info = 3;
+  map<int32, buf.lsp.test.v1alpha1.TestMessage> test_map = 1;
+  buf.lsp.test.v1alpha1.TestMessage.TestNestedMessage test_nested_message = 2;
+  buf.lsp.test.v1alpha1.CodeInfo test_code_info = 3;
 }
 
 enum TestEnum {
@@ -59,5 +59,5 @@ enum TestEnum {
 }
 
 service TestService {
-  rpc TestRpc(v1.TestMessage) returns (TestMessage);
+  rpc TestRpc(v1alpha1.TestMessage) returns (TestMessage);
 }

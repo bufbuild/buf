@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package buf.lsp.test.v1;
+package buf.lsp.test.v1alpha1;
 
 message Diagnostic {
   SourceLocation range = 1;
