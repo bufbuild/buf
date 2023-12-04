@@ -454,8 +454,17 @@ func (b *moduleReadBucket) getIsTargetFileForPathUncached(ctx context.Context, p
 		// so we do not want to cache this value.
 		return false, nil
 	}
-	// We already validate that we don't se this alongside targetPaths and targetExcludePaths
+	// We already validate that we don't set this alongside targetPaths and targetExcludePaths
 	if b.protoFileTargetPath != "" {
+		fileType, err := classifyPathFileType(path)
+		if err != nil {
+			return false, err
+		}
+		if fileType != FileTypeProto {
+			// We are targeting a .proto file and this file is not a .proto file, therefore
+			// this file is not targeted.
+			return false, nil
+		}
 		isProtoFileTargetPath := path == b.protoFileTargetPath
 		if isProtoFileTargetPath {
 			// Regardless of includePackageFiles, we always return true.
