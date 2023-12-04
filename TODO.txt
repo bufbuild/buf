@@ -7,7 +7,6 @@
 
 - config override flag (finish, mostly in bufworkspace)
 - v2 buf.yaml parsing in NewWorkspaceForBucket
-- ProtoFileRef support
 - new digest format - figure out with API
 - option to create workspace with no file searching (wkt)
   - Also use for when --config is used - force the current directory as the found directory
