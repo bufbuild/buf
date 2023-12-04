@@ -250,6 +250,7 @@ type SourceReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
+		options ...GetBucketOption,
 	) (ReadBucketCloser, error)
 }
 
@@ -260,7 +261,22 @@ type DirReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
+		options ...GetBucketOption,
 	) (ReadWriteBucket, error)
+}
+
+// GetBucketOption is an option for a GetSourceReadBucketCloser
+// or GetDirReadWriteBucket call.
+type GetBucketOption func(*getBucketOptions)
+
+// GetBucketWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
+// direct SourceRef or DirRef given.
+//
+// This is used for when the --config flag is specified.
+func GetBucketWithNoSearch() GetBucketOption {
+	return func(getBucketOptions *getBucketOptions) {
+		getBucketOptions.noSearch = true
+	}
 }
 
 // ModuleFetcher is a module fetcher.
@@ -376,4 +392,12 @@ func NewWriter(
 	return newWriter(
 		logger,
 	)
+}
+
+type getBucketOptions struct {
+	noSearch bool
+}
+
+func newGetBucketOptions() *getBucketOptions {
+	return &getBucketOptions{}
 }

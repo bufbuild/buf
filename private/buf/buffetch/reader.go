@@ -147,13 +147,25 @@ func (a *reader) GetSourceReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
+	options ...GetBucketOption,
 ) (ReadBucketCloser, error) {
+	getBucketOptions := newGetBucketOptions()
+	for _, option := range options {
+		option(getBucketOptions)
+	}
+	var internalGetBucketOptions []internal.GetBucketOption
+	if !getBucketOptions.noSearch {
+		internalGetBucketOptions = append(
+			internalGetBucketOptions,
+			internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+			internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
+		)
+	}
 	return a.internalReader.GetReadBucketCloser(
 		ctx,
 		container,
 		sourceRef.internalBucketRef(),
-		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
-		internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
+		internalGetBucketOptions...,
 	)
 }
 
@@ -161,12 +173,25 @@ func (a *reader) GetDirReadWriteBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
+	options ...GetBucketOption,
 ) (ReadWriteBucket, error) {
+	getBucketOptions := newGetBucketOptions()
+	for _, option := range options {
+		option(getBucketOptions)
+	}
+	var internalGetBucketOptions []internal.GetBucketOption
+	if !getBucketOptions.noSearch {
+		internalGetBucketOptions = append(
+			internalGetBucketOptions,
+			internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+		// DirRefs are never ProtoFileRefs, so no need to providr WithGetBucketProtoFileTerminateFunc.
+		)
+	}
 	return a.internalReader.GetReadWriteBucket(
 		ctx,
 		container,
 		dirRef.internalDirRef(),
-		internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+		internalGetBucketOptions...,
 	)
 }
 
