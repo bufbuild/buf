@@ -333,42 +333,6 @@ func (c *controller) GetImageForInputConfig(
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
-	switch t := ref.(type) {
-	case buffetch.ProtoFileRef:
-		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.SourceRef:
-		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.ModuleRef:
-		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.MessageRef:
-		return c.getImageForMessageRef(ctx, t, functionOptions)
-	default:
-		// This is a system error.
-		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
 	ref, err := c.buffetchRefParser.GetRefForInputConfig(ctx, inputConfig)
 	if err != nil {
@@ -630,7 +594,15 @@ func (c *controller) getImage(
 ) (bufimage.Image, error) {
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -657,6 +629,8 @@ func (c *controller) getImage(
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+}
+
 func (c *controller) getWorkspaceForProtoFileRef(
 	ctx context.Context,
 	protoFileRef buffetch.ProtoFileRef,
