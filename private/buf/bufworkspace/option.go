@@ -61,6 +61,23 @@ func WithTargetPaths(targetPaths []string, targetExcludePaths []string) Workspac
 	}
 }
 
+// WithProtoFileTargetPath returns a new WorkspaceBucketOption that specifically targets
+// a single .proto file, and optionally targets all other .proto files that are in the same package.
+//
+// If targetPath is empty, includePackageFiles is ignored.
+// Exclusive with WithTargetPaths - only one of these can have a non-empty value.
+//
+// This is used for ProtoFileRefs only. Do not use this otherwise.
+func WithProtoFileTargetPath(
+	protoFileTargetPath string,
+	includePackageFiles bool,
+) WorkspaceBucketOption {
+	return &workspaceProtoFileTargetPathOption{
+		protoFileTargetPath: protoFileTargetPath,
+		includePackageFiles: includePackageFiles,
+	}
+}
+
 // WithConfigOverride applies the config override.
 //
 // This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml.
@@ -106,6 +123,16 @@ func (t *workspaceTargetPathsOption) applyToWorkspaceModuleKeyConfig(config *wor
 	config.targetExcludePaths = t.targetExcludePaths
 }
 
+type workspaceProtoFileTargetPathOption struct {
+	protoFileTargetPath string
+	includePackageFiles bool
+}
+
+func (p *workspaceProtoFileTargetPathOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
+	config.protoFileTargetPath = p.protoFileTargetPath
+	config.includePackageFiles = p.includePackageFiles
+}
+
 type workspaceConfigOverrideOption struct {
 	configOverride string
 }
@@ -119,10 +146,12 @@ func (c *workspaceConfigOverrideOption) applyToWorkspaceModuleKeyConfig(config *
 }
 
 type workspaceBucketConfig struct {
-	subDirPath         string
-	targetPaths        []string
-	targetExcludePaths []string
-	configOverride     string
+	subDirPath          string
+	targetPaths         []string
+	targetExcludePaths  []string
+	protoFileTargetPath string
+	includePackageFiles bool
+	configOverride      string
 }
 
 func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucketConfig, error) {
@@ -148,6 +177,12 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 	)
 	if err != nil {
 		return nil, err
+	}
+	if config.protoFileTargetPath != "" {
+		config.protoFileTargetPath, err = normalpath.NormalizeAndValidate(config.protoFileTargetPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return config, nil
 }

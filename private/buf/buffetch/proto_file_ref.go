@@ -30,6 +30,10 @@ func newProtoFileRef(internalProtoFileRef internal.ProtoFileRef) *protoFileRef {
 	}
 }
 
+func (r *protoFileRef) ProtoFilePath() string {
+	return r.protoFileRef.Path()
+}
+
 func (r *protoFileRef) IncludePackageFiles() bool {
 	return r.protoFileRef.IncludePackageFiles()
 }

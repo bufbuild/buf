@@ -123,6 +123,7 @@ type ModuleRef interface {
 // ProtoFileRef is a proto file reference.
 type ProtoFileRef interface {
 	SourceRef
+	ProtoFilePath() string
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
 }

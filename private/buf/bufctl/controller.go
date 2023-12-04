@@ -276,8 +276,7 @@ func (c *controller) GetWorkspace(
 	}
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
-		//return c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		return c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 	case buffetch.SourceRef:
 		return c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 	case buffetch.ModuleRef:
@@ -319,16 +318,15 @@ func (c *controller) GetImage(
 	}
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
-		//workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
-		//if err != nil {
-		//return nil, err
-		//}
-		//return c.buildImage(
-		//ctx,
-		//bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-		//functionOptions,
-		//)
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -372,12 +370,11 @@ func (c *controller) GetImageWithConfigs(
 	}
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
-		//workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
-		//if err != nil {
-		//return nil, err
-		//}
-		//return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -636,6 +633,10 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
+		),
+		bufworkspace.WithProtoFileTargetPath(
+			protoFileRef.ProtoFilePath(),
+			protoFileRef.IncludePackageFiles(),
 		),
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,

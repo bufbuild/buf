@@ -453,6 +453,10 @@ func newWorkspaceForBucketAndModuleDirPaths(
 				moduleTargeting.moduleTargetPaths,
 				moduleTargeting.moduleTargetExcludePaths,
 			),
+			bufmodule.LocalModuleWithProtoFileTargetPath(
+				moduleTargeting.moduleProtoFileTargetPath,
+				moduleTargeting.includePackageFiles,
+			),
 		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
@@ -632,6 +636,9 @@ type moduleTargeting struct {
 	moduleTargetPaths []string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetExcludePaths []string
+	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
+	moduleProtoFileTargetPath string
+	includePackageFiles       bool
 }
 
 func newModuleTargeting(
@@ -677,7 +684,6 @@ func newModuleTargeting(
 			moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
 		}
 	}
-
 	moduleTargetPaths, err := slicesext.MapError(
 		moduleTargetPaths,
 		func(moduleTargetPath string) (string, error) {
@@ -696,9 +702,25 @@ func newModuleTargeting(
 	if err != nil {
 		return nil, err
 	}
+	var moduleProtoFileTargetPath string
+	var includePackageFiles bool
+	if config.protoFileTargetPath != "" &&
+		normalpath.ContainsPath(moduleDirPath, config.protoFileTargetPath, normalpath.Relative) {
+		moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, config.protoFileTargetPath)
+		if err != nil {
+			return nil, err
+		}
+		moduleProtoFileTargetPath, err = applyRootsToTargetPath(roots, moduleProtoFileTargetPath, normalpath.Relative)
+		if err != nil {
+			return nil, err
+		}
+		includePackageFiles = config.includePackageFiles
+	}
 	return &moduleTargeting{
-		moduleTargetPaths:        moduleTargetPaths,
-		moduleTargetExcludePaths: moduleTargetExcludePaths,
+		moduleTargetPaths:         moduleTargetPaths,
+		moduleTargetExcludePaths:  moduleTargetExcludePaths,
+		moduleProtoFileTargetPath: moduleProtoFileTargetPath,
+		includePackageFiles:       includePackageFiles,
 	}, nil
 }
 
