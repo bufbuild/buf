@@ -316,20 +316,29 @@ func TestProtoFileTargetPath(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	bucket := testNewBucketForPathToData(
+		t,
+		map[string][]byte{
+			"a/1.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"a/2.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"also_a/1.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"b/1.proto": []byte(
+				`syntax = proto3; package b;`,
+			),
+			"b/2.proto": []byte(
+				`syntax = proto3; package b;`,
+			),
+		},
+	)
 
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
-	moduleSetBuilder.AddLocalModule(
-		testNewBucketForPathToData(
-			t,
-			map[string][]byte{
-				"module1.proto": []byte(
-					`syntax = proto3; package module1`,
-				),
-			},
-		),
-		"module1",
-		true,
-	)
+	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
 	module1 := moduleSet.GetModuleForOpaqueID("module1")
@@ -337,12 +346,82 @@ func TestProtoFileTargetPath(t *testing.T) {
 	testFilePaths(
 		t,
 		module1,
-		"module1.proto",
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
 	)
 	testTargetFilePaths(
 		t,
 		module1,
-		"module1.proto",
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+
+	// The single file a/1.proto
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		bucket,
+		"module1",
+		true,
+		bufmodule.LocalModuleWithProtoFileTargetPath(
+			"a/1.proto",
+			false,
+		),
+	)
+	moduleSet, err = moduleSetBuilder.Build()
+	require.NoError(t, err)
+	module1 = moduleSet.GetModuleForOpaqueID("module1")
+	require.NotNil(t, module1)
+	testFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+	testTargetFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+	)
+
+	// The single file a/1.proto with package files
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		bucket,
+		"module1",
+		true,
+		bufmodule.LocalModuleWithProtoFileTargetPath(
+			"a/1.proto",
+			true,
+		),
+	)
+	moduleSet, err = moduleSetBuilder.Build()
+	require.NoError(t, err)
+	module1 = moduleSet.GetModuleForOpaqueID("module1")
+	require.NotNil(t, module1)
+	testFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+	testTargetFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
 	)
 }
 

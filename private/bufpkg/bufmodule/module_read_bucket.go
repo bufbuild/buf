@@ -413,7 +413,7 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 		// A lack of classification is a system error.
 		return nil, syserror.Wrap(err)
 	}
-	isTargetFile, err := b.getIsTargetFileForPath(ctx, objectInfo.Path())
+	isTargetFile, err := b.getIsTargetFileForPathUncached(ctx, objectInfo.Path())
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +446,7 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 	), nil
 }
 
-func (b *moduleReadBucket) getIsTargetFileForPath(ctx context.Context, path string) (bool, error) {
+func (b *moduleReadBucket) getIsTargetFileForPathUncached(ctx context.Context, path string) (bool, error) {
 	if !b.module.IsTarget() {
 		// If the Module is not targeted, the file is automatically not targeted.
 		//
@@ -465,13 +465,17 @@ func (b *moduleReadBucket) getIsTargetFileForPath(ctx context.Context, path stri
 			// If we don't include package files, then we don't have a match, return false.
 			return false, nil
 		}
+		// We now need to see if we have the same package as the protoFileTargetPath file.
+		//
+		// We've now deferred having to get fastscan.Results as much as we can.
 		protoFileTargetFastscanResult, err := b.getFastscanResultForPath(ctx, b.protoFileTargetPath)
 		if err != nil {
 			return false, err
 		}
-		// We now need to see if we have the same package as the protoFileTargetPath file.
-		//
-		// We've now deferred having to get a fastscan.Result as much as we can.
+		if protoFileTargetFastscanResult.PackageName == "" {
+			// Don't do anything if the target file does not have a package.
+			return false, nil
+		}
 		fastscanResult, err := b.getFastscanResultForPath(ctx, path)
 		if err != nil {
 			return false, err
@@ -510,18 +514,28 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
 ) (_ fastscan.Result, retErr error) {
-	file, err := b.GetFile(ctx, path)
+	fileType, err := classifyPathFileType(path)
+	if err != nil {
+		return fastscan.Result{}, err
+	}
+	if fileType != FileTypeProto {
+		// We should have validated this WAY before.
+		return fastscan.Result{}, syserror.Newf("cannot get fastscan.Result for non-proto file %q", path)
+	}
+	// We *cannot* use GetFile here, because getFileInfo -> getFastscanResultForPath -> getFileInfo,
+	// and this causes a circular wait with the cache locks.
+	bucket, err := b.getBucket()
+	if err != nil {
+		return fastscan.Result{}, err
+	}
+	readObjectCloser, err := bucket.Get(ctx, path)
 	if err != nil {
 		return fastscan.Result{}, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	if file.FileType() != FileTypeProto {
-		// We should have validated this WAY before.
-		return fastscan.Result{}, syserror.Newf("cannot get fastscan.Result for non-proto file %q", path)
-	}
-	fastscanResult, err := fastscan.Scan(file)
+	fastscanResult, err := fastscan.Scan(readObjectCloser)
 	if err != nil {
 		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
 	}
