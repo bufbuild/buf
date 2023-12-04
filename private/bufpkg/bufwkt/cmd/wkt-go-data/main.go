@@ -148,16 +148,18 @@ func getProtosourceFiles(
 	container appflag.Container,
 	bucket storage.ReadBucket,
 ) ([]protosource.File, error) {
-	// TODO: why is this not working? this is the path that should be used, not NewModuleForBucket
-	//module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
-	//ctx,
-	//bucket,
-	//&bufmoduleconfig.Config{},
-	//)
-	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
+	moduleSet, err := bufmodule.NewModuleSetBuilder(
+		ctx,
+		bufmodule.NopModuleDataProvider,
+	).AddLocalModule(
+		bucket,
+		".",
+		true,
+	).Build()
 	if err != nil {
 		return nil, err
 	}
+	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
 		module,
