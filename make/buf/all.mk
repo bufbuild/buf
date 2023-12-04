@@ -86,6 +86,7 @@ testbufnew: installbuf
 		./private/bufpkg/bufconfig/... \
 		./private/bufpkg/bufconnect/... \
 		./private/bufpkg/bufimage/... \
+		./private/bufpkg/bufmigrate/... \
 		./private/bufpkg/bufplugin/... \
 		./private/bufpkg/bufpluginexec/... \
 		./private/bufpkg/bufreflect/... \
