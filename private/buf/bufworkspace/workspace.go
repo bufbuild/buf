@@ -272,7 +272,6 @@ func newWorkspaceForBucket(
 	}
 
 	// No buf.work.yaml found, we operate as if the subDirPath is a single module with no enclosing workspace.
-	//fmt.Println("no buf.work.yaml found")
 	return newWorkspaceForBucketAndModuleDirPaths(
 		ctx,
 		bucket,
@@ -564,6 +563,7 @@ func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDirPath string,
+	// TODO: handle config override
 ) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
 	if err != nil {
