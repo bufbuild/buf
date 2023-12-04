@@ -15,6 +15,8 @@
 package bufmodule
 
 import (
+	"sync"
+
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -33,7 +35,6 @@ type FileInfo interface {
 	//
 	// This denotes if the File is a .proto file, documentation file, or license file.
 	FileType() FileType
-
 	// IsTargetFile returns true if the File is targeted.
 	//
 	// Files are either targets or imports.
@@ -42,6 +43,19 @@ type FileInfo interface {
 	// If specific Files were not targeted but Module.IsTarget() is true, all Files in
 	// the Module will have IsTargetFile() set to true.
 	IsTargetFile() bool
+
+	// protoFileImports returns the file's declared .proto imports, if any.
+	//
+	// Always returns empty if this file is not a .proto file.
+	//
+	// Not exposing this function publicly yet as we don't have a use case.
+	protoFileImports() ([]string, error)
+	// protoFilePackage returns the file's declared Protobuf package, any.
+	//
+	// Always returns empty if this file is not a .proto file.
+	//
+	// Not exposing this function publicly yet as we don't have a use case.
+	protoFilePackage() (string, error)
 
 	isFileInfo()
 }
@@ -56,9 +70,11 @@ func FileInfoPaths(fileInfos []FileInfo) []string {
 type fileInfo struct {
 	storage.ObjectInfo
 
-	module       Module
-	fileType     FileType
-	isTargetFile bool
+	module              Module
+	fileType            FileType
+	isTargetFile        bool
+	getProtoFileImports func() ([]string, error)
+	getProtoFilePackage func() (string, error)
 }
 
 func newFileInfo(
@@ -66,12 +82,16 @@ func newFileInfo(
 	module Module,
 	fileType FileType,
 	isTargetFile bool,
+	getProtoFileImports func() ([]string, error),
+	getProtoFilePackage func() (string, error),
 ) *fileInfo {
 	return &fileInfo{
-		ObjectInfo:   objectInfo,
-		module:       module,
-		fileType:     fileType,
-		isTargetFile: isTargetFile,
+		ObjectInfo:          objectInfo,
+		module:              module,
+		fileType:            fileType,
+		isTargetFile:        isTargetFile,
+		getProtoFileImports: sync.OnceValues(getProtoFileImports),
+		getProtoFilePackage: sync.OnceValues(getProtoFilePackage),
 	}
 }
 
@@ -87,8 +107,12 @@ func (f *fileInfo) IsTargetFile() bool {
 	return f.isTargetFile
 }
 
-//func (f *fileInfo) setIsTargetFile(isTargetFile bool) {
-//f.isTargetFile = isTargetFile
-//}
+func (f *fileInfo) protoFileImports() ([]string, error) {
+	return f.getProtoFileImports()
+}
+
+func (f *fileInfo) protoFilePackage() (string, error) {
+	return f.getProtoFilePackage()
+}
 
 func (*fileInfo) isFileInfo() {}

@@ -20,7 +20,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -52,7 +52,6 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -84,7 +83,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleReference, err := bufmoduleref.ModuleReferenceForString(flags.Module)
+	moduleRef, err := bufmodule.ParseModuleRef(flags.Module)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing module reference: %s", err.Error())
 	}
@@ -92,20 +91,20 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("failed parsing plugin reference: %s", err.Error())
 	}
-	if pluginIdentity.Remote() != moduleReference.Remote() {
+	if pluginIdentity.Remote() != moduleRef.ModuleFullName().Registry() {
 		return appcmd.NewInvalidArgumentError("module and plugin must be from the same remote")
 	}
 	resolver := connectclient.Make(
 		clientConfig,
-		moduleReference.Remote(),
+		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
 	packageVersion, err := resolver.GetPythonVersion(ctx, connect.NewRequest(
 		&registryv1alpha1.GetPythonVersionRequest{
 			ModuleReference: &registryv1alpha1.LocalModuleReference{
-				Owner:      moduleReference.Owner(),
-				Repository: moduleReference.Repository(),
-				Reference:  moduleReference.Reference(),
+				Owner:      moduleRef.ModuleFullName().Owner(),
+				Repository: moduleRef.ModuleFullName().Name(),
+				Reference:  moduleRef.Ref(),
 			},
 			PluginReference: &registryv1alpha1.GetRemotePackageVersionPlugin{
 				Owner:   pluginIdentity.Owner(),

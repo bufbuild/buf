@@ -675,7 +675,7 @@ func getReadBucketCloserForOSProtoFile(
 		}
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
-		// If we found a buf.yaml or buf.workl.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
+		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
 			protoTerminateFileDirPath = string(os.PathSeparator) + mapPath
 		} else {

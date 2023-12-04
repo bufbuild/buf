@@ -181,11 +181,12 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 
 // WithConfigOverride applies the config override.
 //
-// This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml.
-// This flag will not work if a buf.work.yaml is detected, or a v2 buf.yaml is detected.
+// This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a
+// v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml. This flag will not work if a buf.work.yaml
+// is detected, or a v2 buf.yaml is detected.
 //
-// If used with an image or module ref, this has no effect on the build, i.e. excludes are not respected, and the module name
-// is ignored. This matches old behavior.
+// If used with an image or module ref, this has no effect on the build, i.e. excludes are
+// not respected, and the module name is ignored. This matches old behavior.
 //
 // This implements the soon-to-be-deprected --config flag.
 //
@@ -194,7 +195,8 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 // *** DO NOT USE THIS OUTSIDE OF THE CLI AND/OR IF YOU DON'T UNDERSTAND IT. ***
 // *** DO NOT ADD THIS TO ANY NEW COMMANDS. ***
 //
-// Current comments that use this: build, breaking, lint, generate, format, export, ls-breaking-rules, ls-lint-rules.
+// Current commands that use this: build, breaking, lint, generate, format,
+// export, ls-breaking-rules, ls-lint-rules.
 func WithConfigOverride(configOverride string) FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.configOverride = configOverride
@@ -280,7 +282,7 @@ func (c *controller) GetWorkspace(
 	}
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
+		return c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 	case buffetch.SourceRef:
 		return c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 	case buffetch.ModuleRef:
@@ -331,6 +333,42 @@ func (c *controller) GetImageForInputConfig(
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.MessageRef:
+		return c.getImageForMessageRef(ctx, t, functionOptions)
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
 	ref, err := c.buffetchRefParser.GetRefForInputConfig(ctx, inputConfig)
 	if err != nil {
@@ -354,7 +392,11 @@ func (c *controller) GetImageWithConfigs(
 	}
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
-		return nil, errors.New("TODO")
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -615,6 +657,52 @@ func (c *controller) getImage(
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+func (c *controller) getWorkspaceForProtoFileRef(
+	ctx context.Context,
+	protoFileRef buffetch.ProtoFileRef,
+	functionOptions *functionOptions,
+) (_ bufworkspace.Workspace, retErr error) {
+	if len(functionOptions.targetPaths) > 0 {
+		// Even though we didn't have an explicit error case, this never actually worked
+		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
+		// not a breaking change - if anything, this is a bug fix.
+		// TODO: Feed flag names through to here.
+		return nil, fmt.Errorf("--path is not valid for use with .proto file references")
+	}
+	if len(functionOptions.targetExcludePaths) > 0 {
+		// Even though we didn't have an explicit error case, this never actually worked
+		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
+		// not a breaking change - if anything, this is a bug fix.
+		// TODO: Feed flag names through to here.
+		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
+	}
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+		ctx,
+		c.container,
+		protoFileRef,
+		functionOptions.getGetBucketOptions()...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readBucketCloser.Close())
+	}()
+	return bufworkspace.NewWorkspaceForBucket(
+		ctx,
+		readBucketCloser,
+		c.moduleDataProvider,
+		bufworkspace.WithTargetSubDirPath(
+			readBucketCloser.SubDirPath(),
+		),
+		bufworkspace.WithProtoFileTargetPath(
+			protoFileRef.ProtoFilePath(),
+			protoFileRef.IncludePackageFiles(),
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
+		),
+	)
 }
 
 func (c *controller) getWorkspaceForSourceRef(
@@ -622,7 +710,12 @@ func (c *controller) getWorkspaceForSourceRef(
 	sourceRef buffetch.SourceRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.Workspace, retErr error) {
-	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(ctx, c.container, sourceRef)
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+		ctx,
+		c.container,
+		sourceRef,
+		functionOptions.getGetBucketOptions()...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -644,6 +737,9 @@ func (c *controller) getWorkspaceForSourceRef(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
 		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
+		),
 	)
 }
 
@@ -652,7 +748,12 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.UpdateableWorkspace, retErr error) {
-	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(ctx, c.container, dirRef)
+	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(
+		ctx,
+		c.container,
+		dirRef,
+		functionOptions.getGetBucketOptions()...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -670,6 +771,9 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
 		),
 	)
 }
@@ -690,6 +794,9 @@ func (c *controller) getWorkspaceForModuleRef(
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
 		),
 	)
 }
@@ -1039,4 +1146,21 @@ func (f *functionOptions) withPathsForBucketExtender(
 		c.targetExcludePaths[i] = targetExcludePath
 	}
 	return c, nil
+}
+
+func (f *functionOptions) getGetBucketOptions() []buffetch.GetBucketOption {
+	if f.configOverride != "" {
+		// If we have a config override, we do not search for buf.yamls or buf.work.yamls,
+		// instead acting as if the config override was the only configuration file available.
+		//
+		// Note that this is slightly different behavior than the pre-refactor CLI had, but this
+		// was always the intended behavior. The pre-refactor CLI would error if you had a buf.work.yaml,
+		// and did the same search behavior for buf.yamls, which didn't really make sense. In the new
+		// world where buf.yamls also represent the behavior of buf.work.yamls, you should be able
+		// to specify whatever want here.
+		return []buffetch.GetBucketOption{
+			buffetch.GetBucketWithNoSearch(),
+		}
+	}
+	return nil
 }

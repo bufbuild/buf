@@ -272,7 +272,6 @@ func newWorkspaceForBucket(
 	}
 
 	// No buf.work.yaml found, we operate as if the subDirPath is a single module with no enclosing workspace.
-	//fmt.Println("no buf.work.yaml found")
 	return newWorkspaceForBucketAndModuleDirPaths(
 		ctx,
 		bucket,
@@ -292,9 +291,52 @@ func newWorkspaceForModuleKey(
 	if err != nil {
 		return nil, err
 	}
+	// By default, the assocated configuration for a Module gotten by ModuleKey is just
+	// the default config. However, if we have a config override, we may have different
+	// lint or breaking config. We will only apply this different config for the specific
+	// module we are targeting, while the rest will retain the default config - generally,
+	// you shouldn't be linting or doing breaking change detection for any module other
+	// than the one your are targeting (which matches v1 behavior as well). In v1, we didn't
+	// have a "workspace" for modules gotten by module reference, we just had the single
+	// module we were building against, and whatever config override we had only applied
+	// to that module. In v2, we have a ModuleSet, and we need lint and breaking config
+	// for every modules in the ModuleSet, so we attach default lint and breaking config,
+	// but given the presence of ignore_only, we don't want to apply configOverride to
+	// non-target modules as the config override might have file paths, and we won't
+	// lint or breaking change detect against non-target modules anyways.
+	targetModuleConfig := bufconfig.DefaultModuleConfig
 	if config.configOverride != "" {
-		// TODO
-		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForModuleKey")
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
+		if err != nil {
+			return nil, err
+		}
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		switch len(moduleConfigs) {
+		case 0:
+			return nil, syserror.New("had BufYAMLFile with 0 ModuleConfigs")
+		case 1:
+			// If we have a single ModuleConfig, we assume that regardless of whether or not
+			// This ModuleConfig has a name, that this is what the user intends to associate
+			// with the tqrget module. This also handles the v1 case - v1 buf.yamls will always
+			// only have a single ModuleConfig, and it was expected pre-refactor that regardless
+			// of if the ModuleConfig had a name associated with it or not, the lint and breaking
+			// config that came from it would be associated.
+			targetModuleConfig = moduleConfigs[0]
+		default:
+			// If we have more than one ModuleConfig, find the ModuleConfig that matches the
+			// name from the ModuleKey. If none is found, just fall back to the default (ie do nothing here).
+			for _, moduleConfig := range moduleConfigs {
+				moduleFullName := moduleConfig.ModuleFullName()
+				if moduleFullName == nil {
+					continue
+				}
+				if bufmodule.ModuleFullNameEqual(moduleFullName, moduleKey.ModuleFullName()) {
+					targetModuleConfig = moduleConfig
+					// We know that the ModuleConfigs are unique by ModuleFullName.
+					break
+				}
+			}
+		}
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	moduleSetBuilder.AddRemoteModule(
@@ -312,8 +354,13 @@ func newWorkspaceForModuleKey(
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
 	for _, module := range moduleSet.Modules() {
-		opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
-		opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
+		if bufmodule.ModuleFullNameEqual(module.ModuleFullName(), moduleKey.ModuleFullName()) {
+			opaqueIDToLintConfig[module.OpaqueID()] = targetModuleConfig.LintConfig()
+			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
+		} else {
+			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
+			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
+		}
 	}
 	return &workspace{
 		ModuleSet:                moduleSet,
@@ -432,12 +479,14 @@ func newWorkspaceForBucketAndModuleDirPaths(
 				)
 			}
 		}
+		isTargetModule := isTargetFunc(moduleDirPath)
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			moduleBucket,
 			moduleDirPath,
 			moduleConfig,
 			config,
+			isTargetModule,
 		)
 		if err != nil {
 			return nil, err
@@ -445,11 +494,15 @@ func newWorkspaceForBucketAndModuleDirPaths(
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
-			isTargetFunc(moduleDirPath),
+			isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
 				moduleTargeting.moduleTargetExcludePaths,
+			),
+			bufmodule.LocalModuleWithProtoFileTargetPath(
+				moduleTargeting.moduleProtoFileTargetPath,
+				moduleTargeting.includePackageFiles,
 			),
 		)
 	}
@@ -510,6 +563,7 @@ func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDirPath string,
+	// TODO: handle config override
 ) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
 	if err != nil {
@@ -538,6 +592,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	config *workspaceBucketConfig,
+	isTargetmodule bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	rootToExcludes := moduleConfig.RootToExcludes()
 	var rootBuckets []storage.ReadBucket
@@ -584,6 +639,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		moduleDirPath,
 		slicesext.MapKeysToSlice(rootToExcludes),
 		config,
+		isTargetmodule,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -628,13 +684,22 @@ type moduleTargeting struct {
 	moduleTargetPaths []string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetExcludePaths []string
+	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
+	moduleProtoFileTargetPath string
+	includePackageFiles       bool
 }
 
 func newModuleTargeting(
 	moduleDirPath string,
 	roots []string,
 	config *workspaceBucketConfig,
+	isTargetModule bool,
 ) (*moduleTargeting, error) {
+	if !isTargetModule {
+		// If this is not a target Module, we do not want to target anything, as targeting
+		// paths for non-target Modules is an error.
+		return &moduleTargeting{}, nil
+	}
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 	for _, targetPath := range config.targetPaths {
@@ -667,7 +732,6 @@ func newModuleTargeting(
 			moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
 		}
 	}
-
 	moduleTargetPaths, err := slicesext.MapError(
 		moduleTargetPaths,
 		func(moduleTargetPath string) (string, error) {
@@ -686,10 +750,25 @@ func newModuleTargeting(
 	if err != nil {
 		return nil, err
 	}
-
+	var moduleProtoFileTargetPath string
+	var includePackageFiles bool
+	if config.protoFileTargetPath != "" &&
+		normalpath.ContainsPath(moduleDirPath, config.protoFileTargetPath, normalpath.Relative) {
+		moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, config.protoFileTargetPath)
+		if err != nil {
+			return nil, err
+		}
+		moduleProtoFileTargetPath, err = applyRootsToTargetPath(roots, moduleProtoFileTargetPath, normalpath.Relative)
+		if err != nil {
+			return nil, err
+		}
+		includePackageFiles = config.includePackageFiles
+	}
 	return &moduleTargeting{
-		moduleTargetPaths:        moduleTargetPaths,
-		moduleTargetExcludePaths: moduleTargetExcludePaths,
+		moduleTargetPaths:         moduleTargetPaths,
+		moduleTargetExcludePaths:  moduleTargetExcludePaths,
+		moduleProtoFileTargetPath: moduleProtoFileTargetPath,
+		includePackageFiles:       includePackageFiles,
 	}, nil
 }
 

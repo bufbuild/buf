@@ -28,11 +28,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/protocompile/parser/imports"
-	"go.uber.org/multierr"
 )
 
-// errIsWKT is the error returned by getImportsForFilePath or getModuleForFilePath if the
+// errIsWKT is the error returned by getFastscanResultForPath or getModuleForFilePath if the
 // input filePath is a well-known type.
 var errIsWKT = errors.New("wkt")
 
@@ -79,13 +77,7 @@ type ModuleSet interface {
 	// returns errIsWKT if the filePath is a WKT.
 	// returns an error with fs.ErrNotExist if the file is not found.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
-	// getModuleForFilePath gets the imports for the File path of a File within the ModuleSet.
-	//
-	// This should only be used by Modules, and only for dependency calculations.
-	//
-	// returns errIsWKT if the filePath is a WKT.
-	// returns an error with fs.ErrNotExist if the file is not found.
-	getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error)
+
 	isModuleSet()
 }
 
@@ -300,13 +292,11 @@ type moduleSet struct {
 	bucketIDToModule             map[string]Module
 	getDigestStringToModule      func() (map[string]Module, error)
 
-	// filePathToModule is a cache of filePath -> module, used for calculating dependencies.
+	// filePathToModule is a cache of filePath -> module.
 	//
 	// If you are calling both the imports and module caches, you must call the imports cache first,
 	// i.e. lock ordering.
 	filePathToModuleCache cache.Cache[string, Module]
-	// filePathToImports is a cache of filePath -> imports, used for calculating dependencies.
-	filePathToImportsCache cache.Cache[string, map[string]struct{}]
 }
 
 func newModuleSet(
@@ -393,7 +383,7 @@ func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
 	return digestStringToModule[digest.String()], nil
 }
 
-// This should only be used by Modules, and only for dependency calculations.
+// This should only be used by Modules and FileInfos.
 func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (Module, error) {
 	return m.filePathToModuleCache.GetOrAdd(
 		filePath,
@@ -403,18 +393,6 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 	)
 }
 
-// This should only be used by Modules, and only for dependency calculations.
-func (m *moduleSet) getImportsForFilePath(ctx context.Context, filePath string) (map[string]struct{}, error) {
-	return m.filePathToImportsCache.GetOrAdd(
-		filePath,
-		func() (map[string]struct{}, error) {
-			return m.getImportsForFilePathUncached(ctx, filePath)
-		},
-	)
-}
-
-// Assumed to be called within cacheLock.
-// Only call from within *moduleSet.
 func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (Module, error) {
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
@@ -444,36 +422,6 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 		// The addition of opaqueID should give us clearer error messages than we have today.
 		return nil, fmt.Errorf("%s is contained in multiple modules: %v", filePath, slicesext.MapKeysToSortedSlice(matchingOpaqueIDs))
 	}
-}
-
-// Assumed to be called within cacheLock.
-// Only call from within *moduleSet.
-func (m *moduleSet) getImportsForFilePathUncached(ctx context.Context, filePath string) (_ map[string]struct{}, retErr error) {
-	// Even when we know the file we want to get the imports for, we want to make sure the file
-	// is not duplicated across multiple modules. By calling getModuleForFilePath,
-	// we implicitly get this check for now.
-	//
-	// Note this basically kills the idea of only partially-lazily-loading some of the Modules
-	// within a set of []Modules. We could optimize this later, and may want to. This means
-	// that we're going to have to load all the modules within a workspace even if just building
-	// a single module in the workspace, as an example. Luckily, modules within workspaces are
-	// the cheapest to load (ie not remote).
-	module, err := m.getModuleForFilePath(ctx, filePath)
-	if err != nil {
-		return nil, err
-	}
-	file, err := module.GetFile(ctx, filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	imports, err := imports.ScanForImports(file)
-	if err != nil {
-		return nil, fmt.Errorf("%s had import parsing error: %w", filePath, err)
-	}
-	return slicesext.ToStructMap(imports), nil
 }
 
 func (*moduleSet) isModuleSet() {}

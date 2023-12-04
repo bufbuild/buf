@@ -7,9 +7,9 @@
 
 - config override flag (finish, mostly in bufworkspace)
 - v2 buf.yaml parsing in NewWorkspaceForBucket
-- ProtoFileRef support
 - new digest format - figure out with API
 - option to create workspace with no file searching (wkt)
+  - Also use for when --config is used - force the current directory as the found directory
 - new buf migrate command
 
 - port tests from:
@@ -34,3 +34,5 @@
   case where managed mode external config is not empty but the user forgot to set enable: true.
   Otherwise we would need to pass a logger to many functions, breaking the uniformity.
 - Fix the issue where reading a buf.lock with empty digest errors. Run `buf mod update` to reproduce.
+
+NOTE: We are not allowing cross-workspace finding for include_package_files=true

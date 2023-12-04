@@ -199,27 +199,27 @@ func TestBasic(t *testing.T) {
 		},
 		testGetDepOpaqueIDToDirect(t, module2),
 	)
-	module2FileInfos, err := bufmodule.GetFileInfos(ctx, module2)
-	require.NoError(t, err)
 	// These are the files in the in the module.
-	require.Equal(
+	testFilePaths(
 		t,
-		[]string{
-			"foo/module2_excluded.proto",
-			"module2.proto",
-		},
-		bufmodule.FileInfoPaths(module2FileInfos),
+		module2,
+		"foo/module2_excluded.proto",
+		"module2.proto",
 	)
-	module2TargetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, module2)
-	require.NoError(t, err)
 	// These are the target files. We excluded foo, so we only have module2.proto.
-	require.Equal(
+	testTargetFilePaths(
 		t,
-		[]string{
-			"module2.proto",
-		},
-		bufmodule.FileInfoPaths(module2TargetFileInfos),
+		module2,
+		"module2.proto",
 	)
+	//module2ProtoFileInfo, err := module2.StatFileInfo(ctx, "module2.proto")
+	//require.NoError(t, err)
+	//imports, err := module2ProtoFileInfo.protoFileImports()
+	//require.NoError(t, err)
+	//require.Equal(t, []string{"extdep1.proto", "module1.proto"}, imports)
+	//pkg, err := module2ProtoFileInfo.protoFilePackage()
+	//require.NoError(t, err)
+	//require.Equal(t, "module2", pkg)
 
 	extdep2 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep2")
 	require.NotNil(t, extdep2)
@@ -312,6 +312,119 @@ func TestBasic(t *testing.T) {
 	)
 }
 
+func TestProtoFileTargetPath(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	bucket := testNewBucketForPathToData(
+		t,
+		map[string][]byte{
+			"a/1.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"a/2.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"also_a/1.proto": []byte(
+				`syntax = proto3; package a;`,
+			),
+			"b/1.proto": []byte(
+				`syntax = proto3; package b;`,
+			),
+			"b/2.proto": []byte(
+				`syntax = proto3; package b;`,
+			),
+		},
+	)
+
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
+	moduleSet, err := moduleSetBuilder.Build()
+	require.NoError(t, err)
+	module1 := moduleSet.GetModuleForOpaqueID("module1")
+	require.NotNil(t, module1)
+	testFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+	testTargetFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+
+	// The single file a/1.proto
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		bucket,
+		"module1",
+		true,
+		bufmodule.LocalModuleWithProtoFileTargetPath(
+			"a/1.proto",
+			false,
+		),
+	)
+	moduleSet, err = moduleSetBuilder.Build()
+	require.NoError(t, err)
+	module1 = moduleSet.GetModuleForOpaqueID("module1")
+	require.NotNil(t, module1)
+	testFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+	testTargetFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+	)
+
+	// The single file a/1.proto with package files
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder.AddLocalModule(
+		bucket,
+		"module1",
+		true,
+		bufmodule.LocalModuleWithProtoFileTargetPath(
+			"a/1.proto",
+			true,
+		),
+	)
+	moduleSet, err = moduleSetBuilder.Build()
+	require.NoError(t, err)
+	module1 = moduleSet.GetModuleForOpaqueID("module1")
+	require.NotNil(t, module1)
+	testFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+		"b/1.proto",
+		"b/2.proto",
+	)
+	testTargetFilePaths(
+		t,
+		module1,
+		"a/1.proto",
+		"a/2.proto",
+		"also_a/1.proto",
+	)
+}
+
 func testNewBucketForPathToData(t *testing.T, pathToData map[string][]byte) storage.ReadBucket {
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	require.NoError(t, err)
@@ -326,4 +439,26 @@ func testGetDepOpaqueIDToDirect(t *testing.T, module bufmodule.Module) map[strin
 		depOpaqueIDToDirect[moduleDep.OpaqueID()] = moduleDep.IsDirect()
 	}
 	return depOpaqueIDToDirect
+}
+
+func testFilePaths(t *testing.T, module bufmodule.Module, expectedFilePaths ...string) {
+	ctx := context.Background()
+	fileInfos, err := bufmodule.GetFileInfos(ctx, module)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		expectedFilePaths,
+		bufmodule.FileInfoPaths(fileInfos),
+	)
+}
+
+func testTargetFilePaths(t *testing.T, module bufmodule.Module, expectedFilePaths ...string) {
+	ctx := context.Background()
+	fileInfos, err := bufmodule.GetTargetFileInfos(ctx, module)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		expectedFilePaths,
+		bufmodule.FileInfoPaths(fileInfos),
+	)
 }
