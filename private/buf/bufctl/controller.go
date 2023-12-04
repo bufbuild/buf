@@ -620,7 +620,12 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		// TODO: Feed flag names through to here.
 		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
 	}
-	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(ctx, c.container, protoFileRef)
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+		ctx,
+		c.container,
+		protoFileRef,
+		functionOptions.getGetBucketOptions()...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -649,7 +654,12 @@ func (c *controller) getWorkspaceForSourceRef(
 	sourceRef buffetch.SourceRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.Workspace, retErr error) {
-	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(ctx, c.container, sourceRef)
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+		ctx,
+		c.container,
+		sourceRef,
+		functionOptions.getGetBucketOptions()...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +692,12 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.UpdateableWorkspace, retErr error) {
-	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(ctx, c.container, dirRef)
+	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(
+		ctx,
+		c.container,
+		dirRef,
+		functionOptions.getGetBucketOptions()...,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1075,4 +1090,21 @@ func (f *functionOptions) withPathsForBucketExtender(
 		c.targetExcludePaths[i] = targetExcludePath
 	}
 	return c, nil
+}
+
+func (f *functionOptions) getGetBucketOptions() []buffetch.GetBucketOption {
+	if f.configOverride != "" {
+		// If we have a config override, we do not search for buf.yamls or buf.work.yamls,
+		// instead acting as if the config override was the only configuration file available.
+		//
+		// Note that this is slightly different behavior than the pre-refactor CLI had, but this
+		// was always the intended behavior. The pre-refactor CLI would error if you had a buf.work.yaml,
+		// and did the same search behavior for buf.yamls, which didn't really make sense. In the new
+		// world where buf.yamls also represent the behavior of buf.work.yamls, you should be able
+		// to specify whatever want here.
+		return []buffetch.GetBucketOption{
+			buffetch.GetBucketWithNoSearch(),
+		}
+	}
+	return nil
 }
