@@ -28,11 +28,10 @@
 - go through all todos
 - Un-skip relevant tests in generate_test.go and generate_unix_test.go, when
   - the behavior of --path and --exclude-path is updated to match what's on main
-  - proto file ref is implemented
+- Debug the skipped test with proto file ref in generate_test.go
 - Use syserror when possible (especially in buf gen related code).
-- Add Enabled() bool to GenerateManagedConfig: this is useful for printing the warning for the
-  case where managed mode external config is not empty but the user forgot to set enable: true.
-  Otherwise we would need to pass a logger to many functions, breaking the uniformity.
+- Find the right place (right way to pass a logger) to print a warning when a buf.gen.yaml with
+  non-empty managed mode but without `enabled: true`. The key is to decide where to pass the logger.
 - Fix the issue where reading a buf.lock with empty digest errors. Run `buf mod update` to reproduce.
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
