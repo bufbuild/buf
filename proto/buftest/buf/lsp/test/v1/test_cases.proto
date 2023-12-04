@@ -1,0 +1,63 @@
+// Copyright 2020-2023 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.lsp.test.v1;
+
+import "buf/lsp/test/v1/source.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+/* multiline
+   comment */
+message TestMessage {
+  option (buf.validate.message).cel = {expression: "true"};
+
+  // Comments
+  message TestNestedMessage {
+    string test_nested_message_field = 1 [(validate.field).string.min_len = 1];
+    int32 test_int_field = 2 [deprecated = true];
+    TestNestedEnum test_nested_enum = 3 [(buf.validate.field) = {
+      enum: {
+        defined_only: true,
+        not_in: [
+          1,
+          2
+        ]
+      }
+    }];
+  }
+
+  // Hello
+  enum TestNestedEnum {
+    TEST_NESTED_ENUM_FOO = 0;
+    TEST_NESTED_ENUM_BAR = 1;
+  }
+
+  map<int32, buf.lsp.test.v1.TestMessage> test_map = 1;
+  buf.lsp.test.v1.TestMessage.TestNestedMessage test_nested_message = 2;
+  buf.lsp.test.v1.CodeInfo test_code_info = 3;
+}
+
+enum TestEnum {
+  option allow_alias = true;
+  TEST_ENUM_UNSPECIFIED = 0;
+  TEST_ENUM_FOO = 1;
+  TEST_ENUM_BAR = 1;
+}
+
+service TestService {
+  rpc TestRpc(v1.TestMessage) returns (TestMessage);
+}

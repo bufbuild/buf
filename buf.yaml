@@ -10,3 +10,13 @@ modules:
       use:
         - WIRE_JSON
       ignore_unstable_packages: true
+  - directory: proto/buftest
+    name: buf.build/bufbuild/buftest
+    lint:
+      use:
+        - DEFAULT
+        - UNARY_RPC
+    breaking:
+      use:
+        - WIRE_JSON
+      ignore_unstable_packages: true
