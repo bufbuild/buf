@@ -189,7 +189,7 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 // *** DO NOT USE THIS OUTSIDE OF THE CLI AND/OR IF YOU DON'T UNDERSTAND IT. ***
 // *** DO NOT ADD THIS TO ANY NEW COMMANDS. ***
 //
-// Current comments that use this: build, breaking, lint, generate, format,
+// Current commands that use this: build, breaking, lint, generate, format,
 // export, ls-breaking-rules, ls-lint-rules.
 func WithConfigOverride(configOverride string) FunctionOption {
 	return func(functionOptions *functionOptions) {
@@ -277,6 +277,7 @@ func (c *controller) GetWorkspace(
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.ProtoFileRef:
 		return nil, errors.New("TODO")
+		//return c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 	case buffetch.SourceRef:
 		return c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 	case buffetch.ModuleRef:
@@ -319,6 +320,15 @@ func (c *controller) GetImage(
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		return nil, errors.New("TODO")
+		//workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		//if err != nil {
+		//return nil, err
+		//}
+		//return c.buildImage(
+		//ctx,
+		//bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+		//functionOptions,
+		//)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -363,6 +373,11 @@ func (c *controller) GetImageWithConfigs(
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		return nil, errors.New("TODO")
+		//workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		//if err != nil {
+		//return nil, err
+		//}
+		//return c.buildImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
@@ -589,6 +604,45 @@ func (c *controller) PutMessage(
 	return multierr.Append(err, writeCloser.Close())
 }
 
+func (c *controller) getWorkspaceForProtoFileRef(
+	ctx context.Context,
+	protoFileRef buffetch.ProtoFileRef,
+	functionOptions *functionOptions,
+) (_ bufworkspace.Workspace, retErr error) {
+	if len(functionOptions.targetPaths) > 0 {
+		// Even though we didn't have an explicit error case, this never actually worked
+		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
+		// not a breaking change - if anything, this is a bug fix.
+		// TODO: Feed flag names through to here.
+		return nil, fmt.Errorf("--path is not valid for use with .proto file references")
+	}
+	if len(functionOptions.targetExcludePaths) > 0 {
+		// Even though we didn't have an explicit error case, this never actually worked
+		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
+		// not a breaking change - if anything, this is a bug fix.
+		// TODO: Feed flag names through to here.
+		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
+	}
+	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(ctx, c.container, protoFileRef)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readBucketCloser.Close())
+	}()
+	return bufworkspace.NewWorkspaceForBucket(
+		ctx,
+		readBucketCloser,
+		c.moduleDataProvider,
+		bufworkspace.WithTargetSubDirPath(
+			readBucketCloser.SubDirPath(),
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
+		),
+	)
+}
+
 func (c *controller) getWorkspaceForSourceRef(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
@@ -615,6 +669,9 @@ func (c *controller) getWorkspaceForSourceRef(
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
 		),
 	)
 }
@@ -643,6 +700,9 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
 		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
+		),
 	)
 }
 
@@ -662,6 +722,9 @@ func (c *controller) getWorkspaceForModuleRef(
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
+		),
+		bufworkspace.WithConfigOverride(
+			functionOptions.configOverride,
 		),
 	)
 }

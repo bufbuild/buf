@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -237,7 +238,16 @@ func newModule(
 	isLocal bool,
 	targetPaths []string,
 	targetExcludePaths []string,
+	protoFileTargetPath string,
+	includePackageFiles bool,
 ) (*module, error) {
+	// TODO: get these validations into a common place
+	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
+		return nil, syserror.Newf("cannot set both protoFileTargetPath %q and either targetPaths %v or targetExcludePaths %v", protoFileTargetPath, targetPaths, targetExcludePaths)
+	}
+	if protoFileTargetPath != "" && normalpath.Ext(protoFileTargetPath) != ".proto" {
+		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
+	}
 	if bucketID == "" && moduleFullName == nil {
 		// This is a system error.
 		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
@@ -253,13 +263,19 @@ func newModule(
 		isTarget:       isTarget,
 		isLocal:        isLocal,
 	}
-	module.ModuleReadBucket = newModuleReadBucketForModule(
+	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
 		getBucket,
 		module,
 		targetPaths,
 		targetExcludePaths,
+		protoFileTargetPath,
+		includePackageFiles,
 	)
+	if err != nil {
+		return nil, err
+	}
+	module.ModuleReadBucket = moduleReadBucket
 	module.getDigest = sync.OnceValues(
 		func() (bufcas.Digest, error) {
 			return moduleDigestB5(ctx, module)
@@ -452,7 +468,7 @@ func getModuleDepsRec(
 			if fileInfo.FileType() != FileTypeProto {
 				return nil
 			}
-			fastscanResult, err := moduleSet.getFastscanResultForFilePath(ctx, fileInfo.Path())
+			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
 			if err != nil {
 				if errors.Is(err, fs.ErrNotExist) {
 					// Strip any PathError and just get to the point.

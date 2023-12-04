@@ -28,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/protocompile/parser/fastscan"
+	"go.uber.org/multierr"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -75,6 +77,14 @@ type ModuleReadBucket interface {
 	//
 	// A ModuleReadBucket filtered to anything but FileTypeProto is not self-contained.
 	ShouldBeSelfContained() bool
+
+	// getFastscanResultForPath gets the fastscan.Result for the File path of a File within the ModuleReadBucket.
+	//
+	// This should only be used by Modules and FileInfos.
+	//
+	// returns errIsWKT if the filePath is a WKT.
+	// returns an error with fs.ErrNotExist if the file is not found.
+	getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error)
 
 	isModuleReadBucket()
 }
@@ -247,8 +257,11 @@ type moduleReadBucket struct {
 	targetPaths          []string
 	targetPathMap        map[string]struct{}
 	targetExcludePathMap map[string]struct{}
+	protoFileTargetPath  string
+	includePackageFiles  bool
 
-	pathToFileInfoCache cache.Cache[string, FileInfo]
+	pathToFileInfoCache       cache.Cache[string, FileInfo]
+	pathToFastscanResultCache cache.Cache[string, fastscan.Result]
 }
 
 // module cannot be assumed to be functional yet.
@@ -259,8 +272,16 @@ func newModuleReadBucketForModule(
 	module Module,
 	targetPaths []string,
 	targetExcludePaths []string,
-) *moduleReadBucket {
-
+	protoFileTargetPath string,
+	includePackageFiles bool,
+) (*moduleReadBucket, error) {
+	// TODO: get these validations into a common place
+	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
+		return nil, syserror.Newf("cannot set both protoFileTargetPath %q and either targetPaths %v or targetExcludePaths %v", protoFileTargetPath, targetPaths, targetExcludePaths)
+	}
+	if protoFileTargetPath != "" && normalpath.Ext(protoFileTargetPath) != ".proto" {
+		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
+	}
 	return &moduleReadBucket{
 		getBucket: sync.OnceValues(
 			func() (storage.ReadBucket, error) {
@@ -275,7 +296,9 @@ func newModuleReadBucketForModule(
 		targetPaths:          targetPaths,
 		targetPathMap:        slicesext.ToStructMap(targetPaths),
 		targetExcludePathMap: slicesext.ToStructMap(targetExcludePaths),
-	}
+		protoFileTargetPath:  protoFileTargetPath,
+		includePackageFiles:  includePackageFiles,
+	}, nil
 }
 
 func (b *moduleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
@@ -390,13 +413,20 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 		// A lack of classification is a system error.
 		return nil, syserror.Wrap(err)
 	}
+	isTargetFile, err := b.getIsTargetFileForPath(ctx, objectInfo.Path())
+	if err != nil {
+		return nil, err
+	}
 	return newFileInfo(
 		objectInfo,
 		b.module,
 		fileType,
-		b.getIsTargetedFileForPath(objectInfo.Path()),
+		isTargetFile,
 		func() ([]string, error) {
-			fastscanResult, err := b.module.ModuleSet().getFastscanResultForFilePath(ctx, objectInfo.Path())
+			if fileType != FileTypeProto {
+				return nil, nil
+			}
+			fastscanResult, err := b.getFastscanResultForPath(ctx, objectInfo.Path())
 			if err != nil {
 				return nil, err
 			}
@@ -404,7 +434,10 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 			return slicesext.ToUniqueSorted(fastscanResult.Imports), nil
 		},
 		func() (string, error) {
-			fastscanResult, err := b.module.ModuleSet().getFastscanResultForFilePath(ctx, objectInfo.Path())
+			if fileType != FileTypeProto {
+				return "", nil
+			}
+			fastscanResult, err := b.getFastscanResultForPath(ctx, objectInfo.Path())
 			if err != nil {
 				return "", err
 			}
@@ -413,29 +446,86 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 	), nil
 }
 
-func (b *moduleReadBucket) getIsTargetedFileForPath(path string) bool {
+func (b *moduleReadBucket) getIsTargetFileForPath(ctx context.Context, path string) (bool, error) {
 	if !b.module.IsTarget() {
 		// If the Module is not targeted, the file is automatically not targeted.
 		//
 		// Note we can change IsTarget via setIsTarget during ModuleSetBuilder building,
 		// so we do not want to cache this value.
-		return false
+		return false, nil
+	}
+	// We already validate that we don't se this alongside targetPaths and targetExcludePaths
+	if b.protoFileTargetPath != "" {
+		isProtoFileTargetPath := path == b.protoFileTargetPath
+		if isProtoFileTargetPath {
+			// Regardless of includePackageFiles, we always return true.
+			return true, nil
+		}
+		if !b.includePackageFiles {
+			// If we don't include package files, then we don't have a match, return false.
+			return false, nil
+		}
+		protoFileTargetFastscanResult, err := b.getFastscanResultForPath(ctx, b.protoFileTargetPath)
+		if err != nil {
+			return false, err
+		}
+		// We now need to see if we have the same package as the protoFileTargetPath file.
+		//
+		// We've now deferred having to get a fastscan.Result as much as we can.
+		fastscanResult, err := b.getFastscanResultForPath(ctx, path)
+		if err != nil {
+			return false, err
+		}
+		// If the package is the same, this is a target.
+		return protoFileTargetFastscanResult.PackageName == fastscanResult.PackageName, nil
 	}
 	switch {
 	case len(b.targetPathMap) == 0 && len(b.targetExcludePathMap) == 0:
 		// If we did not target specific Files, all Files in a targeted Module are targeted.
-		return true
+		return true, nil
 	case len(b.targetPathMap) == 0 && len(b.targetExcludePathMap) != 0:
 		// We only have exclude paths, no paths.
-		return !normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative)
+		return !normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative), nil
 	case len(b.targetPathMap) != 0 && len(b.targetExcludePathMap) == 0:
 		// We only have paths, no exclude paths.
-		return normalpath.MapHasEqualOrContainingPath(b.targetPathMap, path, normalpath.Relative)
+		return normalpath.MapHasEqualOrContainingPath(b.targetPathMap, path, normalpath.Relative), nil
 	default:
 		// We have both paths and exclude paths.
 		return normalpath.MapHasEqualOrContainingPath(b.targetPathMap, path, normalpath.Relative) &&
-			!normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative)
+			!normalpath.MapHasEqualOrContainingPath(b.targetExcludePathMap, path, normalpath.Relative), nil
 	}
+}
+
+// Only will work for .proto files.
+func (b *moduleReadBucket) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
+	return b.pathToFastscanResultCache.GetOrAdd(
+		path,
+		func() (fastscan.Result, error) {
+			return b.getFastscanResultForPathUncached(ctx, path)
+		},
+	)
+}
+
+func (b *moduleReadBucket) getFastscanResultForPathUncached(
+	ctx context.Context,
+	path string,
+) (_ fastscan.Result, retErr error) {
+	file, err := b.GetFile(ctx, path)
+	if err != nil {
+		return fastscan.Result{}, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	if file.FileType() != FileTypeProto {
+		// We should have validated this WAY before.
+		return fastscan.Result{}, syserror.Newf("cannot get fastscan.Result for non-proto file %q", path)
+	}
+	fastscanResult, err := fastscan.Scan(file)
+	if err != nil {
+		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
+	}
+	return fastscanResult, nil
 }
 
 // filteredModuleReadBucket
@@ -497,6 +587,13 @@ func (f *filteredModuleReadBucket) WalkFileInfos(
 
 func (f *filteredModuleReadBucket) ShouldBeSelfContained() bool {
 	return f.shouldBeSelfContained
+}
+
+func (f *filteredModuleReadBucket) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
+	if _, err := f.StatFileInfo(ctx, path); err != nil {
+		return fastscan.Result{}, err
+	}
+	return f.delegate.getFastscanResultForPath(ctx, path)
 }
 
 func (*filteredModuleReadBucket) isModuleReadBucket() {}
@@ -561,6 +658,14 @@ func (m *multiModuleReadBucket) WalkFileInfos(
 
 func (m *multiModuleReadBucket) ShouldBeSelfContained() bool {
 	return m.shouldBeSelfContained
+}
+
+func (m *multiModuleReadBucket) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
+	_, delegateIndex, err := m.getFileInfoAndDelegateIndex(ctx, "stat", path)
+	if err != nil {
+		return fastscan.Result{}, err
+	}
+	return m.delegates[delegateIndex].getFastscanResultForPath(ctx, path)
 }
 
 func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(

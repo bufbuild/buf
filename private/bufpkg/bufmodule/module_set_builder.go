@@ -21,6 +21,7 @@ import (
 	"sort"
 	"sync/atomic"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -139,6 +140,23 @@ func LocalModuleWithTargetPaths(
 	}
 }
 
+// LocalModuleWithProtoFileTargetPath returns a new LocalModuleOption that specifically targets
+// a single .proto file, and optionally targets all other .proto files that are in the same package.
+//
+// If targetPath is empty, includePackageFiles is ignored.
+// Exclusive with LocalModuleWithTargetPaths - only one of these can have a non-empty value.
+//
+// This is used for ProtoFileRefs only. Do not use this otherwise.
+func LocalModuleWithProtoFileTargetPath(
+	protoFileTargetPath string,
+	includePackageFiles bool,
+) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.protoFileTargetPath = protoFileTargetPath
+		localModuleOptions.includePackageFiles = includePackageFiles
+	}
+}
+
 // RemoteModuleOption is an option for AddRemoteModule.
 type RemoteModuleOption func(*remoteModuleOptions)
 
@@ -203,6 +221,20 @@ func (b *moduleSetBuilder) AddLocalModule(
 		b.errs = append(b.errs, errors.New("cannot set TargetPaths for a non-target Module when calling AddLocalModule"))
 		return b
 	}
+	if !isTarget && localModuleOptions.protoFileTargetPath != "" {
+		b.errs = append(b.errs, errors.New("cannot set ProtoFileTargetPath for a non-target Module when calling AddLocalModule"))
+		return b
+	}
+	if localModuleOptions.protoFileTargetPath != "" &&
+		(len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
+		b.errs = append(b.errs, errors.New("cannot set TargetPaths and ProtoFileTargetPath when calling AddLocalModule"))
+		return b
+	}
+	if localModuleOptions.protoFileTargetPath != "" && normalpath.Ext(localModuleOptions.protoFileTargetPath) != ".proto" {
+		b.errs = append(b.errs, fmt.Errorf("proto file target %q is not a .proto file", localModuleOptions.protoFileTargetPath))
+		return b
+	}
+	// TODO: normalize and validate all target paths
 	module, err := newModule(
 		b.ctx,
 		func() (storage.ReadBucket, error) {
@@ -215,6 +247,8 @@ func (b *moduleSetBuilder) AddLocalModule(
 		true,
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
+		localModuleOptions.protoFileTargetPath,
+		localModuleOptions.includePackageFiles,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -277,6 +311,8 @@ func (b *moduleSetBuilder) AddRemoteModule(
 		false,
 		remoteModuleOptions.targetPaths,
 		remoteModuleOptions.targetExcludePaths,
+		"",
+		false,
 	)
 	if err != nil {
 		b.errs = append(b.errs, err)
@@ -401,10 +437,12 @@ func getUniqueModulesByOpaqueID(ctx context.Context, modules []Module) ([]Module
 }
 
 type localModuleOptions struct {
-	moduleFullName     ModuleFullName
-	commitID           string
-	targetPaths        []string
-	targetExcludePaths []string
+	moduleFullName      ModuleFullName
+	commitID            string
+	targetPaths         []string
+	targetExcludePaths  []string
+	protoFileTargetPath string
+	includePackageFiles bool
 }
 
 func newLocalModuleOptions() *localModuleOptions {

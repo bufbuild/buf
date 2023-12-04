@@ -432,12 +432,14 @@ func newWorkspaceForBucketAndModuleDirPaths(
 				)
 			}
 		}
+		isTargetModule := isTargetFunc(moduleDirPath)
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			moduleBucket,
 			moduleDirPath,
 			moduleConfig,
 			config,
+			isTargetModule,
 		)
 		if err != nil {
 			return nil, err
@@ -445,7 +447,7 @@ func newWorkspaceForBucketAndModuleDirPaths(
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
-			isTargetFunc(moduleDirPath),
+			isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
@@ -538,6 +540,7 @@ func getMappedModuleBucketAndModuleTargeting(
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
 	config *workspaceBucketConfig,
+	isTargetmodule bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
 	rootToExcludes := moduleConfig.RootToExcludes()
 	var rootBuckets []storage.ReadBucket
@@ -584,6 +587,7 @@ func getMappedModuleBucketAndModuleTargeting(
 		moduleDirPath,
 		slicesext.MapKeysToSlice(rootToExcludes),
 		config,
+		isTargetmodule,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -634,7 +638,13 @@ func newModuleTargeting(
 	moduleDirPath string,
 	roots []string,
 	config *workspaceBucketConfig,
+	isTargetModule bool,
 ) (*moduleTargeting, error) {
+	if !isTargetModule {
+		// If this is not a target Module, we do not want to target anything, as targeting
+		// paths for non-target Modules is an error.
+		return &moduleTargeting{}, nil
+	}
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 	for _, targetPath := range config.targetPaths {
@@ -686,7 +696,6 @@ func newModuleTargeting(
 	if err != nil {
 		return nil, err
 	}
-
 	return &moduleTargeting{
 		moduleTargetPaths:        moduleTargetPaths,
 		moduleTargetExcludePaths: moduleTargetExcludePaths,

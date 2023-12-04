@@ -27,3 +27,5 @@
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
+
+NOTE: We are not allowing cross-workspace finding for include_package_files=true
