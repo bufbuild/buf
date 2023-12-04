@@ -66,6 +66,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
@@ -111,6 +112,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
+			lsp.NewCommand("lsp", builder),
 			// TODO: still need to port
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
