@@ -59,6 +59,17 @@ func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
 	return NewModuleFullName(registry, owner, name)
 }
 
+// ModuleFullNameEqual returns true if the ModuleFullNames are equal.
+func ModuleFullNameEqual(one ModuleFullName, two ModuleFullName) bool {
+	if (one == nil) != (two == nil) {
+		return false
+	}
+	if one == nil {
+		return true
+	}
+	return one.String() == two.String()
+}
+
 // *** PRIVATE ***
 
 type moduleFullName struct {

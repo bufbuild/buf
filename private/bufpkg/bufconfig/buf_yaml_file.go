@@ -50,6 +50,9 @@ type BufYAMLFile interface {
 	// ModuleConfigs returns the ModuleConfigs for the File.
 	//
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
+	//
+	// This will always be non-empty.
+	// All ModuleConfigs will have unique ModuleFullNames.
 	// Sorted by DirPath.
 	ModuleConfigs() []ModuleConfig
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
@@ -92,18 +95,33 @@ func GetBufYAMLFileForPrefix(
 	return getFileForPrefix(ctx, bucket, prefix, bufYAMLFileNames, readBufYAMLFile)
 }
 
-// GetBufYAMLFileForPrefixOrOverride get the buf.yaml file for either the usually-flag-based
-// override, or if the override is not set, the bucket prefix.
+// GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override.
 //
 //   - If the override is set and ends in .json, .yaml, or .yml, the override is treated as a
 //     **direct file path on disk** and read (ie not via buckets).
 //   - If the override is otherwise non-empty, it is treated as raw data.
-//   - Otherwise, the prefix is read.
 //
 // This function is the result of the endlessly annoying and shortsighted design decision that the
 // original author of this repository made to allow overriding configuration files on the command line.
 // Of course, the original author never envisioned buf.work.yamls, merging buf.work.yamls into buf.yamls,
 // buf.gen.yamls, or anything of the like, and was very concentrated on "because Bazel."
+func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
+	var data []byte
+	var err error
+	switch filepath.Ext(override) {
+	case ".json", ".yaml", ".yml":
+		data, err = os.ReadFile(override)
+		if err != nil {
+			return nil, fmt.Errorf("could not read file: %v", err)
+		}
+	default:
+		data = []byte(override)
+	}
+	return ReadBufYAMLFile(bytes.NewReader(data))
+}
+
+// GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override,
+// or if the override is not set, falls back to the prefix.
 func GetBufYAMLFileForPrefixOrOverride(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -111,18 +129,7 @@ func GetBufYAMLFileForPrefixOrOverride(
 	override string,
 ) (BufYAMLFile, error) {
 	if override != "" {
-		var data []byte
-		var err error
-		switch filepath.Ext(override) {
-		case ".json", ".yaml", ".yml":
-			data, err = os.ReadFile(override)
-			if err != nil {
-				return nil, fmt.Errorf("could not read file: %v", err)
-			}
-		default:
-			data = []byte(override)
-		}
-		return ReadBufYAMLFile(bytes.NewReader(data))
+		return GetBufYAMLFileForOverride(override)
 	}
 	return GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 }
@@ -176,6 +183,9 @@ func newBufYAMLFile(
 ) (*bufYAMLFile, error) {
 	if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && len(moduleConfigs) > 1 {
 		return nil, fmt.Errorf("had %d ModuleConfigs passed to NewBufYAMLFile for FileVersion %v", len(moduleConfigs), fileVersion)
+	}
+	if len(moduleConfigs) == 0 {
+		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
 	for _, moduleConfig := range moduleConfigs {
 		if moduleConfig == nil {
@@ -328,6 +338,13 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		var externalBufYAMLFile externalBufYAMLFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufYAMLFile); err != nil {
 			return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
+		}
+		externalModules := externalBufYAMLFile.Modules
+		if len(externalModules) == 0 {
+			// Always make sure we have at least one ModuleConfig, with the defaults.
+			externalModules = []externalBufYAMLFileModuleV2{
+				{},
+			}
 		}
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalBufYAMLFile.Modules {
