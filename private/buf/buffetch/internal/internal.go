@@ -906,7 +906,6 @@ func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) 
 			t.IncludePackageFiles(),
 		)
 	case GitRef:
-
 		return bufconfig.NewGitRepoInputConfig(
 			t.Path(),
 			t.SubDirPath(),
