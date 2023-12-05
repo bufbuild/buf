@@ -28,9 +28,16 @@ func Start(ctx context.Context, tracerName string, spanName string) (context.Con
 }
 
 // Start creates a span, recording the error from retErrAddr on End.
-func StartWithRetErr(ctx context.Context, tracerName string, spanName string, retErrAddr *error) (context.Context, trace.Span) {
+func StartRetErr(ctx context.Context, tracerName string, spanName string, retErrAddr *error) (context.Context, trace.Span) {
 	ctx, span := otel.GetTracerProvider().Tracer(tracerName).Start(ctx, spanName)
 	return ctx, newRetErrSpan(span, retErrAddr)
+}
+
+// Do runs f with a span.
+func Do(ctx context.Context, tracerName string, spanName string, f func(context.Context) error) (retErr error) {
+	ctx, span := StartRetErr(ctx, tracerName, spanName, &retErr)
+	defer span.End()
+	return f(ctx)
 }
 
 type retErrSpan struct {
