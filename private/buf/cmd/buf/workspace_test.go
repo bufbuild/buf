@@ -204,6 +204,8 @@ modules:
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
+		// TODO: targeting information problem. The rpc.proto file should be the only one
+		// targeted, but request.proto was targeted.
 		testRunStdout(
 			t,
 			nil,
