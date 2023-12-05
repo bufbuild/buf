@@ -51,6 +51,7 @@ type ModuleConfig interface {
 	// DirPath returns the path of the Module within the Workspace, if specified.
 	//
 	// For v1beta1 and v1 buf.yamls, this is always empty.
+	// For v2 buf.yamls, this is never empty.
 	//
 	// In v2, this will be used as the BucketID within Workspaces. For v1, it is up
 	// to the Workspace constructor to come up with a BucketID (likely the directory name
@@ -153,6 +154,9 @@ func newModuleConfig(
 		if dirPath != "" {
 			return nil, fmt.Errorf("had dirPath %q for NewModuleConfig with FileVersion %v", dirPath, fileVersion)
 		}
+	}
+	if fileVersion == FileVersionV2 && dirPath == "" {
+		return nil, fmt.Errorf("had empty dirPath for NewModuleConfig with FileVersion %v", fileVersion)
 	}
 	if fileVersion == FileVersionV1 || fileVersion == FileVersionV2 {
 		if len(rootToExcludes) != 1 {

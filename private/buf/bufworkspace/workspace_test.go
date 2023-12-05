@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
@@ -32,9 +33,18 @@ func init() {
 	bufconfig.AllowV2ForTesting()
 }
 
-func TestBasic(t *testing.T) {
+func TestBasicV1(t *testing.T) {
 	t.Parallel()
+	testBasic(t, "workspacev1")
+}
 
+func TestBasicV2(t *testing.T) {
+	t.Parallel()
+	t.Skip()
+	testBasic(t, "workspacev2")
+}
+
+func testBasic(t *testing.T, dirPath string) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -51,9 +61,7 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	storageosProvider := storageos.NewProvider()
-	bucket, err := storageosProvider.NewReadWriteBucket(
-		"testdata/basic/workspace",
-	)
+	bucket, err := storageosProvider.NewReadWriteBucket(normalpath.Join("testdata/basic", subDirPath))
 	require.NoError(t, err)
 
 	workspace, err := NewWorkspaceForBucket(
@@ -145,29 +153,6 @@ func TestBasic(t *testing.T) {
 	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
 	require.NoError(t, err)
 	require.False(t, fileInfo.IsTargetFile())
-
-	//workspace, err = NewWorkspaceForBucket(
-	//ctx,
-	//bucket,
-	//bsrProvider,
-	//WorkspaceWithTargetSubDirPath(
-	//"common/geo/proto",
-	//),
-	//WorkspaceWithTargetPaths(
-	//[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
-	//nil,
-	//),
-	//)
-	//require.NoError(t, err)
-	//module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
-	//require.NotNil(t, module)
-	//require.False(t, module.IsTarget())
-	//fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
-	//require.NoError(t, err)
-	//require.False(t, fileInfo.IsTargetFile())
-	//fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
-	//require.NoError(t, err)
-	//require.False(t, fileInfo.IsTargetFile())
 }
 
 func TestProtoc(t *testing.T) {
@@ -181,14 +166,14 @@ func TestProtoc(t *testing.T) {
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",
 			"testdata/basic/bsr/buf.testing/acme/extension",
-			"testdata/basic/workspace/common/geo/proto",
-			"testdata/basic/workspace/common/money/proto",
-			"testdata/basic/workspace/finance/bond/proto/root1",
-			"testdata/basic/workspace/finance/bond/proto/root2",
-			"testdata/basic/workspace/finance/portfolio/proto",
+			"testdata/basic/workspacev1/common/geo/proto",
+			"testdata/basic/workspacev1/common/money/proto",
+			"testdata/basic/workspacev1/finance/bond/proto/root1",
+			"testdata/basic/workspacev1/finance/bond/proto/root2",
+			"testdata/basic/workspacev1/finance/portfolio/proto",
 		},
 		[]string{
-			"testdata/basic/workspace/finance/portfolio/proto/acme/portfolio/v1/portfolio.proto",
+			"testdata/basic/workspacev1/finance/portfolio/proto/acme/portfolio/v1/portfolio.proto",
 		},
 	)
 	require.NoError(t, err)

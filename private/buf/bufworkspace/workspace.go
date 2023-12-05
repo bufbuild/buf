@@ -179,108 +179,6 @@ func (*workspace) isWorkspace() {}
 
 // *** PRIVATE ***
 
-func newWorkspaceForBucket(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceBucketOption,
-) (*workspace, error) {
-	config, err := newWorkspaceBucketConfig(options)
-	if err != nil {
-		return nil, err
-	}
-	if config.configOverride != "" {
-		// TODO
-		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForBucket")
-	}
-	// Both of these functions validate that we're in v1beta1/v1 world. When we add v2, we will likely
-	// need to significantly rework all of newWorkspaceForBucket.
-	bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, config.subDirPath)
-	if err != nil {
-		return nil, err
-	}
-	bufYAMLExists, err := bufYAMLExistsAtPrefix(ctx, bucket, config.subDirPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if bufWorkYAMLExists {
-		if bufYAMLExists {
-			// TODO: Does this match current behavior?
-			// TODO: better error message, potentially take into account the location of the bucket via an option
-			return nil, errors.New("both buf.yaml and buf.work.yaml discovered at input directory")
-		}
-		// TODO: We don't actually verify that the config.subDirPath is listed in the buf.work.yaml, which we should,
-		// and if not, we should continue. This is the logic we apply in buffetch.
-		moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, config.subDirPath)
-		if err != nil {
-			return nil, err
-		}
-		return newWorkspaceForBucketAndModuleDirPaths(
-			ctx,
-			bucket,
-			moduleDataProvider,
-			moduleDirPaths,
-			config,
-		)
-	}
-
-	// We did not find a buf.work.yaml at subDirPath, we will search for one.
-	//
-	// We skip this if we're already at "." before first iteration.
-	if config.subDirPath != "." {
-		curDirPath := normalpath.Dir(config.subDirPath)
-		// We can't just do a normal for-loop, we want to run this condition even if curDirPath == ".", this is a do...while loop
-		for {
-			bufWorkYAMLExists, err := bufWorkYAMLExistsAtPrefix(ctx, bucket, curDirPath)
-			if err != nil {
-				return nil, err
-			}
-			if bufWorkYAMLExists {
-				// TODO: We don't actually verify that the config.subDirPath is listed in the buf.work.yaml, which we should,
-				// and if not, we should continue. This is the logic we apply in buffetch.
-				moduleDirPaths, err := getModuleDirPathsForConfirmedBufWorkYAMLDirPath(ctx, bucket, curDirPath)
-				if err != nil {
-					return nil, err
-				}
-				if len(moduleDirPaths) == 0 {
-					// In this case, the enclosing buf.work.yaml does not list any module under subDirPath, and we will
-					// operate as if there is no workspace.
-					// TODO: do we instead want to error? I think we error right now, but we may not want to anymore.
-					return newWorkspaceForBucketAndModuleDirPaths(
-						ctx,
-						bucket,
-						moduleDataProvider,
-						[]string{config.subDirPath},
-						config,
-					)
-				}
-				//fmt.Println("buf.work.yaml found at", curDirPath, "moduleDirPaths", moduleDirPaths)
-				return newWorkspaceForBucketAndModuleDirPaths(
-					ctx,
-					bucket,
-					moduleDataProvider,
-					moduleDirPaths,
-					config,
-				)
-			}
-			if curDirPath == "." {
-				break
-			}
-			curDirPath = normalpath.Dir(curDirPath)
-		}
-	}
-
-	// No buf.work.yaml found, we operate as if the subDirPath is a single module with no enclosing workspace.
-	return newWorkspaceForBucketAndModuleDirPaths(
-		ctx,
-		bucket,
-		moduleDataProvider,
-		[]string{config.subDirPath},
-		config,
-	)
-}
-
 func newWorkspaceForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
@@ -433,22 +331,194 @@ func newWorkspaceForProtoc(
 	}, nil
 }
 
-func newWorkspaceForBucketAndModuleDirPaths(
+func newWorkspaceForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
-	moduleDirPaths []string,
-	config *workspaceBucketConfig,
+	options ...WorkspaceBucketOption,
 ) (*workspace, error) {
-	// subDirPath is the input subDirPath. We only want to target modules that are inside
+	config, err := newWorkspaceBucketConfig(options)
+	if err != nil {
+		return nil, err
+	}
+	if config.configOverride != "" {
+		// TODO
+		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForBucket")
+	}
+
+	// Search for a workspace file that controls config.subDirPath. A workspace file is either
+	// a buf.work.yaml file, or a v2 buf.yaml file, and the file controls config.subDirPath
+	// if it refers to it. If we find one, we use this to build our workspace. If we don't,
+	// we assume that we're just building a v1 buf.yaml with defaults at config.subDirPath.
+	//
+	// Along the way, we error if we find a v1 and v2 buf.yaml in the recursive parents of config.subDirPath.
+	curDirPath := config.subDirPath
+	// Loop recursively upwards to "." to check for buf.yamls and buf.work.yamls
+	for {
+		bufWorkYAMLFile, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, bucket, curDirPath)
+		bufWorkYAMLExists := err == nil
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, curDirPath)
+		bufYAMLExists := err == nil
+		if bufWorkYAMLExists && bufYAMLExists {
+			// This isn't actually the external directory path, but we do the best we can here for now.
+			return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", curDirPath)
+		}
+
+		// Find the relative path of our original target subDirPath vs where we currently are.
+		// We only stop the loop if a v2 buf.yaml or a buf.work.yaml lists this directory.
+		//
+		// Example: we inputted foo/bar/baz, we're currently at foo. We want to make sure
+		// that buf.work.yaml lists bar/baz as a directory. If so, this buf.work.yaml
+		// relates to our current directory.
+		relDirPath, err := normalpath.Rel(curDirPath, config.subDirPath)
+		if err != nil {
+			return nil, err
+		}
+		if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			dirPathMap := make(map[string]struct{})
+			for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+				dirPathMap[moduleConfig.DirPath()] = struct{}{}
+			}
+			if _, ok := dirPathMap[relDirPath]; ok {
+				return newWorkspaceForBucketBufYAMLV2(
+					ctx,
+					bucket,
+					moduleDataProvider,
+					config,
+					curDirPath,
+				)
+			}
+		}
+		if bufWorkYAMLExists {
+			// If the buf.work.yaml contains the subDirPath, then we have found a workspace file for config.SubDirPath.
+			if _, ok := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]; ok {
+				// We don't actually need to parse the buf.work.yaml again - we have all the information
+				// we need. Just figure out the actual paths within the bucket of the modules, and go
+				// right to newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1.
+				moduleDirPaths := make([]string, len(bufWorkYAMLFile.DirPaths()))
+				for i, dirPath := range bufWorkYAMLFile.DirPaths() {
+					moduleDirPaths[i] = normalpath.Join(curDirPath, dirPath)
+				}
+				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
+					ctx,
+					bucket,
+					moduleDataProvider,
+					config,
+					moduleDirPaths,
+				)
+			}
+		}
+
+		// Break condition - we did not find any buf.work.yaml or buf.yaml.
+		if curDirPath == "." {
+			break
+		}
+		curDirPath = normalpath.Dir(curDirPath)
+	}
+
+	// We did not find any buf.work.yaml or buf.yaml, operate as if a
+	// default v1 buf.yaml was at config.subDirPath.
+	return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
+		ctx,
+		bucket,
+		moduleDataProvider,
+		config,
+		[]string{config.subDirPath},
+	)
+}
+
+func newWorkspaceForBucketBufYAMLV2(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	moduleDataProvider bufmodule.ModuleDataProvider,
+	config *workspaceBucketConfig,
+	bufYAMLV2FileDirPath string,
+) (*workspace, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, bufYAMLV2FileDirPath)
+	if err != nil {
+		// This should be apparent from above functions.
+		return nil, syserror.Newf("error getting buf.yaml at %q: %w", bufYAMLV2FileDirPath, err)
+	}
+	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+		return nil, syserror.Newf("expected v2 buf.yaml at %q but got %v", bufYAMLV2FileDirPath, bufYAMLFile.FileVersion())
+	}
+
+	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
 	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
 	// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
 	// and "foo/bar/bat".
 	//
 	// This is new behavior - before, we required that you input an exact match for the module directory path,
 	// but now, we will take all the modules underneath this workspace.
+	isTargetFunc := func(moduleDirPath string) bool {
+		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
+	}
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
+	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
+	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+		moduleDirPath := moduleConfig.DirPath()
+		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
+		isTargetModule := isTargetFunc(moduleDirPath)
+		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
+			ctx,
+			bucket,
+			config,
+			moduleDirPath,
+			moduleConfig,
+			isTargetModule,
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleSetBuilder.AddLocalModule(
+			mappedModuleBucket,
+			moduleDirPath,
+			isTargetModule,
+			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
+			bufmodule.LocalModuleWithTargetPaths(
+				moduleTargeting.moduleTargetPaths,
+				moduleTargeting.moduleTargetExcludePaths,
+			),
+			bufmodule.LocalModuleWithProtoFileTargetPath(
+				moduleTargeting.moduleProtoFileTargetPath,
+				moduleTargeting.includePackageFiles,
+			),
+		)
+	}
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, bufYAMLV2FileDirPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
+			moduleSetBuilder.AddRemoteModule(
+				depModuleKey,
+				false,
+			)
+		}
+	}
+	moduleSet, err := moduleSetBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	return newWorkspaceForModuleSet(moduleSet, bucketIDToModuleConfig, bufYAMLFile.ConfiguredDepModuleRefs())
+}
+
+func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	moduleDataProvider bufmodule.ModuleDataProvider,
+	config *workspaceBucketConfig,
+	moduleDirPaths []string,
+) (*workspace, error) {
+	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
+	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
+	// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
+	// and "foo/bar/bat".
 	//
-	// We need to verify that at least one module is targeted.
+	// This is new behavior - before, we required that you input an exact match for the module directory path,
+	// but now, we will take all the modules underneath this workspace.
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
 	}
@@ -456,17 +526,17 @@ func newWorkspaceForBucketAndModuleDirPaths(
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
 	for _, moduleDirPath := range moduleDirPaths {
-		moduleConfig, configuredDepModuleRefs, err := getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(ctx, bucket, moduleDirPath)
+		moduleConfig, configuredDepModuleRefs, err := getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
+			ctx,
+			bucket,
+			moduleDirPath,
+		)
 		if err != nil {
 			return nil, err
 		}
 		allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRefs...)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		moduleBucket := storage.MapReadBucket(
-			bucket,
-			storage.MapOnPrefix(moduleDirPath),
-		)
-		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, moduleBucket, ".")
+		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
@@ -482,10 +552,10 @@ func newWorkspaceForBucketAndModuleDirPaths(
 		isTargetModule := isTargetFunc(moduleDirPath)
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
-			moduleBucket,
+			bucket,
+			config,
 			moduleDirPath,
 			moduleConfig,
-			config,
 			isTargetModule,
 		)
 		if err != nil {
@@ -510,7 +580,14 @@ func newWorkspaceForBucketAndModuleDirPaths(
 	if err != nil {
 		return nil, err
 	}
+	return newWorkspaceForModuleSet(moduleSet, bucketIDToModuleConfig, allConfiguredDepModuleRefs)
+}
 
+func newWorkspaceForModuleSet(
+	moduleSet bufmodule.ModuleSet,
+	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
+	configuredDepModuleRefs []bufmodule.ModuleRef,
+) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
 	for _, module := range moduleSet.Modules() {
@@ -531,39 +608,14 @@ func newWorkspaceForBucketAndModuleDirPaths(
 		ModuleSet:                moduleSet,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
-		configuredDepModuleRefs:  allConfiguredDepModuleRefs,
+		configuredDepModuleRefs:  configuredDepModuleRefs,
 	}, nil
 }
 
-func getModuleDirPathsForConfirmedBufWorkYAMLDirPath(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	// This may be a parent of subDirPath via search.
-	bufWorkYAMLDirPath string,
-) ([]string, error) {
-	bufWorkYAMLFile, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, bucket, bufWorkYAMLDirPath)
-	if err != nil {
-		return nil, err
-	}
-	// Just a sanity check. This should have already been validated, but let's make sure.
-	if bufWorkYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
-		return nil, syserror.Newf("buf.work.yaml at %s did not have version v1", bufWorkYAMLDirPath)
-	}
-	moduleDirPaths := bufWorkYAMLFile.DirPaths()
-	for i, moduleDirPath := range moduleDirPaths {
-		// This is the full path relative to the root of the bucket.
-		moduleDirPaths[i] = normalpath.Join(bufWorkYAMLDirPath, moduleDirPath)
-	}
-	return moduleDirPaths, nil
-}
-
-// This helper function kind of sucks. When we go to v2, we'll just want to pass back the BufYAMLFile
-// and let above functions deal with it, but for now we get some validation that this is just v1.
-func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
+func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDirPath string,
-	// TODO: handle config override
 ) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
 	if err != nil {
@@ -588,12 +640,16 @@ func getModuleConfigAndConfiguredDepModuleRefsForModuleDirPath(
 
 func getMappedModuleBucketAndModuleTargeting(
 	ctx context.Context,
-	moduleBucket storage.ReadBucket,
+	bucket storage.ReadBucket,
+	config *workspaceBucketConfig,
 	moduleDirPath string,
 	moduleConfig bufconfig.ModuleConfig,
-	config *workspaceBucketConfig,
-	isTargetmodule bool,
+	isTargetModule bool,
 ) (storage.ReadBucket, *moduleTargeting, error) {
+	moduleBucket := storage.MapReadBucket(
+		bucket,
+		storage.MapOnPrefix(moduleDirPath),
+	)
 	rootToExcludes := moduleConfig.RootToExcludes()
 	var rootBuckets []storage.ReadBucket
 	for root, excludes := range rootToExcludes {
@@ -639,42 +695,12 @@ func getMappedModuleBucketAndModuleTargeting(
 		moduleDirPath,
 		slicesext.MapKeysToSlice(rootToExcludes),
 		config,
-		isTargetmodule,
+		isTargetModule,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
 	return mappedModuleBucket, moduleTargeting, nil
-}
-
-func bufWorkYAMLExistsAtPrefix(ctx context.Context, bucket storage.ReadBucket, prefix string) (bool, error) {
-	fileVersion, err := bufconfig.GetBufWorkYAMLFileVersionForPrefix(ctx, bucket, prefix)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false, nil
-		}
-		return false, err
-	}
-	// Just a sanity check. This should have already been validated, but let's make sure.
-	if fileVersion != bufconfig.FileVersionV1 {
-		return false, syserror.Newf("buf.work.yaml at %s did not have version v1", prefix)
-	}
-	return true, nil
-}
-
-func bufYAMLExistsAtPrefix(ctx context.Context, bucket storage.ReadBucket, prefix string) (bool, error) {
-	fileVersion, err := bufconfig.GetBufYAMLFileVersionForPrefix(ctx, bucket, prefix)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false, nil
-		}
-		return false, err
-	}
-	// Just a sanity check. This should have already been validated, but let's make sure.
-	if fileVersion != bufconfig.FileVersionV1Beta1 && fileVersion != bufconfig.FileVersionV1 {
-		return false, syserror.Newf("buf.yaml at %s did not have version v1beta1 or v1", prefix)
-	}
-	return true, nil
 }
 
 // TODO: All the module_bucket_builder_test.go stuff needs to be copied over

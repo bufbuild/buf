@@ -1,0 +1,15 @@
+version: v2
+modules:
+  - directory: common/geo/proto
+    name: buf.testing/acme/geo
+  - directory: common/money/proto
+    name: buf.testing/acme/money
+  - directory: finance/bond/proto
+    name: buf.testing/acme/bond
+    excludes:
+      - acme/bond/excluded/v1
+  - directory: finance/portfolio/proto
+    name: buf.testing/acme/portfolio
+deps:
+  - buf.testing/name/date
+  - buf.testing/name/extension
