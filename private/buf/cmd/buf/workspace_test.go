@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
