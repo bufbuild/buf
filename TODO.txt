@@ -28,3 +28,5 @@
 - go through all todos
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
+
+- Decide whether or not excludes and ignores should be relative to module directory

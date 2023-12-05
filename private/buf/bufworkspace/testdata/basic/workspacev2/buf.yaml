@@ -7,7 +7,7 @@ modules:
   - directory: finance/bond/proto
     name: buf.testing/acme/bond
     excludes:
-      - acme/bond/excluded/v1
+      - finance/bond/proto/acme/bond/excluded/v1
   - directory: finance/portfolio/proto
     name: buf.testing/acme/portfolio
 deps:
