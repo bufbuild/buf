@@ -40,7 +40,6 @@ func TestBasicV1(t *testing.T) {
 
 func TestBasicV2(t *testing.T) {
 	t.Parallel()
-	t.Skip()
 	testBasic(t, "workspacev2")
 }
 

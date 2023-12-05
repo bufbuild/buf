@@ -350,14 +350,18 @@ func newWorkspaceForBucket(
 	// a buf.work.yaml file, or a v2 buf.yaml file, and the file controls config.subDirPath
 	// if it refers to it. If we find one, we use this to build our workspace. If we don't,
 	// we assume that we're just building a v1 buf.yaml with defaults at config.subDirPath.
-	//
-	// Along the way, we error if we find a v1 and v2 buf.yaml in the recursive parents of config.subDirPath.
 	curDirPath := config.subDirPath
 	// Loop recursively upwards to "." to check for buf.yamls and buf.work.yamls
 	for {
 		bufWorkYAMLFile, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, bucket, curDirPath)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
 		bufWorkYAMLExists := err == nil
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, curDirPath)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
 		bufYAMLExists := err == nil
 		if bufWorkYAMLExists && bufYAMLExists {
 			// This isn't actually the external directory path, but we do the best we can here for now.
