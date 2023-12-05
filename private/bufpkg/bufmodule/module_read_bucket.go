@@ -392,6 +392,20 @@ func (b *moduleReadBucket) ShouldBeSelfContained() bool {
 	return false
 }
 
+func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
+	// We want to avoid sync.OnceValueing getBucket Twice, so we have a special copy function here
+	// instead of calling newModuleReadBucket.
+	return &moduleReadBucket{
+		getBucket:            b.getBucket,
+		module:               module,
+		targetPaths:          b.targetPaths,
+		targetPathMap:        b.targetPathMap,
+		targetExcludePathMap: b.targetExcludePathMap,
+		protoFileTargetPath:  b.protoFileTargetPath,
+		includePackageFiles:  b.includePackageFiles,
+	}
+}
+
 func (*moduleReadBucket) isModuleReadBucket() {}
 
 func (b *moduleReadBucket) getFileInfo(ctx context.Context, objectInfo storage.ObjectInfo) (FileInfo, error) {
@@ -765,16 +779,16 @@ func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.M
 
 func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 	return fmt.Errorf(
-		"%s exists in multiple modules: %v",
+		"%s exists in multiple locations: %v",
 		path,
 		strings.Join(
 			slicesext.Map(
 				fileInfos,
 				func(fileInfo FileInfo) string {
-					return fileInfo.Module().OpaqueID()
+					return fileInfo.ExternalPath()
 				},
 			),
-			", ",
+			" ",
 		),
 	)
 }

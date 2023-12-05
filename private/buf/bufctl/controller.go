@@ -68,7 +68,7 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
-	GetImageWithConfigs(
+	GetTargetImageWithConfigs(
 		ctx context.Context,
 		input string,
 		options ...FunctionOption,
@@ -355,7 +355,7 @@ func (c *controller) GetImage(
 	}
 }
 
-func (c *controller) GetImageWithConfigs(
+func (c *controller) GetTargetImageWithConfigs(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
@@ -374,19 +374,19 @@ func (c *controller) GetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.MessageRef:
 		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
 		if err != nil {
@@ -854,7 +854,7 @@ func (c *controller) buildImage(
 	return filterImage(image, functionOptions, true)
 }
 
-func (c *controller) buildImageWithConfigs(
+func (c *controller) buildTargetImageWithConfigs(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
@@ -862,6 +862,17 @@ func (c *controller) buildImageWithConfigs(
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, len(modules))
 	for i, module := range modules {
+		opaqueID := module.OpaqueID()
+		// We need to make sure that all dependencies are non-targets, so that they
+		// end up as imports in the resulting image.
+		moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
+		if err != nil {
+			return nil, err
+		}
+		module := moduleSet.GetModuleForOpaqueID(opaqueID)
+		if module == nil {
+			return nil, syserror.Newf("new ModuleSet from WithTargetOpaqueIDs did not have opaqueID %q", opaqueID)
+		}
 		moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
 		if err != nil {
 			return nil, err

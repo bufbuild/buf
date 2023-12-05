@@ -57,7 +57,7 @@ type ModuleSet interface {
 	// as the OpaqueID came from a Module contained within Modules(), this will always
 	// return a non-nil value.
 	GetModuleForOpaqueID(opaqueID string) Module
-	// GetModuleForBucketID gets the MOdule for the BucketID, if it exists.
+	// GetModuleForBucketID gets the Module for the BucketID, if it exists.
 	//
 	// Returns nil if there is no Module with the given BucketID.
 	GetModuleForBucketID(bucketID string) Module
@@ -69,6 +69,10 @@ type ModuleSet interface {
 	// Returns nil if there is no Module with the given Digest.
 	// Returns an error if there was an error when calling Digest() on a Module.
 	GetModuleForDigest(digest bufcas.Digest) (Module, error)
+
+	// WithTargetOpaqueIDs returns a new ModuleSet that changes the targeted Modules to
+	// the Modules with the specified OpaqueIDs.
+	WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error)
 
 	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet.
 	//
@@ -329,7 +333,7 @@ func newModuleSet(
 			bucketIDToModule[bucketID] = module
 		}
 	}
-	return &moduleSet{
+	moduleSet := &moduleSet{
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
@@ -354,7 +358,11 @@ func newModuleSet(
 				return digestStringToModule, nil
 			},
 		),
-	}, nil
+	}
+	for _, module := range modules {
+		module.setModuleSet(moduleSet)
+	}
+	return moduleSet, nil
 }
 
 func (m *moduleSet) Modules() []Module {
@@ -381,6 +389,24 @@ func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
 		return nil, err
 	}
 	return digestStringToModule[digest.String()], nil
+}
+
+func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) {
+	if len(opaqueIDs) == 0 {
+		return nil, errors.New("at least one Module must be targeted")
+	}
+	opaqueIDMap := slicesext.ToStructMap(opaqueIDs)
+	modules := make([]Module, len(m.modules))
+	for i, module := range m.modules {
+		_, isTarget := opaqueIDMap[module.OpaqueID()]
+		// Always make a copy regardless of if targeting changes. We're going to set a new ModuleSet on the Module.
+		module, err := module.withIsTarget(isTarget)
+		if err != nil {
+			return nil, err
+		}
+		modules[i] = module
+	}
+	return newModuleSet(modules)
 }
 
 // This should only be used by Modules and FileInfos.

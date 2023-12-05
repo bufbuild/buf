@@ -358,14 +358,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleSet, err := newModuleSet(modules)
-	if err != nil {
-		return nil, err
-	}
-	for _, module := range modules {
-		module.setModuleSet(moduleSet)
-	}
-	return moduleSet, nil
+	return newModuleSet(modules)
 }
 
 func (*moduleSetBuilder) isModuleSetBuilder() {}

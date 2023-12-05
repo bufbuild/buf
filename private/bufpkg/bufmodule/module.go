@@ -134,8 +134,16 @@ type Module interface {
 	// Always present.
 	ModuleSet() ModuleSet
 
-	// Called in ModuleSetBuilder.Build().
+	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
+
+	// withIsTarget returns a copy of the Module with the specified target value.
+	//
+	// Do not expose publicly! This should only be called by ModuleSet.WithTargetOpaqueIDs.
+	// Exposing this directly publicly can have unintended consequences - Modules have a
+	// parent ModuleSet, which is self-contained, and a copy of a Module inside a ModuleSet
+	// that itself has the same ModuleSet will break the expected pattern of the references.
+	withIsTarget(isTarget bool) (Module, error)
 	isModule()
 }
 
@@ -214,6 +222,7 @@ func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
+	ctx            context.Context
 	getBucket      func() (storage.ReadBucket, error)
 	bucketID       string
 	moduleFullName ModuleFullName
@@ -257,6 +266,7 @@ func newModule(
 		return nil, syserror.New("moduleFullName or commitID not present when constructing a remote Module, both of these must be set")
 	}
 	module := &module{
+		ctx:            ctx,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -329,6 +339,34 @@ func (m *module) IsLocal() bool {
 
 func (m *module) ModuleSet() ModuleSet {
 	return m.moduleSet
+}
+
+func (m *module) withIsTarget(isTarget bool) (Module, error) {
+	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
+	newModule := &module{
+		ctx:            m.ctx,
+		bucketID:       m.bucketID,
+		moduleFullName: m.moduleFullName,
+		commitID:       m.commitID,
+		isTarget:       isTarget,
+		isLocal:        m.isLocal,
+	}
+	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
+	if !ok {
+		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
+	}
+	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
+	newModule.getDigest = sync.OnceValues(
+		func() (bufcas.Digest, error) {
+			return moduleDigestB5(newModule.ctx, newModule)
+		},
+	)
+	newModule.getModuleDeps = sync.OnceValues(
+		func() ([]ModuleDep, error) {
+			return getModuleDeps(newModule.ctx, newModule)
+		},
+	)
+	return newModule, nil
 }
 
 func (m *module) setModuleSet(moduleSet ModuleSet) {

@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWorkspaceDir(t *testing.T) {
+func TestWorkspaceDir2(t *testing.T) {
 	// Directory paths contained within a workspace.
 	t.Parallel()
 	// dir_buf_work contains a buf.work instead of a buf.work.yaml
