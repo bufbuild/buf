@@ -136,9 +136,6 @@ func readFile[F File](
 	if err != nil {
 		return f, newDecodeError(fileIdentifier, err)
 	}
-	if err := checkV2SupportedYet(f.FileVersion()); err != nil {
-		return f, newDecodeError(fileIdentifier, err)
-	}
 	return f, nil
 }
 
@@ -151,9 +148,6 @@ func writeFile[F File](
 		f F,
 	) error,
 ) error {
-	if err := checkV2SupportedYet(f.FileVersion()); err != nil {
-		return newEncodeError(fileIdentifier, err)
-	}
 	return writeFileFunc(writer, f)
 }
 

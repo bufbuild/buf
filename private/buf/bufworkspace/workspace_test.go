@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -28,10 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	bufconfig.AllowV2ForTesting()
-}
 
 func TestBasicV1(t *testing.T) {
 	t.Parallel()

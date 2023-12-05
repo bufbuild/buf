@@ -74,14 +74,7 @@ func NewBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (BufYAMLFile, error) {
-	bufYAMLFile, err := newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkV2SupportedYet(bufYAMLFile.FileVersion()); err != nil {
-		return nil, err
-	}
-	return bufYAMLFile, nil
+	return newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.

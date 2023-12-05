@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
@@ -12,10 +11,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	bufconfig.AllowV2ForTesting()
-}
 
 func TestCacheBasicDir(t *testing.T) {
 	testCacheBasic(t, false)
