@@ -342,8 +342,34 @@ func newWorkspaceForBucket(
 		return nil, err
 	}
 	if config.configOverride != "" {
-		// TODO
-		return nil, errors.New("TODO --config is not implemented yet in newWorkspaceForBucket")
+		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
+		if err != nil {
+			return nil, err
+		}
+		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+			// We did not find any buf.work.yaml or buf.yaml, operate as if a
+			// default v1 buf.yaml was at config.subDirPath.
+			return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
+				ctx,
+				bucket,
+				moduleDataProvider,
+				config,
+				[]string{config.subDirPath},
+				bufYAMLFile,
+			)
+		case bufconfig.FileVersionV2:
+			return newWorkspaceForBucketBufYAMLV2(
+				ctx,
+				bucket,
+				moduleDataProvider,
+				config,
+				config.subDirPath,
+				bufYAMLFile,
+			)
+		default:
+			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+		}
 	}
 
 	// Search for a workspace file that controls config.subDirPath. A workspace file is either
@@ -389,6 +415,7 @@ func newWorkspaceForBucket(
 					moduleDataProvider,
 					config,
 					curDirPath,
+					nil,
 				)
 			}
 			dirPathMap := make(map[string]struct{})
@@ -403,6 +430,7 @@ func newWorkspaceForBucket(
 					moduleDataProvider,
 					config,
 					curDirPath,
+					nil,
 				)
 			}
 		}
@@ -423,6 +451,7 @@ func newWorkspaceForBucket(
 					moduleDataProvider,
 					config,
 					moduleDirPaths,
+					nil,
 				)
 			}
 		}
@@ -442,6 +471,7 @@ func newWorkspaceForBucket(
 		moduleDataProvider,
 		config,
 		[]string{config.subDirPath},
+		nil,
 	)
 }
 
@@ -451,14 +481,23 @@ func newWorkspaceForBucketBufYAMLV2(
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
 	bufYAMLV2FileDirPath string,
+	// This can be nil, this is only set if config.configOverride was set, which we
+	// deal with outside of this function.
+	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
-	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, bufYAMLV2FileDirPath)
-	if err != nil {
-		// This should be apparent from above functions.
-		return nil, syserror.Newf("error getting buf.yaml at %q: %w", bufYAMLV2FileDirPath, err)
-	}
-	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-		return nil, syserror.Newf("expected v2 buf.yaml at %q but got %v", bufYAMLV2FileDirPath, bufYAMLFile.FileVersion())
+	var bufYAMLFile bufconfig.BufYAMLFile
+	var err error
+	if overrideBufYAMLFile != nil {
+		bufYAMLFile = overrideBufYAMLFile
+	} else {
+		bufYAMLFile, err = bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, bufYAMLV2FileDirPath)
+		if err != nil {
+			// This should be apparent from above functions.
+			return nil, syserror.Newf("error getting buf.yaml at %q: %w", bufYAMLV2FileDirPath, err)
+		}
+		if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+			return nil, syserror.Newf("expected v2 buf.yaml at %q but got %v", bufYAMLV2FileDirPath, bufYAMLFile.FileVersion())
+		}
 	}
 
 	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
@@ -529,6 +568,9 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
 	moduleDirPaths []string,
+	// This can be nil, this is only set if config.configOverride was set, which we
+	// deal with outside of this function.
+	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
 	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
 	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
@@ -548,6 +590,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			ctx,
 			bucket,
 			moduleDirPath,
+			overrideBufYAMLFile,
 		)
 		if err != nil {
 			return nil, err
@@ -634,15 +677,22 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	moduleDirPath string,
+	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (bufconfig.ModuleConfig, []bufmodule.ModuleRef, error) {
-	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			// If we do not have a buf.yaml, we use the default config.
-			// This is a v1 config.
-			return bufconfig.DefaultModuleConfig, nil, nil
+	var bufYAMLFile bufconfig.BufYAMLFile
+	var err error
+	if overrideBufYAMLFile != nil {
+		bufYAMLFile = overrideBufYAMLFile
+	} else {
+		bufYAMLFile, err = bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				// If we do not have a buf.yaml, we use the default config.
+				// This is a v1 config.
+				return bufconfig.DefaultModuleConfig, nil, nil
+			}
+			return nil, nil, err
 		}
-		return nil, nil, err
 	}
 	// Just a sanity check. This should have already been validated, but let's make sure.
 	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
