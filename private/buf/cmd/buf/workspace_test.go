@@ -168,11 +168,41 @@ func TestWorkspaceDir2(t *testing.T) {
 			nil,
 			1,
 			"", // stdout should be empty
-			"Failure: the --config flag is not compatible with workspaces",
+			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
 			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		)
+		testRunStdoutStderrNoWarn(
+			t,
+			nil,
+			1,
+			"", // stdout should be empty
+			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		)
+		testRunStdout(
+			t,
+			nil,
+			1,
+			"",
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`version: v2
+modules:
+  - directory: a
+  - directory: other/proto
+    lint:
+      use:
+	    - PACKAGE_DIRECTORY_MATCH
+  - directory: proto`,
+			"--path",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
 		testRunStdout(
 			t,
@@ -193,19 +223,6 @@ func TestWorkspaceDir2(t *testing.T) {
 		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--path",
-			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		)
-		testRunStdoutStderrNoWarn(
-			t,
-			nil,
-			1,
-			"", // stdout should be empty
-			"Failure: the --config flag is not compatible with workspaces",
-			"lint",
-			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
