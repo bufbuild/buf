@@ -27,9 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opentelemetry.io/otel"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -38,7 +37,6 @@ import (
 type wasmHandler struct {
 	wasmPluginExecutor bufwasm.PluginExecutor
 	pluginPath         string
-	tracer             trace.Tracer
 }
 
 func newWasmHandler(
@@ -51,7 +49,6 @@ func newWasmHandler(
 		return &wasmHandler{
 			wasmPluginExecutor: wasmPluginExecutor,
 			pluginPath:         pluginAbsPath,
-			tracer:             otel.GetTracerProvider().Tracer("bufbuild/buf"),
 		}, nil
 	}
 }
@@ -62,26 +59,26 @@ func (h *wasmHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(ctx, "plugin_proxy", trace.WithAttributes(
-		attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
-	))
+	ctx, span := tracer.StartRetErr(
+		ctx,
+		"bufbuild/buf",
+		"plugin_proxy",
+		&retErr,
+		trace.WithAttributes(
+			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
+		),
+	)
 	defer span.End()
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	pluginBytes, err := os.ReadFile(h.pluginPath)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	compiledPlugin, err := h.wasmPluginExecutor.CompilePlugin(ctx, pluginBytes)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	defer func() {
@@ -96,8 +93,6 @@ func (h *wasmHandler) Handle(
 		bytes.NewReader(requestData),
 		responseBuffer,
 	); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		if pluginErr := new(bufwasm.PluginExecutionError); errors.As(err, &pluginErr) {
 			_, _ = container.Stderr().Write([]byte(pluginErr.Stderr))
 		}
@@ -105,14 +100,10 @@ func (h *wasmHandler) Handle(
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	response, err = normalizeCodeGeneratorResponse(response)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	if response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL) != 0 {
@@ -120,8 +111,6 @@ func (h *wasmHandler) Handle(
 	}
 	for _, file := range response.File {
 		if err := responseWriter.AddFile(file); err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 	}

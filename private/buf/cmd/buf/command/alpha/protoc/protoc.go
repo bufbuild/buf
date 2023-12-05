@@ -36,8 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -165,15 +164,18 @@ func run(
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufimage.Image{image}
 		if env.ByDir {
-			_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_by_dir")
-			images, err = bufimage.ImageByDir(image)
-			if err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, err.Error())
-				span.End()
+			if err := tracer.Do(
+				ctx,
+				"bufbuild/buf",
+				"image_by_dir",
+				func(ctx context.Context) error {
+					var err error
+					images, err = bufimage.ImageByDir(image)
+					return err
+				},
+			); err != nil {
 				return err
 			}
-			span.End()
 		}
 		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
 			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))

@@ -20,34 +20,24 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type provider struct {
 	logger *zap.Logger
-	tracer trace.Tracer
 }
 
 func newProvider(logger *zap.Logger) *provider {
 	return &provider{
 		logger: logger,
-		tracer: otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := p.tracer.Start(ctx, "get_config")
+	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "get_config", &retErr)
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
 
 	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
 	if err != nil {
