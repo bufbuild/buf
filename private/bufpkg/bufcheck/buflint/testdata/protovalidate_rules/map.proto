@@ -53,4 +53,5 @@ message MapTest {
     (buf.validate.field).map.values.int32.lt = 10,
     (buf.validate.field).map.values.int32.gt = 1
   ];
+  map<int64, string> non_map_rule = 15 [(buf.validate.field).string.min_len = 1];
 }
