@@ -44,7 +44,7 @@ func TestBasicV2(t *testing.T) {
 	testBasic(t, "workspacev2")
 }
 
-func testBasic(t *testing.T, dirPath string) {
+func testBasic(t *testing.T, subDirPath string) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
