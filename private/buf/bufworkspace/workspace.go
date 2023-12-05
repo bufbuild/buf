@@ -348,8 +348,10 @@ func newWorkspaceForBucket(
 
 	// Search for a workspace file that controls config.subDirPath. A workspace file is either
 	// a buf.work.yaml file, or a v2 buf.yaml file, and the file controls config.subDirPath
-	// if it refers to it. If we find one, we use this to build our workspace. If we don't,
-	// we assume that we're just building a v1 buf.yaml with defaults at config.subDirPath.
+	// either (1) we are directly targeting the workspace file, i.e curDirPath == config.subDirPath,
+	// or (2) the workspace file refers to the config.subDirPath. If we find a controlling workspace
+	// file, we use this to build our workspace. If we don't we assume that we're just building
+	// a v1 buf.yaml with defaults at config.subDirPath.
 	curDirPath := config.subDirPath
 	// Loop recursively upwards to "." to check for buf.yamls and buf.work.yamls
 	for {
@@ -379,11 +381,22 @@ func newWorkspaceForBucket(
 			return nil, err
 		}
 		if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			if curDirPath == config.subDirPath {
+				// We've referred to our workspace file directy, we're good to go.
+				return newWorkspaceForBucketBufYAMLV2(
+					ctx,
+					bucket,
+					moduleDataProvider,
+					config,
+					curDirPath,
+				)
+			}
 			dirPathMap := make(map[string]struct{})
 			for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 				dirPathMap[moduleConfig.DirPath()] = struct{}{}
 			}
 			if _, ok := dirPathMap[relDirPath]; ok {
+				// This workspace file refers to curDurPath, we're good to go.
 				return newWorkspaceForBucketBufYAMLV2(
 					ctx,
 					bucket,
@@ -394,8 +407,8 @@ func newWorkspaceForBucket(
 			}
 		}
 		if bufWorkYAMLExists {
-			// If the buf.work.yaml contains the subDirPath, then we have found a workspace file for config.SubDirPath.
-			if _, ok := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]; ok {
+			_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
+			if curDirPath == config.subDirPath || refersToCurDirPath {
 				// We don't actually need to parse the buf.work.yaml again - we have all the information
 				// we need. Just figure out the actual paths within the bucket of the modules, and go
 				// right to newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1.
@@ -403,6 +416,7 @@ func newWorkspaceForBucket(
 				for i, dirPath := range bufWorkYAMLFile.DirPaths() {
 					moduleDirPaths[i] = normalpath.Join(curDirPath, dirPath)
 				}
+				// If the buf.work.yaml contains the subDirPath, then we have found a workspace file for config.SubDirPath.
 				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 					ctx,
 					bucket,
