@@ -34,6 +34,9 @@ func Start(ctx context.Context, tracerName string, options ...StartOption) (cont
 	if spanName == "" {
 		spanName = getRuntimeFrame(2).Function
 	}
+	if startOptions.spanNameSuffix != "" {
+		spanName = spanName + "-" + startOptions.spanNameSuffix
+	}
 	var spanStartOptions []trace.SpanStartOption
 	if len(startOptions.attributes) > 0 {
 		spanStartOptions = append(
@@ -63,6 +66,18 @@ func WithTracerName(tracerName string) StartOption {
 func WithSpanName(spanName string) StartOption {
 	return func(startOptions *startOptions) {
 		startOptions.spanName = spanName
+	}
+}
+
+// WithSpanNameSuffix sets the span name suffix.
+//
+// No no span name is set with WithSpanName, this adds the suffix to the default
+// span name of the calling function name.
+//
+// The default is to use the calling function name.
+func WithSpanNameSuffix(spanNameSuffix string) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.spanNameSuffix = spanNameSuffix
 	}
 }
 
@@ -106,10 +121,11 @@ func (s *wrappedSpan) End(options ...trace.SpanEndOption) {
 }
 
 type startOptions struct {
-	tracerName string
-	spanName   string
-	errAddr    *error
-	attributes []attribute.KeyValue
+	tracerName     string
+	spanName       string
+	spanNameSuffix string
+	errAddr        *error
+	attributes     []attribute.KeyValue
 }
 
 func newStartOptions() *startOptions {

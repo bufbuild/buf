@@ -84,8 +84,13 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	resultC := make(chan *result, len(rules))
 	for _, rule := range rules {
 		rule := rule
+		ruleFunc := func() ([]bufanalysis.FileAnnotation, error) {
+			_, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithSpanNameSuffix(rule.ID()))
+			defer span.End()
+			return rule.check(ignoreFunc, previousFiles, files)
+		}
 		go func() {
-			iFileAnnotations, iErr := rule.check(ignoreFunc, previousFiles, files)
+			iFileAnnotations, iErr := ruleFunc()
 			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}
