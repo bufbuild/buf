@@ -530,6 +530,9 @@ func getReadBucketCloserForBucket(
 		inputBucket,
 		subDirPath,
 		func(externalPath string) (string, error) {
+			if filepath.IsAbs(externalPath) {
+				return "", fmt.Errorf("%s: absolute paths cannot be used for this input type", externalPath)
+			}
 			if !normalpath.EqualsOrContainsPath(mapPath, externalPath, normalpath.Relative) {
 				return "", fmt.Errorf("path %q from input does not contain path %q", mapPath, externalPath)
 			}
