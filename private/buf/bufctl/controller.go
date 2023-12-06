@@ -860,8 +860,8 @@ func (c *controller) buildTargetImageWithConfigs(
 	functionOptions *functionOptions,
 ) ([]ImageWithConfig, error) {
 	modules := bufmodule.ModuleSetTargetModules(workspace)
-	imageWithConfigs := make([]ImageWithConfig, len(modules))
-	for i, module := range modules {
+	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
+	for _, module := range modules {
 		opaqueID := module.OpaqueID()
 		// We need to make sure that all dependencies are non-targets, so that they
 		// end up as imports in the resulting image.
@@ -894,10 +894,13 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		imageWithConfigs[i] = newImageWithConfig(
-			image,
-			workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
-			workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+		imageWithConfigs = append(
+			imageWithConfigs,
+			newImageWithConfig(
+				image,
+				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
+				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+			),
 		)
 	}
 	return imageWithConfigs, nil
