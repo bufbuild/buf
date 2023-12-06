@@ -31,9 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.opentelemetry.io/otel"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
@@ -46,7 +45,6 @@ type protocProxyHandler struct {
 	runner            command.Runner
 	protocPath        string
 	pluginName        string
-	tracer            trace.Tracer
 }
 
 func newProtocProxyHandler(
@@ -60,7 +58,6 @@ func newProtocProxyHandler(
 		runner:            runner,
 		protocPath:        protocPath,
 		pluginName:        pluginName,
-		tracer:            otel.GetTracerProvider().Tracer("bufbuild/buf"),
 	}
 }
 
@@ -70,16 +67,17 @@ func (h *protocProxyHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := h.tracer.Start(ctx, "protoc_proxy", trace.WithAttributes(
-		attribute.Key("plugin").String(filepath.Base(h.pluginName)),
-	))
+	ctx, span := tracer.StartRetErr(
+		ctx,
+		"bufbuild/buf",
+		"plugin_proxy",
+		&retErr,
+		trace.WithAttributes(
+			attribute.Key("plugin").String(filepath.Base(h.pluginName)),
+		),
+	)
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+
 	protocVersion, err := h.getProtocVersion(ctx, container)
 	if err != nil {
 		return err
