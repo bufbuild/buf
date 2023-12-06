@@ -36,7 +36,7 @@ func newProvider(logger *zap.Logger) *provider {
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "get_config", &retErr)
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
 	defer span.End()
 
 	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)

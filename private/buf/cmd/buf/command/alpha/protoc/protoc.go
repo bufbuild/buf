@@ -87,6 +87,9 @@ func run(
 	container appflag.Container,
 	env *env,
 ) (retErr error) {
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	defer span.End()
+
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
 	}
@@ -164,16 +167,13 @@ func run(
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufimage.Image{image}
 		if env.ByDir {
-			if err := tracer.Do(
-				ctx,
-				"bufbuild/buf",
-				"image_by_dir",
-				func(ctx context.Context) error {
-					var err error
-					images, err = bufimage.ImageByDir(image)
-					return err
-				},
-			); err != nil {
+			f := func() (retErr error) {
+				_, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+				defer span.End()
+				images, err = bufimage.ImageByDir(image)
+				return err
+			}
+			if err := f(); err != nil {
 				return err
 			}
 		}

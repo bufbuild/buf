@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -55,12 +54,11 @@ func (h *binaryHandler) Handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := tracer.StartRetErr(
+	ctx, span := tracer.Start(
 		ctx,
 		"bufbuild/buf",
-		"plugin_proxy",
-		&retErr,
-		trace.WithAttributes(
+		tracer.WithErr(&retErr),
+		tracer.WithAttributes(
 			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 		),
 	)

@@ -39,7 +39,7 @@ func buildImage(
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
 ) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
-	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "build_image", &retErr)
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
 	defer span.End()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {

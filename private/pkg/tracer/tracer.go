@@ -45,18 +45,6 @@ func Start(ctx context.Context, tracerName string, options ...StartOption) (cont
 	return ctx, newWrappedSpan(span, startOptions.errAddr)
 }
 
-// Do runs f with a span.
-func Do(
-	ctx context.Context,
-	tracerName string,
-	f func(context.Context) error,
-	options ...StartOption,
-) error {
-	ctx, span := Start(ctx, tracerName, options...)
-	defer span.End()
-	return f(ctx)
-}
-
 // StartOption is an option for Start or Do.
 type StartOption func(*startOptions)
 

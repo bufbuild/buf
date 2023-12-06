@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -69,12 +68,11 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	if len(rules) == 0 {
 		return nil, nil
 	}
-	ctx, span := tracer.StartRetErr(
+	ctx, span := tracer.Start(
 		ctx,
 		"bufbuild/buf",
-		"check",
-		&retErr,
-		trace.WithAttributes(
+		tracer.WithErr(&retErr),
+		tracer.WithAttributes(
 			attribute.Key("num_files").Int(len(files)),
 			attribute.Key("num_rules").Int(len(rules)),
 		),

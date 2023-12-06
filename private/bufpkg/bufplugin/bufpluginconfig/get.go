@@ -27,7 +27,7 @@ import (
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options []ConfigOption) (_ *Config, retErr error) {
-	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "get_plugin_config", &retErr)
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
 	defer span.End()
 
 	// This will be in the order of precedence.
@@ -74,7 +74,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 }
 
 func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) (_ *Config, retErr error) {
-	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "get_plugin_config_for_data", &retErr)
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
 	defer span.End()
 	return getConfigForDataInternal(
 		ctx,

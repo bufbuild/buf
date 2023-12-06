@@ -71,7 +71,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := tracer.StartRetErr(ctx, "bufbuild/buf", "git_clone_to_bucket", &retErr)
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
 	defer span.End()
 
 	var err error
@@ -249,15 +249,8 @@ func (c *cloner) CloneToBucket(
 	if options.Mapper != nil {
 		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
 	}
-	return tracer.Do(
-		ctx,
-		"bufbuild/buf",
-		"git_clone_to_bucket_copy",
-		func(ctx context.Context) error {
-			_, err := storage.Copy(ctx, readBucket, writeBucket)
-			return err
-		},
-	)
+	_, err = storage.Copy(ctx, readBucket, writeBucket)
+	return err
 }
 
 func (c *cloner) getArgsForHTTPSCommand(envContainer app.EnvContainer) ([]string, error) {
