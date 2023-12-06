@@ -512,11 +512,26 @@ func newWorkspaceForBucketBufYAMLV2(
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
+	// We keep track of if any module was tentatively targeted, and then actually targeted via
+	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
+	// --exclude-path flags resulted in no targeted modules. This condition is represented
+	// by hadIsTentativelyTargetModule == true && hadIsTargetModule = false
+	//
+	// If hadIsTentativelyTargetModule is false, this means that our input subDirPath was not
+	// actually representative of any module that we detected in buf.work.yaml or v2 buf.yaml
+	// directories, and this is a system error - this should be verified before we reach this function.
+	var hadIsTentativelyTargetModule bool
+	var hadIsTargetModule bool
+	var moduleDirPaths []string
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
+		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
 		// We figure out based on the paths if this is really a target module in moduleTargeting.
 		isTentativelyTargetModule := isTargetFunc(moduleDirPath)
+		if isTentativelyTargetModule {
+			hadIsTentativelyTargetModule = true
+		}
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			bucket,
@@ -527,6 +542,9 @@ func newWorkspaceForBucketBufYAMLV2(
 		)
 		if err != nil {
 			return nil, err
+		}
+		if moduleTargeting.isTargetModule {
+			hadIsTargetModule = true
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
@@ -555,6 +573,13 @@ func newWorkspaceForBucketBufYAMLV2(
 				false,
 			)
 		}
+	}
+	if !hadIsTentativelyTargetModule {
+		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", config.subDirPath, moduleDirPaths)
+	}
+	if !hadIsTargetModule {
+		// It would be nice to have a better error message than this in the long term.
+		return nil, errors.New("specified paths did not result in any targeted files in the input module or workspace")
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
@@ -586,6 +611,16 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
+	// We keep track of if any module was tentatively targeted, and then actually targeted via
+	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
+	// --exclude-path flags resulted in no targeted modules. This condition is represented
+	// by hadIsTentativelyTargetModule == true && hadIsTargetModule = false
+	//
+	// If hadIsTentativelyTargetModule is false, this means that our input subDirPath was not
+	// actually representative of any module that we detected in buf.work.yaml or v2 buf.yaml
+	// directories, and this is a system error - this should be verified before we reach this function.
+	var hadIsTentativelyTargetModule bool
+	var hadIsTargetModule bool
 	for _, moduleDirPath := range moduleDirPaths {
 		moduleConfig, configuredDepModuleRefs, err := getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 			ctx,
@@ -613,6 +648,9 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		// We figure out based on the paths if this is really a target module in moduleTargeting.
 		isTentativelyTargetModule := isTargetFunc(moduleDirPath)
+		if isTentativelyTargetModule {
+			hadIsTentativelyTargetModule = true
+		}
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			bucket,
@@ -623,6 +661,9 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		)
 		if err != nil {
 			return nil, err
+		}
+		if moduleTargeting.isTargetModule {
+			hadIsTargetModule = true
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
@@ -638,6 +679,13 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				moduleTargeting.includePackageFiles,
 			),
 		)
+	}
+	if !hadIsTentativelyTargetModule {
+		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", config.subDirPath, moduleDirPaths)
+	}
+	if !hadIsTargetModule {
+		// It would be nice to have a better error message than this in the long term.
+		return nil, errors.New("specified paths did not result in any targeted files in the input module or workspace")
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
