@@ -92,7 +92,7 @@ func (c *Rule) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ruleJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
 	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
 }
 

@@ -16,65 +16,132 @@ package tracer
 
 import (
 	"context"
+	"runtime"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // Start creates a span.
-func Start(
-	ctx context.Context,
-	tracerName string,
-	spanName string,
-	options ...trace.SpanStartOption,
-) (context.Context, trace.Span) {
-	return otel.GetTracerProvider().Tracer(tracerName).Start(ctx, spanName, options...)
-}
-
-// Start creates a span, recording the error from retErrAddr on End.
-func StartRetErr(
-	ctx context.Context,
-	tracerName string,
-	spanName string,
-	retErrAddr *error,
-	options ...trace.SpanStartOption,
-) (context.Context, trace.Span) {
-	ctx, span := otel.GetTracerProvider().Tracer(tracerName).Start(ctx, spanName, options...)
-	return ctx, newRetErrSpan(span, retErrAddr)
+func Start(ctx context.Context, tracerName string, options ...StartOption) (context.Context, trace.Span) {
+	startOptions := newStartOptions()
+	for _, option := range options {
+		option(startOptions)
+	}
+	spanName := startOptions.spanName
+	if spanName == "" {
+		spanName = getRuntimeFrame(2).Function
+	}
+	var spanStartOptions []trace.SpanStartOption
+	if len(startOptions.attributes) > 0 {
+		spanStartOptions = append(
+			spanStartOptions,
+			trace.WithAttributes(startOptions.attributes...),
+		)
+	}
+	ctx, span := otel.GetTracerProvider().Tracer(tracerName).Start(ctx, spanName, spanStartOptions...)
+	return ctx, newWrappedSpan(span, startOptions.errAddr)
 }
 
 // Do runs f with a span.
 func Do(
 	ctx context.Context,
 	tracerName string,
-	spanName string,
 	f func(context.Context) error,
-	options ...trace.SpanStartOption,
-) (retErr error) {
-	ctx, span := StartRetErr(ctx, tracerName, spanName, &retErr, options...)
+	options ...StartOption,
+) error {
+	ctx, span := Start(ctx, tracerName, options...)
 	defer span.End()
 	return f(ctx)
 }
 
-type retErrSpan struct {
-	trace.Span
-	retErrAddr *error
-}
+// StartOption is an option for Start or Do.
+type StartOption func(*startOptions)
 
-func newRetErrSpan(span trace.Span, retErrAddr *error) *retErrSpan {
-	return &retErrSpan{
-		Span:       span,
-		retErrAddr: retErrAddr,
+// WithTracerName sets the given tracer name.
+//
+// The default is to use filename.Base(os.Args[0])
+func WithTracerName(tracerName string) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.tracerName = tracerName
 	}
 }
 
-func (s *retErrSpan) End(options ...trace.SpanEndOption) {
+// WithSpanName sets the span name.
+//
+// The default is to use the calling function name.
+func WithSpanName(spanName string) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.spanName = spanName
+	}
+}
+
+// WithErr will result in the given error being recorded on span.End()
+// if the error is not nil, and the status being set to error.
+func WithErr(errAddr *error) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.errAddr = errAddr
+	}
+}
+
+// WithAttributes adds the given attributes.
+func WithAttributes(attributes ...attribute.KeyValue) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.attributes = append(startOptions.attributes, attributes...)
+	}
+}
+
+// *** PRIVATE ***
+
+type wrappedSpan struct {
+	trace.Span
+	errAddr *error
+}
+
+func newWrappedSpan(span trace.Span, errAddr *error) *wrappedSpan {
+	return &wrappedSpan{
+		Span:    span,
+		errAddr: errAddr,
+	}
+}
+
+func (s *wrappedSpan) End(options ...trace.SpanEndOption) {
 	s.Span.End(options...)
-	if s.retErrAddr != nil {
-		if retErr := *s.retErrAddr; retErr != nil {
+	if s.errAddr != nil {
+		if retErr := *s.errAddr; retErr != nil {
 			s.Span.RecordError(retErr)
 			s.Span.SetStatus(codes.Error, retErr.Error())
 		}
 	}
+}
+
+type startOptions struct {
+	tracerName string
+	spanName   string
+	errAddr    *error
+	attributes []attribute.KeyValue
+}
+
+func newStartOptions() *startOptions {
+	return &startOptions{}
+}
+
+func getRuntimeFrame(skipFrames int) runtime.Frame {
+	targetFrameIndex := skipFrames + 2
+	programCounters := make([]uintptr, targetFrameIndex+2)
+	n := runtime.Callers(0, programCounters)
+	var frame runtime.Frame
+	if n > 0 {
+		frames := runtime.CallersFrames(programCounters[:n])
+		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
+			var frameCandidate runtime.Frame
+			frameCandidate, more = frames.Next()
+			if frameIndex == targetFrameIndex {
+				frame = frameCandidate
+			}
+		}
+	}
+	return frame
 }
