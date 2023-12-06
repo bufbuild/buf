@@ -530,7 +530,14 @@ func getReadBucketCloserForBucket(
 		inputBucket,
 		subDirPath,
 		func(externalPath string) (string, error) {
-			return normalpath.NormalizeAndValidate(externalPath)
+			if !normalpath.EqualsOrContainsPath(mapPath, externalPath, normalpath.Relative) {
+				return "", fmt.Errorf("path %q from input does not contain path %q", mapPath, externalPath)
+			}
+			relPath, err := normalpath.Rel(mapPath, externalPath)
+			if err != nil {
+				return "", err
+			}
+			return normalpath.NormalizeAndValidate(relPath)
 		},
 	)
 }

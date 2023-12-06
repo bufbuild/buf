@@ -1098,15 +1098,15 @@ func (f *functionOptions) withPathsForBucketExtender(
 ) (*functionOptions, error) {
 	deref := *f
 	c := &deref
-	for i, targetPath := range c.targetPaths {
-		targetPath, err := bucketExtender.PathForExternalPath(targetPath)
+	for i, inputTargetPath := range c.targetPaths {
+		targetPath, err := bucketExtender.PathForExternalPath(inputTargetPath)
 		if err != nil {
 			return nil, err
 		}
 		c.targetPaths[i] = targetPath
 	}
-	for i, targetExcludePath := range c.targetExcludePaths {
-		targetExcludePath, err := bucketExtender.PathForExternalPath(targetExcludePath)
+	for i, inputTargetExcludePath := range c.targetExcludePaths {
+		targetExcludePath, err := bucketExtender.PathForExternalPath(inputTargetExcludePath)
 		if err != nil {
 			return nil, err
 		}
