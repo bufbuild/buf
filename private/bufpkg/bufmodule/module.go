@@ -111,6 +111,10 @@ type Module interface {
 	// If specific Files were not targeted but the Module was targeted, all Files in the Module
 	// will have FileInfo.IsTargetFile() set to true, and this function will return all Files
 	// that WalkFileInfos does.
+	//
+	// Note that a Module may be targeted but have none of its files targeted - this can occur
+	// when path filtering occurs, but no paths given matched any paths in the Module, but
+	// the Module itself was targeted.
 	IsTarget() bool
 
 	// IsLocal return true if the Module is a local Module.
@@ -161,7 +165,10 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 // ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles converts the Module to a
 // ModuleReadBucket that contains all the .proto files of the Module and its dependencies.
 //
-// Targeting information will remain the same.
+// Targeting information will remain the same. Note that this means that the result ModuleReadBucket
+// may have no target files! This can occur when path filtering was applied, but the path filters did
+// not match any files in the Module, and none of the Module's files were targeted.
+// It can also happen if the Module nor any of its dependencies were targeted.
 //
 // *** THIS IS PROBABLY NOT THE FUNCTION YOU ARE LOOKING FOR. *** You probably want
 // ModuleSetToModuleReadBucketWithOnlyProtoFiles to convert a ModuleSet/Workspace to a

@@ -515,14 +515,15 @@ func newWorkspaceForBucketBufYAMLV2(
 	for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 		moduleDirPath := moduleConfig.DirPath()
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		isTargetModule := isTargetFunc(moduleDirPath)
+		// We figure out based on the paths if this is really a target module in moduleTargeting.
+		isTentativelyTargetModule := isTargetFunc(moduleDirPath)
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			bucket,
 			config,
 			moduleDirPath,
 			moduleConfig,
-			isTargetModule,
+			isTentativelyTargetModule,
 		)
 		if err != nil {
 			return nil, err
@@ -530,7 +531,7 @@ func newWorkspaceForBucketBufYAMLV2(
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
-			isTargetModule,
+			moduleTargeting.isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
@@ -610,14 +611,15 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				)
 			}
 		}
-		isTargetModule := isTargetFunc(moduleDirPath)
+		// We figure out based on the paths if this is really a target module in moduleTargeting.
+		isTentativelyTargetModule := isTargetFunc(moduleDirPath)
 		mappedModuleBucket, moduleTargeting, err := getMappedModuleBucketAndModuleTargeting(
 			ctx,
 			bucket,
 			config,
 			moduleDirPath,
 			moduleConfig,
-			isTargetModule,
+			isTentativelyTargetModule,
 		)
 		if err != nil {
 			return nil, err
@@ -625,7 +627,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
-			isTargetModule,
+			moduleTargeting.isTargetModule,
 			bufmodule.LocalModuleWithModuleFullName(moduleConfig.ModuleFullName()),
 			bufmodule.LocalModuleWithTargetPaths(
 				moduleTargeting.moduleTargetPaths,
@@ -774,6 +776,12 @@ func getMappedModuleBucketAndModuleTargeting(
 // TODO: All the module_bucket_builder_test.go stuff needs to be copied over
 
 type moduleTargeting struct {
+	// Whether this module is really a target module.
+	//
+	// False if this was not specified as a target module by the caller.
+	// Also false if there were config.targetPaths or config.protoFileTargetPath, but
+	// these paths did not match anything in the module.
+	isTargetModule bool
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetPaths []string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
@@ -787,13 +795,17 @@ func newModuleTargeting(
 	moduleDirPath string,
 	roots []string,
 	config *workspaceBucketConfig,
-	isTargetModule bool,
+	isTentativelyTargetModule bool,
 ) (*moduleTargeting, error) {
-	if !isTargetModule {
+	if !isTentativelyTargetModule {
 		// If this is not a target Module, we do not want to target anything, as targeting
 		// paths for non-target Modules is an error.
 		return &moduleTargeting{}, nil
 	}
+	// If we have no target paths, then we always match the value of isTargetModule.
+	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
+	// to consider this module a target.
+	isTargetModule := len(config.targetPaths) == 0 && config.protoFileTargetPath == ""
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 	for _, targetPath := range config.targetPaths {
@@ -804,6 +816,7 @@ func newModuleTargeting(
 			return nil, fmt.Errorf("%q was specified with --path but is also the path to a module - specify this module path directly as an input", targetPath)
 		}
 		if normalpath.ContainsPath(moduleDirPath, targetPath, normalpath.Relative) {
+			isTargetModule = true
 			moduleTargetPath, err := normalpath.Rel(moduleDirPath, targetPath)
 			if err != nil {
 				return nil, err
@@ -848,6 +861,7 @@ func newModuleTargeting(
 	var includePackageFiles bool
 	if config.protoFileTargetPath != "" &&
 		normalpath.ContainsPath(moduleDirPath, config.protoFileTargetPath, normalpath.Relative) {
+		isTargetModule = true
 		moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, config.protoFileTargetPath)
 		if err != nil {
 			return nil, err
@@ -859,6 +873,7 @@ func newModuleTargeting(
 		includePackageFiles = config.includePackageFiles
 	}
 	return &moduleTargeting{
+		isTargetModule:            isTargetModule,
 		moduleTargetPaths:         moduleTargetPaths,
 		moduleTargetExcludePaths:  moduleTargetExcludePaths,
 		moduleProtoFileTargetPath: moduleProtoFileTargetPath,

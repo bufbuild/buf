@@ -134,6 +134,10 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
+		//fmt.Println("here")
+		//for _, file := range imageWithConfig.Files() {
+		//fmt.Println(file.Path(), !file.IsImport())
+		//}
 		fileAnnotations, err := buflint.NewHandler(container.Logger()).Check(
 			ctx,
 			imageWithConfig.LintConfig(),

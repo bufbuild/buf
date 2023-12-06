@@ -877,6 +877,15 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
+		targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
+		if err != nil {
+			return nil, err
+		}
+		// This may happen after path targeting. We may have a Module that itself was targeted,
+		// but no target files remain. In this case, this isn't a target image.
+		if len(targetFileInfos) == 0 {
+			continue
+		}
 		image, err := c.buildImage(
 			ctx,
 			moduleReadBucket,
