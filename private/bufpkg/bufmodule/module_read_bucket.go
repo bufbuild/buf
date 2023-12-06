@@ -322,6 +322,10 @@ func (b *moduleReadBucket) WalkFileInfos(
 	fn func(FileInfo) error,
 	options ...WalkFileInfosOption,
 ) error {
+	// Note that we must verify that at least one file in this ModuleReadBucket is
+	// a .proto file, per the documentation on Module.
+	var sawProtoFile bool
+
 	walkFileInfosOptions := newWalkFileInfosOptions()
 	for _, option := range options {
 		option(walkFileInfosOptions)
@@ -332,7 +336,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	if !walkFileInfosOptions.onlyTargetFiles {
-		return bucket.Walk(
+		if err := bucket.Walk(
 			ctx,
 			"",
 			func(objectInfo storage.ObjectInfo) error {
@@ -340,15 +344,27 @@ func (b *moduleReadBucket) WalkFileInfos(
 				if err != nil {
 					return err
 				}
+				if fileInfo.FileType() == FileTypeProto {
+					sawProtoFile = true
+				}
 				return fn(fileInfo)
 			},
-		)
+		); err != nil {
+			return err
+		}
+		if !sawProtoFile {
+			return fmt.Errorf("module %q had no .proto files", b.module.OpaqueID())
+		}
+		return nil
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
 		fileInfo, err := b.getFileInfo(ctx, objectInfo)
 		if err != nil {
 			return err
+		}
+		if fileInfo.FileType() == FileTypeProto {
+			sawProtoFile = true
 		}
 		if !fileInfo.IsTargetFile() {
 			return nil
@@ -371,9 +387,18 @@ func (b *moduleReadBucket) WalkFileInfos(
 				return err
 			}
 		}
+		// We can't determine if the module had no target paths in this case. We didn't
+		// walk the whole bucket, so we can't make a determination. This is OK per the
+		// docs as we said we'll only do this if there are no target paths.
 		return nil
 	}
-	return bucket.Walk(ctx, "", targetFileWalkFunc)
+	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
+		return err
+	}
+	if !sawProtoFile {
+		return fmt.Errorf("module %q had no .proto files", b.module.OpaqueID())
+	}
+	return nil
 }
 
 func (b *moduleReadBucket) ShouldBeSelfContained() bool {
