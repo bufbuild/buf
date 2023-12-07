@@ -177,8 +177,6 @@ func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 
 func (*workspace) isWorkspace() {}
 
-// *** PRIVATE ***
-
 func newWorkspaceForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
