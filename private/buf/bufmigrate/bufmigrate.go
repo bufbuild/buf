@@ -43,8 +43,6 @@ func Migrate(
 	commitService modulev1beta1connect.CommitServiceClient,
 	options ...MigrateOption,
 ) (retErr error) {
-	// TODO: is it an error if a buf.yaml is v1beta1 but its buf.lock is v1? It's probably OK.
-	// TODO: is it an error if some buf.yamls in a workspace are in v1beta1 while others are v1? It's probably also OK.
 	migrateOptions := newMigrateOptions()
 	for _, option := range options {
 		option(migrateOptions)
@@ -78,7 +76,7 @@ func Migrate(
 		// Alternatively, we could say it's an invalid name and the only valid name is buf.work.yaml, and return an error.
 		file, err := os.Open(migrateOptions.bufWorkYAMLFilePath)
 		if err != nil {
-			return err
+			return syserror.Wrap(err)
 		}
 		bufWorkYAMLFile, err := bufconfig.ReadBufWorkYAMLFile(file)
 		if err != nil {
@@ -157,16 +155,16 @@ func Migrate(
 				return err
 			}
 			// TODO: get file name properly
-			bufLockFiles = append(bufLockFiles, filepath.Join(workspaceDirectory, moduleDirectory, "buf.lock"))
+			bufLockFilePath := filepath.Join(workspaceDirectory, moduleDirectory, "buf.lock")
 			switch bufLockFile.FileVersion() {
 			case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 				depModuleKeys = append(depModuleKeys, bufLockFile.DepModuleKeys()...)
 			case bufconfig.FileVersionV2:
-				// TODO: how to get full path, we have the prefix already, just need the file name
-				return errors.New("file is already at v2")
+				return fmt.Errorf("%s is already at v2", bufLockFilePath)
 			default:
 				return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 			}
+			bufLockFiles = append(bufLockFiles, bufLockFilePath)
 		}
 		moduleDependencies = slicesext.Filter(
 			moduleDependencies,
@@ -189,14 +187,13 @@ func Migrate(
 		}
 		file, err := os.Open(bufYAMLPath)
 		if err != nil {
-			return err
+			return syserror.Wrap(err)
 		}
 		moduleDirectory := filepath.Dir(bufYAMLPath)
 		directoryForModuleConfig, err := filepath.Rel(destinationDir, moduleDirectory)
 		if err != nil {
 			return err
 		}
-		// TODO: close this file
 		bufYAMLFile, err := bufconfig.ReadBufYAMLFile(file)
 		if err != nil {
 			return err
@@ -240,23 +237,23 @@ func Migrate(
 		if err != nil {
 			return err
 		}
-		bufLockFiles = append(bufLockFiles, filepath.Join(moduleDirectory, "buf.lock"))
+		bufLockFilePath := filepath.Join(moduleDirectory, "buf.lock")
 		switch bufLockFile.FileVersion() {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			depModuleKeys = append(depModuleKeys, bufLockFile.DepModuleKeys()...)
 		case bufconfig.FileVersionV2:
-			// TODO: how to get full path, we have the prefix already, but need the file name to print better errors
-			return errors.New("file is already at v2")
+			return fmt.Errorf("%s is already at v2", bufLockFilePath)
 		default:
 			return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 		}
+		bufLockFiles = append(bufLockFiles, bufLockFilePath)
 	}
 	depModuleFullNameToModuleKeys := make(map[string][]bufmodule.ModuleKey)
 	for _, depModuleKey := range depModuleKeys {
 		depModuleFullName := depModuleKey.ModuleFullName().String()
 		depModuleFullNameToModuleKeys[depModuleFullName] = append(depModuleFullNameToModuleKeys[depModuleFullName], depModuleKey)
 	}
-	// TODO: these are resolved arbitrarily right now, resolve them by commit time
+	// TODO: these are resolved arbitrarily right now, we need to resolve them by commit time
 	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleFullNameToModuleKeys))
 	for _, depModuleKeys := range depModuleFullNameToModuleKeys {
 		// TODO: actually resolve dependencies by time
@@ -316,14 +313,20 @@ these files will be written:
 %s
 `,
 			strings.Join(filesToDelete, "\n"),
-			// TODO: find a way to get file name
+			// TODO: find a way to get file name properly
 			filepath.Join(destinationDir, "buf.yaml"),
 			bufYAMLBuffer.String(),
-			// TODO: find a way to get file name
+			// TODO: find a way to get file name properly
 			filepath.Join(destinationDir, "buf.lock"),
 			bufLockBuffer.String(),
 		)
 		return nil
+	}
+	//Remove old files before writing the new
+	for _, fileToDelete := range filesToDelete {
+		if err := os.Remove(fileToDelete); err != nil {
+			return err
+		}
 	}
 	if err := bufconfig.PutBufYAMLFileForPrefix(
 		ctx,
@@ -341,7 +344,6 @@ these files will be written:
 	); err != nil {
 		return err
 	}
-	// TODO: delete files to delete
 	return nil
 }
 
@@ -358,8 +360,7 @@ func modulesAndDependenciesForBufYAMLFile(
 	var moduleDependencies []bufmodule.ModuleRef
 	switch bufYAMLFile.FileVersion() {
 	case bufconfig.FileVersionV1Beta1:
-		// TODO: this has multiple configs
-		// TODO: whether something needs to be done about root to exclude mapping
+		// TODO: whether something needs to be done about root to exclude mapping (what is it relative to now?)
 		if len(bufYAMLFile.ModuleConfigs()) != 1 {
 			return nil, nil, syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAMLFile.ModuleConfigs()))
 		}
@@ -378,7 +379,9 @@ func modulesAndDependenciesForBufYAMLFile(
 					bufconfig.FileVersionV2,
 					slicesext.Map(lintRules, func(rule bufcheck.Rule) string { return rule.ID() }),
 					lintConfig.ExceptIDsAndCategories(),
+					// TODO: filter these paths by root
 					lintConfig.IgnorePaths(),
+					// TODO: filter these paths by root
 					lintConfig.IgnoreIDOrCategoryToPaths(),
 				),
 				lintConfig.EnumZeroValueSuffix(),
@@ -394,7 +397,9 @@ func modulesAndDependenciesForBufYAMLFile(
 					bufconfig.FileVersionV2,
 					breakingConfig.UseIDsAndCategories(),
 					breakingConfig.ExceptIDsAndCategories(),
+					// TODO: filter these paths by root
 					breakingConfig.IgnorePaths(),
+					// TODO: filter these paths by root
 					breakingConfig.IgnoreIDOrCategoryToPaths(),
 				),
 				breakingConfig.IgnoreUnstablePackages(),
@@ -408,8 +413,6 @@ func modulesAndDependenciesForBufYAMLFile(
 				// TODO: if this is not nil, there will be multiple modules in the buf.yaml v2 with the same name.
 				moduleConfig.ModuleFullName(),
 				map[string][]string{".": excludes},
-				// TODO: filter these by root
-				// TODO: possibly convert them to be relative to workspace
 				lintConfigForRoot,
 				breakingConfigForRoot,
 			)
@@ -469,7 +472,7 @@ func modulesAndDependenciesForBufYAMLFile(
 		moduleDependencies = append(moduleDependencies, bufYAMLFile.ConfiguredDepModuleRefs()...)
 	case bufconfig.FileVersionV2:
 		// TODO: how to get full path, we have the prefix already, just need the file name
-		return nil, nil, errors.New("already at v2")
+		return nil, nil, fmt.Errorf("%s is already at v2", bufYAMLFilePath)
 	}
 	return moduleConfigs, moduleDependencies, nil
 }
@@ -487,7 +490,7 @@ func MigrateAsDryRun(writer io.Writer) MigrateOption {
 
 // MigrateBufWorkYAMLFile migrates a v1 buf.work.yaml.
 func MigrateBufWorkYAMLFile(path string) (MigrateOption, error) {
-	// TODO: Looking at IsLocal's doc, it seems to does what we want: relative and does not jump context.
+	// TODO: Looking at IsLocal's doc, it seems to do what we want: relative and does not jump context.
 	if !filepath.IsLocal(path) {
 		return nil, fmt.Errorf("%s is not a relative path", path)
 	}
