@@ -1807,7 +1807,7 @@ func TestConvertWithImage(t *testing.T) {
 			nil,
 			1,
 			"",
-			"Failure: size of input message must not be zero",
+			`Failure: --from: length of data read from "-" was zero`,
 			"convert",
 			filepath.Join(tempDir, "image.binpb"),
 			"--type",
