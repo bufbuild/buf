@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"go.uber.org/multierr"
 )
 
 // Migrate migrate buf configuration files.
@@ -76,8 +77,11 @@ func Migrate(
 		// Alternatively, we could say it's an invalid name and the only valid name is buf.work.yaml, and return an error.
 		file, err := os.Open(migrateOptions.bufWorkYAMLFilePath)
 		if err != nil {
-			return syserror.Wrap(err)
+			return err
 		}
+		defer func() {
+			retErr = multierr.Append(retErr, file.Close())
+		}()
 		bufWorkYAMLFile, err := bufconfig.ReadBufWorkYAMLFile(file)
 		if err != nil {
 			return err
@@ -162,6 +166,7 @@ func Migrate(
 			case bufconfig.FileVersionV2:
 				return fmt.Errorf("%s is already at v2", bufLockFilePath)
 			default:
+				// The file was successfully and so the version must be valid.
 				return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 			}
 			bufLockFiles = append(bufLockFiles, bufLockFilePath)
@@ -187,8 +192,11 @@ func Migrate(
 		}
 		file, err := os.Open(bufYAMLPath)
 		if err != nil {
-			return syserror.Wrap(err)
+			return err
 		}
+		defer func() {
+			retErr = multierr.Append(retErr, file.Close())
+		}()
 		moduleDirectory := filepath.Dir(bufYAMLPath)
 		directoryForModuleConfig, err := filepath.Rel(destinationDir, moduleDirectory)
 		if err != nil {
@@ -244,6 +252,7 @@ func Migrate(
 		case bufconfig.FileVersionV2:
 			return fmt.Errorf("%s is already at v2", bufLockFilePath)
 		default:
+			// The file was read successfully and so the version must be valid.
 			return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 		}
 		bufLockFiles = append(bufLockFiles, bufLockFilePath)
