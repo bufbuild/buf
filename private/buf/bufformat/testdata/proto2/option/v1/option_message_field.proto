@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package foo.bar;
 
+import "google/protobuf/any.proto";
 import "google/protobuf/descriptor.proto";
 
 message Simple {
@@ -27,6 +28,12 @@ message Test {
 	extensions 100 to 200;
 
 	extensions 249, 300 to 350, 500 to 550, 20000 to max [(label) = "jazz"];
+
+	option (any) = {
+		[ type . googleapis . com/ foo.bar.Test	]: {
+			foo: "abc" array: [1,2,3]
+		}
+	};
 
 	message Nested {
 		extend google.protobuf.MessageOptions {
@@ -69,4 +76,5 @@ message Test {
 extend google.protobuf.MessageOptions {
 	repeated Test rept = 20002;
 	optional Test.Nested._NestedNested.EEE eee = 20010;
+	optional google.protobuf.Any any = 20300;
 }
