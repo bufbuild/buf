@@ -41,6 +41,12 @@ type FindControllingWorkspaceResult interface {
 	isFindControllingWorkspaceResult()
 }
 
+// TODO: this doesn't work for ProtoFileRefs. You don't want to require the originalSubDirPath,
+// which is just the directory of the .proto file, to be pointed to by the workspace. You want
+// to bypass this requirement. Solution is to completely separate terminateFunc and protoFileTerminateFunc,
+// and be more lenient on the controlling workspace for ProtoFileRefs to not require the directory to
+// be pointed to...probably?
+
 // FindControllingWorkspace searches for a workspace file at prefix that controls originalSubDirPath.
 // A workspace file is either a buf.work.yaml file or a v2 buf.yaml file, and the file controls
 // originalSubDirPath if either (1) we are directly targeting the workspace file, i.e prefix == originalSubDirPath,

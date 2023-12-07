@@ -65,7 +65,7 @@ func newReader(
 	options ...ReaderOption,
 ) *reader {
 	reader := &reader{
-		logger:            logger,
+		logger:            logger.Named("buffetch"),
 		storageosProvider: storageosProvider,
 	}
 	for _, option := range options {
@@ -263,7 +263,7 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getDirBucket(
@@ -275,7 +275,7 @@ func (r *reader) getDirBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	return getReadWriteBucketForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFunc)
+	return getReadWriteBucketForOS(ctx, r.logger, r.storageosProvider, dirRef.Path(), terminateFunc)
 }
 
 func (r *reader) getProtoFileBucket(
@@ -290,6 +290,7 @@ func (r *reader) getProtoFileBucket(
 	}
 	return getReadBucketCloserForOSProtoFile(
 		ctx,
+		r.logger,
 		r.storageosProvider,
 		protoFileRef.Path(),
 		terminateFunc,
@@ -331,7 +332,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getModuleKey(
@@ -512,11 +513,12 @@ func getGitURL(gitRef GitRef) (string, error) {
 // Use for memory buckets i.e. archive and git.
 func getReadBucketCloserForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
 	terminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
-	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFunc)
+	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, logger, inputBucket, inputSubDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -526,6 +528,12 @@ func getReadBucketCloserForBucket(
 			storage.MapOnPrefix(mapPath),
 		)
 	}
+	logger.Debug(
+		"creating new bucket",
+		zap.String("inputSubDirPath", inputSubDirPath),
+		zap.String("mapPath", mapPath),
+		zap.String("subDirPath", subDirPath),
+	)
 	return newReadBucketCloser(
 		inputBucket,
 		subDirPath,
@@ -553,6 +561,7 @@ func getReadBucketCloserForBucket(
 // Use for directory-based buckets.
 func getReadWriteBucketForOS(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
 	terminateFunc TerminateFunc,
@@ -572,6 +581,7 @@ func getReadWriteBucketForOS(
 	}
 	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(
 		ctx,
+		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absInputDirPath[1:],
@@ -616,6 +626,12 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug(
+		"creating new OS bucket",
+		zap.String("inputDirPath", inputDirPath),
+		zap.String("bucketPath", bucketPath),
+		zap.String("subDirPath", subDirPath),
+	)
 	return newReadWriteBucket(
 		bucket,
 		subDirPath,
@@ -642,6 +658,7 @@ func getReadWriteBucketForOS(
 // Use for ProtoFileRefs.
 func getReadBucketCloserForOSProtoFile(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc TerminateFunc,
@@ -664,6 +681,7 @@ func getReadBucketCloserForOSProtoFile(
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, terminate, err := getMapPathAndSubDirPath(
 		ctx,
+		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
@@ -707,8 +725,13 @@ func getReadBucketCloserForOSProtoFile(
 			}
 		}
 	}
+	logger.Debug(
+		"mapped protoFilePath to dirPath",
+		zap.String("protoFilePath", protoFilePath),
+		zap.String("protoTerminateFileDirPath", protoTerminateFileDirPath),
+	)
 	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
-	readWriteBucket, err := getReadWriteBucketForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
+	readWriteBucket, err := getReadWriteBucketForOS(ctx, logger, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -743,6 +766,7 @@ func getReadBucketCloserForOSProtoFile(
 // returnSubDirPath: .
 func getMapPathAndSubDirPath(
 	ctx context.Context,
+	logger *zap.Logger,
 	inputBucket storage.ReadBucket,
 	inputSubDirPath string,
 	terminateFunc TerminateFunc,
@@ -761,6 +785,12 @@ func getMapPathAndSubDirPath(
 		if err != nil {
 			return "", "", false, err
 		}
+		logger.Debug(
+			"checked terminate",
+			zap.String("curPath", curPath),
+			zap.String("inputSubDirPath", inputSubDirPath),
+			zap.Bool("terminate", terminate),
+		)
 		if terminate {
 			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
 			if err != nil {
