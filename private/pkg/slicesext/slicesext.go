@@ -267,7 +267,7 @@ func ElementsEqual[T comparable](one []T, two []T) bool {
 // ElementsContained returns true if superset contains subset.
 //
 // Nil and empty slices are treated as equals.
-func ElementsContained(superset []string, subset []string) bool {
+func ElementsContained[T comparable](superset []T, subset []T) bool {
 	m := ToStructMap(superset)
 	for _, elem := range subset {
 		if _, ok := m[elem]; !ok {
