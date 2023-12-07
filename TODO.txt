@@ -36,20 +36,21 @@
     It's in bufpkg temporarily only to make it easy to compile. It would also be nice
     if the migration logic lives in bufconfig so that it knows about the file names,
     i.e. buf.work.yaml, buf.work and etc.
+  - It would be nice if the bufconfig.File exposes a Path() method. Or a path() method and
+    I can move bufmigrate into bufconfig.
   - A strategy to resolve dependencies for buf.lock
   - A strategy to resolve dependencies declared. i.e. foo depends on common:commit_1,
     bar depends on common:commit_2 and baz depends on common (without pinning a commit).
   - Refine migration behavior and flags.
   - Relative paths in lint/breaking ignore rules (and similar fields requiring paths), what
     are they relative to? Their module root or the workspace root?
-  - Group lint rules.
+  - Group lint rules, right now lint rules are expanded to a list of individual rules.
     - Also, PACKAGE_NO_IMPORT_CYCLE is added to MINIMAL, BASIC, DEFAULT in v2.
   - Breaking rules:
     - FIELD_SAME_TYPE from v1beta1 is split into 3 rules in v1: FIELD_SAME_TYPE,
       FIELD_WIRE_COMPATIBLE_TYPE, FIELD_WIRE_JSON_COMPATIBLE_TYPE.
         - If you have WIRE_JSON group in v1beta1, FIELD_SAME_TYPE is used. 
         - If you have WIRE_JSONin v1, FIELD_WIRE_JSON_COMPATIBLE_TYPE is used.
-    - Rule `FILE_SAME_PACKAGE` has been
-    added to PACKAGE, WIRE and WIRE_JSON.
+    - Rule `FILE_SAME_PACKAGE` has been added to PACKAGE, WIRE and WIRE_JSON.
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
