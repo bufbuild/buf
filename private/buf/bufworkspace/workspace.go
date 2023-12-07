@@ -381,81 +381,37 @@ func newWorkspaceForBucket(
 	curDirPath := config.subDirPath
 	// Loop recursively upwards to "." to check for buf.yamls and buf.work.yamls
 	for {
-		bufWorkYAMLFile, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, bucket, curDirPath)
-		if err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		bufWorkYAMLExists := err == nil
-		bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, curDirPath)
-		if err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		bufYAMLExists := err == nil
-		if bufWorkYAMLExists && bufYAMLExists {
-			// This isn't actually the external directory path, but we do the best we can here for now.
-			return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", curDirPath)
-		}
-
-		// Find the relative path of our original target subDirPath vs where we currently are.
-		// We only stop the loop if a v2 buf.yaml or a buf.work.yaml lists this directory.
-		//
-		// Example: we inputted foo/bar/baz, we're currently at foo. We want to make sure
-		// that buf.work.yaml lists bar/baz as a directory. If so, this buf.work.yaml
-		// relates to our current directory.
-		relDirPath, err := normalpath.Rel(curDirPath, config.subDirPath)
+		findControllingWorkspaceResult, err := bufconfig.FindControllingWorkspace(
+			ctx,
+			bucket,
+			curDirPath,
+			config.subDirPath,
+		)
 		if err != nil {
 			return nil, err
 		}
-		if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-			if curDirPath == config.subDirPath {
-				// We've referred to our workspace file directy, we're good to go.
-				return newWorkspaceForBucketBufYAMLV2(
-					ctx,
-					bucket,
-					moduleDataProvider,
-					config,
-					curDirPath,
-					nil,
-				)
-			}
-			dirPathMap := make(map[string]struct{})
-			for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
-				dirPathMap[moduleConfig.DirPath()] = struct{}{}
-			}
-			if _, ok := dirPathMap[relDirPath]; ok {
-				// This workspace file refers to curDurPath, we're good to go.
-				return newWorkspaceForBucketBufYAMLV2(
-					ctx,
-					bucket,
-					moduleDataProvider,
-					config,
-					curDirPath,
-					nil,
-				)
-			}
-		}
-		if bufWorkYAMLExists {
-			_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
-			if curDirPath == config.subDirPath || refersToCurDirPath {
-				// We don't actually need to parse the buf.work.yaml again - we have all the information
-				// we need. Just figure out the actual paths within the bucket of the modules, and go
-				// right to newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1.
-				moduleDirPaths := make([]string, len(bufWorkYAMLFile.DirPaths()))
-				for i, dirPath := range bufWorkYAMLFile.DirPaths() {
-					moduleDirPaths[i] = normalpath.Join(curDirPath, dirPath)
-				}
-				// If the buf.work.yaml contains the subDirPath, then we have found a workspace file for config.SubDirPath.
+		if findControllingWorkspaceResult.Found() {
+			// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
+			if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
 				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 					ctx,
 					bucket,
 					moduleDataProvider,
 					config,
-					moduleDirPaths,
+					bufWorkYAMLDirPaths,
 					nil,
 				)
 			}
+			// We have a v2 buf.yaml.
+			return newWorkspaceForBucketBufYAMLV2(
+				ctx,
+				bucket,
+				moduleDataProvider,
+				config,
+				curDirPath,
+				nil,
+			)
 		}
-
 		// Break condition - we did not find any buf.work.yaml or buf.yaml.
 		if curDirPath == "." {
 			break
