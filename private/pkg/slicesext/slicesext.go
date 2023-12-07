@@ -132,6 +132,8 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 }
 
 // Copy returns a copy of the slice.
+//
+// TODO: Delete this in favor of slices.Clone.
 func Copy[T any](s []T) []T {
 	sc := make([]T, len(s))
 	copy(sc, s)
