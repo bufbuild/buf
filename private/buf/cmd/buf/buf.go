@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -136,6 +137,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
 					graph.NewCommand("graph", builder),
+					migratev1.NewCommand("migrate-v1", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					//migratev1beta1.NewCommand("migrate-v1beta1", builder),

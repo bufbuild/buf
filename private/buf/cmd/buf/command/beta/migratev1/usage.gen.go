@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmigrate
+// Generated. DO NOT EDIT.
+
+package migratev1
+
+import _ "github.com/bufbuild/buf/private/usage"

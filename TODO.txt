@@ -26,5 +26,11 @@
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
+- decide whether it should be private/buf/bufmigrate or private/bufpkg/bufmigrate.
+  It's in bufpkg temporarily only to make it easy to compile.
+- `buf mod init` should create a v2 buf.yaml.
+- Is `buf build` supposed to call the API when there is already a buf.lock? On the same
+  directory, the released version (main) doesn't make that API call but `bufmod` calls
+  `buf.registry.module.v1beta1.CommitService/GetCommitNodes`. Is it for computing digest? Or is it because the buf.lock is in v1?
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true

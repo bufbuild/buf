@@ -62,6 +62,7 @@ testbufnew: installbuf
 		./private/buf/buffetch/... \
 		./private/buf/bufformat/... \
 		./private/buf/bufprint/... \
+		./private/buf/bufmigrate/... \
 		./private/buf/bufworkspace/... \
 		./private/buf/cmd/buf/command/alpha/package/... \
 		./private/buf/cmd/buf/command/alpha/protoc/... \
@@ -86,7 +87,6 @@ testbufnew: installbuf
 		./private/bufpkg/bufconfig/... \
 		./private/bufpkg/bufconnect/... \
 		./private/bufpkg/bufimage/... \
-		./private/bufpkg/bufmigrate/... \
 		./private/bufpkg/bufplugin/... \
 		./private/bufpkg/bufpluginexec/... \
 		./private/bufpkg/bufreflect/... \

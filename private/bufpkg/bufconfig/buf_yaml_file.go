@@ -465,7 +465,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		_, err = writer.Write(data)
 		return err
 	case FileVersionV2:
-		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
+		externalBufYAMLFile := externalBufYAMLFileV2{
 			Version: fileVersion.String(),
 		}
 		// Alredy sorted.
@@ -509,6 +509,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalModule.Breaking.Ignore = breakingConfig.IgnorePaths()
 			externalModule.Breaking.IgnoreOnly = breakingConfig.IgnoreIDOrCategoryToPaths()
 			externalModule.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
