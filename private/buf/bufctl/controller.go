@@ -632,6 +632,13 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
+	// The ProtoFilePath is still relative to the input bucket, not the bucket
+	// retrieved from buffetch. Treat the path just as we do with targetPaths
+	// and externalPaths in withPathsForBucketExtender.
+	protoFilePath, err := readBucketCloser.PathForExternalPath(protoFileRef.ProtoFilePath())
+	if err != nil {
+		return nil, err
+	}
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
@@ -640,7 +647,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 			readBucketCloser.SubDirPath(),
 		),
 		bufworkspace.WithProtoFileTargetPath(
-			protoFileRef.ProtoFilePath(),
+			protoFilePath,
 			protoFileRef.IncludePackageFiles(),
 		),
 		bufworkspace.WithConfigOverride(
