@@ -529,6 +529,11 @@ func getReadBucketCloserForBucket(
 	return newReadBucketCloser(
 		inputBucket,
 		subDirPath,
+		// This turns paths that were done relative to the root of the input into paths
+		// that are now relative to the mapped bucket.
+		//
+		// This happens if you do i.e. .git#subdir=foo/bar --path foo/bar/baz.proto
+		// We need to turn the path into baz.proto
 		func(externalPath string) (string, error) {
 			if filepath.IsAbs(externalPath) {
 				return "", fmt.Errorf("%s: absolute paths cannot be used for this input type", externalPath)
@@ -614,6 +619,7 @@ func getReadWriteBucketForOS(
 	return newReadWriteBucket(
 		bucket,
 		subDirPath,
+		// This function turns paths into paths relative to the bucket.
 		func(externalPath string) (string, error) {
 			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketPath))
 			if err != nil {
@@ -702,8 +708,6 @@ func getReadBucketCloserForOSProtoFile(
 		}
 	}
 	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
-	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
-	// add as targeting files when constructing a Workspace.
 	readWriteBucket, err := getReadWriteBucketForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
