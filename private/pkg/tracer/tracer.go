@@ -51,15 +51,6 @@ func Start(ctx context.Context, tracerName string, options ...StartOption) (cont
 // StartOption is an option for Start or Do.
 type StartOption func(*startOptions)
 
-// WithTracerName sets the given tracer name.
-//
-// The default is to use filename.Base(os.Args[0])
-func WithTracerName(tracerName string) StartOption {
-	return func(startOptions *startOptions) {
-		startOptions.tracerName = tracerName
-	}
-}
-
 // WithSpanName sets the span name.
 //
 // The default is to use the calling function name.
@@ -121,7 +112,6 @@ func (s *wrappedSpan) End(options ...trace.SpanEndOption) {
 }
 
 type startOptions struct {
-	tracerName     string
 	spanName       string
 	spanNameSuffix string
 	errAddr        *error
