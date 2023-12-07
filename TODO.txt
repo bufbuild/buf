@@ -45,12 +45,11 @@
   - Relative paths in lint/breaking ignore rules (and similar fields requiring paths), what
     are they relative to? Their module root or the workspace root?
   - Group lint rules, right now lint rules are expanded to a list of individual rules.
-    - Also, PACKAGE_NO_IMPORT_CYCLE is added to MINIMAL, BASIC, DEFAULT in v2.
+    - Going from v1beta1 there are many changes to the rules.
+    - Going from v1 to v2, the only change is that PACKAGE_NO_IMPORT_CYCLE is added to MINIMAL, BASIC, DEFAULT.
   - Breaking rules:
     - FIELD_SAME_TYPE from v1beta1 is split into 3 rules in v1: FIELD_SAME_TYPE,
       FIELD_WIRE_COMPATIBLE_TYPE, FIELD_WIRE_JSON_COMPATIBLE_TYPE.
-        - If you have WIRE_JSON group in v1beta1, FIELD_SAME_TYPE is used. 
-        - If you have WIRE_JSONin v1, FIELD_WIRE_JSON_COMPATIBLE_TYPE is used.
-    - Rule `FILE_SAME_PACKAGE` has been added to PACKAGE, WIRE and WIRE_JSON.
+    - Rule `FILE_SAME_PACKAGE` has been added to PACKAGE, WIRE and WIRE_JSON in v1.
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true

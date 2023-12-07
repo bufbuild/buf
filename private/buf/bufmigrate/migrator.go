@@ -33,9 +33,10 @@ import (
 
 // migrator is used to store state during migration
 type migrator struct {
-	// the directory where the migrated buf.yaml live
+	// the directory where the migrated buf.yaml live, this is useful for computing
+	// module directory paths, and possibly other paths.
 	destinationDir string
-	// the rootBucket at the call site
+	// the rootBucket at "."
 	rootBucket storage.ReadWriteBucket
 
 	// useful for creating new files
@@ -43,7 +44,6 @@ type migrator struct {
 	moduleDependencies []bufmodule.ModuleRef
 	depModuleKeys      []bufmodule.ModuleKey
 
-	// useful for deleting files and checking duplicates
 	moduleNameToParentFile map[string]string
 	seenFiles              map[string]struct{}
 }
@@ -322,6 +322,7 @@ func (m *migrator) getBufYAML() (bufconfig.BufYAMLFile, error) {
 			return !ok
 		},
 	)
+	// TODO: deduplicate/resolve dependency list
 	return bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		m.moduleConfigs,
