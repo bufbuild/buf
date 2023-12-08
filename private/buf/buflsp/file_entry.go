@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 )
@@ -32,9 +32,10 @@ type fileEntry struct {
 	lines    []string
 	refCount int
 
-	// Either from a local module, a remote module pin, or neither.
+	// Either from a local module, a remote module key, or neither.
 	module    bufmodule.Module
-	modulePin bufmoduleref.ModulePin
+	moduleKey bufmodule.ModuleKey
+	workspace bufworkspace.Workspace
 
 	externalPath string
 	path         string
@@ -57,16 +58,19 @@ type fileEntry struct {
 func newFileEntry(
 	document *protocol.TextDocumentItem,
 	module bufmodule.Module,
-	modulePin bufmoduleref.ModulePin,
+	moduleKey bufmodule.ModuleKey,
+	workspace bufworkspace.Workspace,
 	externalPath string,
 	path string,
-	isRemote bool) *fileEntry {
+	isRemote bool,
+) *fileEntry {
 	result := &fileEntry{
 		document: document,
 		refCount: 1,
 
 		module:    module,
-		modulePin: modulePin,
+		moduleKey: moduleKey,
+		workspace: workspace,
 
 		externalPath: externalPath,
 		path:         path,

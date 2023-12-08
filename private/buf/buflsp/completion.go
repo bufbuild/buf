@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 )
@@ -89,30 +91,26 @@ func (b *BufLsp) findImportCompletions(ctx context.Context, entry *fileEntry, pr
 	}
 
 	// Look for well known imports
-	wktFiles, err := wktFiles.ReadDir("wkt")
+	options := make(completionOptions)
+	err := datawkt.ReadBucket.Walk(ctx, prefix, func(objectInfo storage.ObjectInfo) error {
+		item := makeIncludeCompletion(strings.TrimPrefix(objectInfo.Path(), prefix))
+		options[item.Label] = item
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	options := make(completionOptions)
-	for _, wktFile := range wktFiles {
-		path := wktSourceDir + strings.TrimPrefix(wktFile.Name(), "wkt/")
-		if strings.HasPrefix(path, prefix) {
-			item := makeIncludeCompletion(strings.TrimPrefix(path, prefix))
-			options[item.Label] = item
-		}
 	}
 
 	if entry.module != nil {
 		if err := b.findModuleFileCompletions(ctx, entry.module, prefix, options); err != nil {
 			return nil, err
 		}
-		for _, dep := range entry.module.DependencyModulePins() {
-			depMod, err := b.moduleReader.GetModule(ctx, dep)
-			if err != nil {
-				return nil, err
-			}
-			if err := b.findModuleFileCompletions(ctx, depMod, prefix, options); err != nil {
+		deps, err := entry.module.ModuleDeps()
+		if err != nil {
+			return nil, err
+		}
+		for _, dep := range deps {
+			if err := b.findModuleFileCompletions(ctx, dep, prefix, options); err != nil {
 				return nil, err
 			}
 		}
@@ -122,18 +120,14 @@ func (b *BufLsp) findImportCompletions(ctx context.Context, entry *fileEntry, pr
 }
 
 func (b *BufLsp) findModuleFileCompletions(ctx context.Context, module bufmodule.Module, prefix string, options completionOptions) error {
-	infos, err := module.SourceFileInfos(ctx)
-	if err != nil {
-		return err
-	}
-	for _, info := range infos {
+	return module.WalkFileInfos(ctx, func(info bufmodule.FileInfo) error {
 		if strings.HasPrefix(info.Path(), prefix) {
 			relPath := strings.TrimPrefix(info.Path(), prefix)
 			item := makeIncludeCompletion(relPath)
 			options[item.Label] = item
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func (b *BufLsp) findPrefixCompletions(ctx context.Context, entry *fileEntry, scope symbolName, prefixString string) completionOptions {

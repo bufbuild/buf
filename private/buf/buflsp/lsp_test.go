@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
@@ -218,11 +219,17 @@ func newTestBufLsp(tb testing.TB) (*BufLsp, error) {
 		return nil, err
 	}
 
+	controller, err := bufcli.NewController(container)
+	if err != nil {
+		return nil, err
+	}
+
 	server, err := NewBufLsp(
 		context.Background(),
 		nil,
 		logger,
 		container,
+		controller,
 	)
 	if err != nil {
 		return nil, err

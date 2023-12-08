@@ -1,4 +1,4 @@
-// Copyright 2023 Buf Technologies, Inc.
+// Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,18 +26,18 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/buf/private/buf/bufwire"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/fsnotify/fsnotify"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
@@ -46,24 +46,23 @@ import (
 
 const (
 	// The cache directory for materialized wll known .proto files.
-	wktCacheDir = "/v2/wkt/"
+	wktCacheDir = "/v3/wkt/"
 	// The directory that contains the well known .proto files.
 	wktSourceDir = "google/protobuf/"
 
 	// The cache directory for materialized dependency .proto files.
-	depCacheDir = "/v2/files/"
+	depCacheDir = "/v3/files/"
 )
 
 type BufLsp struct {
 	noopServer
 
-	jconn     jsonrpc2.Conn
-	logger    *zap.Logger
-	container appflag.Container
+	jconn      jsonrpc2.Conn
+	logger     *zap.Logger
+	container  appflag.Container
+	controller bufctl.Controller
 
-	moduleReader       bufmodule.ModuleReader
-	moduleConfigReader bufwire.ModuleConfigReader
-	imageBuilder       bufimagebuild.Builder
+	moduleDataProvider bufmodule.ModuleDataProvider
 	lintHandler        buflint.Handler
 	breakingHandler    bufbreaking.Handler
 
@@ -80,28 +79,9 @@ func NewBufLsp(
 	jconn jsonrpc2.Conn,
 	logger *zap.Logger,
 	container appflag.Container,
+	controller bufctl.Controller,
 ) (*BufLsp, error) {
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(
-		container,
-		clientConfig,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	runner := command.NewRunner()
-	storageosProvider := bufcli.NewStorageosProvider(true)
-	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-		moduleReader,
-	)
+	moduleProvider, err := bufcli.NewModuleDataProvider(container)
 	if err != nil {
 		return nil, err
 	}
@@ -113,13 +93,12 @@ func NewBufLsp(
 	}
 
 	buflsp := &BufLsp{
-		jconn:     jconn,
-		logger:    logger,
-		container: container,
+		jconn:      jconn,
+		logger:     logger,
+		container:  container,
+		controller: controller,
 
-		moduleReader:       moduleReader,
-		moduleConfigReader: moduleConfigReader,
-		imageBuilder:       bufimagebuild.NewBuilder(logger, moduleReader),
+		moduleDataProvider: moduleProvider,
 		lintHandler:        buflint.NewHandler(logger),
 		breakingHandler:    bufbreaking.NewHandler(logger),
 
@@ -132,8 +111,8 @@ func NewBufLsp(
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				buflsp.mutex.Lock()
 				if entry, ok := buflsp.fileCache[event.Name]; ok {
-					if entry.module != nil {
-						if err := buflsp.refreshImage(context.Background(), entry.module); err != nil {
+					if entry.workspace != nil {
+						if err := buflsp.refreshImage(context.Background(), entry.workspace); err != nil {
 							buflsp.logger.Sugar().Errorf("refreshImage error: %s", err)
 						}
 					}
@@ -208,8 +187,8 @@ func (b *BufLsp) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	if err != nil {
 		return err
 	}
-	if entry.module != nil {
-		if err := b.refreshImage(ctx, entry.module); err != nil {
+	if entry.workspace != nil {
+		if err := b.refreshImage(ctx, entry.workspace); err != nil {
 			return err
 		}
 	}
@@ -229,8 +208,10 @@ func (b *BufLsp) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		return err
 	}
 	if matches { // Same as on disk, so safe to refresh the image data.
-		if err := b.refreshImage(ctx, entry.module); err != nil {
-			return err
+		if entry.workspace != nil {
+			if err := b.refreshImage(ctx, entry.workspace); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -420,8 +401,8 @@ func completionsToCompletionList(options map[string]protocol.CompletionItem) *pr
 
 func (b *BufLsp) resolveImport(ctx context.Context, entry *fileEntry, path string) (*fileEntry, error) {
 	// Check in the module
-	if file, err := entry.module.GetModuleFile(ctx, path); err == nil {
-		return b.ensureLoaded(ctx, file, entry.modulePin)
+	if file, err := entry.module.GetFile(ctx, path); err == nil {
+		return b.ensureLoaded(ctx, file, entry.moduleKey)
 	}
 
 	// Check well known types
@@ -430,14 +411,17 @@ func (b *BufLsp) resolveImport(ctx context.Context, entry *fileEntry, path strin
 	}
 
 	// Check in the dependencies
-	for _, dep := range entry.module.DependencyModulePins() {
-		mod, err := b.moduleReader.GetModule(ctx, dep)
-		if err != nil {
-			return nil, err
-		}
-
-		if file, err := mod.GetModuleFile(ctx, path); err == nil {
-			return b.ensureLoaded(ctx, file, dep)
+	deps, err := entry.module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	for _, dep := range deps {
+		if file, err := dep.GetFile(ctx, path); err == nil {
+			key, err := bufmodule.NewModuleKey(dep.ModuleFullName(), dep.CommitID(), dep.Digest)
+			if err != nil {
+				return nil, err
+			}
+			return b.ensureLoaded(ctx, file, key)
 		}
 	}
 	return nil, nil
@@ -452,32 +436,40 @@ func (b *BufLsp) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 }
 
 // Create a new file entry with the given contents and metadata.
-func (b *BufLsp) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, externalPath string, pin bufmoduleref.ModulePin) (*fileEntry, error) {
+func (b *BufLsp) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, externalPath string, key bufmodule.ModuleKey) (*fileEntry, error) {
 	if externalPath == "" {
 		externalPath = item.URI.Filename()
 	}
 
 	var module bufmodule.Module
+	var workspace bufworkspace.Workspace
 	var path string
-	if pin != nil {
+	if key != nil {
 		var err error
 		path = externalPath
-		module, err = b.moduleReader.GetModule(ctx, pin)
+		digest, err := key.Digest()
+		if err != nil {
+			return nil, err
+		}
+		moduleSet, err := bufmodule.NewModuleSetBuilder(ctx, b.moduleDataProvider).AddRemoteModule(key, false).Build()
+		if err != nil {
+			return nil, err
+		}
+		module, err = moduleSet.GetModuleForDigest(digest)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		moduleConfig, filePath, err := b.getModuleConfig(ctx, externalPath)
-		if err == nil {
-			path = filePath
-			module = moduleConfig.Module()
-		} else {
-			path = externalPath
-			module = nil
+		// TODO: This never works and is unfinished.
+		var err error
+		path = externalPath
+		workspace, err = b.controller.GetWorkspace(ctx, externalPath)
+		if err != nil {
+			workspace = nil
 		}
 	}
 
-	entry := newFileEntry(&item, module, pin, externalPath, path, strings.HasPrefix(item.URI.Filename(), b.container.CacheDirPath()))
+	entry := newFileEntry(&item, module, key, workspace, externalPath, path, strings.HasPrefix(item.URI.Filename(), b.container.CacheDirPath()))
 	b.fileCache[item.URI.Filename()] = entry
 	if err := entry.processText(ctx, b); err != nil {
 		return nil, err
@@ -491,20 +483,21 @@ func (b *BufLsp) createFileEntry(ctx context.Context, item protocol.TextDocument
 }
 
 // Ensure the given module file is loaded into the cache.
-func (b *BufLsp) ensureLoaded(ctx context.Context, modFile bufmodule.ModuleFile, pin bufmoduleref.ModulePin) (*fileEntry, error) {
+func (b *BufLsp) ensureLoaded(ctx context.Context, modFile bufmodule.File, key bufmodule.ModuleKey) (*fileEntry, error) {
 	uri := makeFileURI(modFile.ExternalPath())
 	if stat, err := os.Stat(modFile.ExternalPath()); err != nil || stat.IsDir() {
 		// Not a local file, create a temporary file
-		if pin == nil {
-			return nil, fmt.Errorf("no pin for %s", modFile.Path())
+		if key == nil {
+			return nil, fmt.Errorf("no key for %s", modFile.Path())
 		}
-		digest, err := bufcas.ParseDigest(pin.Digest())
+		digest, err := key.Digest()
 		if err != nil {
 			return nil, err
 		}
 		digestHex := hex.EncodeToString(digest.Value())
+		moduleFullName := modFile.Module().ModuleFullName()
 		tmpPath := path.Join(b.container.CacheDirPath(),
-			"v2", "files", modFile.ModuleIdentity().IdentityString(), pin.Commit(), digest.Type().String(), digestHex, modFile.Path())
+			"v2", "files", moduleFullName.Registry(), moduleFullName.Owner(), moduleFullName.Name(), digest.Type().String(), digestHex, modFile.Path())
 		uri = makeFileURI(tmpPath)
 	}
 
@@ -530,61 +523,46 @@ func (b *BufLsp) ensureLoaded(ctx context.Context, modFile bufmodule.ModuleFile,
 	return b.createFileEntry(ctx, protocol.TextDocumentItem{
 		URI:  uri,
 		Text: string(fileData),
-	}, modFile.ExternalPath(), pin)
+	}, modFile.ExternalPath(), key)
 }
 
-func annotToDiag(annot bufanalysis.FileAnnotation, severity protocol.DiagnosticSeverity) protocol.Diagnostic {
-	return protocol.Diagnostic{
-		Range: protocol.Range{
-			Start: protocol.Position{
-				Line:      uint32(annot.StartLine() - 1),
-				Character: uint32(annot.StartColumn() - 1),
-			},
-			End: protocol.Position{
-				Line:      uint32(annot.EndLine() - 1),
-				Character: uint32(annot.EndColumn() - 1),
-			},
-		},
-		Severity: severity,
-		Message:  fmt.Sprintf("%s (%s)", annot.Message(), annot.Type()),
-	}
-}
-
-func (b *BufLsp) refreshImage(ctx context.Context, module bufmodule.Module) error {
-	fileInfos, err := module.SourceFileInfos(ctx)
-	if err != nil {
-		return err
-	}
-	for _, fileInfo := range fileInfos {
-		if entry, ok := b.fileCache[fileInfo.ExternalPath()]; ok {
-			entry.bufDiags = nil
-		}
-	}
-	diagsByFile := make(map[string][]protocol.Diagnostic)
-	image, buildAnnots, err := b.imageBuilder.Build(ctx, module)
-	if err != nil {
-		return err
-	}
-	for _, annot := range buildAnnots {
-		diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
-			annotToDiag(annot, protocol.DiagnosticSeverityError))
-	}
-
-	if image != nil {
-		lintAnnots, err := b.lintHandler.Check(ctx, module.LintConfig(), image)
+func (b *BufLsp) refreshImage(ctx context.Context, workspace bufworkspace.Workspace) error {
+	for _, module := range workspace.Modules() {
+		err := module.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+			if entry, ok := b.fileCache[fileInfo.ExternalPath()]; ok {
+				entry.bufDiags = nil
+			}
+			return nil
+		})
 		if err != nil {
 			return err
 		}
-		for _, annot := range lintAnnots {
-			diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
-				annotToDiag(annot, protocol.DiagnosticSeverityWarning))
+		diagsByFile := make(map[string][]protocol.Diagnostic)
+		image, buildAnnots, err := bufimage.BuildImage(ctx, module)
+		if err != nil {
+			return err
 		}
-	}
-	for externalPath, diags := range diagsByFile {
-		if entry, ok := b.fileCache[externalPath]; ok {
-			entry.bufDiags = diags
-			if err := b.updateDiags(ctx, entry); err != nil {
+		for _, annot := range buildAnnots {
+			diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
+				annotToDiag(annot, protocol.DiagnosticSeverityError))
+		}
+
+		if image != nil {
+			lintAnnots, err := b.lintHandler.Check(ctx, workspace.GetLintConfigForOpaqueID(module.OpaqueID()), image)
+			if err != nil {
 				return err
+			}
+			for _, annot := range lintAnnots {
+				diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
+					annotToDiag(annot, protocol.DiagnosticSeverityWarning))
+			}
+		}
+		for externalPath, diags := range diagsByFile {
+			if entry, ok := b.fileCache[externalPath]; ok {
+				entry.bufDiags = diags
+				if err := b.updateDiags(ctx, entry); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -616,19 +594,25 @@ func (b *BufLsp) updateDiags(ctx context.Context, entry *fileEntry) error {
 func (b *BufLsp) restoreCacheFile(ctx context.Context, path string, item protocol.TextDocumentItem) error {
 	if strings.HasPrefix(path, depCacheDir) {
 		path = strings.TrimPrefix(path, depCacheDir)
-		// This is a temporary file, we need to recover the pin from the path
+		// This is a temporary file, we need to recover the key from the path
 		parts := strings.Split(path, "/")
 		if len(parts) < 6 {
 			return fmt.Errorf("invalid temporary file path: %s", item.URI.Filename())
 		}
 		// Path is of the format:
-		// <remote>/<owner>/<repository>/<commit>/<digest type>/<digest>/<path>
-		pin, err := bufmoduleref.NewModulePin(parts[0], parts[1], parts[2], parts[3], parts[4]+":"+parts[5])
+		// <registry>/<owner>/<name>/<digest type>/<digest>/<path>
+		moduleFullName, err := bufmodule.NewModuleFullName(parts[0], parts[1], parts[2])
 		if err != nil {
 			return err
 		}
-		externalPath := strings.Join(parts[6:], "/")
-		if _, err := b.createFileEntry(ctx, item, externalPath, pin); err != nil {
+		moduleKey, err := bufmodule.NewModuleKey(moduleFullName, "", func() (bufcas.Digest, error) {
+			return bufcas.ParseDigest(parts[3] + ":" + parts[4])
+		})
+		if err != nil {
+			return err
+		}
+		externalPath := strings.Join(parts[5:], "/")
+		if _, err := b.createFileEntry(ctx, item, externalPath, moduleKey); err != nil {
 			return err
 		}
 	} else if strings.HasPrefix(path, wktCacheDir) {
@@ -647,8 +631,11 @@ func (b *BufLsp) loadWktFile(ctx context.Context, fileName string) (*fileEntry, 
 		wktEntry.refCount++
 		return wktEntry, nil
 	}
-	cachedName := "wkt/" + strings.TrimPrefix(fileName, wktSourceDir)
-	wktData, err := wktFiles.ReadFile(cachedName)
+	wktFile, err := datawkt.ReadBucket.Get(ctx, fileName)
+	if err != nil {
+		return nil, err
+	}
+	wktData, err := ioext.ReadAllAndClose(wktFile)
 	if err != nil {
 		return nil, err
 	}
@@ -681,43 +668,23 @@ func (b *BufLsp) derefFileEntry(entry *fileEntry) {
 	}
 }
 
-// getModuleConfig returns the ModuleConfig (and include path) that defines the ModuleFile identified by
-// the given external path.
-func (b *BufLsp) getModuleConfig(
-	ctx context.Context,
-	externalPath string,
-) (bufwire.ModuleConfig, string, error) {
-	refParser := buffetch.NewRefParser(b.logger)
-	sourceRef, err := refParser.GetSourceRef(ctx, externalPath)
-	if err != nil {
-		return nil, "", err
-	}
-	moduleConfigs, err := b.moduleConfigReader.GetModuleConfigSet(
-		ctx,
-		b.container,
-		sourceRef,
-		"",
-		nil,
-		nil,
-		false,
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	for _, moduleConfig := range moduleConfigs.ModuleConfigs() {
-		fileInfos, err := moduleConfig.Module().TargetFileInfos(ctx)
-		if err != nil {
-			return nil, "", err
-		}
-		for _, fileInfo := range fileInfos {
-			if fileInfo.ExternalPath() == externalPath {
-				return moduleConfig, fileInfo.Path(), nil
-			}
-		}
-	}
-	return nil, "", fmt.Errorf("could not find %s in any module", externalPath)
-}
-
 func makeFileURI(path string) protocol.DocumentURI {
 	return protocol.DocumentURI("file://" + path)
+}
+
+func annotToDiag(annot bufanalysis.FileAnnotation, severity protocol.DiagnosticSeverity) protocol.Diagnostic {
+	return protocol.Diagnostic{
+		Range: protocol.Range{
+			Start: protocol.Position{
+				Line:      uint32(annot.StartLine() - 1),
+				Character: uint32(annot.StartColumn() - 1),
+			},
+			End: protocol.Position{
+				Line:      uint32(annot.EndLine() - 1),
+				Character: uint32(annot.EndColumn() - 1),
+			},
+		},
+		Severity: severity,
+		Message:  fmt.Sprintf("%s (%s)", annot.Message(), annot.Type()),
+	}
 }
