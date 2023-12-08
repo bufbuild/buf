@@ -53,7 +53,10 @@ func Migrate(
 	// } else {
 	// 	destinationDir = "."
 	// }
-	bucket, err := storageProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
+	bucket, err := storageProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return err
 	}
@@ -62,7 +65,10 @@ func Migrate(
 		destinationDir,
 	)
 	if migrateOptions.bufWorkYAMLFilePath != "" {
-		if err := migrator.addWorkspace(ctx, filepath.Dir(migrateOptions.bufWorkYAMLFilePath)); err != nil {
+		if err := migrator.addWorkspace(
+			ctx,
+			filepath.Dir(migrateOptions.bufWorkYAMLFilePath),
+		); err != nil {
 			return err
 		}
 	}
