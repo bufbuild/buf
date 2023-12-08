@@ -32,7 +32,7 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		``,
-		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:read c.proto: file does not exist`),
+		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:stat c.proto: file does not exist`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "symlink"),
 	)

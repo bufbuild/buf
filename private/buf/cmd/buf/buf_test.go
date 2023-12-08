@@ -234,7 +234,7 @@ func TestFail6(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		filepath.FromSlash(`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`),
+		"Failure: --path is not valid for use with .proto file references",
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--path",
@@ -1069,7 +1069,7 @@ func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		`Failure: --path is not valid for use with .proto file references`,
 		"build",
 		filepath.Join("testdata", "success", "buf", "buf.proto"),
 		"--path",
@@ -1178,12 +1178,12 @@ func TestModInitBasic(t *testing.T) {
 	testModInit(
 		t,
 		`version: v1
-breaking:
-  use:
-    - FILE
 lint:
   use:
     - DEFAULT
+breaking:
+  use:
+    - FILE
 `,
 		false,
 		"",
@@ -1480,7 +1480,7 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		`Failure: --path is not valid for use with .proto file references`,
 		"export",
 		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 		"-o",
@@ -1930,7 +1930,7 @@ func TestConvertInvalidTypeName(t *testing.T) {
 		stdin,
 		1,
 		"",
-		`Failure: ".foo" is not a valid fully qualified type name`,
+		`Failure: --from: ".foo" is not a valid fully qualified type name`,
 		"convert",
 		filepath.Join(tempDir, "image.binpb"),
 		"--type",
