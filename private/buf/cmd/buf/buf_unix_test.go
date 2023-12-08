@@ -28,6 +28,7 @@ func TestLsFilesSymlinks(t *testing.T) {
 		t,
 		nil,
 		0,
+		// b.proto links to a .go file, which shouldn't be parsed
 		filepath.FromSlash(`testdata/symlinks/a.proto
 testdata/symlinks/b.proto`),
 		"ls-files",
