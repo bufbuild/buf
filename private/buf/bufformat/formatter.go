@@ -707,6 +707,10 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	fieldReferenceNode := messageFieldNode.Name
 	if fieldReferenceNode.Open != nil {
 		f.writeStart(fieldReferenceNode.Open)
+		if fieldReferenceNode.URLPrefix != nil {
+			f.writeInline(fieldReferenceNode.URLPrefix)
+			f.writeInline(fieldReferenceNode.Slash)
+		}
 		f.writeInline(fieldReferenceNode.Name)
 	} else {
 		f.writeStart(fieldReferenceNode.Name)
