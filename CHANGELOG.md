@@ -12,6 +12,9 @@
   `use_enum_numbers`. This affects output serialization. Some examples:
   - `buf convert --type foo.Bar --from input.binpb --to output.yaml#use_proto_names=true`
   - `buf convert --type foo.Bar --from input.binpb --to -#format=yaml,use_enum_numbers=true`
+- Fix issue where `buf format` would inadvertently mangle files that used
+  the [expanded `Any` syntax](https://protobuf.com/docs/language-spec#any-messages)
+  in option values.
 
 ## [v1.28.1] - 2023-11-15
 
