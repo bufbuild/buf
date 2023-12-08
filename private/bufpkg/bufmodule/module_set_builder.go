@@ -16,8 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sort"
 	"sync/atomic"
 
@@ -29,7 +27,7 @@ import (
 )
 
 var (
-	errBuildAlreadyCalled = errors.New("ModuleSetBuilder.Build has already been called")
+	errBuildAlreadyCalled = syserror.New("ModuleSetBuilder.Build has already been called")
 )
 
 // ModuleSetBuilder builds ModuleSets.
@@ -205,28 +203,28 @@ func (b *moduleSetBuilder) AddLocalModule(
 		return b.addError(errBuildAlreadyCalled)
 	}
 	if bucketID == "" {
-		return b.addError(errors.New("bucketID is required when calling AddLocalModule"))
+		return b.addError(syserror.New("bucketID is required when calling AddLocalModule"))
 	}
 	localModuleOptions := newLocalModuleOptions()
 	for _, option := range options {
 		option(localModuleOptions)
 	}
 	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != "" {
-		return b.addError(errors.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
+		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
-		return b.addError(errors.New("cannot set TargetPaths for a non-target Module when calling AddLocalModule"))
+		return b.addError(syserror.New("cannot set TargetPaths for a non-target Module when calling AddLocalModule"))
 	}
 	if !isTarget && localModuleOptions.protoFileTargetPath != "" {
-		return b.addError(errors.New("cannot set ProtoFileTargetPath for a non-target Module when calling AddLocalModule"))
+		return b.addError(syserror.New("cannot set ProtoFileTargetPath for a non-target Module when calling AddLocalModule"))
 	}
 	if localModuleOptions.protoFileTargetPath != "" &&
 		(len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
-		return b.addError(errors.New("cannot set TargetPaths and ProtoFileTargetPath when calling AddLocalModule"))
+		return b.addError(syserror.New("cannot set TargetPaths and ProtoFileTargetPath when calling AddLocalModule"))
 	}
 	if localModuleOptions.protoFileTargetPath != "" &&
 		normalpath.Ext(localModuleOptions.protoFileTargetPath) != ".proto" {
-		return b.addError(fmt.Errorf("proto file target %q is not a .proto file", localModuleOptions.protoFileTargetPath))
+		return b.addError(syserror.Newf("proto file target %q is not a .proto file", localModuleOptions.protoFileTargetPath))
 	}
 	// TODO: normalize and validate all paths
 	module, err := newModule(
@@ -270,7 +268,7 @@ func (b *moduleSetBuilder) AddRemoteModule(
 		option(remoteModuleOptions)
 	}
 	if !isTarget && (len(remoteModuleOptions.targetPaths) > 0 || len(remoteModuleOptions.targetExcludePaths) > 0) {
-		return b.addError(errors.New("cannot set TargetPaths for a non-target Module when calling AddRemoteModule"))
+		return b.addError(syserror.New("cannot set TargetPaths for a non-target Module when calling AddRemoteModule"))
 	}
 	b.addedModules = append(
 		b.addedModules,
@@ -292,10 +290,10 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return nil, multierr.Combine(b.errs...)
 	}
 	if len(b.addedModules) == 0 {
-		return nil, errors.New("no Modules added to ModuleSetBuilder")
+		return nil, syserror.New("no Modules added to ModuleSetBuilder")
 	}
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
-		return nil, errors.New("no Modules were targeted in ModuleSetBuilder")
+		return nil, syserror.New("no Modules were targeted in ModuleSetBuilder")
 	}
 
 	// Get the unique modules, preferring targets over non-targets, and local over remote.
@@ -377,14 +375,26 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 		return nil, err
 	}
 	if len(moduleDatas) != 1 {
-		return nil, fmt.Errorf("expected 1 ModuleData, got %d", len(moduleDatas))
+		return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
 	}
 	moduleData := moduleDatas[0]
 	if moduleData.ModuleKey().ModuleFullName() == nil {
-		return nil, errors.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+		return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
 	}
-	if moduleData.ModuleKey().CommitID() == "" {
-		return nil, fmt.Errorf("got empty CommitID for ModuleKey with ModuleFullName %q returned from a ModuleDataProvider", moduleData.ModuleKey().ModuleFullName().String())
+	if remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+		return nil, syserror.Newf(
+			"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
+			remoteModuleKey.ModuleFullName().String(),
+			moduleData.ModuleKey().ModuleFullName().String(),
+		)
+	}
+	if remoteModuleKey.CommitID() != "" && moduleData.ModuleKey().CommitID() == "" {
+		return nil, syserror.Newf(
+			"got empty CommitID for retrieved ModuleKey from a ModuleDataProvider "+
+				"when input ModuleKey had ModuleFullName %q and CommitID %q",
+			remoteModuleKey.ModuleFullName().String(),
+			remoteModuleKey.CommitID(),
+		)
 	}
 
 	// TODO: normalize and validate all paths

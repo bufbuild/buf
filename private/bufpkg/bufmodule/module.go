@@ -84,7 +84,6 @@ type Module interface {
 	//
 	// May be empty. Callers should not rely on this value being present. If
 	// ModuleFullName is nil, this will always be empty.
-	// However, this is always present for remote Modules.
 	CommitID() string
 
 	// Digest returns the Module digest.
@@ -133,7 +132,7 @@ type Module interface {
 	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
 	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 	//
-	// Remote Modules will always have ModuleFullNames and CommitIDs.
+	// Remote Modules will always have ModuleFullNames.
 	IsLocal() bool
 
 	// ModuleSet returns the ModuleSet that this Module is contained within.
@@ -271,9 +270,9 @@ func newModule(
 		// This is a system error.
 		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
-	if !isLocal && (moduleFullName == nil || commitID == "") {
+	if !isLocal && moduleFullName == nil {
 		// This is a system error.
-		return nil, syserror.New("moduleFullName or commitID not present when constructing a remote Module, both of these must be set")
+		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
 	module := &module{
 		ctx:            ctx,
