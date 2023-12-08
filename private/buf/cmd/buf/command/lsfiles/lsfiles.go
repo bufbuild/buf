@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -122,23 +121,22 @@ func run(
 	if err != nil {
 		return err
 	}
-	image, err := controller.GetImage(
+	protoFileInfos, err := controller.GetProtoFileInfos(
 		ctx,
 		input,
-		bufctl.WithImageExcludeSourceInfo(true),
-		bufctl.WithImageExcludeImports(!flags.IncludeImports),
+		bufctl.WithProtoFileInfosIncludeImports(flags.IncludeImports),
 	)
 	if err != nil {
 		return err
 	}
-	imageFilePathFunc := bufimage.ImageFile.ExternalPath
+	pathFunc := bufctl.ProtoFileInfo.ExternalPath
 	if flags.AsImportPaths {
-		imageFilePathFunc = bufimage.ImageFile.Path
+		pathFunc = bufctl.ProtoFileInfo.Path
 	}
 	paths := slicesext.Map(
-		image.Files(),
-		func(imageFile bufimage.ImageFile) string {
-			return imageFilePathFunc(imageFile)
+		protoFileInfos,
+		func(protoFileInfo bufctl.ProtoFileInfo) string {
+			return pathFunc(protoFileInfo)
 		},
 	)
 	sort.Strings(paths)

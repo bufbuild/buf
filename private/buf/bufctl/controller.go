@@ -38,6 +38,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
@@ -50,6 +52,21 @@ type ImageWithConfig interface {
 	bufimage.Image
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
+
+	isImageWithConfig()
+}
+
+// ProtoFileInfo is a minimal FileInfo that can be constructed from either
+// a ModuleSet or an Image with no additional lazy calls.
+//
+// This is used by ls-files.
+type ProtoFileInfo interface {
+	storage.ObjectInfo
+
+	ModuleFullName() bufmodule.ModuleFullName
+	CommitID() string
+
+	isProtoFileInfo()
 }
 
 type Controller interface {
@@ -73,6 +90,15 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) ([]ImageWithConfig, error)
+	// GetProtoFileInfos gets the .proto FileInfos for the given input.
+	//
+	// If WithFileInfosIncludeImports is set, imports are included, otherwise
+	// just the targeted files are included.
+	GetProtoFileInfos(
+		ctx context.Context,
+		input string,
+		options ...FunctionOption,
+	) ([]ProtoFileInfo, error)
 	PutImage(
 		ctx context.Context,
 		imageOutput string,
@@ -117,84 +143,6 @@ func NewController(
 		gitClonerOptions,
 		options...,
 	)
-}
-
-type ControllerOption func(*controller)
-
-func WithDisableSymlinks(disableSymlinks bool) ControllerOption {
-	return func(controller *controller) {
-		controller.disableSymlinks = disableSymlinks
-	}
-}
-
-func WithFileAnnotationErrorFormat(fileAnnotationErrorFormat string) ControllerOption {
-	return func(controller *controller) {
-		controller.fileAnnotationErrorFormat = fileAnnotationErrorFormat
-	}
-}
-
-func WithFileAnnotationsToStdout() ControllerOption {
-	return func(controller *controller) {
-		controller.fileAnnotationsToStdout = true
-	}
-}
-
-// TODO: split up to per-function.
-type FunctionOption func(*functionOptions)
-
-func WithTargetPaths(targetPaths []string, targetExcludePaths []string) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.targetPaths = targetPaths
-		functionOptions.targetExcludePaths = targetExcludePaths
-	}
-}
-
-func WithImageExcludeSourceInfo(imageExcludeSourceInfo bool) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageExcludeSourceInfo = imageExcludeSourceInfo
-	}
-}
-
-func WithImageExcludeImports(imageExcludeImports bool) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageExcludeImports = imageExcludeImports
-	}
-}
-
-func WithImageTypes(imageTypes []string) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageTypes = imageTypes
-	}
-}
-
-func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.imageAsFileDescriptorSet = imageAsFileDescriptorSet
-	}
-}
-
-// WithConfigOverride applies the config override.
-//
-// This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a
-// v1beta1 buf.yaml, v1 buf.yaml, or no buf.yaml. This flag will not work if a buf.work.yaml
-// is detected, or a v2 buf.yaml is detected.
-//
-// If used with an image or module ref, this has no effect on the build, i.e. excludes are
-// not respected, and the module name is ignored. This matches old behavior.
-//
-// This implements the soon-to-be-deprected --config flag.
-//
-// See bufconfig.GetBufYAMLFileForPrefixOrOverride for more details.
-//
-// *** DO NOT USE THIS OUTSIDE OF THE CLI AND/OR IF YOU DON'T UNDERSTAND IT. ***
-// *** DO NOT ADD THIS TO ANY NEW COMMANDS. ***
-//
-// Current commands that use this: build, breaking, lint, generate, format,
-// export, ls-breaking-rules, ls-lint-rules.
-func WithConfigOverride(configOverride string) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.configOverride = configOverride
-	}
 }
 
 /// *** PRIVATE ***
@@ -312,47 +260,7 @@ func (c *controller) GetImage(
 	for _, option := range options {
 		option(functionOptions)
 	}
-	ref, err := c.buffetchRefParser.GetRef(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	switch t := ref.(type) {
-	case buffetch.ProtoFileRef:
-		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.SourceRef:
-		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.ModuleRef:
-		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
-	case buffetch.MessageRef:
-		return c.getImageForMessageRef(ctx, t, functionOptions)
-	default:
-		// This is a system error.
-		return nil, syserror.Newf("invalid Ref: %T", ref)
-	}
+	return c.getImage(ctx, input, functionOptions)
 }
 
 func (c *controller) GetTargetImageWithConfigs(
@@ -441,6 +349,94 @@ func (c *controller) GetTargetImageWithConfigs(
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+}
+
+func (c *controller) GetProtoFileInfos(
+	ctx context.Context,
+	input string,
+	options ...FunctionOption,
+) ([]ProtoFileInfo, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	// We never care about SourceCodeInfo here.
+	functionOptions.imageExcludeSourceInfo = true
+
+	if functionOptions.protoFileInfosIncludeImports {
+		// There are cleaner ways we could do this on per-ref basis, but this matches
+		// what we did in the pre-buf-refactor, and it's simple and fine. We could
+		// optimize this later if we really wanted.
+		image, err := c.getImage(ctx, input, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return getProtoFileInfosForImage(image)
+	}
+	// We now know that we don't want imports. Just get the targets. We set up
+	// functionOptions to do this for images here too.
+	functionOptions.imageExcludeImports = true
+
+	ref, err := c.buffetchRefParser.GetRef(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return getProtoFileInfosForModuleSet(ctx, workspace)
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return getProtoFileInfosForModuleSet(ctx, workspace)
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return getProtoFileInfosForModuleSet(ctx, workspace)
+	case buffetch.MessageRef:
+		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return getProtoFileInfosForImage(image)
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
+	}
+}
+
+// We expect that we only want target files when we call this.
+func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Map(
+		targetFileInfos,
+		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
+			return newModuleProtoFileInfo(fileInfo)
+		},
+	), nil
+}
+
+// Any import filtering is expected to be done before this.
+func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
+	return slicesext.Map(
+		image.Files(),
+		func(imageFile bufimage.ImageFile) ProtoFileInfo {
+			return newImageProtoFileInfo(imageFile)
+		},
+	), nil
 }
 
 func (c *controller) PutImage(
@@ -599,6 +595,54 @@ func (c *controller) PutMessage(
 	}
 	_, err = writeCloser.Write(data)
 	return multierr.Append(err, writeCloser.Close())
+}
+
+func (c *controller) getImage(
+	ctx context.Context,
+	input string,
+	functionOptions *functionOptions,
+) (bufimage.Image, error) {
+	ref, err := c.buffetchRefParser.GetRef(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.SourceRef:
+		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.ModuleRef:
+		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
+		if err != nil {
+			return nil, err
+		}
+		return c.buildImage(
+			ctx,
+			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+			functionOptions,
+		)
+	case buffetch.MessageRef:
+		return c.getImageForMessageRef(ctx, t, functionOptions)
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("invalid Ref: %T", ref)
+	}
 }
 
 func (c *controller) getWorkspaceForProtoFileRef(
@@ -1057,84 +1101,4 @@ func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
 	// TODO: get standard flag names and bindings into this package.
 	fileAnnotationErrorFormatFlagName := "error-format"
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", fileAnnotationErrorFormatFlagName, fileAnnotationErrorFormat)
-}
-
-type imageWithConfig struct {
-	bufimage.Image
-
-	lintConfig     bufconfig.LintConfig
-	breakingConfig bufconfig.BreakingConfig
-}
-
-func newImageWithConfig(
-	image bufimage.Image,
-	lintConfig bufconfig.LintConfig,
-	breakingConfig bufconfig.BreakingConfig,
-) *imageWithConfig {
-	return &imageWithConfig{
-		Image:          image,
-		lintConfig:     lintConfig,
-		breakingConfig: breakingConfig,
-	}
-}
-
-func (i *imageWithConfig) LintConfig() bufconfig.LintConfig {
-	return i.lintConfig
-}
-
-func (i *imageWithConfig) BreakingConfig() bufconfig.BreakingConfig {
-	return i.breakingConfig
-}
-
-type functionOptions struct {
-	targetPaths              []string
-	targetExcludePaths       []string
-	imageExcludeSourceInfo   bool
-	imageExcludeImports      bool
-	imageTypes               []string
-	imageAsFileDescriptorSet bool
-	configOverride           string
-}
-
-func newFunctionOptions() *functionOptions {
-	return &functionOptions{}
-}
-
-func (f *functionOptions) withPathsForBucketExtender(
-	bucketExtender buffetch.BucketExtender,
-) (*functionOptions, error) {
-	deref := *f
-	c := &deref
-	for i, inputTargetPath := range c.targetPaths {
-		targetPath, err := bucketExtender.PathForExternalPath(inputTargetPath)
-		if err != nil {
-			return nil, err
-		}
-		c.targetPaths[i] = targetPath
-	}
-	for i, inputTargetExcludePath := range c.targetExcludePaths {
-		targetExcludePath, err := bucketExtender.PathForExternalPath(inputTargetExcludePath)
-		if err != nil {
-			return nil, err
-		}
-		c.targetExcludePaths[i] = targetExcludePath
-	}
-	return c, nil
-}
-
-func (f *functionOptions) getGetBucketOptions() []buffetch.GetBucketOption {
-	if f.configOverride != "" {
-		// If we have a config override, we do not search for buf.yamls or buf.work.yamls,
-		// instead acting as if the config override was the only configuration file available.
-		//
-		// Note that this is slightly different behavior than the pre-refactor CLI had, but this
-		// was always the intended behavior. The pre-refactor CLI would error if you had a buf.work.yaml,
-		// and did the same search behavior for buf.yamls, which didn't really make sense. In the new
-		// world where buf.yamls also represent the behavior of buf.work.yamls, you should be able
-		// to specify whatever want here.
-		return []buffetch.GetBucketOption{
-			buffetch.GetBucketWithNoSearch(),
-		}
-	}
-	return nil
 }
