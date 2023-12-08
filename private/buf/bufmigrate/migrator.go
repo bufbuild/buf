@@ -38,7 +38,7 @@ type migrator struct {
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
 	destinationDir string
-	// the rootBucket at "."
+	// the bucket at "."
 	rootBucket storage.ReadWriteBucket
 
 	// useful for creating new files
@@ -62,7 +62,7 @@ func newMigrator(
 	}
 }
 
-func (m *migrator) addWorkspace(
+func (m *migrator) addWorkspaceDirectory(
 	ctx context.Context,
 	workspaceDir string,
 ) error {
@@ -73,13 +73,13 @@ func (m *migrator) addWorkspace(
 	// TODO: get path properly
 	m.seenFiles[filepath.Join(workspaceDir, "buf.work.yaml")] = struct{}{}
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		m.addModule(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
+		m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
 	}
 	return nil
 }
 
 // both buf.yaml and buf.lock
-func (m *migrator) addModule(
+func (m *migrator) addModuleDirectory(
 	ctx context.Context,
 	// moduleDir is the relative path (relative to ".") to the module directory
 	moduleDir string,
@@ -106,7 +106,7 @@ func (m *migrator) addModule(
 		if err != nil {
 			return err
 		}
-		if err := m.addModuleConfig(moduleConfig, bufYAMLPath); err != nil {
+		if err := m.appendModuleConfig(moduleConfig, bufYAMLPath); err != nil {
 			return err
 		}
 		// Assume there is no co-resident buf.lock
@@ -324,7 +324,7 @@ func (m *migrator) addBufYAML(
 			if err != nil {
 				return err
 			}
-			if err := m.addModuleConfig(configForRoot, bufYAMLPath); err != nil {
+			if err := m.appendModuleConfig(configForRoot, bufYAMLPath); err != nil {
 				return err
 			}
 		}
@@ -381,7 +381,7 @@ func (m *migrator) addBufYAML(
 		if err != nil {
 			return err
 		}
-		if err := m.addModuleConfig(moduleConfig, bufYAMLPath); err != nil {
+		if err := m.appendModuleConfig(moduleConfig, bufYAMLPath); err != nil {
 			return err
 		}
 		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
@@ -431,7 +431,7 @@ func (m *migrator) getBufLock() (bufconfig.BufLockFile, error) {
 	)
 }
 
-func (m *migrator) addModuleConfig(moduleConfig bufconfig.ModuleConfig, parentFile string) error {
+func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, parentFile string) error {
 	m.moduleConfigs = append(m.moduleConfigs, moduleConfig)
 	if moduleConfig.ModuleFullName() == nil {
 		return nil

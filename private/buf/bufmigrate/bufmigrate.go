@@ -65,7 +65,7 @@ func Migrate(
 		destinationDir,
 	)
 	if migrateOptions.bufWorkYAMLFilePath != "" {
-		if err := migrator.addWorkspace(
+		if err := migrator.addWorkspaceDirectory(
 			ctx,
 			filepath.Dir(migrateOptions.bufWorkYAMLFilePath),
 		); err != nil {
@@ -75,7 +75,7 @@ func Migrate(
 	for _, bufYAMLPath := range migrateOptions.bufYAMLFilePaths {
 		// TODO: read upwards to make sure it's not in a workspace
 		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
-		if err := migrator.addModule(
+		if err := migrator.addModuleDirectory(
 			ctx,
 			filepath.Dir(bufYAMLPath),
 		); err != nil {
