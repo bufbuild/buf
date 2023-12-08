@@ -32,10 +32,6 @@
   `buf.registry.module.v1beta1.CommitService/GetCommitNodes`. Is it for computing digest? Or is it because the buf.lock is in v1?
 
 - Migrate buf.work.yaml, buf.yaml and buf.lock
-  - decide whether it should be private/buf/bufmigrate or private/bufpkg/bufmigrate.
-    It's in bufpkg temporarily only to make it easy to compile. It would also be nice
-    if the migration logic lives in bufconfig so that it knows about the file names,
-    i.e. buf.work.yaml, buf.work and etc.
   - It would be nice if the bufconfig.File exposes a Path() method. Or a path() method and
     I can move bufmigrate into bufconfig.
   - A strategy to resolve dependencies for buf.lock
