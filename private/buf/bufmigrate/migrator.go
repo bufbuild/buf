@@ -15,10 +15,13 @@
 package bufmigrate
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -31,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// migrator is used to store state during migration
 type migrator struct {
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
@@ -60,7 +62,7 @@ func newMigrator(
 	}
 }
 
-func (m *migrator) processWorkspace(
+func (m *migrator) addWorkspace(
 	ctx context.Context,
 	workspaceDir string,
 ) error {
@@ -71,13 +73,13 @@ func (m *migrator) processWorkspace(
 	// TODO: get path properly
 	m.seenFiles[filepath.Join(workspaceDir, "buf.work.yaml")] = struct{}{}
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		m.processModule(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
+		m.addModule(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
 	}
 	return nil
 }
 
 // both buf.yaml and buf.lock
-func (m *migrator) processModule(
+func (m *migrator) addModule(
 	ctx context.Context,
 	// moduleDir is the relative path (relative to ".") to the module directory
 	moduleDir string,
@@ -113,7 +115,7 @@ func (m *migrator) processModule(
 	if err != nil {
 		return err
 	}
-	if err := m.processBufYAML(
+	if err := m.addBufYAML(
 		ctx,
 		bufYAMLFile,
 		bufYAMLPath,
@@ -148,7 +150,85 @@ func (m *migrator) processModule(
 	return nil
 }
 
-func (m *migrator) processBufYAML(
+func (m *migrator) migrateAsDryRun(
+	writer io.Writer,
+) error {
+	migratedBufYAML, err := m.getBufYAML()
+	if err != nil {
+		return err
+	}
+	migratedBufLock, err := m.getBufLock()
+	if err != nil {
+		return err
+	}
+	filesToDelete := m.filesToDelete()
+	var bufYAMLBuffer bytes.Buffer
+	if err := bufconfig.WriteBufYAMLFile(&bufYAMLBuffer, migratedBufYAML); err != nil {
+		return err
+	}
+	var bufLockBuffer bytes.Buffer
+	if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
+		return err
+	}
+	fmt.Fprintf(
+		writer,
+		`in an actual run, these files will be removed:
+%s
+
+these files will be written:
+%s:
+%s
+%s:
+%s
+`,
+		strings.Join(filesToDelete, "\n"),
+		// TODO: find a way to get file name properly
+		filepath.Join(m.destinationDir, "buf.yaml"),
+		bufYAMLBuffer.String(),
+		// TODO: find a way to get file name properly
+		filepath.Join(m.destinationDir, "buf.lock"),
+		bufLockBuffer.String(),
+	)
+	return nil
+}
+
+func (m *migrator) migrate(
+	ctx context.Context,
+) error {
+	migratedBufYAML, err := m.getBufYAML()
+	if err != nil {
+		return err
+	}
+	migratedBufLock, err := m.getBufLock()
+	if err != nil {
+		return err
+	}
+	filesToDelete := m.filesToDelete()
+	for _, fileToDelete := range filesToDelete {
+		if err := os.Remove(fileToDelete); err != nil {
+			return err
+		}
+	}
+	if err := bufconfig.PutBufYAMLFileForPrefix(
+		ctx,
+		m.rootBucket,
+		m.destinationDir,
+		migratedBufYAML,
+	); err != nil {
+		return err
+	}
+	if err := bufconfig.PutBufLockFileForPrefix(
+		ctx,
+		m.rootBucket,
+		m.destinationDir,
+		migratedBufLock,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *migrator) addBufYAML(
 	ctx context.Context,
 	bufYAML bufconfig.BufYAMLFile,
 	bufYAMLPath string,

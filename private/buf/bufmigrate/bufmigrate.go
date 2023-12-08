@@ -15,17 +15,13 @@
 package bufmigrate
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -66,82 +62,24 @@ func Migrate(
 		destinationDir,
 	)
 	if migrateOptions.bufWorkYAMLFilePath != "" {
-		if err := migrator.processWorkspace(ctx, filepath.Dir(migrateOptions.bufWorkYAMLFilePath)); err != nil {
+		if err := migrator.addWorkspace(ctx, filepath.Dir(migrateOptions.bufWorkYAMLFilePath)); err != nil {
 			return err
 		}
 	}
 	for _, bufYAMLPath := range migrateOptions.bufYAMLFilePaths {
 		// TODO: read upwards to make sure it's not in a workspace
 		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
-		if err := migrator.processModule(
+		if err := migrator.addModule(
 			ctx,
 			filepath.Dir(bufYAMLPath),
 		); err != nil {
 			return err
 		}
 	}
-	migratedBufYAML, err := migrator.getBufYAML()
-	if err != nil {
-		return err
-	}
-	migratedBufLock, err := migrator.getBufLock()
-	if err != nil {
-		return err
-	}
-	filesToDelete := migrator.filesToDelete()
 	if migrateOptions.dryRun {
-		var bufYAMLBuffer bytes.Buffer
-		if err := bufconfig.WriteBufYAMLFile(&bufYAMLBuffer, migratedBufYAML); err != nil {
-			return err
-		}
-		var bufLockBuffer bytes.Buffer
-		if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
-			return err
-		}
-		fmt.Fprintf(
-			migrateOptions.dryRunWriter,
-			`in an actual run, these files will be removed:
-%s
-
-these files will be written:
-%s:
-%s
-%s:
-%s
-`,
-			strings.Join(filesToDelete, "\n"),
-			// TODO: find a way to get file name properly
-			filepath.Join(destinationDir, "buf.yaml"),
-			bufYAMLBuffer.String(),
-			// TODO: find a way to get file name properly
-			filepath.Join(destinationDir, "buf.lock"),
-			bufLockBuffer.String(),
-		)
-		return nil
+		return migrator.migrateAsDryRun(migrateOptions.dryRunWriter)
 	}
-	// Remove old files before writing the new ones.
-	for _, fileToDelete := range filesToDelete {
-		if err := os.Remove(fileToDelete); err != nil {
-			return err
-		}
-	}
-	if err := bufconfig.PutBufYAMLFileForPrefix(
-		ctx,
-		bucket,
-		".",
-		migratedBufYAML,
-	); err != nil {
-		return err
-	}
-	if err := bufconfig.PutBufLockFileForPrefix(
-		ctx,
-		bucket,
-		destinationDir,
-		migratedBufLock,
-	); err != nil {
-		return err
-	}
-	return nil
+	return migrator.migrate(ctx)
 }
 
 // MigrateOption is a migrate option.
