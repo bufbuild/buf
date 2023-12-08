@@ -10,6 +10,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestCacheBasicDir(t *testing.T) {
@@ -58,6 +59,7 @@ func testCacheBasic(t *testing.T, tar bool) {
 		)
 	}
 	cacheProvider := newModuleDataProvider(
+		zap.NewNop(),
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
 			storagemem.NewReadWriteBucket(),

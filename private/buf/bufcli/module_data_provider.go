@@ -116,8 +116,10 @@ func newModuleDataProvider(
 		return nil, err
 	}
 	return bufmodulecache.NewModuleDataProvider(
+		container.Logger(),
 		delegateReader,
 		bufmodulestore.NewModuleDataStore(
+			container.Logger(),
 			cacheBucket,
 		),
 	), nil
