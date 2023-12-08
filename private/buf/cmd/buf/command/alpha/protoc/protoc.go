@@ -111,6 +111,7 @@ func run(
 	runner := command.NewRunner()
 	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
+		container.Logger(),
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,

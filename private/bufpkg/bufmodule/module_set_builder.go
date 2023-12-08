@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 var (
@@ -98,8 +99,12 @@ type ModuleSetBuilder interface {
 }
 
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
-func NewModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) ModuleSetBuilder {
-	return newModuleSetBuilder(ctx, moduleDataProvider)
+func NewModuleSetBuilder(
+	ctx context.Context,
+	logger *zap.Logger,
+	moduleDataProvider ModuleDataProvider,
+) ModuleSetBuilder {
+	return newModuleSetBuilder(ctx, logger, moduleDataProvider)
 }
 
 // LocalModuleOption is an option for AddLocalModule.
@@ -179,6 +184,7 @@ func RemoteModuleWithTargetPaths(
 
 type moduleSetBuilder struct {
 	ctx                context.Context
+	logger             *zap.Logger
 	moduleDataProvider ModuleDataProvider
 
 	addedModules []*addedModule
@@ -186,9 +192,14 @@ type moduleSetBuilder struct {
 	buildCalled  atomic.Bool
 }
 
-func newModuleSetBuilder(ctx context.Context, moduleDataProvider ModuleDataProvider) *moduleSetBuilder {
+func newModuleSetBuilder(
+	ctx context.Context,
+	logger *zap.Logger,
+	moduleDataProvider ModuleDataProvider,
+) *moduleSetBuilder {
 	return &moduleSetBuilder{
 		ctx:                ctx,
+		logger:             logger.Named("bufmodule"),
 		moduleDataProvider: moduleDataProvider,
 	}
 }
@@ -229,6 +240,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 	// TODO: normalize and validate all paths
 	module, err := newModule(
 		b.ctx,
+		b.logger,
 		func() (storage.ReadBucket, error) {
 			return bucket, nil
 		},
@@ -400,6 +412,7 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 	// TODO: normalize and validate all paths
 	module, err := newModule(
 		b.ctx,
+		b.logger,
 		moduleData.Bucket,
 		"",
 		moduleData.ModuleKey().ModuleFullName(),

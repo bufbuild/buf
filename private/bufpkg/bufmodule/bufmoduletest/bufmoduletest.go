@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"go.uber.org/zap"
 )
 
 // ModuleData is the data needed to construct a Module in test.
@@ -214,7 +215,7 @@ func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 }
 
 func newModuleSet(moduleDatas []ModuleData, requireName bool) (bufmodule.ModuleSet, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), zap.NewNop(), bufmodule.NopModuleDataProvider)
 	for i, moduleData := range moduleDatas {
 		if err := addModuleDataToModuleSetBuilder(
 			moduleSetBuilder,

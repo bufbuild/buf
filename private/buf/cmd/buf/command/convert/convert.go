@@ -242,7 +242,7 @@ func wellKnownTypeImage(
 	logger *zap.Logger,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
 	moduleSetBuilder.AddLocalModule(
 		datawkt.ReadBucket,
 		".",

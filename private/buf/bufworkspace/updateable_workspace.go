@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/zap"
 )
 
 // UpdateableWorkspace is a workspace that can be updated.
@@ -43,11 +44,12 @@ type UpdateableWorkspace interface {
 // This function can only read v2 buf.yamls.
 func NewUpdateableWorkspaceForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
+	return newUpdateableWorkspaceForBucket(ctx, logger, bucket, moduleDataProvider, options...)
 }
 
 // *** PRIVATE ***
@@ -60,11 +62,12 @@ type updateableWorkspace struct {
 
 func newUpdateableWorkspaceForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
-	workspace, err := newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
+	workspace, err := newWorkspaceForBucket(ctx, logger, bucket, moduleDataProvider, options...)
 	if err != nil {
 		return nil, err
 	}

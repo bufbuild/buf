@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"go.uber.org/zap"
 )
 
 // Workspace is a buf workspace.
@@ -105,11 +106,12 @@ type Workspace interface {
 // This function can read a single v1 or v1beta1 buf.yaml, a v1 buf.work.yaml, or a v2 buf.yaml.
 func NewWorkspaceForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	return newWorkspaceForBucket(ctx, bucket, moduleDataProvider, options...)
+	return newWorkspaceForBucket(ctx, logger, bucket, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForModuleKey wraps the ModuleKey into a workspace, returning defaults
@@ -119,11 +121,12 @@ func NewWorkspaceForBucket(
 // associated configuration.
 func NewWorkspaceForModuleKey(
 	ctx context.Context,
+	logger *zap.Logger,
 	moduleKey bufmodule.ModuleKey,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	return newWorkspaceForModuleKey(ctx, moduleKey, moduleDataProvider, options...)
+	return newWorkspaceForModuleKey(ctx, logger, moduleKey, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -136,11 +139,12 @@ func NewWorkspaceForModuleKey(
 // that is banned in protoc.
 func NewWorkspaceForProtoc(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
 ) (Workspace, error) {
-	return newWorkspaceForProtoc(ctx, storageosProvider, includeDirPaths, filePaths)
+	return newWorkspaceForProtoc(ctx, logger, storageosProvider, includeDirPaths, filePaths)
 }
 
 // *** PRIVATE ***
@@ -148,6 +152,7 @@ func NewWorkspaceForProtoc(
 type workspace struct {
 	bufmodule.ModuleSet
 
+	logger                   *zap.Logger
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
@@ -179,6 +184,7 @@ func (*workspace) isWorkspace() {}
 
 func newWorkspaceForModuleKey(
 	ctx context.Context,
+	logger *zap.Logger,
 	moduleKey bufmodule.ModuleKey,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
@@ -234,7 +240,7 @@ func newWorkspaceForModuleKey(
 			}
 		}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	moduleSetBuilder.AddRemoteModule(
 		moduleKey,
 		true,
@@ -260,6 +266,7 @@ func newWorkspaceForModuleKey(
 	}
 	return &workspace{
 		ModuleSet:                moduleSet,
+		logger:                   logger.Named("bufworkspace"),
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  nil,
@@ -268,6 +275,7 @@ func newWorkspaceForModuleKey(
 
 func newWorkspaceForProtoc(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
@@ -303,7 +311,7 @@ func newWorkspaceForProtoc(
 		return nil, err
 	}
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
 	moduleSetBuilder.AddLocalModule(
 		storage.MultiReadBucket(rootBuckets...),
 		".",
@@ -319,6 +327,7 @@ func newWorkspaceForProtoc(
 	}
 	return &workspace{
 		ModuleSet: moduleSet,
+		logger:    logger.Named("bufworkspace"),
 		opaqueIDToLintConfig: map[string]bufconfig.LintConfig{
 			".": bufconfig.DefaultLintConfig,
 		},
@@ -331,6 +340,7 @@ func newWorkspaceForProtoc(
 
 func newWorkspaceForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
@@ -350,6 +360,7 @@ func newWorkspaceForBucket(
 			// default v1 buf.yaml was at config.subDirPath.
 			return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				ctx,
+				logger,
 				bucket,
 				moduleDataProvider,
 				config,
@@ -359,6 +370,7 @@ func newWorkspaceForBucket(
 		case bufconfig.FileVersionV2:
 			return newWorkspaceForBucketBufYAMLV2(
 				ctx,
+				logger,
 				bucket,
 				moduleDataProvider,
 				config,
@@ -393,6 +405,7 @@ func newWorkspaceForBucket(
 			if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
 				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 					ctx,
+					logger,
 					bucket,
 					moduleDataProvider,
 					config,
@@ -403,6 +416,7 @@ func newWorkspaceForBucket(
 			// We have a v2 buf.yaml.
 			return newWorkspaceForBucketBufYAMLV2(
 				ctx,
+				logger,
 				bucket,
 				moduleDataProvider,
 				config,
@@ -421,6 +435,7 @@ func newWorkspaceForBucket(
 	// default v1 buf.yaml was at config.subDirPath.
 	return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		ctx,
+		logger,
 		bucket,
 		moduleDataProvider,
 		config,
@@ -431,6 +446,7 @@ func newWorkspaceForBucket(
 
 func newWorkspaceForBucketBufYAMLV2(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
@@ -464,7 +480,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -539,11 +555,12 @@ func newWorkspaceForBucketBufYAMLV2(
 	if err != nil {
 		return nil, err
 	}
-	return newWorkspaceForModuleSet(moduleSet, bucketIDToModuleConfig, bufYAMLFile.ConfiguredDepModuleRefs())
+	return newWorkspaceForModuleSet(moduleSet, logger, bucketIDToModuleConfig, bufYAMLFile.ConfiguredDepModuleRefs())
 }
 
 func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	ctx context.Context,
+	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
@@ -562,7 +579,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
@@ -645,11 +662,12 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	if err != nil {
 		return nil, err
 	}
-	return newWorkspaceForModuleSet(moduleSet, bucketIDToModuleConfig, allConfiguredDepModuleRefs)
+	return newWorkspaceForModuleSet(moduleSet, logger, bucketIDToModuleConfig, allConfiguredDepModuleRefs)
 }
 
 func newWorkspaceForModuleSet(
 	moduleSet bufmodule.ModuleSet,
+	logger *zap.Logger,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*workspace, error) {
@@ -671,6 +689,7 @@ func newWorkspaceForModuleSet(
 	}
 	return &workspace{
 		ModuleSet:                moduleSet,
+		logger:                   logger.Named("bufworkspace"),
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  configuredDepModuleRefs,

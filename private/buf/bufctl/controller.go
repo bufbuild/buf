@@ -685,6 +685,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	}
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		c.logger,
 		readBucketCloser,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -723,6 +724,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	}
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		c.logger,
 		readBucketCloser,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -758,6 +760,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	}
 	return bufworkspace.NewUpdateableWorkspaceForBucket(
 		ctx,
+		c.logger,
 		readWriteBucket,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -784,6 +787,7 @@ func (c *controller) getWorkspaceForModuleRef(
 	}
 	return bufworkspace.NewWorkspaceForModuleKey(
 		ctx,
+		c.logger,
 		moduleKey,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetPaths(

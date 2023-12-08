@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // Module presents a BSR module.
@@ -232,6 +233,7 @@ type module struct {
 	ModuleReadBucket
 
 	ctx            context.Context
+	logger         *zap.Logger
 	getBucket      func() (storage.ReadBucket, error)
 	bucketID       string
 	moduleFullName ModuleFullName
@@ -248,6 +250,7 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
+	logger *zap.Logger,
 	getBucket func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
@@ -276,6 +279,7 @@ func newModule(
 	}
 	module := &module{
 		ctx:            ctx,
+		logger:         logger,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -284,6 +288,7 @@ func newModule(
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
+		logger,
 		getBucket,
 		module,
 		targetPaths,
@@ -354,6 +359,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
 	newModule := &module{
 		ctx:            m.ctx,
+		logger:         m.logger,
 		bucketID:       m.bucketID,
 		moduleFullName: m.moduleFullName,
 		commitID:       m.commitID,
