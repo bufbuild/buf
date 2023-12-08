@@ -74,14 +74,7 @@ func NewBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (BufYAMLFile, error) {
-	bufYAMLFile, err := newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkV2SupportedYet(bufYAMLFile.FileVersion()); err != nil {
-		return nil, err
-	}
-	return bufYAMLFile, nil
+	return newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
@@ -278,6 +271,7 @@ func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 
 // TODO: port tests from bufmoduleconfig, buflintconfig, bufbreakingconfig
+// TODO: We need to validate all paths on ignore, excludes, etc
 func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -315,10 +309,12 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			"",
 			moduleFullName,
 			rootToExcludes,
+			// TODO: we do no validation of paths now
 			getLintConfigForExternalLint(
 				fileVersion,
 				externalBufYAMLFile.Lint,
 			),
+			// TODO: we do no validation of paths now
 			getBreakingConfigForExternalBreaking(
 				fileVersion,
 				externalBufYAMLFile.Breaking,
@@ -352,6 +348,10 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			if dirPath == "" {
 				dirPath = "."
 			}
+			dirPath, err := normalpath.NormalizeAndValidate(dirPath)
+			if err != nil {
+				return nil, fmt.Errorf("invaid module directory: %w", err)
+			}
 			var moduleFullName bufmodule.ModuleFullName
 			if externalModule.Name != "" {
 				moduleFullName, err = bufmodule.ParseModuleFullName(externalModule.Name)
@@ -359,7 +359,32 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 					return nil, err
 				}
 			}
-			rootToExcludes, err := getRootToExcludes([]string{dirPath}, externalModule.Excludes)
+			// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
+			relExcludes, err := slicesext.MapError(
+				externalModule.Excludes,
+				func(exclude string) (string, error) {
+					exclude, err := normalpath.NormalizeAndValidate(exclude)
+					if err != nil {
+						// user error
+						return "", fmt.Errorf("invalid exclude: %w", err)
+					}
+					if exclude == dirPath {
+						return "", fmt.Errorf("exclude %q is equal to module directory %q", exclude, dirPath)
+					}
+					if !normalpath.EqualsOrContainsPath(dirPath, exclude, normalpath.Relative) {
+						return "", fmt.Errorf("exclude %q does not reside within module directory %q", exclude, dirPath)
+					}
+					relExclude, err := normalpath.Rel(dirPath, exclude)
+					if err != nil {
+						return "", err
+					}
+					return relExclude, nil
+				},
+			)
+			if err != nil {
+				return nil, err
+			}
+			rootToExcludes, err := getRootToExcludes([]string{"."}, relExcludes)
 			if err != nil {
 				return nil, err
 			}
@@ -367,15 +392,20 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 				dirPath,
 				moduleFullName,
 				rootToExcludes,
+				// TODO: we do no validation of paths now
 				getLintConfigForExternalLint(
 					fileVersion,
 					externalModule.Lint,
 				),
+				// TODO: we do no validation of paths now
 				getBreakingConfigForExternalBreaking(
 					fileVersion,
 					externalModule.Breaking,
 				),
 			)
+			if err != nil {
+				return nil, err
+			}
 			moduleConfigs = append(moduleConfigs, moduleConfig)
 		}
 		configuredDepModuleRefs, err := getConfiguredDepModuleRefsForExternalDeps(externalBufYAMLFile.Deps)

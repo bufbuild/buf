@@ -5,11 +5,7 @@
   - push
   - sync
 
-- config override flag (finish, mostly in bufworkspace)
-- v2 buf.yaml parsing in NewWorkspaceForBucket
 - new digest format - figure out with API
-- option to create workspace with no file searching (wkt)
-  - Also use for when --config is used - force the current directory as the found directory
 - new buf migrate command
 
 - port tests from:
@@ -49,3 +45,5 @@
     - Rule `FILE_SAME_PACKAGE` has been added to PACKAGE, WIRE and WIRE_JSON in v1.
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
+
+- Decide whether or not excludes and ignores should be relative to module directory

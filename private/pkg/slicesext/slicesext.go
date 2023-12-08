@@ -132,6 +132,8 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 }
 
 // Copy returns a copy of the slice.
+//
+// TODO: Delete this in favor of slices.Clone.
 func Copy[T any](s []T) []T {
 	sc := make([]T, len(s))
 	copy(sc, s)
@@ -265,7 +267,7 @@ func ElementsEqual[T comparable](one []T, two []T) bool {
 // ElementsContained returns true if superset contains subset.
 //
 // Nil and empty slices are treated as equals.
-func ElementsContained(superset []string, subset []string) bool {
+func ElementsContained[T comparable](superset []T, subset []T) bool {
 	m := ToStructMap(superset)
 	for _, elem := range subset {
 		if _, ok := m[elem]; !ok {

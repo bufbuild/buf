@@ -17,8 +17,10 @@ package appcmdtesting
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -53,7 +55,12 @@ func RunCommandExitCodeStdout(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
@@ -101,7 +108,12 @@ func RunCommandExitCodeStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
@@ -138,8 +150,18 @@ func RunCommandExitCodeStdoutStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandSuccess runs the command and makes sure it was successful.
@@ -202,6 +224,15 @@ func RunCommandExitCode(
 		t,
 		expectedExitCode,
 		exitCode,
-		stringutil.TrimLines(stdoutCopy.String())+"\n"+stringutil.TrimLines(stderrCopy.String()),
+		requireErrorMessage(args, stdoutCopy, stderrCopy),
+	)
+}
+
+func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
+	return fmt.Sprintf(
+		"args: %s\nstdout: %s\nstderr: %s",
+		strings.Join(args, " "),
+		stringutil.TrimLines(stdout.String()),
+		stringutil.TrimLines(stderr.String()),
 	)
 }

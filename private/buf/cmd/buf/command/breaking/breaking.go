@@ -158,7 +158,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetImageWithConfigs(
+	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
@@ -177,7 +177,7 @@ func run(
 			return err
 		}
 	}
-	againstImageWithConfigs, err := controller.GetImageWithConfigs(
+	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		flags.Against,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),

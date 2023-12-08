@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -168,12 +168,44 @@ func TestWorkspaceDir(t *testing.T) {
 			nil,
 			1,
 			"", // stdout should be empty
-			"Failure: the --config flag is not compatible with workspaces",
+			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
 			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 		)
+		testRunStdoutStderrNoWarn(
+			t,
+			nil,
+			1,
+			"", // stdout should be empty
+			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		)
+		testRunStdout(
+			t,
+			nil,
+			1,
+			"",
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`version: v2
+modules:
+  - directory: a
+  - directory: other/proto
+    lint:
+      use:
+	    - PACKAGE_DIRECTORY_MATCH
+  - directory: proto`,
+			"--path",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
+		)
+		// TODO: targeting information problem. The rpc.proto file should be the only one
+		// targeted, but request.proto was targeted.
 		testRunStdout(
 			t,
 			nil,
@@ -193,19 +225,6 @@ func TestWorkspaceDir(t *testing.T) {
 		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--path",
-			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		)
-		testRunStdoutStderrNoWarn(
-			t,
-			nil,
-			1,
-			"", // stdout should be empty
-			"Failure: the --config flag is not compatible with workspaces",
-			"lint",
-			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
@@ -1112,7 +1131,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		1,
 		``,
 		filepath.FromSlash(fmt.Sprintf(
-			`Failure: %s/proto/rpc.proto: expected to be relative`,
+			`Failure: %s/proto/rpc.proto: absolute paths cannot be used for this input type`,
 			wd,
 		)),
 		"lint",

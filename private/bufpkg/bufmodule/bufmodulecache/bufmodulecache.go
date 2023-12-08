@@ -22,21 +22,24 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"go.uber.org/zap"
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider that caches the results of the delegate.
 //
 // The ModuleDataStore is used as a cache.
 func NewModuleDataProvider(
+	logger *zap.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(delegate, store)
+	return newModuleDataProvider(logger, delegate, store)
 }
 
 /// *** PRIVATE ***
 
 type moduleDataProvider struct {
+	logger   *zap.Logger
 	delegate bufmodule.ModuleDataProvider
 	store    bufmodulestore.ModuleDataStore
 
@@ -45,10 +48,12 @@ type moduleDataProvider struct {
 }
 
 func newModuleDataProvider(
+	logger *zap.Logger,
 	delegate bufmodule.ModuleDataProvider,
 	store bufmodulestore.ModuleDataStore,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
+		logger:   logger.Named("bufmodulecache"),
 		delegate: delegate,
 		store:    store,
 	}
@@ -67,6 +72,13 @@ func (p *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 	// We will then fetch these specific ModuleKeys in one shot from the delegate.
 	var missedModuleKeysIndexes []int
 	for i, cachedOptionalModuleData := range cachedOptionalModuleDatas {
+		if err := p.logDebugModuleKey(
+			moduleKeys[i],
+			"get",
+			zap.Bool("found", cachedOptionalModuleData.Found()),
+		); err != nil {
+			return nil, err
+		}
 		if cachedOptionalModuleData.Found() {
 			// We put the cached ModuleData at the specific location it is expected to be returned,
 			// given that the returned ModuleData order must match the input ModuleKey order.
@@ -134,4 +146,27 @@ func (p *moduleDataProvider) getModuleKeysRetrieved() int {
 
 func (p *moduleDataProvider) getModuleKeysHit() int {
 	return int(p.moduleKeysHit.Load())
+}
+
+func (p *moduleDataProvider) logDebugModuleKey(
+	moduleKey bufmodule.ModuleKey,
+	message string,
+	fields ...zap.Field,
+) error {
+	if checkedEntry := p.logger.Check(zap.DebugLevel, message); checkedEntry != nil {
+		digest, err := moduleKey.Digest()
+		if err != nil {
+			return err
+		}
+		checkedEntry.Write(
+			append(
+				[]zap.Field{
+					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
+					zap.String("digest", digest.String()),
+				},
+				fields...,
+			)...,
+		)
+	}
+	return nil
 }

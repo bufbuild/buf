@@ -132,7 +132,7 @@ func (b *builder) run(
 		defer func() {
 			retErr = multierr.Append(retErr, closer.Close())
 		}()
-		_, span := tracerProvider.Tracer("bufbuild/buf").Start(ctx, "command")
+		_, span := tracerProvider.Tracer(b.appName).Start(ctx, "command")
 		defer span.End()
 	}
 	if !b.profile {

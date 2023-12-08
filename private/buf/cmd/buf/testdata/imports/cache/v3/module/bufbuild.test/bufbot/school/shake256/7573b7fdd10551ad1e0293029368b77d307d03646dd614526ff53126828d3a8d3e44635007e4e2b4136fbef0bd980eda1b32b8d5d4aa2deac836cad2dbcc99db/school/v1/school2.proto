@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package school.v1;
+
+enum SchoolType {
+  SCHOOL_TYPE_UNSPECIFIED = 0;
+  SCHOOL_TYPE_FOO = 1;
+  SCHOOL_TYPE_BAR = 2;
+  SCHOOL_TYPE_BAZ = 3;
+}

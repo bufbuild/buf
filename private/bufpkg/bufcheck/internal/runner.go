@@ -23,30 +23,23 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.opentelemetry.io/otel"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-)
-
-const (
-	tracerName = "bufbuild/buf"
 )
 
 // Runner is a runner.
 type Runner struct {
 	logger       *zap.Logger
 	ignorePrefix string
-	tracer       trace.Tracer
 }
 
 // NewRunner returns a new Runner.
 func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
 	runner := &Runner{
 		logger: logger,
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 	for _, option := range options {
 		option(runner)
@@ -70,15 +63,20 @@ func RunnerWithIgnorePrefix(ignorePrefix string) RunnerOption {
 }
 
 // Check runs the Rules.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
 	rules := config.Rules
 	if len(rules) == 0 {
 		return nil, nil
 	}
-	ctx, span := r.tracer.Start(ctx, "check", trace.WithAttributes(
-		attribute.Key("num_files").Int(len(files)),
-		attribute.Key("num_rules").Int(len(rules)),
-	))
+	ctx, span := tracer.Start(
+		ctx,
+		"bufbuild/buf",
+		tracer.WithErr(&retErr),
+		tracer.WithAttributes(
+			attribute.Key("num_files").Int(len(files)),
+			attribute.Key("num_rules").Int(len(rules)),
+		),
+	)
 	defer span.End()
 
 	ignoreFunc := r.newIgnoreFunc(config)
@@ -86,8 +84,13 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	resultC := make(chan *result, len(rules))
 	for _, rule := range rules {
 		rule := rule
+		ruleFunc := func() ([]bufanalysis.FileAnnotation, error) {
+			_, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithSpanNameSuffix(rule.ID()))
+			defer span.End()
+			return rule.check(ignoreFunc, previousFiles, files)
+		}
 		go func() {
-			iFileAnnotations, iErr := rule.check(ignoreFunc, previousFiles, files)
+			iFileAnnotations, iErr := ruleFunc()
 			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}

@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -71,14 +71,7 @@ type BufLockFile interface {
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().
 func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (BufLockFile, error) {
-	bufLockFile, err := newBufLockFile(fileVersion, depModuleKeys)
-	if err != nil {
-		return nil, err
-	}
-	if err := checkV2SupportedYet(bufLockFile.FileVersion()); err != nil {
-		return nil, err
-	}
-	return bufLockFile, nil
+	return newBufLockFile(fileVersion, depModuleKeys)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file at the given bucket prefix.

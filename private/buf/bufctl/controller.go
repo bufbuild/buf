@@ -68,7 +68,7 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
-	GetImageWithConfigs(
+	GetTargetImageWithConfigs(
 		ctx context.Context,
 		input string,
 		options ...FunctionOption,
@@ -355,7 +355,7 @@ func (c *controller) GetImage(
 	}
 }
 
-func (c *controller) GetImageWithConfigs(
+func (c *controller) GetTargetImageWithConfigs(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
@@ -374,19 +374,19 @@ func (c *controller) GetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return c.buildImageWithConfigs(ctx, workspace, functionOptions)
+		return c.buildTargetImageWithConfigs(ctx, workspace, functionOptions)
 	case buffetch.MessageRef:
 		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
 		if err != nil {
@@ -632,6 +632,13 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
+	// The ProtoFilePath is still relative to the input bucket, not the bucket
+	// retrieved from buffetch. Treat the path just as we do with targetPaths
+	// and externalPaths in withPathsForBucketExtender.
+	protoFilePath, err := readBucketCloser.PathForExternalPath(protoFileRef.ProtoFilePath())
+	if err != nil {
+		return nil, err
+	}
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
@@ -640,7 +647,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 			readBucketCloser.SubDirPath(),
 		),
 		bufworkspace.WithProtoFileTargetPath(
-			protoFileRef.ProtoFilePath(),
+			protoFilePath,
 			protoFileRef.IncludePackageFiles(),
 		),
 		bufworkspace.WithConfigOverride(
@@ -854,17 +861,37 @@ func (c *controller) buildImage(
 	return filterImage(image, functionOptions, true)
 }
 
-func (c *controller) buildImageWithConfigs(
+func (c *controller) buildTargetImageWithConfigs(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) ([]ImageWithConfig, error) {
 	modules := bufmodule.ModuleSetTargetModules(workspace)
-	imageWithConfigs := make([]ImageWithConfig, len(modules))
-	for i, module := range modules {
+	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
+	for _, module := range modules {
+		opaqueID := module.OpaqueID()
+		// We need to make sure that all dependencies are non-targets, so that they
+		// end up as imports in the resulting image.
+		moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
+		if err != nil {
+			return nil, err
+		}
+		module := moduleSet.GetModuleForOpaqueID(opaqueID)
+		if module == nil {
+			return nil, syserror.Newf("new ModuleSet from WithTargetOpaqueIDs did not have opaqueID %q", opaqueID)
+		}
 		moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
 		if err != nil {
 			return nil, err
+		}
+		targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
+		if err != nil {
+			return nil, err
+		}
+		// This may happen after path targeting. We may have a Module that itself was targeted,
+		// but no target files remain. In this case, this isn't a target image.
+		if len(targetFileInfos) == 0 {
+			continue
 		}
 		image, err := c.buildImage(
 			ctx,
@@ -874,10 +901,13 @@ func (c *controller) buildImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
-		imageWithConfigs[i] = newImageWithConfig(
-			image,
-			workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
-			workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+		imageWithConfigs = append(
+			imageWithConfigs,
+			newImageWithConfig(
+				image,
+				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
+				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
+			),
 		)
 	}
 	return imageWithConfigs, nil
@@ -1075,15 +1105,15 @@ func (f *functionOptions) withPathsForBucketExtender(
 ) (*functionOptions, error) {
 	deref := *f
 	c := &deref
-	for i, targetPath := range c.targetPaths {
-		targetPath, err := bucketExtender.PathForExternalPath(targetPath)
+	for i, inputTargetPath := range c.targetPaths {
+		targetPath, err := bucketExtender.PathForExternalPath(inputTargetPath)
 		if err != nil {
 			return nil, err
 		}
 		c.targetPaths[i] = targetPath
 	}
-	for i, targetExcludePath := range c.targetExcludePaths {
-		targetExcludePath, err := bucketExtender.PathForExternalPath(targetExcludePath)
+	for i, inputTargetExcludePath := range c.targetExcludePaths {
+		targetExcludePath, err := bucketExtender.PathForExternalPath(inputTargetExcludePath)
 		if err != nil {
 			return nil, err
 		}
