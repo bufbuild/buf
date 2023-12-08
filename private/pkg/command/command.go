@@ -47,6 +47,8 @@ type Runner interface {
 	//
 	// This should be used instead of exec.Command(...).Start().
 	Start(name string, options ...StartOption) (Process, error)
+
+	isRunner()
 }
 
 // RunOption is an option for Run.

@@ -84,6 +84,8 @@ func (r *runner) decrement() {
 	<-r.semaphoreC
 }
 
+func (*runner) isRunner() {}
+
 type execOptions struct {
 	args   []string
 	env    map[string]string
