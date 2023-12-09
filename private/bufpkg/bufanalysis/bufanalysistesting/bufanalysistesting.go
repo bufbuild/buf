@@ -15,10 +15,10 @@
 package bufanalysistesting
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,16 +108,11 @@ func AssertFileAnnotationsEqual(
 ) {
 	expected = normalizeFileAnnotations(t, expected)
 	actual = normalizeFileAnnotations(t, actual)
-	assert.Equal(t, len(expected), len(actual), fmt.Sprint(actual))
-	if len(expected) == len(actual) {
-		for i, a := range actual {
-			e := expected[i]
-			expectedFileInfo := e.FileInfo()
-			actualFileInfo := a.FileInfo()
-			assert.Equal(t, expectedFileInfo, actualFileInfo)
-			assert.Equal(t, e, a)
-		}
-	}
+	assert.Equal(
+		t,
+		slicesext.Map(expected, func(annotation bufanalysis.FileAnnotation) string { return annotation.String() }),
+		slicesext.Map(actual, func(annotation bufanalysis.FileAnnotation) string { return annotation.String() }),
+	)
 }
 
 func normalizeFileAnnotations(
