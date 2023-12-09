@@ -81,7 +81,7 @@ func newModuleDataStore(
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
 	moduleDataStore := &moduleDataStore{
-		logger: logger.Named("bufmodulestore"),
+		logger: logger,
 		bucket: bucket,
 	}
 	for _, option := range options {
@@ -144,7 +144,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	p.logDebugModuleFullNameAndDigest(
 		moduleFullName,
 		digest,
-		"store get buf.lock",
+		"module store get buf.lock",
 		zap.Bool("found", err == nil),
 		zap.Error(err),
 	)
@@ -175,7 +175,7 @@ func (p *moduleDataStore) getReadBucketForDir(
 	p.logDebugModuleFullNameAndDigest(
 		moduleFullName,
 		digest,
-		"get dir read bucket",
+		"module store get dir read bucket",
 		zap.String("dirPath", dirPath),
 	)
 	return storage.MapReadBucket(p.bucket, storage.MapOnPrefix(dirPath))
@@ -191,7 +191,7 @@ func (p *moduleDataStore) getReadBucketForTar(
 		p.logDebugModuleFullNameAndDigest(
 			moduleFullName,
 			digest,
-			"get tar read bucket",
+			"module store get tar read bucket",
 			zap.String("tarPath", tarPath),
 			zap.Bool("found", retErr == nil),
 			zap.Error(retErr),
@@ -274,7 +274,7 @@ func (p *moduleDataStore) getWriteBucketForDir(
 	p.logDebugModuleFullNameAndDigest(
 		moduleFullName,
 		digest,
-		"put dir write bucket",
+		"module store put dir write bucket",
 		zap.String("dirPath", dirPath),
 	)
 	return storage.MapWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
@@ -291,7 +291,7 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 			p.logDebugModuleFullNameAndDigest(
 				moduleFullName,
 				digest,
-				"put tar to write bucket",
+				"module store put tar to write bucket",
 				zap.String("tarPath", tarPath),
 				zap.Bool("found", retErr == nil),
 				zap.Error(retErr),

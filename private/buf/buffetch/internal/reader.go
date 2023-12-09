@@ -65,7 +65,7 @@ func newReader(
 	options ...ReaderOption,
 ) *reader {
 	reader := &reader{
-		logger:            logger.Named("buffetch"),
+		logger:            logger,
 		storageosProvider: storageosProvider,
 	}
 	for _, option := range options {
@@ -529,7 +529,7 @@ func getReadBucketCloserForBucket(
 		)
 	}
 	logger.Debug(
-		"creating new bucket",
+		"buffetch creating new bucket",
 		zap.String("inputSubDirPath", inputSubDirPath),
 		zap.String("mapPath", mapPath),
 		zap.String("subDirPath", subDirPath),
@@ -627,7 +627,7 @@ func getReadWriteBucketForOS(
 		return nil, err
 	}
 	logger.Debug(
-		"creating new OS bucket",
+		"buffetch creating new OS bucket",
 		zap.String("inputDirPath", inputDirPath),
 		zap.String("bucketPath", bucketPath),
 		zap.String("subDirPath", subDirPath),
@@ -726,7 +726,7 @@ func getReadBucketCloserForOSProtoFile(
 		}
 	}
 	logger.Debug(
-		"mapped protoFilePath to dirPath",
+		"buffetch mapped protoFilePath to dirPath",
 		zap.String("protoFilePath", protoFilePath),
 		zap.String("protoTerminateFileDirPath", protoTerminateFileDirPath),
 	)
@@ -786,7 +786,7 @@ func getMapPathAndSubDirPath(
 			return "", "", false, err
 		}
 		logger.Debug(
-			"checked terminate",
+			"buffetch checked terminate",
 			zap.String("curPath", curPath),
 			zap.String("inputSubDirPath", inputSubDirPath),
 			zap.Bool("terminate", terminate),

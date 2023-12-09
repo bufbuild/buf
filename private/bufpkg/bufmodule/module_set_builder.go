@@ -199,7 +199,7 @@ func newModuleSetBuilder(
 ) *moduleSetBuilder {
 	return &moduleSetBuilder{
 		ctx:                ctx,
-		logger:             logger.Named("bufmodule"),
+		logger:             logger,
 		moduleDataProvider: moduleDataProvider,
 	}
 }

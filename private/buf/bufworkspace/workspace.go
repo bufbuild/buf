@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.uber.org/zap"
 )
 
@@ -266,7 +267,7 @@ func newWorkspaceForModuleKey(
 	}
 	return &workspace{
 		ModuleSet:                moduleSet,
-		logger:                   logger.Named("bufworkspace"),
+		logger:                   logger,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  nil,
@@ -327,7 +328,7 @@ func newWorkspaceForProtoc(
 	}
 	return &workspace{
 		ModuleSet: moduleSet,
-		logger:    logger.Named("bufworkspace"),
+		logger:    logger,
 		opaqueIDToLintConfig: map[string]bufconfig.LintConfig{
 			".": bufconfig.DefaultLintConfig,
 		},
@@ -344,7 +345,9 @@ func newWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
-) (*workspace, error) {
+) (_ *workspace, retErr error) {
+	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	defer span.End()
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err
@@ -354,7 +357,7 @@ func newWorkspaceForBucket(
 		if err != nil {
 			return nil, err
 		}
-		logger.Named("bufworkspace").Debug(
+		logger.Debug(
 			"creating new workspace with config override",
 			zap.String("subDirPath", config.subDirPath),
 		)
@@ -407,7 +410,7 @@ func newWorkspaceForBucket(
 		if findControllingWorkspaceResult.Found() {
 			// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
 			if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
-				logger.Named("bufworkspace").Debug(
+				logger.Debug(
 					"creating new workspace based on v1 buf.work.yaml",
 					zap.String("subDirPath", config.subDirPath),
 					zap.String("bufWorkYAMLDirPath", curDirPath),
@@ -422,7 +425,7 @@ func newWorkspaceForBucket(
 					nil,
 				)
 			}
-			logger.Named("bufworkspace").Debug(
+			logger.Debug(
 				"creating new workspace based on v2 buf.yaml",
 				zap.String("subDirPath", config.subDirPath),
 				zap.String("bufYAMLDirPath", curDirPath),
@@ -445,7 +448,7 @@ func newWorkspaceForBucket(
 		curDirPath = normalpath.Dir(curDirPath)
 	}
 
-	logger.Named("bufworkspace").Debug(
+	logger.Debug(
 		"creating new workspace with no found buf.work.yaml or buf.yaml",
 		zap.String("subDirPath", config.subDirPath),
 	)
@@ -707,7 +710,7 @@ func newWorkspaceForModuleSet(
 	}
 	return &workspace{
 		ModuleSet:                moduleSet,
-		logger:                   logger.Named("bufworkspace"),
+		logger:                   logger,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
