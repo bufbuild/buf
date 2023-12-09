@@ -348,7 +348,7 @@ func TestFail11(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:read buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+		fmt.Sprintf("%v:5:8:stat buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
