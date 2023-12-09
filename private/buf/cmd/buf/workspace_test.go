@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1071,7 +1072,7 @@ func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: path does not exist: testdata/workspace/success/dir/notexist`),
+		`Failure: `+bufmodule.ErrNoTargetProtoFiles.Error(),
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",
@@ -1108,7 +1109,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: path "notexist" has no matching file in the module`,
+		`Failure: `+bufmodule.ErrNoTargetProtoFiles.Error(),
 		"lint",
 		filepath.Join(zipDir, "archive.zip#subdir=proto"),
 		"--path",

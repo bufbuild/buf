@@ -964,6 +964,11 @@ func (c *controller) buildTargetImageWithConfigs(
 			),
 		)
 	}
+	if len(imageWithConfigs) == 0 {
+		// If we had no target modules, or no target files within the modules after path filtering, this is an error.
+		// We could have a better user error than this. This gets back to the lack of allowNotExist.
+		return nil, bufmodule.ErrNoTargetProtoFiles
+	}
 	return imageWithConfigs, nil
 }
 

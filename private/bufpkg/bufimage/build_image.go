@@ -52,7 +52,9 @@ func buildImage(
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
-		return nil, nil, errors.New("no input files specified")
+		// If we had no no target files within the module after path filtering, this is an error.
+		// We could have a better user error than this. This gets back to the lack of allowNotExist.
+		return nil, nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	paths := bufmodule.FileInfoPaths(targetFileInfos)
 
