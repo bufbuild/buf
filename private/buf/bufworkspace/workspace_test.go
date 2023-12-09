@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestBasicV1(t *testing.T) {
@@ -60,6 +61,7 @@ func testBasic(t *testing.T, subDirPath string) {
 
 	workspace, err := NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
 		bucket,
 		bsrProvider,
 		WithTargetSubDirPath(
@@ -127,6 +129,7 @@ func testBasic(t *testing.T, subDirPath string) {
 
 	workspace, err = NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
 		bucket,
 		bsrProvider,
 		WithTargetSubDirPath(
@@ -156,6 +159,7 @@ func TestProtoc(t *testing.T) {
 
 	workspace, err := NewWorkspaceForProtoc(
 		ctx,
+		zap.NewNop(),
 		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",

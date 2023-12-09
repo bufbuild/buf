@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -135,6 +135,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	// impact on our dependency tree.
 	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
+		zap.NewNop(),
 		testStorageosProvider,
 		[]string{dirPath},
 		nil,

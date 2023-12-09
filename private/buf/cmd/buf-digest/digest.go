@@ -75,7 +75,7 @@ func run(
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, container.Logger(), bufmodule.NopModuleDataProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {
 		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)

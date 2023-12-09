@@ -773,12 +773,14 @@ func testBreaking(
 
 	previousWorkspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
 		previousReadWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
 		readWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)

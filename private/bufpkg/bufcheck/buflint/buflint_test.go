@@ -1106,6 +1106,7 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
 		readWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)

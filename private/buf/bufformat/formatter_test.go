@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestFormatter(t *testing.T) {
@@ -69,7 +70,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 		runner := command.NewRunner()
 		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
-		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
 		moduleSetBuilder.AddLocalModule(bucket, path, true)
 		moduleSet, err := moduleSetBuilder.Build()
 		require.NoError(t, err)
