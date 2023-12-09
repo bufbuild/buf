@@ -94,8 +94,8 @@ type Workspace interface {
 	// with v1 buf.yaml, this is a union of the deps in the buf.yaml files in the workspace.
 	//
 	// Sorted.
-	// TODO: rename to AllConfiguredDepModuleRefs, to differentiate from BufYAMLFile?
-	// TODO: use to warn on unused deps.
+	//
+	// We use this to warn on unused dependencies in bufctl.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 
 	isWorkspace()

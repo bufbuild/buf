@@ -545,19 +545,22 @@ func getModuleDepsRec(
 					// call via say ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles via lint, and
 					// the --path specified is fine, but something else in the ModuleSet is not.
 					//
+					// Return the error and see what happens in integration testing for more details.
+					//
 					// Not great. There's other architecture decisions we could make that are wholesale
 					// different here, and likely involve not using imports to derive dependencies.
 					//
 					// Keeping the error version of this commented out below.
+					//
+					// We may want to actually remove the warning here. It'll result a warning and
+					// an error if somet cases.
 					if errors.Is(err, fs.ErrNotExist) {
 						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp)
 						continue
+						//// Strip any PathError and just get to the point.
+						//err = fs.ErrNotExist
+						//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 					}
-					//if errors.Is(err, fs.ErrNotExist) {
-					//// Strip any PathError and just get to the point.
-					//err = fs.ErrNotExist
-					//}
-					//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep

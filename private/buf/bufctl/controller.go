@@ -612,6 +612,9 @@ func (c *controller) getImage(
 		if err != nil {
 			return nil, err
 		}
+		if err := c.warnOnUnusedDeps(workspace); err != nil {
+			return nil, err
+		}
 		return c.buildImage(
 			ctx,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
@@ -622,6 +625,9 @@ func (c *controller) getImage(
 		if err != nil {
 			return nil, err
 		}
+		if err := c.warnOnUnusedDeps(workspace); err != nil {
+			return nil, err
+		}
 		return c.buildImage(
 			ctx,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
@@ -630,6 +636,9 @@ func (c *controller) getImage(
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
+			return nil, err
+		}
+		if err := c.warnOnUnusedDeps(workspace); err != nil {
 			return nil, err
 		}
 		return c.buildImage(
@@ -914,6 +923,9 @@ func (c *controller) buildTargetImageWithConfigs(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) ([]ImageWithConfig, error) {
+	if err := c.warnOnUnusedDeps(workspace); err != nil {
+		return nil, err
+	}
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
@@ -970,6 +982,52 @@ func (c *controller) buildTargetImageWithConfigs(
 		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	return imageWithConfigs, nil
+}
+
+// Only call this if you are building an image. This results in ModuleDeps calls that
+// you don't want to invoke unless you are building - they'll result in import reading,
+// which can cause issues. If this happens for all workspaces, you'll see integration
+// test errors, and correctly so In the pre-refactor world, we only did this with
+// image building, so we keep it that way for now.
+func (c *controller) warnOnUnusedDeps(workspace bufworkspace.Workspace) error {
+	configuredModuleFullNames, err := slicesext.MapError(
+		workspace.ConfiguredDepModuleRefs(),
+		func(moduleRef bufmodule.ModuleRef) (string, error) {
+			moduleFullName := moduleRef.ModuleFullName()
+			if moduleFullName == nil {
+				return "", syserror.New("ModuleFullName nil on ModuleRef")
+			}
+			return moduleFullName.String(), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	remoteDeps, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(workspace)
+	if err != nil {
+		return err
+	}
+	remoteDepModuleFullNames, err := slicesext.MapError(
+		remoteDeps,
+		func(module bufmodule.Module) (string, error) {
+			moduleFullName := module.ModuleFullName()
+			if moduleFullName == nil {
+				return "", syserror.Newf("ModuleFullName nil on remote Module dependency %q", module.OpaqueID())
+			}
+			return moduleFullName.String(), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	remoteDepModuleFullNameMap := slicesext.ToStructMap(remoteDepModuleFullNames)
+	for _, configuredModuleFullName := range configuredModuleFullNames {
+		if _, ok := remoteDepModuleFullNameMap[configuredModuleFullName]; !ok {
+			c.logger.Sugar().Warnf("Module %s is declared in your buf.yaml deps but is unused.", configuredModuleFullName)
+		}
+	}
+	return nil
+
 }
 
 func bootstrapResolver(
