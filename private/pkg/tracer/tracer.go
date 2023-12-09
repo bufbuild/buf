@@ -102,13 +102,15 @@ func newWrappedSpan(span trace.Span, errAddr *error) *wrappedSpan {
 }
 
 func (s *wrappedSpan) End(options ...trace.SpanEndOption) {
-	s.Span.End(options...)
 	if s.errAddr != nil {
 		if retErr := *s.errAddr; retErr != nil {
 			s.Span.RecordError(retErr)
 			s.Span.SetStatus(codes.Error, retErr.Error())
+		} else {
+			s.Span.SetStatus(codes.Ok, "")
 		}
 	}
+	s.Span.End(options...)
 }
 
 type startOptions struct {
