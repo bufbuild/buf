@@ -937,11 +937,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		fmt.Sprintf(
-			"%s: %s",
-			filepath.FromSlash(`Failure: directory "../breaking/other/proto" listed in testdata/workspace/fail/jumpcontext/buf.work.yaml is invalid`),
-			"../breaking/other/proto: is outside the context directory",
-		),
+		filepath.FromSlash(`Failure: decode testdata/workspace/fail/jumpcontext/buf.work.yaml: directory "../breaking/other/proto" is invalid: ../breaking/other/proto: is outside the context directory`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
 	)
@@ -955,7 +951,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: directory "foo" contains directory "foo/bar" in testdata/workspace/fail/diroverlap/buf.work.yaml`),
+		filepath.FromSlash(`Failure: decode testdata/workspace/fail/diroverlap/buf.work.yaml: directory "foo" contains directory "foo/bar"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
 	)
