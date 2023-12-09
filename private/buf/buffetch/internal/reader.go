@@ -627,9 +627,9 @@ func getReadWriteBucketForOS(
 		return nil, err
 	}
 	logger.Debug(
-		"buffetch creating new OS bucket",
+		"creating new OS bucket for controlling workspace",
 		zap.String("inputDirPath", inputDirPath),
-		zap.String("bucketPath", bucketPath),
+		zap.String("workspacePath", bucketPath),
 		zap.String("subDirPath", subDirPath),
 	)
 	return newReadWriteBucket(
@@ -705,9 +705,9 @@ func getReadBucketCloserForOSProtoFile(
 			protoTerminateFileDirPath = "."
 		}
 		logger.Debug(
-			"did not find buf.yaml or buf.work.yaml for proto file ref",
+			"did not find enclosing module or workspace for proto file ref",
 			zap.String("protoFilePath", protoFilePath),
-			zap.String("usingPwd", protoTerminateFileDirPath),
+			zap.String("defaultingToPwd", protoTerminateFileDirPath),
 		)
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
@@ -727,9 +727,9 @@ func getReadBucketCloserForOSProtoFile(
 			}
 		}
 		logger.Debug(
-			"found buf.yaml or buf.work.yaml for proto file ref",
+			"found enclosing module or workspace for proto file ref",
 			zap.String("protoFilePath", protoFilePath),
-			zap.String("foundDirPath", protoTerminateFileDirPath),
+			zap.String("enclosingDirPath", protoTerminateFileDirPath),
 		)
 	}
 	// Now, build a workspace bucket based on the directory we found.
@@ -789,12 +789,12 @@ func getMapPathAndSubDirPath(
 		if err != nil {
 			return "", "", false, err
 		}
-		logger.Debug(
-			"buffetch checked terminate",
-			zap.String("curPath", curPath),
-			zap.String("inputSubDirPath", inputSubDirPath),
-			zap.Bool("terminate", terminate),
-		)
+		//logger.Debug(
+		//"checked terminate",
+		//zap.String("curPath", curPath),
+		//zap.String("inputSubDirPath", inputSubDirPath),
+		//zap.Bool("terminate", terminate),
+		//)
 		if terminate {
 			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
 			if err != nil {
