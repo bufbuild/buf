@@ -1085,7 +1085,7 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: path "notexist" has no matching file in the module`,
+		`Failure: `+bufmodule.ErrNoTargetProtoFiles.Error(),
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
 		"--path",
