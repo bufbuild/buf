@@ -570,7 +570,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
-		return nil, errors.New("specified paths did not result in any targeted files in the input module or workspace")
+		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
@@ -677,7 +677,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
-		return nil, errors.New("specified paths did not result in any targeted files in the input module or workspace")
+		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {

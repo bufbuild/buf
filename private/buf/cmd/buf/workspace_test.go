@@ -923,7 +923,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: directory "notexist" listed in testdata/workspace/fail/notexist/buf.work.yaml contains no .proto files`),
+		filepath.FromSlash(`Failure: module "notexist" had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
