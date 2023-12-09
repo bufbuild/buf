@@ -350,11 +350,15 @@ func newWorkspaceForBucket(
 		return nil, err
 	}
 	if config.configOverride != "" {
-		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
+		overrideBufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
 		if err != nil {
 			return nil, err
 		}
-		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+		logger.Named("bufworkspace").Debug(
+			"creating new workspace with config override",
+			zap.String("subDirPath", config.subDirPath),
+		)
+		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			// We did not find any buf.work.yaml or buf.yaml, operate as if a
 			// default v1 buf.yaml was at config.subDirPath.
@@ -365,7 +369,7 @@ func newWorkspaceForBucket(
 				moduleDataProvider,
 				config,
 				[]string{config.subDirPath},
-				bufYAMLFile,
+				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
 			return newWorkspaceForBucketBufYAMLV2(
@@ -375,7 +379,7 @@ func newWorkspaceForBucket(
 				moduleDataProvider,
 				config,
 				config.subDirPath,
-				bufYAMLFile,
+				overrideBufYAMLFile,
 			)
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
@@ -403,6 +407,11 @@ func newWorkspaceForBucket(
 		if findControllingWorkspaceResult.Found() {
 			// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
 			if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
+				logger.Named("bufworkspace").Debug(
+					"creating new workspace based on v1 buf.work.yaml",
+					zap.String("subDirPath", config.subDirPath),
+					zap.String("bufWorkYAMLDirPath", curDirPath),
+				)
 				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 					ctx,
 					logger,
@@ -413,6 +422,11 @@ func newWorkspaceForBucket(
 					nil,
 				)
 			}
+			logger.Named("bufworkspace").Debug(
+				"creating new workspace based on v2 buf.yaml",
+				zap.String("subDirPath", config.subDirPath),
+				zap.String("bufYAMLDirPath", curDirPath),
+			)
 			// We have a v2 buf.yaml.
 			return newWorkspaceForBucketBufYAMLV2(
 				ctx,
@@ -431,6 +445,10 @@ func newWorkspaceForBucket(
 		curDirPath = normalpath.Dir(curDirPath)
 	}
 
+	logger.Named("bufworkspace").Debug(
+		"creating new workspace with no found buf.work.yaml or buf.yaml",
+		zap.String("subDirPath", config.subDirPath),
+	)
 	// We did not find any buf.work.yaml or buf.yaml, operate as if a
 	// default v1 buf.yaml was at config.subDirPath.
 	return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(

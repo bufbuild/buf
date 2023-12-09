@@ -413,6 +413,7 @@ func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
 	// We want to avoid sync.OnceValueing getBucket Twice, so we have a special copy function here
 	// instead of calling newModuleReadBucket.
 	return &moduleReadBucket{
+		logger:               b.logger,
 		getBucket:            b.getBucket,
 		module:               module,
 		targetPaths:          b.targetPaths,
@@ -553,7 +554,19 @@ func (b *moduleReadBucket) getFastscanResultForPath(ctx context.Context, path st
 func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
-) (_ fastscan.Result, retErr error) {
+) (fastscanResult fastscan.Result, retErr error) {
+	defer func() {
+		if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
+			checkedEntry.Write(
+				zap.String("moduleOpaqueID", b.module.OpaqueID()),
+				zap.String("path", path),
+				zap.String("resultPackage", fastscanResult.PackageName),
+				zap.Strings("resultImports", fastscanResult.Imports),
+				zap.Error(retErr),
+			)
+		}
+	}()
+
 	fileType, err := classifyPathFileType(path)
 	if err != nil {
 		return fastscan.Result{}, err
@@ -575,7 +588,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	fastscanResult, err := fastscan.Scan(readObjectCloser)
+	fastscanResult, err = fastscan.Scan(readObjectCloser)
 	if err != nil {
 		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
 	}
