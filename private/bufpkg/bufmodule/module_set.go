@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"sort"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -190,99 +189,6 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 		}
 	}
 	return graph, nil
-}
-
-// ModuleSetRemoteDepsOfLocalModules is a convenience function that returns the remote dependencies
-// of the local Modules in the ModuleSet.
-//
-// We don't care about targeting here - we want to know the remote dependencies for
-// purposes such as figuring out what dependencies are unused and can be pruned.
-//
-// Returns Modules instead of ModuleDeps as IsDirect() has no meaning in this context,
-// and there could be multiple parents for a given ModuleDep. Technically, could determine
-// if a Module is a direct dependency of the ModuleSet, but this is not what IsDirect() means currently.
-//
-// Optionally allows filtering for only transitive remote dependencies via WithOnlyTransitiveRemoteDeps().
-//
-// All returned Modules will have a ModuleFullName, as they are remote.
-// All returned Modules will be unique.
-//
-// Sorted by ModuleFullName.
-//
-// TODO: This needs a LOT of testing.
-func ModuleSetRemoteDepsOfLocalModules(
-	moduleSet ModuleSet,
-	options ...ModuleSetRemoteDepsOfLocalModulesOption,
-) ([]Module, error) {
-	moduleSetRemoteDepsOfLocalModuleOptions := newModuleSetRemoteDepsOfLocalModuleOptions()
-	for _, option := range options {
-		option(moduleSetRemoteDepsOfLocalModuleOptions)
-	}
-	visitedOpaqueIDs := make(map[string]struct{})
-	remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal := make(map[string]struct{})
-	var remoteDeps []Module
-	for _, module := range moduleSet.Modules() {
-		if !module.IsLocal() {
-			continue
-		}
-		moduleDeps, err := module.ModuleDeps()
-		if err != nil {
-			return nil, err
-		}
-		for _, moduleDep := range moduleDeps {
-			if moduleDep.IsLocal() {
-				continue
-			}
-			moduleDepFullName := moduleDep.ModuleFullName()
-			if moduleDepFullName == nil {
-				// Just a sanity check.
-				return nil, syserror.New("remote module did not have a ModuleFullName")
-			}
-			if moduleDep.IsDirect() {
-				remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleDepFullName.String()] = struct{}{}
-			}
-			iRemoteDeps, err := moduleSetRemoteDepsRec(
-				moduleDep,
-				visitedOpaqueIDs,
-			)
-			if err != nil {
-				return nil, err
-			}
-			remoteDeps = append(remoteDeps, iRemoteDeps...)
-		}
-	}
-	if moduleSetRemoteDepsOfLocalModuleOptions.onlyTransitiveRemoteDeps {
-		var resultRemoteDeps []Module
-		for _, remoteDep := range remoteDeps {
-			moduleFullName := remoteDep.ModuleFullName()
-			if moduleFullName == nil {
-				// Just a sanity check.
-				return nil, syserror.New("remote module did not have a ModuleFullName")
-			}
-			if _, ok := remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal[moduleFullName.String()]; !ok {
-				resultRemoteDeps = append(resultRemoteDeps, remoteDep)
-			}
-		}
-		remoteDeps = resultRemoteDeps
-	}
-	sort.Slice(
-		remoteDeps,
-		func(i int, j int) bool {
-			return remoteDeps[i].OpaqueID() < remoteDeps[j].OpaqueID()
-		},
-	)
-	return remoteDeps, nil
-}
-
-// ModuleSetRemoteDepsOfLocalModulesOption is an option for ModuleSetRemoteDepsOfLocalModules.
-type ModuleSetRemoteDepsOfLocalModulesOption func(*moduleSetRemoteDepsOfLocalModuleOption)
-
-// WithOnlyTransitiveRemoteDeps returns a new ModuleSetRemoteDepsOfLocalModulesOption that says
-// to only return transitive remote dependencies.
-func WithOnlyTransitiveRemoteDeps() ModuleSetRemoteDepsOfLocalModulesOption {
-	return func(moduleSetRemoteDepsOfLocalModuleOption *moduleSetRemoteDepsOfLocalModuleOption) {
-		moduleSetRemoteDepsOfLocalModuleOption.onlyTransitiveRemoteDeps = true
-	}
 }
 
 // *** PRIVATE ***
@@ -472,56 +378,9 @@ func moduleSetToDAGRec(
 	return nil
 }
 
-func moduleSetRemoteDepsRec(
-	remoteModule Module,
-	visitedOpaqueIDs map[string]struct{},
-) ([]Module, error) {
-	if remoteModule.IsLocal() {
-		return nil, syserror.New("only pass remote modules to moduleSetRemoteDepsRec")
-	}
-	if remoteModule.ModuleFullName() == nil {
-		// Just a sanity check.
-		return nil, syserror.New("ModuleFullName is nil for a remote Module")
-	}
-	opaqueID := remoteModule.OpaqueID()
-	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
-		return nil, nil
-	}
-	visitedOpaqueIDs[opaqueID] = struct{}{}
-	recModuleDeps, err := remoteModule.ModuleDeps()
-	if err != nil {
-		return nil, err
-	}
-	recDeps := make([]Module, 0, len(recModuleDeps)+1)
-	recDeps = append(recDeps, remoteModule)
-	for _, recModuleDep := range recModuleDeps {
-		if recModuleDep.IsLocal() {
-			continue
-		}
-		// We deal with local vs remote in the recursive call.
-		iRecDeps, err := moduleSetRemoteDepsRec(
-			recModuleDep,
-			visitedOpaqueIDs,
-		)
-		if err != nil {
-			return nil, err
-		}
-		recDeps = append(recDeps, iRecDeps...)
-	}
-	return recDeps, nil
-}
-
 func modulesOpaqueIDs(modules []Module) []string {
 	return slicesext.Map(
 		modules,
 		func(module Module) string { return module.OpaqueID() },
 	)
-}
-
-type moduleSetRemoteDepsOfLocalModuleOption struct {
-	onlyTransitiveRemoteDeps bool
-}
-
-func newModuleSetRemoteDepsOfLocalModuleOptions() *moduleSetRemoteDepsOfLocalModuleOption {
-	return &moduleSetRemoteDepsOfLocalModuleOption{}
 }

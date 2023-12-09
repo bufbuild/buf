@@ -290,7 +290,7 @@ func TestBasic(t *testing.T) {
 		},
 		topoSort,
 	)
-	remoteDeps, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet)
+	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -300,16 +300,16 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep3",
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
+		slicesext.Map(remoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
-	remoteDeps, err = bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet, bufmodule.WithOnlyTransitiveRemoteDeps())
+	transitiveRemoteDeps := slicesext.Filter(remoteDeps, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		[]string{
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
+		slicesext.Map(transitiveRemoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
 }
 

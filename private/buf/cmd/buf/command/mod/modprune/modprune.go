@@ -63,11 +63,16 @@ func run(
 	if err != nil {
 		return err
 	}
-	depModules, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(updateableWorkspace)
+	depModules, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
 	if err != nil {
 		return err
 	}
-	depModuleKeys, err := slicesext.MapError(depModules, bufmodule.ModuleToModuleKey)
+	depModuleKeys, err := slicesext.MapError(
+		depModules,
+		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(remoteDep)
+		},
+	)
 	if err != nil {
 		return err
 	}

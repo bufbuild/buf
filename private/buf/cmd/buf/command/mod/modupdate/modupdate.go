@@ -110,16 +110,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	depModules, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(updateableWorkspace)
+	depModules, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
 	if err != nil {
 		return err
 	}
 	// All the ModuleKeys we get from the current dependency list in the workspace.
 	// This includes transitive dependencies.
-	depModuleKeys, err := slicesext.MapError(depModules, bufmodule.ModuleToModuleKey)
-	if err != nil {
-		return err
-	}
+	depModuleKeys, err := slicesext.MapError(
+		depModules,
+		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(remoteDep)
+		},
+	)
 	depNameToModuleKey := slicesext.ToValuesMap(
 		depModuleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
@@ -159,17 +161,13 @@ func run(
 			}
 		}
 	}
-	transitiveDepModules, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(
-		updateableWorkspace,
-		bufmodule.WithOnlyTransitiveRemoteDeps(),
+	transitiveDepModules := slicesext.Filter(depModules, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
+	transitiveDepModuleKeys, err := slicesext.MapError(
+		transitiveDepModules,
+		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(remoteDep)
+		},
 	)
-	if err != nil {
-		return err
-	}
-	transitiveDepModuleKeys, err := slicesext.MapError(transitiveDepModules, bufmodule.ModuleToModuleKey)
-	if err != nil {
-		return err
-	}
 	transitiveDepNameToModuleKey := slicesext.ToValuesMap(
 		transitiveDepModuleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
