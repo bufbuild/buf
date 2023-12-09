@@ -1031,7 +1031,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash("Failure: path \"testdata/workspace/success/dir\" is equal to the workspace defined in \"testdata/workspace/success/dir/buf.work.yaml\""),
+		`Failure: input is equal to a value of --path - this has no effect and is disallowed`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",

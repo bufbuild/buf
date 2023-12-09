@@ -202,6 +202,9 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
 		// applied to them. Which is another argument to do this at a higher level.
 		for _, targetPath := range config.targetPaths {
+			if targetPath == config.subDirPath {
+				return nil, errors.New("input is equal to a value of --path - this has no effect and is disallowed")
+			}
 			// We want this to be deterministic.  We don't have that many paths in almost all cases.
 			// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
 			// If this becomes a problem, there's optimizations we can do by turning targetExcludePaths into
@@ -216,6 +219,11 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 				if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
 					return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", targetExcludePath, targetPath, targetPath)
 				}
+			}
+		}
+		for _, targetExcludePath := range config.targetExcludePaths {
+			if targetExcludePath == config.subDirPath {
+				return nil, errors.New("given input is equal to a value of --exclude-path - this would exclude everything")
 			}
 		}
 	}
