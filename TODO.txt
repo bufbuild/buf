@@ -27,3 +27,6 @@
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
 
 - Decide whether or not excludes and ignores should be relative to module directory
+
+  // This is new post-refactor. Before, we gave precedence to --path. While a change,
+  // doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.

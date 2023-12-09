@@ -1497,7 +1497,21 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 func TestBuildWithPaths(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3", "foo"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3"))
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		"build",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+	)
 }
 
 func TestLintWithPaths(t *testing.T) {
