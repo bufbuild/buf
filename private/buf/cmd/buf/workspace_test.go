@@ -1031,10 +1031,25 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: input is equal to a value of --path - this has no effect and is disallowed`,
+		`Failure: given input is equal to a value of --path - this has no effect and is disallowed`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+	)
+}
+
+func TestWorkspaceWithWorkspaceExcludePathFail(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: given input is equal to a value of --exclude-path - this would exclude everything`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--exclude-path",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 	)
 }

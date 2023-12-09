@@ -203,7 +203,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		// applied to them. Which is another argument to do this at a higher level.
 		for _, targetPath := range config.targetPaths {
 			if targetPath == config.subDirPath {
-				return nil, errors.New("input is equal to a value of --path - this has no effect and is disallowed")
+				return nil, errors.New("given input is equal to a value of --path - this has no effect and is disallowed")
 			}
 			// We want this to be deterministic.  We don't have that many paths in almost all cases.
 			// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
