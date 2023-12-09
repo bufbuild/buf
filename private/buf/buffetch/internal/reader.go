@@ -784,25 +784,42 @@ func getMapPathAndSubDirPath(
 	if terminateFunc == nil {
 		return inputSubDirPath, ".", false, nil
 	}
-	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-		terminate, err := terminateFunc(ctx, inputBucket, curPath, inputSubDirPath)
+	// We can't do this in a traditional loop like this:
+	//
+	// for curDirPath := inputSubDirPath; curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
+	//
+	// If we do that, then we don't run terminateFunc for ".", which we want to so that we get
+	// the correct value for the terminate bool.
+	//
+	// Instead, we effectively do a do-while loop.
+	curDirPath := inputSubDirPath
+	for {
+		terminate, err := terminateFunc(ctx, inputBucket, curDirPath, inputSubDirPath)
 		if err != nil {
 			return "", "", false, err
 		}
-		//logger.Debug(
-		//"checked terminate",
-		//zap.String("curPath", curPath),
-		//zap.String("inputSubDirPath", inputSubDirPath),
-		//zap.Bool("terminate", terminate),
-		//)
 		if terminate {
-			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
+			logger.Debug(
+				"buffetch termination found",
+				zap.String("curDirPath", curDirPath),
+				zap.String("inputSubDirPath", inputSubDirPath),
+			)
+			subDirPath, err := normalpath.Rel(curDirPath, inputSubDirPath)
 			if err != nil {
 				return "", "", false, err
 			}
-			return curPath, subDirPath, true, nil
+			return curDirPath, subDirPath, true, nil
 		}
+		if curDirPath == "." {
+			// Do this instead. This makes this loop effectively a do-while loop.
+			break
+		}
+		curDirPath = normalpath.Dir(curDirPath)
 	}
+	logger.Debug(
+		"buffetch no termination found",
+		zap.String("inputSubDirPath", inputSubDirPath),
+	)
 	return inputSubDirPath, ".", false, nil
 }
 
