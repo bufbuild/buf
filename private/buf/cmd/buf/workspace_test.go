@@ -1021,7 +1021,7 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: testdata/workspace/fail/nodirectories/buf.work.yaml has no directories set. Please add "directories: [...]"`),
+		filepath.FromSlash(`Failure: decode testdata/workspace/fail/nodirectories/buf.work.yaml: directories is empty`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "nodirectories"),
 	)
