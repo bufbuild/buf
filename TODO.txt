@@ -7,6 +7,7 @@
 
 - new digest format - figure out with API
 - new buf migrate command
+- allownotexist
 
 - port tests from:
   - bufmodule

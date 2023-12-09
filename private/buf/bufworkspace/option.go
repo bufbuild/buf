@@ -15,6 +15,9 @@
 package bufworkspace
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -198,22 +201,23 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		//
 		// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
 		// applied to them. Which is another argument to do this at a higher level.
-		// TODO: Figure out why TestLintWithPaths exits with code 0 without this.
-		//for _, targetPath := range config.targetPaths {
-		//// We want this to be deterministic.  We don't have that many paths in almost all cases.
-		//// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
-		//// If this becomes a problem, there's optimizations we can do by turning targetExcludePaths into
-		//// a map but keeping the index in config.targetExcludePaths around to prioritize what error
-		//// message to print.
-		//for _, targetExcludePath := range config.targetExcludePaths {
-		//if targetPath == targetExcludePath {
-		//return nil, errors.New("cannot set the same path both --path and --exclude-path")
-		//}
-		//if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
-		//return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", targetExcludePath, targetPath, targetPath)
-		//}
-		//}
-		//}
+		for _, targetPath := range config.targetPaths {
+			// We want this to be deterministic.  We don't have that many paths in almost all cases.
+			// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
+			// If this becomes a problem, there's optimizations we can do by turning targetExcludePaths into
+			// a map but keeping the index in config.targetExcludePaths around to prioritize what error
+			// message to print.
+			for _, targetExcludePath := range config.targetExcludePaths {
+				if targetPath == targetExcludePath {
+					return nil, errors.New("cannot set the same path both --path and --exclude-path")
+				}
+				// This is new post-refactor. Before, we gave precedence to --path. While a change,
+				// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+				if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
+					return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", targetExcludePath, targetPath, targetPath)
+				}
+			}
+		}
 	}
 	return config, nil
 }

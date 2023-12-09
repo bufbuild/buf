@@ -1518,11 +1518,11 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(
-			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
-testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
+		1,
 		"",
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
 		"lint",
 		filepath.Join("testdata", "paths"),
 		"--path",

@@ -84,7 +84,7 @@ func printModule(ctx context.Context, printer indent.Printer, module bufmodule.M
 	}
 	printer.P("module:")
 	printer.In()
-	printer.Pf("name:", module.OpaqueID())
+	printer.Pf("name: %s", module.OpaqueID())
 	printer.Pf("target: %v", module.IsTarget())
 	printer.Pf("local: %v", module.IsLocal())
 	printer.P("deps:")
