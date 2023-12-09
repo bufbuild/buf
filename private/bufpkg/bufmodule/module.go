@@ -40,8 +40,8 @@ type Module interface {
 	//
 	// This bucket is not self-contained - it requires the files from dependencies to be so.
 	//
-	// A ModuleReadBucket directly derived from a Module with no target paths will always have
-	// at least one .proto file. If this is not the case, WalkFileInfos will return an error when called.
+	// A ModuleReadBucket directly derived from a Module will always have at least one .proto file.
+	// If this is not the case, WalkFileInfos will return an error when called.
 	ModuleReadBucket
 
 	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative

@@ -61,6 +61,9 @@ type ModuleReadBucket interface {
 	// GetDocFile and GetLicenseFile may change in the future if other paths are accepted for
 	// documentation or licenses, or if we allow multiple documentation or license files to
 	// exist within a Module (currently, only one of each is allowed).
+	//
+	// A ModuleReadBucket directly derived from a Module will always have at least one .proto file.
+	// If this is not the case, WalkFileInfos will return an error when called.
 	WalkFileInfos(ctx context.Context, f func(FileInfo) error, options ...WalkFileInfosOption) error
 
 	// ShouldBeSelfContained returns true if the ModuleReadBucket was constructed with the intention
@@ -328,7 +331,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 ) error {
 	// Note that we must verify that at least one file in this ModuleReadBucket is
 	// a .proto file, per the documentation on Module.
-	var sawProtoFile bool
+	protoFileTracker := newProtoFileTracker(b.module)
 
 	walkFileInfosOptions := newWalkFileInfosOptions()
 	for _, option := range options {
@@ -348,18 +351,13 @@ func (b *moduleReadBucket) WalkFileInfos(
 				if err != nil {
 					return err
 				}
-				if fileInfo.FileType() == FileTypeProto {
-					sawProtoFile = true
-				}
+				protoFileTracker.track(fileInfo)
 				return fn(fileInfo)
 			},
 		); err != nil {
 			return err
 		}
-		if !sawProtoFile {
-			return fmt.Errorf("module %q had no .proto files", b.module.OpaqueID())
-		}
-		return nil
+		return protoFileTracker.validate()
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
@@ -367,9 +365,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 		if err != nil {
 			return err
 		}
-		if fileInfo.FileType() == FileTypeProto {
-			sawProtoFile = true
-		}
+		protoFileTracker.track(fileInfo)
 		if !fileInfo.IsTargetFile() {
 			return nil
 		}
@@ -391,22 +387,15 @@ func (b *moduleReadBucket) WalkFileInfos(
 				return err
 			}
 		}
-		// We can't determine if the module had no target paths in this case. We didn't
-		// walk the whole bucket, so we can't make a determination. This is OK per the
-		// docs as we said we'll only do this if there are no target paths.
+		// We can't determine if the Module had any .proto file paths, as we only walked
+		// the target paths. We don't return any value from protoFileTracker.validate().
 		return nil
+
 	}
 	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
 		return err
 	}
-	if !sawProtoFile {
-		return fmt.Errorf("module %q had no .proto files", b.module.OpaqueID())
-	}
-	return nil
-}
-
-func (b *moduleReadBucket) ShouldBeSelfContained() bool {
-	return false
+	return protoFileTracker.validate()
 }
 
 func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
@@ -555,17 +544,17 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
 ) (fastscanResult fastscan.Result, retErr error) {
-	defer func() {
-		if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
-			checkedEntry.Write(
-				zap.String("moduleOpaqueID", b.module.OpaqueID()),
-				zap.String("path", path),
-				zap.String("resultPackage", fastscanResult.PackageName),
-				zap.Strings("resultImports", fastscanResult.Imports),
-				zap.Error(retErr),
-			)
-		}
-	}()
+	//defer func() {
+	//if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
+	//checkedEntry.Write(
+	//zap.String("moduleOpaqueID", b.module.OpaqueID()),
+	//zap.String("path", path),
+	//zap.String("resultPackage", fastscanResult.PackageName),
+	//zap.Strings("resultImports", fastscanResult.Imports),
+	//zap.Error(retErr),
+	//)
+	//}
+	//}()
 
 	fileType, err := classifyPathFileType(path)
 	if err != nil {
@@ -821,6 +810,44 @@ func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 			" ",
 		),
 	)
+}
+
+// protoFileTracker tracks if we found a .proto file for WalkFileInfos.
+//
+// This allows us to fulfill the documentation for ModuleReadBucket on Module where at least
+// one .proto file will exist in a ModuleReadBucket.
+type protoFileTracker struct {
+	module Module
+	found  bool
+}
+
+func newProtoFileTracker(module Module) *protoFileTracker {
+	return &protoFileTracker{
+		module: module,
+		found:  false,
+	}
+}
+
+func (t *protoFileTracker) track(fileInfo FileInfo) {
+	if fileInfo.FileType() == FileTypeProto {
+		t.found = true
+	}
+}
+
+func (t *protoFileTracker) validate() error {
+	if !t.found {
+		// Prefer BucketID over OpaqueID as the user will understand this better.
+		id := t.module.BucketID()
+		if id == "" {
+			id = t.module.OpaqueID()
+		}
+		return fmt.Errorf("module %q hod no .proto files", id)
+	}
+	return nil
+}
+
+func (b *moduleReadBucket) ShouldBeSelfContained() bool {
+	return false
 }
 
 type walkFileInfosOptions struct {

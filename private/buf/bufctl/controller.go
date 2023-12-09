@@ -942,6 +942,8 @@ func (c *controller) buildTargetImageWithConfigs(
 		}
 		// This may happen after path targeting. We may have a Module that itself was targeted,
 		// but no target files remain. In this case, this isn't a target image.
+		//
+		// TODO: without allowNotExist, this results in silent behavior when --path is incorrect.
 		if len(targetFileInfos) == 0 {
 			continue
 		}
