@@ -104,7 +104,8 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		[]string{
 			"WARN",
 			// a -> c
-			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
+			`Module bufbuild.test/workspace/second is declared in your buf.yaml deps but is unused`,
+			`Module bufbuild.test/workspace/third is declared in your buf.yaml deps but is unused.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),

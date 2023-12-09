@@ -133,7 +133,7 @@ func RunCommandExitCodeStderrContains(
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
 	for _, expectedPartial := range expectedStderrPartials {
-		assert.Contains(t, allStderr, expectedPartial)
+		assert.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 
