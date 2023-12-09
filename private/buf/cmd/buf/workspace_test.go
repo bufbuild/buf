@@ -166,20 +166,20 @@ func TestWorkspaceDir(t *testing.T) {
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
-			1,
-			"", // stdout should be empty
-			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
+			100,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`),
+			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1beta1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 		)
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
-			1,
-			"", // stdout should be empty
-			`Failure: proto/rpc.proto: error on import "request.proto": file does not exist`,
+			100,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`),
+			"",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
