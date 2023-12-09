@@ -917,6 +917,10 @@ func (c *controller) buildTargetImageWithConfigs(
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
+		c.logger.Debug(
+			"building image for target module",
+			zap.String("moduleOpaqueID", module.OpaqueID()),
+		)
 		opaqueID := module.OpaqueID()
 		// We need to make sure that all dependencies are non-targets, so that they
 		// end up as imports in the resulting image.

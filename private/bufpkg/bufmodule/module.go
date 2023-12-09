@@ -307,7 +307,7 @@ func newModule(
 	)
 	module.getModuleDeps = sync.OnceValues(
 		func() ([]ModuleDep, error) {
-			return getModuleDeps(ctx, module)
+			return getModuleDeps(ctx, logger, module)
 		},
 	)
 	return module, nil
@@ -378,7 +378,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	)
 	newModule.getModuleDeps = sync.OnceValues(
 		func() ([]ModuleDep, error) {
-			return getModuleDeps(newModule.ctx, newModule)
+			return getModuleDeps(newModule.ctx, newModule.logger, newModule)
 		},
 	)
 	return newModule, nil
@@ -464,11 +464,13 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(
 	ctx context.Context,
+	logger *zap.Logger,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
 	if err := getModuleDepsRec(
 		ctx,
+		logger,
 		module,
 		module,
 		make(map[string]struct{}),
@@ -493,6 +495,7 @@ func getModuleDeps(
 
 func getModuleDepsRec(
 	ctx context.Context,
+	logger *zap.Logger,
 	module Module,
 	parentModule Module,
 	visitedOpaqueIDs map[string]struct{},
@@ -536,11 +539,25 @@ func getModuleDepsRec(
 						// Do not include as a dependency.
 						continue
 					}
+					// We don't fail if we can't find an import, but we do provide a warning.
+					// If we fail, we can't be compatible with commands that did pass in the pre-buf-refactor
+					// world. This can happen in cases where you filter with --path and then do a ModuleDeps()
+					// call via say ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles via lint, and
+					// the --path specified is fine, but something else in the ModuleSet is not.
+					//
+					// Not great. There's other architecture decisions we could make that are wholesale
+					// different here, and likely involve not using imports to derive dependencies.
+					//
+					// Keeping the error version of this commented out below.
 					if errors.Is(err, fs.ErrNotExist) {
-						// Strip any PathError and just get to the point.
-						err = fs.ErrNotExist
+						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp)
+						continue
 					}
-					return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
+					//if errors.Is(err, fs.ErrNotExist) {
+					//// Strip any PathError and just get to the point.
+					//err = fs.ErrNotExist
+					//}
+					//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep
@@ -565,6 +582,7 @@ func getModuleDepsRec(
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
+			logger,
 			newModuleDep,
 			parentModule,
 			visitedOpaqueIDs,
