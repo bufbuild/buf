@@ -855,7 +855,7 @@ func newModuleTargeting(
 			// We're just going to be realists in our error messages here.
 			// TODO: Do we error here currently? If so, this error remains. For extra credit in the future,
 			// if we were really clever, we'd go back and just add this as a module path.
-			return nil, fmt.Errorf("%q was specified with --path but is also the path to a module - specify this module path directly as an input", targetPath)
+			return nil, fmt.Errorf("module %q was specified with --path - specify this module path directly as an input", targetPath)
 		}
 		if normalpath.ContainsPath(moduleDirPath, targetPath, normalpath.Relative) {
 			isTargetModule = true
@@ -871,7 +871,8 @@ func newModuleTargeting(
 			// We're just going to be realists in our error messages here.
 			// TODO: Do we error here currently? If so, this error remains. For extra credit in the future,
 			// if we were really clever, we'd go back and just remove this as a module path if it was specified.
-			return nil, fmt.Errorf("%q was specified with --exclude-path but is also the path to a module - specify this module path directly as an input", targetExcludePath)
+			// This really should be allowed - how else do you exclude from a workspace?
+			return nil, fmt.Errorf("module %q was specified with --exclude-path - this flag cannot be used to specify module directories", targetExcludePath)
 		}
 		if normalpath.ContainsPath(moduleDirPath, targetExcludePath, normalpath.Relative) {
 			moduleTargetExcludePath, err := normalpath.Rel(moduleDirPath, targetExcludePath)

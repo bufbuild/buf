@@ -1051,11 +1051,7 @@ func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		fmt.Sprintf(
-			"Failure: path \"%v\" is equal to workspace directory \"proto\" defined in \"%v\"",
-			filepath.FromSlash("testdata/workspace/success/dir/proto"),
-			filepath.FromSlash("testdata/workspace/success/dir/buf.work.yaml"),
-		),
+		`Failure: module "proto" was specified with --path - specify this module path directly as an input`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",
