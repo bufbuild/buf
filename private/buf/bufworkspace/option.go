@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // WorkspaceBucketOption is an option for a new Workspace created by a Bucket.
@@ -185,6 +186,34 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		if err != nil {
 			return nil, err
 		}
+	}
+	if len(config.targetPaths) > 0 || len(config.targetExcludePaths) > 0 {
+		if config.protoFileTargetPath != "" {
+			// This is just a system error. We messed up and called both exclusive options.
+			return nil, syserror.New("cannot set targetPaths/targetExcludePaths with protoFileTargetPaths")
+		}
+		// These are actual user errors. This is us verifying --path and --exclude-path.
+		// An argument could be made this should be at a higher level for user errors, and then
+		// if it gets to this point, this should be a system error.
+		//
+		// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
+		// applied to them. Which is another argument to do this at a higher level.
+		// TODO: Figure out why TestLintWithPaths exits with code 0 without this.
+		//for _, targetPath := range config.targetPaths {
+		//// We want this to be deterministic.  We don't have that many paths in almost all cases.
+		//// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
+		//// If this becomes a problem, there's optimizations we can do by turning targetExcludePaths into
+		//// a map but keeping the index in config.targetExcludePaths around to prioritize what error
+		//// message to print.
+		//for _, targetExcludePath := range config.targetExcludePaths {
+		//if targetPath == targetExcludePath {
+		//return nil, errors.New("cannot set the same path both --path and --exclude-path")
+		//}
+		//if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
+		//return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", targetExcludePath, targetPath, targetPath)
+		//}
+		//}
+		//}
 	}
 	return config, nil
 }
