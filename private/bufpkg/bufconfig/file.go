@@ -17,7 +17,6 @@ package bufconfig
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 
@@ -181,9 +180,11 @@ func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
 }
 
 func newDecodeError(fileIdentifier string, err error) error {
-	return fmt.Errorf("failed to decode %s: %w", fileIdentifier, err)
+	// We intercept PathErrors in buffetch to deal with fixing of paths.
+	return &fs.PathError{Op: "decode", Path: fileIdentifier, Err: err}
 }
 
 func newEncodeError(fileIdentifier string, err error) error {
-	return fmt.Errorf("failed to encode %s: %w", fileIdentifier, err)
+	// We intercept PathErrors in buffetch to deal with fixing of paths.
+	return &fs.PathError{Op: "encode", Path: fileIdentifier, Err: err}
 }

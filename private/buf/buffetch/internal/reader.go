@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -588,7 +589,7 @@ func getReadWriteBucketForOS(
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 	// Examples:
 	//
@@ -688,7 +689,7 @@ func getReadBucketCloserForOSProtoFile(
 		protoFileTerminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 
 	var protoTerminateFileDirPath string
@@ -821,6 +822,37 @@ func getMapPathAndSubDirPath(
 		zap.String("inputSubDirPath", inputSubDirPath),
 	)
 	return inputSubDirPath, ".", false, nil
+}
+
+// We attempt to fix up paths we get back to better printing to the user.
+// Without this, we'll get things like "stat: Users/foo/path/to/input: does not exist"
+// based on our usage of osRootBucket and absProtoFileDirPath above. While we won't
+// break any contracts printing these out, this is confusing to the user, so this is
+// our attempt to fix that.
+//
+// This is going to take away other intermediate errors unfortunately.
+func attemptToFixOSRootBucketPathErrors(err error) error {
+	var pathError *fs.PathError
+	if errors.As(err, &pathError) {
+		pwd, err := osext.Getwd()
+		if err != nil {
+			return err
+		}
+		pwd = normalpath.Normalize(pwd)
+		if normalpath.EqualsOrContainsPath(pwd, "/"+pathError.Path, normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, "/"+pathError.Path)
+			// Just ignore if this errors and do nothing.
+			if err == nil {
+				// Making a copy just to be super-safe.
+				return &fs.PathError{
+					Op:   pathError.Op,
+					Path: relPath,
+					Err:  pathError.Err,
+				}
+			}
+		}
+	}
+	return err
 }
 
 type getFileOptions struct {

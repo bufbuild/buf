@@ -993,7 +993,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: failed to decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`),
+		filepath.FromSlash(`Failure: decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "noversion"),
 	)
@@ -1007,7 +1007,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: failed to decode Users/pedge/git/buf/private/buf/cmd/buf/testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`),
+		filepath.FromSlash(`Failure: decode Users/pedge/git/buf/private/buf/cmd/buf/testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
 	)
