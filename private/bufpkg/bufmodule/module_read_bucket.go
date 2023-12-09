@@ -841,7 +841,7 @@ func (t *protoFileTracker) validate() error {
 		if id == "" {
 			id = t.module.OpaqueID()
 		}
-		return fmt.Errorf("module %q had no .proto files", id)
+		return newErrNoProtoFiles(id)
 	}
 	return nil
 }

@@ -14,18 +14,27 @@
 
 package bufmodule
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
-// ErrNoTargetProtoFiles is the error to return if no target .proto files were found in situations where
-// they were expected to be found.
-//
-// Pre-refactor, we had extremely exacting logic that determined if --path and --exclude-path were valid
-// paths, which almost no CLI tool does. This logic had a heavy burden, when typically this error message
-// is enough (and again, is more than almost any other CLI does - most CLIs silently move on if invalid
-// paths are specified). The pre-refactor logic was the "allowNotExist" logic. Removing the allowNotExist
-// logic was not a breaking change - we do not error in any place that we previously did not.
-//
-// This is used by bufctl.Controller.GetTargetImageWithConfigs, bufworkspace.NewWorkspaceForBucet, and bufimage.BuildImage.
-//
-// We do assume flag names here, but we're just going with reality.
-var ErrNoTargetProtoFiles = errors.New("no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.")
+var (
+	// ErrNoTargetProtoFiles is the error to return if no target .proto files were found in situations where
+	// they were expected to be found.
+	//
+	// Pre-refactor, we had extremely exacting logic that determined if --path and --exclude-path were valid
+	// paths, which almost no CLI tool does. This logic had a heavy burden, when typically this error message
+	// is enough (and again, is more than almost any other CLI does - most CLIs silently move on if invalid
+	// paths are specified). The pre-refactor logic was the "allowNotExist" logic. Removing the allowNotExist
+	// logic was not a breaking change - we do not error in any place that we previously did not.
+	//
+	// This is used by bufctl.Controller.GetTargetImageWithConfigs, bufworkspace.NewWorkspaceForBucet, and bufimage.BuildImage.
+	//
+	// We do assume flag names here, but we're just going with reality.
+	ErrNoTargetProtoFiles = errors.New("no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.")
+)
+
+func newErrNoProtoFiles(moduleID string) error {
+	return fmt.Errorf("module %q had no .proto files", moduleID)
+}
