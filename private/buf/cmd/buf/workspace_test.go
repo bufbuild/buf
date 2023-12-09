@@ -328,11 +328,17 @@ func TestWorkspaceDetached(t *testing.T) {
 	// The workspace doesn't include the 'proto' directory, so
 	// its contents aren't included in the workspace.
 	t.Parallel()
-	testRunStdout(
+	// In the pre-refactor, this was a successful call, as the workspace was still being discovered
+	// as the enclosing workspace, despite not pointing to the proto directory. In post-refactor
+	// we'd consider this a bug: you specified the proto directory, and no controlling workspace
+	// was discovered, therefore you build as if proto was the input directory, which results in
+	// request.proto not existing as an import.
+	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		0,
+		bufctl.ExitCodeFileAnnotation,
 		``,
+		`testdata/workspace/success/detached/proto/rpc.proto:5:8:stat request.proto: file does not exist`,
 		"build",
 		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
 	)
@@ -344,12 +350,16 @@ func TestWorkspaceDetached(t *testing.T) {
 		"ls-files",
 		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
 	)
+	// In the pre-refactor, this was a successful call, as the workspace was still being discovered
+	// as the enclosing workspace, despite not pointing to the proto directory. In post-refactor
+	// we'd consider this a bug: you specified the proto directory, and no controlling workspace
+	// was discovered, therefore you build as if proto was the input directory, which results in
+	// request.proto not existing as an import.
 	testRunStdout(
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/workspace/success/detached/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
-        testdata/workspace/success/detached/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
+		`testdata/workspace/success/detached/proto/rpc.proto:5:8:stat request.proto: file does not exist`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
 	)
