@@ -1007,7 +1007,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode Users/pedge/git/buf/private/buf/cmd/buf/testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`),
+		filepath.FromSlash(`Failure: decode testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
 	)
