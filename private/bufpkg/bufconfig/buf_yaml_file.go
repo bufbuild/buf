@@ -135,7 +135,7 @@ func GetBufYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufYAMLFileNames)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufYAMLFileNames, true, FileVersionV2)
 }
 
 // PutBufYAMLFileForPrefix puts the buf.yaml file at the given bucket prefix.
@@ -277,7 +277,8 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	fileVersion, err := getFileVersionForData(data, allowJSON)
+	// We've always required a file version for buf.yaml files.
+	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
 	if err != nil {
 		return nil, err
 	}

@@ -993,7 +993,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: testdata/workspace/fail/noversion/buf.work.yaml has no version set. Please add "version: v1"`),
+		filepath.FromSlash(`Failure: failed to decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "noversion"),
 	)
