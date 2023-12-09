@@ -685,10 +685,7 @@ func getReadBucketCloserForOSProtoFile(
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
-		newMultiTerminateFunc(
-			terminateFunc,
-			protoFileTerminateFunc,
-		),
+		protoFileTerminateFunc,
 	)
 	if err != nil {
 		return nil, err
@@ -707,6 +704,11 @@ func getReadBucketCloserForOSProtoFile(
 		} else {
 			protoTerminateFileDirPath = "."
 		}
+		logger.Debug(
+			"did not find buf.yaml or buf.work.yaml for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("usingPwd", protoTerminateFileDirPath),
+		)
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
@@ -724,13 +726,15 @@ func getReadBucketCloserForOSProtoFile(
 				return nil, err
 			}
 		}
+		logger.Debug(
+			"found buf.yaml or buf.work.yaml for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("foundDirPath", protoTerminateFileDirPath),
+		)
 	}
-	logger.Debug(
-		"buffetch mapped protoFilePath to dirPath",
-		zap.String("protoFilePath", protoFilePath),
-		zap.String("protoTerminateFileDirPath", protoTerminateFileDirPath),
-	)
-	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
+	// Now, build a workspace bucket based on the directory we found.
+	// If the directory is a module directory, we'll get the enclosing workspace.
+	// If the directory is a workspace directory, this will effectively be a no-op.
 	readWriteBucket, err := getReadWriteBucketForOS(ctx, logger, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
@@ -800,31 +804,6 @@ func getMapPathAndSubDirPath(
 		}
 	}
 	return inputSubDirPath, ".", false, nil
-}
-
-func newMultiTerminateFunc(terminateFuncs ...TerminateFunc) TerminateFunc {
-	return TerminateFunc(
-		func(
-			ctx context.Context,
-			bucket storage.ReadBucket,
-			prefix string,
-			originalSubDirPath string,
-		) (bool, error) {
-			for _, terminateFunc := range terminateFuncs {
-				if terminateFunc == nil {
-					continue
-				}
-				terminate, err := terminateFunc(ctx, bucket, prefix, originalSubDirPath)
-				if err != nil {
-					return false, err
-				}
-				if terminate {
-					return true, nil
-				}
-			}
-			return false, nil
-		},
-	)
 }
 
 type getFileOptions struct {

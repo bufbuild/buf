@@ -41,19 +41,15 @@ type FindControllingWorkspaceResult interface {
 	isFindControllingWorkspaceResult()
 }
 
-// TODO: this doesn't work for ProtoFileRefs. You don't want to require the originalSubDirPath,
-// which is just the directory of the .proto file, to be pointed to by the workspace. You want
-// to bypass this requirement. Solution is to completely separate terminateFunc and protoFileTerminateFunc,
-// and be more lenient on the controlling workspace for ProtoFileRefs to not require the directory to
-// be pointed to...probably?
-
 // FindControllingWorkspace searches for a workspace file at prefix that controls originalSubDirPath.
-// A workspace file is either a buf.work.yaml file or a v2 buf.yaml file, and the file controls
-// originalSubDirPath if either (1) we are directly targeting the workspace file, i.e prefix == originalSubDirPath,
-// or (2) the workspace file refers to the config.subDirPath. If we find a controlling workspace
-// file, we use this to build our workspace. If we don't, return nil.
 //
-// This is used by both buffetch/internal.Reader via PrefixContainsWorkspaceFile and NewWorkspaceForBucket,
+// # A workspace file is either a buf.work.yaml file or a v2 buf.yaml file
+//
+// The workspace file controls originalSubDirPath if either:
+//  1. prefix == origiinalSubDirPath, that is we're just directly targeting originalSubDirPath.
+//  3. The workspace file refers to the originalSubDirPath via "directories" in buf.work.yaml or "directory" in buf.yaml.
+//
+// This is used by both buffetch/internal.Reader via the Prefix functions, and NewWorkspaceForBucket,
 // which do their own independent searches and do not depend on each other.
 func FindControllingWorkspace(
 	ctx context.Context,
@@ -61,97 +57,56 @@ func FindControllingWorkspace(
 	prefix string,
 	originalSubDirPath string,
 ) (FindControllingWorkspaceResult, error) {
-	bufWorkYAMLFile, err := GetBufWorkYAMLFileForPrefix(ctx, bucket, prefix)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return nil, err
-	}
-	bufWorkYAMLExists := err == nil
-	bufYAMLFile, err := GetBufYAMLFileForPrefix(ctx, bucket, prefix)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return nil, err
-	}
-	bufYAMLExists := err == nil
-	if bufWorkYAMLExists && bufYAMLExists {
-		// This isn't actually the external directory path, but we do the best we can here for now.
-		return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", prefix)
-	}
-
-	// Find the relative path of our original target subDirPath vs where we currently are.
-	// We only stop the loop if a v2 buf.yaml or a buf.work.yaml lists this directory,
-	// or if the original target subDirPath points ot the workspace file itself.
-	//
-	// Example: we inputted foo/bar/baz, we're currently at foo. We want to make sure
-	// that buf.work.yaml lists bar/baz as a directory. If so, this buf.work.yaml
-	// relates to our current directory.
-	//
-	// Example: we inputted foo/bar/baz, we're at foo/bar/baz. Great.
-	relDirPath, err := normalpath.Rel(prefix, originalSubDirPath)
-	if err != nil {
-		return nil, err
-	}
-	if bufYAMLExists && bufYAMLFile.FileVersion() == FileVersionV2 {
-		if prefix == originalSubDirPath {
-			// We've referred to our workspace file directy, we're good to go.
-			return newFindControllingWorkspaceResult(true, nil), nil
-		}
-		dirPathMap := make(map[string]struct{})
-		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
-			dirPathMap[moduleConfig.DirPath()] = struct{}{}
-		}
-		if _, ok := dirPathMap[relDirPath]; ok {
-			// This workspace file refers to curDurPath, we're good to go.
-			return newFindControllingWorkspaceResult(true, nil), nil
-		}
-	}
-	if bufWorkYAMLExists {
-		_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
-		if prefix == originalSubDirPath || refersToCurDirPath {
-			// We don't actually need to parse the buf.work.yaml again - we have all the information
-			// we need. Just figure out the actual paths within the bucket of the modules, and go
-			// right to newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1.
-			moduleDirPaths := make([]string, len(bufWorkYAMLFile.DirPaths()))
-			for i, dirPath := range bufWorkYAMLFile.DirPaths() {
-				moduleDirPaths[i] = normalpath.Join(prefix, dirPath)
-			}
-			return newFindControllingWorkspaceResult(true, moduleDirPaths), nil
-		}
-	}
-	return newFindControllingWorkspaceResult(false, nil), nil
+	return findControllingWorkspace(ctx, bucket, prefix, originalSubDirPath, true)
 }
 
-// PrefixContainsWorkspaceFile returns true if the bucket contains a "workspace file"
+// TerminateForNonProtoFileRef returns true if the bucket contains a workspace file
 // that controls originalSubDirPath at the prefix.
 //
-// A workspace file roots a Workspace. It is either a buf.work.yaml or buf.work file,
-// or a v2 buf.yaml file.
+// See the commentary on FindControllingWorkspace.
 //
 // This is used by buffetch when searching for the root of the workspace.
-func PrefixContainsWorkspaceFile(
+// See buffetch/internal.WithGetBucketTerminateFunc for more information.
+func TerminateAtControllingWorkspace(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
 	originalSubDirPath string,
 ) (bool, error) {
-	findControllingWorkspaceResult, err := FindControllingWorkspace(ctx, bucket, prefix, originalSubDirPath)
+	findControllingWorkspaceResult, err := findControllingWorkspace(ctx, bucket, prefix, originalSubDirPath, true)
 	if err != nil {
 		return false, err
 	}
 	return findControllingWorkspaceResult.Found(), nil
 }
 
-// PrefixContainsModuleFile returns true if the bucket contains a "module file"
-// at the prefix.
+// TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef returns true if the bucket contains
+// either a module file or workspace file at the prefix.
 //
-// A module file roots a Module. It is either a v1 or v1beta1 buf.yaml or buf.mod file,
-// or a v2 buf.yaml file that has a module with directory ".".
+// A module file is either a v1 or v1beta1 buf.yaml or buf.mod file, or a v2 buf.yaml file that
+// has a module with directory ".". This is configuration for a module rooted at this directory.
+//
+// A workspace file is either a buf.work.yaml file or a v2 buf.yaml file.
+//
+// As opposed to TerminateForNonProtoFileRef, this does not require the prefix to point to the
+// originalSubDirPath - ProtoFileRefs assume that if you have a workspace file, it controls the ProtoFileRef.
 //
 // This is used by buffetch when searching for the root of the module when dealing with ProtoFileRefs.
-func PrefixContainsModuleFile(
+// See buffetch/internal.WithGetBucketProtoFileTerminateFunc for more information.
+func TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
 	originalSubDirPath string,
 ) (bool, error) {
+	findControllingWorkspaceResult, err := findControllingWorkspace(ctx, bucket, prefix, originalSubDirPath, false)
+	if err != nil {
+		return false, err
+	}
+	if findControllingWorkspaceResult.Found() {
+		return true, nil
+	}
+
 	bufYAMLFile, err := GetBufYAMLFileForPrefix(ctx, bucket, prefix)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -204,3 +159,77 @@ func (f *findControllingWorkspaceResult) BufWorkYAMLDirPaths() []string {
 }
 
 func (*findControllingWorkspaceResult) isFindControllingWorkspaceResult() {}
+
+// findControllingWorkspace adds the property that the prefix may not be required to point to originalSubDirPath.
+//
+// We don't require the workspace file to point to originalSubDirPath when finding the enclosing module or
+// workspace for a ProtoFileRef.
+func findControllingWorkspace(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalSubDirPath string,
+	requirePrefixWorkspaceToPointToOriginalSubDirPath bool,
+) (FindControllingWorkspaceResult, error) {
+	bufWorkYAMLFile, err := GetBufWorkYAMLFileForPrefix(ctx, bucket, prefix)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	bufWorkYAMLExists := err == nil
+	bufYAMLFile, err := GetBufYAMLFileForPrefix(ctx, bucket, prefix)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	bufYAMLExists := err == nil
+	if bufWorkYAMLExists && bufYAMLExists {
+		// This isn't actually the external directory path, but we do the best we can here for now.
+		return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", prefix)
+	}
+
+	// Find the relative path of our original target subDirPath vs where we currently are.
+	// We only stop the loop if a v2 buf.yaml or a buf.work.yaml lists this directory,
+	// or if the original target subDirPath points ot the workspace file itself.
+	//
+	// Example: we inputted foo/bar/baz, we're currently at foo. We want to make sure
+	// that buf.work.yaml lists bar/baz as a directory. If so, this buf.work.yaml
+	// relates to our current directory.
+	//
+	// Example: we inputted foo/bar/baz, we're at foo/bar/baz. Great.
+	relDirPath, err := normalpath.Rel(prefix, originalSubDirPath)
+	if err != nil {
+		return nil, err
+	}
+	if bufYAMLExists && bufYAMLFile.FileVersion() == FileVersionV2 {
+		if !requirePrefixWorkspaceToPointToOriginalSubDirPath {
+			// We don't require the workspace to point to the prefix (likely because we're
+			// finding the controlling workspace for a ProtoFileRef), we're good to go.
+			return newFindControllingWorkspaceResult(true, nil), nil
+		}
+		if prefix == originalSubDirPath {
+			// We've referred to our workspace file directy, we're good to go.
+			return newFindControllingWorkspaceResult(true, nil), nil
+		}
+		dirPathMap := make(map[string]struct{})
+		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			dirPathMap[moduleConfig.DirPath()] = struct{}{}
+		}
+		if _, ok := dirPathMap[relDirPath]; ok {
+			// This workspace file refers to curDirPath, we're good to go.
+			return newFindControllingWorkspaceResult(true, nil), nil
+		}
+	}
+	if bufWorkYAMLExists {
+		_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
+		if prefix == originalSubDirPath || refersToCurDirPath || !requirePrefixWorkspaceToPointToOriginalSubDirPath {
+			// We don't actually need to parse the buf.work.yaml again - we have all the information
+			// we need. Just figure out the actual paths within the bucket of the modules, and go
+			// right to newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1.
+			moduleDirPaths := make([]string, len(bufWorkYAMLFile.DirPaths()))
+			for i, dirPath := range bufWorkYAMLFile.DirPaths() {
+				moduleDirPaths[i] = normalpath.Join(prefix, dirPath)
+			}
+			return newFindControllingWorkspaceResult(true, moduleDirPaths), nil
+		}
+	}
+	return newFindControllingWorkspaceResult(false, nil), nil
+}
