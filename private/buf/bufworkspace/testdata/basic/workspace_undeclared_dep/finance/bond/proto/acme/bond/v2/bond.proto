@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package acme.bond.v2;
+
+import "acme/date/v1/date.proto";
+import "google/protobuf/duration.proto";
+
+message Bond {
+  acme.date.v1.Date purchase_date = 3;
+  google.protobuf.Duration duration = 4;
+  string name = 6;
+}

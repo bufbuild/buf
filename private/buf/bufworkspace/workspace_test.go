@@ -203,7 +203,7 @@ func TestProtoc(t *testing.T) {
 	require.True(t, fileInfo.IsTargetFile())
 }
 
-func TestUnused(t *testing.T) {
+func TestUnusedDep(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -238,4 +238,39 @@ func TestUnused(t *testing.T) {
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[0].Type())
 	require.Equal(t, "buf.testing/acme/extension", malformedDeps[1].ModuleFullName().String())
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[1].Type())
+}
+
+func TestUndeclaredDep(t *testing.T) {
+	ctx := context.Background()
+
+	// This represents some external dependencies from the BSR.
+	bsrProvider, err := bufmoduletest.NewOmniProvider(
+		bufmoduletest.ModuleData{
+			Name:    "buf.testing/acme/date",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
+		},
+		bufmoduletest.ModuleData{
+			Name:    "buf.testing/acme/extension",
+			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
+		},
+	)
+	require.NoError(t, err)
+
+	storageosProvider := storageos.NewProvider()
+	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspace_undeclared_dep")
+	require.NoError(t, err)
+
+	workspace, err := NewWorkspaceForBucket(
+		ctx,
+		zap.NewNop(),
+		bucket,
+		bsrProvider,
+	)
+	require.NoError(t, err)
+
+	malformedDeps, err := MalformedDepsForWorkspace(workspace)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(malformedDeps))
+	require.Equal(t, "buf.testing/acme/extension", malformedDeps[0].ModuleFullName().String())
+	require.Equal(t, MalformedDepTypeUndeclared, malformedDeps[0].Type())
 }
