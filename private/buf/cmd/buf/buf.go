@@ -61,6 +61,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
@@ -101,7 +102,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
-			//export.NewCommand("export", builder),
+			export.NewCommand("export", builder),
 			//format.NewCommand("format", builder),
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),

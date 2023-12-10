@@ -21,15 +21,9 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/cobra"
@@ -137,241 +131,66 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
+	controller, err := bufcli.NewController(
 		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-		moduleReader,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
 	)
 	if err != nil {
 		return err
 	}
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
+	workspace, err := controller.GetWorkspace(
 		ctx,
-		container,
-		sourceOrModuleRef,
-		flags.Config,
-		flags.Paths,
-		flags.ExcludePaths,
-		false,
+		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err
 	}
-	moduleConfigs := moduleConfigSet.ModuleConfigs()
-	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
-		container.Logger(),
-		moduleReader,
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace)
+	// We should just take the workspace and build an image, but we get the filtering
+	// for free here so we just do this for now.
+	image, err := controller.GetImage(
+		ctx,
+		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithImageExcludeSourceInfo(true),
+		bufctl.WithImageExcludeImports(flags.ExcludeImports),
+		bufctl.WithConfigOverride(flags.Config),
 	)
-	// TODO: this is going to be a mess when we want to remove ModuleFileSet
-	moduleFileSets := make([]bufmodule.ModuleFileSet, len(moduleConfigs))
-	for i, moduleConfig := range moduleConfigs {
-		moduleFileSet, err := moduleFileSetBuilder.Build(
-			ctx,
-			moduleConfig.Module(),
-			bufmodulebuild.WithWorkspace(moduleConfigSet.Workspace()),
-		)
-		if err != nil {
-			return err
-		}
-		moduleFileSets[i] = moduleFileSet
+	if err != nil {
+		return err
 	}
 
-	// We build the image to filter the output:
-	//   1) the input is a proto file reference
-	//   2) ensuring that we are including the relevant imports
-	//
-	// In the first scenario, the imageConfigReader returns imageCongfigs that handle the filtering
-	// for the proto file ref.
-	//
-	// To handle imports for all other references, unless we are excluding imports, we only want
-	// to export those imports that are actually used. To figure this out, we build an image of images
-	// and use the fact that something is in an image to determine if it is actually used.
-	var images []bufimage.Image
-	_, isProtoFileRef := sourceOrModuleRef.(buffetch.ProtoFileRef)
-	if isProtoFileRef {
-		// If the reference is a ProtoFileRef, we need to resolve the image for the reference,
-		// since the image config reader distills down the reference to the file and its dependencies,
-		// and also handles the #include_package_files option.
-		imageConfigReader, err := bufcli.NewWireImageConfigReader(
-			container,
-			storageosProvider,
-			runner,
-			clientConfig,
-		)
-		if err != nil {
-			return err
-		}
-		imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-			ctx,
-			container,
-			sourceOrModuleRef,
-			flags.Config,
-			flags.Paths,
-			flags.ExcludePaths,
-			false,
-			true, // SourceCodeInfo is not needed here for outputting the source code
-		)
-		if err != nil {
-			return err
-		}
-		if len(fileAnnotations) > 0 {
-			if err := bufanalysis.PrintFileAnnotations(
-				container.Stderr(),
-				fileAnnotations,
-				bufanalysis.FormatText.String(),
-			); err != nil {
-				return err
-			}
-		}
-		for _, imageConfig := range imageConfigs {
-			images = append(images, imageConfig.Image())
-		}
-	} else {
-		for _, moduleFileSet := range moduleFileSets {
-			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
-			if err != nil {
-				return err
-			}
-			if len(targetFileInfos) == 0 {
-				// This ModuleFileSet doesn't have any targets, so we shouldn't build
-				// an image for it.
-				continue
-			}
-			image, fileAnnotations, err := bufimage.BuildImage(
-				ctx,
-				moduleFileSet,
-				bufimage.WithExcludeSourceCodeInfo(),
-			)
-			if err != nil {
-				return err
-			}
-			if len(fileAnnotations) > 0 {
-				// stderr since we do output to stdout potentially
-				if err := bufanalysis.PrintFileAnnotations(
-					container.Stderr(),
-					fileAnnotations,
-					bufanalysis.FormatText.String(),
-				); err != nil {
-					return err
-				}
-				return bufctl.ErrFileAnnotation
-			}
-			images = append(images, image)
-		}
-	}
-	// images will only be non-empty if !flags.ExcludeImports || isProtoFileRef
-	// mergedImage will be nil if images is empty
-	// therefore, we must gate on mergedImage != nil below
-	mergedImage, err := bufimage.MergeImages(images...)
-	if err != nil {
-		return err
-	}
 	if err := os.MkdirAll(flags.Output, 0755); err != nil {
 		return err
 	}
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+	var options []storageos.ProviderOption
+	if !flags.DisableSymlinks {
+		options = append(options, storageos.ProviderWithSymlinks())
+	}
+	readWriteBucket, err := storageos.NewProvider(options...).NewReadWriteBucket(
 		flags.Output,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
 		return err
 	}
-	fileInfosFunc := bufmodule.ModuleFileSet.AllFileInfos
-	// If we filtered on some paths, only use the targets.
-	// Otherwise, we want to print everything, including potentially imports.
-	// We can have duplicates across the ModuleFileSets and that's OK - they will
-	// only be written once via writtenPaths, and we aren't building here.
-	if len(flags.Paths) > 0 {
-		fileInfosFunc = func(
-			moduleFileSet bufmodule.ModuleFileSet,
-			ctx context.Context,
-		) ([]bufmoduleref.FileInfo, error) {
-			return moduleFileSet.TargetFileInfos(ctx)
-		}
+	imageFiles := image.Files()
+	if len(imageFiles) == 0 {
+		return errors.New("no .proto target files found")
 	}
-	writtenPaths := make(map[string]struct{})
-	for _, moduleFileSet := range moduleFileSets {
-		// If the reference was a proto file reference, we will use the image files as the basis
-		// for outputting source files.
-		// We do an extra mergedImage != nil check even though this must be true
-		if isProtoFileRef && mergedImage != nil {
-			for _, protoFileRefImageFile := range mergedImage.Files() {
-				path := protoFileRefImageFile.Path()
-				if _, ok := writtenPaths[path]; ok {
-					continue
-				}
-				if flags.ExcludeImports && protoFileRefImageFile.IsImport() {
-					continue
-				}
-				moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
-				if err != nil {
-					return err
-				}
-				if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
-					return multierr.Append(err, moduleFile.Close())
-				}
-				if err := moduleFile.Close(); err != nil {
-					return err
-				}
-				writtenPaths[path] = struct{}{}
-			}
-			if len(writtenPaths) == 0 {
-				return errors.New("no .proto target files found")
-			}
-			return nil
-		}
-		fileInfos, err := fileInfosFunc(moduleFileSet, ctx)
+	for _, imageFile := range image.Files() {
+		moduleFile, err := moduleReadBucket.GetFile(ctx, imageFile.Path())
 		if err != nil {
 			return err
 		}
-		for _, fileInfo := range fileInfos {
-			path := fileInfo.Path()
-			if _, ok := writtenPaths[path]; ok {
-				continue
-			}
-			// If the file is not an import in some ModuleFileSet, it will
-			// eventually be written via the iteration over moduleFileSets.
-			imageFile := mergedImage.GetFile(path)
-			// We check the merged image to see if the path exists.
-			if imageFile == nil {
-				continue
-			}
-			if flags.ExcludeImports {
-				if imageFile.IsImport() {
-					continue
-				}
-			}
-			moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
-			if err != nil {
-				return err
-			}
-			if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
-				return multierr.Append(err, moduleFile.Close())
-			}
-			if err := moduleFile.Close(); err != nil {
-				return err
-			}
-			writtenPaths[path] = struct{}{}
+		if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
+			return multierr.Append(err, moduleFile.Close())
 		}
-	}
-	if len(writtenPaths) == 0 {
-		return errors.New("no .proto target files found")
+		if err := moduleFile.Close(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
