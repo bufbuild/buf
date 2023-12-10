@@ -1006,10 +1006,17 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 				malformedDep.ModuleFullName(),
 			)
 		case bufworkspace.MalformedDepTypeUnused:
-			c.logger.Sugar().Warnf(
-				"Module %s is declared in your buf.yaml deps but is unused.",
-				malformedDep.ModuleFullName(),
-			)
+			if workspace.GetModuleForModuleFullName(malformedDep.ModuleFullName()) != nil {
+				c.logger.Sugar().Warnf(
+					`Module %s is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
+					malformedDep.ModuleFullName(),
+				)
+			} else {
+				c.logger.Sugar().Warnf(
+					`Module %s is declared in your buf.yaml deps but is unused.`,
+					malformedDep.ModuleFullName(),
+				)
+			}
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}
