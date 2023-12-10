@@ -81,7 +81,9 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToUniqueValuesMapError(
+	// We actually want to allow for values to be duplicated, it is part of
+	// the documentation for ConfiguredDepModuleRefs().
+	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToValuesMapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufmodule.ModuleRef) (string, error) {
 			moduleFullName := moduleRef.ModuleFullName()
