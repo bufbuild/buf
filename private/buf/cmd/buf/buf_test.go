@@ -1196,8 +1196,6 @@ breaking:
 
 func TestExportProto(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1223,8 +1221,6 @@ func TestExportProto(t *testing.T) {
 
 func TestExportOtherProto(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1250,8 +1246,6 @@ func TestExportOtherProto(t *testing.T) {
 
 func TestExportAll(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1278,8 +1272,6 @@ func TestExportAll(t *testing.T) {
 
 func TestExportExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1304,8 +1296,6 @@ func TestExportExcludeImports(t *testing.T) {
 
 func TestExportPaths(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1331,8 +1321,6 @@ func TestExportPaths(t *testing.T) {
 
 func TestExportPathsAndExcludes(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1370,8 +1358,6 @@ func TestExportPathsAndExcludes(t *testing.T) {
 
 func TestExportProtoFileRef(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1396,8 +1382,6 @@ func TestExportProtoFileRef(t *testing.T) {
 
 func TestExportProtoFileRefExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1422,8 +1406,6 @@ func TestExportProtoFileRefExcludeImports(t *testing.T) {
 
 func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1449,8 +1431,6 @@ func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
 
 func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1476,8 +1456,6 @@ func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 
 func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdoutStderrNoWarn(
 		t,
