@@ -1038,7 +1038,6 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 		}
 	}
 	return nil
-
 }
 
 func bootstrapResolver(
