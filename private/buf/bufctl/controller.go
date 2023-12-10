@@ -993,48 +993,25 @@ func (c *controller) buildTargetImageWithConfigs(
 // test errors, and correctly so In the pre-refactor world, we only did this with
 // image building, so we keep it that way for now.
 func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
-	configuredModuleFullNames, err := slicesext.MapError(
-		workspace.ConfiguredDepModuleRefs(),
-		func(moduleRef bufmodule.ModuleRef) (string, error) {
-			moduleFullName := moduleRef.ModuleFullName()
-			if moduleFullName == nil {
-				return "", syserror.New("ModuleFullName nil on ModuleRef")
-			}
-			return moduleFullName.String(), nil
-		},
-	)
+	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
 	if err != nil {
 		return err
 	}
-	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(workspace)
-	if err != nil {
-		return err
-	}
-	for _, remoteDep := range remoteDeps {
-		if !remoteDep.IsDirect() {
-			moduleFullName := remoteDep.ModuleFullName()
-			if moduleFullName == nil {
-				return syserror.Newf("ModuleFullName nil on remote Module dependency %q", remoteDep.OpaqueID())
-			}
-			c.logger.Sugar().Warnf("Module %s is a transitive remote dependency not declared in your buf.yaml deps. Add %s to your deps.", moduleFullName)
-		}
-	}
-	moduleFullNameToRemoteDep, err := slicesext.ToUniqueValuesMapError(
-		remoteDeps,
-		func(remoteDep bufmodule.RemoteDep) (string, error) {
-			moduleFullName := remoteDep.ModuleFullName()
-			if moduleFullName == nil {
-				return "", syserror.Newf("ModuleFullName nil on remote Module dependency %q", remoteDep.OpaqueID())
-			}
-			return moduleFullName.String(), nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-	for _, configuredModuleFullName := range configuredModuleFullNames {
-		if _, ok := moduleFullNameToRemoteDep[configuredModuleFullName]; !ok {
-			c.logger.Sugar().Warnf("Module %s is declared in your buf.yaml deps but is unused.", configuredModuleFullName)
+	for _, malformedDep := range malformedDeps {
+		switch t := malformedDep.Type(); t {
+		case bufworkspace.MalformedDepTypeUndeclared:
+			c.logger.Sugar().Warnf(
+				"Module %s is a transitive remote dependency not declared in your buf.yaml deps. Add %s to your deps.",
+				malformedDep.ModuleFullName(),
+				malformedDep.ModuleFullName(),
+			)
+		case bufworkspace.MalformedDepTypeUnused:
+			c.logger.Sugar().Warnf(
+				"Module %s is declared in your buf.yaml deps but is unused.",
+				malformedDep.ModuleFullName(),
+			)
+		default:
+			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}
 	}
 	return nil

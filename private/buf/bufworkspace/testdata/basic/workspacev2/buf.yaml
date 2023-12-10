@@ -11,5 +11,5 @@ modules:
   - directory: finance/portfolio/proto
     # No name on purpose
 deps:
-  - buf.testing/name/date
-  - buf.testing/name/extension
+  - buf.testing/acme/date
+  - buf.testing/acme/extension

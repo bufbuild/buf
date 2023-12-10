@@ -87,10 +87,7 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		t, nil, 0,
 		[]string{
 			"WARN",
-			// school1 -> people1
-			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
-			// school1 -> people2
-			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
+			`Module bufbuild.test/bufbot/people is a transitive remote dependency not declared in your buf.yaml deps. Add bufbuild.test/bufbot/people to your deps.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),

@@ -15,6 +15,9 @@
 package bufworkspace
 
 import (
+	"sort"
+	"strconv"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -28,8 +31,24 @@ const (
 	MalformedDepTypeUnused
 )
 
+var (
+	malformedDepTypeToString = map[MalformedDepType]string{
+		MalformedDepTypeUndeclared: "undeclared",
+		MalformedDepTypeUnused:     "unused",
+	}
+)
+
 // MalformedDepType is the type of malformed dep.
 type MalformedDepType int
+
+// String implements fmt.Stringer.
+func (t MalformedDepType) String() string {
+	s, ok := malformedDepTypeToString[t]
+	if !ok {
+		return strconv.Itoa(int(t))
+	}
+	return s
+}
 
 // MalformedDep is a dep that was malformed in some way in the buf.yaml.
 type MalformedDep interface {
@@ -45,19 +64,9 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
-	var malformedDeps []MalformedDep
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(workspace)
 	if err != nil {
 		return nil, err
-	}
-	for _, remoteDep := range remoteDeps {
-		if !remoteDep.IsDirect() {
-			moduleFullName := remoteDep.ModuleFullName()
-			if moduleFullName == nil {
-				return nil, syserror.Newf("ModuleFullName nil on remote Module dependency %q", remoteDep.OpaqueID())
-			}
-			malformedDeps = append(malformedDeps, newMalformedDep(moduleFullName, MalformedDepTypeUndeclared))
-		}
 	}
 	moduleFullNameStringToRemoteDep, err := slicesext.ToUniqueValuesMapError(
 		remoteDeps,
@@ -72,24 +81,41 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	configuredModuleFullNames, err := slicesext.MapError(
+	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToUniqueValuesMapError(
 		workspace.ConfiguredDepModuleRefs(),
-		func(moduleRef bufmodule.ModuleRef) (bufmodule.ModuleFullName, error) {
+		func(moduleRef bufmodule.ModuleRef) (string, error) {
 			moduleFullName := moduleRef.ModuleFullName()
 			if moduleFullName == nil {
-				return nil, syserror.New("ModuleFullName nil on ModuleRef")
+				return "", syserror.New("ModuleFullName nil on ModuleRef")
 			}
-			return moduleFullName, nil
+			return moduleFullName.String(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	for _, configuredModuleFullName := range configuredModuleFullNames {
-		if _, ok := moduleFullNameStringToRemoteDep[configuredModuleFullName.String()]; !ok {
-			malformedDeps = append(malformedDeps, newMalformedDep(configuredModuleFullName, MalformedDepTypeUnused))
+	var malformedDeps []MalformedDep
+	for moduleFullNameString, configuredDepModuleRef := range moduleFullNameStringToConfiguredDepModuleRef {
+		if _, ok := moduleFullNameStringToRemoteDep[moduleFullNameString]; !ok {
+			// The module was in buf.yaml deps, but was not in the remote dep list after
+			// adding all ModuleKeys and transitive dependency ModuleKeys. Therefore it is unused.
+			malformedDeps = append(malformedDeps, newMalformedDep(configuredDepModuleRef.ModuleFullName(), MalformedDepTypeUnused))
 		}
 	}
+	for moduleFullNameString, remoteDep := range moduleFullNameStringToRemoteDep {
+		if _, ok := moduleFullNameStringToConfiguredDepModuleRef[moduleFullNameString]; !ok {
+			// The module was in the remote dep list after adding all ModuleKeys and transitive dependency
+			// ModuleKeys, but was not in buf.yaml deps. Therefore it is undeclared.
+			malformedDeps = append(malformedDeps, newMalformedDep(remoteDep.ModuleFullName(), MalformedDepTypeUndeclared))
+		}
+	}
+	sort.Slice(
+		malformedDeps,
+		func(i int, j int) bool {
+			return malformedDeps[i].ModuleFullName().String() <
+				malformedDeps[j].ModuleFullName().String()
+		},
+	)
 	return malformedDeps, nil
 }
 

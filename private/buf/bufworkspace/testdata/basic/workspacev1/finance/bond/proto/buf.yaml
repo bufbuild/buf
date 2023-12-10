@@ -7,5 +7,5 @@ build:
   excludes:
     - root1/acme/bond/excluded/v1
 deps:
-  - buf.testing/name/date
-  - buf.testing/name/extension
+  - buf.testing/acme/date
+  - buf.testing/acme/extension
