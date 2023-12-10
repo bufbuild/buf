@@ -1,5 +1,4 @@
 - last commands:
-  - export
   - format
   - generate
   - push
