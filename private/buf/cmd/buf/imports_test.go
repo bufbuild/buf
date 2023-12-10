@@ -101,8 +101,8 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		[]string{
 			"WARN",
 			// a -> c
-			`Module bufbuild.test/workspace/second is declared in your buf.yaml deps but is unused`,
-			`Module bufbuild.test/workspace/third is declared in your buf.yaml deps but is unused.`,
+			`Module bufbuild.test/workspace/second is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
+			`Module bufbuild.test/workspace/third is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),
