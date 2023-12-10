@@ -46,7 +46,7 @@ type FindControllingWorkspaceResult interface {
 // # A workspace file is either a buf.work.yaml file or a v2 buf.yaml file
 //
 // The workspace file controls originalSubDirPath if either:
-//  1. prefix == origiinalSubDirPath, that is we're just directly targeting originalSubDirPath.
+//  1. prefix == originalSubDirPath, that is we're just directly targeting originalSubDirPath.
 //  3. The workspace file refers to the originalSubDirPath via "directories" in buf.work.yaml or "directory" in buf.yaml.
 //
 // This is used by both buffetch/internal.Reader via the Prefix functions, and NewWorkspaceForBucket,
