@@ -24,36 +24,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// UpdateableWorkspace is a workspace that can be updated.
-type UpdateableWorkspace interface {
-	Workspace
-
-	// PutBufLockFile updates the lock file that backs this Workspace.
-	//
-	// If a buf.lock does not exist, one will be created.
-	//
-	// This will fail for UpdateableWorkspaces not created from v2 buf.yamls.
-	PutBufLockFile(ctx context.Context, bufLockFile bufconfig.BufLockFile) error
-
-	isUpdateableWorkspace()
-}
-
-// NewUpdateableWorkspaceForBucket returns a new Workspace for the given Bucket.
-//
-// All parsing of configuration files is done behind the scenes here.
-// This function can only read v2 buf.yamls.
-func NewUpdateableWorkspaceForBucket(
-	ctx context.Context,
-	logger *zap.Logger,
-	bucket storage.ReadWriteBucket,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	options ...WorkspaceBucketOption,
-) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, logger, bucket, moduleDataProvider, options...)
-}
-
-// *** PRIVATE ***
-
 type updateableWorkspace struct {
 	*workspace
 
