@@ -47,6 +47,3 @@ func NewController(
 		options...,
 	)
 }
-
-// NewControllerForLogger returns a new
-func NewControllerForLogger()
