@@ -49,7 +49,7 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"private",
-	"bufpkg",
+	"buf",
 	"buftesting",
 )
 

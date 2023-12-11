@@ -24,6 +24,7 @@ type container struct {
 	app.Container
 	NameContainer
 	LoggerContainer
+	TracerContainer
 	VerboseContainer
 }
 
@@ -41,34 +42,7 @@ func newContainer(
 		Container:        baseContainer,
 		NameContainer:    nameContainer,
 		LoggerContainer:  newLoggerContainer(logger),
+		TracerContainer:  newTracerContainer(appName),
 		VerboseContainer: newVerboseContainer(verbosePrinter),
 	}, nil
 }
-
-//func (c *container) AppName() string {
-//return c.nameContainer.AppName()
-//}
-
-//func (c *container) ConfigDirPath() string {
-//return c.nameContainer.ConfigDirPath()
-//}
-
-//func (c *container) CacheDirPath() string {
-//return c.nameContainer.CacheDirPath()
-//}
-
-//func (c *container) DataDirPath() string {
-//return c.nameContainer.DataDirPath()
-//}
-
-//func (c *container) Port() (uint16, error) {
-//return c.nameContainer.Port()
-//}
-
-//func (c *container) Logger() *zap.Logger {
-//return c.logContainer.Logger()
-//}
-
-//func (c *container) VerbosePrinter() verbose.Printer {
-//return c.verboseContainer.VerbosePrinter()
-//}

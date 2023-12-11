@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -54,6 +55,16 @@ type LoggerContainer interface {
 // NewLoggerContainer returns a new LoggerContainer.
 func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
 	return newLoggerContainer(logger)
+}
+
+// TracerContainer provides a trace.Tracer based on the application name.
+type TracerContainer interface {
+	Tracer() trace.Tracer
+}
+
+// NewTracerContainer returns a new TracerContainer for the application name.
+func NewTracerContainer(appName string) TracerContainer {
+	return newTracerContainer(appName)
 }
 
 // NameContainer is a container for named applications.
@@ -95,8 +106,8 @@ type NameContainer interface {
 // NewNameContainer returns a new NameContainer.
 //
 // The name must be in [a-zA-Z0-9-_].
-func NewNameContainer(envContainer app.EnvContainer, name string) (NameContainer, error) {
-	return newNameContainer(envContainer, name)
+func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContainer, error) {
+	return newNameContainer(envContainer, appName)
 }
 
 // Container contains not just the base app container, but all extended containers.
@@ -104,6 +115,7 @@ type Container interface {
 	app.Container
 	NameContainer
 	LoggerContainer
+	TracerContainer
 	VerboseContainer
 }
 
