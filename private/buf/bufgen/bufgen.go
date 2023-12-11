@@ -29,16 +29,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
-)
-
-const (
-	// ExternalConfigFilePath is the default external configuration file path.
-	ExternalConfigFilePath = "buf.gen.yaml"
-	// V1Version is the string used to identify the v1 version of the generate template.
-	V1Version = "v1"
-	// V1Beta1Version is the string used to identify the v1beta1 version of the generate template.
-	V1Beta1Version = "v1beta1"
 )
 
 const (
@@ -97,6 +89,7 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -107,6 +100,7 @@ func NewGenerator(
 ) Generator {
 	return newGenerator(
 		logger,
+		tracer,
 		storageosProvider,
 		runner,
 		wasmPluginExecutor,

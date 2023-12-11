@@ -21,22 +21,23 @@ import (
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
-	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -44,6 +45,7 @@ import (
 
 type generator struct {
 	logger              *zap.Logger
+	tracer              tracing.Tracer
 	storageosProvider   storageos.Provider
 	pluginexecGenerator bufpluginexec.Generator
 	clientConfig        *connectclient.Config
@@ -51,6 +53,7 @@ type generator struct {
 
 func newGenerator(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
@@ -58,8 +61,9 @@ func newGenerator(
 ) *generator {
 	return &generator{
 		logger:              logger,
+		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
+		pluginexecGenerator: bufpluginexec.NewGenerator(logger, tracer, storageosProvider, runner, wasmPluginExecutor),
 		clientConfig:        clientConfig,
 	}
 }

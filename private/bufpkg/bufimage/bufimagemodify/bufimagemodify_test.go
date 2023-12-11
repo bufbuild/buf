@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -798,17 +799,17 @@ func testGetImageFromDirs(
 	dirPathToModuleFullName map[string]string,
 	includeSourceInfo bool,
 ) bufimage.Image {
-	moduleDatas := make([]bufmoduletest.ModuleData, 0, len(dirPathToModuleFullName))
+	moduleDatas := make([]bufmoduletesting.ModuleData, 0, len(dirPathToModuleFullName))
 	for dirPath, moduleFullName := range dirPathToModuleFullName {
 		moduleDatas = append(
 			moduleDatas,
-			bufmoduletest.ModuleData{
+			bufmoduletesting.ModuleData{
 				Name:    moduleFullName,
 				DirPath: dirPath,
 			},
 		)
 	}
-	moduleSet, err := bufmoduletest.NewModuleSet(moduleDatas...)
+	moduleSet, err := bufmoduletesting.NewModuleSet(moduleDatas...)
 	require.NoError(t, err)
 	var options []bufimage.BuildImageOption
 	if !includeSourceInfo {

@@ -81,7 +81,7 @@ func testGetRawPathAndOptionsError(
 ) {
 	t.Run(value, func(t *testing.T) {
 		t.Parallel()
-		_, _, err := getRawPathAndOptionsForInputString(value)
+		_, _, err := getRawPathAndOptions(value)
 		assert.EqualError(t, err, expectedErr.Error())
 	})
 }

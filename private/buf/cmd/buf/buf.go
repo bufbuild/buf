@@ -142,7 +142,6 @@ func NewRootCommand(name string) *appcmd.Command {
 					graph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
-					//migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", builder),
 					{
 						Use:   "registry",

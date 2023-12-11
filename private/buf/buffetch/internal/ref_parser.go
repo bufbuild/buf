@@ -63,7 +63,7 @@ func (a *refParser) GetParsedRef(
 	for _, option := range options {
 		option(getParsedRefOptions)
 	}
-	return a.getParsedRefForInputString(ctx, value, getParsedRefOptions.allowedFormats)
+	return a.getParsedRef(ctx, value, getParsedRefOptions.allowedFormats)
 }
 
 func (a *refParser) GetParsedRefForInputConfig(
@@ -78,17 +78,17 @@ func (a *refParser) GetParsedRefForInputConfig(
 	return a.getParsedRefForInputConfig(ctx, inputConfig, getParsedRefOptions.allowedFormats)
 }
 
-func (a *refParser) getParsedRefForInputString(
+func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
 	allowedFormats map[string]struct{},
 ) (ParsedRef, error) {
 	// path is never empty after returning from this function
-	path, options, err := getRawPathAndOptionsForInputString(value)
+	path, options, err := getRawPathAndOptions(value)
 	if err != nil {
 		return nil, err
 	}
-	rawRef, err := a.getRawRefFromInputString(path, value, options)
+	rawRef, err := a.getRawRef(path, value, options)
 	if err != nil {
 		return nil, err
 	}
@@ -100,66 +100,16 @@ func (a *refParser) getParsedRefForInputConfig(
 	inputConfig bufconfig.InputConfig,
 	allowedFormats map[string]struct{},
 ) (ParsedRef, error) {
-	rawRef, err := a.getRawRefFromInputConfig(inputConfig)
+	rawRef, err := a.getRawRefForInputConfig(inputConfig)
 	if err != nil {
 		return nil, err
 	}
 	return a.parseRawRef(rawRef, allowedFormats)
 }
 
-func (a *refParser) parseRawRef(
-	rawRef *RawRef,
-	allowedFormats map[string]struct{},
-) (ParsedRef, error) {
-	singleFormatInfo, singleOK := a.singleFormatToInfo[rawRef.Format]
-	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
-	_, dirOK := a.dirFormatToInfo[rawRef.Format]
-	_, gitOK := a.gitFormatToInfo[rawRef.Format]
-	_, moduleOK := a.moduleFormatToInfo[rawRef.Format]
-	_, protoFileOK := a.protoFileFormatToInfo[rawRef.Format]
-	if !(singleOK || archiveOK || dirOK || gitOK || moduleOK || protoFileOK) {
-		return nil, NewFormatUnknownError(rawRef.Format)
-	}
-	if len(allowedFormats) > 0 {
-		if _, ok := allowedFormats[rawRef.Format]; !ok {
-			return nil, NewFormatNotAllowedError(rawRef.Format, allowedFormats)
-		}
-	}
-	if !singleOK && len(rawRef.UnrecognizedOptions) > 0 {
-		// Only single refs allow custom options. In every other case, this is an error.
-		//
-		// We verify unrecognized options match what is expected in getSingleRef.
-		keys := make([]string, 0, len(rawRef.UnrecognizedOptions))
-		for key := range rawRef.UnrecognizedOptions {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-		return nil, NewOptionsInvalidKeysError(keys...)
-	}
-	if singleOK {
-		return getSingleRef(rawRef, singleFormatInfo.defaultCompressionType, singleFormatInfo.customOptionKeys)
-	}
-	if archiveOK {
-		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
-	}
-	if protoFileOK {
-		return getProtoFileRef(rawRef)
-	}
-	if dirOK {
-		return getDirRef(rawRef)
-	}
-	if gitOK {
-		return getGitRef(rawRef)
-	}
-	if moduleOK {
-		return getModuleRef(rawRef)
-	}
-	return nil, NewFormatUnknownError(rawRef.Format)
-}
-
-func (a *refParser) getRawRefFromInputString(
+func (a *refParser) getRawRef(
 	path string,
-	// TODO: need a better name
+	// Used to reference the input config in error messages.
 	displayName string,
 	options map[string]string,
 ) (*RawRef, error) {
@@ -225,7 +175,6 @@ func (a *refParser) getRawRefFromInputString(
 			switch value {
 			case "true":
 				rawRef.IncludePackageFiles = true
-			// TODO: perhaps empty values should not be accepted
 			case "false", "":
 				rawRef.IncludePackageFiles = false
 			default:
@@ -250,7 +199,7 @@ func (a *refParser) getRawRefFromInputString(
 	return rawRef, nil
 }
 
-func (a *refParser) getRawRefFromInputConfig(
+func (a *refParser) getRawRefForInputConfig(
 	inputConfig bufconfig.InputConfig,
 ) (*RawRef, error) {
 	rawRef := &RawRef{
@@ -318,6 +267,56 @@ func (a *refParser) getRawRefFromInputConfig(
 		return nil, err
 	}
 	return rawRef, nil
+}
+
+func (a *refParser) parseRawRef(
+	rawRef *RawRef,
+	allowedFormats map[string]struct{},
+) (ParsedRef, error) {
+	singleFormatInfo, singleOK := a.singleFormatToInfo[rawRef.Format]
+	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
+	_, dirOK := a.dirFormatToInfo[rawRef.Format]
+	_, gitOK := a.gitFormatToInfo[rawRef.Format]
+	_, moduleOK := a.moduleFormatToInfo[rawRef.Format]
+	_, protoFileOK := a.protoFileFormatToInfo[rawRef.Format]
+	if !(singleOK || archiveOK || dirOK || gitOK || moduleOK || protoFileOK) {
+		return nil, NewFormatUnknownError(rawRef.Format)
+	}
+	if len(allowedFormats) > 0 {
+		if _, ok := allowedFormats[rawRef.Format]; !ok {
+			return nil, NewFormatNotAllowedError(rawRef.Format, allowedFormats)
+		}
+	}
+	if !singleOK && len(rawRef.UnrecognizedOptions) > 0 {
+		// Only single refs allow custom options. In every other case, this is an error.
+		//
+		// We verify unrecognized options match what is expected in getSingleRef.
+		keys := make([]string, 0, len(rawRef.UnrecognizedOptions))
+		for key := range rawRef.UnrecognizedOptions {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		return nil, NewOptionsInvalidKeysError(keys...)
+	}
+	if singleOK {
+		return getSingleRef(rawRef, singleFormatInfo.defaultCompressionType, singleFormatInfo.customOptionKeys)
+	}
+	if archiveOK {
+		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
+	}
+	if protoFileOK {
+		return getProtoFileRef(rawRef)
+	}
+	if dirOK {
+		return getDirRef(rawRef)
+	}
+	if gitOK {
+		return getGitRef(rawRef)
+	}
+	if moduleOK {
+		return getModuleRef(rawRef)
+	}
+	return nil, NewFormatUnknownError(rawRef.Format)
 }
 
 func (a *refParser) validateRawRef(
@@ -403,9 +402,9 @@ func parseSubDirPath(value string) (string, error) {
 	return subDirPath, nil
 }
 
-// getRawPathAndOptionsForInputString returns the raw path and options from the value provided,
+// getRawPathAndOptions returns the raw path and options from the value provided,
 // the rawPath will be non-empty when returning without error here.
-func getRawPathAndOptionsForInputString(value string) (string, map[string]string, error) {
+func getRawPathAndOptions(value string) (string, map[string]string, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return "", nil, newValueEmptyError()

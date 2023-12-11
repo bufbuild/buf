@@ -837,7 +837,7 @@ type GetModuleOption func(*getModuleOptions)
 // passed because if the ref is a git ref, it would only have a git.Name, instead
 // of a git branch, a git ref and a git tag. Therefore the original string is passed.
 func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
-	_, options, err := getRawPathAndOptionsForInputString(value)
+	_, options, err := getRawPathAndOptions(value)
 	if err != nil {
 		return nil, err
 	}
