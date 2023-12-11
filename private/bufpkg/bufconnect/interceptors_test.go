@@ -24,8 +24,9 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,10 +112,10 @@ func TestCLIWarningInterceptor(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := applog.NewLogger(&buf, "warn", "text")
+	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
 	require.NoError(t, err)
 	// testing valid warning message
-	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		resp := connect.NewResponse(&bytes.Buffer{})
 		resp.Header().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return resp, nil
@@ -124,7 +125,7 @@ func TestCLIWarningInterceptor(t *testing.T) {
 
 	// testing no warning message in valid response with no header
 	buf.Reset()
-	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		return connect.NewResponse(&bytes.Buffer{}), nil
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.NoError(t, err)
@@ -135,10 +136,10 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	t.Parallel()
 	warningMessage := "This is a warning message from the BSR"
 	var buf bytes.Buffer
-	logger, err := applog.NewLogger(&buf, "warn", "text")
+	logger, err := zaputil.NewLoggerForFlagValues(&buf, "warn", "text")
 	require.NoError(t, err)
 	// testing valid warning message from error
-	_, err = NewCLIWarningInterceptor(applog.NewContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+	_, err = NewCLIWarningInterceptor(appext.NewLoggerContainer(logger))(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		err := connect.NewError(connect.CodeInternal, errors.New("error"))
 		err.Meta().Set(CLIWarningHeaderName, base64.StdEncoding.EncodeToString([]byte(warningMessage)))
 		return nil, err
