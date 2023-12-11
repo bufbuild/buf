@@ -89,7 +89,7 @@ testbufnew: installbuf
 		./private/bufpkg/bufimage/... \
 		./private/bufpkg/bufmodule/... \
 		./private/bufpkg/bufplugin/... \
-		./private/bufpkg/bufpluginexec/... \
+		./private/buf/bufpluginexec/... \
 		./private/bufpkg/bufreflect/... \
 		./private/bufpkg/bufremoteplugin/... \
 		./private/bufpkg/bufstudioagent/... \
