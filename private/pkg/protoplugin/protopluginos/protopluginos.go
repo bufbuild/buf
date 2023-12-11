@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appprotoos does OS-specific generation.
-package appprotoos
+// Package protopluginos does OS-specific generation.
+package protopluginos
 
 import (
 	"context"

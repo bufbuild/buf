@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package appproto
+package protopluginos
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -169,7 +169,7 @@ func run(
 		return err
 	}
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
-	// if the roots change, then we're torched
+	// of the roots change, then we're torched
 	externalPaths := flags.Paths
 	if flags.LimitToInputFiles {
 		externalPaths, err = getExternalPathsForImages(imageWithConfigs)

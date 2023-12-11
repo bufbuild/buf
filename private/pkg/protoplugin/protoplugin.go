@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appproto contains helper functionality for protoc plugins.
+// Package protoplugin contains helper functionality for protoc plugins.
 //
 // Note this is currently implicitly tested through buf's protoc command.
 // If this were split out into a separate package, testing would need to be
 // moved to this package.
-package appproto
+package protoplugin
 
 import (
 	"context"

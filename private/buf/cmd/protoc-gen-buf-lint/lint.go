@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -115,10 +115,23 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
+	if fileAnnotations := bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations); len(fileAnnotations) > 0 {
 		buffer := bytes.NewBuffer(nil)
-		if err := buflintconfig.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			return err
+		if externalConfig.ErrorFormat == "config-ignore-yaml" {
+			if err := buflint.PrintFileAnnotationsConfigIgnoreYAMLV1(
+				buffer,
+				fileAnnotations,
+			); err != nil {
+				return err
+			}
+		} else {
+			if err := bufanalysis.PrintFileAnnotations(
+				buffer,
+				fileAnnotations,
+				externalConfig.ErrorFormat,
+			); err != nil {
+				return err
+			}
 		}
 		responseWriter.AddError(strings.TrimSpace(buffer.String()))
 	}
