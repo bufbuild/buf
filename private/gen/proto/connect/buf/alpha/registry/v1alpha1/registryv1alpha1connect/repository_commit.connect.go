@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// RepositoryCommitServiceName is the fully-qualified name of the RepositoryCommitService service.
@@ -62,6 +62,16 @@ const (
 	// RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure is the fully-qualified name of the
 	// RepositoryCommitService's DeleteRepositoryDraftCommit RPC.
 	RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure = "/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	repositoryCommitServiceServiceDescriptor                                = v1alpha1.File_buf_alpha_registry_v1alpha1_repository_commit_proto.Services().ByName("RepositoryCommitService")
+	repositoryCommitServiceListRepositoryCommitsByBranchMethodDescriptor    = repositoryCommitServiceServiceDescriptor.Methods().ByName("ListRepositoryCommitsByBranch")
+	repositoryCommitServiceListRepositoryCommitsByReferenceMethodDescriptor = repositoryCommitServiceServiceDescriptor.Methods().ByName("ListRepositoryCommitsByReference")
+	repositoryCommitServiceGetRepositoryCommitByReferenceMethodDescriptor   = repositoryCommitServiceServiceDescriptor.Methods().ByName("GetRepositoryCommitByReference")
+	repositoryCommitServiceListRepositoryDraftCommitsMethodDescriptor       = repositoryCommitServiceServiceDescriptor.Methods().ByName("ListRepositoryDraftCommits")
+	repositoryCommitServiceDeleteRepositoryDraftCommitMethodDescriptor      = repositoryCommitServiceServiceDescriptor.Methods().ByName("DeleteRepositoryDraftCommit")
 )
 
 // RepositoryCommitServiceClient is a client for the
@@ -98,30 +108,35 @@ func NewRepositoryCommitServiceClient(httpClient connect.HTTPClient, baseURL str
 		listRepositoryCommitsByBranch: connect.NewClient[v1alpha1.ListRepositoryCommitsByBranchRequest, v1alpha1.ListRepositoryCommitsByBranchResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
+			connect.WithSchema(repositoryCommitServiceListRepositoryCommitsByBranchMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryCommitsByReference: connect.NewClient[v1alpha1.ListRepositoryCommitsByReferenceRequest, v1alpha1.ListRepositoryCommitsByReferenceResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
+			connect.WithSchema(repositoryCommitServiceListRepositoryCommitsByReferenceMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getRepositoryCommitByReference: connect.NewClient[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
+			connect.WithSchema(repositoryCommitServiceGetRepositoryCommitByReferenceMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryDraftCommits: connect.NewClient[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
+			connect.WithSchema(repositoryCommitServiceListRepositoryDraftCommitsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteRepositoryDraftCommit: connect.NewClient[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse](
 			httpClient,
 			baseURL+RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
+			connect.WithSchema(repositoryCommitServiceDeleteRepositoryDraftCommitMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -198,30 +213,35 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 	repositoryCommitServiceListRepositoryCommitsByBranchHandler := connect.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByBranchProcedure,
 		svc.ListRepositoryCommitsByBranch,
+		connect.WithSchema(repositoryCommitServiceListRepositoryCommitsByBranchMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryCommitServiceListRepositoryCommitsByReferenceHandler := connect.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryCommitsByReferenceProcedure,
 		svc.ListRepositoryCommitsByReference,
+		connect.WithSchema(repositoryCommitServiceListRepositoryCommitsByReferenceMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryCommitServiceGetRepositoryCommitByReferenceHandler := connect.NewUnaryHandler(
 		RepositoryCommitServiceGetRepositoryCommitByReferenceProcedure,
 		svc.GetRepositoryCommitByReference,
+		connect.WithSchema(repositoryCommitServiceGetRepositoryCommitByReferenceMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryCommitServiceListRepositoryDraftCommitsHandler := connect.NewUnaryHandler(
 		RepositoryCommitServiceListRepositoryDraftCommitsProcedure,
 		svc.ListRepositoryDraftCommits,
+		connect.WithSchema(repositoryCommitServiceListRepositoryDraftCommitsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryCommitServiceDeleteRepositoryDraftCommitHandler := connect.NewUnaryHandler(
 		RepositoryCommitServiceDeleteRepositoryDraftCommitProcedure,
 		svc.DeleteRepositoryDraftCommit,
+		connect.WithSchema(repositoryCommitServiceDeleteRepositoryDraftCommitMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ResourceServiceName is the fully-qualified name of the ResourceService service.
@@ -50,6 +50,12 @@ const (
 	// ResourceServiceGetResourceByNameProcedure is the fully-qualified name of the ResourceService's
 	// GetResourceByName RPC.
 	ResourceServiceGetResourceByNameProcedure = "/buf.alpha.registry.v1alpha1.ResourceService/GetResourceByName"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	resourceServiceServiceDescriptor                 = v1alpha1.File_buf_alpha_registry_v1alpha1_resource_proto.Services().ByName("ResourceService")
+	resourceServiceGetResourceByNameMethodDescriptor = resourceServiceServiceDescriptor.Methods().ByName("GetResourceByName")
 )
 
 // ResourceServiceClient is a client for the buf.alpha.registry.v1alpha1.ResourceService service.
@@ -72,6 +78,7 @@ func NewResourceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 		getResourceByName: connect.NewClient[v1alpha1.GetResourceByNameRequest, v1alpha1.GetResourceByNameResponse](
 			httpClient,
 			baseURL+ResourceServiceGetResourceByNameProcedure,
+			connect.WithSchema(resourceServiceGetResourceByNameMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -105,6 +112,7 @@ func NewResourceServiceHandler(svc ResourceServiceHandler, opts ...connect.Handl
 	resourceServiceGetResourceByNameHandler := connect.NewUnaryHandler(
 		ResourceServiceGetResourceByNameProcedure,
 		svc.GetResourceByName,
+		connect.WithSchema(resourceServiceGetResourceByNameMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
