@@ -2,8 +2,8 @@ buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-2023111520450
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231115204500-e097f827e652.2/go.mod h1:xafc+XIsTxTy76GJQ1TKgvJWsSugFBqMaN27WhUblew=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231205222057-ac336d436f46.2 h1:VJ/y9MzaXeq7L05f1Ba2qyGhTndi1rdcAoUwsoN+ylc=
 buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231205222057-ac336d436f46.2/go.mod h1:Zj8avI5rYv2fcYbXQDUmEdbpOCmdZjBNbYsE1EDyEBI=
-connectrpc.com/connect v1.12.0 h1:HwKdOY0lGhhoHdsza+hW55aqHEC64pYpObRNoAgn70g=
-connectrpc.com/connect v1.12.0/go.mod h1:3AGaO6RRGMx5IKFfqbe3hvK1NqLosFNP2BxDYTPmNPo=
+connectrpc.com/connect v1.13.0 h1:lGs5maZZzWOOD+PFFiOt5OncKmMsk9ZdPwpy5jcmaYg=
+connectrpc.com/connect v1.13.0/go.mod h1:uHAFHtYgeSZJxXrkN1IunDpKghnTXhYbVh0wW4StPW0=
 connectrpc.com/otelconnect v0.6.0 h1:VJAdQL9+sgdUw9+7+J+jq8pQo/h1S7tSFv2+vDcR7bU=
 connectrpc.com/otelconnect v0.6.0/go.mod h1:jdcs0uiwXQVmSMgTJ2dAaWR5VbpNd7QKNkuoH7n86RA=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// GithubServiceName is the fully-qualified name of the GithubService service.
@@ -50,6 +50,12 @@ const (
 	// GithubServiceGetGithubAppConfigProcedure is the fully-qualified name of the GithubService's
 	// GetGithubAppConfig RPC.
 	GithubServiceGetGithubAppConfigProcedure = "/buf.alpha.registry.v1alpha1.GithubService/GetGithubAppConfig"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	githubServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_github_proto.Services().ByName("GithubService")
+	githubServiceGetGithubAppConfigMethodDescriptor = githubServiceServiceDescriptor.Methods().ByName("GetGithubAppConfig")
 )
 
 // GithubServiceClient is a client for the buf.alpha.registry.v1alpha1.GithubService service.
@@ -71,6 +77,7 @@ func NewGithubServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		getGithubAppConfig: connect.NewClient[v1alpha1.GetGithubAppConfigRequest, v1alpha1.GetGithubAppConfigResponse](
 			httpClient,
 			baseURL+GithubServiceGetGithubAppConfigProcedure,
+			connect.WithSchema(githubServiceGetGithubAppConfigMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -103,6 +110,7 @@ func NewGithubServiceHandler(svc GithubServiceHandler, opts ...connect.HandlerOp
 	githubServiceGetGithubAppConfigHandler := connect.NewUnaryHandler(
 		GithubServiceGetGithubAppConfigProcedure,
 		svc.GetGithubAppConfig,
+		connect.WithSchema(githubServiceGetGithubAppConfigMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

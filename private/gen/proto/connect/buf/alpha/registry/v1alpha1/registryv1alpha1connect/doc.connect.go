@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// DocServiceName is the fully-qualified name of the DocService service.
@@ -62,6 +62,16 @@ const (
 	// DocServiceGetPackageDocumentationProcedure is the fully-qualified name of the DocService's
 	// GetPackageDocumentation RPC.
 	DocServiceGetPackageDocumentationProcedure = "/buf.alpha.registry.v1alpha1.DocService/GetPackageDocumentation"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	docServiceServiceDescriptor                       = v1alpha1.File_buf_alpha_registry_v1alpha1_doc_proto.Services().ByName("DocService")
+	docServiceGetSourceDirectoryInfoMethodDescriptor  = docServiceServiceDescriptor.Methods().ByName("GetSourceDirectoryInfo")
+	docServiceGetSourceFileMethodDescriptor           = docServiceServiceDescriptor.Methods().ByName("GetSourceFile")
+	docServiceGetModulePackagesMethodDescriptor       = docServiceServiceDescriptor.Methods().ByName("GetModulePackages")
+	docServiceGetModuleDocumentationMethodDescriptor  = docServiceServiceDescriptor.Methods().ByName("GetModuleDocumentation")
+	docServiceGetPackageDocumentationMethodDescriptor = docServiceServiceDescriptor.Methods().ByName("GetPackageDocumentation")
 )
 
 // DocServiceClient is a client for the buf.alpha.registry.v1alpha1.DocService service.
@@ -99,30 +109,35 @@ func NewDocServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 		getSourceDirectoryInfo: connect.NewClient[v1alpha1.GetSourceDirectoryInfoRequest, v1alpha1.GetSourceDirectoryInfoResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceDirectoryInfoProcedure,
+			connect.WithSchema(docServiceGetSourceDirectoryInfoMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getSourceFile: connect.NewClient[v1alpha1.GetSourceFileRequest, v1alpha1.GetSourceFileResponse](
 			httpClient,
 			baseURL+DocServiceGetSourceFileProcedure,
+			connect.WithSchema(docServiceGetSourceFileMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getModulePackages: connect.NewClient[v1alpha1.GetModulePackagesRequest, v1alpha1.GetModulePackagesResponse](
 			httpClient,
 			baseURL+DocServiceGetModulePackagesProcedure,
+			connect.WithSchema(docServiceGetModulePackagesMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getModuleDocumentation: connect.NewClient[v1alpha1.GetModuleDocumentationRequest, v1alpha1.GetModuleDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetModuleDocumentationProcedure,
+			connect.WithSchema(docServiceGetModuleDocumentationMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getPackageDocumentation: connect.NewClient[v1alpha1.GetPackageDocumentationRequest, v1alpha1.GetPackageDocumentationResponse](
 			httpClient,
 			baseURL+DocServiceGetPackageDocumentationProcedure,
+			connect.WithSchema(docServiceGetPackageDocumentationMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -194,30 +209,35 @@ func NewDocServiceHandler(svc DocServiceHandler, opts ...connect.HandlerOption) 
 	docServiceGetSourceDirectoryInfoHandler := connect.NewUnaryHandler(
 		DocServiceGetSourceDirectoryInfoProcedure,
 		svc.GetSourceDirectoryInfo,
+		connect.WithSchema(docServiceGetSourceDirectoryInfoMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetSourceFileHandler := connect.NewUnaryHandler(
 		DocServiceGetSourceFileProcedure,
 		svc.GetSourceFile,
+		connect.WithSchema(docServiceGetSourceFileMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetModulePackagesHandler := connect.NewUnaryHandler(
 		DocServiceGetModulePackagesProcedure,
 		svc.GetModulePackages,
+		connect.WithSchema(docServiceGetModulePackagesMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetModuleDocumentationHandler := connect.NewUnaryHandler(
 		DocServiceGetModuleDocumentationProcedure,
 		svc.GetModuleDocumentation,
+		connect.WithSchema(docServiceGetModuleDocumentationMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	docServiceGetPackageDocumentationHandler := connect.NewUnaryHandler(
 		DocServiceGetPackageDocumentationProcedure,
 		svc.GetPackageDocumentation,
+		connect.WithSchema(docServiceGetPackageDocumentationMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

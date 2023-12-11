@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ConvertServiceName is the fully-qualified name of the ConvertService service.
@@ -49,6 +49,12 @@ const (
 const (
 	// ConvertServiceConvertProcedure is the fully-qualified name of the ConvertService's Convert RPC.
 	ConvertServiceConvertProcedure = "/buf.alpha.registry.v1alpha1.ConvertService/Convert"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	convertServiceServiceDescriptor       = v1alpha1.File_buf_alpha_registry_v1alpha1_convert_proto.Services().ByName("ConvertService")
+	convertServiceConvertMethodDescriptor = convertServiceServiceDescriptor.Methods().ByName("Convert")
 )
 
 // ConvertServiceClient is a client for the buf.alpha.registry.v1alpha1.ConvertService service.
@@ -71,7 +77,8 @@ func NewConvertServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 		convert: connect.NewClient[v1alpha1.ConvertRequest, v1alpha1.ConvertResponse](
 			httpClient,
 			baseURL+ConvertServiceConvertProcedure,
-			opts...,
+			connect.WithSchema(convertServiceConvertMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -103,7 +110,8 @@ func NewConvertServiceHandler(svc ConvertServiceHandler, opts ...connect.Handler
 	convertServiceConvertHandler := connect.NewUnaryHandler(
 		ConvertServiceConvertProcedure,
 		svc.Convert,
-		opts...,
+		connect.WithSchema(convertServiceConvertMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.ConvertService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

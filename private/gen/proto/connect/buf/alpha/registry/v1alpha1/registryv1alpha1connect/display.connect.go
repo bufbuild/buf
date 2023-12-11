@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// DisplayServiceName is the fully-qualified name of the DisplayService service.
@@ -73,6 +73,19 @@ const (
 	DisplayServiceListManageableUserRepositoryRolesProcedure = "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	displayServiceServiceDescriptor                                 = v1alpha1.File_buf_alpha_registry_v1alpha1_display_proto.Services().ByName("DisplayService")
+	displayServiceDisplayOrganizationElementsMethodDescriptor       = displayServiceServiceDescriptor.Methods().ByName("DisplayOrganizationElements")
+	displayServiceDisplayRepositoryElementsMethodDescriptor         = displayServiceServiceDescriptor.Methods().ByName("DisplayRepositoryElements")
+	displayServiceDisplayUserElementsMethodDescriptor               = displayServiceServiceDescriptor.Methods().ByName("DisplayUserElements")
+	displayServiceDisplayServerElementsMethodDescriptor             = displayServiceServiceDescriptor.Methods().ByName("DisplayServerElements")
+	displayServiceDisplayOwnerEntitledElementsMethodDescriptor      = displayServiceServiceDescriptor.Methods().ByName("DisplayOwnerEntitledElements")
+	displayServiceDisplayRepositoryEntitledElementsMethodDescriptor = displayServiceServiceDescriptor.Methods().ByName("DisplayRepositoryEntitledElements")
+	displayServiceListManageableRepositoryRolesMethodDescriptor     = displayServiceServiceDescriptor.Methods().ByName("ListManageableRepositoryRoles")
+	displayServiceListManageableUserRepositoryRolesMethodDescriptor = displayServiceServiceDescriptor.Methods().ByName("ListManageableUserRepositoryRoles")
+)
+
 // DisplayServiceClient is a client for the buf.alpha.registry.v1alpha1.DisplayService service.
 type DisplayServiceClient interface {
 	// DisplayOrganizationElements returns which organization elements should be displayed to the user.
@@ -108,48 +121,56 @@ func NewDisplayServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 		displayOrganizationElements: connect.NewClient[v1alpha1.DisplayOrganizationElementsRequest, v1alpha1.DisplayOrganizationElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayOrganizationElementsProcedure,
+			connect.WithSchema(displayServiceDisplayOrganizationElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		displayRepositoryElements: connect.NewClient[v1alpha1.DisplayRepositoryElementsRequest, v1alpha1.DisplayRepositoryElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayRepositoryElementsProcedure,
+			connect.WithSchema(displayServiceDisplayRepositoryElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		displayUserElements: connect.NewClient[v1alpha1.DisplayUserElementsRequest, v1alpha1.DisplayUserElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayUserElementsProcedure,
+			connect.WithSchema(displayServiceDisplayUserElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		displayServerElements: connect.NewClient[v1alpha1.DisplayServerElementsRequest, v1alpha1.DisplayServerElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayServerElementsProcedure,
+			connect.WithSchema(displayServiceDisplayServerElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		displayOwnerEntitledElements: connect.NewClient[v1alpha1.DisplayOwnerEntitledElementsRequest, v1alpha1.DisplayOwnerEntitledElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayOwnerEntitledElementsProcedure,
+			connect.WithSchema(displayServiceDisplayOwnerEntitledElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		displayRepositoryEntitledElements: connect.NewClient[v1alpha1.DisplayRepositoryEntitledElementsRequest, v1alpha1.DisplayRepositoryEntitledElementsResponse](
 			httpClient,
 			baseURL+DisplayServiceDisplayRepositoryEntitledElementsProcedure,
+			connect.WithSchema(displayServiceDisplayRepositoryEntitledElementsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listManageableRepositoryRoles: connect.NewClient[v1alpha1.ListManageableRepositoryRolesRequest, v1alpha1.ListManageableRepositoryRolesResponse](
 			httpClient,
 			baseURL+DisplayServiceListManageableRepositoryRolesProcedure,
+			connect.WithSchema(displayServiceListManageableRepositoryRolesMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listManageableUserRepositoryRoles: connect.NewClient[v1alpha1.ListManageableUserRepositoryRolesRequest, v1alpha1.ListManageableUserRepositoryRolesResponse](
 			httpClient,
 			baseURL+DisplayServiceListManageableUserRepositoryRolesProcedure,
+			connect.WithSchema(displayServiceListManageableUserRepositoryRolesMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -246,48 +267,56 @@ func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect.Handler
 	displayServiceDisplayOrganizationElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayOrganizationElementsProcedure,
 		svc.DisplayOrganizationElements,
+		connect.WithSchema(displayServiceDisplayOrganizationElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceDisplayRepositoryElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayRepositoryElementsProcedure,
 		svc.DisplayRepositoryElements,
+		connect.WithSchema(displayServiceDisplayRepositoryElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceDisplayUserElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayUserElementsProcedure,
 		svc.DisplayUserElements,
+		connect.WithSchema(displayServiceDisplayUserElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceDisplayServerElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayServerElementsProcedure,
 		svc.DisplayServerElements,
+		connect.WithSchema(displayServiceDisplayServerElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceDisplayOwnerEntitledElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayOwnerEntitledElementsProcedure,
 		svc.DisplayOwnerEntitledElements,
+		connect.WithSchema(displayServiceDisplayOwnerEntitledElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceDisplayRepositoryEntitledElementsHandler := connect.NewUnaryHandler(
 		DisplayServiceDisplayRepositoryEntitledElementsProcedure,
 		svc.DisplayRepositoryEntitledElements,
+		connect.WithSchema(displayServiceDisplayRepositoryEntitledElementsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceListManageableRepositoryRolesHandler := connect.NewUnaryHandler(
 		DisplayServiceListManageableRepositoryRolesProcedure,
 		svc.ListManageableRepositoryRoles,
+		connect.WithSchema(displayServiceListManageableRepositoryRolesMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	displayServiceListManageableUserRepositoryRolesHandler := connect.NewUnaryHandler(
 		DisplayServiceListManageableUserRepositoryRolesProcedure,
 		svc.ListManageableUserRepositoryRoles,
+		connect.WithSchema(displayServiceListManageableUserRepositoryRolesMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
