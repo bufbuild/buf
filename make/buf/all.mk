@@ -25,7 +25,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
-	private/bufpkg/buftesting/cache/ \
+	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
@@ -94,7 +94,7 @@ testbufnew: installbuf
 		./private/bufpkg/bufremoteplugin/... \
 		./private/bufpkg/bufstudioagent/... \
 		./private/bufpkg/bufstyle/... \
-		./private/bufpkg/buftesting/... \
+		./private/buf/buftesting/... \
 		./private/bufpkg/buftransport/... \
 		./private/bufpkg/bufwasm/...
 
