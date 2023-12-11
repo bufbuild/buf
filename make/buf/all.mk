@@ -54,54 +54,8 @@ CMD ?= test
 .PHONY: testbufnew
 testbufnew: installbuf
 	# TODO: remove when done with refactor
-	go $(CMD) \
-		./private/buf/bufapp/... \
-		./private/buf/bufcli/... \
-		./private/buf/bufctl/... \
-		./private/buf/bufcurl/... \
-		./private/buf/buffetch/... \
-		./private/buf/bufformat/... \
-		./private/buf/bufgen/... \
-		./private/buf/bufprint/... \
-		./private/buf/bufworkspace/... \
-		./private/buf/cmd/buf/command/alpha/package/... \
-		./private/buf/cmd/buf/command/alpha/protoc/... \
-		./private/buf/cmd/buf/command/alpha/registry/... \
-		./private/buf/cmd/buf/command/beta/graph/... \
-		./private/buf/cmd/buf/command/beta/price/... \
-		./private/buf/cmd/buf/command/beta/registry/... \
-		./private/buf/cmd/buf/command/beta/stats/... \
-		./private/buf/cmd/buf/command/beta/studioagent/... \
-		./private/buf/cmd/buf/command/build/... \
-		./private/buf/cmd/buf/command/breaking/... \
-		./private/buf/cmd/buf/command/convert/... \
-		./private/buf/cmd/buf/command/generate/... \
-		./private/buf/cmd/buf/command/lint/... \
-		./private/buf/cmd/buf/command/lsfiles/... \
-		./private/buf/cmd/buf/command/mod/... \
-		./private/buf/cmd/buf/command/push/... \
-		./private/buf/cmd/buf/command/registry/... \
-		./private/buf/cmd/buf \
-		./private/buf/cmd/buf-digest/... \
-		./private/buf/cmd/protoc-gen-buf-breaking/... \
-		./private/buf/cmd/protoc-gen-buf-lint/... \
-		./private/bufpkg/bufanalysis/... \
-		./private/bufpkg/bufapi/... \
-		./private/bufpkg/bufcas/... \
-		./private/bufpkg/bufcheck/... \
-		./private/bufpkg/bufconfig/... \
-		./private/bufpkg/bufconnect/... \
-		./private/bufpkg/bufimage/... \
-		./private/bufpkg/bufmodule/... \
-		./private/bufpkg/bufplugin/... \
-		./private/buf/bufpluginexec/... \
-		./private/bufpkg/bufreflect/... \
-		./private/bufpkg/bufremoteplugin/... \
-		./private/buf/bufstudioagent/... \
-		./private/bufpkg/bufstyle/... \
-		./private/buf/buftesting/... \
-		./private/bufpkg/buftransport/... \
-		./private/bufpkg/bufwasm/...
+	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
+	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/bufsync | grep -v buf\/command\/format | grep -v command\/alpha\/repo\/reposync | grep -v bufwkt\/cmd\/wkt-go-data)
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 

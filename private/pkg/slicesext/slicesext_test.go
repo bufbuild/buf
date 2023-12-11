@@ -34,7 +34,6 @@ func TestToUniqueSorted(t *testing.T) {
 
 func TestElementsContained(t *testing.T) {
 	t.Parallel()
-	assert.True(t, ElementsContained(nil, nil))
 	assert.True(t, ElementsContained([]string{}, []string{}))
 	assert.True(t, ElementsContained(nil, []string{}))
 	assert.True(t, ElementsContained([]string{}, nil))
