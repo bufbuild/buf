@@ -37,3 +37,23 @@ deps:
   - name: buf.testing/acme/extension
     digest: ${EXTENSION_DIGEST}
 EOF
+
+rm -f workspace_undeclared_dep/buf.lock
+cat <<EOF > workspace_undeclared_dep/buf.lock
+version: v2
+deps:
+  - name: buf.testing/acme/date
+    digest: ${DATE_DIGEST}
+  - name: buf.testing/acme/extension
+    digest: ${EXTENSION_DIGEST}
+EOF
+
+rm -f workspace_unused_dep/buf.lock
+cat <<EOF > workspace_unused_dep/buf.lock
+version: v2
+deps:
+  - name: buf.testing/acme/date
+    digest: ${DATE_DIGEST}
+  - name: buf.testing/acme/extension
+    digest: ${EXTENSION_DIGEST}
+EOF
