@@ -77,6 +77,7 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/lint/... \
 		./private/buf/cmd/buf/command/lsfiles/... \
 		./private/buf/cmd/buf/command/mod/... \
+		./private/buf/cmd/buf/command/push/... \
 		./private/buf/cmd/buf/command/registry/... \
 		./private/buf/cmd/buf \
 		./private/buf/cmd/buf-digest/... \
