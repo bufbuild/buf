@@ -1,6 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/bufbuild/protocompile@146b831231f7f7c1a19b09065875b9778d3d5d25
+#GO_GET_PKGS := $(GO_GET_PKGS)
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
