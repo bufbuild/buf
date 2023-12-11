@@ -45,7 +45,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Create a BSR repository",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/pkg/browser"
-	"github.com/spf13/cobra"
 )
 
 // NewCommand returns a new open Command.
@@ -43,7 +42,7 @@ func NewCommand(
 The directory must have a buf.yaml that contains a specified module name.
 
 The directory defaults to "." if no argument is specified.`,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container)

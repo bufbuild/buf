@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/spf13/cobra"
 )
 
 // NewCommand returns a new prune Command.
@@ -38,7 +37,7 @@ func NewCommand(
 Defaults to "." if no argument is specified.
 
 Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container)

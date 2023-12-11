@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -48,7 +47,7 @@ func NewCommand(
 		Use:   name + " <input>",
 		Short: "List Protobuf files",
 		Long:  bufcli.GetInputLong(`the source, module, or image to list from`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

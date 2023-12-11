@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -43,7 +42,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " [buf.build/owner/foobar]",
 		Short: "Initializes and writes a new buf.yaml file.",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

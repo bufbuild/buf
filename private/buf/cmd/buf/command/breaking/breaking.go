@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -55,7 +54,7 @@ func NewCommand(
 		Short: "Verify no breaking changes have been made",
 		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location. ` +
 			bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

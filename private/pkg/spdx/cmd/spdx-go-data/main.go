@@ -41,7 +41,7 @@ func newCommand() *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:  programName,
-		Args: cobra.NoArgs,
+		Args: appcmd.NoArgs,
 		Run: func(ctx context.Context, container app.Container) error {
 			return run(ctx, container, flags)
 		},

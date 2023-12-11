@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -43,7 +42,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository:draft>",
 		Short: "Delete a repository draft",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

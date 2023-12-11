@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -39,7 +38,7 @@ func NewCommand(
 		Use:     name,
 		Aliases: aliases,
 		Short:   "Clear the BSR module cache",
-		Args:    cobra.NoArgs,
+		Args:    appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

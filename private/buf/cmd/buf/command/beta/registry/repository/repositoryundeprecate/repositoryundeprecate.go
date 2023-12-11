@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/cobra"
 )
 
 // NewCommand returns a new Command
@@ -35,7 +34,7 @@ func NewCommand(name string, builder appflag.SubCommandBuilder) *appcmd.Command 
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Undeprecate a BSR repository",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run:   builder.NewRunFunc(run),
 	}
 }

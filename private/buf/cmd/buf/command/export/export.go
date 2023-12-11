@@ -74,7 +74,7 @@ Export a git repo to a local directory.
 
     $ buf export https://github.com/owner/repository.git --output=<output-dir>
 `,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

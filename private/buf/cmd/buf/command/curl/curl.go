@@ -42,7 +42,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/verbose"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"golang.org/x/net/http2"
@@ -181,7 +180,7 @@ If an error occurs that is due to incorrect usage or other unexpected error, thi
 return an exit code that is less than 8. If the RPC fails otherwise, this program will return an
 exit code that is the gRPC code, shifted three bits to the left.
 `,
-		Args: checkPositionalArgs,
+		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -767,14 +766,6 @@ func verifyEndpointURL(urlArg string) (endpointURL *url.URL, service, method, ba
 		return nil, "", "", "", fmt.Errorf("failed to extract base URL from %q", urlArg)
 	}
 	return endpointURL, service, method, baseURL, nil
-}
-
-func checkPositionalArgs(_ *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return errors.New("expecting exactly one positional argument: the URL of the endpoint to invoke")
-	}
-	_, _, _, _, err := verifyEndpointURL(args[0])
-	return err
 }
 
 func run(ctx context.Context, container appflag.Container, f *flags) (err error) {

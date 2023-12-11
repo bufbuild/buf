@@ -36,7 +36,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -57,7 +56,7 @@ func newCommand() *appcmd.Command {
 	builder := appflag.NewBuilder(programName)
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/google/protobuf/include", programName),
-		Args: cobra.ExactArgs(1),
+		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

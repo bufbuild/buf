@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -49,7 +48,7 @@ The first argument is the directory of the local module to update.
 Defaults to "." if no argument is specified.
 
 Note that updating is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

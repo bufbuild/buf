@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -50,7 +49,7 @@ func NewCommand(
 		Short: `Log in to the Buf Schema Registry`,
 		Long: fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.
 The <domain> argument will default to buf.build if not specified.`, netrc.Filename),
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

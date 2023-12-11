@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpserver"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -53,7 +52,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Run an HTTP(S) server as the Studio agent",
-		Args:  cobra.ExactArgs(0),
+		Args:  appcmd.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

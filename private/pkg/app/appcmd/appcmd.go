@@ -42,9 +42,7 @@ type Command struct {
 	// Must be unset if short is unset.
 	Long string
 	// Args are the expected arguments.
-	//
-	// TODO: make specific types for appcmd to limit what can be done.
-	Args cobra.PositionalArgs
+	Args PositionalArgs
 	// Deprecated says to print this deprecation string.
 	Deprecated string
 	// Hidden says to hide this command.
@@ -105,6 +103,8 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 	}
 }
 
+// *** PRIVATE ***
+
 func newRunFunc(command *Command) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
 		return run(ctx, container, command)
@@ -142,7 +142,7 @@ func run(
 					{
 						Use:   "bash",
 						Short: "Generate auto-completion scripts for bash",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenBashCompletion(container.Stdout())
 						},
@@ -150,7 +150,7 @@ func run(
 					{
 						Use:   "fish",
 						Short: "Generate auto-completion scripts for fish",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenFishCompletion(container.Stdout(), true)
 						},
@@ -158,7 +158,7 @@ func run(
 					{
 						Use:   "powershell",
 						Short: "Generate auto-completion scripts for powershell",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenPowerShellCompletion(container.Stdout())
 						},
@@ -166,7 +166,7 @@ func run(
 					{
 						Use:   "zsh",
 						Short: "Generate auto-completion scripts for zsh",
-						Args:  cobra.NoArgs,
+						Args:  NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenZshCompletion(container.Stdout())
 						},
@@ -184,7 +184,7 @@ func run(
 			container,
 			&Command{
 				Use:    "manpages",
-				Args:   cobra.ExactArgs(1),
+				Args:   ExactArgs(1),
 				Hidden: true,
 				Run: func(ctx context.Context, container app.Container) error {
 					return doc.GenManTree(
@@ -263,10 +263,14 @@ func commandToCobra(
 	if err := commandValidate(command); err != nil {
 		return nil, err
 	}
+	var cobraPositionalArgs cobra.PositionalArgs
+	if command.Args != nil {
+		cobraPositionalArgs = command.Args.cobra()
+	}
 	cobraCommand := &cobra.Command{
 		Use:        command.Use,
 		Aliases:    command.Aliases,
-		Args:       command.Args,
+		Args:       cobraPositionalArgs,
 		Deprecated: command.Deprecated,
 		Hidden:     command.Hidden,
 		Short:      strings.TrimSpace(command.Short),

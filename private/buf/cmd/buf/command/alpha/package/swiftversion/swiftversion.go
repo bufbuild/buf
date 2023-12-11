@@ -47,7 +47,7 @@ func NewCommand(
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: bufcli.PackageVersionShortDescription(registryName),
 		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/connectrpc/swift"),
-		Args:  cobra.NoArgs,
+		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
