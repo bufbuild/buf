@@ -19,15 +19,17 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
 	logger             *zap.Logger
+	tracer             tracing.Tracer
 	storageosProvider  storageos.Provider
 	runner             command.Runner
 	wasmPluginExecutor bufwasm.PluginExecutor
@@ -35,12 +37,14 @@ type generator struct {
 
 func newGenerator(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
 ) *generator {
 	return &generator{
 		logger:             logger,
+		tracer:             tracer,
 		storageosProvider:  storageosProvider,
 		runner:             runner,
 		wasmPluginExecutor: wasmPluginExecutor,
@@ -71,6 +75,7 @@ func (g *generator) Generate(
 	handler, err := NewHandler(
 		g.storageosProvider,
 		g.runner,
+		g.tracer,
 		g.wasmPluginExecutor,
 		pluginName,
 		handlerOptions...,

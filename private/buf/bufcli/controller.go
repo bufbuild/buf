@@ -19,6 +19,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 )
 
 // NewController returns a new Controller.
@@ -37,6 +38,7 @@ func NewController(
 	}
 	return bufctl.NewController(
 		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
 		container,
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,

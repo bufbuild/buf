@@ -27,9 +27,10 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -92,11 +93,12 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	wasmPluginExecutor bufwasm.PluginExecutor,
 ) Generator {
-	return newGenerator(logger, storageosProvider, runner, wasmPluginExecutor)
+	return newGenerator(logger, tracer, storageosProvider, runner, wasmPluginExecutor)
 }
 
 // GenerateOption is an option for Generate.
@@ -139,6 +141,7 @@ func GenerateWithWASMEnabled() GenerateOption {
 func NewHandler(
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	tracer tracing.Tracer,
 	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginName string,
 	options ...HandlerOption,
@@ -152,17 +155,17 @@ func NewHandler(
 	// branch here. A more stringent check is done inside the handler initialization.
 	// In a followup we should unify the following three checks into a strategy pattern.
 	if looksLikeWASM(pluginName) && handlerOptions.wasmEnabled {
-		return newWasmHandler(wasmPluginExecutor, pluginName)
+		return newWasmHandler(wasmPluginExecutor, tracer, pluginName)
 	}
 
 	// Initialize binary plugin handler when path is specified with optional args. Return
 	// on error as something is wrong with the supplied pluginPath option.
 	if len(handlerOptions.pluginPath) > 0 {
-		return NewBinaryHandler(runner, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
+		return NewBinaryHandler(runner, tracer, handlerOptions.pluginPath[0], handlerOptions.pluginPath[1:])
 	}
 
 	// Initialize binary plugin handler based on plugin name.
-	if handler, err := NewBinaryHandler(runner, "protoc-gen-"+pluginName, nil); err == nil {
+	if handler, err := NewBinaryHandler(runner, tracer, "protoc-gen-"+pluginName, nil); err == nil {
 		return handler, nil
 	}
 
@@ -175,7 +178,7 @@ func NewHandler(
 		if protocPath, err := unsafeLookPath(handlerOptions.protocPath); err != nil {
 			return nil, err
 		} else {
-			return newProtocProxyHandler(storageosProvider, runner, protocPath, pluginName), nil
+			return newProtocProxyHandler(storageosProvider, runner, tracer, protocPath, pluginName), nil
 		}
 	}
 	return nil, fmt.Errorf(
@@ -218,14 +221,12 @@ func HandlerWithWASMEnabled() HandlerOption {
 
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
-//
-// Used by other repositories.
-func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
+func NewBinaryHandler(runner command.Runner, tracer tracing.Tracer, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err
 	}
-	return newBinaryHandler(runner, pluginPath, pluginArgs), nil
+	return newBinaryHandler(runner, tracer, pluginPath, pluginArgs), nil
 }
 
 type handlerOptions struct {

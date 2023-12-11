@@ -21,14 +21,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
-	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/tmp"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/multierr"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -94,6 +95,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalys
 	}
 	return bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

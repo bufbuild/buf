@@ -21,14 +21,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -49,8 +50,8 @@ type Handler interface {
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(logger *zap.Logger) Handler {
-	return newHandler(logger)
+func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
+	return newHandler(logger, tracer)
 }
 
 // RulesForConfig returns the rules for a given config.

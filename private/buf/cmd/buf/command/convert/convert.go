@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -182,7 +183,12 @@ func run(
 	if resolveWellKnownType {
 		if _, ok := datawkt.MessageFilePath(flags.Type); ok {
 			var wktErr error
-			schemaImage, wktErr = wellKnownTypeImage(ctx, container.Logger(), flags.Type)
+			schemaImage, wktErr = wellKnownTypeImage(
+				ctx,
+				container.Logger(),
+				tracing.NewTracer(container.Tracer()),
+				flags.Type,
+			)
 			if wktErr != nil {
 				return wktErr
 			}
@@ -239,6 +245,7 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 func wellKnownTypeImage(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
@@ -253,6 +260,7 @@ func wellKnownTypeImage(
 	}
 	image, _, err := bufimage.BuildImage(
 		ctx,
+		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
 	if err != nil {

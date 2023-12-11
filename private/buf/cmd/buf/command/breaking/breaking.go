@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -201,7 +202,10 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		fileAnnotations, err := bufbreaking.NewHandler(container.Logger()).Check(
+		fileAnnotations, err := bufbreaking.NewHandler(
+			container.Logger(),
+			tracing.NewTracer(container.Tracer()),
+		).Check(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			againstImageWithConfigs[i],

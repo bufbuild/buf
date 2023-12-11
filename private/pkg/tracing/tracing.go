@@ -21,7 +21,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
+
+// NopTracer is a no-op tracer.
+var NopTracer Tracer = NewTracer(noop.Tracer{})
 
 // Tracer wraps an otel trace.Tracer.
 type Tracer interface {

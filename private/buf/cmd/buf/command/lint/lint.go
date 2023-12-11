@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -137,7 +138,10 @@ func run(
 		//for _, file := range imageWithConfig.Files() {
 		//fmt.Println(file.Path(), !file.IsImport())
 		//}
-		fileAnnotations, err := buflint.NewHandler(container.Logger()).Check(
+		fileAnnotations, err := buflint.NewHandler(
+			container.Logger(),
+			tracing.NewTracer(container.Tracer()),
+		).Check(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,

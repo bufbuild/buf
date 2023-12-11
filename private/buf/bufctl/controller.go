@@ -42,6 +42,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -125,6 +126,7 @@ type Controller interface {
 
 func NewController(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -135,6 +137,7 @@ func NewController(
 ) (Controller, error) {
 	return newController(
 		logger,
+		tracer,
 		container,
 		moduleKeyProvider,
 		moduleDataProvider,
@@ -154,6 +157,7 @@ func NewController(
 // deal in the global variables.
 type controller struct {
 	logger             *zap.Logger
+	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
 	moduleDataProvider bufmodule.ModuleDataProvider
 
@@ -170,6 +174,7 @@ type controller struct {
 
 func newController(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -180,6 +185,7 @@ func newController(
 ) (*controller, error) {
 	controller := &controller{
 		logger:             logger,
+		tracer:             tracer,
 		container:          container,
 		moduleDataProvider: moduleDataProvider,
 	}
@@ -199,6 +205,7 @@ func newController(
 		httpauthAuthenticator,
 		git.NewCloner(
 			logger,
+			tracer,
 			controller.storageosProvider,
 			controller.commandRunner,
 			gitClonerOptions,
@@ -695,6 +702,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		c.logger,
+		c.tracer,
 		readBucketCloser,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -734,6 +742,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	return bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		c.logger,
+		c.tracer,
 		readBucketCloser,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -770,6 +779,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	return bufworkspace.NewUpdateableWorkspaceForBucket(
 		ctx,
 		c.logger,
+		c.tracer,
 		readWriteBucket,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
@@ -797,6 +807,7 @@ func (c *controller) getWorkspaceForModuleRef(
 	return bufworkspace.NewWorkspaceForModuleKey(
 		ctx,
 		c.logger,
+		c.tracer,
 		moduleKey,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetPaths(
@@ -895,6 +906,7 @@ func (c *controller) buildImage(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		c.tracer,
 		moduleReadBucket,
 		options...,
 	)

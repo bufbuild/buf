@@ -87,6 +87,8 @@ func run(
 	container appext.Container,
 	env *env,
 ) (retErr error) {
+	runner := command.NewRunner()
+	logger := container.Logger()
 	tracer := tracing.NewTracer(container.Tracer())
 	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
@@ -101,7 +103,7 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := container.Logger().Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
+	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
 		checkedEntry.Write(
 			zap.Any("flags", env.flags),
 			zap.Any("plugins", env.PluginNameToPluginInfo),
@@ -109,10 +111,10 @@ func run(
 	}
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	runner := command.NewRunner()
 	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
-		container.Logger(),
+		logger,
+		tracer,
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,
@@ -127,6 +129,7 @@ func run(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
@@ -192,7 +195,8 @@ func run(
 			}
 			response, err := executePlugin(
 				ctx,
-				container.Logger(),
+				logger,
+				tracer,
 				storageosProvider,
 				runner,
 				wasmPluginExecutor,
@@ -210,7 +214,7 @@ func run(
 			return err
 		}
 		responseWriter := protopluginos.NewResponseWriter(
-			container.Logger(),
+			logger,
 			storageosProvider,
 		)
 		for _, pluginResponse := range pluginResponses {

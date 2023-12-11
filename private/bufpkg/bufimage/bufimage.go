@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -155,6 +156,7 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 // the only two ways you should have a ModuleReadBucket that you pass to BuildImage.
 func BuildImage(
 	ctx context.Context,
+	tracer tracing.Tracer,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
 ) (Image, []bufanalysis.FileAnnotation, error) {
@@ -164,6 +166,7 @@ func BuildImage(
 	}
 	return buildImage(
 		ctx,
+		tracer,
 		moduleReadBucket,
 		buildImageOptions.excludeSourceCodeInfo,
 		buildImageOptions.noParallelism,
