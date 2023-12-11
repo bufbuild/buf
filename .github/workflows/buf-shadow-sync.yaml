@@ -14,7 +14,7 @@ jobs:
           fetch-depth: 0 # fetch all branches and commits, so we can loop them
       - run: git remote set-head origin --auto # set a HEAD for remote/origin, so buf sync can pickup the current default branch
       - name: setup-go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21.x'
       - name: Install Local Buf
