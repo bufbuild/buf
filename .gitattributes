@@ -7,5 +7,5 @@
 **/testdata/** binary
 
 **/corpus/** linguist-generated=true
-**/privateusage.gen.go linguist-generated=true
+**/usage.gen.go linguist-generated=true
 /private/gen/** linguist-generated=true
