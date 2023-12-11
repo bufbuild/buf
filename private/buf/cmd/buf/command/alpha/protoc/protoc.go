@@ -22,21 +22,21 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -87,7 +87,8 @@ func run(
 	container appext.Container,
 	env *env,
 ) (retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	tracer := tracing.NewTracer(container.Tracer())
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
@@ -169,7 +170,7 @@ func run(
 		images := []bufimage.Image{image}
 		if env.ByDir {
 			f := func() (retErr error) {
-				_, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+				_, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 				defer span.End()
 				images, err = bufimage.ImageByDir(image)
 				return err

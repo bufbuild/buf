@@ -12,43 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tracer
+package tracing
 
 import (
 	"context"
 	"runtime"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Start creates a span.
-func Start(ctx context.Context, tracerName string, options ...StartOption) (context.Context, trace.Span) {
-	startOptions := newStartOptions()
-	for _, option := range options {
-		option(startOptions)
-	}
-	spanName := startOptions.spanName
-	if spanName == "" {
-		spanName = getRuntimeFrame(2).Function
-	}
-	if startOptions.spanNameSuffix != "" {
-		spanName = spanName + "-" + startOptions.spanNameSuffix
-	}
-	var spanStartOptions []trace.SpanStartOption
-	if len(startOptions.attributes) > 0 {
-		spanStartOptions = append(
-			spanStartOptions,
-			trace.WithAttributes(startOptions.attributes...),
-		)
-	}
-	ctx, span := otel.GetTracerProvider().Tracer(tracerName).Start(ctx, spanName, spanStartOptions...)
-	return ctx, newWrappedSpan(span, startOptions.errAddr)
+// Tracer wraps an otel trace.Tracer.
+type Tracer interface {
+	// Start creates a span.
+	Start(ctx context.Context, options ...StartOption) (context.Context, trace.Span)
 }
 
-// StartOption is an option for Start or Do.
+// NewTracer returns a new Tracer.
+func NewTracer(otelTracer trace.Tracer) Tracer {
+	return newTracer(otelTracer)
+}
+
+// StartOption is an option for Start.
 type StartOption func(*startOptions)
 
 // WithSpanName sets the span name.
@@ -88,6 +74,39 @@ func WithAttributes(attributes ...attribute.KeyValue) StartOption {
 }
 
 // *** PRIVATE ***
+
+type tracer struct {
+	otelTracer trace.Tracer
+}
+
+func newTracer(otelTracer trace.Tracer) *tracer {
+	return &tracer{
+		otelTracer: otelTracer,
+	}
+}
+
+func (t *tracer) Start(ctx context.Context, options ...StartOption) (context.Context, trace.Span) {
+	startOptions := newStartOptions()
+	for _, option := range options {
+		option(startOptions)
+	}
+	spanName := startOptions.spanName
+	if spanName == "" {
+		spanName = getRuntimeFrame(2).Function
+	}
+	if startOptions.spanNameSuffix != "" {
+		spanName = spanName + "-" + startOptions.spanNameSuffix
+	}
+	var spanStartOptions []trace.SpanStartOption
+	if len(startOptions.attributes) > 0 {
+		spanStartOptions = append(
+			spanStartOptions,
+			trace.WithAttributes(startOptions.attributes...),
+		)
+	}
+	ctx, span := t.otelTracer.Start(ctx, spanName, spanStartOptions...)
+	return ctx, newWrappedSpan(span, startOptions.errAddr)
+}
 
 type wrappedSpan struct {
 	trace.Span

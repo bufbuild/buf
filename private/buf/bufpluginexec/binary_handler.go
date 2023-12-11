@@ -21,28 +21,31 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type binaryHandler struct {
 	runner     command.Runner
+	tracer     tracing.Tracer
 	pluginPath string
 	pluginArgs []string
 }
 
 func newBinaryHandler(
 	runner command.Runner,
+	tracer tracing.Tracer,
 	pluginPath string,
 	pluginArgs []string,
 ) *binaryHandler {
 	return &binaryHandler{
 		runner:     runner,
+		tracer:     tracer,
 		pluginPath: pluginPath,
 		pluginArgs: pluginArgs,
 	}
@@ -54,11 +57,10 @@ func (h *binaryHandler) Handle(
 	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := tracer.Start(
+	ctx, span := h.tracer.Start(
 		ctx,
-		"bufbuild/buf",
-		tracer.WithErr(&retErr),
-		tracer.WithAttributes(
+		tracing.WithErr(&retErr),
+		tracing.WithAttributes(
 			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 		),
 	)

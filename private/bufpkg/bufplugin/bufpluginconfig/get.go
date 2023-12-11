@@ -22,14 +22,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracer"
 	"go.uber.org/multierr"
 )
 
 func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, options []ConfigOption) (_ *Config, retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
-	defer span.End()
-
 	// This will be in the order of precedence.
 	var foundConfigFilePaths []string
 	// Go through all valid config file paths and see which ones are present.
@@ -74,8 +70,6 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, opti
 }
 
 func getConfigForData(ctx context.Context, data []byte, options []ConfigOption) (_ *Config, retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
-	defer span.End()
 	return getConfigForDataInternal(
 		ctx,
 		encoding.UnmarshalJSONOrYAMLNonStrict,

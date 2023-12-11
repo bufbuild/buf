@@ -25,9 +25,9 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -35,11 +35,13 @@ import (
 
 type wasmHandler struct {
 	wasmPluginExecutor bufwasm.PluginExecutor
+	tracer             tracing.Tracer
 	pluginPath         string
 }
 
 func newWasmHandler(
 	wasmPluginExecutor bufwasm.PluginExecutor,
+	tracer tracing.Tracer,
 	pluginPath string,
 ) (*wasmHandler, error) {
 	if pluginAbsPath, err := validateWASMFilePath(pluginPath); err != nil {
@@ -47,6 +49,7 @@ func newWasmHandler(
 	} else {
 		return &wasmHandler{
 			wasmPluginExecutor: wasmPluginExecutor,
+			tracer:             tracer,
 			pluginPath:         pluginAbsPath,
 		}, nil
 	}
@@ -58,11 +61,10 @@ func (h *wasmHandler) Handle(
 	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := tracer.Start(
+	ctx, span := h.tracer.Start(
 		ctx,
-		"bufbuild/buf",
-		tracer.WithErr(&retErr),
-		tracer.WithAttributes(
+		tracing.WithErr(&retErr),
+		tracing.WithAttributes(
 			attribute.Key("plugin").String(filepath.Base(h.pluginPath)),
 		),
 	)

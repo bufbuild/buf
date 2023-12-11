@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -44,6 +44,7 @@ const (
 
 type cloner struct {
 	logger            *zap.Logger
+	tracer            tracing.Tracer
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	options           ClonerOptions
@@ -51,12 +52,14 @@ type cloner struct {
 
 func newCloner(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	options ClonerOptions,
 ) *cloner {
 	return &cloner{
 		logger:            logger,
+		tracer:            tracer,
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		options:           options,
@@ -71,7 +74,7 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
 	var err error

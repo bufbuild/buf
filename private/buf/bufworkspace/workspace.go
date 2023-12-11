@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -105,11 +105,12 @@ type Workspace interface {
 func NewWorkspaceForBucket(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	return newWorkspaceForBucket(ctx, logger, bucket, moduleDataProvider, options...)
+	return newWorkspaceForBucket(ctx, logger, tracer, bucket, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForModuleKey wraps the ModuleKey into a workspace, returning defaults
@@ -120,11 +121,12 @@ func NewWorkspaceForBucket(
 func NewWorkspaceForModuleKey(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	moduleKey bufmodule.ModuleKey,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	return newWorkspaceForModuleKey(ctx, logger, moduleKey, moduleDataProvider, options...)
+	return newWorkspaceForModuleKey(ctx, logger, tracer, moduleKey, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -138,11 +140,12 @@ func NewWorkspaceForModuleKey(
 func NewWorkspaceForProtoc(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
 ) (Workspace, error) {
-	return newWorkspaceForProtoc(ctx, logger, storageosProvider, includeDirPaths, filePaths)
+	return newWorkspaceForProtoc(ctx, logger, tracer, storageosProvider, includeDirPaths, filePaths)
 }
 
 // *** PRIVATE ***
@@ -183,6 +186,7 @@ func (*workspace) isWorkspace() {}
 func newWorkspaceForModuleKey(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	moduleKey bufmodule.ModuleKey,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
@@ -274,6 +278,7 @@ func newWorkspaceForModuleKey(
 func newWorkspaceForProtoc(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	includeDirPaths []string,
 	filePaths []string,
@@ -339,11 +344,12 @@ func newWorkspaceForProtoc(
 func newWorkspaceForBucket(
 	ctx context.Context,
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (_ *workspace, retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {

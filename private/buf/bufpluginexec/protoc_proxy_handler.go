@@ -24,14 +24,14 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
 	"google.golang.org/protobuf/proto"
@@ -42,6 +42,7 @@ import (
 type protocProxyHandler struct {
 	storageosProvider storageos.Provider
 	runner            command.Runner
+	tracer            tracing.Tracer
 	protocPath        string
 	pluginName        string
 }
@@ -49,12 +50,14 @@ type protocProxyHandler struct {
 func newProtocProxyHandler(
 	storageosProvider storageos.Provider,
 	runner command.Runner,
+	tracer tracing.Tracer,
 	protocPath string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
 		storageosProvider: storageosProvider,
 		runner:            runner,
+		tracer:            tracer,
 		protocPath:        protocPath,
 		pluginName:        pluginName,
 	}
@@ -66,11 +69,10 @@ func (h *protocProxyHandler) Handle(
 	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	ctx, span := tracer.Start(
+	ctx, span := h.tracer.Start(
 		ctx,
-		"bufbuild/buf",
-		tracer.WithErr(&retErr),
-		tracer.WithAttributes(
+		tracing.WithErr(&retErr),
+		tracing.WithAttributes(
 			attribute.Key("plugin").String(filepath.Base(h.pluginName)),
 		),
 	)

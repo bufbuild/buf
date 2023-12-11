@@ -20,23 +20,25 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type provider struct {
 	logger *zap.Logger
+	tracer tracing.Tracer
 }
 
-func newProvider(logger *zap.Logger) *provider {
+func newProvider(logger *zap.Logger, tracer tracing.Tracer) *provider {
 	return &provider{
 		logger: logger,
+		tracer: tracer,
 	}
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	ctx, span := p.tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
 	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
