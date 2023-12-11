@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -75,7 +74,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The ID of the token to delete",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, tokenIDFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, tokenIDFlagName)
 }
 
 func run(

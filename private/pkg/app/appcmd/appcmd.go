@@ -13,6 +13,10 @@
 // limitations under the License.
 
 // Package appcmd contains helper functionality for applications using commands.
+//
+// This package wraps cobra. Imports should not import cobra directly - raise an issue
+// internally if there is missing cobra functionality you need. It is acceptable to
+// import pflag, however.
 package appcmd
 
 import (
@@ -101,6 +105,12 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 			bindFunc(flagSet)
 		}
 	}
+}
+
+// MarkFlagRequired matches cobra.MarkFlagRequired so that importers of appcmd do
+// not need to reference cobra (and shouldn't).
+func MarkFlagRequired(flagSet *pflag.FlagSet, flagName string) error {
+	return cobra.MarkFlagRequired(flagSet, flagName)
 }
 
 // *** PRIVATE ***

@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/bandeps"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -78,7 +77,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The config file to use.",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, configFileFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, configFileFlagName)
 }
 
 func run(ctx context.Context, container appflag.Container, flags *flags) error {

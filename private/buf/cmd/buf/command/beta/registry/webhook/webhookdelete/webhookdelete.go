@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -68,14 +67,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The webhook ID to delete",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, webhookIDFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, webhookIDFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
 		"The remote of the repository the webhook ID belongs to",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(

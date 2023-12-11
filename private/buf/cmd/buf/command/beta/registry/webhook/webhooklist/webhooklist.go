@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -71,21 +70,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The owner name of the repository to list webhooks for`,
 	)
-	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
 		"The repository name to list webhooks for.",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, repositoryFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
 		"The remote of the owner and repository to list webhooks for",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(

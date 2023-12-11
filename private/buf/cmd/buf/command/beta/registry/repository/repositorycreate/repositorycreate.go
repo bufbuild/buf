@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -66,7 +65,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
