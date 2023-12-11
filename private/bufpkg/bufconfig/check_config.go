@@ -99,6 +99,8 @@ type checkConfig struct {
 	ignoreOnly  map[string][]string
 }
 
+// TODO: validation of paths
+
 func newCheckConfig(
 	fileVersion FileVersion,
 	use []string,

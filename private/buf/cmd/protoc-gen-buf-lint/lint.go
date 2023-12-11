@@ -21,14 +21,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -81,20 +81,9 @@ func handle(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	config, err := bufconfig.ReadConfigOS(
+	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(
-			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		),
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
@@ -107,9 +96,9 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := buflint.NewHandler(logger).Check(
+	fileAnnotations, err := buflint.NewHandler(logger, tracing.NopTracer).Check(
 		ctx,
-		config.Lint,
+		moduleConfig.LintConfig(),
 		image,
 	)
 	if err != nil {

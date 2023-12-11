@@ -25,15 +25,16 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -116,19 +117,9 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	config, err := bufconfig.ReadConfigOS(
+	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(
-			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		),
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
@@ -137,9 +128,9 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := bufbreaking.NewHandler(logger).Check(
+	fileAnnotations, err := bufbreaking.NewHandler(logger, tracing.NopTracer).Check(
 		ctx,
-		config.Breaking,
+		moduleConfig.BreakingConfig(),
 		againstImage,
 		image,
 	)
@@ -157,7 +148,8 @@ func handle(
 }
 
 type externalConfig struct {
-	AgainstInput       string          `json:"against_input,omitempty" yaml:"against_input,omitempty"`
+	AgainstInput string `json:"against_input,omitempty" yaml:"against_input,omitempty"`
+	// This was never actually used, but we keep it around for we can do unmarshal strict without breaking anyone.
 	AgainstInputConfig json.RawMessage `json:"against_input_config,omitempty" yaml:"against_input_config,omitempty"`
 	InputConfig        json.RawMessage `json:"input_config,omitempty" yaml:"input_config,omitempty"`
 	LimitToInputFiles  bool            `json:"limit_to_input_files,omitempty" yaml:"limit_to_input_files,omitempty"`
