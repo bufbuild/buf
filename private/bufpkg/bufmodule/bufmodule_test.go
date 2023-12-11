@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -34,8 +34,8 @@ func TestBasic(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep1",
 			PathToData: map[string][]byte{
 				"extdep1.proto": []byte(
@@ -43,7 +43,7 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep2",
 			PathToData: map[string][]byte{
 				"extdep2.proto": []byte(
@@ -51,7 +51,7 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep3",
 			PathToData: map[string][]byte{
 				"extdep3.proto": []byte(
@@ -60,7 +60,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		// This module is only a transitive remote dependency. It is only depended on by extdep3.
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep4",
 			PathToData: map[string][]byte{
 				"extdep4.proto": []byte(
@@ -71,7 +71,7 @@ func TestBasic(t *testing.T) {
 		// Adding in a module that exists remotely but we'll also have in the workspace.
 		//
 		// This one will import from extdep2 instead of the workspace importing from extdep1.
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/bar/module2",
 			PathToData: map[string][]byte{
 				"module2.proto": []byte(

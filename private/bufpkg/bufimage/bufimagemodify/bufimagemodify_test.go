@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,8 +68,8 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 }
 
 func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	moduleSet, err := bufmoduletest.NewModuleSet(
-		bufmoduletest.ModuleData{
+	moduleSet, err := bufmoduletesting.NewModuleSet(
+		bufmoduletesting.ModuleData{
 			Name:    testRemote + "/" + testRepositoryOwner + "/" + testRepositoryName,
 			DirPath: dirPath,
 		},

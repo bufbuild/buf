@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -299,7 +299,7 @@ func TestDuplicateSyntheticOneofs(t *testing.T) {
 func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
-		moduleSet, err := bufmoduletest.NewModuleSetForDirPath(filepath.Join("testdata", "optionpanic"))
+		moduleSet, err := bufmoduletesting.NewModuleSetForDirPath(filepath.Join("testdata", "optionpanic"))
 		require.NoError(t, err)
 		_, _, err = bufimage.BuildImage(
 			context.Background(),
@@ -334,7 +334,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism bool) (bufimage.Image, []bufanalysis.FileAnnotation) {
-	moduleSet, err := bufmoduletest.NewModuleSetForDirPath(dirPath)
+	moduleSet, err := bufmoduletesting.NewModuleSetForDirPath(dirPath)
 	require.NoError(t, err)
 	var options []bufimage.BuildImageOption
 	if !includeSourceInfo {

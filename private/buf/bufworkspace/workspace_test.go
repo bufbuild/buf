@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -43,12 +43,12 @@ func testBasic(t *testing.T, subDirPath string) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/date",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/extension",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
@@ -207,12 +207,12 @@ func TestUnusedDep(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/date",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/extension",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
@@ -244,12 +244,12 @@ func TestUndeclaredDep(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/date",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/extension",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
