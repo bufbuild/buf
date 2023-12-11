@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/testingext"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -305,6 +306,7 @@ func TestOptionPanic(t *testing.T) {
 		require.NoError(t, err)
 		_, _, err = bufimage.BuildImage(
 			context.Background(),
+			tracing.NopTracer,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		)
 		require.NoError(t, err)
@@ -347,6 +349,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		context.Background(),
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

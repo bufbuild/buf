@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -1109,6 +1110,7 @@ func testLintWithOptions(
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		readWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)
@@ -1116,6 +1118,7 @@ func testLintWithOptions(
 
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
@@ -1130,7 +1133,7 @@ func testLintWithOptions(
 	}
 	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop())
+	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
 	fileAnnotations, err = handler.Check(
 		ctx,
 		lintConfig,

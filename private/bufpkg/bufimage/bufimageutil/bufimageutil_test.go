@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
@@ -172,6 +173,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -207,6 +209,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -242,6 +245,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	}
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

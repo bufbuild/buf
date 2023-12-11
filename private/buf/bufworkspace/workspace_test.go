@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -62,6 +63,7 @@ func testBasic(t *testing.T, subDirPath string) {
 	workspace, err := NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		bucket,
 		bsrProvider,
 		WithTargetSubDirPath(
@@ -137,6 +139,7 @@ func testBasic(t *testing.T, subDirPath string) {
 	workspace, err = NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		bucket,
 		bsrProvider,
 		WithTargetSubDirPath(
@@ -167,6 +170,7 @@ func TestProtoc(t *testing.T) {
 	workspace, err := NewWorkspaceForProtoc(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",
@@ -226,6 +230,7 @@ func TestUnusedDep(t *testing.T) {
 	workspace, err := NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		bucket,
 		bsrProvider,
 	)
@@ -263,6 +268,7 @@ func TestUndeclaredDep(t *testing.T) {
 	workspace, err := NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
+		tracing.NopTracer,
 		bucket,
 		bsrProvider,
 	)
