@@ -86,6 +86,11 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
+	GetImageForWorkspace(
+		ctx context.Context,
+		workspace bufworkspace.Workspace,
+		options ...FunctionOption,
+	) (bufimage.Image, error)
 	GetTargetImageWithConfigs(
 		ctx context.Context,
 		input string,
@@ -268,6 +273,18 @@ func (c *controller) GetImage(
 		option(functionOptions)
 	}
 	return c.getImage(ctx, input, functionOptions)
+}
+
+func (c *controller) GetImageForWorkspace(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	options ...FunctionOption,
+) (bufimage.Image, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	return c.getImageForWorkspace(ctx, workspace, functionOptions)
 }
 
 func (c *controller) GetTargetImageWithConfigs(
@@ -619,46 +636,40 @@ func (c *controller) getImage(
 		if err != nil {
 			return nil, err
 		}
-		if err := c.warnDeps(workspace); err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
+		return c.getImageForWorkspace(ctx, workspace, functionOptions)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.warnDeps(workspace); err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
+		return c.getImageForWorkspace(ctx, workspace, functionOptions)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.warnDeps(workspace); err != nil {
-			return nil, err
-		}
-		return c.buildImage(
-			ctx,
-			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
-			functionOptions,
-		)
+		return c.getImageForWorkspace(ctx, workspace, functionOptions)
 	case buffetch.MessageRef:
 		return c.getImageForMessageRef(ctx, t, functionOptions)
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+}
+
+func (c *controller) getImageForWorkspace(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	functionOptions *functionOptions,
+) (bufimage.Image, error) {
+	if err := c.warnDeps(workspace); err != nil {
+		return nil, err
+	}
+	return c.buildImage(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+		functionOptions,
+	)
 }
 
 func (c *controller) getWorkspaceForProtoFileRef(

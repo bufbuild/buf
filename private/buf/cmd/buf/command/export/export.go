@@ -147,15 +147,11 @@ func run(
 		return err
 	}
 	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace)
-	// We should just take the workspace and build an image, but we get the filtering
-	// for free here so we just do this for now.
-	image, err := controller.GetImage(
+	image, err := controller.GetImageForWorkspace(
 		ctx,
-		input,
-		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		workspace,
 		bufctl.WithImageExcludeSourceInfo(true),
 		bufctl.WithImageExcludeImports(flags.ExcludeImports),
-		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err
