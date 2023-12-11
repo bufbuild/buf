@@ -12,8 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package appext
 
-package applog
+import (
+	"go.uber.org/zap"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+type loggerContainer struct {
+	logger *zap.Logger
+}
+
+func newLoggerContainer(logger *zap.Logger) *loggerContainer {
+	return &loggerContainer{
+		logger: logger,
+	}
+}
+
+func (c *loggerContainer) Logger() *zap.Logger {
+	return c.logger
+}

@@ -12,8 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package appext
 
-package appflag
+import (
+	"github.com/bufbuild/buf/private/pkg/verbose"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+type verboseContainer struct {
+	verbosePrinter verbose.Printer
+}
+
+func newVerboseContainer(verbosePrinter verbose.Printer) *verboseContainer {
+	return &verboseContainer{
+		verbosePrinter: verbosePrinter,
+	}
+}
+
+func (c *verboseContainer) VerbosePrinter() verbose.Printer {
+	return c.verbosePrinter
+}

@@ -38,13 +38,21 @@ type Printer interface {
 	Printf(format string, args ...interface{})
 }
 
-// NewWritePrinter returns a new Printer using the given Writer.
+// NewPrinter returns a new Printer using the given Writer.
 //
 // The trimmed prefix is printed with a : before each line.
 //
 // This generally aligns with the --verbose flag being set and writer being stderr.
-func NewWritePrinter(writer io.Writer, prefix string) Printer {
+func NewPrinter(writer io.Writer, prefix string) Printer {
 	return newWritePrinter(writer, prefix)
+}
+
+// NewPrinterForFlagValue returns a new Printer for the given verboseValue flag value.
+func NewPrinterForFlagValue(writer io.Writer, prefix string, verboseValue bool) Printer {
+	if verboseValue {
+		return NewPrinter(writer, prefix)
+	}
+	return NopPrinter
 }
 
 type nopPrinter struct{}

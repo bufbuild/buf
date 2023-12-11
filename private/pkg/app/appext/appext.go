@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appname provides containers for named applications.
-//
-// Application name foo-bar translate to environment variable prefix FOO_BAR_.
-package appname
+// Package appext contains functionality to work with flags.
+package appext
 
 import (
 	"context"
@@ -24,9 +22,13 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -34,8 +36,31 @@ const (
 	secretRelDirPath = "secrets"
 )
 
-// Container is a container.
-type Container interface {
+// VerboseContainer provides a verbose.Printer.
+type VerboseContainer interface {
+	VerbosePrinter() verbose.Printer
+}
+
+// NewVerboseContainer returns a new VerboseContainer.
+func NewVerboseContainer(verbosePrinter verbose.Printer) VerboseContainer {
+	return newVerboseContainer(verbosePrinter)
+}
+
+// LoggerContainer provides a *zap.Logger.
+type LoggerContainer interface {
+	Logger() *zap.Logger
+}
+
+// NewLoggerContainer returns a new LoggerContainer.
+func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
+	return newLoggerContainer(logger)
+}
+
+// NameContainer is a container for named applications.
+//
+// Application name foo-bar translates to environment variable prefix FOO_BAR_, which is
+// used for the various functions that NameContainer provides.
+type NameContainer interface {
 	// AppName is the application name.
 	//
 	// The name must be in [a-zA-Z0-9-_].
@@ -67,11 +92,62 @@ type Container interface {
 	Port() (uint16, error)
 }
 
-// NewContainer returns a new Container.
+// NewNameContainer returns a new NameContainer.
 //
 // The name must be in [a-zA-Z0-9-_].
-func NewContainer(envContainer app.EnvContainer, name string) (Container, error) {
-	return newContainer(envContainer, name)
+func NewNameContainer(envContainer app.EnvContainer, name string) (NameContainer, error) {
+	return newNameContainer(envContainer, name)
+}
+
+// Container contains not just the base app container, but all extended containers.
+type Container interface {
+	app.Container
+	NameContainer
+	LoggerContainer
+	VerboseContainer
+}
+
+// Interceptor intercepts and adapts the request or response of run functions.
+type Interceptor func(func(context.Context, Container) error) func(context.Context, Container) error
+
+// SubCommandBuilder builds run functions for sub-commands.
+type SubCommandBuilder interface {
+	NewRunFunc(func(context.Context, Container) error) func(context.Context, app.Container) error
+}
+
+// Builder builds run functions for both top-level commands and sub-commands.
+type Builder interface {
+	BindRoot(flagSet *pflag.FlagSet)
+	SubCommandBuilder
+}
+
+// NewBuilder returns a new Builder.
+func NewBuilder(appName string, options ...BuilderOption) Builder {
+	return newBuilder(appName, options...)
+}
+
+// BuilderOption is an option for a new Builder
+type BuilderOption func(*builder)
+
+// BuilderWithTimeout returns a new BuilderOption that adds a timeout flag and the default timeout.
+func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
+	return func(builder *builder) {
+		builder.defaultTimeout = defaultTimeout
+	}
+}
+
+// BuilderWithTracing enables zap tracing for the builder.
+func BuilderWithTracing() BuilderOption {
+	return func(builder *builder) {
+		builder.tracing = true
+	}
+}
+
+// BuilderWithInterceptor adds the given interceptor for all run functions.
+func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
+	return func(builder *builder) {
+		builder.interceptors = append(builder.interceptors, interceptor)
+	}
 }
 
 // ReadConfig reads the configuration from the YAML configuration file config.yaml
@@ -79,7 +155,7 @@ func NewContainer(envContainer app.EnvContainer, name string) (Container, error)
 //
 // If the file does not exist, this is a no-op.
 // The value should be a pointer to unmarshal into.
-func ReadConfig(container Container, value interface{}) error {
+func ReadConfig(container NameContainer, value interface{}) error {
 	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
 	data, err := os.ReadFile(configFilePath)
 	if !errors.Is(err, os.ErrNotExist) {
@@ -95,7 +171,7 @@ func ReadConfig(container Container, value interface{}) error {
 
 // ReadSecret returns the contents of the file at path
 // filepath.Join(container.ConfigDirPath(), secretRelDirPath, name).
-func ReadSecret(container Container, name string) (string, error) {
+func ReadSecret(container NameContainer, name string) (string, error) {
 	secretFilePath := filepath.Join(container.ConfigDirPath(), secretRelDirPath, name)
 	data, err := os.ReadFile(secretFilePath)
 	if err != nil {
@@ -109,7 +185,7 @@ func ReadSecret(container Container, name string) (string, error) {
 //
 // The directory is created if it does not exist.
 // The value should be a pointer to marshal.
-func WriteConfig(container Container, value interface{}) error {
+func WriteConfig(container NameContainer, value interface{}) error {
 	data, err := encoding.MarshalYAML(value)
 	if err != nil {
 		return err
@@ -127,7 +203,7 @@ func WriteConfig(container Container, value interface{}) error {
 }
 
 // Listen listens on the container's port, falling back to defaultPort.
-func Listen(ctx context.Context, container Container, defaultPort uint16) (net.Listener, error) {
+func Listen(ctx context.Context, container NameContainer, defaultPort uint16) (net.Listener, error) {
 	port, err := container.Port()
 	if err != nil {
 		return nil, err

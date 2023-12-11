@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appname
+package appext
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 )
 
-type container struct {
+type nameContainer struct {
 	envContainer app.EnvContainer
 	appName      string
 
@@ -40,58 +40,58 @@ type container struct {
 	portOnce          sync.Once
 }
 
-func newContainer(envContainer app.EnvContainer, appName string) (*container, error) {
+func newNameContainer(envContainer app.EnvContainer, appName string) (*nameContainer, error) {
 	if err := validateAppName(appName); err != nil {
 		return nil, err
 	}
-	return &container{
+	return &nameContainer{
 		envContainer: envContainer,
 		appName:      appName,
 	}, nil
 }
 
-func (c *container) AppName() string {
+func (c *nameContainer) AppName() string {
 	return c.appName
 }
 
-func (c *container) ConfigDirPath() string {
+func (c *nameContainer) ConfigDirPath() string {
 	c.configDirPathOnce.Do(c.setConfigDirPath)
 	return c.configDirPath
 }
 
-func (c *container) CacheDirPath() string {
+func (c *nameContainer) CacheDirPath() string {
 	c.cacheDirPathOnce.Do(c.setCacheDirPath)
 	return c.cacheDirPath
 }
 
-func (c *container) DataDirPath() string {
+func (c *nameContainer) DataDirPath() string {
 	c.dataDirPathOnce.Do(c.setDataDirPath)
 	return c.dataDirPath
 }
 
-func (c *container) Port() (uint16, error) {
+func (c *nameContainer) Port() (uint16, error) {
 	c.portOnce.Do(c.setPort)
 	return c.port, c.portErr
 }
 
-func (c *container) setConfigDirPath() {
+func (c *nameContainer) setConfigDirPath() {
 	c.configDirPath = c.getDirPath("CONFIG_DIR", app.ConfigDirPath)
 }
 
-func (c *container) setCacheDirPath() {
+func (c *nameContainer) setCacheDirPath() {
 	c.cacheDirPath = c.getDirPath("CACHE_DIR", app.CacheDirPath)
 }
 
-func (c *container) setDataDirPath() {
+func (c *nameContainer) setDataDirPath() {
 	c.dataDirPath = c.getDirPath("DATA_DIR", app.DataDirPath)
 }
 
-func (c *container) setPort() {
+func (c *nameContainer) setPort() {
 	c.port, c.portErr = c.getPort()
 }
 
-func (c *container) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
-	dirPath := c.envContainer.Env(getEnvPrefix(c.appName) + envSuffix)
+func (c *nameContainer) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
+	dirPath := c.envContainer.Env(getAppNameEnvPrefix(c.appName) + envSuffix)
 	if dirPath == "" {
 		baseDirPath, err := getBaseDirPath(c.envContainer)
 		if err == nil {
@@ -101,8 +101,8 @@ func (c *container) getDirPath(envSuffix string, getBaseDirPath func(app.EnvCont
 	return dirPath
 }
 
-func (c *container) getPort() (uint16, error) {
-	portString := c.envContainer.Env(getEnvPrefix(c.appName) + "PORT")
+func (c *nameContainer) getPort() (uint16, error) {
+	portString := c.envContainer.Env(getAppNameEnvPrefix(c.appName) + "PORT")
 	if portString == "" {
 		portString = c.envContainer.Env("PORT")
 		if portString == "" {
@@ -116,9 +116,10 @@ func (c *container) getPort() (uint16, error) {
 	return uint16(port), nil
 }
 
-func getEnvPrefix(appName string) string {
+func getAppNameEnvPrefix(appName string) string {
 	return strings.ToUpper(strings.ReplaceAll(appName, "-", "_")) + "_"
 }
+
 func validateAppName(appName string) error {
 	if appName == "" {
 		return errors.New("empty application name")

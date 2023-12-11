@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appflag
+package appext
 
 import (
 	"context"
@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/observabilityzap"
+	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -108,14 +108,14 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
-	logger, err := applog.NewLogger(appContainer.Stderr(), logLevel, b.logFormat)
+	logger, err := zaputil.NewLoggerForFlagValues(appContainer.Stderr(), logLevel, b.logFormat)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, logger.Sync())
 	}()
-	verbosePrinter := appverbose.NewVerbosePrinter(appContainer.Stderr(), b.appName, b.verbose)
+	verbosePrinter := verbose.NewPrinterForFlagValue(appContainer.Stderr(), b.appName, b.verbose)
 	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
 	if err != nil {
 		return err

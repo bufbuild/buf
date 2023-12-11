@@ -17,7 +17,7 @@
 //go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
 
-package appname
+package appext
 
 import (
 	"os"
@@ -115,7 +115,7 @@ func TestPort4(t *testing.T) {
 }
 
 func testPort(t *testing.T, appName string, env map[string]string, expected uint16) {
-	container, err := NewContainer(app.NewEnvContainer(env), appName)
+	container, err := NewNameContainer(app.NewEnvContainer(env), appName)
 	require.NoError(t, err)
 	port, err := container.Port()
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func testPort(t *testing.T, appName string, env map[string]string, expected uint
 func testRoundTrip(t *testing.T, appName string, env map[string]string, dirPath string) {
 	_, err := os.Lstat(filepath.Join(dirPath, configFileName))
 	require.Error(t, err)
-	container, err := NewContainer(app.NewEnvContainer(env), appName)
+	container, err := NewNameContainer(app.NewEnvContainer(env), appName)
 	require.NoError(t, err)
 	inputTestConfig := &testConfig{Bar: "one", Baz: "two"}
 	err = WriteConfig(container, inputTestConfig)
