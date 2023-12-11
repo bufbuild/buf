@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -147,18 +148,22 @@ func getProtosourceFiles(
 	container appext.Container,
 	bucket storage.ReadBucket,
 ) ([]protosource.File, error) {
-	// TODO: why is this not working? this is the path that should be used, not NewModuleForBucket
-	//module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
-	//ctx,
-	//bucket,
-	//&bufmoduleconfig.Config{},
-	//)
-	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
+	moduleSet, err := bufmodule.NewModuleSetBuilder(
+		ctx,
+		container.Logger(),
+		bufmodule.NopModuleDataProvider,
+	).AddLocalModule(
+		bucket,
+		".",
+		true,
+	).Build()
 	if err != nil {
 		return nil, err
 	}
+	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracing.NewTracer(container.Tracer()),
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)

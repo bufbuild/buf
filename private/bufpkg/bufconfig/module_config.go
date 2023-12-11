@@ -31,7 +31,7 @@ func init() {
 		"",
 		nil,
 		map[string][]string{
-			".": []string{},
+			".": {},
 		},
 		DefaultLintConfig,
 		DefaultBreakingConfig,
