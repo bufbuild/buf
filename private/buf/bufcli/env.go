@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 )
@@ -58,7 +58,7 @@ var (
 
 // WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnAlphaCommand(_ context.Context, container appflag.Container) {
+func WarnAlphaCommand(_ context.Context, container appext.Container) {
 	if container.Env(alphaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1")
 	}
@@ -66,7 +66,7 @@ func WarnAlphaCommand(_ context.Context, container appflag.Container) {
 
 // WarnBetaCommand prints a warning for a beta command unless the betaSuppressWarningsEnvKey
 // environment variable is set.
-func WarnBetaCommand(_ context.Context, container appflag.Container) {
+func WarnBetaCommand(_ context.Context, container appext.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
 	}

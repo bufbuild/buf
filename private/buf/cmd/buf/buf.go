@@ -75,7 +75,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -88,11 +88,11 @@ func Main(name string) {
 //
 // This is public for use in testing.
 func NewRootCommand(name string) *appcmd.Command {
-	builder := appflag.NewBuilder(
+	builder := appext.NewBuilder(
 		name,
-		appflag.BuilderWithTimeout(120*time.Second),
-		appflag.BuilderWithTracing(),
-		appflag.BuilderWithInterceptor(newErrorInterceptor()),
+		appext.BuilderWithTimeout(120*time.Second),
+		appext.BuilderWithTracing(),
+		appext.BuilderWithInterceptor(newErrorInterceptor()),
 	)
 	return &appcmd.Command{
 		Use:                 name,
@@ -258,9 +258,9 @@ func NewRootCommand(name string) *appcmd.Command {
 }
 
 // newErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
-func newErrorInterceptor() appflag.Interceptor {
-	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
-		return func(ctx context.Context, container appflag.Container) error {
+func newErrorInterceptor() appext.Interceptor {
+	return func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {
+		return func(ctx context.Context, container appext.Container) error {
 			return wrapError(next(ctx, container))
 		}
 	}

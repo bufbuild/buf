@@ -32,7 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -53,12 +53,12 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	flags := newFlags()
-	builder := appflag.NewBuilder(programName)
+	builder := appext.NewBuilder(programName)
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/google/protobuf/include", programName),
 		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -83,7 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 }
 
-func run(ctx context.Context, container appflag.Container, flags *flags) error {
+func run(ctx context.Context, container appext.Container, flags *flags) error {
 	dirPath := container.Arg(0)
 	packageName := flags.Pkg
 	if packageName == "" {
@@ -144,7 +144,7 @@ func getPathToData(ctx context.Context, bucket storage.ReadBucket) (map[string][
 
 func getProtosourceFiles(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	bucket storage.ReadBucket,
 ) ([]protosource.File, error) {
 	// TODO: why is this not working? this is the path that should be used, not NewModuleForBucket

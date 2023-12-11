@@ -36,7 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -97,7 +97,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -182,7 +182,7 @@ exit code that is the gRPC code, shifted three bits to the left.
 `,
 		Args: appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -768,7 +768,7 @@ func verifyEndpointURL(urlArg string) (endpointURL *url.URL, service, method, ba
 	return endpointURL, service, method, baseURL, nil
 }
 
-func run(ctx context.Context, container appflag.Container, f *flags) (err error) {
+func run(ctx context.Context, container appext.Container, f *flags) (err error) {
 	endpointURL, service, method, baseURL, err := verifyEndpointURL(container.Arg(0))
 	if err != nil {
 		return err

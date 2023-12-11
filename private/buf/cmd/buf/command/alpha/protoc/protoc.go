@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -44,7 +44,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
@@ -63,7 +63,7 @@ Additional flags:
       --(.*)_opt:                   Options for the named plugin.
       @filename:                    Parse arguments from the given filename.`,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				env, err := flagsBuilder.Build(app.Args(container))
 				if err != nil {
 					return err
@@ -84,7 +84,7 @@ Additional flags:
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	env *env,
 ) (retErr error) {
 	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))

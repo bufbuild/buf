@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -87,7 +87,7 @@ var (
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
 // required cache directories.
-func NewModuleDataProvider(container appflag.Container) (bufmodule.ModuleDataProvider, error) {
+func NewModuleDataProvider(container appext.Container) (bufmodule.ModuleDataProvider, error) {
 	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func NewModuleDataProvider(container appflag.Container) (bufmodule.ModuleDataPro
 }
 
 func newModuleDataProvider(
-	container appflag.Container,
+	container appext.Container,
 	clientProvider bufapi.ClientProvider,
 ) (bufmodule.ModuleDataProvider, error) {
 	if err := createCacheDir(container.CacheDirPath(), v3CacheModuleRelDirPath); err != nil {

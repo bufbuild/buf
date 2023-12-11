@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/bandeps"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -43,16 +43,16 @@ func main() {
 }
 
 func newCommand() *appcmd.Command {
-	builder := appflag.NewBuilder(
+	builder := appext.NewBuilder(
 		name,
-		appflag.BuilderWithTimeout(timeout),
-		appflag.BuilderWithTracing(),
+		appext.BuilderWithTimeout(timeout),
+		appext.BuilderWithTracing(),
 	)
 	flags := newFlags()
 	return &appcmd.Command{
 		Use: name,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -80,7 +80,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	_ = appcmd.MarkFlagRequired(flagSet, configFileFlagName)
 }
 
-func run(ctx context.Context, container appflag.Container, flags *flags) error {
+func run(ctx context.Context, container appext.Container, flags *flags) error {
 	configData, err := os.ReadFile(flags.ConfigFile)
 	if err != nil {
 		return err

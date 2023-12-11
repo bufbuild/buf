@@ -18,12 +18,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewController returns a new Controller.
 func NewController(
-	container appflag.Container,
+	container appext.Container,
 	options ...bufctl.ControllerOption,
 ) (bufctl.Controller, error) {
 	clientConfig, err := NewConnectClientConfig(container)

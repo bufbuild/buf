@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/pkg/browser"
 )
@@ -31,7 +31,7 @@ import (
 // NewCommand returns a new open Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
@@ -44,7 +44,7 @@ The directory must have a buf.yaml that contains a specified module name.
 The directory defaults to "." if no argument is specified.`,
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container)
 			},
 		),
@@ -53,7 +53,7 @@ The directory defaults to "." if no argument is specified.`,
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 ) error {
 	dirPath := "."
 	if container.NumArgs() > 0 {

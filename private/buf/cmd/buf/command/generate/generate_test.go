@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -379,7 +379,7 @@ func testCompareGeneratedStubs(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -501,7 +501,7 @@ func testRunSuccess(t *testing.T, args ...string) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -517,7 +517,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		expectedExitCode,

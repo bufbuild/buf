@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -66,7 +66,7 @@ func TestOverlap(t *testing.T) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		nil,
@@ -105,7 +105,7 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		actualProtocStdout.String(),
@@ -250,7 +250,7 @@ func testInsertionPointMixedPathsSuccess(t *testing.T, runner command.Runner, re
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -313,7 +313,7 @@ func testCompareGeneratedStubs(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -401,7 +401,7 @@ func testCompareGeneratedStubsArchive(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -476,7 +476,7 @@ func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		nil,

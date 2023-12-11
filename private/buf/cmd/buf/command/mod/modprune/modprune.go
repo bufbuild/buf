@@ -21,14 +21,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // NewCommand returns a new prune Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
@@ -39,7 +39,7 @@ Defaults to "." if no argument is specified.
 Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container)
 			},
 		),
@@ -48,7 +48,7 @@ Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to mi
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 ) error {
 	dirPath := "."
 	if container.NumArgs() > 0 {
