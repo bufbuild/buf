@@ -19,27 +19,29 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-const defaultTimeout = 10 * time.Second
+const (
+	appName        = "protoc-gen-buf-breaking"
+	defaultTimeout = 10 * time.Second
+)
 
 // Main is the main.
 func Main() {
@@ -65,7 +67,7 @@ func Main() {
 
 func handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
+	envStderrContainer app.EnvStderrContainer,
 	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
@@ -81,35 +83,36 @@ func handle(
 		// this is actually checked as part of ReadImageEnv but just in case
 		return errors.New(`"against_input" is required`)
 	}
+	container, err := newAppextContainer(
+		envStderrContainer,
+		externalConfig.LogLevel,
+		externalConfig.LogFormat,
+	)
+	if err != nil {
+		return err
+	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := zaputil.NewLoggerForFlagValues(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
-	if err != nil {
-		return err
-	}
 	files := request.FileToGenerate
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	againstMessageRef, err := buffetch.NewMessageRefParser(logger).GetMessageRef(ctx, externalConfig.AgainstInput)
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithFileAnnotationErrorFormat(externalConfig.ErrorFormat),
+	)
 	if err != nil {
-		return fmt.Errorf("against_input: %v", err)
+		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	runner := command.NewRunner()
-	imageReader := bufcli.NewWireImageReader(logger, storageosProvider, runner)
-	againstImage, err := imageReader.GetImage(
+	againstImage, err := controller.GetImage(
 		ctx,
-		newContainer(container),
-		againstMessageRef,
-		files, // limit to the input files if specified
-		nil,   // exclude paths are not supported on this plugin
-		true,  // allow files in the against input to not exist
-		false, // keep for now
+		externalConfig.AgainstInput,
+		// limit to the input files if specified
+		bufctl.WithTargetPaths(files, nil),
 	)
 	if err != nil {
 		return err
@@ -128,7 +131,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := bufbreaking.NewHandler(logger, tracing.NopTracer).Check(
+	fileAnnotations, err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
 		ctx,
 		moduleConfig.BreakingConfig(),
 		againstImage,
@@ -160,15 +163,42 @@ type externalConfig struct {
 	Timeout            time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
-type container struct {
-	app.EnvContainer
-	app.StdinContainer
+func newAppextContainer(
+	envStderrContainer app.EnvStderrContainer,
+	logLevel string,
+	logFormat string,
+) (appext.Container, error) {
+	logger, err := zaputil.NewLoggerForFlagValues(
+		envStderrContainer.Stderr(),
+		logLevel,
+		logFormat,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return appext.NewContainer(
+		newAppContainer(envStderrContainer),
+		appName,
+		logger,
+		verbose.NopPrinter,
+	)
 }
 
-func newContainer(c app.EnvContainer) *container {
-	return &container{
-		EnvContainer: c,
+type appContainer struct {
+	app.EnvStderrContainer
+	app.StdinContainer
+	app.StdoutContainer
+	app.ArgContainer
+}
+
+func newAppContainer(envStderrContainer app.EnvStderrContainer) *appContainer {
+	return &appContainer{
+		EnvStderrContainer: envStderrContainer,
 		// cannot read against input from stdin, this is for the CodeGeneratorRequest
 		StdinContainer: app.NewStdinContainer(nil),
+		// cannot write output to stdout, this is for the CodeGeneratorResponse
+		StdoutContainer: app.NewStdoutContainer(nil),
+		// no args
+		ArgContainer: app.NewArgContainer(),
 	}
 }

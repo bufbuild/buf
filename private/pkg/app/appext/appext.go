@@ -37,36 +37,6 @@ const (
 	secretRelDirPath = "secrets"
 )
 
-// VerboseContainer provides a verbose.Printer.
-type VerboseContainer interface {
-	VerbosePrinter() verbose.Printer
-}
-
-// NewVerboseContainer returns a new VerboseContainer.
-func NewVerboseContainer(verbosePrinter verbose.Printer) VerboseContainer {
-	return newVerboseContainer(verbosePrinter)
-}
-
-// LoggerContainer provides a *zap.Logger.
-type LoggerContainer interface {
-	Logger() *zap.Logger
-}
-
-// NewLoggerContainer returns a new LoggerContainer.
-func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
-	return newLoggerContainer(logger)
-}
-
-// TracerContainer provides a trace.Tracer based on the application name.
-type TracerContainer interface {
-	Tracer() trace.Tracer
-}
-
-// NewTracerContainer returns a new TracerContainer for the application name.
-func NewTracerContainer(appName string) TracerContainer {
-	return newTracerContainer(appName)
-}
-
 // NameContainer is a container for named applications.
 //
 // Application name foo-bar translates to environment variable prefix FOO_BAR_, which is
@@ -110,6 +80,36 @@ func NewNameContainer(envContainer app.EnvContainer, appName string) (NameContai
 	return newNameContainer(envContainer, appName)
 }
 
+// LoggerContainer provides a *zap.Logger.
+type LoggerContainer interface {
+	Logger() *zap.Logger
+}
+
+// NewLoggerContainer returns a new LoggerContainer.
+func NewLoggerContainer(logger *zap.Logger) LoggerContainer {
+	return newLoggerContainer(logger)
+}
+
+// TracerContainer provides a trace.Tracer based on the application name.
+type TracerContainer interface {
+	Tracer() trace.Tracer
+}
+
+// NewTracerContainer returns a new TracerContainer for the application name.
+func NewTracerContainer(appName string) TracerContainer {
+	return newTracerContainer(appName)
+}
+
+// VerboseContainer provides a verbose.Printer.
+type VerboseContainer interface {
+	VerbosePrinter() verbose.Printer
+}
+
+// NewVerboseContainer returns a new VerboseContainer.
+func NewVerboseContainer(verbosePrinter verbose.Printer) VerboseContainer {
+	return newVerboseContainer(verbosePrinter)
+}
+
 // Container contains not just the base app container, but all extended containers.
 type Container interface {
 	app.Container
@@ -117,6 +117,21 @@ type Container interface {
 	LoggerContainer
 	TracerContainer
 	VerboseContainer
+}
+
+// NewContainer returns a new Container.
+func NewContainer(
+	baseContainer app.Container,
+	appName string,
+	logger *zap.Logger,
+	verbosePrinter verbose.Printer,
+) (Container, error) {
+	return newContainer(
+		baseContainer,
+		appName,
+		logger,
+		verbosePrinter,
+	)
 }
 
 // Interceptor intercepts and adapts the request or response of run functions.
