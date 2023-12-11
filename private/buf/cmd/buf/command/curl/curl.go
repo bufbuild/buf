@@ -37,7 +37,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -590,7 +589,7 @@ func (f *flags) determineCredentials(
 	ctx context.Context,
 	container interface {
 		app.Container
-		appverbose.Container
+		appext.VerboseContainer
 	},
 	host string,
 ) (string, error) {
