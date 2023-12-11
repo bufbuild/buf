@@ -164,6 +164,7 @@ func checkForField(
 		},
 		constraints,
 		fieldDescriptor,
+		fieldDescriptor.Cardinality() == protoreflect.Repeated,
 	)
 }
 
@@ -171,6 +172,7 @@ func checkConstraintsForField(
 	adder *adder,
 	fieldConstraints *validate.FieldConstraints,
 	fieldDescriptor protoreflect.FieldDescriptor,
+	expectRepeatedRule bool,
 ) error {
 	if fieldConstraints == nil {
 		return nil
@@ -211,7 +213,7 @@ func checkConstraintsForField(
 	if typeRulesFieldNumber == repeatedRulesFieldNumber {
 		return checkRepeatedRules(adder, fieldConstraints.GetRepeated(), fieldDescriptor)
 	}
-	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber)
+	typesMatch := checkRulesTypeMatchFieldType(adder, fieldDescriptor, typeRulesFieldNumber, expectRepeatedRule)
 	if !typesMatch {
 		return nil
 	}
@@ -276,7 +278,18 @@ func checkRulesTypeMatchFieldType(
 	adder *adder,
 	fieldDescriptor protoreflect.FieldDescriptor,
 	ruleFieldNumber int32,
+	expectRepeatedRule bool,
 ) bool {
+	if expectRepeatedRule {
+		adder.addForPathf(
+			[]int32{ruleFieldNumber},
+			"Field %q is of type repeated %s but has %s rules.",
+			adder.fieldName(),
+			adder.fieldPrettyTypeName,
+			adder.getFieldRuleName(ruleFieldNumber),
+		)
+		return false
+	}
 	if expectedScalarType, ok := fieldNumberToAllowedScalarType[ruleFieldNumber]; ok &&
 		expectedScalarType == fieldDescriptor.Kind() {
 		return true
@@ -363,7 +376,7 @@ func checkRepeatedRules(
 		)
 	}
 	itemAdder := baseAdder.cloneWithNewBasePath(repeatedRulesFieldNumber, itemsFieldNumberInRepeatedRules)
-	return checkConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor)
+	return checkConstraintsForField(itemAdder, repeatedRules.Items, fieldDescriptor, false)
 }
 
 func checkMapRules(
@@ -401,12 +414,12 @@ func checkMapRules(
 		)
 	}
 	keyAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, keysFieldNumberInMapRules)
-	err := checkConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey())
+	err := checkConstraintsForField(keyAdder, mapRules.Keys, fieldDescriptor.MapKey(), false)
 	if err != nil {
 		return err
 	}
 	valueAdder := baseAdder.cloneWithNewBasePath(mapRulesFieldNumber, valuesFieldNumberInMapRules)
-	return checkConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue())
+	return checkConstraintsForField(valueAdder, mapRules.Values, fieldDescriptor.MapValue(), false)
 }
 
 func checkStringRules(adder *adder, stringRules *validate.StringRules) error {

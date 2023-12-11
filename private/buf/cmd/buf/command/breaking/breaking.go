@@ -25,10 +25,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -47,7 +47,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -55,9 +55,9 @@ func NewCommand(
 		Short: "Verify no breaking changes have been made",
 		Long: `buf breaking makes sure that the <input> location has no breaking changes compared to the <against-input> location. ` +
 			bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -139,7 +139,7 @@ Overrides --%s`,
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	if err := bufcli.ValidateRequiredFlag(againstFlagName, flags.Against); err != nil {
@@ -158,7 +158,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageWithConfigs, err := controller.GetImageWithConfigs(
+	imageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		input,
 		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
@@ -169,7 +169,7 @@ func run(
 		return err
 	}
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
-	// if the roots change, then we're torched
+	// of the roots change, then we're torched
 	externalPaths := flags.Paths
 	if flags.LimitToInputFiles {
 		externalPaths, err = getExternalPathsForImages(imageWithConfigs)
@@ -177,7 +177,7 @@ func run(
 			return err
 		}
 	}
-	againstImageWithConfigs, err := controller.GetImageWithConfigs(
+	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
 		ctx,
 		flags.Against,
 		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
@@ -202,7 +202,10 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		fileAnnotations, err := bufbreaking.NewHandler(container.Logger()).Check(
+		fileAnnotations, err := bufbreaking.NewHandler(
+			container.Logger(),
+			tracing.NewTracer(container.Tracer()),
+		).Check(
 			ctx,
 			imageWithConfig.BreakingConfig(),
 			againstImageWithConfigs[i],

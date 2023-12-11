@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // Module presents a BSR module.
@@ -38,6 +39,9 @@ type Module interface {
 	// are accessible via the functions on ModuleReadBucket.
 	//
 	// This bucket is not self-contained - it requires the files from dependencies to be so.
+	//
+	// A ModuleReadBucket directly derived from a Module will always have at least one .proto file.
+	// If this is not the case, WalkFileInfos will return an error when called.
 	ModuleReadBucket
 
 	// OpaqueID returns an unstructured ID that can uniquely identify a Module relative
@@ -81,7 +85,6 @@ type Module interface {
 	//
 	// May be empty. Callers should not rely on this value being present. If
 	// ModuleFullName is nil, this will always be empty.
-	// However, this is always present for remote Modules.
 	CommitID() string
 
 	// Digest returns the Module digest.
@@ -111,6 +114,10 @@ type Module interface {
 	// If specific Files were not targeted but the Module was targeted, all Files in the Module
 	// will have FileInfo.IsTargetFile() set to true, and this function will return all Files
 	// that WalkFileInfos does.
+	//
+	// Note that a Module may be targeted but have none of its files targeted - this can occur
+	// when path filtering occurs, but no paths given matched any paths in the Module, but
+	// the Module itself was targeted.
 	IsTarget() bool
 
 	// IsLocal return true if the Module is a local Module.
@@ -126,7 +133,7 @@ type Module interface {
 	// dependencies specified in a buf.lock (with no correspoding Module in the Workspace),
 	// or a DepNode in a CreateCommitRequest with no corresponding ModuleNode.
 	//
-	// Remote Modules will always have ModuleFullNames and CommitIDs.
+	// Remote Modules will always have ModuleFullNames.
 	IsLocal() bool
 
 	// ModuleSet returns the ModuleSet that this Module is contained within.
@@ -134,8 +141,16 @@ type Module interface {
 	// Always present.
 	ModuleSet() ModuleSet
 
-	// Called in ModuleSetBuilder.Build().
+	// Called in newModuleSet.
 	setModuleSet(ModuleSet)
+
+	// withIsTarget returns a copy of the Module with the specified target value.
+	//
+	// Do not expose publicly! This should only be called by ModuleSet.WithTargetOpaqueIDs.
+	// Exposing this directly publicly can have unintended consequences - Modules have a
+	// parent ModuleSet, which is self-contained, and a copy of a Module inside a ModuleSet
+	// that itself has the same ModuleSet will break the expected pattern of the references.
+	withIsTarget(isTarget bool) (Module, error)
 	isModule()
 }
 
@@ -153,7 +168,10 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 // ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles converts the Module to a
 // ModuleReadBucket that contains all the .proto files of the Module and its dependencies.
 //
-// Targeting information will remain the same.
+// Targeting information will remain the same. Note that this means that the result ModuleReadBucket
+// may have no target files! This can occur when path filtering was applied, but the path filters did
+// not match any files in the Module, and none of the Module's files were targeted.
+// It can also happen if the Module nor any of its dependencies were targeted.
 //
 // *** THIS IS PROBABLY NOT THE FUNCTION YOU ARE LOOKING FOR. *** You probably want
 // ModuleSetToModuleReadBucketWithOnlyProtoFiles to convert a ModuleSet/Workspace to a
@@ -214,6 +232,8 @@ func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
+	ctx            context.Context
+	logger         *zap.Logger
 	getBucket      func() (storage.ReadBucket, error)
 	bucketID       string
 	moduleFullName ModuleFullName
@@ -230,6 +250,7 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
+	logger *zap.Logger,
 	getBucket func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
@@ -252,11 +273,13 @@ func newModule(
 		// This is a system error.
 		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
-	if !isLocal && (moduleFullName == nil || commitID == "") {
+	if !isLocal && moduleFullName == nil {
 		// This is a system error.
-		return nil, syserror.New("moduleFullName or commitID not present when constructing a remote Module, both of these must be set")
+		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
 	module := &module{
+		ctx:            ctx,
+		logger:         logger,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -265,6 +288,7 @@ func newModule(
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
+		logger,
 		getBucket,
 		module,
 		targetPaths,
@@ -283,7 +307,7 @@ func newModule(
 	)
 	module.getModuleDeps = sync.OnceValues(
 		func() ([]ModuleDep, error) {
-			return getModuleDeps(ctx, module)
+			return getModuleDeps(ctx, logger, module)
 		},
 	)
 	return module, nil
@@ -329,6 +353,35 @@ func (m *module) IsLocal() bool {
 
 func (m *module) ModuleSet() ModuleSet {
 	return m.moduleSet
+}
+
+func (m *module) withIsTarget(isTarget bool) (Module, error) {
+	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
+	newModule := &module{
+		ctx:            m.ctx,
+		logger:         m.logger,
+		bucketID:       m.bucketID,
+		moduleFullName: m.moduleFullName,
+		commitID:       m.commitID,
+		isTarget:       isTarget,
+		isLocal:        m.isLocal,
+	}
+	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
+	if !ok {
+		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
+	}
+	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
+	newModule.getDigest = sync.OnceValues(
+		func() (bufcas.Digest, error) {
+			return moduleDigestB5(newModule.ctx, newModule)
+		},
+	)
+	newModule.getModuleDeps = sync.OnceValues(
+		func() ([]ModuleDep, error) {
+			return getModuleDeps(newModule.ctx, newModule.logger, newModule)
+		},
+	)
+	return newModule, nil
 }
 
 func (m *module) setModuleSet(moduleSet ModuleSet) {
@@ -411,11 +464,13 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(
 	ctx context.Context,
+	logger *zap.Logger,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
 	if err := getModuleDepsRec(
 		ctx,
+		logger,
 		module,
 		module,
 		make(map[string]struct{}),
@@ -440,6 +495,7 @@ func getModuleDeps(
 
 func getModuleDepsRec(
 	ctx context.Context,
+	logger *zap.Logger,
 	module Module,
 	parentModule Module,
 	visitedOpaqueIDs map[string]struct{},
@@ -483,11 +539,28 @@ func getModuleDepsRec(
 						// Do not include as a dependency.
 						continue
 					}
+					// We don't fail if we can't find an import, but we do provide a warning.
+					// If we fail, we can't be compatible with commands that did pass in the pre-buf-refactor
+					// world. This can happen in cases where you filter with --path and then do a ModuleDeps()
+					// call via say ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles via lint, and
+					// the --path specified is fine, but something else in the ModuleSet is not.
+					//
+					// Return the error and see what happens in integration testing for more details.
+					//
+					// Not great. There's other architecture decisions we could make that are wholesale
+					// different here, and likely involve not using imports to derive dependencies.
+					//
+					// Keeping the error version of this commented out below.
+					//
+					// We may want to actually remove the warning here. It'll result a warning and
+					// an error if somet cases.
 					if errors.Is(err, fs.ErrNotExist) {
-						// Strip any PathError and just get to the point.
-						err = fs.ErrNotExist
+						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp)
+						continue
+						//// Strip any PathError and just get to the point.
+						//err = fs.ErrNotExist
+						//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 					}
-					return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep
@@ -512,6 +585,7 @@ func getModuleDepsRec(
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
+			logger,
 			newModuleDep,
 			parentModule,
 			visitedOpaqueIDs,

@@ -9,6 +9,8 @@
 
 ## Modules in workspace
 
+In both `workspacev1` and `workspacev2`.
+
 - `buf.testing/acme/geo` at `common/geo/proto`
 
 - `buf.testing/acme/money` at `common/money/proto`

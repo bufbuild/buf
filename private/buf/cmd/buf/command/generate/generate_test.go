@@ -24,11 +24,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -48,7 +48,7 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"private",
-	"bufpkg",
+	"buf",
 	"buftesting",
 )
 
@@ -382,7 +382,7 @@ func testCompareGeneratedStubs(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -504,7 +504,7 @@ func testRunSuccess(t *testing.T, args ...string) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -520,14 +520,14 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(
+				appext.NewBuilder(
 					name,
 					appflag.BuilderWithInterceptor(
 						// TODO: use the real interceptor. Currently in buf.go, NewBuilder receives appflag.BuilderWithInterceptor(newErrorInterceptor()).
 						// However we cannot depend on newErrorInterceptor because it would create an import cycle, not to mention it needs to be exported first.
 						// This can depend on newErroInterceptor when it's moved to a separate package and made public.
-						func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
-							return func(ctx context.Context, container appflag.Container) error {
+						func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {
+							return func(ctx context.Context, container appext.Container) error {
 								err := next(ctx, container)
 								if err == nil {
 									return nil

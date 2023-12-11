@@ -19,12 +19,13 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestBasic(t *testing.T) {
@@ -33,8 +34,8 @@ func TestBasic(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep1",
 			PathToData: map[string][]byte{
 				"extdep1.proto": []byte(
@@ -42,7 +43,7 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep2",
 			PathToData: map[string][]byte{
 				"extdep2.proto": []byte(
@@ -50,7 +51,7 @@ func TestBasic(t *testing.T) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep3",
 			PathToData: map[string][]byte{
 				"extdep3.proto": []byte(
@@ -59,7 +60,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		// This module is only a transitive remote dependency. It is only depended on by extdep3.
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/extdep4",
 			PathToData: map[string][]byte{
 				"extdep4.proto": []byte(
@@ -70,7 +71,7 @@ func TestBasic(t *testing.T) {
 		// Adding in a module that exists remotely but we'll also have in the workspace.
 		//
 		// This one will import from extdep2 instead of the workspace importing from extdep1.
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/bar/module2",
 			PathToData: map[string][]byte{
 				"module2.proto": []byte(
@@ -84,7 +85,7 @@ func TestBasic(t *testing.T) {
 	// This is the ModuleSetBuilder that will build the modules that we are going to test.
 	// This is replicating how a workspace would be built from remote dependencies and
 	// local sources.
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bsrProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bsrProvider)
 
 	// First, we add the remote dependences (adding order doesn't matter).
 	//
@@ -289,7 +290,7 @@ func TestBasic(t *testing.T) {
 		},
 		topoSort,
 	)
-	remoteDeps, err := bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet)
+	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -299,16 +300,16 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep3",
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
+		slicesext.Map(remoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
-	remoteDeps, err = bufmodule.ModuleSetRemoteDepsOfLocalModules(moduleSet, bufmodule.WithOnlyTransitiveRemoteDeps())
+	transitiveRemoteDeps := slicesext.Filter(remoteDeps, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		[]string{
 			"buf.build/foo/extdep4",
 		},
-		slicesext.Map(remoteDeps, func(module bufmodule.Module) string { return module.OpaqueID() }),
+		slicesext.Map(transitiveRemoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
 	)
 }
 
@@ -337,7 +338,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 		},
 	)
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
 	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
@@ -363,7 +364,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",
@@ -393,7 +394,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto with package files
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",

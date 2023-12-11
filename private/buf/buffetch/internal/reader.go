@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -263,7 +264,7 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getDirBucket(
@@ -275,7 +276,7 @@ func (r *reader) getDirBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	return getReadWriteBucketForOS(ctx, r.storageosProvider, dirRef.Path(), terminateFunc)
+	return getReadWriteBucketForOS(ctx, r.logger, r.storageosProvider, dirRef.Path(), terminateFunc)
 }
 
 func (r *reader) getProtoFileBucket(
@@ -290,6 +291,7 @@ func (r *reader) getProtoFileBucket(
 	}
 	return getReadBucketCloserForOSProtoFile(
 		ctx,
+		r.logger,
 		r.storageosProvider,
 		protoFileRef.Path(),
 		terminateFunc,
@@ -331,7 +333,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(ctx, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
 }
 
 func (r *reader) getModuleKey(
@@ -512,11 +514,12 @@ func getGitURL(gitRef GitRef) (string, error) {
 // Use for memory buckets i.e. archive and git.
 func getReadBucketCloserForBucket(
 	ctx context.Context,
+	logger *zap.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
 	terminateFunc TerminateFunc,
 ) (ReadBucketCloser, error) {
-	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, inputBucket, inputSubDirPath, terminateFunc)
+	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, logger, inputBucket, inputSubDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -526,11 +529,32 @@ func getReadBucketCloserForBucket(
 			storage.MapOnPrefix(mapPath),
 		)
 	}
+	logger.Debug(
+		"buffetch creating new bucket",
+		zap.String("inputSubDirPath", inputSubDirPath),
+		zap.String("mapPath", mapPath),
+		zap.String("subDirPath", subDirPath),
+	)
 	return newReadBucketCloser(
 		inputBucket,
 		subDirPath,
+		// This turns paths that were done relative to the root of the input into paths
+		// that are now relative to the mapped bucket.
+		//
+		// This happens if you do i.e. .git#subdir=foo/bar --path foo/bar/baz.proto
+		// We need to turn the path into baz.proto
 		func(externalPath string) (string, error) {
-			return normalpath.NormalizeAndValidate(externalPath)
+			if filepath.IsAbs(externalPath) {
+				return "", fmt.Errorf("%s: absolute paths cannot be used for this input type", externalPath)
+			}
+			if !normalpath.EqualsOrContainsPath(mapPath, externalPath, normalpath.Relative) {
+				return "", fmt.Errorf("path %q from input does not contain path %q", mapPath, externalPath)
+			}
+			relPath, err := normalpath.Rel(mapPath, externalPath)
+			if err != nil {
+				return "", err
+			}
+			return normalpath.NormalizeAndValidate(relPath)
 		},
 	)
 }
@@ -538,6 +562,7 @@ func getReadBucketCloserForBucket(
 // Use for directory-based buckets.
 func getReadWriteBucketForOS(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
 	terminateFunc TerminateFunc,
@@ -557,13 +582,14 @@ func getReadWriteBucketForOS(
 	}
 	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(
 		ctx,
+		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absInputDirPath[1:],
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 	// Examples:
 	//
@@ -601,9 +627,16 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug(
+		"creating new OS bucket for controlling workspace",
+		zap.String("inputDirPath", inputDirPath),
+		zap.String("workspacePath", bucketPath),
+		zap.String("subDirPath", subDirPath),
+	)
 	return newReadWriteBucket(
 		bucket,
 		subDirPath,
+		// This function turns paths into paths relative to the bucket.
 		func(externalPath string) (string, error) {
 			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketPath))
 			if err != nil {
@@ -626,6 +659,7 @@ func getReadWriteBucketForOS(
 // Use for ProtoFileRefs.
 func getReadBucketCloserForOSProtoFile(
 	ctx context.Context,
+	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc TerminateFunc,
@@ -648,16 +682,14 @@ func getReadBucketCloserForOSProtoFile(
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, terminate, err := getMapPathAndSubDirPath(
 		ctx,
+		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
-		newMultiTerminateFunc(
-			terminateFunc,
-			protoFileTerminateFunc,
-		),
+		protoFileTerminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 
 	var protoTerminateFileDirPath string
@@ -673,6 +705,11 @@ func getReadBucketCloserForOSProtoFile(
 		} else {
 			protoTerminateFileDirPath = "."
 		}
+		logger.Debug(
+			"did not find enclosing module or workspace for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("defaultingToPwd", protoTerminateFileDirPath),
+		)
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
@@ -690,11 +727,16 @@ func getReadBucketCloserForOSProtoFile(
 				return nil, err
 			}
 		}
+		logger.Debug(
+			"found enclosing module or workspace for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("enclosingDirPath", protoTerminateFileDirPath),
+		)
 	}
-	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
-	// TODO: do we do filtering of bucket in bufwire right now? Need to bring that up here or
-	// add as targeting files when constructing a Workspace.
-	readWriteBucket, err := getReadWriteBucketForOS(ctx, storageosProvider, protoTerminateFileDirPath, terminateFunc)
+	// Now, build a workspace bucket based on the directory we found.
+	// If the directory is a module directory, we'll get the enclosing workspace.
+	// If the directory is a workspace directory, this will effectively be a no-op.
+	readWriteBucket, err := getReadWriteBucketForOS(ctx, logger, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -729,6 +771,7 @@ func getReadBucketCloserForOSProtoFile(
 // returnSubDirPath: .
 func getMapPathAndSubDirPath(
 	ctx context.Context,
+	logger *zap.Logger,
 	inputBucket storage.ReadBucket,
 	inputSubDirPath string,
 	terminateFunc TerminateFunc,
@@ -742,45 +785,74 @@ func getMapPathAndSubDirPath(
 	if terminateFunc == nil {
 		return inputSubDirPath, ".", false, nil
 	}
-	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-		terminate, err := terminateFunc(ctx, inputBucket, curPath, inputSubDirPath)
+	// We can't do this in a traditional loop like this:
+	//
+	// for curDirPath := inputSubDirPath; curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
+	//
+	// If we do that, then we don't run terminateFunc for ".", which we want to so that we get
+	// the correct value for the terminate bool.
+	//
+	// Instead, we effectively do a do-while loop.
+	curDirPath := inputSubDirPath
+	for {
+		terminate, err := terminateFunc(ctx, inputBucket, curDirPath, inputSubDirPath)
 		if err != nil {
 			return "", "", false, err
 		}
 		if terminate {
-			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
+			logger.Debug(
+				"buffetch termination found",
+				zap.String("curDirPath", curDirPath),
+				zap.String("inputSubDirPath", inputSubDirPath),
+			)
+			subDirPath, err := normalpath.Rel(curDirPath, inputSubDirPath)
 			if err != nil {
 				return "", "", false, err
 			}
-			return curPath, subDirPath, true, nil
+			return curDirPath, subDirPath, true, nil
 		}
+		if curDirPath == "." {
+			// Do this instead. This makes this loop effectively a do-while loop.
+			break
+		}
+		curDirPath = normalpath.Dir(curDirPath)
 	}
+	logger.Debug(
+		"buffetch no termination found",
+		zap.String("inputSubDirPath", inputSubDirPath),
+	)
 	return inputSubDirPath, ".", false, nil
 }
 
-func newMultiTerminateFunc(terminateFuncs ...TerminateFunc) TerminateFunc {
-	return TerminateFunc(
-		func(
-			ctx context.Context,
-			bucket storage.ReadBucket,
-			prefix string,
-			originalSubDirPath string,
-		) (bool, error) {
-			for _, terminateFunc := range terminateFuncs {
-				if terminateFunc == nil {
-					continue
-				}
-				terminate, err := terminateFunc(ctx, bucket, prefix, originalSubDirPath)
-				if err != nil {
-					return false, err
-				}
-				if terminate {
-					return true, nil
+// We attempt to fix up paths we get back to better printing to the user.
+// Without this, we'll get things like "stat: Users/foo/path/to/input: does not exist"
+// based on our usage of osRootBucket and absProtoFileDirPath above. While we won't
+// break any contracts printing these out, this is confusing to the user, so this is
+// our attempt to fix that.
+//
+// This is going to take away other intermediate errors unfortunately.
+func attemptToFixOSRootBucketPathErrors(err error) error {
+	var pathError *fs.PathError
+	if errors.As(err, &pathError) {
+		pwd, err := osext.Getwd()
+		if err != nil {
+			return err
+		}
+		pwd = normalpath.Normalize(pwd)
+		if normalpath.EqualsOrContainsPath(pwd, "/"+pathError.Path, normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, "/"+pathError.Path)
+			// Just ignore if this errors and do nothing.
+			if err == nil {
+				// Making a copy just to be super-safe.
+				return &fs.PathError{
+					Op:   pathError.Op,
+					Path: relPath,
+					Err:  pathError.Err,
 				}
 			}
-			return false, nil
-		},
-	)
+		}
+	}
+	return err
 }
 
 type getFileOptions struct {

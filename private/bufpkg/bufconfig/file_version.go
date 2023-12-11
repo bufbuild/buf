@@ -62,9 +62,16 @@ func (f FileVersion) String() string {
 	return s
 }
 
-func parseFileVersion(s string) (FileVersion, error) {
-	// Default to v1beta1 for legacy reasons.
+func parseFileVersion(
+	s string,
+	fileVersionRequired bool,
+	suggestedFileVersion FileVersion,
+) (FileVersion, error) {
 	if s == "" {
+		if fileVersionRequired {
+			return 0, newNoFileVersionError(suggestedFileVersion)
+		}
+		// Default to v1beta1 for legacy reasons.
 		return FileVersionV1Beta1, nil
 	}
 	c, ok := stringToFileVersion[s]
@@ -74,7 +81,7 @@ func parseFileVersion(s string) (FileVersion, error) {
 	return c, nil
 }
 
-func validateFileVersionExists(fileVersion FileVersion) error {
+func validateFileVersionKnown(fileVersion FileVersion) error {
 	if _, ok := fileVersionToString[fileVersion]; !ok {
 		return fmt.Errorf("unknown file version: %v", fileVersion)
 	}
@@ -84,4 +91,11 @@ func validateFileVersionExists(fileVersion FileVersion) error {
 // externalFileVersion represents just the version component of any file.
 type externalFileVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+// newNoFileVersionError returns a new error when a FileVersion is required but was not found.
+//
+// The suggested FileVersion is printed in the error.
+func newNoFileVersionError(suggestedFileVersion FileVersion) error {
+	return fmt.Errorf(`"version" is not set. Please add "version: %s"`, suggestedFileVersion.String())
 }

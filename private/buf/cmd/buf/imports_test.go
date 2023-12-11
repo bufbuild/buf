@@ -65,7 +65,7 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:read nonexistent.proto: file does not exist`)},
+		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:stat nonexistent.proto: file does not exist`)},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -75,7 +75,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `read people/v1/people_nonexistent.proto: file does not exist`},
+		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `stat people/v1/people_nonexistent.proto: file does not exist`},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)
@@ -87,10 +87,7 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		t, nil, 0,
 		[]string{
 			"WARN",
-			// school1 -> people1
-			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
-			// school1 -> people2
-			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
+			`Module bufbuild.test/bufbot/people is a transitive remote dependency not declared in your buf.yaml deps. Add bufbuild.test/bufbot/people to your deps.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
@@ -104,7 +101,8 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		[]string{
 			"WARN",
 			// a -> c
-			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
+			`Module bufbuild.test/workspace/second is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
+			`Module bufbuild.test/workspace/third is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),

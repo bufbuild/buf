@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/fastscan"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -60,6 +61,9 @@ type ModuleReadBucket interface {
 	// GetDocFile and GetLicenseFile may change in the future if other paths are accepted for
 	// documentation or licenses, or if we allow multiple documentation or license files to
 	// exist within a Module (currently, only one of each is allowed).
+	//
+	// A ModuleReadBucket directly derived from a Module will always have at least one .proto file.
+	// If this is not the case, WalkFileInfos will return an error when called.
 	WalkFileInfos(ctx context.Context, f func(FileInfo) error, options ...WalkFileInfosOption) error
 
 	// ShouldBeSelfContained returns true if the ModuleReadBucket was constructed with the intention
@@ -91,20 +95,6 @@ type ModuleReadBucket interface {
 
 // WalkFileInfosOption is an option for WalkFileInfos
 type WalkFileInfosOption func(*walkFileInfosOptions)
-
-// WalkFileInfosWithOnlyTargetFiles returns a new WalkFileInfosOption that will result in only
-// FileInfos with FileInfo.IsTargetFile() set to true being walked.
-//
-// Note that no Files from a Module will have FileInfo.IsTargetFile() set to true if
-// Module.IsTarget() is false.
-//
-// If specific Files were not targeted but the Module was targeted, all Files will have
-// FileInfo.IsTargetFile() set to true, and this function will return all Files that WalkFileInfos does.
-func WalkFileInfosWithOnlyTargetFiles() WalkFileInfosOption {
-	return func(walkFileInfosOptions *walkFileInfosOptions) {
-		walkFileInfosOptions.onlyTargetFiles = true
-	}
-}
 
 // ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
 //
@@ -163,10 +153,12 @@ func GetTargetFileInfos(ctx context.Context, moduleReadBucket ModuleReadBucket) 
 	if err := moduleReadBucket.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
+			if !fileInfo.IsTargetFile() {
+				return nil
+			}
 			fileInfos = append(fileInfos, fileInfo)
 			return nil
 		},
-		WalkFileInfosWithOnlyTargetFiles(),
 	); err != nil {
 		return nil, err
 	}
@@ -249,6 +241,7 @@ func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
 // moduleReadBucket
 
 type moduleReadBucket struct {
+	logger    *zap.Logger
 	getBucket func() (storage.ReadBucket, error)
 	module    Module
 	// We have to store a deterministic ordering of targetPaths so that Walk
@@ -268,6 +261,7 @@ type moduleReadBucket struct {
 // Do not call any functions on module.
 func newModuleReadBucketForModule(
 	ctx context.Context,
+	logger *zap.Logger,
 	getBucket func() (storage.ReadBucket, error),
 	module Module,
 	targetPaths []string,
@@ -283,6 +277,7 @@ func newModuleReadBucketForModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	return &moduleReadBucket{
+		logger: logger,
 		getBucket: sync.OnceValues(
 			func() (storage.ReadBucket, error) {
 				bucket, err := getBucket()
@@ -334,6 +329,10 @@ func (b *moduleReadBucket) WalkFileInfos(
 	fn func(FileInfo) error,
 	options ...WalkFileInfosOption,
 ) error {
+	// Note that we must verify that at least one file in this ModuleReadBucket is
+	// a .proto file, per the documentation on Module.
+	protoFileTracker := newProtoFileTracker(b.module)
+
 	walkFileInfosOptions := newWalkFileInfosOptions()
 	for _, option := range options {
 		option(walkFileInfosOptions)
@@ -344,7 +343,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	if !walkFileInfosOptions.onlyTargetFiles {
-		return bucket.Walk(
+		if err := bucket.Walk(
 			ctx,
 			"",
 			func(objectInfo storage.ObjectInfo) error {
@@ -352,9 +351,13 @@ func (b *moduleReadBucket) WalkFileInfos(
 				if err != nil {
 					return err
 				}
+				protoFileTracker.track(fileInfo)
 				return fn(fileInfo)
 			},
-		)
+		); err != nil {
+			return err
+		}
+		return protoFileTracker.validate()
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
@@ -362,6 +365,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 		if err != nil {
 			return err
 		}
+		protoFileTracker.track(fileInfo)
 		if !fileInfo.IsTargetFile() {
 			return nil
 		}
@@ -383,13 +387,30 @@ func (b *moduleReadBucket) WalkFileInfos(
 				return err
 			}
 		}
+		// We can't determine if the Module had any .proto file paths, as we only walked
+		// the target paths. We don't return any value from protoFileTracker.validate().
 		return nil
+
 	}
-	return bucket.Walk(ctx, "", targetFileWalkFunc)
+	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
+		return err
+	}
+	return protoFileTracker.validate()
 }
 
-func (b *moduleReadBucket) ShouldBeSelfContained() bool {
-	return false
+func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
+	// We want to avoid sync.OnceValueing getBucket Twice, so we have a special copy function here
+	// instead of calling newModuleReadBucket.
+	return &moduleReadBucket{
+		logger:               b.logger,
+		getBucket:            b.getBucket,
+		module:               module,
+		targetPaths:          b.targetPaths,
+		targetPathMap:        b.targetPathMap,
+		targetExcludePathMap: b.targetExcludePathMap,
+		protoFileTargetPath:  b.protoFileTargetPath,
+		includePackageFiles:  b.includePackageFiles,
+	}
 }
 
 func (*moduleReadBucket) isModuleReadBucket() {}
@@ -522,7 +543,19 @@ func (b *moduleReadBucket) getFastscanResultForPath(ctx context.Context, path st
 func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
-) (_ fastscan.Result, retErr error) {
+) (fastscanResult fastscan.Result, retErr error) {
+	//defer func() {
+	//if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
+	//checkedEntry.Write(
+	//zap.String("moduleOpaqueID", b.module.OpaqueID()),
+	//zap.String("path", path),
+	//zap.String("resultPackage", fastscanResult.PackageName),
+	//zap.Strings("resultImports", fastscanResult.Imports),
+	//zap.Error(retErr),
+	//)
+	//}
+	//}()
+
 	fileType, err := classifyPathFileType(path)
 	if err != nil {
 		return fastscan.Result{}, err
@@ -544,7 +577,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	fastscanResult, err := fastscan.Scan(readObjectCloser)
+	fastscanResult, err = fastscan.Scan(readObjectCloser)
 	if err != nil {
 		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
 	}
@@ -765,18 +798,56 @@ func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.M
 
 func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 	return fmt.Errorf(
-		"%s exists in multiple modules: %v",
+		"%s exists in multiple locations: %v",
 		path,
 		strings.Join(
 			slicesext.Map(
 				fileInfos,
 				func(fileInfo FileInfo) string {
-					return fileInfo.Module().OpaqueID()
+					return fileInfo.ExternalPath()
 				},
 			),
-			", ",
+			" ",
 		),
 	)
+}
+
+// protoFileTracker tracks if we found a .proto file for WalkFileInfos.
+//
+// This allows us to fulfill the documentation for ModuleReadBucket on Module where at least
+// one .proto file will exist in a ModuleReadBucket.
+type protoFileTracker struct {
+	module Module
+	found  bool
+}
+
+func newProtoFileTracker(module Module) *protoFileTracker {
+	return &protoFileTracker{
+		module: module,
+		found:  false,
+	}
+}
+
+func (t *protoFileTracker) track(fileInfo FileInfo) {
+	if fileInfo.FileType() == FileTypeProto {
+		t.found = true
+	}
+}
+
+func (t *protoFileTracker) validate() error {
+	if !t.found {
+		// Prefer BucketID over OpaqueID as the user will understand this better.
+		id := t.module.BucketID()
+		if id == "" {
+			id = t.module.OpaqueID()
+		}
+		return newErrNoProtoFiles(id)
+	}
+	return nil
+}
+
+func (b *moduleReadBucket) ShouldBeSelfContained() bool {
+	return false
 }
 
 type walkFileInfosOptions struct {

@@ -22,12 +22,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -42,16 +40,16 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "List Protobuf files",
 		Long:  bufcli.GetInputLong(`the source, module, or image to list from`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -107,7 +105,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
@@ -122,23 +120,22 @@ func run(
 	if err != nil {
 		return err
 	}
-	image, err := controller.GetImage(
+	protoFileInfos, err := controller.GetProtoFileInfos(
 		ctx,
 		input,
-		bufctl.WithImageExcludeSourceInfo(true),
-		bufctl.WithImageExcludeImports(!flags.IncludeImports),
+		bufctl.WithProtoFileInfosIncludeImports(flags.IncludeImports),
 	)
 	if err != nil {
 		return err
 	}
-	imageFilePathFunc := bufimage.ImageFile.ExternalPath
+	pathFunc := bufctl.ProtoFileInfo.ExternalPath
 	if flags.AsImportPaths {
-		imageFilePathFunc = bufimage.ImageFile.Path
+		pathFunc = bufctl.ProtoFileInfo.Path
 	}
 	paths := slicesext.Map(
-		image.Files(),
-		func(imageFile bufimage.ImageFile) string {
-			return imageFilePathFunc(imageFile)
+		protoFileInfos,
+		func(protoFileInfo bufctl.ProtoFileInfo) string {
+			return pathFunc(protoFileInfo)
 		},
 	)
 	sort.Strings(paths)

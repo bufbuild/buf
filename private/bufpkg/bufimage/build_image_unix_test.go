@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/buftesting"
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/testingext"

@@ -4,8 +4,8 @@
 * text=auto
 
 # Never attempt EOL conversion on files within testdata
-**/testdata/** binary
+**/testdata/** -crlf
 
 **/corpus/** linguist-generated=true
-**/privateusage.gen.go linguist-generated=true
+**/usage.gen.go linguist-generated=true
 /private/gen/** linguist-generated=true

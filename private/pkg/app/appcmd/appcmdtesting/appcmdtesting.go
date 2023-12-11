@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package appcmdtesting contains test utilities for appcmd.
 package appcmdtesting
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +57,12 @@ func RunCommandExitCodeStdout(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
@@ -101,7 +110,12 @@ func RunCommandExitCodeStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
@@ -120,7 +134,7 @@ func RunCommandExitCodeStderrContains(
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
 	for _, expectedPartial := range expectedStderrPartials {
-		assert.Contains(t, allStderr, expectedPartial)
+		assert.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 
@@ -138,8 +152,18 @@ func RunCommandExitCodeStdoutStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandSuccess runs the command and makes sure it was successful.
@@ -202,6 +226,24 @@ func RunCommandExitCode(
 		t,
 		expectedExitCode,
 		exitCode,
-		stringutil.TrimLines(stdoutCopy.String())+"\n"+stringutil.TrimLines(stderrCopy.String()),
+		requireErrorMessage(args, stdoutCopy, stderrCopy),
+	)
+}
+
+func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
+	return fmt.Sprintf(
+		"args: %s\nstdout: %s\nstderr: %s",
+		strings.Join(
+			slicesext.Map(
+				args,
+				// To make the args copy-pastable.
+				func(arg string) string {
+					return `'` + arg + `'`
+				},
+			),
+			" ",
+		),
+		stringutil.TrimLines(stdout.String()),
+		stringutil.TrimLines(stderr.String()),
 	)
 }

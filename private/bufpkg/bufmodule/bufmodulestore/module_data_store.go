@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // ModuleDataStore reads and writes ModulesDatas.
@@ -45,10 +46,11 @@ type ModuleDataStore interface {
 // TODO: make self-correcting. Just delete and return not found if there is an error on read,
 // or at least make this optional.
 func NewModuleDataStore(
+	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
 	options ...ModuleDataStoreOption,
 ) ModuleDataStore {
-	return newModuleDataStore(bucket, options...)
+	return newModuleDataStore(logger, bucket, options...)
 }
 
 // ModuleDataStoreOption is an option for a new ModuleDataStore.
@@ -67,16 +69,19 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
+	logger *zap.Logger
 	bucket storage.ReadWriteBucket
 
 	tar bool
 }
 
 func newModuleDataStore(
+	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
 	moduleDataStore := &moduleDataStore{
+		logger: logger,
 		bucket: bucket,
 	}
 	for _, option := range options {
@@ -136,6 +141,13 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
 	// result in bad data being overwritten.
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
+	p.logDebugModuleFullNameAndDigest(
+		moduleFullName,
+		digest,
+		"module store get buf.lock",
+		zap.Bool("found", err == nil),
+		zap.Error(err),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -159,15 +171,14 @@ func (p *moduleDataStore) getReadBucketForDir(
 	moduleFullName bufmodule.ModuleFullName,
 	digest bufcas.Digest,
 ) storage.ReadBucket {
-	return storage.MapReadBucket(
-		p.bucket,
-		storage.MapOnPrefix(
-			getModuleStoreDir(
-				moduleFullName,
-				digest,
-			),
-		),
+	dirPath := getModuleStoreDirPath(moduleFullName, digest)
+	p.logDebugModuleFullNameAndDigest(
+		moduleFullName,
+		digest,
+		"module store get dir read bucket",
+		zap.String("dirPath", dirPath),
 	)
+	return storage.MapReadBucket(p.bucket, storage.MapOnPrefix(dirPath))
 }
 
 func (p *moduleDataStore) getReadBucketForTar(
@@ -175,13 +186,18 @@ func (p *moduleDataStore) getReadBucketForTar(
 	moduleFullName bufmodule.ModuleFullName,
 	digest bufcas.Digest,
 ) (_ storage.ReadBucket, retErr error) {
-	readObjectCloser, err := p.bucket.Get(
-		ctx,
-		getModuleStoreTar(
+	tarPath := getModuleStoreTarPath(moduleFullName, digest)
+	defer func() {
+		p.logDebugModuleFullNameAndDigest(
 			moduleFullName,
 			digest,
-		),
-	)
+			"module store get tar read bucket",
+			zap.String("tarPath", tarPath),
+			zap.Bool("found", retErr == nil),
+			zap.Error(retErr),
+		)
+	}()
+	readObjectCloser, err := p.bucket.Get(ctx, tarPath)
 	if err != nil {
 		return nil, err
 	}
@@ -254,15 +270,14 @@ func (p *moduleDataStore) getWriteBucketForDir(
 	moduleFullName bufmodule.ModuleFullName,
 	digest bufcas.Digest,
 ) storage.WriteBucket {
-	return storage.MapWriteBucket(
-		p.bucket,
-		storage.MapOnPrefix(
-			getModuleStoreDir(
-				moduleFullName,
-				digest,
-			),
-		),
+	dirPath := getModuleStoreDirPath(moduleFullName, digest)
+	p.logDebugModuleFullNameAndDigest(
+		moduleFullName,
+		digest,
+		"module store put dir write bucket",
+		zap.String("dirPath", dirPath),
 	)
+	return storage.MapWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
 }
 
 func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
@@ -271,12 +286,20 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 ) (storage.WriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
-		writeObjectCloser, err := p.bucket.Put(
-			ctx,
-			getModuleStoreTar(
+		tarPath := getModuleStoreTarPath(moduleFullName, digest)
+		defer func() {
+			p.logDebugModuleFullNameAndDigest(
 				moduleFullName,
 				digest,
-			),
+				"module store put tar to write bucket",
+				zap.String("tarPath", tarPath),
+				zap.Bool("found", retErr == nil),
+				zap.Error(retErr),
+			)
+		}()
+		writeObjectCloser, err := p.bucket.Put(
+			ctx,
+			tarPath,
 			// Not needed since single file, but doing for now.
 			storage.PutWithAtomic(),
 		)
@@ -294,12 +317,31 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	}
 }
 
+func (p *moduleDataStore) logDebugModuleFullNameAndDigest(
+	moduleFullName bufmodule.ModuleFullName,
+	digest bufcas.Digest,
+	message string,
+	fields ...zap.Field,
+) {
+	if checkedEntry := p.logger.Check(zap.DebugLevel, message); checkedEntry != nil {
+		checkedEntry.Write(
+			append(
+				[]zap.Field{
+					zap.String("moduleFullName", moduleFullName.String()),
+					zap.String("digest", digest.String()),
+				},
+				fields...,
+			)...,
+		)
+	}
+}
+
 // Returns the module's path within the store if storing individual files.
 //
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
 // e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
 // "buf.build/acme/weather/shake256/12345".
-func getModuleStoreDir(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
+func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
 		moduleFullName.Owner(),
@@ -314,7 +356,7 @@ func getModuleStoreDir(moduleFullName bufmodule.ModuleFullName, digest bufcas.Di
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}.tar",
 // e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
 // "buf.build/acme/weather/shake256/12345.tar".
-func getModuleStoreTar(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
+func getModuleStoreTarPath(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
 		moduleFullName.Owner(),

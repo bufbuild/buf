@@ -16,7 +16,9 @@
 package zaputil
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -37,6 +39,22 @@ func NewLogger(
 	)
 }
 
+// NewLoggerForFlagValues returns a new Logger for the given level and format strings.
+//
+// The level can be [debug,info,warn,error]. The default is info.
+// The format can be [text,color,json]. The default is color.
+func NewLoggerForFlagValues(writer io.Writer, levelString string, format string) (*zap.Logger, error) {
+	level, err := getZapLevel(levelString)
+	if err != nil {
+		return nil, err
+	}
+	encoder, err := getZapEncoder(format)
+	if err != nil {
+		return nil, err
+	}
+	return NewLogger(writer, level, encoder), nil
+}
+
 // NewTextEncoder returns a new text Encoder.
 func NewTextEncoder() zapcore.Encoder {
 	return zapcore.NewConsoleEncoder(textEncoderConfig)
@@ -50,4 +68,34 @@ func NewColortextEncoder() zapcore.Encoder {
 // NewJSONEncoder returns a new JSON encoder.
 func NewJSONEncoder() zapcore.Encoder {
 	return zapcore.NewJSONEncoder(jsonEncoderConfig)
+}
+
+func getZapLevel(level string) (zapcore.Level, error) {
+	level = strings.TrimSpace(strings.ToLower(level))
+	switch level {
+	case "debug":
+		return zapcore.DebugLevel, nil
+	case "info", "":
+		return zapcore.InfoLevel, nil
+	case "warn":
+		return zapcore.WarnLevel, nil
+	case "error":
+		return zapcore.ErrorLevel, nil
+	default:
+		return 0, fmt.Errorf("unknown log level [debug,info,warn,error]: %q", level)
+	}
+}
+
+func getZapEncoder(format string) (zapcore.Encoder, error) {
+	format = strings.TrimSpace(strings.ToLower(format))
+	switch format {
+	case "text":
+		return NewTextEncoder(), nil
+	case "color", "":
+		return NewColortextEncoder(), nil
+	case "json":
+		return NewJSONEncoder(), nil
+	default:
+		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", format)
+	}
 }

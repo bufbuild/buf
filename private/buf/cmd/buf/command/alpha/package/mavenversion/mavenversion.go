@@ -25,9 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -40,16 +39,16 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: bufcli.PackageVersionShortDescription(registryName),
 		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/connectrpc/kotlin"),
-		Args:  cobra.NoArgs,
+		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -69,13 +68,13 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.Module, moduleFlagName, "", "The module reference to resolve")
 	flagSet.StringVar(&f.Plugin, pluginFlagName, "", fmt.Sprintf("The %s plugin reference to resolve", registryName))
-	_ = cobra.MarkFlagRequired(flagSet, moduleFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, pluginFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, moduleFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, pluginFlagName)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)

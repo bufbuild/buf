@@ -24,33 +24,25 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-const tracerName = "bufbuild/buf"
-
 func buildImage(
 	ctx context.Context,
+	tracer tracing.Tracer,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
 ) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
-	tracer := otel.GetTracerProvider().Tracer(tracerName)
-	ctx, span := tracer.Start(ctx, "build_image")
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+
 	if !moduleReadBucket.ShouldBeSelfContained() {
 		return nil, nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
 	}
@@ -61,7 +53,9 @@ func buildImage(
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
-		return nil, nil, errors.New("no input files specified")
+		// If we had no no target files within the module after path filtering, this is an error.
+		// We could have a better user error than this. This gets back to the lack of allowNotExist.
+		return nil, nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	paths := bufmodule.FileInfoPaths(targetFileInfos)
 

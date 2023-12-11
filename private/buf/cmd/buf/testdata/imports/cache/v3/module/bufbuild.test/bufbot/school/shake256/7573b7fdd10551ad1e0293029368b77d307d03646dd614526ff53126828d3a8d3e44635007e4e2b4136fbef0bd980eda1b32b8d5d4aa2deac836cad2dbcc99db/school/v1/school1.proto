@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package school.v1;
+
+
+import "school/v1/school2.proto"; // source, ok
+import "students/v1/students.proto"; // direct dep, ok
+
+message Class {
+  school.v1.SchoolType school_type = 1;
+  repeated students.v1.Student students = 2;
+}

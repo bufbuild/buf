@@ -49,7 +49,7 @@ func newArchiveReader(
 	httpClient *http.Client,
 ) *archiveReader {
 	return &archiveReader{
-		logger:            logger.Named("githubtesting"),
+		logger:            logger,
 		storageosProvider: storageosProvider,
 		httpClient:        httpClient,
 	}

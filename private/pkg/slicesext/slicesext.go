@@ -15,7 +15,10 @@
 // Package slicesext provides extra functionality on top of the slices package.
 package slicesext
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
 //
@@ -132,6 +135,8 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 }
 
 // Copy returns a copy of the slice.
+//
+// TODO: Delete this in favor of slices.Clone.
 func Copy[T any](s []T) []T {
 	sc := make([]T, len(s))
 	copy(sc, s)
@@ -162,6 +167,52 @@ func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K]V {
 		}
 	}
 	return m
+}
+
+// ToValuesMapError transforms the input slice into a map from f(V) -> V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// Duplicate values of type K will result in a single map entry.
+//
+// Returns error the first time f returns error.
+func ToValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K]V, error) {
+	var zero K
+	m := make(map[K]V)
+	for _, v := range s {
+		k, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if k != zero {
+			m[k] = v
+		}
+	}
+	return m, nil
+}
+
+// ToUniqueValuesMapError transforms the input slice into a map from f(V) -> V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// Duplicate values of type K will result in an error.
+// Otherwise returns error the first time f returns error.
+func ToUniqueValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K]V, error) {
+	var zero K
+	m := make(map[K]V)
+	for _, v := range s {
+		k, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if k != zero {
+			if _, ok := m[k]; ok {
+				return nil, fmt.Errorf("key %v is duplicated", k)
+			}
+			m[k] = v
+		}
+	}
+	return m, nil
 }
 
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.
@@ -281,7 +332,7 @@ func ElementsEqual[T comparable](one []T, two []T) bool {
 // ElementsContained returns true if superset contains subset.
 //
 // Nil and empty slices are treated as equals.
-func ElementsContained(superset []string, subset []string) bool {
+func ElementsContained[T comparable](superset []T, subset []T) bool {
 	m := ToStructMap(superset)
 	for _, elem := range subset {
 		if _, ok := m[elem]; !ok {

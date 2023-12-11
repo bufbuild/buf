@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -816,6 +816,7 @@ func testGetImageFromDirs(
 	}
 	image, annotations, err := bufimage.BuildImage(
 		context.Background(),
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

@@ -5,9 +5,9 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
+	private/buf/bufwkt/cmd/wkt-go-data \
 	private/buf/cmd/buf-digest \
 	private/bufpkg/bufstyle/cmd/bufstyle \
-	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -25,7 +25,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
-	private/bufpkg/buftesting/cache/ \
+	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
@@ -79,8 +79,12 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/lint/... \
 		./private/buf/cmd/buf/command/lsfiles/... \
 		./private/buf/cmd/buf/command/mod/... \
+		./private/buf/cmd/buf/command/push/... \
 		./private/buf/cmd/buf/command/registry/... \
+		./private/buf/cmd/buf \
 		./private/buf/cmd/buf-digest/... \
+		./private/buf/cmd/protoc-gen-buf-breaking/... \
+		./private/buf/cmd/protoc-gen-buf-lint/... \
 		./private/bufpkg/bufanalysis/... \
 		./private/bufpkg/bufapi/... \
 		./private/bufpkg/bufcas/... \
@@ -88,13 +92,14 @@ testbufnew: installbuf
 		./private/bufpkg/bufconfig/... \
 		./private/bufpkg/bufconnect/... \
 		./private/bufpkg/bufimage/... \
+		./private/bufpkg/bufmodule/... \
 		./private/bufpkg/bufplugin/... \
-		./private/bufpkg/bufpluginexec/... \
+		./private/buf/bufpluginexec/... \
 		./private/bufpkg/bufreflect/... \
 		./private/bufpkg/bufremoteplugin/... \
-		./private/bufpkg/bufstudioagent/... \
+		./private/buf/bufstudioagent/... \
 		./private/bufpkg/bufstyle/... \
-		./private/bufpkg/buftesting/... \
+		./private/buf/buftesting/... \
 		./private/bufpkg/buftransport/... \
 		./private/bufpkg/bufwasm/...
 

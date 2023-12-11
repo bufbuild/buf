@@ -13,6 +13,15 @@
 // limitations under the License.
 
 // Package app provides application primitives.
+//
+// This should be used for all mains. It provides common globals for the OS and environment
+// in containers, so that they can be isolated for testing.
+//
+// This package has three sub-packages:
+//
+// - appext: More containers for typical buf-related needs, to provide things like loggers.
+// - appcmd: A wrapper for cobra.
+// - appcmd/appcmdtesting: Testing utilities for appcmd.
 package app
 
 import (

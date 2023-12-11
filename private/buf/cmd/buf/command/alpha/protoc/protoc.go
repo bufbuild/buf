@@ -22,22 +22,21 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -45,7 +44,7 @@ import (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
@@ -64,7 +63,7 @@ Additional flags:
       --(.*)_opt:                   Options for the named plugin.
       @filename:                    Parse arguments from the given filename.`,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				env, err := flagsBuilder.Build(app.Args(container))
 				if err != nil {
 					return err
@@ -85,9 +84,15 @@ Additional flags:
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	env *env,
 ) (retErr error) {
+	runner := command.NewRunner()
+	logger := container.Logger()
+	tracer := tracing.NewTracer(container.Tracer())
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
 	}
@@ -98,7 +103,7 @@ func run(
 		return fmt.Errorf("cannot call --%s and plugins at the same time", outputFlagName)
 	}
 
-	if checkedEntry := container.Logger().Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
+	if checkedEntry := logger.Check(zapcore.DebugLevel, "env"); checkedEntry != nil {
 		checkedEntry.Write(
 			zap.Any("flags", env.flags),
 			zap.Any("plugins", env.PluginNameToPluginInfo),
@@ -106,9 +111,10 @@ func run(
 	}
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	runner := command.NewRunner()
 	workspace, err := bufworkspace.NewWorkspaceForProtoc(
 		ctx,
+		logger,
+		tracer,
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,
@@ -123,6 +129,7 @@ func run(
 	}
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
@@ -165,22 +172,22 @@ func run(
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufimage.Image{image}
 		if env.ByDir {
-			_, span := otel.GetTracerProvider().Tracer("bufbuild/buf").Start(ctx, "image_by_dir")
-			images, err = bufimage.ImageByDir(image)
-			if err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, err.Error())
-				span.End()
+			f := func() (retErr error) {
+				_, span := tracer.Start(ctx, tracing.WithErr(&retErr))
+				defer span.End()
+				images, err = bufimage.ImageByDir(image)
 				return err
 			}
-			span.End()
+			if err := f(); err != nil {
+				return err
+			}
 		}
 		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
 			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
 		if err != nil {
 			return err
 		}
-		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
+		pluginResponses := make([]*protoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
 			if !ok {
@@ -188,7 +195,8 @@ func run(
 			}
 			response, err := executePlugin(
 				ctx,
-				container.Logger(),
+				logger,
+				tracer,
 				storageosProvider,
 				runner,
 				wasmPluginExecutor,
@@ -200,13 +208,13 @@ func run(
 			if err != nil {
 				return err
 			}
-			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName, pluginInfo.Out))
+			pluginResponses = append(pluginResponses, protoplugin.NewPluginResponse(response, pluginName, pluginInfo.Out))
 		}
-		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
+		if err := protoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
 		}
-		responseWriter := appprotoos.NewResponseWriter(
-			container.Logger(),
+		responseWriter := protopluginos.NewResponseWriter(
+			logger,
 			storageosProvider,
 		)
 		for _, pluginResponse := range pluginResponses {

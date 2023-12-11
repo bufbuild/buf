@@ -21,15 +21,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/cmd/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -37,13 +37,13 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	appproto.Main(
+	protoplugin.Main(
 		context.Background(),
-		appproto.HandlerFunc(
+		protoplugin.HandlerFunc(
 			func(
 				ctx context.Context,
 				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseBuilder,
+				responseWriter protoplugin.ResponseBuilder,
 				request *pluginpb.CodeGeneratorRequest,
 			) error {
 				return handle(
@@ -60,7 +60,7 @@ func Main() {
 func handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseBuilder,
+	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
@@ -77,24 +77,13 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := zaputil.NewLoggerForFlagValues(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	config, err := bufconfig.ReadConfigOS(
+	moduleConfig, err := internal.GetModuleConfigForProtocPlugin(
 		ctx,
-		readWriteBucket,
-		bufconfig.ReadConfigOSWithOverride(
-			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
-		),
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
@@ -107,18 +96,31 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := buflint.NewHandler(logger).Check(
+	fileAnnotations, err := buflint.NewHandler(logger, tracing.NopTracer).Check(
 		ctx,
-		config.Lint,
+		moduleConfig.LintConfig(),
 		image,
 	)
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
+	if fileAnnotations := bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations); len(fileAnnotations) > 0 {
 		buffer := bytes.NewBuffer(nil)
-		if err := buflintconfig.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			return err
+		if externalConfig.ErrorFormat == "config-ignore-yaml" {
+			if err := buflint.PrintFileAnnotationsConfigIgnoreYAMLV1(
+				buffer,
+				fileAnnotations,
+			); err != nil {
+				return err
+			}
+		} else {
+			if err := bufanalysis.PrintFileAnnotations(
+				buffer,
+				fileAnnotations,
+				externalConfig.ErrorFormat,
+			); err != nil {
+				return err
+			}
 		}
 		responseWriter.AddError(strings.TrimSpace(buffer.String()))
 	}

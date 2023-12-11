@@ -32,7 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netext"
 	"github.com/bufbuild/buf/private/pkg/netrc"
@@ -45,7 +45,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -70,16 +69,16 @@ var allVisibiltyStrings = []string{
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Push a plugin to a registry",
 		Long:  bufcli.GetSourceDirLong(`the source to push (directory containing buf.plugin.yaml or plugin release zip)`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -125,12 +124,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(`The plugin's visibility setting. Must be one of %s`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) (retErr error) {
 	bufcli.WarnBetaCommand(ctx, container)

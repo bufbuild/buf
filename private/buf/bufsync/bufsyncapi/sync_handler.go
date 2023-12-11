@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -42,7 +42,7 @@ type RepositoryCommitServiceClientFactory func(address string) registryv1alpha1c
 
 type syncHandler struct {
 	logger               *zap.Logger
-	container            appflag.Container
+	container            appext.Container
 	repo                 git.Repository
 	createWithVisibility *registryv1alpha1.Visibility
 
@@ -60,7 +60,7 @@ type syncHandler struct {
 
 func newSyncHandler(
 	logger *zap.Logger,
-	container appflag.Container,
+	container appext.Container,
 	repo git.Repository,
 	createWithVisibility *registryv1alpha1.Visibility,
 	syncServiceClientFactory SyncServiceClientFactory,
