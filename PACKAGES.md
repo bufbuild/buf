@@ -12,7 +12,7 @@
 
 ## Specific Packages
 
-- TODO: Move `appproto` out of `app`
+- TODO: Move `protoplugin` out of `app`
 - TODO: Look into merging `appcmd` and `appflag`
 - TODO: Replicate `cobra.PositionalArgs` so that no one needs to directly import cobra
 - TODO: Better documentation for app

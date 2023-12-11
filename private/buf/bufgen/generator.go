@@ -31,8 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -75,9 +75,9 @@ func newGenerator(
 //
 // All of the plugins, both local and remote, are called concurrently. Each
 // plugin returns a single CodeGeneratorResponse, which are cached in-memory in
-// the appprotoos.ResponseWriter. Once all of the CodeGeneratorResponses
+// the protopluginos.ResponseWriter. Once all of the CodeGeneratorResponses
 // are written in-memory, we flush them to the OS filesystem by closing the
-// appprotoos.ResponseWriter.
+// protopluginos.ResponseWriter.
 //
 // This behavior is equivalent to protoc, which only writes out the content
 // for each of the plugins if all of the plugins are successful.
@@ -130,10 +130,10 @@ func (g *generator) generate(
 		return err
 	}
 	// Apply the CodeGeneratorResponses in the order they were specified.
-	responseWriter := appprotoos.NewResponseWriter(
+	responseWriter := protopluginos.NewResponseWriter(
 		g.logger,
 		g.storageosProvider,
-		appprotoos.ResponseWriterWithCreateOutDirIfNotExists(),
+		protopluginos.ResponseWriterWithCreateOutDirIfNotExists(),
 	)
 	for i, pluginConfig := range config.PluginConfigs {
 		out := pluginConfig.Out
@@ -592,7 +592,7 @@ func validateResponses(
 	if len(responses) != len(pluginConfigs) {
 		return fmt.Errorf("unexpected number of responses: expected %d but got %d", len(pluginConfigs), len(responses))
 	}
-	pluginResponses := make([]*appproto.PluginResponse, 0, len(responses))
+	pluginResponses := make([]*protoplugin.PluginResponse, 0, len(responses))
 	for i, response := range responses {
 		pluginConfig := pluginConfigs[i]
 		if response == nil {
@@ -600,14 +600,14 @@ func validateResponses(
 		}
 		pluginResponses = append(
 			pluginResponses,
-			appproto.NewPluginResponse(
+			protoplugin.NewPluginResponse(
 				response,
 				pluginConfig.PluginName(),
 				pluginConfig.Out,
 			),
 		)
 	}
-	if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
+	if err := protoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 		return err
 	}
 	return nil

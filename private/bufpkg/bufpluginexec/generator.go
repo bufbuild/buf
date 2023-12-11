@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -78,7 +78,7 @@ func (g *generator) Generate(
 	if err != nil {
 		return nil, err
 	}
-	return appproto.NewGenerator(
+	return protoplugin.NewGenerator(
 		g.logger,
 		handler,
 	).Generate(

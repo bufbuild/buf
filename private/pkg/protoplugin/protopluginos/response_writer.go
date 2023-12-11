@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -44,7 +44,7 @@ Created-By: 1.6.0 (protoc)
 type responseWriter struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
-	responseWriter    appproto.ResponseWriter
+	responseWriter    protoplugin.ResponseWriter
 	// If set, create directories if they don't already exist.
 	createOutDirIfNotExists bool
 	// Cache the readWriteBuckets by their respective output paths.
@@ -82,7 +82,7 @@ func newResponseWriter(
 	return &responseWriter{
 		logger:                  logger,
 		storageosProvider:       storageosProvider,
-		responseWriter:          appproto.NewResponseWriter(logger),
+		responseWriter:          protoplugin.NewResponseWriter(logger),
 		createOutDirIfNotExists: responseWriterOptions.createOutDirIfNotExists,
 		readWriteBuckets:        make(map[string]storage.ReadWriteBucket),
 	}
@@ -184,7 +184,7 @@ func (w *responseWriter) writeZip(
 			ctx,
 			readWriteBucket,
 			response,
-			appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
+			protoplugin.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 		); err != nil {
 			return err
 		}
@@ -216,7 +216,7 @@ func (w *responseWriter) writeZip(
 		ctx,
 		readWriteBucket,
 		response,
-		appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
+		protoplugin.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 	); err != nil {
 		return err
 	}
@@ -252,7 +252,7 @@ func (w *responseWriter) writeDirectory(
 			ctx,
 			readWriteBucket,
 			response,
-			appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
+			protoplugin.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 		); err != nil {
 			return err
 		}
@@ -263,7 +263,7 @@ func (w *responseWriter) writeDirectory(
 		ctx,
 		readWriteBucket,
 		response,
-		appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
+		protoplugin.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 	); err != nil {
 		return err
 	}

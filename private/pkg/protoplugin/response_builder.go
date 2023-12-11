@@ -56,7 +56,7 @@ func (r *responseBuilder) AddFile(file *pluginpb.CodeGeneratorResponse_File) err
 	// this is what normalize does
 	normalizedName, err := normalpath.NormalizeAndValidate(name)
 	if err != nil {
-		// we need names to be normalized for the appproto.Generator to properly put them in buckets
+		// we need names to be normalized for the protoplugin.Generator to properly put them in buckets
 		// so we have to error here if it is not validated
 		return newUnvalidatedNameError(name)
 	}
@@ -64,7 +64,7 @@ func (r *responseBuilder) AddFile(file *pluginpb.CodeGeneratorResponse_File) err
 		if err := r.warnUnnormalizedName(name); err != nil {
 			return err
 		}
-		// we need names to be normalized for the appproto.Generator to properly put
+		// we need names to be normalized for the protoplugin.Generator to properly put
 		// them in buckets, so we will coerce this into a normalized name if it is
 		// validated, ie if it does not container ".." and is absolute, we can still
 		// continue, assuming we validate here

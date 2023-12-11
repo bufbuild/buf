@@ -32,8 +32,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracer"
@@ -183,7 +183,7 @@ func run(
 		if err != nil {
 			return err
 		}
-		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
+		pluginResponses := make([]*protoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
 			if !ok {
@@ -203,12 +203,12 @@ func run(
 			if err != nil {
 				return err
 			}
-			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName, pluginInfo.Out))
+			pluginResponses = append(pluginResponses, protoplugin.NewPluginResponse(response, pluginName, pluginInfo.Out))
 		}
-		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
+		if err := protoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
 		}
-		responseWriter := appprotoos.NewResponseWriter(
+		responseWriter := protopluginos.NewResponseWriter(
 			container.Logger(),
 			storageosProvider,
 		)

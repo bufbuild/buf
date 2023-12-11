@@ -27,7 +27,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -142,7 +142,7 @@ func NewHandler(
 	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginName string,
 	options ...HandlerOption,
-) (appproto.Handler, error) {
+) (protoplugin.Handler, error) {
 	handlerOptions := newHandlerOptions()
 	for _, option := range options {
 		option(handlerOptions)
@@ -220,7 +220,7 @@ func HandlerWithWASMEnabled() HandlerOption {
 // specified by pluginPath.
 //
 // Used by other repositories.
-func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []string) (appproto.Handler, error) {
+func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []string) (protoplugin.Handler, error) {
 	pluginPath, err := unsafeLookPath(pluginPath)
 	if err != nil {
 		return nil, err

@@ -31,7 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -42,13 +42,13 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	appproto.Main(
+	protoplugin.Main(
 		context.Background(),
-		appproto.HandlerFunc(
+		protoplugin.HandlerFunc(
 			func(
 				ctx context.Context,
 				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseBuilder,
+				responseWriter protoplugin.ResponseBuilder,
 				request *pluginpb.CodeGeneratorRequest,
 			) error {
 				return handle(
@@ -65,7 +65,7 @@ func Main() {
 func handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseBuilder,
+	responseWriter protoplugin.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
