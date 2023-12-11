@@ -34,12 +34,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+const (
+	// DefaultBufYAMLFileName is the buf.yaml default file name.
+	DefaultBufYAMLFileName = "buf.yaml"
+	// LegacyBufYAMLFileName is the old file name for buf.yaml.
+	LegacyBufYAMLFileName = "buf.mod"
+)
+
 var (
-	bufYAML = newFileName("buf.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
+	bufYAML = newFileName(DefaultBufYAMLFileName, FileVersionV1Beta1, FileVersionV1, FileVersionV2)
 	// Originally we thought we were going to move to buf.mod, and had this around for
 	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
 	// we released with it, however.
-	bufMod           = newFileName("buf.mod", FileVersionV1Beta1, FileVersionV1)
+	bufMod           = newFileName(LegacyBufYAMLFileName, FileVersionV1Beta1, FileVersionV1)
 	bufYAMLFileNames = []*fileName{bufYAML, bufMod}
 )
 

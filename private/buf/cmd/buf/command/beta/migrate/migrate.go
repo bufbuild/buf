@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package migratev1
+package migrate
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	// TODO: buf-work-yaml or bufwork-yaml?
 	bufWorkYAMLPathFlagName = "buf-work-yaml"
 	bufYAMLPathsFlagName    = "buf-yaml"
 	dryRunFlagName          = "dry-run"
@@ -38,13 +37,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// TODO: update if we are taking a directory as input
 		Use:   name,
 		Short: `Migrate configuration to the latest version`,
-		Long: `Migrate any v1 and v1beta1 configuration files in the directory to the latest version.
-Defaults to the current directory if not specified.`,
-		// TODO: update if we are taking a directory as input
-		Args: appcmd.MaximumNArgs(0),
+		Long:  `Migrate specified configuration files to the latest version.`,
+		Args:  appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -110,6 +106,7 @@ func run(
 	}
 	return bufmigrate.Migrate(
 		ctx,
+		container.Logger(),
 		// TODO: Do we want to add a flag --disable-symlinks?
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
 		// TODO: pass an actual client when implemented on server

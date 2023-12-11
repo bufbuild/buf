@@ -26,15 +26,19 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type migrator struct {
+	logger *zap.Logger
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
 	destinationDir string
@@ -51,10 +55,12 @@ type migrator struct {
 }
 
 func newMigrator(
+	logger *zap.Logger,
 	rootBucket storage.ReadWriteBucket,
 	destinationDir string,
 ) *migrator {
 	return &migrator{
+		logger:                 logger,
 		destinationDir:         destinationDir,
 		rootBucket:             rootBucket,
 		moduleNameToParentFile: map[string]string{},
@@ -62,18 +68,27 @@ func newMigrator(
 	}
 }
 
-func (m *migrator) addWorkspaceDirectory(
+func (m *migrator) addWorkspaceForBufWorkYAML(
 	ctx context.Context,
-	workspaceDir string,
-) error {
-	bufWorkYAML, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, m.rootBucket, workspaceDir)
+	bufWorkYAMLPath string,
+) (retErr error) {
+	file, err := os.Open(bufWorkYAMLPath)
 	if err != nil {
 		return err
 	}
-	// TODO: get path properly
-	m.seenFiles[filepath.Join(workspaceDir, "buf.work.yaml")] = struct{}{}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	bufWorkYAML, err := bufconfig.ReadBufWorkYAMLFile(file)
+	if err != nil {
+		return err
+	}
+	m.seenFiles[bufWorkYAMLPath] = struct{}{}
+	workspaceDir := filepath.Dir(bufWorkYAMLPath)
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
+		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace)); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -84,12 +99,9 @@ func (m *migrator) addModuleDirectory(
 	// moduleDir is the relative path (relative to ".") to the module directory
 	moduleDir string,
 ) error {
-	// TODO: get file path properly
-	bufYAMLPath := filepath.Join(moduleDir, "buf.yaml")
-	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(
-		ctx,
-		m.rootBucket,
-		moduleDir,
+	bufYAMLPath, err := findFirstExistingPath(
+		filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName),
+		filepath.Join(moduleDir, bufconfig.LegacyBufYAMLFileName),
 	)
 	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
 		moduleDirInMigratedBufYAML, err := filepath.Rel(m.destinationDir, moduleDir)
@@ -106,7 +118,10 @@ func (m *migrator) addModuleDirectory(
 		if err != nil {
 			return err
 		}
-		if err := m.appendModuleConfig(moduleConfig, bufYAMLPath); err != nil {
+		if err := m.appendModuleConfig(
+			moduleConfig,
+			filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName),
+		); err != nil {
 			return err
 		}
 		// Assume there is no co-resident buf.lock
@@ -115,140 +130,51 @@ func (m *migrator) addModuleDirectory(
 	if err != nil {
 		return err
 	}
-	if err := m.addBufYAML(
-		ctx,
-		bufYAMLFile,
-		bufYAMLPath,
-	); err != nil {
-		return err
-	}
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
-		ctx,
-		m.rootBucket,
-		moduleDir,
-	)
-	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	// TODO: get file paths properly
-	bufLockFilePath := filepath.Join(moduleDir, "buf.lock")
-	// We don't need to check whether it's already in the map, but because if it were,
-	// its co-resident buf.yaml would also have been a duplicate, which would make this
-	// function return early.
-	m.seenFiles[bufLockFilePath] = struct{}{}
-	switch bufLockFile.FileVersion() {
-	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-		m.depModuleKeys = append(m.depModuleKeys, bufLockFile.DepModuleKeys()...)
-	case bufconfig.FileVersionV2:
-		return fmt.Errorf("%s is already at v2", bufLockFilePath)
-	default:
-		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
-	}
-	return nil
+	return m.addModuleDirectoryForBufYAML(ctx, bufYAMLPath)
 }
 
-func (m *migrator) migrateAsDryRun(
-	writer io.Writer,
-) error {
-	migratedBufYAML, err := m.getBufYAML()
-	if err != nil {
-		return err
-	}
-	migratedBufLock, err := m.getBufLock()
-	if err != nil {
-		return err
-	}
-	filesToDelete := m.filesToDelete()
-	var bufYAMLBuffer bytes.Buffer
-	if err := bufconfig.WriteBufYAMLFile(&bufYAMLBuffer, migratedBufYAML); err != nil {
-		return err
-	}
-	var bufLockBuffer bytes.Buffer
-	if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
-		return err
-	}
-	fmt.Fprintf(
-		writer,
-		`in an actual run, these files will be removed:
-%s
-
-these files will be written:
-%s:
-%s
-%s:
-%s
-`,
-		strings.Join(filesToDelete, "\n"),
-		// TODO: find a way to get file name properly
-		filepath.Join(m.destinationDir, "buf.yaml"),
-		bufYAMLBuffer.String(),
-		// TODO: find a way to get file name properly
-		filepath.Join(m.destinationDir, "buf.lock"),
-		bufLockBuffer.String(),
-	)
-	return nil
-}
-
-func (m *migrator) migrate(
+func (m *migrator) addModuleDirectoryForBufYAML(
 	ctx context.Context,
-) error {
-	migratedBufYAML, err := m.getBufYAML()
-	if err != nil {
-		return err
-	}
-	migratedBufLock, err := m.getBufLock()
-	if err != nil {
-		return err
-	}
-	filesToDelete := m.filesToDelete()
-	for _, fileToDelete := range filesToDelete {
-		if err := os.Remove(fileToDelete); err != nil {
-			return err
-		}
-	}
-	if err := bufconfig.PutBufYAMLFileForPrefix(
-		ctx,
-		m.rootBucket,
-		m.destinationDir,
-		migratedBufYAML,
-	); err != nil {
-		return err
-	}
-	if err := bufconfig.PutBufLockFileForPrefix(
-		ctx,
-		m.rootBucket,
-		m.destinationDir,
-		migratedBufLock,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *migrator) addBufYAML(
-	ctx context.Context,
-	bufYAML bufconfig.BufYAMLFile,
 	bufYAMLPath string,
-) error {
+) (retErr error) {
+	file, err := os.Open(bufYAMLPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	bufYAML, err := bufconfig.ReadBufYAMLFile(file)
+	if err != nil {
+		return err
+	}
 	if _, ok := m.seenFiles[bufYAMLPath]; ok {
-		// TODO: this isn't always the case, perhaps the first time it was read as part of the workspace.
-		// TODO: we could also return nil here.
-		return fmt.Errorf("%s is specified multiple times", bufYAMLPath)
+		return nil
 	}
 	m.seenFiles[bufYAMLPath] = struct{}{}
 	// TODO: transform paths so that they are relative to the new buf.yaml v2 or module root (depending on buf.yaml v2 semantics)
+	// Paths include RootToExcludes, IgnorePaths, IgnoreIDOrCategoryToPaths
 	switch bufYAML.FileVersion() {
 	case bufconfig.FileVersionV1Beta1:
-		// TODO: whether something needs to be done about root to exclude mapping (what is it relative to now?)
 		if len(bufYAML.ModuleConfigs()) != 1 {
 			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAML.ModuleConfigs()))
 		}
 		moduleConfig := bufYAML.ModuleConfigs()[0]
-		// TODO: iterate through this map in deterministic order
-		for root, excludes := range moduleConfig.RootToExcludes() {
+		// If a v1beta buf.yaml has multiple roots, they are split into multiple
+		// module configs, but they cannot share the same module full name.
+		moduleFullName := moduleConfig.ModuleFullName()
+		if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
+			m.logger.Sugar().Warnf(
+				"%s has name %s and multiple roots. These roots are now separate unnamed modules.",
+				bufYAMLPath,
+				moduleFullName.String(),
+			)
+			moduleFullName = nil
+		}
+		// Iterate through root-to-excludes in deterministic order.
+		sortedRoots := slicesext.MapKeysToSortedSlice(moduleConfig.RootToExcludes())
+		for _, root := range sortedRoots {
+			excludes := moduleConfig.RootToExcludes()[root]
 			lintConfig := moduleConfig.LintConfig()
 			// TODO: this list expands to individual rules, we could process
 			// this list and make it shorter by substituting some rules with
@@ -276,11 +202,15 @@ func (m *migrator) addBufYAML(
 				lintConfig.AllowCommentIgnores(),
 			)
 			breakingConfig := moduleConfig.BreakingConfig()
+			breakingRules, err := bufbreaking.RulesForConfig(breakingConfig)
+			if err != nil {
+				return err
+			}
+			breakingRuleNames := slicesext.Map(breakingRules, func(rule bufcheck.Rule) string { return rule.ID() })
 			breakingConfigForRoot := bufconfig.NewBreakingConfig(
 				bufconfig.NewCheckConfig(
 					bufconfig.FileVersionV2,
-					// TODO: FIELD_SAME_TYPE
-					breakingConfig.UseIDsAndCategories(),
+					breakingRuleNames,
 					breakingConfig.ExceptIDsAndCategories(),
 					// TODO: filter these paths by root
 					breakingConfig.IgnorePaths(),
@@ -299,24 +229,10 @@ func (m *migrator) addBufYAML(
 			if err != nil {
 				return err
 			}
-			// If a v1beta buf.yaml has multiple roots, they are split into multiple
-			// module configs, but they cannot share the same module full name.
-			moduleFullName := moduleConfig.ModuleFullName()
-			if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
-				moduleFullName, err = bufmodule.NewModuleFullName(
-					moduleFullName.Registry(),
-					moduleFullName.Owner(),
-					// Note: roots are normalized, "/" is universal
-					moduleFullName.Name()+"-"+strings.ReplaceAll(root, "/", "-"),
-				)
-				if err != nil {
-					return err
-				}
-			}
 			configForRoot, err := bufconfig.NewModuleConfig(
 				dirPathRelativeToDestination,
 				moduleFullName,
-				// TODO: excludes might need to be transformed WRT what it's relative to
+				// TODO: make them relative to what they should be relative to.
 				map[string][]string{".": excludes},
 				lintConfigForRoot,
 				breakingConfigForRoot,
@@ -329,7 +245,6 @@ func (m *migrator) addBufYAML(
 			}
 		}
 		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
-		return nil
 	case bufconfig.FileVersionV1:
 		// TODO: smiliar to the above, make paths (root to excludes, lint ignore, ...) relative to the correct root (either buf.yaml v2 or module root)
 		if len(bufYAML.ModuleConfigs()) != 1 {
@@ -385,16 +300,116 @@ func (m *migrator) addBufYAML(
 			return err
 		}
 		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
-		return nil
 	case bufconfig.FileVersionV2:
 		return fmt.Errorf("%s is already at v2", bufYAMLPath)
 	default:
 		return syserror.Newf("unexpected version: %v", bufYAML.FileVersion())
 	}
+	moduleDir := filepath.Dir(bufYAMLPath)
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+		ctx,
+		m.rootBucket,
+		moduleDir,
+	)
+	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	bufLockFilePath := filepath.Join(moduleDir, bufconfig.DefaultBufLockFileName)
+	// We don't need to check whether it's already in the map, but because if it were,
+	// its co-resident buf.yaml would also have been a duplicate, which would make this
+	// function return early.
+	m.seenFiles[bufLockFilePath] = struct{}{}
+	switch bufLockFile.FileVersion() {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		m.depModuleKeys = append(m.depModuleKeys, bufLockFile.DepModuleKeys()...)
+	case bufconfig.FileVersionV2:
+		return fmt.Errorf("%s is already at v2", bufLockFilePath)
+	default:
+		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
+	}
+	return nil
+}
+
+func (m *migrator) migrateAsDryRun(
+	writer io.Writer,
+) error {
+	migratedBufYAML, err := m.getBufYAML()
+	if err != nil {
+		return err
+	}
+	migratedBufLock, err := m.getBufLock()
+	if err != nil {
+		return err
+	}
+	filesToDelete := m.filesToDelete()
+	var bufYAMLBuffer bytes.Buffer
+	if err := bufconfig.WriteBufYAMLFile(&bufYAMLBuffer, migratedBufYAML); err != nil {
+		return err
+	}
+	var bufLockBuffer bytes.Buffer
+	if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
+		return err
+	}
+	fmt.Fprintf(
+		writer,
+		`in an actual run, these files will be removed:
+%s
+
+these files will be written:
+%s:
+%s
+%s:
+%s
+`,
+		strings.Join(filesToDelete, "\n"),
+		filepath.Join(m.destinationDir, bufconfig.DefaultBufYAMLFileName),
+		bufYAMLBuffer.String(),
+		filepath.Join(m.destinationDir, bufconfig.DefaultBufLockFileName),
+		bufLockBuffer.String(),
+	)
+	return nil
+}
+
+func (m *migrator) migrate(
+	ctx context.Context,
+) error {
+	migratedBufYAML, err := m.getBufYAML()
+	if err != nil {
+		return err
+	}
+	migratedBufLock, err := m.getBufLock()
+	if err != nil {
+		return err
+	}
+	filesToDelete := m.filesToDelete()
+	for _, fileToDelete := range filesToDelete {
+		if err := os.Remove(fileToDelete); err != nil {
+			return err
+		}
+	}
+	if err := bufconfig.PutBufYAMLFileForPrefix(
+		ctx,
+		m.rootBucket,
+		m.destinationDir,
+		migratedBufYAML,
+	); err != nil {
+		return err
+	}
+	if err := bufconfig.PutBufLockFileForPrefix(
+		ctx,
+		m.rootBucket,
+		m.destinationDir,
+		migratedBufLock,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *migrator) getBufYAML() (bufconfig.BufYAMLFile, error) {
-	// TODO: where do we update seenModuleNames?
 	filteredModuleDependencies := slicesext.Filter(
 		m.moduleDependencies,
 		func(moduleRef bufmodule.ModuleRef) bool {
@@ -445,4 +460,18 @@ func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, paren
 
 func (m *migrator) filesToDelete() []string {
 	return slicesext.MapKeysToSortedSlice(m.seenFiles)
+}
+
+func findFirstExistingPath(paths ...string) (string, error) {
+	for _, path := range paths {
+		_, err := os.Stat(path)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		return path, nil
+	}
+	return "", fs.ErrNotExist
 }
