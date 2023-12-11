@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig/bufconfigtest"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagetesting"
@@ -200,7 +199,7 @@ func TestModifyImageFile(
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
 				},
 			),
 			modifyFunc: modifyCcEnableArenas,
@@ -223,13 +222,13 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionCsharpNamespacePrefix, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionCsharpNamespacePrefix, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespacePrefix, "BarPrefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespace, "BarValue"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespace, "FooValue"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespacePrefix, "FooPrefix"),
+					newTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespacePrefix, "BarPrefix"),
+					newTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionCsharpNamespace, "BarValue"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespace, "FooValue"),
+					newTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespacePrefix, "FooPrefix"),
 				},
 			),
 			modifyFunc: modifyCsharpNamespace,
@@ -260,13 +259,13 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionGoPackagePrefix, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionGoPackagePrefix, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionGoPackagePrefix, "barprefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionGoPackage, "barvalue"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty/with_package.proto", "buf.build/acme/foo", bufconfig.FileOptionGoPackage, "foovalue"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionGoPackagePrefix, "fooprefix"),
+					newTestFileOptionOverrideRule(t, "bar_empty", "buf.build/acme/bar", bufconfig.FileOptionGoPackagePrefix, "barprefix"),
+					newTestFileOptionOverrideRule(t, "bar_empty/without_package.proto", "buf.build/acme/bar", bufconfig.FileOptionGoPackage, "barvalue"),
+					newTestFileOptionOverrideRule(t, "foo_empty/with_package.proto", "buf.build/acme/foo", bufconfig.FileOptionGoPackage, "foovalue"),
+					newTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionGoPackagePrefix, "fooprefix"),
 				},
 			),
 			modifyFunc: modifyGoPackage,
@@ -300,11 +299,11 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackagePrefix, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackagePrefix, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackagePrefix, "barprefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackageSuffix, "foosuffix"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackagePrefix, "barprefix"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackageSuffix, "foosuffix"),
 				},
 			),
 			modifyFunc: modifyJavaPackage,
@@ -397,10 +396,10 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackageSuffix, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackageSuffix, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
 			modifyFunc: modifyJavaPackage,
@@ -452,11 +451,11 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackage, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "bar_empty", "", "", bufconfig.FileOptionJavaPackage, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackage, "bar.value"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackage, "foo.value"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionJavaPackage, "bar.value"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackage, "foo.value"),
 				},
 			),
 			modifyFunc: modifyJavaPackage,
@@ -506,12 +505,12 @@ func TestModifyImageFile(
 			config: bufconfig.NewGenerateManagedConfig(
 				true,
 				[]bufconfig.ManagedDisableRule{
-					bufconfigtest.NewTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionObjcClassPrefix, bufconfig.FieldOptionUnspecified),
+					newTestManagedDisableRule(t, "foo_empty/with_package.proto", "", "", bufconfig.FileOptionObjcClassPrefix, bufconfig.FieldOptionUnspecified),
 				},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionObjcClassPrefix, "BAR"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOO"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "foo_all", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOOALL"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionObjcClassPrefix, "BAR"),
+					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOO"),
+					newTestFileOptionOverrideRule(t, "foo_all", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOOALL"),
 				},
 			),
 			modifyFunc: modifyObjcClassPrefix,
@@ -606,7 +605,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -618,7 +617,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -630,7 +629,7 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -642,8 +641,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -655,8 +654,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -668,8 +667,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
 			imageFile: testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -684,9 +683,9 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
 			imageFile: testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -701,9 +700,9 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -715,8 +714,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix2"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackagePrefix, "prefix2"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -728,8 +727,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix2"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix2"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -741,8 +740,8 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 				true,
 				[]bufconfig.ManagedDisableRule{},
 				[]bufconfig.ManagedOverrideRule{
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
-					bufconfigtest.NewTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value2"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value"),
+					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackage, "value2"),
 				},
 			),
 			imageFile:        testGetImageFile(t, "a.proto", "buf.build/foo/bar"),
@@ -824,4 +823,59 @@ func testGetImageFromDirs(
 	require.NoError(t, err)
 	require.Empty(t, annotations)
 	return image
+}
+
+func newTestManagedDisableRule(
+	t *testing.T,
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fileOption bufconfig.FileOption,
+	fieldOption bufconfig.FieldOption,
+) bufconfig.ManagedDisableRule {
+	disable, err := bufconfig.NewDisableRule(
+		path,
+		moduleFullName,
+		fieldName,
+		fileOption,
+		fieldOption,
+	)
+	require.NoError(t, err)
+	return disable
+}
+
+func newTestFileOptionOverrideRule(
+	t *testing.T,
+	path string,
+	moduleFullName string,
+	fileOption bufconfig.FileOption,
+	value interface{},
+) bufconfig.ManagedOverrideRule {
+	fileOptionOverride, err := bufconfig.NewFileOptionOverrideRule(
+		path,
+		moduleFullName,
+		fileOption,
+		value,
+	)
+	require.NoError(t, err)
+	return fileOptionOverride
+}
+
+func newTestFieldOptionOverrideRule(
+	t *testing.T,
+	path string,
+	moduleFullName string,
+	fieldName string,
+	fieldOption bufconfig.FieldOption,
+	value interface{},
+) bufconfig.ManagedOverrideRule {
+	fieldOptionOverrid, err := bufconfig.NewFieldOptionOverrideRule(
+		path,
+		moduleFullName,
+		bufconfig.FileOptionPhpMetadataNamespace.String(),
+		fieldOption,
+		value,
+	)
+	require.NoError(t, err)
+	return fieldOptionOverrid
 }
