@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/app/appname"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
@@ -87,7 +86,7 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 // newConfig creates a new Config.
 func newConfig(container appext.Container) (*bufapp.Config, error) {
 	externalConfig := bufapp.ExternalConfig{}
-	if err := appname.ReadConfig(container, &externalConfig); err != nil {
+	if err := appext.ReadConfig(container, &externalConfig); err != nil {
 		return nil, err
 	}
 	return bufapp.NewConfig(container, externalConfig)
