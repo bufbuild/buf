@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
+	"github.com/bufbuild/buf/private/buf/bufstudioagent"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
