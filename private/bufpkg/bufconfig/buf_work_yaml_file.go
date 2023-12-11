@@ -178,7 +178,7 @@ func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) err
 	if err != nil {
 		return err
 	}
-	_, err = writer.Write(append(bufLockFileHeader, data...))
+	_, err = writer.Write(data)
 	return err
 }
 

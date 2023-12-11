@@ -17,22 +17,27 @@ package generate
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -48,6 +53,7 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
+	migrateFlagName             = "migrate"
 )
 
 // NewCommand returns a new Command.
@@ -208,6 +214,7 @@ type flags struct {
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
+	Migrate         bool
 	// special
 	InputHashtag string
 }
@@ -276,6 +283,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
+	flagSet.BoolVar(
+		&f.Migrate,
+		migrateFlagName,
+		false,
+		"Migrate the generation template to the latest version",
+	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -293,33 +306,26 @@ func run(
 		// in the context of including imports.
 		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s", includeWKTFlagName, includeImportsFlagName)
 	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
+	var storageosProvider storageos.Provider
+	if flags.DisableSymlinks {
+		storageosProvider = storageos.NewProvider()
+	} else {
+		storageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	genConfig, err := bufgen.ReadConfig(
-		ctx,
-		logger,
-		bufgen.NewProvider(logger),
-		readWriteBucket,
-		bufgen.ReadConfigWithOverride(flags.Template),
-	)
+	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
+		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
 	if err != nil {
 		return err
 	}
@@ -327,39 +333,83 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageConfigReader, err := bufcli.NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-	)
-	if err != nil {
-		return err
-	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
-		ctx,
-		container,
-		ref,
-		flags.Config,
-		flags.Paths,        // we filter on files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for generation
-	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, flags.ErrorFormat); err != nil {
+	var bufGenYAMLFile bufconfig.BufGenYAMLFile
+	templatePathExtension := filepath.Ext(flags.Template)
+	switch {
+	case flags.Template == "":
+		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
+		if err != nil {
 			return err
 		}
-		return bufctl.ErrFileAnnotation
+		bufGenYAMLFile, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+		if err != nil {
+			return err
+		}
+		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
+				ctx,
+				logger,
+				bufGenYAMLFile,
+				input,
+				*flags,
+			)
+			if err != nil {
+				return err
+			}
+			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", migratedBufGenYAMLFile); err != nil {
+				return err
+			}
+			// TODO: perhaps print a message
+		}
+	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
+		// We should not read from a bucket at "." because this path can jump context.
+		configFile, err := os.Open(flags.Template)
+		if err != nil {
+			return err
+		}
+		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configFile)
+		if err != nil {
+			return err
+		}
+		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
+				ctx,
+				logger,
+				bufGenYAMLFile,
+				input,
+				*flags,
+			)
+			if err != nil {
+				return err
+			}
+			if err := bufconfig.WriteBufGenYAMLFile(configFile, migratedBufGenYAMLFile); err != nil {
+				return err
+			}
+			// TODO: perhaps print a message
+		}
+	default:
+		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
+		if err != nil {
+			return err
+		}
+		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+			return fmt.Errorf(
+				"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
+				flags.Template,
+			)
+		}
 	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	image, err := bufimage.MergeImages(images...)
+	images, err := getInputImages(
+		ctx,
+		logger,
+		controller,
+		input,
+		bufGenYAMLFile,
+		flags.Config,
+		flags.Paths,
+		flags.ExcludePaths,
+		flags.Types,
+	)
 	if err != nil {
 		return err
 	}
@@ -388,35 +438,153 @@ func run(
 			bufgen.GenerateWithWASMEnabled(),
 		)
 	}
-	var includedTypes []string
-	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
-		// command-line flags take precedence
-		includedTypes = append(flags.Types, flags.TypesDeprecated...)
-	} else if genConfig.TypesConfig != nil {
-		includedTypes = genConfig.TypesConfig.Include
-	}
-	if len(includedTypes) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
-		if err != nil {
-			return err
-		}
-	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
-	if err != nil {
-		return err
-	}
 	return bufgen.NewGenerator(
 		logger,
+		tracing.NewTracer(container.Tracer()),
 		storageosProvider,
-		runner,
+		command.NewRunner(),
 		wasmPluginExecutor,
 		clientConfig,
 	).Generate(
 		ctx,
 		container,
-		genConfig,
-		image,
+		bufGenYAMLFile.GenerateConfig(),
+		images,
 		generateOptions...,
 	)
+}
+
+func getInputImages(
+	ctx context.Context,
+	logger *zap.Logger,
+	controller bufctl.Controller,
+	inputSpecified string,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	moduleConfigOverride string,
+	includePathsOverride []string,
+	excludePathsOverride []string,
+	includeTypesOverride []string,
+) ([]bufimage.Image, error) {
+	var inputImages []bufimage.Image
+	// If input is specified on the command line, we use that. If input is not
+	// specified on the command line, but the config has no inputs, use the default input.
+	if inputSpecified != "" || len(bufGenYAMLFile.InputConfigs()) == 0 {
+		input := "."
+		if inputSpecified != "" {
+			input = inputSpecified
+		}
+		var includeTypes []string
+		if typesConfig := bufGenYAMLFile.GenerateConfig().GenerateTypeConfig(); typesConfig != nil {
+			includeTypes = typesConfig.IncludeTypes()
+		}
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImage(
+			ctx,
+			input,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(includePathsOverride, excludePathsOverride),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		inputImages = []bufimage.Image{inputImage}
+	} else {
+		for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
+			includePaths := inputConfig.IncludePaths()
+			if len(includePathsOverride) > 0 {
+				includePaths = includePathsOverride
+			}
+			excludePaths := inputConfig.ExcludePaths()
+			if len(excludePathsOverride) > 0 {
+				excludePaths = excludePathsOverride
+			}
+			// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
+			// because it is always nil.
+			// TODO: document the above in godoc
+			includeTypes := inputConfig.IncludeTypes()
+			if len(includeTypesOverride) > 0 {
+				includeTypes = includeTypesOverride
+			}
+			inputImage, err := controller.GetImageForInputConfig(
+				ctx,
+				inputConfig,
+				bufctl.WithConfigOverride(moduleConfigOverride),
+				bufctl.WithTargetPaths(includePaths, excludePaths),
+				bufctl.WithImageTypes(includeTypes),
+			)
+			if err != nil {
+				return nil, err
+			}
+			inputImages = append(inputImages, inputImage)
+		}
+	}
+	return inputImages, nil
+}
+
+// getBufGenYAMLFileWithFlagEquivalence returns a buf gen yaml file the same as
+// the given one, except that it is overriden by flags.
+// This is called only for migration. Input will be used regardless if it's empty.
+func getBufGenYAMLFileWithFlagEquivalence(
+	ctx context.Context,
+	logger *zap.Logger,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	input string,
+	flags flags,
+) (bufconfig.BufGenYAMLFile, error) {
+	if input == "" {
+		input = "."
+	}
+	inputConfig, err := buffetch.GetInputConfigForString(
+		ctx,
+		buffetch.NewRefParser(logger),
+		input,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var includeTypes []string
+	if bufGenYAMLFile.GenerateConfig().GenerateTypeConfig() != nil {
+		includeTypes = bufGenYAMLFile.GenerateConfig().GenerateTypeConfig().IncludeTypes()
+	}
+	if len(flags.Types) > 0 {
+		includeTypes = flags.Types
+	}
+	inputConfig, err = bufconfig.NewInputConfigWithTargets(
+		inputConfig,
+		flags.Paths,
+		flags.ExcludePaths,
+		includeTypes,
+	)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := slicesext.MapError(
+		bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
+		func(pluginConfig bufconfig.GeneratePluginConfig) (bufconfig.GeneratePluginConfig, error) {
+			return bufconfig.NewGeneratePluginWithIncludeImportsAndWKT(
+				pluginConfig,
+				flags.IncludeImports,
+				flags.IncludeWKT,
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	generateConfig, err := bufconfig.NewGenerateConfig(
+		pluginConfigs,
+		bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewBufGenYAMLFile(
+		bufconfig.FileVersionV2,
+		generateConfig,
+		[]bufconfig.InputConfig{inputConfig},
+	), nil
 }

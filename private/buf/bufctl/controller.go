@@ -86,6 +86,11 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) (bufimage.Image, error)
+	GetImageForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+		options ...FunctionOption,
+	) (bufimage.Image, error)
 	GetImageForWorkspace(
 		ctx context.Context,
 		workspace bufworkspace.Workspace,
@@ -273,6 +278,18 @@ func (c *controller) GetImage(
 		option(functionOptions)
 	}
 	return c.getImage(ctx, input, functionOptions)
+}
+
+func (c *controller) GetImageForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	options ...FunctionOption,
+) (bufimage.Image, error) {
+	functionOptions := newFunctionOptions()
+	for _, option := range options {
+		option(functionOptions)
+	}
+	return c.getImageForInputConfig(ctx, inputConfig, functionOptions)
 }
 
 func (c *controller) GetImageForWorkspace(
@@ -630,6 +647,26 @@ func (c *controller) getImage(
 	if err != nil {
 		return nil, err
 	}
+	return c.getImageForRef(ctx, ref, functionOptions)
+}
+
+func (c *controller) getImageForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	functionOptions *functionOptions,
+) (bufimage.Image, error) {
+	ref, err := c.buffetchRefParser.GetRefForInputConfig(ctx, inputConfig)
+	if err != nil {
+		return nil, err
+	}
+	return c.getImageForRef(ctx, ref, functionOptions)
+}
+
+func (c *controller) getImageForRef(
+	ctx context.Context,
+	ref buffetch.Ref,
+	functionOptions *functionOptions,
+) (bufimage.Image, error) {
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)

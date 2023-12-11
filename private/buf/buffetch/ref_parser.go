@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -207,8 +208,38 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,
-) (_ Ref, retErr error) {
+) (Ref, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		messageEncoding, err := parseMessageEncoding(t.Format())
+		if err != nil {
+			return nil, err
+		}
+		return newMessageRef(t, messageEncoding)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newSourceRef(t), nil
+	case internal.ParsedGitRef:
+		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (Ref, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, allFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -237,8 +268,34 @@ func (a *refParser) GetRef(
 func (a *refParser) GetSourceOrModuleRef(
 	ctx context.Context,
 	value string,
-) (_ SourceOrModuleRef, retErr error) {
+) (SourceOrModuleRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, sourceOrModuleFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newSourceRef(t), nil
+	case internal.ParsedGitRef:
+		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetSourceOrModuleRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (SourceOrModuleRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, sourceOrModuleFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -263,8 +320,27 @@ func (a *refParser) GetSourceOrModuleRef(
 func (a *refParser) GetMessageRef(
 	ctx context.Context,
 	value string,
-) (_ MessageRef, retErr error) {
+) (MessageRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, messageFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
+	if !ok {
+		return nil, fmt.Errorf("invalid ParsedRef type for message: %T", parsedRef)
+	}
+	messageEncoding, err := parseMessageEncoding(parsedSingleRef.Format())
+	if err != nil {
+		return nil, err
+	}
+	return newMessageRef(parsedSingleRef, messageEncoding)
+}
+
+func (a *refParser) GetMessageRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (MessageRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, messageFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -282,8 +358,24 @@ func (a *refParser) GetMessageRef(
 func (a *refParser) GetSourceRef(
 	ctx context.Context,
 	value string,
-) (_ SourceRef, retErr error) {
+) (SourceRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedBucketRef, ok := parsedRef.(internal.ParsedBucketRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newSourceRef(parsedBucketRef), nil
+}
+
+func (a *refParser) GetSourceRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (SourceRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, sourceFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -298,8 +390,24 @@ func (a *refParser) GetSourceRef(
 func (a *refParser) GetDirRef(
 	ctx context.Context,
 	value string,
-) (_ DirRef, retErr error) {
+) (DirRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, dirFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedDirRef, ok := parsedRef.(internal.ParsedDirRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newDirRef(parsedDirRef), nil
+}
+
+func (a *refParser) GetDirRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (DirRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, dirFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +422,7 @@ func (a *refParser) GetDirRef(
 func (a *refParser) GetModuleRef(
 	ctx context.Context,
 	value string,
-) (_ ModuleRef, retErr error) {
+) (ModuleRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, moduleFormats)
 	if err != nil {
 		return nil, err
@@ -327,6 +435,23 @@ func (a *refParser) GetModuleRef(
 	return newModuleRef(parsedModuleRef), nil
 }
 
+func (a *refParser) GetModuleRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (ModuleRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, moduleFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedModuleRef, ok := parsedRef.(internal.ParsedModuleRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newModuleRef(parsedModuleRef), nil
+}
+
+// TODO: rename to getParsedRefForString
 func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
@@ -335,6 +460,23 @@ func (a *refParser) getParsedRef(
 	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
+		internal.WithAllowedFormats(allowedFormats...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	a.checkDeprecated(parsedRef)
+	return parsedRef, nil
+}
+
+func (a *refParser) getParsedRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	allowedFormats []string,
+) (internal.ParsedRef, error) {
+	parsedRef, err := a.fetchRefParser.GetParsedRefForInputConfig(
+		ctx,
+		inputConfig,
 		internal.WithAllowedFormats(allowedFormats...),
 	)
 	if err != nil {

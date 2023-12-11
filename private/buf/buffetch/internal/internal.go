@@ -16,9 +16,12 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -82,6 +85,20 @@ type ArchiveType int
 
 // CompressionType is a compression type.
 type CompressionType int
+
+// String implements fmt.Stringer
+func (c CompressionType) String() string {
+	switch c {
+	case CompressionTypeNone:
+		return "none"
+	case CompressionTypeGzip:
+		return "gzip"
+	case CompressionTypeZstd:
+		return "zstd"
+	default:
+		return strconv.Itoa(int(c))
+	}
+}
 
 // Ref is a reference.
 type Ref interface {
@@ -360,6 +377,12 @@ type RefParser interface {
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
 	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
+	// GetParsedRefForInputConfig gets the ParsedRef for the input config.
+	//
+	// The returned ParsedRef will be either a ParsedSingleRef, ParsedArchiveRef, ParsedDirRef, ParsedGitRef, or ParsedModuleRef.
+	//
+	// The options should be used to validate that you are getting one of the correct formats.
+	GetParsedRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.
@@ -809,3 +832,62 @@ func WithPutFileNoFileCompression() PutFileOption {
 
 // GetModuleOption is a GetModule option.
 type GetModuleOption func(*getModuleOptions)
+
+// GetInputConfigForRef returns the input config for the ref. A string is also
+// passed because if the ref is a git ref, it would only have a git.Name, instead
+// of a git branch, a git ref and a git tag. Therefore the original string is passed.
+func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
+	_, options, err := getRawPathAndOptions(value)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case ArchiveRef:
+		switch t.ArchiveType() {
+		case ArchiveTypeZip:
+			return bufconfig.NewZipArchiveInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.StripComponents(),
+			)
+		case ArchiveTypeTar:
+			return bufconfig.NewTarballInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.CompressionType().String(),
+				t.StripComponents(),
+			)
+		default:
+			return nil, fmt.Errorf("invalid archive type: %v", t.ArchiveType())
+		}
+	case DirRef:
+		return bufconfig.NewDirectoryInputConfig(
+			t.Path(),
+		)
+	case ModuleRef:
+		return bufconfig.NewModuleInputConfig(
+			t.ModuleRef().String(),
+		)
+	case ProtoFileRef:
+		return bufconfig.NewProtoFileInputConfig(
+			t.Path(),
+			t.IncludePackageFiles(),
+		)
+	case GitRef:
+		return bufconfig.NewGitRepoInputConfig(
+			t.Path(),
+			t.SubDirPath(),
+			options["branch"],
+			options["tag"],
+			options["ref"],
+			toPointer(t.Depth()),
+			t.RecurseSubmodules(),
+		)
+	default:
+		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
+	}
+}
+
+func toPointer[T any](value T) *T {
+	return &value
+}
