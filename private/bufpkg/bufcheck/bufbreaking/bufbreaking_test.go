@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -773,12 +774,16 @@ func testBreaking(
 
 	previousWorkspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
+		tracing.NopTracer,
 		previousReadWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
+		tracing.NopTracer,
 		readWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)
@@ -786,6 +791,7 @@ func testBreaking(
 
 	previousImage, previousFileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -795,6 +801,7 @@ func testBreaking(
 
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
@@ -803,7 +810,10 @@ func testBreaking(
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
 	require.NotNil(t, breakingConfig)
-	handler := bufbreaking.NewHandler(zap.NewNop())
+	handler := bufbreaking.NewHandler(
+		zap.NewNop(),
+		tracing.NopTracer,
+	)
 	fileAnnotations, err = handler.Check(
 		ctx,
 		breakingConfig,

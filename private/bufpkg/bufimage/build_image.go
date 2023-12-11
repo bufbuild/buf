@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/parser"
@@ -35,11 +35,12 @@ import (
 
 func buildImage(
 	ctx context.Context,
+	tracer tracing.Tracer,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
 ) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
-	ctx, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithErr(&retErr))
+	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {
@@ -52,7 +53,9 @@ func buildImage(
 		return nil, nil, err
 	}
 	if len(targetFileInfos) == 0 {
-		return nil, nil, errors.New("no input files specified")
+		// If we had no no target files within the module after path filtering, this is an error.
+		// We could have a better user error than this. This gets back to the lack of allowNotExist.
+		return nil, nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	paths := bufmodule.FileInfoPaths(targetFileInfos)
 

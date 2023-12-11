@@ -62,6 +62,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
@@ -71,11 +73,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -88,11 +91,11 @@ func Main(name string) {
 //
 // This is public for use in testing.
 func NewRootCommand(name string) *appcmd.Command {
-	builder := appflag.NewBuilder(
+	builder := appext.NewBuilder(
 		name,
-		appflag.BuilderWithTimeout(120*time.Second),
-		appflag.BuilderWithTracing(),
-		appflag.BuilderWithInterceptor(newErrorInterceptor()),
+		appext.BuilderWithTimeout(120*time.Second),
+		appext.BuilderWithTracing(),
+		appext.BuilderWithInterceptor(newErrorInterceptor()),
 	)
 	return &appcmd.Command{
 		Use:                 name,
@@ -102,13 +105,14 @@ func NewRootCommand(name string) *appcmd.Command {
 		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
-			//export.NewCommand("export", builder),
+			export.NewCommand("export", builder),
 			//format.NewCommand("format", builder),
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
-			//generate.NewCommand("generate", builder),
+			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
-			//push.NewCommand("push", builder),
+			// TODO: still need to port
+			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
 			{
@@ -140,7 +144,6 @@ func NewRootCommand(name string) *appcmd.Command {
 					migratev1.NewCommand("migrate-v1", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
-					//migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					studioagent.NewCommand("studio-agent", builder),
 					{
 						Use:   "registry",
@@ -259,9 +262,9 @@ func NewRootCommand(name string) *appcmd.Command {
 }
 
 // newErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
-func newErrorInterceptor() appflag.Interceptor {
-	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
-		return func(ctx context.Context, container appflag.Container) error {
+func newErrorInterceptor() appext.Interceptor {
+	return func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {
+		return func(ctx context.Context, container appext.Container) error {
 			return wrapError(next(ctx, container))
 		}
 	}

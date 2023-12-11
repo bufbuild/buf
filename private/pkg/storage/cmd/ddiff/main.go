@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
 )
 
 const (
@@ -39,7 +38,7 @@ func main() {
 func newCommand() *appcmd.Command {
 	return &appcmd.Command{
 		Use:  use + " dir1 dir2",
-		Args: cobra.ExactArgs(2),
+		Args: appcmd.ExactArgs(2),
 		Run:  run,
 	}
 }

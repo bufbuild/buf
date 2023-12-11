@@ -18,11 +18,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // NewModuleKeyProvider returns a new ModuleKeyProvider.
-func NewModuleKeyProvider(container appflag.Container) (bufmodule.ModuleKeyProvider, error) {
+func NewModuleKeyProvider(container appext.Container) (bufmodule.ModuleKeyProvider, error) {
 	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err

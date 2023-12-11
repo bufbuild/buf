@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/tracer"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
@@ -33,13 +33,15 @@ import (
 // Runner is a runner.
 type Runner struct {
 	logger       *zap.Logger
+	tracer       tracing.Tracer
 	ignorePrefix string
 }
 
 // NewRunner returns a new Runner.
-func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
+func NewRunner(logger *zap.Logger, tracer tracing.Tracer, options ...RunnerOption) *Runner {
 	runner := &Runner{
 		logger: logger,
+		tracer: tracer,
 	}
 	for _, option := range options {
 		option(runner)
@@ -68,11 +70,10 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	if len(rules) == 0 {
 		return nil, nil
 	}
-	ctx, span := tracer.Start(
+	ctx, span := r.tracer.Start(
 		ctx,
-		"bufbuild/buf",
-		tracer.WithErr(&retErr),
-		tracer.WithAttributes(
+		tracing.WithErr(&retErr),
+		tracing.WithAttributes(
 			attribute.Key("num_files").Int(len(files)),
 			attribute.Key("num_rules").Int(len(rules)),
 		),
@@ -85,7 +86,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	for _, rule := range rules {
 		rule := rule
 		ruleFunc := func() ([]bufanalysis.FileAnnotation, error) {
-			_, span := tracer.Start(ctx, "bufbuild/buf", tracer.WithSpanNameSuffix(rule.ID()))
+			_, span := r.tracer.Start(ctx, tracing.WithSpanNameSuffix(rule.ID()))
 			defer span.End()
 			return rule.check(ignoreFunc, previousFiles, files)
 		}

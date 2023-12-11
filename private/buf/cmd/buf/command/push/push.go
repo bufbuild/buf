@@ -19,22 +19,11 @@ import (
 	"errors"
 	"fmt"
 
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
-	"github.com/bufbuild/buf/private/bufpkg/buflock"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/connectclient"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -54,16 +43,16 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Push a module to a registry",
 		Long:  bufcli.GetSourceLong(`the source to push`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -151,181 +140,189 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if len(flags.Tracks) > 0 {
-		return appcmd.NewInvalidArgumentErrorf("--%s has never had any effect, do not use.", trackFlagName)
-	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
-	if flags.Draft != "" && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
-	}
-	if len(flags.Tags) > 0 && flags.Draft != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
-	}
-	// For now, we are restricting branch behavior to be exactly the same as drafts, and thus
-	// cannot be used in conjunction with tags.
-	if len(flags.Tags) > 0 && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
-	}
-	if flags.CreateVisibility != "" {
-		if !flags.Create {
-			return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
-		}
-		// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
-		// we expect validation to be handled here.
-		if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
-			return appcmd.NewInvalidArgumentError(err.Error())
-		}
-	} else if flags.Create {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
-	}
-	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	// We are pushing to the BSR, this module has to be independently buildable
-	// given the configuration it has without any enclosing workspace.
-	sourceBucket, sourceConfig, err := bufcli.BucketAndConfigForSource(
-		ctx,
-		container.Logger(),
-		container,
-		storageosProvider,
-		runner,
-		source,
-	)
-	if err != nil {
-		return err
-	}
-	if err := buflock.CheckDeprecatedDigests(ctx, container.Logger(), sourceBucket); err != nil {
-		return err
-	}
-	moduleFullName := sourceConfig.ModuleFullName
-	builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		ctx,
-		sourceBucket,
-		sourceConfig.Build,
-	)
-	if err != nil {
-		return err
-	}
-	modulePin, err := pushOrCreate(ctx, container, moduleFullName, builtModule, flags)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists {
-			if _, err := container.Stderr().Write(
-				[]byte(fmt.Sprintf("%s\n", err.Error())),
-			); err != nil {
-				return err
-			}
-			return nil
-		}
-		return err
-	}
-	if modulePin == nil {
-		return errors.New("Missing local module pin in the registry's response.")
-	}
-	if _, err := container.Stdout().Write([]byte(modulePin.Commit + "\n")); err != nil {
-		return err
-	}
-	return nil
+	return errors.New("buf push is not yet ported")
 }
 
-func pushOrCreate(
-	ctx context.Context,
-	container appflag.Container,
-	moduleFullName bufmodule.ModuleFullName,
-	builtModule *bufmodulebuild.BuiltModule,
-	flags *flags,
-) (*registryv1alpha1.LocalModulePin, error) {
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	modulePin, err := push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
-	if err != nil {
-		// We rely on Push* returning a NotFound error to denote the repository is not created.
-		// This technically could be a NotFound error for some other entity than the repository
-		// in question, however if it is, then this Create call will just fail as the repository
-		// is already created, and there is no side effect. The 99% case is that a NotFound
-		// error is because the repository does not exist, and we want to avoid having to do
-		// a GetRepository RPC call for every call to push --create.
-		if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
-			if err := create(ctx, container, clientConfig, moduleFullName, flags); err != nil {
-				return nil, err
-			}
-			return push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
-		}
-		return nil, err
-	}
-	return modulePin, nil
-}
+//func run(
+//ctx context.Context,
+//container appext.Container,
+//flags *flags,
+//) (retErr error) {
+//if len(flags.Tracks) > 0 {
+//return appcmd.NewInvalidArgumentErrorf("--%s has never had any effect, do not use.", trackFlagName)
+//}
+//if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+//return err
+//}
+//if flags.Draft != "" && flags.Branch != "" {
+//return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+//}
+//if len(flags.Tags) > 0 && flags.Draft != "" {
+//return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+//}
+//// For now, we are restricting branch behavior to be exactly the same as drafts, and thus
+//// cannot be used in conjunction with tags.
+//if len(flags.Tags) > 0 && flags.Branch != "" {
+//return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
+//}
+//if flags.CreateVisibility != "" {
+//if !flags.Create {
+//return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s.", createVisibilityFlagName, createFlagName)
+//}
+//// We re-parse below as needed, but do not return an appcmd.NewInvalidArgumentError below as
+//// we expect validation to be handled here.
+//if _, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility); err != nil {
+//return appcmd.NewInvalidArgumentError(err.Error())
+//}
+//} else if flags.Create {
+//return appcmd.NewInvalidArgumentErrorf("--%s is required if --%s is set.", createVisibilityFlagName, createFlagName)
+//}
+//source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+//if err != nil {
+//return err
+//}
+//storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
+//runner := command.NewRunner()
+//// We are pushing to the BSR, this module has to be independently buildable
+//// given the configuration it has without any enclosing workspace.
+//sourceBucket, sourceConfig, err := bufcli.BucketAndConfigForSource(
+//ctx,
+//container.Logger(),
+//container,
+//storageosProvider,
+//runner,
+//source,
+//)
+//if err != nil {
+//return err
+//}
+//if err := buflock.CheckDeprecatedDigests(ctx, container.Logger(), sourceBucket); err != nil {
+//return err
+//}
+//moduleFullName := sourceConfig.ModuleFullName
+//builtModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
+//ctx,
+//sourceBucket,
+//sourceConfig.Build,
+//)
+//if err != nil {
+//return err
+//}
+//modulePin, err := pushOrCreate(ctx, container, moduleFullName, builtModule, flags)
+//if err != nil {
+//if connect.CodeOf(err) == connect.CodeAlreadyExists {
+//if _, err := container.Stderr().Write(
+//[]byte(fmt.Sprintf("%s\n", err.Error())),
+//); err != nil {
+//return err
+//}
+//return nil
+//}
+//return err
+//}
+//if modulePin == nil {
+//return errors.New("Missing local module pin in the registry's response.")
+//}
+//if _, err := container.Stdout().Write([]byte(modulePin.Commit + "\n")); err != nil {
+//return err
+//}
+//return nil
+//}
 
-func push(
-	ctx context.Context,
-	container appflag.Container,
-	clientConfig *connectclient.Config,
-	moduleFullName bufmodule.ModuleFullName,
-	builtModule *bufmodulebuild.BuiltModule,
-	flags *flags,
-) (*registryv1alpha1.LocalModulePin, error) {
-	service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewPushServiceClient)
-	fileSet, err := bufcas.NewFileSetForBucket(ctx, builtModule.Bucket)
-	if err != nil {
-		return nil, err
-	}
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
-	if err != nil {
-		return nil, err
-	}
-	draftOrBranchName := flags.Draft
-	if draftOrBranchName == "" {
-		// If draft is not set, then we we set the draft name to branch.
-		draftOrBranchName = flags.Branch
-	}
-	resp, err := service.PushManifestAndBlobs(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
-			Owner:      moduleFullName.Owner(),
-			Repository: moduleFullName.Name(),
-			Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
-			Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
-			Tags:       flags.Tags,
-			DraftName:  draftOrBranchName,
-		}),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return resp.Msg.LocalModulePin, nil
-}
+//func pushOrCreate(
+//ctx context.Context,
+//container appext.Container,
+//moduleFullName bufmodule.ModuleFullName,
+//builtModule *bufmodulebuild.BuiltModule,
+//flags *flags,
+//) (*registryv1alpha1.LocalModulePin, error) {
+//clientConfig, err := bufcli.NewConnectClientConfig(container)
+//if err != nil {
+//return nil, err
+//}
+//modulePin, err := push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
+//if err != nil {
+//// We rely on Push* returning a NotFound error to denote the repository is not created.
+//// This technically could be a NotFound error for some other entity than the repository
+//// in question, however if it is, then this Create call will just fail as the repository
+//// is already created, and there is no side effect. The 99% case is that a NotFound
+//// error is because the repository does not exist, and we want to avoid having to do
+//// a GetRepository RPC call for every call to push --create.
+//if flags.Create && connect.CodeOf(err) == connect.CodeNotFound {
+//if err := create(ctx, container, clientConfig, moduleFullName, flags); err != nil {
+//return nil, err
+//}
+//return push(ctx, container, clientConfig, moduleFullName, builtModule, flags)
+//}
+//return nil, err
+//}
+//return modulePin, nil
+//}
 
-func create(
-	ctx context.Context,
-	container appflag.Container,
-	clientConfig *connectclient.Config,
-	moduleFullName bufmodule.ModuleFullName,
-	flags *flags,
-) error {
-	service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewRepositoryServiceClient)
-	visiblity, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility)
-	if err != nil {
-		return err
-	}
-	fullName := moduleFullName.Owner() + "/" + moduleFullName.Name()
-	_, err = service.CreateRepositoryByFullName(
-		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   fullName,
-			Visibility: visiblity,
-		}),
-	)
-	if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("Expected repository %s to be missing but found the repository to already exist", fullName))
-	}
-	return err
-}
+//func push(
+//ctx context.Context,
+//container appext.Container,
+//clientConfig *connectclient.Config,
+//moduleFullName bufmodule.ModuleFullName,
+//builtModule *bufmodulebuild.BuiltModule,
+//flags *flags,
+//) (*registryv1alpha1.LocalModulePin, error) {
+//service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewPushServiceClient)
+//fileSet, err := bufcas.NewFileSetForBucket(ctx, builtModule.Bucket)
+//if err != nil {
+//return nil, err
+//}
+//protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
+//if err != nil {
+//return nil, err
+//}
+//draftOrBranchName := flags.Draft
+//if draftOrBranchName == "" {
+//// If draft is not set, then we we set the draft name to branch.
+//draftOrBranchName = flags.Branch
+//}
+//resp, err := service.PushManifestAndBlobs(
+//ctx,
+//connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
+//Owner:      moduleFullName.Owner(),
+//Repository: moduleFullName.Name(),
+//Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
+//Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
+//Tags:       flags.Tags,
+//DraftName:  draftOrBranchName,
+//}),
+//)
+//if err != nil {
+//return nil, err
+//}
+//return resp.Msg.LocalModulePin, nil
+//}
+
+//func create(
+//ctx context.Context,
+//container appext.Container,
+//clientConfig *connectclient.Config,
+//moduleFullName bufmodule.ModuleFullName,
+//flags *flags,
+//) error {
+//service := connectclient.Make(clientConfig, moduleFullName.Registry(), registryv1alpha1connect.NewRepositoryServiceClient)
+//visiblity, err := bufcli.VisibilityFlagToVisibility(flags.CreateVisibility)
+//if err != nil {
+//return err
+//}
+//fullName := moduleFullName.Owner() + "/" + moduleFullName.Name()
+//_, err = service.CreateRepositoryByFullName(
+//ctx,
+//connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
+//FullName:   fullName,
+//Visibility: visiblity,
+//}),
+//)
+//if err != nil && connect.CodeOf(err) == connect.CodeAlreadyExists {
+//return connect.NewError(connect.CodeInternal, fmt.Errorf("Expected repository %s to be missing but found the repository to already exist", fullName))
+//}
+//return err
+//}

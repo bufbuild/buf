@@ -22,16 +22,15 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 	aliases ...string,
 ) *appcmd.Command {
 	flags := newFlags()
@@ -39,9 +38,9 @@ func NewCommand(
 		Use:     name,
 		Aliases: aliases,
 		Short:   "Clear the BSR module cache",
-		Args:    cobra.NoArgs,
+		Args:    appcmd.NoArgs,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -59,7 +58,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	for _, cacheModuleRelDirPath := range bufcli.AllCacheModuleRelDirPaths {

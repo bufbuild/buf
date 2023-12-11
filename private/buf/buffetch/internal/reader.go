@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -65,7 +66,7 @@ func newReader(
 	options ...ReaderOption,
 ) *reader {
 	reader := &reader{
-		logger:            logger.Named("buffetch"),
+		logger:            logger,
 		storageosProvider: storageosProvider,
 	}
 	for _, option := range options {
@@ -529,7 +530,7 @@ func getReadBucketCloserForBucket(
 		)
 	}
 	logger.Debug(
-		"creating new bucket",
+		"buffetch creating new bucket",
 		zap.String("inputSubDirPath", inputSubDirPath),
 		zap.String("mapPath", mapPath),
 		zap.String("subDirPath", subDirPath),
@@ -588,7 +589,7 @@ func getReadWriteBucketForOS(
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 	// Examples:
 	//
@@ -627,9 +628,9 @@ func getReadWriteBucketForOS(
 		return nil, err
 	}
 	logger.Debug(
-		"creating new OS bucket",
+		"creating new OS bucket for controlling workspace",
 		zap.String("inputDirPath", inputDirPath),
-		zap.String("bucketPath", bucketPath),
+		zap.String("workspacePath", bucketPath),
 		zap.String("subDirPath", subDirPath),
 	)
 	return newReadWriteBucket(
@@ -685,13 +686,10 @@ func getReadBucketCloserForOSProtoFile(
 		osRootBucket,
 		// This makes the path relative to the bucket.
 		absProtoFileDirPath[1:],
-		newMultiTerminateFunc(
-			terminateFunc,
-			protoFileTerminateFunc,
-		),
+		protoFileTerminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, attemptToFixOSRootBucketPathErrors(err)
 	}
 
 	var protoTerminateFileDirPath string
@@ -707,6 +705,11 @@ func getReadBucketCloserForOSProtoFile(
 		} else {
 			protoTerminateFileDirPath = "."
 		}
+		logger.Debug(
+			"did not find enclosing module or workspace for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("defaultingToPwd", protoTerminateFileDirPath),
+		)
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
@@ -724,13 +727,15 @@ func getReadBucketCloserForOSProtoFile(
 				return nil, err
 			}
 		}
+		logger.Debug(
+			"found enclosing module or workspace for proto file ref",
+			zap.String("protoFilePath", protoFilePath),
+			zap.String("enclosingDirPath", protoTerminateFileDirPath),
+		)
 	}
-	logger.Debug(
-		"mapped protoFilePath to dirPath",
-		zap.String("protoFilePath", protoFilePath),
-		zap.String("protoTerminateFileDirPath", protoTerminateFileDirPath),
-	)
-	// Now, build a workspace bucket based on the module we found (either buf.yaml or current directory)
+	// Now, build a workspace bucket based on the directory we found.
+	// If the directory is a module directory, we'll get the enclosing workspace.
+	// If the directory is a workspace directory, this will effectively be a no-op.
 	readWriteBucket, err := getReadWriteBucketForOS(ctx, logger, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
@@ -780,51 +785,74 @@ func getMapPathAndSubDirPath(
 	if terminateFunc == nil {
 		return inputSubDirPath, ".", false, nil
 	}
-	for curPath := inputSubDirPath; curPath != "."; curPath = normalpath.Dir(curPath) {
-		terminate, err := terminateFunc(ctx, inputBucket, curPath, inputSubDirPath)
+	// We can't do this in a traditional loop like this:
+	//
+	// for curDirPath := inputSubDirPath; curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
+	//
+	// If we do that, then we don't run terminateFunc for ".", which we want to so that we get
+	// the correct value for the terminate bool.
+	//
+	// Instead, we effectively do a do-while loop.
+	curDirPath := inputSubDirPath
+	for {
+		terminate, err := terminateFunc(ctx, inputBucket, curDirPath, inputSubDirPath)
 		if err != nil {
 			return "", "", false, err
 		}
-		logger.Debug(
-			"checked terminate",
-			zap.String("curPath", curPath),
-			zap.String("inputSubDirPath", inputSubDirPath),
-			zap.Bool("terminate", terminate),
-		)
 		if terminate {
-			subDirPath, err := normalpath.Rel(curPath, inputSubDirPath)
+			logger.Debug(
+				"buffetch termination found",
+				zap.String("curDirPath", curDirPath),
+				zap.String("inputSubDirPath", inputSubDirPath),
+			)
+			subDirPath, err := normalpath.Rel(curDirPath, inputSubDirPath)
 			if err != nil {
 				return "", "", false, err
 			}
-			return curPath, subDirPath, true, nil
+			return curDirPath, subDirPath, true, nil
 		}
+		if curDirPath == "." {
+			// Do this instead. This makes this loop effectively a do-while loop.
+			break
+		}
+		curDirPath = normalpath.Dir(curDirPath)
 	}
+	logger.Debug(
+		"buffetch no termination found",
+		zap.String("inputSubDirPath", inputSubDirPath),
+	)
 	return inputSubDirPath, ".", false, nil
 }
 
-func newMultiTerminateFunc(terminateFuncs ...TerminateFunc) TerminateFunc {
-	return TerminateFunc(
-		func(
-			ctx context.Context,
-			bucket storage.ReadBucket,
-			prefix string,
-			originalSubDirPath string,
-		) (bool, error) {
-			for _, terminateFunc := range terminateFuncs {
-				if terminateFunc == nil {
-					continue
-				}
-				terminate, err := terminateFunc(ctx, bucket, prefix, originalSubDirPath)
-				if err != nil {
-					return false, err
-				}
-				if terminate {
-					return true, nil
+// We attempt to fix up paths we get back to better printing to the user.
+// Without this, we'll get things like "stat: Users/foo/path/to/input: does not exist"
+// based on our usage of osRootBucket and absProtoFileDirPath above. While we won't
+// break any contracts printing these out, this is confusing to the user, so this is
+// our attempt to fix that.
+//
+// This is going to take away other intermediate errors unfortunately.
+func attemptToFixOSRootBucketPathErrors(err error) error {
+	var pathError *fs.PathError
+	if errors.As(err, &pathError) {
+		pwd, err := osext.Getwd()
+		if err != nil {
+			return err
+		}
+		pwd = normalpath.Normalize(pwd)
+		if normalpath.EqualsOrContainsPath(pwd, "/"+pathError.Path, normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, "/"+pathError.Path)
+			// Just ignore if this errors and do nothing.
+			if err == nil {
+				// Making a copy just to be super-safe.
+				return &fs.PathError{
+					Op:   pathError.Op,
+					Path: relPath,
+					Err:  pathError.Err,
 				}
 			}
-			return false, nil
-		},
-	)
+		}
+	}
+	return err
 }
 
 type getFileOptions struct {

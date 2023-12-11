@@ -1,5 +1,4 @@
 - last commands:
-  - export
   - format
   - generate
   - push
@@ -18,7 +17,6 @@
   - bufconfig
 
 - lots of QA, especially around workspace file searching, target paths
-- figure out what to do about AllowNotExist and how it fits in
 - document behavior of file searching, config override
 - fix tamper-proofing
 - go through all todos
@@ -43,7 +41,43 @@
     - FIELD_SAME_TYPE from v1beta1 is split into 3 rules in v1: FIELD_SAME_TYPE,
       FIELD_WIRE_COMPATIBLE_TYPE, FIELD_WIRE_JSON_COMPATIBLE_TYPE.
     - Rule `FILE_SAME_PACKAGE` has been added to PACKAGE, WIRE and WIRE_JSON in v1.
+- Un-skip relevant tests in generate_test.go and generate_unix_test.go, when
+  - the behavior of --path and --exclude-path is updated to match what's on main
+- Debug the skipped test with proto file ref in generate_test.go
+- Use syserror when possible (especially in buf gen related code).
+- Find the right place (right way to pass a logger) to print a warning when a buf.gen.yaml with
+  non-empty managed mode but without `enabled: true`. The key is to decide where to pass the logger.
+- Fix the issue where reading a buf.lock with empty digest errors. Run `buf mod update` to reproduce.
 
 NOTE: We are not allowing cross-workspace finding for include_package_files=true
 
 - Decide whether or not excludes and ignores should be relative to module directory
+
+  // This is new post-refactor. Before, we gave precedence to --path. While a change,
+  // doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+
+- Changed protoc-gen-buf-lint and protoc-gen-buf-breaking configuration, deprecated old configurations
+- Need to manually test protoc-gen-buf-breaking
+
+NEW ALGORITHM
+
+- Take input, list<paths>, list<excluded_paths> -> suspected_workspace_bucket, list<workspace_paths>, list<workspace_exclude_paths>
+  - .git#subdir=proto --path proto/foo --path proto/bar.proto --exclude-path proto/baz -> .git, [proto/foo, proto/bar.proto] [proto/baz]
+  - work/mod --path work/mod/foo --path work/mod/bar.proto -> wor, [mod/foo, mod/bar.proto]
+  - Treat subdir like any other filter path, deduplicate them
+  - Treat a dirRef input path like any other filter path on "/", deduplicate them
+  - So that is, if workspace is at .. and you pass buf build foo --path foo/bar --path foo/baz, you get .. -> foo/bar, foo/baz
+  - Validate that paths fall within the suspected workspace bucket
+  - Validate no workspace_exclude_path equals or contains a workspace_path
+- Take suspected_workspace_paths, find controlling module or workspace if exists -> potential_module_dir_paths
+  - controlling module does onto being filtered into a controlling workspace, but can live on its own?
+  - No need to special case .proto files -> they could be dirs, treat them as prefixes all the same.
+  - Controlling module is any module that doesn't exclude the workspace_path via buf.yaml excludes
+  - By default, assume directory of path if no module can be found
+- Take potential_module_dir_paths, find controlling workspace -> controlling_workspace_paths
+  - Controlling workspace is the workspace that includes the potential_module_dir_paths
+    - a directory in the module equals or contains the potential_module_dir_paths
+- Make sure len(controlling_workspace_paths) == 1
+- Take workspace_paths, assign to modules in the controlling workspace
+- Split workspace_paths into <module_path, module_target_path>
+- Take workspace_exclude_paths, use to delete module_paths, otherwise create module_target_exclude_paths

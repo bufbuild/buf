@@ -17,7 +17,7 @@ package bufsyncapi
 import (
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"go.uber.org/zap"
 )
@@ -25,7 +25,7 @@ import (
 // NewHandle returns a new bufsync.Handler that handles requests by communicating with a BSR instance.
 func NewHandler(
 	logger *zap.Logger,
-	container appflag.Container,
+	container appext.Container,
 	repo git.Repository,
 	createWithVisibility *registryv1alpha1.Visibility,
 	syncServiceClientFactory SyncServiceClientFactory,

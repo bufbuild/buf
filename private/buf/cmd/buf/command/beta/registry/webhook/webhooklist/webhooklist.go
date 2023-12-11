@@ -23,9 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -38,15 +37,15 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
 		Short: "List repository webhooks",
-		Args:  cobra.ExactArgs(0),
+		Args:  appcmd.ExactArgs(0),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -71,26 +70,26 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The owner name of the repository to list webhooks for`,
 	)
-	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
 		"The repository name to list webhooks for.",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, repositoryFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
 		"The remote of the owner and repository to list webhooks for",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)

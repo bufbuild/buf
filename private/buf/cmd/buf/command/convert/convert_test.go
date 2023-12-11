@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 func TestConvertDefaultInputBin(t *testing.T) {
@@ -401,5 +401,5 @@ func TestConvertWKTImport(t *testing.T) {
 }
 
 func testNewCommand(use string) *appcmd.Command {
-	return NewCommand("convert", appflag.NewBuilder("convert"))
+	return NewCommand("convert", appext.NewBuilder("convert"))
 }

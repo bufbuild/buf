@@ -5,9 +5,9 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
+	private/buf/bufwkt/cmd/wkt-go-data \
 	private/buf/cmd/buf-digest \
 	private/bufpkg/bufstyle/cmd/bufstyle \
-	private/bufpkg/bufwkt/cmd/wkt-go-data \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -25,7 +25,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
-	private/bufpkg/buftesting/cache/ \
+	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
@@ -54,48 +54,8 @@ CMD ?= test
 .PHONY: testbufnew
 testbufnew: installbuf
 	# TODO: remove when done with refactor
-	go $(CMD) \
-		./private/buf/bufapp/... \
-		./private/buf/bufcli/... \
-		./private/buf/bufctl/... \
-		./private/buf/bufcurl/... \
-		./private/buf/buffetch/... \
-		./private/buf/bufformat/... \
-		./private/buf/bufprint/... \
-		./private/buf/bufmigrate/... \
-		./private/buf/bufworkspace/... \
-		./private/buf/cmd/buf/command/alpha/package/... \
-		./private/buf/cmd/buf/command/alpha/protoc/... \
-		./private/buf/cmd/buf/command/alpha/registry/... \
-		./private/buf/cmd/buf/command/beta/graph/... \
-		./private/buf/cmd/buf/command/beta/price/... \
-		./private/buf/cmd/buf/command/beta/registry/... \
-		./private/buf/cmd/buf/command/beta/stats/... \
-		./private/buf/cmd/buf/command/beta/studioagent/... \
-		./private/buf/cmd/buf/command/build/... \
-		./private/buf/cmd/buf/command/breaking/... \
-		./private/buf/cmd/buf/command/convert/... \
-		./private/buf/cmd/buf/command/lint/... \
-		./private/buf/cmd/buf/command/lsfiles/... \
-		./private/buf/cmd/buf/command/mod/... \
-		./private/buf/cmd/buf/command/registry/... \
-		./private/buf/cmd/buf-digest/... \
-		./private/bufpkg/bufanalysis/... \
-		./private/bufpkg/bufapi/... \
-		./private/bufpkg/bufcas/... \
-		./private/bufpkg/bufcheck/... \
-		./private/bufpkg/bufconfig/... \
-		./private/bufpkg/bufconnect/... \
-		./private/bufpkg/bufimage/... \
-		./private/bufpkg/bufplugin/... \
-		./private/bufpkg/bufpluginexec/... \
-		./private/bufpkg/bufreflect/... \
-		./private/bufpkg/bufremoteplugin/... \
-		./private/bufpkg/bufstudioagent/... \
-		./private/bufpkg/bufstyle/... \
-		./private/bufpkg/buftesting/... \
-		./private/bufpkg/buftransport/... \
-		./private/bufpkg/bufwasm/...
+	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
+	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/bufsync | grep -v buf\/command\/format | grep -v command\/alpha\/repo\/reposync | grep -v bufwkt\/cmd\/wkt-go-data)
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 

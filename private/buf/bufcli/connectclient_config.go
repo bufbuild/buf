@@ -20,8 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
@@ -30,7 +29,7 @@ import (
 // NewConnectClientConfig creates a new connect.ClientConfig which uses a token reader to look
 // up the token in the container or in netrc based on the address of each individual client.
 // It is then set in the header of all outgoing requests from clients created using this config.
-func NewConnectClientConfig(container appflag.Container) (*connectclient.Config, error) {
+func NewConnectClientConfig(container appext.Container) (*connectclient.Config, error) {
 	envTokenProvider, err := bufconnect.NewTokenProviderFromContainer(container)
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func NewConnectClientConfig(container appflag.Container) (*connectclient.Config,
 
 // NewConnectClientConfigWithToken creates a new connect.ClientConfig with a given token. The provided token is
 // set in the header of all outgoing requests from this provider
-func NewConnectClientConfigWithToken(container appflag.Container, token string) (*connectclient.Config, error) {
+func NewConnectClientConfigWithToken(container appext.Container, token string) (*connectclient.Config, error) {
 	tokenProvider, err := bufconnect.NewTokenProviderFromString(token)
 	if err != nil {
 		return nil, err
@@ -60,7 +59,7 @@ func NewConnectClientConfigWithToken(container appflag.Container, token string) 
 }
 
 // Returns a registry provider with the given options applied in addition to default ones for all providers
-func newConnectClientConfigWithOptions(container appflag.Container, opts ...connectclient.ConfigOption) (*connectclient.Config, error) {
+func newConnectClientConfigWithOptions(container appext.Container, opts ...connectclient.ConfigOption) (*connectclient.Config, error) {
 	config, err := newConfig(container)
 	if err != nil {
 		return nil, err
@@ -85,9 +84,9 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 }
 
 // newConfig creates a new Config.
-func newConfig(container appflag.Container) (*bufapp.Config, error) {
+func newConfig(container appext.Container) (*bufapp.Config, error) {
 	externalConfig := bufapp.ExternalConfig{}
-	if err := appname.ReadConfig(container, &externalConfig); err != nil {
+	if err := appext.ReadConfig(container, &externalConfig); err != nil {
 		return nil, err
 	}
 	return bufapp.NewConfig(container, externalConfig)

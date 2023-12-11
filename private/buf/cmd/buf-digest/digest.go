@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
@@ -36,10 +36,10 @@ func main() {
 }
 
 func newCommand() *appcmd.Command {
-	builder := appflag.NewBuilder(
+	builder := appext.NewBuilder(
 		name,
-		appflag.BuilderWithTimeout(120*time.Second),
-		appflag.BuilderWithTracing(),
+		appext.BuilderWithTimeout(120*time.Second),
+		appext.BuilderWithTracing(),
 	)
 	flags := newFlags()
 	return &appcmd.Command{
@@ -49,7 +49,7 @@ func newCommand() *appcmd.Command {
 The modules given must be self-contained, i.e. all dependencies must be represented.
 This is not intended to be used outside of development of the buf codebase.`,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -68,14 +68,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	dirPaths := app.Args(container)
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, container.Logger(), bufmodule.NopModuleDataProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {
 		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)

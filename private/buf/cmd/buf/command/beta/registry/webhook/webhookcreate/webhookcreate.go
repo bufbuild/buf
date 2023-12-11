@@ -24,9 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -41,15 +40,15 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Create a repository webhook",
-		Args:  cobra.ExactArgs(0),
+		Args:  appcmd.ExactArgs(0),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -76,40 +75,40 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The event type to create a webhook for. The proto enum string value is used for this input (e.g. 'WEBHOOK_EVENT_REPOSITORY_PUSH')",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, webhookEventFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, webhookEventFlagName)
 	flagSet.StringVar(
 		&f.OwnerName,
 		ownerFlagName,
 		"",
 		`The owner name of the repository to create a webhook for`,
 	)
-	_ = cobra.MarkFlagRequired(flagSet, ownerFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, ownerFlagName)
 	flagSet.StringVar(
 		&f.RepositoryName,
 		repositoryFlagName,
 		"",
 		"The repository name to create a webhook for",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, repositoryFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, repositoryFlagName)
 	flagSet.StringVar(
 		&f.CallbackURL,
 		callbackURLFlagName,
 		"",
 		"The url for the webhook to callback to on a given event",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, callbackURLFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, callbackURLFlagName)
 	flagSet.StringVar(
 		&f.Remote,
 		remoteFlagName,
 		"",
 		"The remote of the repository the created webhook will belong to",
 	)
-	_ = cobra.MarkFlagRequired(flagSet, remoteFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, remoteFlagName)
 }
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)

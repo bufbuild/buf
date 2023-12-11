@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package appcmdtesting contains test utilities for appcmd.
 package appcmdtesting
 
 import (
@@ -25,6 +26,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -132,7 +134,7 @@ func RunCommandExitCodeStderrContains(
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
 	for _, expectedPartial := range expectedStderrPartials {
-		assert.Contains(t, allStderr, expectedPartial)
+		assert.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 
@@ -231,7 +233,16 @@ func RunCommandExitCode(
 func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
 	return fmt.Sprintf(
 		"args: %s\nstdout: %s\nstderr: %s",
-		strings.Join(args, " "),
+		strings.Join(
+			slicesext.Map(
+				args,
+				// To make the args copy-pastable.
+				func(arg string) string {
+					return `'` + arg + `'`
+				},
+			),
+			" ",
+		),
 		stringutil.TrimLines(stdout.String()),
 		stringutil.TrimLines(stderr.String()),
 	)

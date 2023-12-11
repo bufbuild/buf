@@ -15,7 +15,10 @@
 // Package slicesext provides extra functionality on top of the slices package.
 package slicesext
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
 //
@@ -166,6 +169,52 @@ func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K]V {
 	return m
 }
 
+// ToValuesMapError transforms the input slice into a map from f(V) -> V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// Duplicate values of type K will result in a single map entry.
+//
+// Returns error the first time f returns error.
+func ToValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K]V, error) {
+	var zero K
+	m := make(map[K]V)
+	for _, v := range s {
+		k, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if k != zero {
+			m[k] = v
+		}
+	}
+	return m, nil
+}
+
+// ToUniqueValuesMapError transforms the input slice into a map from f(V) -> V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// Duplicate values of type K will result in an error.
+// Otherwise returns error the first time f returns error.
+func ToUniqueValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K]V, error) {
+	var zero K
+	m := make(map[K]V)
+	for _, v := range s {
+		k, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if k != zero {
+			if _, ok := m[k]; ok {
+				return nil, fmt.Errorf("key %v is duplicated", k)
+			}
+			m[k] = v
+		}
+	}
+	return m, nil
+}
+
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.
 func MapKeysToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
 	s := MapKeysToSlice(m)
@@ -185,6 +234,22 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 	for k := range m {
 		s = append(s, k)
 	}
+	return s
+}
+
+// MapValuesToSlice converts the map's values to a sorted slice.
+//
+// Duplicate values will be added. This should generally be used
+// in cases where you know there is a 1-1 mapping from K to V.
+func MapValuesToSortedSlice[K comparable, V Ordered](m map[K]V) []V {
+	s := MapValuesToSlice(m)
+	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	sort.Slice(
+		s,
+		func(i int, j int) bool {
+			return s[i] < s[j]
+		},
+	)
 	return s
 }
 

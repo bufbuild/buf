@@ -96,7 +96,7 @@ func GetBufLockFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufLockFileNames)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufLockFileNames, false, 0)
 }
 
 // PutBufLockFileForPrefix puts the buf.lock file at the given bucket prefix.
@@ -176,7 +176,8 @@ func readBufLockFile(
 	if err != nil {
 		return nil, err
 	}
-	fileVersion, err := getFileVersionForData(data, allowJSON)
+	// We have allowed buf.locks to not have file versions historically. Why we did this, I do not know.
+	fileVersion, err := getFileVersionForData(data, allowJSON, false, 0)
 	if err != nil {
 		return nil, err
 	}

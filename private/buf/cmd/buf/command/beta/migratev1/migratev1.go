@@ -19,9 +19,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -35,7 +34,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.SubCommandBuilder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -45,9 +44,9 @@ func NewCommand(
 		Long: `Migrate any v1 and v1beta1 configuration files in the directory to the latest version.
 Defaults to the current directory if not specified.`,
 		// TODO: update if we are taking a directory as input
-		Args: cobra.MaximumNArgs(0),
+		Args: appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -88,7 +87,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	var migrateOptions []bufmigrate.MigrateOption

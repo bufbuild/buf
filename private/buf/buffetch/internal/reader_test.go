@@ -43,7 +43,7 @@ func TestGetReadBucketCloserTerminateFileName(t *testing.T) {
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -83,7 +83,7 @@ func TestGetReadBucketCloserForBucketAbs(t *testing.T) {
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -117,7 +117,7 @@ func TestGetReadWriteBucketForOSTerminateFileName(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
@@ -148,7 +148,7 @@ func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
@@ -181,7 +181,7 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five"),
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
@@ -193,7 +193,7 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/buf.work.yaml"), fileInfo.ExternalPath())
 }
 
-func TestGetReadBucketCloserForOSProtoFileNoTerminateFileName(t *testing.T) {
+func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
@@ -202,7 +202,7 @@ func TestGetReadBucketCloserForOSProtoFileNoTerminateFileName(t *testing.T) {
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
 		nil,
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -220,8 +220,8 @@ func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -253,8 +253,8 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -288,8 +288,8 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/proto/foo.proto"),
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -310,8 +310,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -340,8 +340,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
@@ -376,8 +376,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"),
-		NewTerminateAtFileNamesFunc("buf.work.yaml"),
-		NewTerminateAtFileNamesFunc("buf.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
+		testNewTerminateAtFileNamesFunc("buf.yaml", "buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
@@ -388,4 +388,22 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/buf.work.yaml"), fileInfo.ExternalPath())
 	require.NoError(t, readBucketCloser.Close())
+}
+
+func testNewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
+	return TerminateFunc(
+		func(
+			ctx context.Context,
+			bucket storage.ReadBucket,
+			prefix string,
+			originalSubDirPath string,
+		) (bool, error) {
+			for _, terminateFileName := range terminateFileNames {
+				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {
+					return true, nil
+				}
+			}
+			return false, nil
+		},
+	)
 }

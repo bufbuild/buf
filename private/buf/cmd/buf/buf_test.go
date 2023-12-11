@@ -16,7 +16,6 @@ package buf
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -29,8 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
@@ -272,7 +269,11 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+		// Note: `were in directory "buf"` was changed to `were in directory "testdata/fail/buf"`
+		// during the refactor. This is actually more correct - pre-refactor, the CLI was acting
+		// as if the buf.yaml at testdata/fail/buf.yaml mattered in some way. In fact, it doesn't -
+		// you've said that you have overridden it entirely.
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "testdata/fail/buf".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
@@ -348,7 +349,7 @@ func TestFail11(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:read buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+		fmt.Sprintf("%v:5:8:stat buf/buf.proto: file does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -1192,8 +1193,6 @@ breaking:
 
 func TestExportProto(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1219,8 +1218,6 @@ func TestExportProto(t *testing.T) {
 
 func TestExportOtherProto(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1246,8 +1243,6 @@ func TestExportOtherProto(t *testing.T) {
 
 func TestExportAll(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1274,8 +1269,6 @@ func TestExportAll(t *testing.T) {
 
 func TestExportExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1366,8 +1359,6 @@ func TestExportPathsAndExcludes(t *testing.T) {
 
 func TestExportProtoFileRef(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1392,8 +1383,6 @@ func TestExportProtoFileRef(t *testing.T) {
 
 func TestExportProtoFileRefExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1418,8 +1407,6 @@ func TestExportProtoFileRefExcludeImports(t *testing.T) {
 
 func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1445,8 +1432,6 @@ func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
 
 func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1472,8 +1457,6 @@ func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 
 func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1493,7 +1476,21 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 func TestBuildWithPaths(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
-	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3", "foo"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3"))
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		"build",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+	)
 }
 
 func TestLintWithPaths(t *testing.T) {
@@ -1514,11 +1511,11 @@ func TestLintWithPaths(t *testing.T) {
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
-		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(
-			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
-testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
+		1,
 		"",
+		// This is new post-refactor. Before, we gave precedence to --path. While a change,
+		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
 		"lint",
 		filepath.Join("testdata", "paths"),
 		"--path",
@@ -1564,207 +1561,6 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")
-}
-
-func TestMigrateV1Beta1(t *testing.T) {
-	t.Parallel()
-	// TODO
-	t.Skip("TODO")
-	storageosProvider := storageos.NewProvider()
-	runner := command.NewRunner()
-
-	// These test cases are ordered alphabetically to align with the folders in testadata.
-	t.Run("buf-gen-yaml-without-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"buf-gen-yaml-without-version",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("buf-yaml-without-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"buf-yaml-without-version",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("complex", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"complex",
-			`The ignored file "file3.proto" was not found in any roots and has been removed.
-Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
-		)
-	})
-	t.Run("deps-without-name", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"deps-without-name",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("flat-deps-without-name", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"flat-deps-without-name",
-			"Successfully migrated your buf.yaml and buf.lock to v1.",
-		)
-	})
-	t.Run("lock-file-without-deps", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"lock-file-without-deps",
-			`Successfully migrated your buf.yaml and buf.lock to v1.`,
-		)
-	})
-	t.Run("nested-folder", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"nested-folder",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("nested-root", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"nested-root",
-			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("no-deps", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"no-deps",
-			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("noop", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"noop",
-			"",
-		)
-	})
-	t.Run("only-buf-gen-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-gen-yaml",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("only-buf-lock", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-lock",
-			"Successfully migrated your buf.lock to v1.",
-		)
-	})
-	t.Run("only-buf-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-buf-yaml",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("only-old-buf-gen-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-gen-yaml",
-			"Successfully migrated your buf.gen.yaml to v1.",
-		)
-	})
-	t.Run("only-old-buf-lock", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-lock",
-			`Successfully migrated your buf.lock to v1.`,
-		)
-	})
-	t.Run("only-old-buf-yaml", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"only-old-buf-yaml",
-			"Successfully migrated your buf.yaml to v1.",
-		)
-	})
-	t.Run("simple", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"simple",
-			"Successfully migrated your buf.yaml, buf.gen.yaml, and buf.lock to v1.",
-		)
-	})
-	t.Run("v1beta1-lock-file", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Diff(
-			t,
-			storageosProvider,
-			runner,
-			"v1beta1-lock-file",
-			`Successfully migrated your buf.yaml and buf.lock to v1.`,
-		)
-	})
-
-	t.Run("fails-on-invalid-version", func(t *testing.T) {
-		t.Parallel()
-		testMigrateV1Beta1Failure(
-			t,
-			storageosProvider,
-			"invalid-version",
-			`failed to migrate config: unknown config file version: spaghetti`,
-		)
-	})
 }
 
 func TestConvertWithImage(t *testing.T) {
@@ -2506,55 +2302,6 @@ func TestConvertRoundTrip(t *testing.T) {
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
 	})
-}
-
-func testMigrateV1Beta1Diff(
-	t *testing.T,
-	storageosProvider storageos.Provider,
-	runner command.Runner,
-	scenario string,
-	expectedStderr string,
-) {
-	// Copy test setup to temporary directory to avoid writing to filesystem
-	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
-	require.NoError(t, err)
-	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
-
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		0,
-		"",
-		expectedStderr,
-		"beta",
-		"migrate-v1beta1",
-		tempDir,
-	)
-
-	expectedOutputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "output"))
-	require.NoError(t, err)
-
-	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutputBucket, readWriteBucket)
-	require.NoError(t, err)
-	require.Empty(t, string(diff))
-}
-
-func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
-	// Copy test setup to temporary directory to avoid writing to filesystem
-	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "failure", scenario))
-	require.NoError(t, err)
-	tempDir, _ := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
-
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		1,
-		"",
-		expectedStderr,
-		"beta",
-		"migrate-v1beta1",
-		tempDir,
-	)
 }
 
 func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {

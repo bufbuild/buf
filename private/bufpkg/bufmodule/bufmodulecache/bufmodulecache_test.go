@@ -6,7 +6,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -24,8 +24,8 @@ func TestCacheBasicTar(t *testing.T) {
 func testCacheBasic(t *testing.T, tar bool) {
 	ctx := context.Background()
 
-	bsrProvider, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/mod1",
 			PathToData: map[string][]byte{
 				"mod1.proto": []byte(
@@ -33,7 +33,7 @@ func testCacheBasic(t *testing.T, tar bool) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/mod2",
 			PathToData: map[string][]byte{
 				"mod2.proto": []byte(
@@ -41,7 +41,7 @@ func testCacheBasic(t *testing.T, tar bool) {
 				),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/foo/mod3",
 			PathToData: map[string][]byte{
 				"mod3.proto": []byte(
@@ -62,6 +62,7 @@ func testCacheBasic(t *testing.T, tar bool) {
 		zap.NewNop(),
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
+			zap.NewNop(),
 			storagemem.NewReadWriteBucket(),
 			moduleDataStoreOptions...,
 		),

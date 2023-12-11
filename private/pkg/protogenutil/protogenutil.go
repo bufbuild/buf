@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package protogenutil provides support for protoc plugin development with the
-// appproto and protogen packages.
+// protoplugin and protogen packages.
 package protogenutil
 
 import (
@@ -24,23 +24,23 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// NewHandler returns a new appproto.Handler for the protogen.Plugin function.
-func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) appproto.Handler {
+// NewHandler returns a new protoplugin.Handler for the protogen.Plugin function.
+func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) protoplugin.Handler {
 	handlerOptions := newHandlerOptions()
 	for _, option := range options {
 		option(handlerOptions)
 	}
-	return appproto.HandlerFunc(
+	return protoplugin.HandlerFunc(
 		func(
 			ctx context.Context,
 			container app.EnvStderrContainer,
-			responseWriter appproto.ResponseBuilder,
+			responseWriter protoplugin.ResponseBuilder,
 			request *pluginpb.CodeGeneratorRequest,
 		) error {
 			plugin, err := protogen.Options{
@@ -73,7 +73,7 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) apppro
 // NewFileHandler returns a newHandler for the protogen file function.
 //
 // This will invoke f with every file marked for generation.
-func NewFileHandler(f func(*protogen.Plugin, []*protogen.File) error, options ...HandlerOption) appproto.Handler {
+func NewFileHandler(f func(*protogen.Plugin, []*protogen.File) error, options ...HandlerOption) protoplugin.Handler {
 	return NewHandler(
 		func(plugin *protogen.Plugin) error {
 			generateFiles := make([]*protogen.File, 0, len(plugin.Files))
@@ -97,7 +97,7 @@ func NewFileHandler(f func(*protogen.Plugin, []*protogen.File) error, options ..
 // NewPerFileHandler returns a newHandler for the protogen per-file function.
 //
 // This will invoke f for every file marked for generation.
-func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options ...HandlerOption) appproto.Handler {
+func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options ...HandlerOption) protoplugin.Handler {
 	return NewFileHandler(
 		func(plugin *protogen.Plugin, files []*protogen.File) error {
 			for _, file := range files {
@@ -117,7 +117,7 @@ func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options .
 // the same directory also have the same go package and go import path.
 //
 // This will invoke f with every file marked for generation.
-func NewGoPackageHandler(f func(*protogen.Plugin, []*GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
+func NewGoPackageHandler(f func(*protogen.Plugin, []*GoPackageFileSet) error, options ...HandlerOption) protoplugin.Handler {
 	return NewHandler(
 		func(plugin *protogen.Plugin) error {
 			generatedDirToGoPackageFileSet := make(map[string]*GoPackageFileSet)
@@ -184,7 +184,7 @@ func NewGoPackageHandler(f func(*protogen.Plugin, []*GoPackageFileSet) error, op
 // the same directory also have the same go package and go import path.
 //
 // This will invoke f for every file marked for generation.
-func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
+func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, options ...HandlerOption) protoplugin.Handler {
 	return NewGoPackageHandler(
 		func(plugin *protogen.Plugin, goPackageFileSets []*GoPackageFileSet) error {
 			for _, goPackageFileSet := range goPackageFileSets {
@@ -296,7 +296,7 @@ type NamedHelper interface {
 }
 
 // NewNamedFileHandler returns a new file handler for a named plugin.
-func NewNamedFileHandler(f func(NamedHelper, *protogen.Plugin, []*protogen.File) error) appproto.Handler {
+func NewNamedFileHandler(f func(NamedHelper, *protogen.Plugin, []*protogen.File) error) protoplugin.Handler {
 	namedHelper := newNamedHelper()
 	return NewFileHandler(
 		func(plugin *protogen.Plugin, files []*protogen.File) error {
@@ -309,7 +309,7 @@ func NewNamedFileHandler(f func(NamedHelper, *protogen.Plugin, []*protogen.File)
 }
 
 // NewNamedPerFileHandler returns a new per-file handler for a named plugin.
-func NewNamedPerFileHandler(f func(NamedHelper, *protogen.Plugin, *protogen.File) error) appproto.Handler {
+func NewNamedPerFileHandler(f func(NamedHelper, *protogen.Plugin, *protogen.File) error) protoplugin.Handler {
 	namedHelper := newNamedHelper()
 	return NewPerFileHandler(
 		func(plugin *protogen.Plugin, file *protogen.File) error {
@@ -322,7 +322,7 @@ func NewNamedPerFileHandler(f func(NamedHelper, *protogen.Plugin, *protogen.File
 }
 
 // NewNamedGoPackageHandler returns a new go package handler for a named plugin.
-func NewNamedGoPackageHandler(f func(NamedHelper, *protogen.Plugin, []*GoPackageFileSet) error) appproto.Handler {
+func NewNamedGoPackageHandler(f func(NamedHelper, *protogen.Plugin, []*GoPackageFileSet) error) protoplugin.Handler {
 	namedHelper := newNamedHelper()
 	return NewGoPackageHandler(
 		func(plugin *protogen.Plugin, goPackageFileSets []*GoPackageFileSet) error {
@@ -335,7 +335,7 @@ func NewNamedGoPackageHandler(f func(NamedHelper, *protogen.Plugin, []*GoPackage
 }
 
 // NewNamedPerGoPackageHandler returns a new per-go-package handler for a named plugin.
-func NewNamedPerGoPackageHandler(f func(NamedHelper, *protogen.Plugin, *GoPackageFileSet) error) appproto.Handler {
+func NewNamedPerGoPackageHandler(f func(NamedHelper, *protogen.Plugin, *GoPackageFileSet) error) protoplugin.Handler {
 	namedHelper := newNamedHelper()
 	return NewPerGoPackageHandler(
 		func(plugin *protogen.Plugin, goPackageFileSet *GoPackageFileSet) error {

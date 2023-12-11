@@ -53,7 +53,7 @@ func newModuleDataProvider(
 	store bufmodulestore.ModuleDataStore,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
-		logger:   logger.Named("bufmodulecache"),
+		logger:   logger,
 		delegate: delegate,
 		store:    store,
 	}
@@ -74,7 +74,7 @@ func (p *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 	for i, cachedOptionalModuleData := range cachedOptionalModuleDatas {
 		if err := p.logDebugModuleKey(
 			moduleKeys[i],
-			"get",
+			"module cache get",
 			zap.Bool("found", cachedOptionalModuleData.Found()),
 		); err != nil {
 			return nil, err

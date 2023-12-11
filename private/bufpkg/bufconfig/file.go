@@ -17,7 +17,6 @@ package bufconfig
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 
@@ -76,6 +75,8 @@ func getFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 	fileNames []*fileName,
+	fileVersionRequired bool,
+	suggestedFileVersion FileVersion,
 ) (FileVersion, error) {
 	for _, fileName := range fileNames {
 		path := normalpath.Join(prefix, fileName.Name())
@@ -86,7 +87,7 @@ func getFileVersionForPrefix(
 			}
 			return 0, err
 		}
-		fileVersion, err := getFileVersionForData(data, false)
+		fileVersion, err := getFileVersionForData(data, false, fileVersionRequired, suggestedFileVersion)
 		if err != nil {
 			return 0, newDecodeError(path, err)
 		}
@@ -154,12 +155,14 @@ func writeFile[F File](
 func getFileVersionForData(
 	data []byte,
 	allowJSON bool,
+	fileVersionRequired bool,
+	suggestedFileVersion FileVersion,
 ) (FileVersion, error) {
 	var externalFileVersion externalFileVersion
 	if err := getUnmarshalNonStrict(allowJSON)(data, &externalFileVersion); err != nil {
 		return 0, err
 	}
-	return parseFileVersion(externalFileVersion.Version)
+	return parseFileVersion(externalFileVersion.Version, fileVersionRequired, suggestedFileVersion)
 }
 
 func getUnmarshalStrict(allowJSON bool) func([]byte, interface{}) error {
@@ -177,9 +180,11 @@ func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
 }
 
 func newDecodeError(fileIdentifier string, err error) error {
-	return fmt.Errorf("failed to decode %s: %w", fileIdentifier, err)
+	// We intercept PathErrors in buffetch to deal with fixing of paths.
+	return &fs.PathError{Op: "decode", Path: fileIdentifier, Err: err}
 }
 
 func newEncodeError(fileIdentifier string, err error) error {
-	return fmt.Errorf("failed to encode %s: %w", fileIdentifier, err)
+	// We intercept PathErrors in buffetch to deal with fixing of paths.
+	return &fs.PathError{Op: "encode", Path: fileIdentifier, Err: err}
 }

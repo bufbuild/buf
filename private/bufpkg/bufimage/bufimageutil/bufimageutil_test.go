@@ -24,10 +24,11 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletest"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
@@ -162,7 +163,7 @@ func TestSourceCodeInfo(t *testing.T) {
 func TestTransitivePublic(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	moduleSet, err := bufmoduletest.NewModuleSetForPathToData(
+	moduleSet, err := bufmoduletesting.NewModuleSetForPathToData(
 		map[string][]byte{
 			"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
 			"b.proto": []byte(`syntax = "proto3";package b;import public "a.proto";message Bar {}`),
@@ -172,6 +173,7 @@ func TestTransitivePublic(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -189,14 +191,14 @@ func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	moduleSet, err := bufmoduletest.NewOmniProvider(
-		bufmoduletest.ModuleData{
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/repo/main",
 			PathToData: map[string][]byte{
 				"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
 			},
 		},
-		bufmoduletest.ModuleData{
+		bufmoduletesting.ModuleData{
 			Name: "buf.build/repo/dep",
 			PathToData: map[string][]byte{
 				"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
@@ -207,6 +209,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
@@ -236,12 +239,13 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	if err != nil {
 		return nil, nil, err
 	}
-	moduleSet, err := bufmoduletest.NewModuleSetForBucket(bucket)
+	moduleSet, err := bufmoduletesting.NewModuleSetForBucket(bucket)
 	if err != nil {
 		return nil, nil, err
 	}
 	image, analysis, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)

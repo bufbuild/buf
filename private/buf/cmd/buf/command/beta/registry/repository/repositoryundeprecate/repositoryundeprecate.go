@@ -24,23 +24,22 @@ import (
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/spf13/cobra"
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.SubCommandBuilder) *appcmd.Command {
+func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Undeprecate a BSR repository",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run:   builder.NewRunFunc(run),
 	}
 }
 
-func run(ctx context.Context, container appflag.Container) error {
+func run(ctx context.Context, container appext.Container) error {
 	bufcli.WarnBetaCommand(ctx, container)
 	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {

@@ -157,8 +157,8 @@ func (a *reader) GetSourceReadBucketCloser(
 	if !getBucketOptions.noSearch {
 		internalGetBucketOptions = append(
 			internalGetBucketOptions,
-			internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
-			internal.WithGetBucketProtoFileTerminateFunc(bufconfig.PrefixContainsModuleFile),
+			internal.WithGetBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
+			internal.WithGetBucketProtoFileTerminateFunc(bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef),
 		)
 	}
 	return a.internalReader.GetReadBucketCloser(
@@ -183,7 +183,7 @@ func (a *reader) GetDirReadWriteBucket(
 	if !getBucketOptions.noSearch {
 		internalGetBucketOptions = append(
 			internalGetBucketOptions,
-			internal.WithGetBucketTerminateFunc(bufconfig.PrefixContainsWorkspaceFile),
+			internal.WithGetBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
 		// DirRefs are never ProtoFileRefs, so no need to providr WithGetBucketProtoFileTerminateFunc.
 		)
 	}

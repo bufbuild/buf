@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -613,6 +614,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 46, 5, 46, 47, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 50, 5, 50, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 53, 5, 53, 50, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 56, 41, 56, 80, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
@@ -640,6 +642,7 @@ func TestRunProtovalidate(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 49, 28, 49, 71, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 51, 38, 51, 92, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 53, 26, 53, 74, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 55, 42, 55, 76, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 31, 5, 31, 46, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 36, 5, 36, 44, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 41, 5, 41, 44, "PROTOVALIDATE"),
@@ -1106,6 +1109,8 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
+		zap.NewNop(),
+		tracing.NopTracer,
 		readWriteBucket,
 		bufmodule.NopModuleDataProvider,
 	)
@@ -1113,6 +1118,7 @@ func testLintWithOptions(
 
 	image, fileAnnotations, err := bufimage.BuildImage(
 		ctx,
+		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
@@ -1127,7 +1133,7 @@ func testLintWithOptions(
 	}
 	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop())
+	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
 	fileAnnotations, err = handler.Check(
 		ctx,
 		lintConfig,

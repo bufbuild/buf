@@ -22,10 +22,10 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/stretchr/testify/require"
@@ -240,11 +240,11 @@ func testRunLint(
 	runner := command.NewRunner()
 	testRunHandlerFunc(
 		t,
-		appproto.HandlerFunc(
+		protoplugin.HandlerFunc(
 			func(
 				ctx context.Context,
 				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseBuilder,
+				responseWriter protoplugin.ResponseBuilder,
 				request *pluginpb.CodeGeneratorRequest,
 			) error {
 				return handle(
@@ -270,7 +270,7 @@ func testRunLint(
 
 func testRunHandlerFunc(
 	t *testing.T,
-	handler appproto.Handler,
+	handler protoplugin.Handler,
 	request *pluginpb.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
@@ -282,7 +282,7 @@ func testRunHandlerFunc(
 	stderr := bytes.NewBuffer(nil)
 
 	exitCode := app.GetExitCode(
-		appproto.Run(
+		protoplugin.Run(
 			context.Background(),
 			app.NewContainer(
 				nil,

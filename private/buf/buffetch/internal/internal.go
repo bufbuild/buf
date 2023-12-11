@@ -16,14 +16,16 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -83,6 +85,20 @@ type ArchiveType int
 
 // CompressionType is a compression type.
 type CompressionType int
+
+// String implements fmt.Stringer
+func (c CompressionType) String() string {
+	switch c {
+	case CompressionTypeNone:
+		return "none"
+	case CompressionTypeGzip:
+		return "gzip"
+	case CompressionTypeZstd:
+		return "zstd"
+	default:
+		return strconv.Itoa(int(c))
+	}
+}
 
 // Ref is a reference.
 type Ref interface {
@@ -361,6 +377,12 @@ type RefParser interface {
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
 	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
+	// GetParsedRefForInputConfig gets the ParsedRef for the input config.
+	//
+	// The returned ParsedRef will be either a ParsedSingleRef, ParsedArchiveRef, ParsedDirRef, ParsedGitRef, or ParsedModuleRef.
+	//
+	// The options should be used to validate that you are getting one of the correct formats.
+	GetParsedRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.
@@ -764,12 +786,9 @@ type GetBucketOption func(*getBucketOptions)
 // potentially terminate the search for the workspace file. This will result in the
 // given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
-// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
-// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
-// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
-//
-// See NewTerminateAtFileNamesFunc as an example that would work in the pre-buf.yaml-v2 world
-// where we just wanted to terminate at file names buf.work.yaml, buf.work.
+// See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
+// This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
+// to find the controlling workspace of an enclosing module or workspace.
 func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFunc = terminateFunc
@@ -777,10 +796,11 @@ func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
 }
 
 // WithGetBucketProtoFileTerminateFunc is like WithGetBucketTerminateFunc, but determines
-// where to stop searching when given a ProtoFileRef, to determine what prefix is the enclosing
-// module.
+// where to stop searching for the enclosing module or workspace when given a ProtoFileRef.
 //
-// In pre-buf.yaml-v2 world, this would be NewTerminateAtFilesNamesFunc("buf.yaml", "buf.mod").
+// See bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef, which is the only thing that uses this.
+// This finds the enclosing module or workspace.
+// This is only used for ProtoFileRefs.
 func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.protoFileTerminateFunc = protoFileTerminateFunc
@@ -793,41 +813,12 @@ func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) G
 // the prefix should be where the bucket is mapped onto.
 //
 // The original subDirPath is also given to the TerminateFunc.
-//
-// Example of how this is used: check the prefix for buf.work.yaml, if there is a buf.work.yaml,
-// read it and check if normalpath.Rel(prefix, subDirPath) is a directory within the buf.work.yaml.
-// If so, then we have a buf.work.yaml that references our original subDirPath, and we terminate.
-//
-// See with WithGetBucketTerminateFunc more documentation.
 type TerminateFunc func(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
 	originalSubDirPath string,
 ) (terminate bool, err error)
-
-// NewTerminateAtFileNamesFunc returns a new terminate function that terminates at the
-// given file names.
-//
-// This is mostly left here as an example and for simple testing. Our actual logic takes
-// the version of configs into account.
-func NewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
-	return TerminateFunc(
-		func(
-			ctx context.Context,
-			bucket storage.ReadBucket,
-			prefix string,
-			originalSubDirPath string,
-		) (bool, error) {
-			for _, terminateFileName := range terminateFileNames {
-				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {
-					return true, nil
-				}
-			}
-			return false, nil
-		},
-	)
-}
 
 // PutFileOption is a PutFile option.
 type PutFileOption func(*putFileOptions)
@@ -841,3 +832,62 @@ func WithPutFileNoFileCompression() PutFileOption {
 
 // GetModuleOption is a GetModule option.
 type GetModuleOption func(*getModuleOptions)
+
+// GetInputConfigForRef returns the input config for the ref. A string is also
+// passed because if the ref is a git ref, it would only have a git.Name, instead
+// of a git branch, a git ref and a git tag. Therefore the original string is passed.
+func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
+	_, options, err := getRawPathAndOptions(value)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case ArchiveRef:
+		switch t.ArchiveType() {
+		case ArchiveTypeZip:
+			return bufconfig.NewZipArchiveInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.StripComponents(),
+			)
+		case ArchiveTypeTar:
+			return bufconfig.NewTarballInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.CompressionType().String(),
+				t.StripComponents(),
+			)
+		default:
+			return nil, fmt.Errorf("invalid archive type: %v", t.ArchiveType())
+		}
+	case DirRef:
+		return bufconfig.NewDirectoryInputConfig(
+			t.Path(),
+		)
+	case ModuleRef:
+		return bufconfig.NewModuleInputConfig(
+			t.ModuleRef().String(),
+		)
+	case ProtoFileRef:
+		return bufconfig.NewProtoFileInputConfig(
+			t.Path(),
+			t.IncludePackageFiles(),
+		)
+	case GitRef:
+		return bufconfig.NewGitRepoInputConfig(
+			t.Path(),
+			t.SubDirPath(),
+			options["branch"],
+			options["tag"],
+			options["ref"],
+			toPointer(t.Depth()),
+			t.RecurseSubmodules(),
+		)
+	default:
+		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
+	}
+}
+
+func toPointer[T any](value T) *T {
+	return &value
+}

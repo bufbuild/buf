@@ -14,57 +14,133 @@
 
 package bufconfig
 
-// GenerateConfig is a generation configuration.
-//
-// TODO
-type GenerateConfig interface {
-	GeneratePluginConfigs() []GeneratePluginConfig
-	// may be nil
-	GenerateManagedConfig() GenerateManagedConfig
-	// may be empty
-	// will always be empty in v2
-	// TODO: we may need a way to attach inputs to make this consistent, but
-	// can deal with that for v2.
-	//GenerateInputConfigs() []GenerateInputConfig
+import (
+	"errors"
 
-	// may be nil
-	// will always be nil in v2
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+)
+
+// GenerateConfig is a generation configuration.
+type GenerateConfig interface {
+	// GeneratePluginConfigs returns the plugin configurations. This will always be
+	// non-empty. Zero plugin configs will cause an error at construction time.
+	GeneratePluginConfigs() []GeneratePluginConfig
+	// GenerateManagedConfig returns the managed mode configuration.
+	// This may will never be nil.
+	GenerateManagedConfig() GenerateManagedConfig
+	// GenerateTypeConfig returns the types to generate code for. This overrides other type
+	// filters from input configurations, which exist in v2.
+	// This will always be nil in v2
 	GenerateTypeConfig() GenerateTypeConfig
+
 	isGenerateConfig()
 }
 
-type GeneratePluginConfig interface {
-	Plugin() string
-	Revision() int
-	Out() string
-	// TODO define enum in same pattern as FileVersion
-	// GenerateStrategy() GenerateStrategy
-	// TODO finish
-	// TODO: figure out what to do with TypesConfig
-	isGeneratePluginConfig()
-}
-
-type GenerateManagedConfig interface {
-	// second value is whether or not this was present
-	CCEnableArenas() (bool, bool)
-	// TODO finish
-	isGenerateManagedConfig()
-}
-
-//type GenerateInputConfig interface {
-//isGenerateInputConfig()
-//}
-
-type GenerateTypeConfig interface {
-	isGenerateTypeConfig()
+// NewGenerateConfig returns a validated GenerateConfig.
+func NewGenerateConfig(
+	pluginConfigs []GeneratePluginConfig,
+	managedConfig GenerateManagedConfig,
+	typeConfig GenerateTypeConfig,
+) (GenerateConfig, error) {
+	if len(pluginConfigs) == 0 {
+		return nil, newNoPluginsError()
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+		typeConfig:    typeConfig,
+	}, nil
 }
 
 // *** PRIVATE ***
 
-type generateConfig struct{}
+type generateConfig struct {
+	pluginConfigs []GeneratePluginConfig
+	managedConfig GenerateManagedConfig
+	typeConfig    GenerateTypeConfig
+}
 
-func newGenerateConfig() *generateConfig {
-	return &generateConfig{}
+func newGenerateConfigFromExternalFileV1Beta1(
+	externalFile externalBufGenYAMLFileV1Beta1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV1Beta1(externalFile.Managed, externalFile.Options)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, newNoPluginsError()
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1Beta1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+	}, nil
+}
+
+func newGenerateConfigFromExternalFileV1(
+	externalFile externalBufGenYAMLFileV1,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV1(externalFile.Managed)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFile.Plugins) == 0 {
+		return nil, newNoPluginsError()
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV1,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		pluginConfigs: pluginConfigs,
+		managedConfig: managedConfig,
+		typeConfig:    newGenerateTypeConfig(externalFile.Types.Include),
+	}, nil
+}
+
+func newGenerateConfigFromExternalFileV2(
+	externalFile externalBufGenYAMLFileV2,
+) (GenerateConfig, error) {
+	managedConfig, err := newManagedConfigFromExternalV2(externalFile.Managed)
+	if err != nil {
+		return nil, err
+	}
+	pluginConfigs, err := slicesext.MapError(
+		externalFile.Plugins,
+		newPluginConfigFromExternalV2,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &generateConfig{
+		managedConfig: managedConfig,
+		pluginConfigs: pluginConfigs,
+	}, nil
+}
+
+func (g *generateConfig) GeneratePluginConfigs() []GeneratePluginConfig {
+	return g.pluginConfigs
+}
+
+func (g *generateConfig) GenerateManagedConfig() GenerateManagedConfig {
+	return g.managedConfig
+}
+
+func (g *generateConfig) GenerateTypeConfig() GenerateTypeConfig {
+	return g.typeConfig
 }
 
 func (*generateConfig) isGenerateConfig() {}
+
+func newNoPluginsError() error {
+	return errors.New("must specify at least one plugin")
+}
