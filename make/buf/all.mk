@@ -80,6 +80,8 @@ testbufnew: installbuf
 		./private/buf/cmd/buf/command/registry/... \
 		./private/buf/cmd/buf \
 		./private/buf/cmd/buf-digest/... \
+		./private/buf/cmd/protoc-gen-buf-breaking/... \
+		./private/buf/cmd/protoc-gen-buf-lint/... \
 		./private/bufpkg/bufanalysis/... \
 		./private/bufpkg/bufapi/... \
 		./private/bufpkg/bufcas/... \
