@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	bufWorkYAMLPathFlagName = "buf-work-yaml"
-	bufYAMLPathsFlagName    = "buf-yaml"
-	dryRunFlagName          = "dry-run"
+	workspaceDirectoryFlagName = "workspace-dir"
+	moduleDirectoriesFlagName  = "module-dir"
+	bufGenYAMLPathFlagName     = "generate-template"
+	dryRunFlagName             = "dry-run"
 )
 
 // NewCommand returns a new Command.
@@ -53,9 +54,10 @@ func NewCommand(
 }
 
 type flags struct {
-	BufWorkYAMLPath string
-	BufYAMLPaths    []string
-	DryRun          bool
+	WorkspaceDirectory string
+	ModuleDirectories  []string
+	BufGenYAMLPath     []string
+	DryRun             bool
 }
 
 func newFlags() *flags {
@@ -64,22 +66,28 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
-		&f.BufWorkYAMLPath,
-		bufWorkYAMLPathFlagName,
+		&f.WorkspaceDirectory,
+		workspaceDirectoryFlagName,
 		"",
-		"The buf.work.yaml to migrate",
+		"The workspace directory to migrate. Its buf.work.yaml, buf.yamls and buf.locks will be migrated.",
 	)
 	flagSet.StringSliceVar(
-		&f.BufYAMLPaths,
-		bufYAMLPathsFlagName,
+		&f.ModuleDirectories,
+		moduleDirectoriesFlagName,
 		nil,
-		"The buf.yamls to migrate. Must not be included by the workspace specified",
+		"The buf.yamls to migrate. Its buf.yaml and buf.lock will be migrated",
 	)
 	flagSet.BoolVar(
 		&f.DryRun,
 		dryRunFlagName,
 		false,
-		"Print the changes to be made, without writing to the disk",
+		"Print the changes to be made without writing to the disk",
+	)
+	flagSet.StringSliceVar(
+		&f.BufGenYAMLPath,
+		bufGenYAMLPathFlagName,
+		nil,
+		"The paths to the generation templates to migrate",
 	)
 }
 
@@ -89,19 +97,25 @@ func run(
 	flags *flags,
 ) error {
 	var migrateOptions []bufmigrate.MigrateOption
-	if flags.BufWorkYAMLPath != "" {
-		option, err := bufmigrate.MigrateBufWorkYAMLFile(flags.BufWorkYAMLPath)
+	if flags.WorkspaceDirectory != "" {
+		option, err := bufmigrate.MigrateWorkspaceDirectory(flags.WorkspaceDirectory)
 		if err != nil {
 			return err
 		}
 		migrateOptions = append(migrateOptions, option)
 	}
-	if len(flags.BufYAMLPaths) > 0 {
-		option, err := bufmigrate.MigrateBufYAMLFile(flags.BufYAMLPaths)
+	if len(flags.ModuleDirectories) > 0 {
+		option, err := bufmigrate.MigrateModuleDirectories(flags.ModuleDirectories)
 		if err != nil {
 			return err
 		}
 		migrateOptions = append(migrateOptions, option)
+	}
+	if len(flags.BufGenYAMLPath) > 0 {
+		migrateOptions = append(
+			migrateOptions,
+			bufmigrate.MigrateGenerationTemplates(flags.BufGenYAMLPath),
+		)
 	}
 	if flags.DryRun {
 		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun(container.Stdout()))

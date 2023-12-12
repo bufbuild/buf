@@ -40,7 +40,7 @@ func Migrate(
 		option(migrateOptions)
 	}
 	// TODO: check buf.gen.yaml as well when it's added
-	if migrateOptions.bufWorkYAMLFilePath == "" && len(migrateOptions.bufYAMLFilePaths) == 0 {
+	if migrateOptions.workspaceDirectory == "" && len(migrateOptions.moduleDirectories) == 0 {
 		return errors.New("no ")
 	}
 	bucket, err := storageProvider.NewReadWriteBucket(
@@ -56,19 +56,19 @@ func Migrate(
 		bucket,
 		".",
 	)
-	if migrateOptions.bufWorkYAMLFilePath != "" {
+	if migrateOptions.workspaceDirectory != "" {
 		// TODO: should we allow multiple workspaces?
-		if err := migrator.addWorkspaceForBufWorkYAML(
+		if err := migrator.addWorkspace(
 			ctx,
-			migrateOptions.bufWorkYAMLFilePath,
+			migrateOptions.workspaceDirectory,
 		); err != nil {
 			return err
 		}
 	}
-	for _, bufYAMLPath := range migrateOptions.bufYAMLFilePaths {
+	for _, bufYAMLPath := range migrateOptions.moduleDirectories {
 		// TODO: read upwards to make sure it's not in a workspace
 		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
-		if err := migrator.addModuleDirectoryForBufYAML(
+		if err := migrator.addModuleDirectory(
 			ctx,
 			bufYAMLPath,
 		); err != nil {
@@ -84,7 +84,8 @@ func Migrate(
 // MigrateOption is a migrate option.
 type MigrateOption func(*migrateOptions)
 
-// MigrateAsDryRun write to the writer the summary of the changes to be made, without writing to the disk.
+// MigrateAsDryRun write to the writer the summary of the changes to be made,
+// without writing to the disk.
 func MigrateAsDryRun(writer io.Writer) MigrateOption {
 	return func(migrateOptions *migrateOptions) {
 		migrateOptions.dryRun = true
@@ -92,36 +93,45 @@ func MigrateAsDryRun(writer io.Writer) MigrateOption {
 	}
 }
 
-// MigrateBufWorkYAMLFile migrates a buf.work.yaml.
-func MigrateBufWorkYAMLFile(path string) (MigrateOption, error) {
+// MigrateWorkspaceDirectory migrates buf.work.yaml, and all buf.yamls in directories
+// pointed to by this workspace, as well as their co-resident buf.locks.
+func MigrateWorkspaceDirectory(directory string) (MigrateOption, error) {
 	// TODO: Looking at IsLocal's doc, it seems to validate for what we want: relative and does not jump context.
-	if !filepath.IsLocal(path) {
-		return nil, fmt.Errorf("%s is not a relative path", path)
+	if !filepath.IsLocal(directory) {
+		return nil, fmt.Errorf("%s is not a relative path", directory)
 	}
 	return func(migrateOptions *migrateOptions) {
-		migrateOptions.bufWorkYAMLFilePath = filepath.Clean(path)
+		migrateOptions.workspaceDirectory = filepath.Clean(directory)
 	}, nil
 }
 
-// MigrateBufYAMLFile migrates buf.yaml files.
-func MigrateBufYAMLFile(paths []string) (MigrateOption, error) {
-	for _, path := range paths {
+// MigrateModuleDirectories migrates buf.yamls buf.locks in directories.
+func MigrateModuleDirectories(directories []string) (MigrateOption, error) {
+	for _, path := range directories {
 		if !filepath.IsLocal(path) {
 			return nil, fmt.Errorf("%s is not a relative path", path)
 		}
 	}
 	return func(migrateOptions *migrateOptions) {
-		migrateOptions.bufYAMLFilePaths = slicesext.Map(paths, filepath.Clean)
+		migrateOptions.moduleDirectories = slicesext.Map(directories, filepath.Clean)
 	}, nil
+}
+
+// MigrateGenerationTemplates migrates buf.gen.yamls.
+func MigrateGenerationTemplates(paths []string) MigrateOption {
+	return func(migrateOptions *migrateOptions) {
+		migrateOptions.bufGenYAMLPaths = slicesext.Map(paths, filepath.Clean)
+	}
 }
 
 /// *** PRIVATE ***
 
 type migrateOptions struct {
-	dryRun              bool
-	dryRunWriter        io.Writer
-	bufWorkYAMLFilePath string
-	bufYAMLFilePaths    []string
+	dryRun             bool
+	dryRunWriter       io.Writer
+	workspaceDirectory string
+	moduleDirectories  []string
+	bufGenYAMLPaths    []string
 }
 
 func newMigrateOptions() *migrateOptions {

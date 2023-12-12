@@ -31,8 +31,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// DefaultBufLockFileName is the buf.yaml default file name.
-const DefaultBufLockFileName = "buf.yaml"
+// DefaultBufLockFileName is the buf.lock default file name.
+const DefaultBufLockFileName = "buf.lock"
 
 var (
 	// bufLockFileHeader is the header prepended to any lock files.

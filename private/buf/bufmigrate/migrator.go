@@ -76,25 +76,37 @@ func newMigrator(
 	}
 }
 
-func (m *migrator) addWorkspaceForBufWorkYAML(
+func (m *migrator) addWorkspace(
 	ctx context.Context,
-	bufWorkYAMLPath string,
+	workspaceDirectory string,
 ) (retErr error) {
-	file, err := os.Open(bufWorkYAMLPath)
+	bufWorkYAMLPath, err := findFirstExistingPath(
+		filepath.Join(workspaceDirectory, bufconfig.DefaultBufWorkYAMLFileName),
+		filepath.Join(workspaceDirectory, bufconfig.LegacyBufWorkYAMLFileName),
+	)
+	if errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf(
+			"workspace %q does not have a %s or %s",
+			workspaceDirectory,
+			bufconfig.DefaultBufWorkYAMLFileName,
+			bufconfig.LegacyBufWorkYAMLFileName,
+		)
+	}
 	if err != nil {
 		return err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
+	file, err := os.Open(bufWorkYAMLPath)
+	// Not checking if err is fs.ErrNotExist because we just did that.
+	if err != nil {
+		return err
+	}
 	bufWorkYAML, err := bufconfig.ReadBufWorkYAMLFile(file)
 	if err != nil {
 		return err
 	}
 	m.seenFiles[bufWorkYAMLPath] = struct{}{}
-	workspaceDir := filepath.Dir(bufWorkYAMLPath)
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace)); err != nil {
+		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDirectory, moduleDirRelativeToWorkspace)); err != nil {
 			return err
 		}
 	}
@@ -106,7 +118,7 @@ func (m *migrator) addModuleDirectory(
 	ctx context.Context,
 	// moduleDir is the relative path (relative to ".") to the module directory
 	moduleDir string,
-) error {
+) (retErr error) {
 	bufYAMLPath, err := findFirstExistingPath(
 		filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName),
 		filepath.Join(moduleDir, bufconfig.LegacyBufYAMLFileName),
@@ -138,14 +150,8 @@ func (m *migrator) addModuleDirectory(
 	if err != nil {
 		return err
 	}
-	return m.addModuleDirectoryForBufYAML(ctx, bufYAMLPath)
-}
-
-func (m *migrator) addModuleDirectoryForBufYAML(
-	ctx context.Context,
-	bufYAMLPath string,
-) (retErr error) {
 	file, err := os.Open(bufYAMLPath)
+	// Not checking if err is fs.ErrNotExist because we just did that.
 	if err != nil {
 		return err
 	}
@@ -313,7 +319,6 @@ func (m *migrator) addModuleDirectoryForBufYAML(
 	default:
 		return syserror.Newf("unexpected version: %v", bufYAML.FileVersion())
 	}
-	moduleDir := filepath.Dir(bufYAMLPath)
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		m.rootBucket,
@@ -327,8 +332,8 @@ func (m *migrator) addModuleDirectoryForBufYAML(
 	}
 	bufLockFilePath := filepath.Join(moduleDir, bufconfig.DefaultBufLockFileName)
 	// We don't need to check whether it's already in the map, but because if it were,
-	// its co-resident buf.yaml would also have been a duplicate, which would make this
-	// function return early.
+	// its co-resident buf.yaml would also have been a duplicate and made this
+	// function return at an earlier point.
 	m.seenFiles[bufLockFilePath] = struct{}{}
 	switch bufLockFile.FileVersion() {
 	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
