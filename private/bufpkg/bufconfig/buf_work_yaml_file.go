@@ -27,9 +27,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+// DefaultBufWorkYAMLFileName is the default buf.work.yaml file name.
+const DefaultBufWorkYAMLFileName = "buf.work.yaml"
+
 var (
 	// We only supported buf.work.yamls in v1.
-	bufWorkYAML = newFileName("buf.work.yaml", FileVersionV1)
+	bufWorkYAML = newFileName(DefaultBufWorkYAMLFileName, FileVersionV1)
 	// Originally we thought we were going to move to buf.work, and had this around for
 	// a while, but then reverted back to buf.work.yaml. We still need to support buf.work as
 	// we released with it, however.

@@ -34,7 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// DefaultBufYAMLFileName is the buf.yaml default file name.
+// DefaultBufYAMLFileName is the default buf.yaml file name.
 const DefaultBufYAMLFileName = "buf.yaml"
 
 var (
