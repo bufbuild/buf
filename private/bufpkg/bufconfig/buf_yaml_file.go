@@ -344,7 +344,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			}
 		}
 		var moduleConfigs []ModuleConfig
-		for _, externalModule := range externalBufYAMLFile.Modules {
+		for _, externalModule := range externalModules {
 			dirPath := externalModule.Directory
 			if dirPath == "" {
 				dirPath = "."
