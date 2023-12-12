@@ -38,7 +38,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -80,31 +79,18 @@ func (m *migrator) addWorkspace(
 	ctx context.Context,
 	workspaceDirectory string,
 ) (retErr error) {
-	bufWorkYAMLPath, err := findFirstExistingPath(
-		filepath.Join(workspaceDirectory, bufconfig.DefaultBufWorkYAMLFileName),
-		filepath.Join(workspaceDirectory, bufconfig.LegacyBufWorkYAMLFileName),
+	bufWorkYAML, err := bufconfig.GetBufWorkYAMLFileForPrefix(
+		ctx,
+		m.rootBucket,
+		workspaceDirectory,
 	)
 	if errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf(
-			"workspace %q does not have a %s or %s",
-			workspaceDirectory,
-			bufconfig.DefaultBufWorkYAMLFileName,
-			bufconfig.LegacyBufWorkYAMLFileName,
-		)
+		return fmt.Errorf("%q does not have a workspace configuration file", workspaceDirectory)
 	}
 	if err != nil {
 		return err
 	}
-	file, err := os.Open(bufWorkYAMLPath)
-	// Not checking if err is fs.ErrNotExist because we just did that.
-	if err != nil {
-		return err
-	}
-	bufWorkYAML, err := bufconfig.ReadBufWorkYAMLFile(file)
-	if err != nil {
-		return err
-	}
-	m.seenFiles[bufWorkYAMLPath] = struct{}{}
+	m.seenFiles[filepath.Join(workspaceDirectory, bufWorkYAML.FileName())] = struct{}{}
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
 		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDirectory, moduleDirRelativeToWorkspace)); err != nil {
 			return err
@@ -119,9 +105,10 @@ func (m *migrator) addModuleDirectory(
 	// moduleDir is the relative path (relative to ".") to the module directory
 	moduleDir string,
 ) (retErr error) {
-	bufYAMLPath, err := findFirstExistingPath(
-		filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName),
-		filepath.Join(moduleDir, bufconfig.LegacyBufYAMLFileName),
+	bufYAML, err := bufconfig.GetBufYAMLFileForPrefix(
+		ctx,
+		m.rootBucket,
+		moduleDir,
 	)
 	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
 		moduleDirInMigratedBufYAML, err := filepath.Rel(m.destinationDir, moduleDir)
@@ -150,18 +137,7 @@ func (m *migrator) addModuleDirectory(
 	if err != nil {
 		return err
 	}
-	file, err := os.Open(bufYAMLPath)
-	// Not checking if err is fs.ErrNotExist because we just did that.
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	bufYAML, err := bufconfig.ReadBufYAMLFile(file)
-	if err != nil {
-		return err
-	}
+	bufYAMLPath := filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName)
 	if _, ok := m.seenFiles[bufYAMLPath]; ok {
 		return nil
 	}
@@ -426,9 +402,25 @@ func (m *migrator) buildBufYAMLAndBufLock(
 			return !ok
 		},
 	)
-	// TODO: enable this when ready
-	moduleRefs := filteredModuleDependencies
-	var moduleKeys []bufmodule.ModuleKey
+	// TODO: the next two variables have placeholder values. Inside the if-statement
+	// is what should happen.
+	moduleRefs := slicesext.MapValuesToSlice(
+		slicesext.ToValuesMap(
+			filteredModuleDependencies,
+			func(moduleRef bufmodule.ModuleRef) string {
+				return moduleRef.ModuleFullName().String()
+			},
+		),
+	)
+	moduleKeys := slicesext.MapValuesToSlice(
+		slicesext.ToValuesMap(
+			m.depModuleKeys,
+			func(moduleKey bufmodule.ModuleKey) string {
+				return moduleKey.ModuleFullName().String()
+			},
+		),
+	)
+	// TODO: use this logic when it's tested and when commit service is ready.
 	if false {
 		moduleToRefToCommit, err := getModuleToRefToCommit(ctx, filteredModuleDependencies, m.clientProvider)
 		if err != nil {
@@ -480,20 +472,6 @@ func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, paren
 
 func (m *migrator) filesToDelete() []string {
 	return slicesext.MapKeysToSortedSlice(m.seenFiles)
-}
-
-func findFirstExistingPath(paths ...string) (string, error) {
-	for _, path := range paths {
-		_, err := os.Stat(path)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return "", err
-		}
-		return path, nil
-	}
-	return "", fs.ErrNotExist
 }
 
 func resolvedDeclaredAndLockedDependencies(

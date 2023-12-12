@@ -42,7 +42,7 @@ var (
 	// Originally we thought we were going to move to buf.mod, and had this around for
 	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
 	// we released with it, however.
-	bufMod           = newFileName(LegacyBufYAMLFileName, FileVersionV1Beta1, FileVersionV1)
+	bufMod           = newFileName("buf.mod", FileVersionV1Beta1, FileVersionV1)
 	bufYAMLFileNames = []*fileName{bufYAML, bufMod}
 )
 
