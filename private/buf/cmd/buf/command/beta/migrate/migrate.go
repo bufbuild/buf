@@ -16,6 +16,7 @@ package migrate
 
 import (
 	"context"
+	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
@@ -116,6 +117,9 @@ func run(
 			migrateOptions,
 			bufmigrate.MigrateGenerationTemplates(flags.BufGenYAMLPath),
 		)
+	}
+	if len(migrateOptions) == 0 {
+		return errors.New("no directories or files specified")
 	}
 	if flags.DryRun {
 		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun(container.Stdout()))

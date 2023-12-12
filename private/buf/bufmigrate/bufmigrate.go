@@ -39,9 +39,8 @@ func Migrate(
 	for _, option := range options {
 		option(migrateOptions)
 	}
-	// TODO: check buf.gen.yaml as well when it's added
-	if migrateOptions.workspaceDirectory == "" && len(migrateOptions.moduleDirectories) == 0 {
-		return errors.New("no ")
+	if migrateOptions.workspaceDirectory == "" && len(migrateOptions.moduleDirectories) == 0 && len(migrateOptions.bufGenYAMLPaths) == 0 {
+		return errors.New("no directory or file specified")
 	}
 	bucket, err := storageProvider.NewReadWriteBucket(
 		".",
@@ -72,6 +71,11 @@ func Migrate(
 			ctx,
 			bufYAMLPath,
 		); err != nil {
+			return err
+		}
+	}
+	for _, bufGenYAMLPath := range migrateOptions.bufGenYAMLPaths {
+		if err := migrator.addBufGenYAML(bufGenYAMLPath); err != nil {
 			return err
 		}
 	}
