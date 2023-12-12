@@ -112,11 +112,7 @@ func ReadBufWorkYAMLFile(reader io.Reader, fileName string) (BufWorkYAMLFile, er
 
 // WriteBufWorkYAMLFile writes the buf.work.yaml to the io.Writer.
 func WriteBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) error {
-	fileIdentifier := bufWorkYAMLFile.FileName()
-	if fileIdentifier == "" {
-		fileIdentifier = "config file"
-	}
-	return writeFile(writer, fileIdentifier, bufWorkYAMLFile, writeBufWorkYAMLFile)
+	return writeFile(writer, bufWorkYAMLFile.FileName(), bufWorkYAMLFile, writeBufWorkYAMLFile)
 }
 
 // *** PRIVATE ***

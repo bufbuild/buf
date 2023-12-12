@@ -122,19 +122,12 @@ func PutBufLockFileForPrefix(
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateFileDigests().
 func ReadBufLockFile(reader io.Reader, fileName string) (BufLockFile, error) {
-	if fileName == "" {
-		fileName = "lock file"
-	}
 	return readFile(reader, fileName, readBufLockFile)
 }
 
 // WriteBufLockFile writes the BufLockFile to the io.Writer.
 func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
-	fileIdentifier := bufLockFile.FileName()
-	if fileIdentifier == "" {
-		fileIdentifier = "lock file"
-	}
-	return writeFile(writer, fileIdentifier, bufLockFile, writeBufLockFile)
+	return writeFile(writer, bufLockFile.FileName(), bufLockFile, writeBufLockFile)
 }
 
 // *** PRIVATE ***

@@ -144,13 +144,16 @@ func readFile[F File](
 
 func writeFile[F File](
 	writer io.Writer,
-	fileIdentifier string,
+	fileName string,
 	f F,
 	writeFileFunc func(
 		writer io.Writer,
 		f F,
 	) error,
 ) error {
+	if err := writeFileFunc(writer, f); err != nil {
+		return newDecodeError(fileName, err)
+	}
 	return writeFileFunc(writer, f)
 }
 

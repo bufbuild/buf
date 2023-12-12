@@ -170,11 +170,7 @@ func ReadBufYAMLFile(reader io.Reader, fileName string) (BufYAMLFile, error) {
 
 // WriteBufYAMLFile writes the BufYAMLFile to the io.Writer.
 func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
-	fileIdentifier := bufYAMLFile.FileName()
-	if fileIdentifier == "" {
-		fileIdentifier = "config file"
-	}
-	return writeFile(writer, fileIdentifier, bufYAMLFile, writeBufYAMLFile)
+	return writeFile(writer, bufYAMLFile.FileName(), bufYAMLFile, writeBufYAMLFile)
 }
 
 // *** PRIVATE ***
