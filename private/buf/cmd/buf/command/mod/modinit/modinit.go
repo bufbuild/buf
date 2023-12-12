@@ -121,7 +121,7 @@ func run(
 		"",
 		moduleFullName,
 		map[string][]string{
-			".": []string{},
+			".": {},
 		},
 		bufconfig.NewLintConfig(
 			bufconfig.NewCheckConfig(

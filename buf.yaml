@@ -1,6 +1,6 @@
 version: v2
 modules:
-  - directory: proto
+  - directory: proto/buf
     name: buf.build/bufbuild/buf
     lint:
       use:

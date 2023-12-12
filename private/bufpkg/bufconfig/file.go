@@ -44,6 +44,7 @@ func getFileForPrefix[F File](
 	fileNames []*fileName,
 	readFileFunc func(
 		reader io.Reader,
+		fileName string,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
@@ -57,7 +58,7 @@ func getFileForPrefix[F File](
 			var f F
 			return f, err
 		}
-		f, err := readFileFunc(readObjectCloser, false)
+		f, err := readFileFunc(readObjectCloser, fileName.Name(), false)
 		if err != nil {
 			return f, multierr.Append(newDecodeError(path, err), readObjectCloser.Close())
 		}
@@ -127,28 +128,32 @@ func putFileForPrefix[F File](
 
 func readFile[F File](
 	reader io.Reader,
-	fileIdentifier string,
+	fileName string,
 	readFileFunc func(
 		reader io.Reader,
+		fileName string,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
-	f, err := readFileFunc(reader, true)
+	f, err := readFileFunc(reader, fileName, true)
 	if err != nil {
-		return f, newDecodeError(fileIdentifier, err)
+		return f, newDecodeError(fileName, err)
 	}
 	return f, nil
 }
 
 func writeFile[F File](
 	writer io.Writer,
-	fileIdentifier string,
+	fileName string,
 	f F,
 	writeFileFunc func(
 		writer io.Writer,
 		f F,
 	) error,
 ) error {
+	if err := writeFileFunc(writer, f); err != nil {
+		return newDecodeError(fileName, err)
+	}
 	return writeFileFunc(writer, f)
 }
 
@@ -179,12 +184,18 @@ func getUnmarshalNonStrict(allowJSON bool) func([]byte, interface{}) error {
 	return encoding.UnmarshalYAMLNonStrict
 }
 
-func newDecodeError(fileIdentifier string, err error) error {
+func newDecodeError(fileName string, err error) error {
+	if fileName == "" {
+		fileName = "config file"
+	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "decode", Path: fileIdentifier, Err: err}
+	return &fs.PathError{Op: "decode", Path: fileName, Err: err}
 }
 
-func newEncodeError(fileIdentifier string, err error) error {
+func newEncodeError(fileName string, err error) error {
+	if fileName == "" {
+		fileName = "config file"
+	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "encode", Path: fileIdentifier, Err: err}
+	return &fs.PathError{Op: "encode", Path: fileName, Err: err}
 }

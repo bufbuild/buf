@@ -20,8 +20,8 @@
 package bufbreakingv2
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 )
 
 // VersionSpec is the version specification for v2.

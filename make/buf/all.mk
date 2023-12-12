@@ -55,7 +55,7 @@ CMD ?= test
 testbufnew: installbuf
 	# TODO: remove when done with refactor
 	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
-	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/bufsync | grep -v buf\/command\/format | grep -v command\/alpha\/repo\/reposync | grep -v bufwkt\/cmd\/wkt-go-data)
+	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/bufsync | grep -v buf\/command\/format | grep -v command\/alpha\/repo\/reposync)
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
@@ -126,12 +126,12 @@ bufgenerateclean:: \
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
-	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate proto/buf --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
-	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate proto/buf --template data/template/buf.go-client.gen.yaml
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:

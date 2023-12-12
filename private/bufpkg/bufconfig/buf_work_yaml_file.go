@@ -27,16 +27,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-const (
-	// DefaultBufWorkYAMLFileName is the default buf.work.yaml file name.
-	DefaultBufWorkYAMLFileName = "buf.work.yaml"
-	// LegacyBufWorkYAMLFileName is the legacy buf.work file name.
-	LegacyBufWorkYAMLFileName = "buf.work"
-)
+// DefaultBufWorkYAMLFileName is the default buf.work.yaml file name.
+const DefaultBufWorkYAMLFileName = "buf.work.yaml"
 
 var (
 	// We only supported buf.work.yamls in v1.
-	bufWorkYAML = newFileName("buf.work.yaml", FileVersionV1)
+	bufWorkYAML = newFileName(DefaultBufWorkYAMLFileName, FileVersionV1)
 	// Originally we thought we were going to move to buf.work, and had this around for
 	// a while, but then reverted back to buf.work.yaml. We still need to support buf.work as
 	// we released with it, however.
@@ -51,6 +47,11 @@ var (
 type BufWorkYAMLFile interface {
 	File
 
+	// FileName returns the name of the file when the BufWorkYAMLFile was read.
+	//
+	// If there was no file name, this returns empty. This can happen when the BufWorkYAMLFile
+	// is created via ReadBufWorkYAMLFile, for example.
+	FileName() string
 	// DirPaths returns all the directory paths specified in buf.work.yaml,
 	// relative to the directory with buf.work.yaml. The following are guaranteed:
 	//
@@ -69,7 +70,7 @@ type BufWorkYAMLFile interface {
 
 // NewBufWorkYAMLFile returns a new validated BufWorkYAMLFile.
 func NewBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (BufWorkYAMLFile, error) {
-	return newBufWorkYAMLFile(fileVersion, dirPaths)
+	return newBufWorkYAMLFile(fileVersion, "", dirPaths)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file at the given bucket prefix.
@@ -108,23 +109,26 @@ func PutBufWorkYAMLFileForPrefix(
 }
 
 // ReadBufWorkYAMLFile reads the buf.work.yaml file from the io.Reader.
-func ReadBufWorkYAMLFile(reader io.Reader) (BufWorkYAMLFile, error) {
-	return readFile(reader, "workspace file", readBufWorkYAMLFile)
+//
+// fileName may be empty.
+func ReadBufWorkYAMLFile(reader io.Reader, fileName string) (BufWorkYAMLFile, error) {
+	return readFile(reader, fileName, readBufWorkYAMLFile)
 }
 
 // WriteBufWorkYAMLFile writes the buf.work.yaml to the io.Writer.
 func WriteBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) error {
-	return writeFile(writer, "workspace file", bufWorkYAMLFile, writeBufWorkYAMLFile)
+	return writeFile(writer, bufWorkYAMLFile.FileName(), bufWorkYAMLFile, writeBufWorkYAMLFile)
 }
 
 // *** PRIVATE ***
 
 type bufWorkYAMLFile struct {
 	fileVersion FileVersion
+	fileName    string
 	dirPaths    []string
 }
 
-func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAMLFile, error) {
+func newBufWorkYAMLFile(fileVersion FileVersion, fileName string, dirPaths []string) (*bufWorkYAMLFile, error) {
 	if fileVersion != FileVersionV1 {
 		return nil, newUnsupportedFileVersionError("", fileVersion)
 	}
@@ -134,12 +138,17 @@ func newBufWorkYAMLFile(fileVersion FileVersion, dirPaths []string) (*bufWorkYAM
 	}
 	return &bufWorkYAMLFile{
 		fileVersion: fileVersion,
+		fileName:    fileName,
 		dirPaths:    sortedNormalizedDirPaths,
 	}, nil
 }
 
 func (w *bufWorkYAMLFile) FileVersion() FileVersion {
 	return w.fileVersion
+}
+
+func (w *bufWorkYAMLFile) FileName() string {
+	return w.fileName
 }
 
 func (w *bufWorkYAMLFile) DirPaths() []string {
@@ -149,7 +158,7 @@ func (w *bufWorkYAMLFile) DirPaths() []string {
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}
 func (*bufWorkYAMLFile) isFile()            {}
 
-func readBufWorkYAMLFile(reader io.Reader, allowJSON bool) (BufWorkYAMLFile, error) {
+func readBufWorkYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufWorkYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -167,7 +176,7 @@ func readBufWorkYAMLFile(reader io.Reader, allowJSON bool) (BufWorkYAMLFile, err
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
 		return nil, fmt.Errorf("invalid as version %v: %w", fileVersion, err)
 	}
-	return newBufWorkYAMLFile(fileVersion, externalBufWorkYAMLFile.Directories)
+	return newBufWorkYAMLFile(fileVersion, fileName, externalBufWorkYAMLFile.Directories)
 }
 
 func writeBufWorkYAMLFile(writer io.Writer, bufWorkYAMLFile BufWorkYAMLFile) error {
