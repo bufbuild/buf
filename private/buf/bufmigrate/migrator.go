@@ -23,8 +23,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
+	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
@@ -38,7 +43,8 @@ import (
 )
 
 type migrator struct {
-	logger *zap.Logger
+	logger         *zap.Logger
+	clientProvider bufapi.ClientProvider
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
 	destinationDir string
@@ -56,11 +62,13 @@ type migrator struct {
 
 func newMigrator(
 	logger *zap.Logger,
+	clientProvider bufapi.ClientProvider,
 	rootBucket storage.ReadWriteBucket,
 	destinationDir string,
 ) *migrator {
 	return &migrator{
 		logger:                 logger,
+		clientProvider:         clientProvider,
 		destinationDir:         destinationDir,
 		rootBucket:             rootBucket,
 		moduleNameToParentFile: map[string]string{},
@@ -334,13 +342,10 @@ func (m *migrator) addModuleDirectoryForBufYAML(
 }
 
 func (m *migrator) migrateAsDryRun(
+	ctx context.Context,
 	writer io.Writer,
 ) error {
-	migratedBufYAML, err := m.getBufYAML()
-	if err != nil {
-		return err
-	}
-	migratedBufLock, err := m.getBufLock()
+	migratedBufYAML, migratedBufLock, err := m.buildBufYAMLAndBufLock(ctx)
 	if err != nil {
 		return err
 	}
@@ -376,11 +381,7 @@ these files will be written:
 func (m *migrator) migrate(
 	ctx context.Context,
 ) error {
-	migratedBufYAML, err := m.getBufYAML()
-	if err != nil {
-		return err
-	}
-	migratedBufLock, err := m.getBufLock()
+	migratedBufYAML, migratedBufLock, err := m.buildBufYAMLAndBufLock(ctx)
 	if err != nil {
 		return err
 	}
@@ -409,7 +410,10 @@ func (m *migrator) migrate(
 	return nil
 }
 
-func (m *migrator) getBufYAML() (bufconfig.BufYAMLFile, error) {
+func (m *migrator) buildBufYAMLAndBufLock(
+	ctx context.Context,
+) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
+	// Remove declared dependencies that are also modules in this workspace.
 	filteredModuleDependencies := slicesext.Filter(
 		m.moduleDependencies,
 		func(moduleRef bufmodule.ModuleRef) bool {
@@ -417,33 +421,44 @@ func (m *migrator) getBufYAML() (bufconfig.BufYAMLFile, error) {
 			return !ok
 		},
 	)
-	// TODO: deduplicate/resolve dependency list
-	return bufconfig.NewBufYAMLFile(
+	// TODO: enable this when ready
+	moduleRefs := filteredModuleDependencies
+	var moduleKeys []bufmodule.ModuleKey
+	if false {
+		moduleToRefToCommit, err := getModuleToRefToCommit(ctx, filteredModuleDependencies, m.clientProvider)
+		if err != nil {
+			return nil, nil, err
+		}
+		commitIDToCommit, err := getCommitIDToCommit(ctx, m.clientProvider, m.depModuleKeys)
+		if err != nil {
+			return nil, nil, err
+		}
+		moduleRefs, moduleKeys, err = resolvedDeclaredAndLockedDependencies(
+			moduleToRefToCommit,
+			commitIDToCommit,
+			filteredModuleDependencies,
+			m.depModuleKeys,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		m.moduleConfigs,
-		filteredModuleDependencies,
+		moduleRefs,
 	)
-}
-
-func (m *migrator) getBufLock() (bufconfig.BufLockFile, error) {
-	depModuleFullNameToModuleKeys := make(map[string][]bufmodule.ModuleKey)
-	for _, depModuleKey := range m.depModuleKeys {
-		depModuleFullName := depModuleKey.ModuleFullName().String()
-		depModuleFullNameToModuleKeys[depModuleFullName] = append(depModuleFullNameToModuleKeys[depModuleFullName], depModuleKey)
+	if err != nil {
+		return nil, nil, err
 	}
-	// TODO: these are resolved arbitrarily right now, we need to resolve them by commit time
-	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleFullNameToModuleKeys))
-	for _, depModuleKeys := range depModuleFullNameToModuleKeys {
-		// TODO: actually resolve dependencies by time
-		// The alternative is to build the workspace with tentative dependencies and
-		// find the latest one that does not break. However, what if there are 3 dependencies
-		// in question, each has 4 potential versions. We don't want to build 4*4*4 times in the worst case.
-		resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
-	}
-	return bufconfig.NewBufLockFile(
+	bufLock, err := bufconfig.NewBufLockFile(
 		bufconfig.FileVersionV2,
-		resolvedDepModuleKeys,
+		moduleKeys,
 	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return bufYAML, bufLock, nil
 }
 
 func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, parentFile string) error {
@@ -474,4 +489,175 @@ func findFirstExistingPath(paths ...string) (string, error) {
 		return path, nil
 	}
 	return "", fs.ErrNotExist
+}
+
+func resolvedDeclaredAndLockedDependencies(
+	moduleToRefToCommit map[string]map[string]*modulev1beta1.Commit,
+	commitIDToCommit map[string]*modulev1beta1.Commit,
+	declaredDependencies []bufmodule.ModuleRef,
+	lockedDependencies []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
+	depModuleFullNameToRefs := make(map[string][]bufmodule.ModuleRef)
+	for _, depModuleRef := range declaredDependencies {
+		moduleFullName := depModuleRef.ModuleFullName().String()
+		depModuleFullNameToRefs[moduleFullName] = append(depModuleFullNameToRefs[moduleFullName], depModuleRef)
+	}
+	depModuleFullNameToResolvedRef := make(map[string]bufmodule.ModuleRef)
+	for moduleFullName, refs := range depModuleFullNameToRefs {
+		nonEmptyRef := slicesext.Filter(
+			refs,
+			func(ref bufmodule.ModuleRef) bool {
+				return ref.Ref() != ""
+			},
+		)
+		switch len(nonEmptyRef) {
+		case 0:
+			// All refs are empty, we take the first one (they are all the same). refs is guaranteed not empty,
+			// by the construction of depModuleFullNameToRefs.
+			depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
+		default:
+			// There are multiple pinned versions of the same dependency, we use the latest one.
+			sort.Slice(nonEmptyRef, func(i, j int) bool {
+				refToCommit := moduleToRefToCommit[moduleFullName]
+				iTime := refToCommit[refs[i].Ref()].GetCreateTime().AsTime()
+				jTime := refToCommit[refs[j].Ref()].GetCreateTime().AsTime()
+				return iTime.After(jTime)
+			})
+			depModuleFullNameToResolvedRef[moduleFullName] = nonEmptyRef[0]
+		}
+	}
+	// We only want locked dependencies that correspond to declared dependencies.
+	lockedDependencies = slicesext.Filter(
+		lockedDependencies,
+		func(lockedDependency bufmodule.ModuleKey) bool {
+			_, ok := depModuleFullNameToRefs[lockedDependency.ModuleFullName().String()]
+			return ok
+		},
+	)
+	depModuleFullNameToModuleKeys := make(map[string][]bufmodule.ModuleKey)
+	for _, depModuleKey := range lockedDependencies {
+		depModuleFullName := depModuleKey.ModuleFullName().String()
+		depModuleFullNameToModuleKeys[depModuleFullName] = append(depModuleFullNameToModuleKeys[depModuleFullName], depModuleKey)
+	}
+	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleFullNameToModuleKeys))
+	for moduleFullName, depModuleKeys := range depModuleFullNameToModuleKeys {
+		resolvedRef := depModuleFullNameToResolvedRef[moduleFullName]
+		if resolvedRef.Ref() != "" {
+			// TODO: do we want to do all this? It feels like we are doing a partial `buf mod update`.
+			// More specifically, it's possible that the declared dependency pin does not have a corresponding
+			// lock entry. For example, the buf.lock might not exist.
+			// Might as well do this for all lock entries.
+			resolvedCommit := moduleToRefToCommit[moduleFullName][resolvedRef.Ref()]
+			key, err := bufmodule.NewModuleKey(
+				resolvedRef.ModuleFullName(),
+				resolvedCommit.GetId(),
+				func() (bufcas.Digest, error) { return bufcas.ProtoToDigest(resolvedCommit.GetDigest()) },
+			)
+			if err != nil {
+				return nil, nil, err
+			}
+			resolvedDepModuleKeys = append(resolvedDepModuleKeys, key)
+			continue
+		}
+		// Use the lastest
+		sort.Slice(depModuleKeys, func(i, j int) bool {
+			iTime := commitIDToCommit[depModuleKeys[i].CommitID()].GetCreateTime().AsTime()
+			jTime := commitIDToCommit[depModuleKeys[j].CommitID()].GetCreateTime().AsTime()
+			return iTime.After(jTime)
+		})
+		resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
+	}
+	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depModuleFullNameToResolvedRef)
+	sort.Slice(resolvedDeclaredDependencies, func(i, j int) bool {
+		return resolvedDeclaredDependencies[i].ModuleFullName().String() < resolvedDeclaredDependencies[j].ModuleFullName().String()
+	})
+	sort.Slice(resolvedDepModuleKeys, func(i, j int) bool {
+		return resolvedDepModuleKeys[i].ModuleFullName().String() < resolvedDepModuleKeys[j].ModuleFullName().String()
+	})
+	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
+}
+
+func getModuleToRefToCommit(
+	ctx context.Context,
+	moduleRefs []bufmodule.ModuleRef,
+	clientProvider bufapi.ClientProvider,
+) (map[string]map[string]*modulev1beta1.Commit, error) {
+	moduleToRefToCommit := make(map[string]map[string]*modulev1beta1.Commit)
+	for _, moduleRef := range moduleRefs {
+		if moduleRef.Ref() == "" {
+			continue
+		}
+		moduleFullName := moduleRef.ModuleFullName()
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+			ctx,
+			connect.NewRequest(
+				&modulev1beta1.ResolveCommitsRequest{
+					ResourceRefs: []*modulev1beta1.ResourceRef{
+						{
+							Value: &modulev1beta1.ResourceRef_Name_{
+								Name: &modulev1beta1.ResourceRef_Name{
+									Owner:  moduleFullName.Owner(),
+									Module: moduleFullName.Name(),
+									Child: &modulev1beta1.ResourceRef_Name_Ref{
+										Ref: moduleRef.Ref(),
+									},
+								},
+							},
+						},
+					},
+				},
+			),
+		)
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
+			}
+			return nil, err
+		}
+		if len(response.Msg.Commits) != 1 {
+			return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
+		}
+		if moduleToRefToCommit[moduleFullName.String()] == nil {
+			moduleToRefToCommit[moduleFullName.String()] = make(map[string]*modulev1beta1.Commit)
+		}
+		moduleToRefToCommit[moduleFullName.String()][moduleRef.Ref()] = response.Msg.Commits[0]
+	}
+	return moduleToRefToCommit, nil
+}
+
+func getCommitIDToCommit(
+	ctx context.Context,
+	clientProvider bufapi.ClientProvider,
+	moduleKeys []bufmodule.ModuleKey,
+) (map[string]*modulev1beta1.Commit, error) {
+	commitIDToCommit := make(map[string]*modulev1beta1.Commit)
+	for _, moduleKey := range moduleKeys {
+		moduleFullName := moduleKey.ModuleFullName()
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+			ctx,
+			connect.NewRequest(
+				&modulev1beta1.ResolveCommitsRequest{
+					ResourceRefs: []*modulev1beta1.ResourceRef{
+						{
+							Value: &modulev1beta1.ResourceRef_Id{
+								// TODO: is this in the correct dashless/dashful form?
+								Id: moduleKey.CommitID(),
+							},
+						},
+					},
+				},
+			),
+		)
+		if err != nil {
+			if connect.CodeOf(err) == connect.CodeNotFound {
+				return nil, &fs.PathError{Op: "read", Path: moduleKey.CommitID(), Err: fs.ErrNotExist}
+			}
+			return nil, err
+		}
+		if len(response.Msg.Commits) != 1 {
+			return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
+		}
+		commitIDToCommit[moduleKey.CommitID()] = response.Msg.Commits[0]
+	}
+	return commitIDToCommit, nil
 }

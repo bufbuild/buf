@@ -21,7 +21,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -32,7 +32,7 @@ func Migrate(
 	ctx context.Context,
 	logger *zap.Logger,
 	storageProvider storageos.Provider,
-	commitService modulev1beta1connect.CommitServiceClient,
+	clientProvider bufapi.ClientProvider,
 	options ...MigrateOption,
 ) (retErr error) {
 	migrateOptions := newMigrateOptions()
@@ -52,6 +52,7 @@ func Migrate(
 	}
 	migrator := newMigrator(
 		logger,
+		clientProvider,
 		bucket,
 		".",
 	)
@@ -75,7 +76,7 @@ func Migrate(
 		}
 	}
 	if migrateOptions.dryRun {
-		return migrator.migrateAsDryRun(migrateOptions.dryRunWriter)
+		return migrator.migrateAsDryRun(ctx, migrateOptions.dryRunWriter)
 	}
 	return migrator.migrate(ctx)
 }

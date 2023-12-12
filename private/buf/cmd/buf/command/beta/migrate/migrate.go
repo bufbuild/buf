@@ -17,7 +17,9 @@ package migrate
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -104,13 +106,16 @@ func run(
 	if flags.DryRun {
 		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun(container.Stdout()))
 	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
+	}
 	return bufmigrate.Migrate(
 		ctx,
 		container.Logger(),
 		// TODO: Do we want to add a flag --disable-symlinks?
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
-		// TODO: pass an actual client when implemented on server
-		nil,
+		bufapi.NewClientProvider(clientConfig),
 		migrateOptions...,
 	)
 }
