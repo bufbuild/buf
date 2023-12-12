@@ -48,6 +48,11 @@ var (
 type BufLockFile interface {
 	File
 
+	// FileName returns the name of the file when the BufLockFile was read.
+	//
+	// If there was no file name, this returns empty. This can happen when the BufLockFile
+	// is created via ReadBufLockFile, for example.
+	FileName() string
 	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
 	//
 	// Note that ModuleKeys may not have CommitIDs with FileVersionV2.
@@ -71,7 +76,7 @@ type BufLockFile interface {
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().
 func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (BufLockFile, error) {
-	return newBufLockFile(fileVersion, depModuleKeys)
+	return newBufLockFile(fileVersion, "", depModuleKeys)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file at the given bucket prefix.
@@ -116,24 +121,33 @@ func PutBufLockFileForPrefix(
 //
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateFileDigests().
-func ReadBufLockFile(reader io.Reader) (BufLockFile, error) {
-	return readFile(reader, "lock file", readBufLockFile)
+func ReadBufLockFile(reader io.Reader, fileName string) (BufLockFile, error) {
+	if fileName == "" {
+		fileName = "lock file"
+	}
+	return readFile(reader, fileName, readBufLockFile)
 }
 
 // WriteBufLockFile writes the BufLockFile to the io.Writer.
 func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
-	return writeFile(writer, "lock file", bufLockFile, writeBufLockFile)
+	fileIdentifier := bufLockFile.FileName()
+	if fileIdentifier == "" {
+		fileIdentifier = "lock file"
+	}
+	return writeFile(writer, fileIdentifier, bufLockFile, writeBufLockFile)
 }
 
 // *** PRIVATE ***
 
 type bufLockFile struct {
 	fileVersion   FileVersion
+	fileName      string
 	depModuleKeys []bufmodule.ModuleKey
 }
 
 func newBufLockFile(
 	fileVersion FileVersion,
+	fileName string,
 	depModuleKeys []bufmodule.ModuleKey,
 ) (*bufLockFile, error) {
 	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
@@ -161,6 +175,10 @@ func (l *bufLockFile) FileVersion() FileVersion {
 	return l.fileVersion
 }
 
+func (l *bufLockFile) FileName() string {
+	return l.fileName
+}
+
 func (l *bufLockFile) DepModuleKeys() []bufmodule.ModuleKey {
 	return l.depModuleKeys
 }
@@ -170,6 +188,7 @@ func (*bufLockFile) isFile()        {}
 
 func readBufLockFile(
 	reader io.Reader,
+	fileName string,
 	allowJSON bool,
 ) (BufLockFile, error) {
 	data, err := io.ReadAll(reader)
@@ -230,7 +249,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, depModuleKeys)
+		return newBufLockFile(fileVersion, fileName, depModuleKeys)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
@@ -266,7 +285,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, depModuleKeys)
+		return newBufLockFile(fileVersion, fileName, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
