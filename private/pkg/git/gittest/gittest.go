@@ -99,6 +99,7 @@ func scaffoldGitRepository(t *testing.T, runner command.Runner, defaultBranch st
 	writeFiles(t, localDir, map[string]string{"README.md": "This is a scaffold repository.\n"})
 	runInDir(t, runner, localDir, "git", "add", ".")
 	runInDir(t, runner, localDir, "git", "commit", "-m", "initial commit")
+	runInDir(t, runner, localDir, "git", "branch", "-m", defaultBranch) // this ensures a consistent defaultBranch name for all versions of Git
 	runInDir(t, runner, localDir, "git", "push", "-u", "-f", "origin", defaultBranch)
 
 	return localDir
