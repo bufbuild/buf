@@ -154,7 +154,7 @@ func writeFile[F File](
 	if err := writeFileFunc(writer, f); err != nil {
 		return newDecodeError(fileName, err)
 	}
-	return writeFileFunc(writer, f)
+	return nil
 }
 
 func getFileVersionForData(
