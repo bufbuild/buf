@@ -121,6 +121,8 @@ func PutBufLockFileForPrefix(
 //
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateFileDigests().
+//
+// fileName may be empty.
 func ReadBufLockFile(reader io.Reader, fileName string) (BufLockFile, error) {
 	return readFile(reader, fileName, readBufLockFile)
 }

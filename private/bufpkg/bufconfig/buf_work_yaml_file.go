@@ -106,6 +106,8 @@ func PutBufWorkYAMLFileForPrefix(
 }
 
 // ReadBufWorkYAMLFile reads the buf.work.yaml file from the io.Reader.
+//
+// fileName may be empty.
 func ReadBufWorkYAMLFile(reader io.Reader, fileName string) (BufWorkYAMLFile, error) {
 	return readFile(reader, fileName, readBufWorkYAMLFile)
 }
