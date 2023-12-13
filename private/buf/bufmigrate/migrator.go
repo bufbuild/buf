@@ -153,9 +153,34 @@ func (m *migrator) addModuleDirectory(
 		moduleConfig, err := bufconfig.NewModuleConfig(
 			moduleDirInMigratedBufYAML,
 			nil,
-			nil,
-			nil,
-			nil,
+			map[string][]string{
+				".": {},
+			},
+			bufconfig.NewLintConfig(
+				bufconfig.NewCheckConfig(
+					bufconfig.FileVersionV2,
+					nil,
+					nil,
+					nil,
+					nil,
+				),
+				"",
+				false,
+				false,
+				false,
+				"",
+				false,
+			),
+			bufconfig.NewBreakingConfig(
+				bufconfig.NewCheckConfig(
+					bufconfig.FileVersionV2,
+					nil,
+					nil,
+					nil,
+					nil,
+				),
+				false,
+			),
 		)
 		if err != nil {
 			return err
