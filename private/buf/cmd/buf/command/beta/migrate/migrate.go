@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	workspaceDirectoryFlagName = "workspace-dir"
-	moduleDirectoriesFlagName  = "module-dir"
-	bufGenYAMLPathFlagName     = "generate-template"
+	workspaceDirectoryFlagName = "workspace"
+	moduleDirectoriesFlagName  = "module"
+	bufGenYAMLPathFlagName     = "template"
 	dryRunFlagName             = "dry-run"
 )
 
