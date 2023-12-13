@@ -501,6 +501,9 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		// We are only removing lock entries that are in the workspace. If a lock
 		// entry is not in the workspace, it could be an indirect
 		// A lock entry could be for an indirect dependenceny not listed in deps in buf.yaml.
+		if _, ok := m.moduleNameToParentFile[moduleFullName]; !ok {
+			continue
+		}
 		depModuleToKeys[moduleFullName] = append(depModuleToKeys[moduleFullName], depModuleKey)
 	}
 	areDependenciesResolved := true
