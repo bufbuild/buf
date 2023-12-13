@@ -53,7 +53,7 @@ type migrator struct {
 
 	moduleConfigs            []bufconfig.ModuleConfig
 	moduleDependencies       []bufmodule.ModuleRef
-	isLockFileSeen           bool
+	hasSeenBufLock           bool
 	depModuleKeys            []bufmodule.ModuleKey
 	pathToMigratedBufGenYAML map[string]bufconfig.BufGenYAMLFile
 	moduleNameToParentFile   map[string]string
@@ -355,7 +355,7 @@ func (m *migrator) addModuleDirectory(
 	default:
 		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 	}
-	m.isLockFileSeen = true
+	m.hasSeenBufLock = true
 	return nil
 }
 
@@ -525,7 +525,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys...)
 		}
 		var bufLock bufconfig.BufLockFile
-		if m.isLockFileSeen {
+		if m.hasSeenBufLock {
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedDepModuleKeys,
@@ -554,7 +554,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
 		}
 		var bufLock bufconfig.BufLockFile
-		if m.isLockFileSeen {
+		if m.hasSeenBufLock {
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedDepModuleKeys,
@@ -592,7 +592,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		return nil, nil, err
 	}
 	var bufLock bufconfig.BufLockFile
-	if m.isLockFileSeen {
+	if m.hasSeenBufLock {
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
