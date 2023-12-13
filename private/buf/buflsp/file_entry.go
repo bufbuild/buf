@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
@@ -32,13 +31,10 @@ type fileEntry struct {
 	lines    []string
 	refCount int
 
-	// Either from a local module, a remote module key, or neither.
-	module    bufmodule.Module
-	moduleKey bufmodule.ModuleKey
-	workspace bufworkspace.Workspace
+	moduleSet bufmodule.ModuleSet
+	bucket    bufmodule.ModuleReadBucket
 
 	externalPath string
-	path         string
 	isRemote     bool // If the file is part of a remote module.
 
 	hasParseError bool // If parsing produced an error.
@@ -57,23 +53,17 @@ type fileEntry struct {
 
 func newFileEntry(
 	document *protocol.TextDocumentItem,
-	module bufmodule.Module,
-	moduleKey bufmodule.ModuleKey,
-	workspace bufworkspace.Workspace,
+	moduleSet bufmodule.ModuleSet,
 	externalPath string,
-	path string,
 	isRemote bool,
 ) *fileEntry {
+	bucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
 	result := &fileEntry{
-		document: document,
-		refCount: 1,
-
-		module:    module,
-		moduleKey: moduleKey,
-		workspace: workspace,
-
+		document:     document,
+		refCount:     1,
+		moduleSet:    moduleSet,
+		bucket:       bucket,
 		externalPath: externalPath,
-		path:         path,
 		isRemote:     isRemote,
 	}
 	result.lines = strings.Split(result.document.Text, "\n")
@@ -86,11 +76,11 @@ func (f *fileEntry) getSourcePos(pos protocol.Position) ast.SourcePos {
 	return ast.SourcePos{
 		Line:     int(pos.Line + 1),
 		Col:      int(pos.Character + 1),
-		Filename: f.path,
+		Filename: f.externalPath,
 	}
 }
 
-func (f *fileEntry) processText(ctx context.Context, lsp *BufLsp) error {
+func (f *fileEntry) processText(ctx context.Context, lsp *server) error {
 	f.tryParse()
 	if err := f.resolveImports(ctx, lsp); err != nil {
 		return err
@@ -98,7 +88,7 @@ func (f *fileEntry) processText(ctx context.Context, lsp *BufLsp) error {
 	return lsp.updateDiagnostics(ctx, f)
 }
 
-func (f *fileEntry) updateText(ctx context.Context, lsp *BufLsp, text string) (bool, error) {
+func (f *fileEntry) updateText(ctx context.Context, lsp *server, text string) (bool, error) {
 	f.document.Text = text
 	f.lines = strings.Split(f.document.Text, "\n")
 	matchDisk := false
@@ -145,15 +135,15 @@ func (f *fileEntry) generateSymbols() {
 	})
 }
 
-func (f *fileEntry) resolveImports(ctx context.Context, lsp *BufLsp) error {
-	if f.module == nil {
+func (f *fileEntry) resolveImports(ctx context.Context, lsp *server) error {
+	if f.moduleSet == nil {
 		return nil
 	}
 	for _, importStatement := range f.imports {
 		if importStatement.docURI != "" {
 			continue
 		}
-		importEntry, err := lsp.resolveImport(ctx, f, importStatement.node.Name.AsString())
+		importEntry, err := lsp.resolveImport(ctx, f.moduleSet, f.bucket, importStatement.node.Name.AsString())
 		if err != nil {
 			return err
 		} else if importEntry != nil {

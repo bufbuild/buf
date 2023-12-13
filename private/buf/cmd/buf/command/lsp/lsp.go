@@ -24,8 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
@@ -38,15 +37,15 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.Builder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Start the language server.",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -70,7 +69,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	var jstream jsonrpc2.Stream
@@ -86,22 +85,21 @@ func run(
 			writer: container.Stdout(),
 		})
 	}
-	jconn := jsonrpc2.NewConn(jstream)
+	jsonrpc2Conn := jsonrpc2.NewConn(jstream)
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
 	}
-	server, err := buflsp.NewBufLsp(
+	server, err := buflsp.NewServer(
 		ctx,
-		jconn,
-		container.Logger(),
+		jsonrpc2Conn,
 		container,
 		controller,
 	)
 	if err != nil {
 		return err
 	}
-	jconn.Go(ctx, protocol.ServerHandler(
+	jsonrpc2Conn.Go(ctx, protocol.ServerHandler(
 		server,
 		nil,
 	))

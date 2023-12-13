@@ -27,43 +27,62 @@ import (
 
 type completionOptions map[string]protocol.CompletionItem
 
-func (b *BufLsp) findRefCompletions(ref *symbolRef, options completionOptions) {
+func (s *server) findRefCompletions(ref *symbolRef, options completionOptions) {
 	prefix := ref.refName
 	if len(prefix) > 0 {
 		// Ignore the last part of the prefix, as it is being completed.
 		prefix = prefix[:len(prefix)-1]
 	}
-	b.findRefPrefixCompletions(ref, prefix, options)
+	s.findRefPrefixCompletions(ref, prefix, options)
 }
 
-func (b *BufLsp) findRefPrefixCompletions(ref *symbolRef, prefix symbolRefName, options completionOptions) {
-	b.findCompletions(ref.entry, prefix, ref.scope, options, ref.isField)
+func (s *server) findRefPrefixCompletions(
+	ref *symbolRef,
+	prefix symbolRefName,
+	options completionOptions,
+) {
+	s.findCompletions(ref.entry, prefix, ref.scope, options, ref.isField)
 }
 
-func (b *BufLsp) findCompletions(entry *fileEntry, name symbolRefName, scope symbolName, options completionOptions, isField bool) {
+func (s *server) findCompletions(
+	entry *fileEntry,
+	name symbolRefName,
+	scope symbolName,
+	options completionOptions,
+	isField bool,
+) {
 	candidates := findCandidates(name, scope)
 	for _, candidate := range candidates {
 		entry.findCompletions(candidate, options, isField)
 		for _, importEntry := range entry.imports {
-			b.findCompletionsFromImport(importEntry, candidate, options, isField)
+			s.findCompletionsFromImport(importEntry, candidate, options, isField)
 		}
 	}
 }
 
-func (b *BufLsp) findCompletionsFromImport(importEntry *importEntry, candidate symbolName, options completionOptions, isField bool) {
+func (s *server) findCompletionsFromImport(
+	importEntry *importEntry,
+	candidate symbolName,
+	options completionOptions,
+	isField bool,
+) {
 	if importEntry.docURI != "" {
-		if importFile, ok := b.fileCache[importEntry.docURI.Filename()]; ok {
+		if importFile, ok := s.fileCache[importEntry.docURI.Filename()]; ok {
 			importFile.findCompletions(candidate, options, isField)
 			for _, subImportEntry := range importFile.imports {
 				if subImportEntry.isPublic {
-					b.findCompletionsFromImport(subImportEntry, candidate, options, isField)
+					s.findCompletionsFromImport(subImportEntry, candidate, options, isField)
 				}
 			}
 		}
 	}
 }
 
-func (b *BufLsp) findImportCompletionsAt(ctx context.Context, entry *fileEntry, pos ast.SourcePos) (completionOptions, bool, error) {
+func (s *server) findImportCompletionsAt(
+	ctx context.Context,
+	entry *fileEntry,
+	pos ast.SourcePos,
+) (completionOptions, bool, error) {
 	importEntry := entry.findImportEntry(pos)
 	if importEntry == nil {
 		return nil, false, nil
@@ -78,11 +97,15 @@ func (b *BufLsp) findImportCompletionsAt(ctx context.Context, entry *fileEntry, 
 		return nil, true, nil
 	}
 	prefix := importEntry.node.Name.AsString()[:colOffset]
-	result, err := b.findImportCompletions(ctx, entry, prefix)
+	result, err := s.findImportCompletions(ctx, entry, prefix)
 	return result, true, err
 }
 
-func (b *BufLsp) findImportCompletions(ctx context.Context, entry *fileEntry, prefix string) (completionOptions, error) {
+func (s *server) findImportCompletions(
+	ctx context.Context,
+	entry *fileEntry,
+	prefix string,
+) (completionOptions, error) {
 	endPos := strings.LastIndex(prefix, "/")
 	if endPos == -1 {
 		prefix = ""
@@ -101,26 +124,22 @@ func (b *BufLsp) findImportCompletions(ctx context.Context, entry *fileEntry, pr
 		return nil, err
 	}
 
-	if entry.module != nil {
-		if err := b.findModuleFileCompletions(ctx, entry.module, prefix, options); err != nil {
+	if entry.moduleSet != nil {
+		if err := s.findBucketCompletions(ctx, entry.bucket, prefix, options); err != nil {
 			return nil, err
-		}
-		deps, err := entry.module.ModuleDeps()
-		if err != nil {
-			return nil, err
-		}
-		for _, dep := range deps {
-			if err := b.findModuleFileCompletions(ctx, dep, prefix, options); err != nil {
-				return nil, err
-			}
 		}
 	}
 
 	return options, nil
 }
 
-func (b *BufLsp) findModuleFileCompletions(ctx context.Context, module bufmodule.Module, prefix string, options completionOptions) error {
-	return module.WalkFileInfos(ctx, func(info bufmodule.FileInfo) error {
+func (s *server) findBucketCompletions(
+	ctx context.Context,
+	bucket bufmodule.ModuleReadBucket,
+	prefix string,
+	options completionOptions,
+) error {
+	return bucket.WalkFileInfos(ctx, func(info bufmodule.FileInfo) error {
 		if strings.HasPrefix(info.Path(), prefix) {
 			relPath := strings.TrimPrefix(info.Path(), prefix)
 			item := makeIncludeCompletion(relPath)
@@ -130,14 +149,19 @@ func (b *BufLsp) findModuleFileCompletions(ctx context.Context, module bufmodule
 	})
 }
 
-func (b *BufLsp) findPrefixCompletions(ctx context.Context, entry *fileEntry, scope symbolName, prefixString string) completionOptions {
+func (s *server) findPrefixCompletions(
+	ctx context.Context,
+	entry *fileEntry,
+	scope symbolName,
+	prefixString string,
+) completionOptions {
 	options := make(completionOptions)
 	inOption := strings.HasPrefix(prefixString, "[")
 
 	if !inOption {
 		prefixString = strings.TrimPrefix(prefixString, "(")
 		refName := strings.Split(prefixString, ".")
-		b.findRefCompletions(&symbolRef{
+		s.findRefCompletions(&symbolRef{
 			entry:   entry,
 			refName: refName,
 			scope:   scope,
@@ -191,7 +215,7 @@ func (b *BufLsp) findPrefixCompletions(ctx context.Context, entry *fileEntry, sc
 			scope:   entry.pkg,
 			isField: true,
 		}
-		b.findRefPrefixCompletions(ref, ext, options)
+		s.findRefPrefixCompletions(ref, ext, options)
 	case len(ext) > 0:
 		// Auto complete the extension field
 		ref := &symbolRef{
@@ -200,29 +224,29 @@ func (b *BufLsp) findPrefixCompletions(ctx context.Context, entry *fileEntry, sc
 			scope:   entry.pkg,
 			isField: true,
 		}
-		ref = b.resolveFieldType(ref)
+		ref = s.resolveFieldType(ref)
 		for _, part := range prefix {
 			if ref == nil {
 				break
 			}
 			ref.refName = append(ref.refName, part)
-			ref = b.resolveFieldType(ref)
+			ref = s.resolveFieldType(ref)
 		}
 		if ref != nil {
 			ref.isField = true
 			ref.scope = entry.pkg
-			b.findRefPrefixCompletions(ref, ref.refName, options)
+			s.findRefPrefixCompletions(ref, ref.refName, options)
 		}
 	default:
 		for _, wko := range wellKnownOptions {
-			ref := b.resolveWellKnownExtendee(ctx, wko)
+			ref := s.resolveWellKnownExtendee(ctx, wko)
 			for _, part := range prefix {
 				ref.refName = append(ref.refName, part)
 				ref.isField = true
-				ref = b.resolveFieldType(ref)
+				ref = s.resolveFieldType(ref)
 			}
 			ref.isField = true
-			b.findRefPrefixCompletions(ref, ref.refName, options)
+			s.findRefPrefixCompletions(ref, ref.refName, options)
 		}
 	}
 	return options
@@ -236,7 +260,6 @@ func makeIncludeCompletion(relPath string) protocol.CompletionItem {
 			Kind:  protocol.CompletionItemKindFile,
 		}
 	}
-
 	label := relPath[:endPos]
 	return protocol.CompletionItem{
 		Label: label,

@@ -20,3 +20,5 @@ modules:
       use:
         - WIRE_JSON
       ignore_unstable_packages: true
+deps:
+  - buf.build/bufbuild/protovalidate

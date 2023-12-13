@@ -18,28 +18,33 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/applog"
-	"github.com/bufbuild/buf/private/pkg/app/appname"
-	"github.com/bufbuild/buf/private/pkg/app/appverbose"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/git"
+	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
+	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.lsp.dev/protocol"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 func TestBufLsp(t *testing.T) {
 	t.Parallel()
-	server, doc, err := newTestBufLspWith(t, "../proto/buf/lsp/test/v1/test_cases.proto")
+	lspServer, doc, err := newTestBufLspWith(t, "../../../proto/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	entry, ok := server.fileCache[doc.Filename()]
+	entry, ok := lspServer.fileCache[doc.Filename()]
 	if !ok {
 		t.Fatal("file not in cache")
 	}
@@ -124,16 +129,16 @@ func TestBufLsp(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.prefix, func(t *testing.T) {
 			t.Parallel()
-			server.mutex.Lock()
-			defer server.mutex.Unlock()
-			expectCompletions(t, server, entry, testCase.prefix, testCase.expected)
+			lspServer.lock.Lock()
+			defer lspServer.lock.Unlock()
+			expectCompletions(t, lspServer, entry, testCase.prefix, testCase.expected)
 		})
 	}
 }
 
-func expectCompletions(t *testing.T, server *BufLsp, entry *fileEntry, prefix string, expectedParts []string) {
+func expectCompletions(t *testing.T, lspServer *server, entry *fileEntry, prefix string, expectedParts []string) {
 	t.Helper()
-	completions := server.findPrefixCompletions(context.Background(), entry, symbolName{"buf", "lsp", "test", "v1"}, prefix)
+	completions := lspServer.findPrefixCompletions(context.Background(), entry, symbolName{"buf", "lsp", "test", "v1"}, prefix)
 	for _, expectedPart := range expectedParts {
 		if _, ok := completions[expectedPart]; !ok {
 			got := make([]string, 0, len(completions))
@@ -153,20 +158,20 @@ func expectCompletions(t *testing.T, server *BufLsp, entry *fileEntry, prefix st
 	}
 }
 
-func newTestBufLspWith(t *testing.T, fileName string) (*BufLsp, protocol.DocumentURI, error) {
+func newTestBufLspWith(t *testing.T, fileName string) (*server, protocol.DocumentURI, error) {
 	t.Helper()
-	server, err := newTestBufLsp(t)
+	lspServer, err := newTestBufLsp(t)
 	if err != nil {
 		return nil, "", err
 	}
-	entry, err := openFile(context.Background(), server, fileName)
+	entry, err := openFile(context.Background(), lspServer, fileName)
 	if err != nil {
 		return nil, "", err
 	}
-	return server, entry, nil
+	return lspServer, entry, nil
 }
 
-func openFile(ctx context.Context, server *BufLsp, fileName string) (protocol.DocumentURI, error) {
+func openFile(ctx context.Context, lspServer *server, fileName string) (protocol.DocumentURI, error) {
 	fileReader, err := os.Open(fileName)
 	if err != nil {
 		return "", err
@@ -182,7 +187,7 @@ func openFile(ctx context.Context, server *BufLsp, fileName string) (protocol.Do
 		return "", err
 	}
 	fileURI := protocol.DocumentURI("file://" + absPath)
-	if err := server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+	if err := lspServer.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
 		TextDocument: protocol.TextDocumentItem{
 			URI:  fileURI,
 			Text: string(fileData),
@@ -193,7 +198,7 @@ func openFile(ctx context.Context, server *BufLsp, fileName string) (protocol.Do
 	return fileURI, nil
 }
 
-func newTestBufLsp(tb testing.TB) (*BufLsp, error) {
+func newTestBufLsp(tb testing.TB) (*server, error) {
 	tb.Helper()
 	use := "test"
 	stdout := bytes.NewBuffer(nil)
@@ -208,43 +213,62 @@ func newTestBufLsp(tb testing.TB) (*BufLsp, error) {
 		"test",
 	)
 
-	logger, err := applog.NewLogger(appContainer.Stderr(), "info", "text")
+	logger, err := zaputil.NewLoggerForFlagValues(appContainer.Stderr(), "info", "text")
 	if err != nil {
 		return nil, err
 	}
-	verbosePrinter := appverbose.NewVerbosePrinter(appContainer.Stderr(), "test", true)
+	verbosePrinter := verbose.NewPrinter(appContainer.Stderr(), "test")
 
 	container, err := newContainer(appContainer, "test", logger, verbosePrinter)
 	if err != nil {
 		return nil, err
 	}
-
-	controller, err := bufcli.NewController(container)
+	omniProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/bufbuild/protovalidate",
+			PathToData: map[string][]byte{
+				"buf/validate/validate.proto": []byte("// Test"),
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	controller, err := bufctl.NewController(
+		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
+		container,
+		omniProvider,
+		omniProvider,
+		http.DefaultClient,
+		httpauth.NewNopAuthenticator(),
+		git.ClonerOptions{},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	server, err := NewBufLsp(
+	lspServer, err := newServer(
 		context.Background(),
 		nil,
-		logger,
 		container,
 		controller,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := server.Initialize(context.Background(), &protocol.InitializeParams{}); err != nil {
+	if _, err := lspServer.Initialize(context.Background(), &protocol.InitializeParams{}); err != nil {
 		return nil, err
 	}
-	return server, nil
+	return lspServer, nil
 }
 
 type container struct {
 	app.Container
-	nameContainer    appname.Container
-	logContainer     applog.Container
-	verboseContainer appverbose.Container
+	nameContainer    appext.NameContainer
+	logContainer     appext.LoggerContainer
+	tracerContainer  appext.TracerContainer
+	verboseContainer appext.VerboseContainer
 }
 
 func newContainer(
@@ -253,15 +277,16 @@ func newContainer(
 	logger *zap.Logger,
 	verbosePrinter verbose.Printer,
 ) (*container, error) {
-	nameContainer, err := appname.NewContainer(baseContainer, appName)
+	nameContainer, err := appext.NewNameContainer(baseContainer, appName)
 	if err != nil {
 		return nil, err
 	}
 	return &container{
 		Container:        baseContainer,
 		nameContainer:    nameContainer,
-		logContainer:     applog.NewContainer(logger),
-		verboseContainer: appverbose.NewContainer(verbosePrinter),
+		logContainer:     appext.NewLoggerContainer(logger),
+		tracerContainer:  appext.NewTracerContainer(appName),
+		verboseContainer: appext.NewVerboseContainer(verbosePrinter),
 	}, nil
 }
 
@@ -287,6 +312,10 @@ func (c *container) Port() (uint16, error) {
 
 func (c *container) Logger() *zap.Logger {
 	return c.logContainer.Logger()
+}
+
+func (c *container) Tracer() trace.Tracer {
+	return c.tracerContainer.Tracer()
 }
 
 func (c *container) VerbosePrinter() verbose.Printer {

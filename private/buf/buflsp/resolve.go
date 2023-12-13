@@ -32,9 +32,9 @@ type symbolRef struct {
 
 // Resolve the name and scope to candidate symbol names, and then find the symbols
 // reachable from the given file and it's direct imports.
-func (b *BufLsp) findSymbols(ref *symbolRef) []*symbolEntry {
+func (s *server) findSymbols(ref *symbolRef) []*symbolEntry {
 	for _, candidate := range findCandidates(ref.refName, ref.scope) {
-		symbols := b.findSymbolsForCandidate(ref, candidate)
+		symbols := s.findSymbolsForCandidate(ref, candidate)
 		if len(symbols) != 0 {
 			return symbols
 		}
@@ -43,27 +43,27 @@ func (b *BufLsp) findSymbols(ref *symbolRef) []*symbolEntry {
 }
 
 // Searches for the given symbol by name, in the given file and its direct imports.
-func (b *BufLsp) findSymbolsForCandidate(ref *symbolRef, candidate symbolName) []*symbolEntry {
+func (s *server) findSymbolsForCandidate(ref *symbolRef, candidate symbolName) []*symbolEntry {
 	// Include local symbols
 	result := ref.entry.findSymbols(candidate, ref.isField)
 
 	// Include symbols from direct imports
 	for _, importEntry := range ref.entry.imports {
-		result = append(result, b.findImportedSymbolsForCandidate(ref, importEntry, candidate)...)
+		result = append(result, s.findImportedSymbolsForCandidate(ref, importEntry, candidate)...)
 	}
 
 	return result
 }
 
-func (b *BufLsp) findImportedSymbolsForCandidate(ref *symbolRef, importEntry *importEntry, candidate symbolName) []*symbolEntry {
+func (s *server) findImportedSymbolsForCandidate(ref *symbolRef, importEntry *importEntry, candidate symbolName) []*symbolEntry {
 	var result []*symbolEntry
 	if importEntry.docURI != "" {
-		if importFile, ok := b.fileCache[importEntry.docURI.Filename()]; ok {
+		if importFile, ok := s.fileCache[importEntry.docURI.Filename()]; ok {
 			result = append(result, importFile.findSymbols(candidate, ref.isField)...)
 			for _, subImportEntry := range importFile.imports {
 				if subImportEntry.isPublic {
 					// Include symbols from indirect public imports
-					result = append(result, b.findImportedSymbolsForCandidate(ref, subImportEntry, candidate)...)
+					result = append(result, s.findImportedSymbolsForCandidate(ref, subImportEntry, candidate)...)
 				}
 			}
 		}
@@ -71,21 +71,21 @@ func (b *BufLsp) findImportedSymbolsForCandidate(ref *symbolRef, importEntry *im
 	return result
 }
 
-func (b *BufLsp) findReferencedSymbols(ctx context.Context, entry *fileEntry, pos ast.SourcePos) []*symbolEntry {
+func (s *server) findReferencedSymbols(ctx context.Context, entry *fileEntry, pos ast.SourcePos) []*symbolEntry {
 	symbolScope := entry.findSymbolScope(pos)
 	if symbolScope == nil {
 		return nil // No references exist in the top level scope.
 	}
 
-	result := b.findReferenceAt(ctx, entry, symbolScope, pos)
+	result := s.findReferenceAt(ctx, entry, symbolScope, pos)
 	if result == nil || len(result.refName) == 0 {
 		return nil
 	}
-	return b.findSymbols(result)
+	return s.findSymbols(result)
 }
 
-func (b *BufLsp) findSymbolLocation(symbol *symbolEntry) protocol.Location {
-	if symbolFile, ok := b.fileCache[symbol.file.Filename()]; ok {
+func (s *server) findSymbolLocation(symbol *symbolEntry) protocol.Location {
+	if symbolFile, ok := s.fileCache[symbol.file.Filename()]; ok {
 		return protocol.Location{
 			URI:   symbol.file,
 			Range: symbolFile.nodeLocation(symbol.node),
@@ -96,11 +96,11 @@ func (b *BufLsp) findSymbolLocation(symbol *symbolEntry) protocol.Location {
 }
 
 // Find the location of any symbols that are referenced at the given position.
-func (b *BufLsp) findReferencedDefLoc(ctx context.Context, entry *fileEntry, pos ast.SourcePos) []protocol.Location {
-	symbols := b.findReferencedSymbols(ctx, entry, pos)
+func (s *server) findReferencedDefLoc(ctx context.Context, entry *fileEntry, pos ast.SourcePos) []protocol.Location {
+	symbols := s.findReferencedSymbols(ctx, entry, pos)
 	result := make([]protocol.Location, len(symbols))
 	for i, symbol := range symbols {
-		result[i] = b.findSymbolLocation(symbol)
+		result[i] = s.findSymbolLocation(symbol)
 	}
 	return result
 }
@@ -122,7 +122,7 @@ func getRefName(identValue ast.IdentValueNode) symbolRefName {
 	return nil
 }
 
-func (b *BufLsp) findReferenceAt(ctx context.Context, entry *fileEntry, symbolScope *symbolScopeEntry, pos ast.SourcePos) *symbolRef {
+func (s *server) findReferenceAt(ctx context.Context, entry *fileEntry, symbolScope *symbolScopeEntry, pos ast.SourcePos) *symbolRef {
 	// Check if the position is in a type reference.
 	for _, ref := range symbolScope.typeRefs {
 		if !entry.containsPos(ref.node, pos) {
@@ -157,26 +157,26 @@ func (b *BufLsp) findReferenceAt(ctx context.Context, entry *fileEntry, symbolSc
 		if !entry.containsPos(option.node, pos) {
 			continue
 		}
-		result := b.resolveWellKnownExtendee(ctx, option.extendee)
+		result := s.resolveWellKnownExtendee(ctx, option.extendee)
 		for _, field := range option.node.Name.Parts {
 			var found bool
-			result, found = b.resolveFieldRef(entry, result, field, pos)
+			result, found = s.resolveFieldRef(entry, result, field, pos)
 			if found || result == nil {
 				return result
 			}
-			result = b.resolveFieldType(result)
+			result = s.resolveFieldType(result)
 			if result == nil {
 				return nil
 			}
 		}
-		result, _ = b.findReferenceInValueNode(entry, result, option.node.Val, pos)
+		result, _ = s.findReferenceInValueNode(entry, result, option.node.Val, pos)
 		return result
 	}
 
 	return nil
 }
 
-func (b *BufLsp) findReferenceInValueNode(entry *fileEntry, ref *symbolRef, valueNode ast.ValueNode, pos ast.SourcePos) (*symbolRef, bool) {
+func (s *server) findReferenceInValueNode(entry *fileEntry, ref *symbolRef, valueNode ast.ValueNode, pos ast.SourcePos) (*symbolRef, bool) {
 	if ref == nil {
 		return nil, false
 	}
@@ -198,12 +198,12 @@ func (b *BufLsp) findReferenceInValueNode(entry *fileEntry, ref *symbolRef, valu
 			continue
 		}
 		var found bool
-		result, found = b.resolveFieldRef(entry, result, element.Name, pos)
+		result, found = s.resolveFieldRef(entry, result, element.Name, pos)
 		if found || result == nil {
 			return result, found
 		}
-		result = b.resolveFieldType(result)
-		return b.findReferenceInValueNode(entry, result, element.Val, pos)
+		result = s.resolveFieldType(result)
+		return s.findReferenceInValueNode(entry, result, element.Val, pos)
 	}
 	// We aren't on any field name, so assume we are starting a new field name.
 	result.refName = append(result.refName, "")
@@ -213,15 +213,15 @@ func (b *BufLsp) findReferenceInValueNode(entry *fileEntry, ref *symbolRef, valu
 // Resolve fieldRef (a field symbolRefName) in the context of messageRef (its containing message symbolRefName).
 //
 // Returns the resolved field and if the position is in the field name.
-func (b *BufLsp) resolveFieldRef(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
+func (s *server) resolveFieldRef(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
 	if fieldRefNode.IsExtension() {
-		return b.resolveExtField(entry, messageRef, fieldRefNode, pos)
+		return s.resolveExtField(entry, messageRef, fieldRefNode, pos)
 	} else {
-		return b.resolveNormalField(entry, messageRef, fieldRefNode, pos)
+		return s.resolveNormalField(entry, messageRef, fieldRefNode, pos)
 	}
 }
 
-func (b *BufLsp) resolveNormalField(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
+func (s *server) resolveNormalField(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
 	if fieldName, ok := fieldRefNode.Name.(*ast.IdentNode); ok {
 		fieldRef := &symbolRef{
 			entry:   messageRef.entry,
@@ -236,8 +236,8 @@ func (b *BufLsp) resolveNormalField(entry *fileEntry, messageRef *symbolRef, fie
 }
 
 // Returns the resolved field and if the position is in the field name.
-func (b *BufLsp) resolveExtField(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
-	symbols := b.findSymbols(messageRef)
+func (s *server) resolveExtField(entry *fileEntry, messageRef *symbolRef, fieldRefNode *ast.FieldReferenceNode, pos ast.SourcePos) (*symbolRef, bool) {
+	symbols := s.findSymbols(messageRef)
 	if len(symbols) > 0 {
 		messageRef.refName = symbols[0].ref()
 	}
@@ -274,10 +274,10 @@ func (b *BufLsp) resolveExtField(entry *fileEntry, messageRef *symbolRef, fieldR
 	return nil, false
 }
 
-func (b *BufLsp) resolveWellKnownExtendee(ctx context.Context, extendee symbolRefName) *symbolRef {
+func (s *server) resolveWellKnownExtendee(ctx context.Context, extendee symbolRefName) *symbolRef {
 	// Check if it is a reference to a well known type Option type.
-	if descEntry, err := b.loadWktFile(ctx, wktSourceDir+"descriptor.proto"); err == nil {
-		defer func() { b.derefFileEntry(descEntry) }()
+	if descEntry, err := s.resolveImport(ctx, s.wellKnownTypesModuleSet, s.wellKnownTypesBucket, wellKnownTypesDescriptorProtoPath); err == nil {
+		defer func() { s.decrementReferenceCount(descEntry) }()
 		return &symbolRef{
 			entry:   descEntry,
 			refName: extendee,
@@ -286,14 +286,14 @@ func (b *BufLsp) resolveWellKnownExtendee(ctx context.Context, extendee symbolRe
 	return nil
 }
 
-func (b *BufLsp) resolveFieldType(ref *symbolRef) *symbolRef {
-	symbols := b.findSymbols(ref)
+func (s *server) resolveFieldType(ref *symbolRef) *symbolRef {
+	symbols := s.findSymbols(ref)
 	if len(symbols) == 0 {
 		return nil
 	}
 
 	symbol := symbols[0]
-	if symbolFile, ok := b.fileCache[symbol.file.Filename()]; ok {
+	if symbolFile, ok := s.fileCache[symbol.file.Filename()]; ok {
 		if node, ok := symbol.node.(*ast.FieldNode); ok {
 			fieldRef := &symbolRef{
 				entry:   symbolFile,
@@ -301,7 +301,7 @@ func (b *BufLsp) resolveFieldType(ref *symbolRef) *symbolRef {
 				scope:   symbol.name()[:len(symbol.name())-1],
 				isField: true,
 			}
-			symbols := b.findSymbols(fieldRef)
+			symbols := s.findSymbols(fieldRef)
 			if len(symbols) == 0 {
 				return nil
 			}
