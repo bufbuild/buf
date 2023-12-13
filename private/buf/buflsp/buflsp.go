@@ -536,7 +536,11 @@ func (s *server) localPathForImport(
 	file bufmodule.File,
 ) (string, error) {
 	if workspace == s.wellKnownTypesModuleSet {
-		return normalpath.Join(s.container.CacheDirPath(), lspWellKnownTypesCacheRelDirPath, file.Path()), nil
+		digest, err := file.Module().Digest()
+		if err != nil {
+			return "", err
+		}
+		return normalpath.Join(s.container.CacheDirPath(), lspWellKnownTypesCacheRelDirPath, digest.String(), file.Path()), nil
 	}
 	module := file.Module()
 	if module.IsLocal() {
