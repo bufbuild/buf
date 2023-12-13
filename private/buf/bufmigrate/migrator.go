@@ -45,14 +45,15 @@ import (
 type migrator struct {
 	logger         *zap.Logger
 	clientProvider bufapi.ClientProvider
+	// the bucket at "."
+	rootBucket storage.ReadWriteBucket
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
 	destinationDir string
-	// the bucket at "."
-	rootBucket storage.ReadWriteBucket
 
 	moduleConfigs            []bufconfig.ModuleConfig
 	moduleDependencies       []bufmodule.ModuleRef
+	isLockFileSeen           bool
 	depModuleKeys            []bufmodule.ModuleKey
 	pathToMigratedBufGenYAML map[string]bufconfig.BufGenYAMLFile
 	moduleNameToParentFile   map[string]string
@@ -354,6 +355,7 @@ func (m *migrator) addModuleDirectory(
 	default:
 		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
 	}
+	m.isLockFileSeen = true
 	return nil
 }
 
@@ -381,16 +383,18 @@ func (m *migrator) migrateAsDryRun(
 			filepath.Join(m.destinationDir, bufconfig.DefaultBufYAMLFileName),
 			bufYAMLBuffer.String(),
 		)
-		var bufLockBuffer bytes.Buffer
-		if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
-			return err
+		if migratedBufLock != nil {
+			var bufLockBuffer bytes.Buffer
+			if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
+				return err
+			}
+			fmt.Fprintf(
+				writer,
+				"%s:\n%s\n",
+				filepath.Join(m.destinationDir, bufconfig.DefaultBufLockFileName),
+				bufLockBuffer.String(),
+			)
 		}
-		fmt.Fprintf(
-			writer,
-			"%s:\n%s\n",
-			filepath.Join(m.destinationDir, bufconfig.DefaultBufLockFileName),
-			bufLockBuffer.String(),
-		)
 	}
 	for bufGenYAMLPath, migratedBufGenYAML := range m.pathToMigratedBufGenYAML {
 		var bufGenYAMLBuffer bytes.Buffer
@@ -440,18 +444,21 @@ func (m *migrator) migrate(
 		); err != nil {
 			return err
 		}
-		if err := bufconfig.PutBufLockFileForPrefix(
-			ctx,
-			m.rootBucket,
-			m.destinationDir,
-			migratedBufLock,
-		); err != nil {
-			return err
+		if migratedBufLock != nil {
+			if err := bufconfig.PutBufLockFileForPrefix(
+				ctx,
+				m.rootBucket,
+				m.destinationDir,
+				migratedBufLock,
+			); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
+// If no error, the BufYAMLFile returned is never nil, but the BufLockFile returne may be nil.
 func (m *migrator) buildBufYAMLAndBufLock(
 	ctx context.Context,
 ) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
@@ -517,12 +524,15 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		for _, depModuleKeys := range depModuleToKeys {
 			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys...)
 		}
-		bufLock, err := bufconfig.NewBufLockFile(
-			bufconfig.FileVersionV2,
-			resolvedDepModuleKeys,
-		)
-		if err != nil {
-			return nil, nil, err
+		var bufLock bufconfig.BufLockFile
+		if m.isLockFileSeen {
+			bufLock, err = bufconfig.NewBufLockFile(
+				bufconfig.FileVersionV2,
+				resolvedDepModuleKeys,
+			)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 		return bufYAML, bufLock, nil
 	}
@@ -543,12 +553,15 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		for _, depModuleKeys := range depModuleToKeys {
 			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
 		}
-		bufLock, err := bufconfig.NewBufLockFile(
-			bufconfig.FileVersionV2,
-			resolvedDepModuleKeys,
-		)
-		if err != nil {
-			return nil, nil, err
+		var bufLock bufconfig.BufLockFile
+		if m.isLockFileSeen {
+			bufLock, err = bufconfig.NewBufLockFile(
+				bufconfig.FileVersionV2,
+				resolvedDepModuleKeys,
+			)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 		return bufYAML, bufLock, nil
 	}
@@ -561,7 +574,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	if err != nil {
 		return nil, nil, err
 	}
-	moduleRefs, moduleKeys, err := resolvedDeclaredAndLockedDependencies(
+	resolvedDepModuleRefs, resolvedDepModuleKeys, err := resolvedDeclaredAndLockedDependencies(
 		moduleToRefToCommit,
 		commitIDToCommit,
 		depModuleToRefs,
@@ -573,17 +586,20 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
 		m.moduleConfigs,
-		moduleRefs,
+		resolvedDepModuleRefs,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
-	bufLock, err := bufconfig.NewBufLockFile(
-		bufconfig.FileVersionV2,
-		moduleKeys,
-	)
-	if err != nil {
-		return nil, nil, err
+	var bufLock bufconfig.BufLockFile
+	if m.isLockFileSeen {
+		bufLock, err = bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV2,
+			resolvedDepModuleKeys,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	return bufYAML, bufLock, nil
 }
