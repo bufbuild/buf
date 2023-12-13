@@ -538,8 +538,9 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			},
 		)
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			moduleDirPath := moduleConfig.DirPath()
 			externalModule := externalBufYAMLFileModuleV2{
-				Directory: moduleConfig.DirPath(),
+				Directory: moduleDirPath,
 			}
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
@@ -558,7 +559,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalModule.Lint.Use = lintConfig.UseIDsAndCategories()
 			externalModule.Lint.Except = lintConfig.ExceptIDsAndCategories()
 			joinDirPath := func(importPath string) string {
-				return filepath.Join(moduleConfig.DirPath(), importPath)
+				return filepath.Join(moduleDirPath, importPath)
 			}
 			externalModule.Lint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
 			externalModule.Lint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
