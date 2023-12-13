@@ -57,7 +57,10 @@ func newFileEntry(
 	externalPath string,
 	isRemote bool,
 ) *fileEntry {
-	bucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	var bucket bufmodule.ModuleReadBucket
+	if moduleSet != nil {
+		bucket = bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	}
 	result := &fileEntry{
 		document:     document,
 		refCount:     1,

@@ -1,0 +1,4 @@
+version: v2
+deps:
+  - name: buf.build/bufbuild/protovalidate
+    digest: shake256:0000000000000000000000000000000000000000000000000000000000000000

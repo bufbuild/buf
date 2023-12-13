@@ -15,6 +15,7 @@
 package buflsp
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"io"
@@ -30,9 +31,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -66,11 +69,11 @@ func TestBufLsp(t *testing.T) {
 			expected: []string{"lsp", "validate"},
 		},
 		{
-			prefix:   "v1.hello",
+			prefix:   "buf.lsp.test.v1alpha1.",
 			expected: []string{"SourceLocation", "TestEnum", "TestMessage", "CodeInfo", "Diagnostic", "FileInfo", "SemanticToken"},
 		},
 		{
-			prefix:   "(v1.hello",
+			prefix:   "(buf.lsp.test.v1alpha1.",
 			expected: []string{"SourceLocation", "TestEnum", "TestMessage", "CodeInfo", "Diagnostic", "FileInfo", "SemanticToken"},
 		},
 		{
@@ -225,10 +228,8 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 	}
 	omniProvider, err := bufmoduletesting.NewOmniProvider(
 		bufmoduletesting.ModuleData{
-			Name: "buf.build/bufbuild/protovalidate",
-			PathToData: map[string][]byte{
-				"buf/validate/validate.proto": []byte("// Test"),
-			},
+			Name:       "buf.build/bufbuild/protovalidate",
+			PathToData: zipData(tb, "./testdata/protovalidate.zip"),
 		},
 	)
 	if err != nil {
@@ -261,6 +262,23 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 		return nil, err
 	}
 	return lspServer, nil
+}
+
+func zipData(tb testing.TB, filename string) map[string][]byte {
+	zipData := map[string][]byte{}
+	zipReader, err := zip.OpenReader(filename)
+	require.NoError(tb, err)
+	for _, file := range zipReader.File {
+		if file.FileInfo().IsDir() {
+			continue
+		}
+		r, err := file.Open()
+		require.NoError(tb, err)
+		data, err := ioext.ReadAllAndClose(r)
+		require.NoError(tb, err)
+		zipData[file.Name] = data
+	}
+	return zipData
 }
 
 type container struct {
