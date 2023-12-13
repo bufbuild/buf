@@ -191,6 +191,40 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 	return graph, nil
 }
 
+// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles converts the Module to a
+// ModuleReadBucket that contains all the .proto files of the Module and its dependencies.
+//
+// Targeting information will remain the same. Note that this means that the result ModuleReadBucket
+// may have no target files! This can occur when path filtering was applied, but the path filters did
+// not match any files in the Module, and none of the Module's files were targeted.
+// It can also happen if the Module nor any of its dependencies were targeted.
+//
+// *** THIS IS PROBABLY NOT THE FUNCTION YOU ARE LOOKING FOR. *** You probably want
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles to convert a ModuleSet/Workspace to a
+// ModuleReadBucket. This function is used for cases where we want to create an Image
+// specifically for one Module, such as when we need to associate LintConfig and BreakingConfig
+// on a per-Module basis for buf lint and buf breaking. See bufctl.Controller, which is likely
+// the only place this should be used outside of testing.
+func ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module Module) (ModuleReadBucket, error) {
+	modules := []Module{module}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	for _, moduleDep := range moduleDeps {
+		modules = append(modules, moduleDep)
+	}
+	return newMultiModuleReadBucket(
+		slicesext.Map(
+			modules,
+			func(module Module) ModuleReadBucket {
+				return ModuleReadBucketWithOnlyProtoFiles(module)
+			},
+		),
+		true,
+	), nil
+}
+
 // *** PRIVATE ***
 
 // moduleSet

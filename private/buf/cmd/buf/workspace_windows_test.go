@@ -23,7 +23,7 @@ import (
 )
 
 func TestWorkspaceAbsoluteFail(t *testing.T) {
-	// The buf.work.yaml file cannot specify absolute paths.
+	// The workspace file (v1: buf.work.yaml, v2: buf.yaml) file cannot specify absolute paths.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -32,5 +32,14 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		`Failure: directory "C:\buf" listed in testdata\workspace\fail\absolute\windows\buf.work.yaml is invalid: C:\buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute", "windows"),
+	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: directory "C:\buf" listed in testdata\workspace\fail\absolute\windows\buf.work.yaml is invalid: C:\buf: expected to be relative`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "v2", "absolute", "windows"),
 	)
 }

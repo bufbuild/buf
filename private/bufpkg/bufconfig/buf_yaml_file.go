@@ -380,7 +380,7 @@ func readBufYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufYAML
 			}
 			dirPath, err := normalpath.NormalizeAndValidate(dirPath)
 			if err != nil {
-				return nil, fmt.Errorf("invaid module directory: %w", err)
+				return nil, fmt.Errorf("invalid module directory: %w", err)
 			}
 			var moduleFullName bufmodule.ModuleFullName
 			if externalModule.Name != "" {
