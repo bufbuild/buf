@@ -45,9 +45,9 @@ import (
 var (
 	// wellKnownTypesDescriptorProtoPath is the path of the descriptor.proto well-known types file.
 	wellKnownTypesDescriptorProtoPath = normalpath.Join("google", "protobuf", "descriptor.proto")
-	// v3WellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
+	// lspWellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
 	// well-known types .proto files.
-	v3WellKnownTypesCacheRelDirPath = normalpath.Join("v3", "wkt")
+	lspWellKnownTypesCacheRelDirPath = normalpath.Join("lsp", "wkt")
 	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
 	// NOTE: This needs to be kept in sync with module_data_provider.
 	v3CacheModuleRelDirPath = normalpath.Join("v3", "module")
@@ -193,16 +193,19 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	var moduleSet bufmodule.ModuleSet
 	wellKnownTypesCachePath := normalpath.Join(
 		s.container.CacheDirPath(),
-		v3WellKnownTypesCacheRelDirPath,
+		lspWellKnownTypesCacheRelDirPath,
 	)
 	if strings.HasPrefix(normalpath.Normalize(params.TextDocument.URI.Filename()), wellKnownTypesCachePath) {
 		moduleSet = s.wellKnownTypesModuleSet
 	} else {
 		var err error
-		moduleSet, err = s.controller.GetWorkspace(ctx, params.TextDocument.URI.Filename())
+		workspace, err := s.controller.GetWorkspace(ctx, params.TextDocument.URI.Filename())
 		if err != nil {
 			s.logger.Warn("could not determine workspace", zap.Error(err))
 			// Continue anyways if this fails.
+		}
+		if workspace != nil {
+			moduleSet = workspace
 		}
 	}
 
@@ -533,7 +536,7 @@ func (s *server) localPathForImport(
 	file bufmodule.File,
 ) (string, error) {
 	if workspace == s.wellKnownTypesModuleSet {
-		return normalpath.Join(s.container.CacheDirPath(), v3WellKnownTypesCacheRelDirPath, file.Path()), nil
+		return normalpath.Join(s.container.CacheDirPath(), lspWellKnownTypesCacheRelDirPath, file.Path()), nil
 	}
 	module := file.Module()
 	if module.IsLocal() {
