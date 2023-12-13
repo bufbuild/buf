@@ -455,51 +455,120 @@ func (m *migrator) migrate(
 func (m *migrator) buildBufYAMLAndBufLock(
 	ctx context.Context,
 ) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
-	// Remove declared dependencies that are also modules in this workspace.
-	filteredModuleDependencies := slicesext.Filter(
-		m.moduleDependencies,
-		func(moduleRef bufmodule.ModuleRef) bool {
-			_, ok := m.moduleNameToParentFile[moduleRef.ModuleFullName().String()]
-			return !ok
-		},
-	)
-	// TODO: the next two variables have placeholder values. Inside the if-statement
-	// is what should happen.
-	moduleRefs := slicesext.MapValuesToSlice(
-		slicesext.ToValuesMap(
-			filteredModuleDependencies,
-			func(moduleRef bufmodule.ModuleRef) string {
-				return moduleRef.ModuleFullName().String()
-			},
-		),
-	)
-	moduleKeys := slicesext.MapValuesToSlice(
-		slicesext.ToValuesMap(
-			m.depModuleKeys,
+	depModuleToRefs := make(map[string][]bufmodule.ModuleRef)
+	for _, depModuleRef := range m.moduleDependencies {
+		moduleFullName := depModuleRef.ModuleFullName().String()
+		if _, ok := m.moduleNameToParentFile[moduleFullName]; !ok {
+			continue
+		}
+		depModuleToRefs[moduleFullName] = append(depModuleToRefs[moduleFullName], depModuleRef)
+	}
+	depModuleToKeys := make(map[string][]bufmodule.ModuleKey)
+	for _, depModuleKey := range m.depModuleKeys {
+		moduleFullName := depModuleKey.ModuleFullName().String()
+		// We are only removing lock entries that are in the workspace. If a lock
+		// entry is not in the workspace, it could be an indirect
+		// A lock entry could be for an indirect dependenceny not listed in deps in buf.yaml.
+		depModuleToKeys[moduleFullName] = append(depModuleToKeys[moduleFullName], depModuleKey)
+	}
+	areDependenciesResolved := true
+	for depModule, depModuleRefs := range depModuleToRefs {
+		refStringToRef := make(map[string]bufmodule.ModuleRef)
+		for _, ref := range depModuleRefs {
+			// Add ref even if ref.Ref() is empty. Therefore, slicesext.ToValuesMap is not used.
+			refStringToRef[ref.Ref()] = ref
+		}
+		// If there are both buf.build/foo/bar and buf.build/foo/bar:some_ref, take the latter.
+		if len(refStringToRef) > 1 {
+			delete(refStringToRef, "")
+		}
+		if len(refStringToRef) > 1 {
+			areDependenciesResolved = false
+		}
+		depModuleToRefs[depModule] = slicesext.MapValuesToSlice(refStringToRef)
+	}
+	for depModule, depModuleKeys := range depModuleToKeys {
+		commitIDToKey := slicesext.ToValuesMap(
+			depModuleKeys,
 			func(moduleKey bufmodule.ModuleKey) string {
-				return moduleKey.ModuleFullName().String()
+				return moduleKey.CommitID()
 			},
-		),
-	)
-	// TODO: use this logic when it's tested and when commit service is ready.
-	if false {
-		moduleToRefToCommit, err := getModuleToRefToCommit(ctx, filteredModuleDependencies, m.clientProvider)
-		if err != nil {
-			return nil, nil, err
+		)
+		if len(commitIDToKey) > 1 {
+			areDependenciesResolved = false
 		}
-		commitIDToCommit, err := getCommitIDToCommit(ctx, m.clientProvider, m.depModuleKeys)
-		if err != nil {
-			return nil, nil, err
+		depModuleToKeys[depModule] = slicesext.MapValuesToSlice(commitIDToKey)
+	}
+	if areDependenciesResolved {
+		resolvedDepModuleRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToRefs))
+		for _, depModuleRefs := range depModuleToRefs {
+			// depModuleRefs is guaranteed to have length 1
+			resolvedDepModuleRefs = append(resolvedDepModuleRefs, depModuleRefs...)
 		}
-		moduleRefs, moduleKeys, err = resolvedDeclaredAndLockedDependencies(
-			moduleToRefToCommit,
-			commitIDToCommit,
-			filteredModuleDependencies,
-			m.depModuleKeys,
+		bufYAML, err := bufconfig.NewBufYAMLFile(
+			bufconfig.FileVersionV2,
+			m.moduleConfigs,
+			resolvedDepModuleRefs,
 		)
 		if err != nil {
 			return nil, nil, err
 		}
+		resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleToKeys))
+		for _, depModuleKeys := range depModuleToKeys {
+			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys...)
+		}
+		bufLock, err := bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV2,
+			resolvedDepModuleKeys,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		return bufYAML, bufLock, nil
+	}
+	if true {
+		resolvedDepModuleRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToRefs))
+		for _, depModuleRefs := range depModuleToRefs {
+			resolvedDepModuleRefs = append(resolvedDepModuleRefs, depModuleRefs[0])
+		}
+		bufYAML, err := bufconfig.NewBufYAMLFile(
+			bufconfig.FileVersionV2,
+			m.moduleConfigs,
+			resolvedDepModuleRefs,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleToKeys))
+		for _, depModuleKeys := range depModuleToKeys {
+			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
+		}
+		bufLock, err := bufconfig.NewBufLockFile(
+			bufconfig.FileVersionV2,
+			resolvedDepModuleKeys,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		return bufYAML, bufLock, nil
+	}
+	// TODO: the code below this line isn't currently reachable.
+	moduleToRefToCommit, err := getModuleToRefToCommit(ctx, m.clientProvider, m.moduleDependencies)
+	if err != nil {
+		return nil, nil, err
+	}
+	commitIDToCommit, err := getCommitIDToCommit(ctx, m.clientProvider, m.depModuleKeys)
+	if err != nil {
+		return nil, nil, err
+	}
+	moduleRefs, moduleKeys, err := resolvedDeclaredAndLockedDependencies(
+		moduleToRefToCommit,
+		commitIDToCommit,
+		depModuleToRefs,
+		depModuleToKeys,
+	)
+	if err != nil {
+		return nil, nil, err
 	}
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
@@ -534,59 +603,24 @@ func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, paren
 func resolvedDeclaredAndLockedDependencies(
 	moduleToRefToCommit map[string]map[string]*modulev1beta1.Commit,
 	commitIDToCommit map[string]*modulev1beta1.Commit,
-	declaredDependencies []bufmodule.ModuleRef,
-	lockedDependencies []bufmodule.ModuleKey,
+	moduleFullNameToDeclaredRefs map[string][]bufmodule.ModuleRef,
+	moduleFullNameToLockKeys map[string][]bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
-	depModuleFullNameToRefs := make(map[string][]bufmodule.ModuleRef)
-	for _, depModuleRef := range declaredDependencies {
-		moduleFullName := depModuleRef.ModuleFullName().String()
-		depModuleFullNameToRefs[moduleFullName] = append(depModuleFullNameToRefs[moduleFullName], depModuleRef)
-	}
 	depModuleFullNameToResolvedRef := make(map[string]bufmodule.ModuleRef)
-	for moduleFullName, refs := range depModuleFullNameToRefs {
-		nonEmptyRef := slicesext.Filter(
-			refs,
-			func(ref bufmodule.ModuleRef) bool {
-				return ref.Ref() != ""
-			},
-		)
-		switch len(nonEmptyRef) {
-		case 0:
-			// All refs are empty, we take the first one (they are all the same). refs is guaranteed not empty,
-			// by the construction of depModuleFullNameToRefs.
-			depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
-		default:
-			// There are multiple pinned versions of the same dependency, we use the latest one.
-			sort.Slice(nonEmptyRef, func(i, j int) bool {
-				refToCommit := moduleToRefToCommit[moduleFullName]
-				iTime := refToCommit[refs[i].Ref()].GetCreateTime().AsTime()
-				jTime := refToCommit[refs[j].Ref()].GetCreateTime().AsTime()
-				return iTime.After(jTime)
-			})
-			depModuleFullNameToResolvedRef[moduleFullName] = nonEmptyRef[0]
-		}
+	for moduleFullName, refs := range moduleFullNameToDeclaredRefs {
+		// There are multiple pinned versions of the same dependency, we use the latest one.
+		sort.Slice(refs, func(i, j int) bool {
+			refToCommit := moduleToRefToCommit[moduleFullName]
+			iTime := refToCommit[refs[i].Ref()].GetCreateTime().AsTime()
+			jTime := refToCommit[refs[j].Ref()].GetCreateTime().AsTime()
+			return iTime.After(jTime)
+		})
+		depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
 	}
-	// We only want locked dependencies that correspond to declared dependencies.
-	lockedDependencies = slicesext.Filter(
-		lockedDependencies,
-		func(lockedDependency bufmodule.ModuleKey) bool {
-			_, ok := depModuleFullNameToRefs[lockedDependency.ModuleFullName().String()]
-			return ok
-		},
-	)
-	depModuleFullNameToModuleKeys := make(map[string][]bufmodule.ModuleKey)
-	for _, depModuleKey := range lockedDependencies {
-		depModuleFullName := depModuleKey.ModuleFullName().String()
-		depModuleFullNameToModuleKeys[depModuleFullName] = append(depModuleFullNameToModuleKeys[depModuleFullName], depModuleKey)
-	}
-	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleFullNameToModuleKeys))
-	for moduleFullName, depModuleKeys := range depModuleFullNameToModuleKeys {
+	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(moduleFullNameToLockKeys))
+	for moduleFullName, lockKeys := range moduleFullNameToLockKeys {
 		resolvedRef := depModuleFullNameToResolvedRef[moduleFullName]
 		if resolvedRef.Ref() != "" {
-			// TODO: do we want to do all this? It feels like we are doing a partial `buf mod update`.
-			// More specifically, it's possible that the declared dependency pin does not have a corresponding
-			// lock entry. For example, the buf.lock might not exist.
-			// Might as well do this for all lock entries.
 			resolvedCommit := moduleToRefToCommit[moduleFullName][resolvedRef.Ref()]
 			key, err := bufmodule.NewModuleKey(
 				resolvedRef.ModuleFullName(),
@@ -600,12 +634,12 @@ func resolvedDeclaredAndLockedDependencies(
 			continue
 		}
 		// Use the lastest
-		sort.Slice(depModuleKeys, func(i, j int) bool {
-			iTime := commitIDToCommit[depModuleKeys[i].CommitID()].GetCreateTime().AsTime()
-			jTime := commitIDToCommit[depModuleKeys[j].CommitID()].GetCreateTime().AsTime()
+		sort.Slice(lockKeys, func(i, j int) bool {
+			iTime := commitIDToCommit[lockKeys[i].CommitID()].GetCreateTime().AsTime()
+			jTime := commitIDToCommit[lockKeys[j].CommitID()].GetCreateTime().AsTime()
 			return iTime.After(jTime)
 		})
-		resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
+		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}
 	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depModuleFullNameToResolvedRef)
 	sort.Slice(resolvedDeclaredDependencies, func(i, j int) bool {
@@ -619,8 +653,8 @@ func resolvedDeclaredAndLockedDependencies(
 
 func getModuleToRefToCommit(
 	ctx context.Context,
-	moduleRefs []bufmodule.ModuleRef,
 	clientProvider bufapi.ClientProvider,
+	moduleRefs []bufmodule.ModuleRef,
 ) (map[string]map[string]*modulev1beta1.Commit, error) {
 	moduleToRefToCommit := make(map[string]map[string]*modulev1beta1.Commit)
 	for _, moduleRef := range moduleRefs {
