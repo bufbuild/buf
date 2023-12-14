@@ -482,7 +482,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	depModuleToRefs := make(map[string][]bufmodule.ModuleRef)
 	for _, depModuleRef := range m.moduleDependencies {
 		moduleFullName := depModuleRef.ModuleFullName().String()
-		if _, ok := m.moduleNameToParentFile[moduleFullName]; !ok {
+		if _, ok := m.moduleNameToParentFile[moduleFullName]; ok {
 			continue
 		}
 		depModuleToRefs[moduleFullName] = append(depModuleToRefs[moduleFullName], depModuleRef)
@@ -490,10 +490,9 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	depModuleToKeys := make(map[string][]bufmodule.ModuleKey)
 	for _, depModuleKey := range m.depModuleKeys {
 		moduleFullName := depModuleKey.ModuleFullName().String()
-		// We are only removing lock entries that are in the workspace. If a lock
-		// entry is not in the workspace, it could be an indirect
-		// A lock entry could be for an indirect dependenceny not listed in deps in buf.yaml.
-		if _, ok := m.moduleNameToParentFile[moduleFullName]; !ok {
+		// We are only removing lock entries that are in the workspace. A lock entry
+		// could be for an indirect dependenceny not listed in deps in any buf.yaml.
+		if _, ok := m.moduleNameToParentFile[moduleFullName]; ok {
 			continue
 		}
 		depModuleToKeys[moduleFullName] = append(depModuleToKeys[moduleFullName], depModuleKey)
