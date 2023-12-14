@@ -43,7 +43,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: `Migrate configuration to the latest version`,
-		Long:  `Migrate specified configuration files to the latest version.`,
+		Long:  `Migrate configuration files at the specified directories or paths to the latest version.`,
 		Args:  appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
