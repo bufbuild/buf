@@ -243,7 +243,6 @@ func (m *migrator) addModuleDirectory(
 			configForRoot, err := bufconfig.NewModuleConfig(
 				dirPathRelativeToDestination,
 				moduleFullName,
-				// TODO: make them relative to what they should be relative to.
 				map[string][]string{".": excludes},
 				lintConfigForRoot,
 				breakingConfigForRoot,
@@ -257,7 +256,6 @@ func (m *migrator) addModuleDirectory(
 		}
 		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
 	case bufconfig.FileVersionV1:
-		// TODO: smiliar to the above, make paths (root to excludes, lint ignore, ...) relative to the correct root (either buf.yaml v2 or module root)
 		if len(bufYAML.ModuleConfigs()) != 1 {
 			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAML.ModuleConfigs()))
 		}
@@ -277,7 +275,6 @@ func (m *migrator) addModuleDirectory(
 		moduleConfig, err = bufconfig.NewModuleConfig(
 			dirPathRelativeToDestination,
 			moduleConfig.ModuleFullName(),
-			// TODO: paths
 			moduleConfig.RootToExcludes(),
 			lintConfig,
 			breakingConfig,
