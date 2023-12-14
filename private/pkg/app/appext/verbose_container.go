@@ -28,6 +28,10 @@ func newVerboseContainer(verbosePrinter verbose.Printer) *verboseContainer {
 	}
 }
 
+func (c *verboseContainer) VerboseEnabled() bool {
+	return c.verbosePrinter.Enabled()
+}
+
 func (c *verboseContainer) VerbosePrinter() verbose.Printer {
 	return c.verbosePrinter
 }

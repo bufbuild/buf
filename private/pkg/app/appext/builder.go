@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type builder struct {
@@ -50,7 +51,9 @@ type builder struct {
 
 	tracing bool
 
-	interceptors []Interceptor
+	// 0 is InfoLevel in zap
+	defaultLogLevel zapcore.Level
+	interceptors    []Interceptor
 }
 
 func newBuilder(appName string, options ...BuilderOption) *builder {
@@ -104,7 +107,7 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logLevel, err := getLogLevel(b.debug, b.noWarn)
+	logLevel, err := getLogLevel(b.defaultLogLevel, b.debug, b.noWarn)
 	if err != nil {
 		return err
 	}
@@ -202,7 +205,7 @@ func runProfile(
 	return nil
 }
 
-func getLogLevel(debugFlag bool, noWarnFlag bool) (string, error) {
+func getLogLevel(defaultLogLevel zapcore.Level, debugFlag bool, noWarnFlag bool) (string, error) {
 	if debugFlag && noWarnFlag {
 		return "", fmt.Errorf("cannot set both --debug and --no-warn")
 	}
@@ -212,7 +215,7 @@ func getLogLevel(debugFlag bool, noWarnFlag bool) (string, error) {
 	if debugFlag {
 		return "debug", nil
 	}
-	return "info", nil
+	return defaultLogLevel.String(), nil
 }
 
 // chainInterceptors consolidates the given interceptors into one.

@@ -29,6 +29,10 @@ var (
 
 // Printer prints verbose messages.
 type Printer interface {
+	// Enabled returns true if verbose mode is enabled.
+	//
+	// This is false if the Printer is a no-op printer.
+	Enabled() bool
 	// Printf prints a new verbose message.
 	//
 	// Leading and trailing newlines are not respected.
@@ -36,6 +40,8 @@ type Printer interface {
 	// Callers should not rely on the print calls being reliable, i.e. errors to
 	// a backing Writer will be ignored.
 	Printf(format string, args ...interface{})
+
+	isPrinter()
 }
 
 // NewPrinter returns a new Printer using the given Writer.
@@ -59,6 +65,12 @@ type nopPrinter struct{}
 
 func (nopPrinter) Printf(string, ...interface{}) {}
 
+func (nopPrinter) Enabled() bool {
+	return false
+}
+
+func (nopPrinter) isPrinter() {}
+
 type writePrinter struct {
 	writer io.Writer
 	prefix string
@@ -81,3 +93,9 @@ func (w *writePrinter) Printf(format string, args ...interface{}) {
 		_, _ = w.writer.Write([]byte(w.prefix + value + "\n"))
 	}
 }
+
+func (*writePrinter) Enabled() bool {
+	return true
+}
+
+func (*writePrinter) isPrinter() {}
