@@ -80,8 +80,8 @@ type ManagedDisableRule interface {
 	isManagedDisableRule()
 }
 
-// NewDisableRule returns a new ManagedDisableRule
-func NewDisableRule(
+// NewManagedDisableRule returns a new ManagedDisableRule.
+func NewManagedDisableRule(
 	path string,
 	moduleFullName string,
 	fieldName string,
@@ -125,8 +125,8 @@ type ManagedOverrideRule interface {
 	isManagedOverrideRule()
 }
 
-// NewFieldOptionOverrideRule returns an OverrideRule for a field option.
-func NewFileOptionOverrideRule(
+// NewFieldOptionOverrideRule returns a new ManagedOverrideRule for a file option.
+func NewManagedOverrideRuleForFileOption(
 	path string,
 	moduleFullName string,
 	fileOption FileOption,
@@ -140,8 +140,8 @@ func NewFileOptionOverrideRule(
 	)
 }
 
-// NewFieldOptionOverrideRule returns an OverrideRule for a field option.
-func NewFieldOptionOverrideRule(
+// NewManagedOverrideRuleForFieldOption returns a new ManagedOverrideRule for a field option.
+func NewManagedOverrideRuleForFieldOption(
 	path string,
 	moduleFullName string,
 	fieldName string,
@@ -173,7 +173,7 @@ func newManagedConfigFromExternalV1Beta1(
 		overrides []ManagedOverrideRule
 	)
 	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionCcEnableArenas,
@@ -185,7 +185,7 @@ func newManagedConfigFromExternalV1Beta1(
 		overrides = append(overrides, override)
 	}
 	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionJavaMultipleFiles,
@@ -197,7 +197,7 @@ func newManagedConfigFromExternalV1Beta1(
 		overrides = append(overrides, override)
 	}
 	if externalOptimizeFor := externalConfig.OptimizeFor; externalOptimizeFor != "" {
-		defaultOverride, err := NewFileOptionOverrideRule(
+		defaultOverride, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionOptimizeFor,
@@ -222,7 +222,7 @@ func newManagedConfigFromExternalV1(
 		overrides []ManagedOverrideRule
 	)
 	if externalCCEnableArenas := externalConfig.CcEnableArenas; externalCCEnableArenas != nil {
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionCcEnableArenas,
@@ -234,7 +234,7 @@ func newManagedConfigFromExternalV1(
 		overrides = append(overrides, override)
 	}
 	if externalJavaMultipleFiles := externalConfig.JavaMultipleFiles; externalJavaMultipleFiles != nil {
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionJavaMultipleFiles,
@@ -246,7 +246,7 @@ func newManagedConfigFromExternalV1(
 		overrides = append(overrides, override)
 	}
 	if externalJavaStringCheckUtf8 := externalConfig.JavaStringCheckUtf8; externalJavaStringCheckUtf8 != nil {
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionJavaStringCheckUtf8,
@@ -261,7 +261,7 @@ func newManagedConfigFromExternalV1(
 		if externalJavaPackagePrefix.Default == "" {
 			return nil, errors.New("java_package_prefix requires a default value")
 		}
-		defaultOverride, err := NewFileOptionOverrideRule(
+		defaultOverride, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionJavaPackagePrefix,
@@ -300,7 +300,7 @@ func newManagedConfigFromExternalV1(
 		if externalOptimizeFor.Default == "" {
 			return nil, errors.New("optimize_for requires a default value")
 		}
-		defaultOverride, err := NewFileOptionOverrideRule(
+		defaultOverride, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionOptimizeFor,
@@ -326,7 +326,7 @@ func newManagedConfigFromExternalV1(
 		if externalGoPackagePrefix.Default == "" {
 			return nil, errors.New("go_package_prefix requires a default value")
 		}
-		defaultOverride, err := NewFileOptionOverrideRule(
+		defaultOverride, err := NewManagedOverrideRuleForFileOption(
 			"",
 			"",
 			FileOptionGoPackagePrefix,
@@ -351,7 +351,7 @@ func newManagedConfigFromExternalV1(
 	if externalObjcClassPrefix := externalConfig.ObjcClassPrefix; !externalObjcClassPrefix.isEmpty() {
 		if externalObjcClassPrefix.Default != "" {
 			// objc class prefix allows empty default
-			defaultOverride, err := NewFileOptionOverrideRule(
+			defaultOverride, err := NewManagedOverrideRuleForFileOption(
 				"",
 				"",
 				FileOptionObjcClassPrefix,
@@ -449,7 +449,7 @@ func newManagedConfigFromExternalV2(
 			if err != nil {
 				return nil, err
 			}
-			override, err := NewFieldOptionOverrideRule(
+			override, err := NewManagedOverrideRuleForFieldOption(
 				externalOverrideConfig.Path,
 				externalOverrideConfig.Module,
 				externalOverrideConfig.Field,
@@ -466,7 +466,7 @@ func newManagedConfigFromExternalV2(
 		if err != nil {
 			return nil, err
 		}
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			externalOverrideConfig.Path,
 			externalOverrideConfig.Module,
 			fileOption,
@@ -712,7 +712,7 @@ func disablesAndOverridesFromExceptAndOverrideV1(
 		if _, ok := seenExceptModuleFullNames[overrideModuleFullName]; ok {
 			return nil, nil, fmt.Errorf("override %q is already defined as an except", overrideModuleFullName)
 		}
-		override, err := NewFileOptionOverrideRule(
+		override, err := NewManagedOverrideRuleForFileOption(
 			"",
 			overrideModuleFullName,
 			overrideFileOption,
@@ -752,7 +752,7 @@ func overrideRulesForPerFileOverridesV1(
 					return nil, fmt.Errorf("")
 				}
 			}
-			overrideRule, err := NewFileOptionOverrideRule(
+			overrideRule, err := NewManagedOverrideRuleForFileOption(
 				filePath,
 				"",
 				fileOption,

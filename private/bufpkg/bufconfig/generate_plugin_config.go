@@ -106,6 +106,87 @@ type GeneratePluginConfig interface {
 	isGeneratePluginConfig()
 }
 
+// NewRemotePluginConfig returns a new GeneratePluginConfig for a remote plugin.
+func NewRemotePluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	revision int,
+) (GeneratePluginConfig, error) {
+	return newRemotePluginConfig(
+		name,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		revision,
+	)
+}
+
+// NewLocalPluginConfig returns a new GeneratePluginConfig for a local plugin.
+func NewLocalPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+) (GeneratePluginConfig, error) {
+	return newLocalPluginConfig(
+		name,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		strategy,
+	)
+}
+
+// NewBinaryPluginConfig returns a new GeneratePluginConfig for a binary plugin.
+func NewBinaryPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+	path []string,
+) (GeneratePluginConfig, error) {
+	return newBinaryPluginConfig(
+		name,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		strategy,
+		path,
+	)
+}
+
+// NewProtocBuiltinPluginConfig returns a new GeneratePluginConfig for a protoc
+// builtin plugin.
+func NewProtocBuiltinPluginConfig(
+	name string,
+	out string,
+	opt []string,
+	includeImports bool,
+	includeWKT bool,
+	strategy *GenerateStrategy,
+	protocPath string,
+) (GeneratePluginConfig, error) {
+	return newProtocBuiltinPluginConfig(
+		name,
+		out,
+		opt,
+		includeImports,
+		includeWKT,
+		strategy,
+		protocPath,
+	)
+}
+
 // NewGeneratePluginWithIncludeImportsAndWKT returns a GeneratePluginConfig the
 // same as the input, with include imports and include wkt overriden.
 func NewGeneratePluginWithIncludeImportsAndWKT(

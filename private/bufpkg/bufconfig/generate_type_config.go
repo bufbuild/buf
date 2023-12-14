@@ -23,6 +23,11 @@ type GenerateTypeConfig interface {
 	isGenerateTypeConfig()
 }
 
+// NewGenerateTypeConfig returns a new GenerateTypeConfig.
+func NewGenerateTypeConfig(includeTypes []string) GenerateTypeConfig {
+	return newGenerateTypeConfig(includeTypes)
+}
+
 // *** PRIVATE ***
 
 type generateTypeConfig struct {

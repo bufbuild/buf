@@ -140,7 +140,7 @@ func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
 func (*bufGenYAMLFile) isFile()           {}
 
-func readBufGenYAMLFile(reader io.Reader, allowJSON bool) (BufGenYAMLFile, error) {
+func readBufGenYAMLFile(reader io.Reader, _ string, allowJSON bool) (BufGenYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
