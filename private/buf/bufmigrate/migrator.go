@@ -201,8 +201,6 @@ func (m *migrator) addModuleDirectory(
 	if _, ok := m.filesToDelete[bufYAMLPath]; ok {
 		return nil
 	}
-	// TODO: transform paths so that they are relative to the new buf.yaml v2 or module root (depending on buf.yaml v2 semantics)
-	// Paths include RootToExcludes, IgnorePaths, IgnoreIDOrCategoryToPaths
 	switch bufYAML.FileVersion() {
 	case bufconfig.FileVersionV1Beta1:
 		if len(bufYAML.ModuleConfigs()) != 1 {
@@ -238,9 +236,7 @@ func (m *migrator) addModuleDirectory(
 					bufconfig.FileVersionV2,
 					lintRuleNames,
 					lintConfig.ExceptIDsAndCategories(),
-					// TODO: filter these paths by root
 					lintConfig.IgnorePaths(),
-					// TODO: filter these paths by root
 					lintConfig.IgnoreIDOrCategoryToPaths(),
 				),
 				lintConfig.EnumZeroValueSuffix(),
@@ -261,9 +257,7 @@ func (m *migrator) addModuleDirectory(
 					bufconfig.FileVersionV2,
 					breakingRuleNames,
 					breakingConfig.ExceptIDsAndCategories(),
-					// TODO: filter these paths by root
 					breakingConfig.IgnorePaths(),
-					// TODO: filter these paths by root
 					breakingConfig.IgnoreIDOrCategoryToPaths(),
 				),
 				breakingConfig.IgnoreUnstablePackages(),
@@ -307,7 +301,6 @@ func (m *migrator) addModuleDirectory(
 				bufconfig.FileVersionV2,
 				lintConfig.UseIDsAndCategories(),
 				lintConfig.ExceptIDsAndCategories(),
-				// TODO: paths
 				lintConfig.IgnorePaths(),
 				lintConfig.IgnoreIDOrCategoryToPaths(),
 			),
@@ -324,7 +317,6 @@ func (m *migrator) addModuleDirectory(
 				bufconfig.FileVersionV2,
 				breakingConfig.UseIDsAndCategories(),
 				breakingConfig.ExceptIDsAndCategories(),
-				// TODO: paths
 				breakingConfig.IgnorePaths(),
 				breakingConfig.IgnoreIDOrCategoryToPaths(),
 			),
@@ -564,6 +556,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		}
 		return bufYAML, bufLock, nil
 	}
+	// TODO: remove entire if-clause when commit service is implemented
 	if true {
 		resolvedDepModuleRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToRefs))
 		for _, depModuleRefs := range depModuleToRefs {
