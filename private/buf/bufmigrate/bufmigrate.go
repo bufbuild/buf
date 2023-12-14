@@ -49,11 +49,15 @@ func Migrate(
 	if err != nil {
 		return err
 	}
+	destionationDirectory := "."
+	if migrateOptions.workspaceDirectory != "" && len(migrateOptions.moduleDirectories) == 0 {
+		destionationDirectory = migrateOptions.workspaceDirectory
+	}
 	migrator := newMigrator(
 		logger,
 		clientProvider,
 		bucket,
-		".",
+		destionationDirectory,
 	)
 	if migrateOptions.workspaceDirectory != "" {
 		// TODO: should we allow multiple workspaces?
