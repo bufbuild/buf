@@ -833,7 +833,7 @@ func newTestManagedDisableRule(
 	fileOption bufconfig.FileOption,
 	fieldOption bufconfig.FieldOption,
 ) bufconfig.ManagedDisableRule {
-	disable, err := bufconfig.NewDisableRule(
+	disable, err := bufconfig.NewManagedDisableRule(
 		path,
 		moduleFullName,
 		fieldName,
@@ -851,7 +851,7 @@ func newTestFileOptionOverrideRule(
 	fileOption bufconfig.FileOption,
 	value interface{},
 ) bufconfig.ManagedOverrideRule {
-	fileOptionOverride, err := bufconfig.NewFileOptionOverrideRule(
+	fileOptionOverride, err := bufconfig.NewManagedOverrideRuleForFileOption(
 		path,
 		moduleFullName,
 		fileOption,
@@ -869,7 +869,7 @@ func newTestFieldOptionOverrideRule(
 	fieldOption bufconfig.FieldOption,
 	value interface{},
 ) bufconfig.ManagedOverrideRule {
-	fieldOptionOverrid, err := bufconfig.NewFieldOptionOverrideRule(
+	fieldOptionOverrid, err := bufconfig.NewManagedOverrideRuleForFieldOption(
 		path,
 		moduleFullName,
 		bufconfig.FileOptionPhpMetadataNamespace.String(),
