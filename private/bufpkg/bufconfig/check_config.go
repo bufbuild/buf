@@ -61,11 +61,9 @@ type CheckConfig interface {
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
 	// Sorted
-	// TODO: should we make these now relative to root of workspace in v2?
 	IgnorePaths() []string
 	// Paths are specific to the Module.
 	// Paths are relative to roots.
-	// TODO: should we make these now relative to root of workspace in v2?
 	// Paths sorted.
 	IgnoreIDOrCategoryToPaths() map[string][]string
 
