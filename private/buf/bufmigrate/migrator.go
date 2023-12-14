@@ -222,46 +222,14 @@ func (m *migrator) addModuleDirectory(
 		sortedRoots := slicesext.MapKeysToSortedSlice(moduleConfig.RootToExcludes())
 		for _, root := range sortedRoots {
 			excludes := moduleConfig.RootToExcludes()[root]
-			lintConfig := moduleConfig.LintConfig()
-			// TODO: this list expands to individual rules, we could process
-			// this list and make it shorter by substituting some rules with
-			// a single group, if all rules in that group are present.
-			lintRules, err := buflint.RulesForConfig(lintConfig)
+			lintConfigForRoot, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
 			if err != nil {
 				return err
 			}
-			lintRuleNames := slicesext.Map(lintRules, func(rule bufcheck.Rule) string { return rule.ID() })
-			lintConfigForRoot := bufconfig.NewLintConfig(
-				bufconfig.NewCheckConfig(
-					bufconfig.FileVersionV2,
-					lintRuleNames,
-					lintConfig.ExceptIDsAndCategories(),
-					lintConfig.IgnorePaths(),
-					lintConfig.IgnoreIDOrCategoryToPaths(),
-				),
-				lintConfig.EnumZeroValueSuffix(),
-				lintConfig.RPCAllowSameRequestResponse(),
-				lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-				lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-				lintConfig.ServiceSuffix(),
-				lintConfig.AllowCommentIgnores(),
-			)
-			breakingConfig := moduleConfig.BreakingConfig()
-			breakingRules, err := bufbreaking.RulesForConfig(breakingConfig)
+			breakingConfigForRoot, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
 			if err != nil {
 				return err
 			}
-			breakingRuleNames := slicesext.Map(breakingRules, func(rule bufcheck.Rule) string { return rule.ID() })
-			breakingConfigForRoot := bufconfig.NewBreakingConfig(
-				bufconfig.NewCheckConfig(
-					bufconfig.FileVersionV2,
-					breakingRuleNames,
-					breakingConfig.ExceptIDsAndCategories(),
-					breakingConfig.IgnorePaths(),
-					breakingConfig.IgnoreIDOrCategoryToPaths(),
-				),
-				breakingConfig.IgnoreUnstablePackages(),
-			)
 			dirPathRelativeToDestination, err := filepath.Rel(
 				m.destinationDir,
 				filepath.Join(
@@ -294,34 +262,14 @@ func (m *migrator) addModuleDirectory(
 			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAML.ModuleConfigs()))
 		}
 		moduleConfig := bufYAML.ModuleConfigs()[0]
-		// use the same lint and breaking config, except that they are v2.
-		lintConfig := moduleConfig.LintConfig()
-		lintConfig = bufconfig.NewLintConfig(
-			bufconfig.NewCheckConfig(
-				bufconfig.FileVersionV2,
-				lintConfig.UseIDsAndCategories(),
-				lintConfig.ExceptIDsAndCategories(),
-				lintConfig.IgnorePaths(),
-				lintConfig.IgnoreIDOrCategoryToPaths(),
-			),
-			lintConfig.EnumZeroValueSuffix(),
-			lintConfig.RPCAllowSameRequestResponse(),
-			lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
-			lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
-			lintConfig.ServiceSuffix(),
-			lintConfig.AllowCommentIgnores(),
-		)
-		breakingConfig := moduleConfig.BreakingConfig()
-		breakingConfig = bufconfig.NewBreakingConfig(
-			bufconfig.NewCheckConfig(
-				bufconfig.FileVersionV2,
-				breakingConfig.UseIDsAndCategories(),
-				breakingConfig.ExceptIDsAndCategories(),
-				breakingConfig.IgnorePaths(),
-				breakingConfig.IgnoreIDOrCategoryToPaths(),
-			),
-			breakingConfig.IgnoreUnstablePackages(),
-		)
+		lintConfig, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
+		if err != nil {
+			return err
+		}
+		breakingConfig, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
+		if err != nil {
+			return err
+		}
 		dirPathRelativeToDestination, err := filepath.Rel(m.destinationDir, filepath.Dir(bufYAMLPath))
 		if err != nil {
 			return err
@@ -770,4 +718,113 @@ func getCommitIDToCommit(
 		commitIDToCommit[moduleKey.CommitID()] = response.Msg.Commits[0]
 	}
 	return commitIDToCommit, nil
+}
+
+func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
+	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		lintConfig,
+		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
+			lintConfig := bufconfig.NewLintConfig(
+				checkConfig,
+				lintConfig.EnumZeroValueSuffix(),
+				lintConfig.RPCAllowSameRequestResponse(),
+				lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+				lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
+				lintConfig.ServiceSuffix(),
+				lintConfig.AllowCommentIgnores(),
+			)
+			return buflint.RulesForConfig(lintConfig)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewLintConfig(
+		equivalentCheckConfigV2,
+		lintConfig.EnumZeroValueSuffix(),
+		lintConfig.RPCAllowSameRequestResponse(),
+		lintConfig.RPCAllowGoogleProtobufEmptyRequests(),
+		lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
+		lintConfig.ServiceSuffix(),
+		lintConfig.AllowCommentIgnores(),
+	), nil
+}
+
+func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
+	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
+		breakingConfig,
+		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
+			breakingConfig := bufconfig.NewBreakingConfig(
+				checkConfig,
+				breakingConfig.IgnoreUnstablePackages(),
+			)
+			return bufbreaking.RulesForConfig(breakingConfig)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewBreakingConfig(
+		equivalentCheckConfigV2,
+		breakingConfig.IgnoreUnstablePackages(),
+	), nil
+}
+
+func equivalentCheckConfigInV2(
+	checkConfig bufconfig.CheckConfig,
+	getRulesFunc func(bufconfig.CheckConfig) ([]bufcheck.Rule, error),
+) (bufconfig.CheckConfig, error) {
+	expectedRules, err := getRulesFunc(checkConfig)
+	if err != nil {
+		return nil, err
+	}
+	expectedIDs := slicesext.Map(
+		expectedRules,
+		func(rule bufcheck.Rule) string {
+			return rule.ID()
+		},
+	)
+	simplyTranslatedCheckConfig := bufconfig.NewCheckConfig(
+		bufconfig.FileVersionV2,
+		checkConfig.UseIDsAndCategories(),
+		checkConfig.ExceptIDsAndCategories(),
+		checkConfig.IgnorePaths(),
+		checkConfig.IgnoreIDOrCategoryToPaths(),
+	)
+	simplyTranslatedRules, err := getRulesFunc(simplyTranslatedCheckConfig)
+	if err != nil {
+		return nil, err
+	}
+	simplyTranslatedIDs := slicesext.Map(
+		simplyTranslatedRules,
+		func(rule bufcheck.Rule) string {
+			return rule.ID()
+		},
+	)
+	if slicesext.ElementsEqual(expectedIDs, simplyTranslatedIDs) {
+		return simplyTranslatedCheckConfig, nil
+	}
+	expectedIDsMap := slicesext.ToStructMap(expectedIDs)
+	simplyTranslatedIDsMap := slicesext.ToStructMap(simplyTranslatedIDs)
+	extraUse := slicesext.Filter(
+		expectedIDs,
+		func(expectedID string) bool {
+			_, ok := simplyTranslatedIDsMap[expectedID]
+			return !ok
+		},
+	)
+	extraExcept := slicesext.Filter(
+		simplyTranslatedIDs,
+		func(simplyTranslatedID string) bool {
+			_, ok := expectedIDsMap[simplyTranslatedID]
+			return !ok
+		},
+	)
+	return bufconfig.NewCheckConfig(
+		bufconfig.FileVersionV2,
+		append(checkConfig.UseIDsAndCategories(), extraUse...),
+		append(checkConfig.ExceptIDsAndCategories(), extraExcept...),
+		checkConfig.IgnorePaths(),
+		checkConfig.IgnoreIDOrCategoryToPaths(),
+	), nil
 }
