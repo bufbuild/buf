@@ -66,11 +66,17 @@ func modifyJavaOuterClass(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionJavaOuterClassname,
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionUnspecified,
@@ -86,6 +92,9 @@ func modifyJavaOuterClass(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.JavaOuterClassname = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.JavaOuterClassname != nil
+		},
 		javaOuterClassnamePath,
 	)
 }
@@ -94,11 +103,17 @@ func modifyJavaPackage(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionJavaPackage,
 		bufconfig.FileOptionJavaPackagePrefix,
 		bufconfig.FileOptionJavaPackageSuffix,
@@ -112,6 +127,9 @@ func modifyJavaPackage(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.JavaPackage = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.JavaPackage != nil
+		},
 		javaPackagePath,
 	)
 }
@@ -120,11 +138,17 @@ func modifyGoPackage(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionGoPackage,
 		bufconfig.FileOptionGoPackagePrefix,
 		bufconfig.FileOptionUnspecified,
@@ -143,6 +167,9 @@ func modifyGoPackage(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.GoPackage = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.GoPackage != nil
+		},
 		goPackagePath,
 	)
 }
@@ -151,11 +178,17 @@ func modifyObjcClassPrefix(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionObjcClassPrefix,
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionUnspecified,
@@ -171,6 +204,9 @@ func modifyObjcClassPrefix(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.ObjcClassPrefix = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.ObjcClassPrefix != nil
+		},
 		objcClassPrefixPath,
 	)
 }
@@ -179,11 +215,17 @@ func modifyCsharpNamespace(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionCsharpNamespace,
 		bufconfig.FileOptionCsharpNamespacePrefix,
 		bufconfig.FileOptionUnspecified,
@@ -199,6 +241,9 @@ func modifyCsharpNamespace(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.CsharpNamespace = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.CsharpNamespace != nil
+		},
 		csharpNamespacePath,
 	)
 }
@@ -207,11 +252,17 @@ func modifyPhpNamespace(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionPhpNamespace,
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionUnspecified,
@@ -227,6 +278,9 @@ func modifyPhpNamespace(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.PhpNamespace = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.PhpNamespace != nil
+		},
 		phpNamespacePath,
 	)
 }
@@ -235,11 +289,17 @@ func modifyPhpMetadataNamespace(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionPhpMetadataNamespace,
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionPhpMetadataNamespaceSuffix,
@@ -255,6 +315,9 @@ func modifyPhpMetadataNamespace(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.PhpMetadataNamespace = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.PhpMetadataNamespace != nil
+		},
 		phpMetadataNamespacePath,
 	)
 }
@@ -263,11 +326,17 @@ func modifyRubyPackage(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	return modifyStringOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionRubyPackage,
 		bufconfig.FileOptionUnspecified,
 		bufconfig.FileOptionRubyPackageSuffix,
@@ -283,6 +352,9 @@ func modifyRubyPackage(
 		func(options *descriptorpb.FileOptions, value string) {
 			options.RubyPackage = proto.String(value)
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.RubyPackage != nil
+		},
 		rubyPackagePath,
 	)
 }
@@ -291,11 +363,17 @@ func modifyCcEnableArenas(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
-	return modifyFileOption[bool](
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
+	return modifyFileOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionCcEnableArenas,
 		true,
 		func(options *descriptorpb.FileOptions) bool {
@@ -303,6 +381,9 @@ func modifyCcEnableArenas(
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
 			options.CcEnableArenas = proto.Bool(value)
+		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.CcEnableArenas != nil
 		},
 		ccEnableArenasPath,
 	)
@@ -312,11 +393,17 @@ func modifyJavaMultipleFiles(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
-	return modifyFileOption[bool](
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
+	return modifyFileOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionJavaMultipleFiles,
 		true,
 		func(options *descriptorpb.FileOptions) bool {
@@ -324,6 +411,9 @@ func modifyJavaMultipleFiles(
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
 			options.JavaMultipleFiles = proto.Bool(value)
+		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.JavaMultipleFiles != nil
 		},
 		javaMultipleFilesPath,
 	)
@@ -333,11 +423,17 @@ func modifyJavaStringCheckUtf8(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
-	return modifyFileOption[bool](
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
+	return modifyFileOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionJavaStringCheckUtf8,
 		false,
 		func(options *descriptorpb.FileOptions) bool {
@@ -345,6 +441,9 @@ func modifyJavaStringCheckUtf8(
 		},
 		func(options *descriptorpb.FileOptions, value bool) {
 			options.JavaStringCheckUtf8 = proto.Bool(value)
+		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.JavaStringCheckUtf8 != nil
 		},
 		javaStringCheckUtf8Path,
 	)
@@ -354,11 +453,17 @@ func modifyOptmizeFor(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
-	return modifyFileOption[descriptorpb.FileOptions_OptimizeMode](
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
+	return modifyFileOption(
 		sweeper,
 		imageFile,
 		config,
+		modifyOptions.preserveExisting,
 		bufconfig.FileOptionOptimizeFor,
 		descriptorpb.FileOptions_SPEED,
 		func(options *descriptorpb.FileOptions) descriptorpb.FileOptions_OptimizeMode {
@@ -367,21 +472,32 @@ func modifyOptmizeFor(
 		func(options *descriptorpb.FileOptions, value descriptorpb.FileOptions_OptimizeMode) {
 			options.OptimizeFor = value.Enum()
 		},
+		func(options *descriptorpb.FileOptions) bool {
+			return options != nil && options.OptimizeFor != nil
+		},
 		optimizeForPath,
 	)
 }
+
+// *** PRIVATE ***
 
 func modifyFileOption[T bool | descriptorpb.FileOptions_OptimizeMode](
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	preserveExisting bool,
 	fileOption bufconfig.FileOption,
 	// You can set this value to the same as protobuf default, in order to not modify a value by default.
 	defaultValue T,
 	getOptionFunc func(*descriptorpb.FileOptions) T,
 	setOptionFunc func(*descriptorpb.FileOptions, T),
+	checkOptionSetFunc func(*descriptorpb.FileOptions) bool,
 	sourceLocationPath []int32,
 ) error {
+	descriptor := imageFile.FileDescriptorProto()
+	if preserveExisting && checkOptionSetFunc(descriptor.Options) {
+		return nil
+	}
 	value := defaultValue
 	if isFileOptionDisabledForFile(
 		imageFile,
@@ -401,7 +517,6 @@ func modifyFileOption[T bool | descriptorpb.FileOptions_OptimizeMode](
 	if override != nil {
 		value = *override
 	}
-	descriptor := imageFile.FileDescriptorProto()
 	if getOptionFunc(descriptor.Options) == value {
 		// The option is already set to the same value, don't modify or mark it.
 		return nil
@@ -418,6 +533,7 @@ func modifyStringOption(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	preserveExisting bool,
 	valueOption bufconfig.FileOption,
 	prefixOption bufconfig.FileOption,
 	suffixOption bufconfig.FileOption,
@@ -425,8 +541,13 @@ func modifyStringOption(
 	valueFunc func(bufimage.ImageFile, stringOverrideOptions) string,
 	getOptionFunc func(*descriptorpb.FileOptions) string,
 	setOptionFunc func(*descriptorpb.FileOptions, string),
+	checkOptionSetFunc func(*descriptorpb.FileOptions) bool,
 	sourceLocationPath []int32,
 ) error {
+	descriptor := imageFile.FileDescriptorProto()
+	if preserveExisting && checkOptionSetFunc(descriptor.Options) {
+		return nil
+	}
 	overrideOptions, err := stringOverrideFromConfig(
 		imageFile,
 		config,
@@ -452,7 +573,6 @@ func modifyStringOption(
 	if value == "" {
 		return nil
 	}
-	descriptor := imageFile.FileDescriptorProto()
 	if getOptionFunc(descriptor.Options) == value {
 		// The option is already set to the same value, don't modify or mark it.
 		return nil
