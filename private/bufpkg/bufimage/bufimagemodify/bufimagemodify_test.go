@@ -158,7 +158,6 @@ func TestModifyImage(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
 				err := Modify(
-					context.Background(),
 					image,
 					testcase.config,
 				)
@@ -202,7 +201,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "", "buf.build/acme/bar", bufconfig.FileOptionCcEnableArenas, false),
 				},
 			),
-			modifyFunc: ModifyCcEnableArenas,
+			modifyFunc: modifyCcEnableArenas,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"foo_empty/without_package.proto": nil,
 				"bar_empty/without_package.proto": {
@@ -231,7 +230,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionCsharpNamespacePrefix, "FooPrefix"),
 				},
 			),
-			modifyFunc: ModifyCsharpNamespace,
+			modifyFunc: modifyCsharpNamespace,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"bar_empty/with_package.proto": {
 					CsharpNamespace: proto.String("BarPrefix.Bar.Empty"),
@@ -268,7 +267,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "foo_empty", "buf.build/acme/foo", bufconfig.FileOptionGoPackagePrefix, "fooprefix"),
 				},
 			),
-			modifyFunc: ModifyGoPackage,
+			modifyFunc: modifyGoPackage,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"bar_empty/with_package.proto": {
 					GoPackage: proto.String("barprefix/bar_empty"),
@@ -306,7 +305,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackageSuffix, "foosuffix"),
 				},
 			),
-			modifyFunc: ModifyJavaPackage,
+			modifyFunc: modifyJavaPackage,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"foo_empty/with_package.proto": {
 					// default prefix and override suffix
@@ -402,7 +401,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "", "", bufconfig.FileOptionJavaPackageSuffix, "suffix"),
 				},
 			),
-			modifyFunc: ModifyJavaPackage,
+			modifyFunc: modifyJavaPackage,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"foo_empty/with_package.proto": {
 					// only suffix matches, but apply both prefix and suffix
@@ -458,7 +457,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "", "buf.build/acme/foo", bufconfig.FileOptionJavaPackage, "foo.value"),
 				},
 			),
-			modifyFunc: ModifyJavaPackage,
+			modifyFunc: modifyJavaPackage,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				// bar_empty disabled
 				"bar_empty/with_package.proto":    nil,
@@ -513,7 +512,7 @@ func TestModifyImageFile(
 					newTestFileOptionOverrideRule(t, "foo_all", "buf.build/acme/foo", bufconfig.FileOptionObjcClassPrefix, "FOOALL"),
 				},
 			),
-			modifyFunc: ModifyObjcClassPrefix,
+			modifyFunc: modifyObjcClassPrefix,
 			filePathToExpectedOptions: map[string]*descriptorpb.FileOptions{
 				"bar_empty/with_package.proto": {
 					ObjcClassPrefix: proto.String("BAR"),

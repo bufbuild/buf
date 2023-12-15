@@ -33,8 +33,7 @@ import (
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L567
 var jsTypeSubPath = []int32{8, 6}
 
-// ModifyJsType modifies the js_type field option.
-func ModifyJsType(
+func modifyJsType(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
