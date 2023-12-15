@@ -29,15 +29,21 @@ import (
 )
 
 // jsTypeSubPath is the SourceCodeInfo sub path for the jstype field option.
+// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L215
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L567
-// TODO: where does the 8 come from?????
 var jsTypeSubPath = []int32{8, 6}
 
-func modifyJsType(
+// ModifyJsType modifies the js_type field option.
+func ModifyJsType(
 	sweeper internal.MarkSweeper,
 	imageFile bufimage.ImageFile,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
+	modifyOptions := newModifyOptions()
+	for _, option := range options {
+		option(modifyOptions)
+	}
 	overrideRules := slicesext.Filter(
 		config.Overrides(),
 		func(override bufconfig.ManagedOverrideRule) bool {
@@ -93,6 +99,9 @@ func modifyJsType(
 			if jsType == nil {
 				return nil
 			}
+			if modifyOptions.preserveExisting && fieldDescriptor.Options != nil && fieldDescriptor.Options.Jstype != nil {
+				return nil
+			}
 			if fieldDescriptor.Type == nil || !isJsTypePermittedForType(*fieldDescriptor.Type) {
 				return nil
 			}
@@ -113,6 +122,8 @@ func modifyJsType(
 		},
 	)
 }
+
+// *** PRIVATE ***
 
 func isJsTypePermittedForType(fieldType descriptorpb.FieldDescriptorProto_Type) bool {
 	// https://github.com/protocolbuffers/protobuf/blob/d4db41d395dcbb2c79b7fb1f109086fa04afd8aa/src/google/protobuf/descriptor.proto#L622

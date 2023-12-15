@@ -23,13 +23,12 @@ import (
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 )
 
-// TODO: move this package into bufgen/internal
-
 // Modify modifies the image according to the managed config.
 func Modify(
 	ctx context.Context,
 	image bufimage.Image,
 	config bufconfig.GenerateManagedConfig,
+	options ...ModifyOption,
 ) error {
 	if !config.Enabled() {
 		return nil
@@ -39,26 +38,48 @@ func Modify(
 		if datawkt.Exists(imageFile.Path()) {
 			continue
 		}
-		modifyFuncs := []func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error{
-			modifyCcEnableArenas,
-			modifyCsharpNamespace,
-			modifyGoPackage,
-			modifyJavaMultipleFiles,
-			modifyJavaOuterClass,
-			modifyJavaPackage,
-			modifyJavaStringCheckUtf8,
-			modifyObjcClassPrefix,
-			modifyOptmizeFor,
-			modifyPhpMetadataNamespace,
-			modifyPhpNamespace,
-			modifyRubyPackage,
-			modifyJsType,
+		modifyFuncs := []func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig, ...ModifyOption) error{
+			ModifyCcEnableArenas,
+			ModifyCsharpNamespace,
+			ModifyGoPackage,
+			ModifyJavaMultipleFiles,
+			ModifyJavaOuterClass,
+			ModifyJavaPackage,
+			ModifyJavaStringCheckUtf8,
+			ModifyObjcClassPrefix,
+			ModifyOptmizeFor,
+			ModifyPhpMetadataNamespace,
+			ModifyPhpNamespace,
+			ModifyRubyPackage,
+			ModifyJsType,
 		}
 		for _, modifyFunc := range modifyFuncs {
-			if err := modifyFunc(sweeper, imageFile, config); err != nil {
+			if err := modifyFunc(sweeper, imageFile, config, options...); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// ModifyOption is an option for Modify.
+type ModifyOption func(*modifyOptions)
+
+// ModifyPreserveExisting only modifies an option if it is not defined in the file.
+//
+// Do not use this option in the CLI.
+func ModifyPreserveExisting() ModifyOption {
+	return func(modifyOptions *modifyOptions) {
+		modifyOptions.preserveExisting = true
+	}
+}
+
+// *** PRIVATE ***
+
+type modifyOptions struct {
+	preserveExisting bool
+}
+
+func newModifyOptions() *modifyOptions {
+	return &modifyOptions{}
 }
