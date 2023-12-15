@@ -97,7 +97,7 @@ func (g *generator) Generate(
 		option(generateOptions)
 	}
 	for _, image := range images {
-		if err := bufimagemodify.Modify(ctx, image, config.GenerateManagedConfig()); err != nil {
+		if err := bufimagemodify.Modify(image, config.GenerateManagedConfig()); err != nil {
 			return err
 		}
 		if err := g.generateCode(

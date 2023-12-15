@@ -158,7 +158,6 @@ func TestModifyImage(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
 				err := Modify(
-					context.Background(),
 					image,
 					testcase.config,
 				)
@@ -185,7 +184,7 @@ func TestModifyImageFile(
 		description                           string
 		dirPathToModuleFullName               map[string]string
 		config                                bufconfig.GenerateManagedConfig
-		modifyFunc                            func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error
+		modifyFunc                            func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig, ...ModifyOption) error
 		filePathToExpectedOptions             map[string]*descriptorpb.FileOptions
 		filePathToExpectedMarkedLocationPaths map[string][][]int32
 	}{
