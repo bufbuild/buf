@@ -300,11 +300,6 @@ func run(
 		// only makes sense in the context of including imports.
 		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s to true without setting --%s to true", includeWKTFlagName, includeImportsFlagName)
 	}
-	if flags.IncludeImportsOverride != nil &&
-		!*flags.IncludeImportsOverride &&
-		(flags.IncludeWKTOverride == nil || *flags.IncludeWKTOverride) {
-		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s to false without setting --%s to false", includeImportsFlagName, includeWKTFlagName)
-	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
@@ -485,6 +480,20 @@ func getInputImages(
 	return inputImages, nil
 }
 
+// TODO: where does this belong? A flagsext package?
+// value must not be nil.
+func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage string) {
+	flag := flagSet.VarPF(
+		&boolPointerValue{
+			valuePointer: value,
+		},
+		name,
+		"",
+		usage,
+	)
+	flag.NoOptDefVal = "true"
+}
+
 type boolPointerValue struct {
 	// This must not be nil at construction time.
 	valuePointer **bool
@@ -508,17 +517,4 @@ func (b *boolPointerValue) Set(value string) error {
 
 func (b *boolPointerValue) Type() string {
 	return "bool pointer"
-}
-
-// value must not be nil.
-func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage string) {
-	flag := flagSet.VarPF(
-		&boolPointerValue{
-			valuePointer: value,
-		},
-		name,
-		"",
-		usage,
-	)
-	flag.NoOptDefVal = "true"
 }
