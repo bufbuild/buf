@@ -494,6 +494,7 @@ func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage st
 	flag.NoOptDefVal = "true"
 }
 
+// Implements pflag.Value.
 type boolPointerValue struct {
 	// This must not be nil at construction time.
 	valuePointer **bool

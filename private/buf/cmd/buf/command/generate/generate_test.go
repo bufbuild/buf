@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/testingext"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -271,6 +272,29 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 	require.NoError(t, err)
 	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
 	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
+}
+
+func TestBoolPointerFlagTrue(t *testing.T) {
+	t.Parallel()
+	expected := true
+	testParseBoolPointer(t, "test-name", &expected, "--test-name")
+}
+
+func TestBoolPointerFlagTrueSpecified(t *testing.T) {
+	t.Parallel()
+	expected := true
+	testParseBoolPointer(t, "test-name", &expected, "--test-name=true")
+}
+
+func TestBoolPointerFlagFalseSpecified(t *testing.T) {
+	t.Parallel()
+	expected := false
+	testParseBoolPointer(t, "test-name", &expected, "--test-name=false")
+}
+
+func TestBoolPointerFlagUnspecified(t *testing.T) {
+	t.Parallel()
+	testParseBoolPointer(t, "test-name", nil)
 }
 
 func testGenerateInsertionPoint(
@@ -546,6 +570,15 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		stdin,
 		args...,
 	)
+}
+
+func testParseBoolPointer(t *testing.T, flagName string, expectedResult *bool, args ...string) {
+	var boolPointer *bool
+	flagSet := pflag.NewFlagSet("test flag set", pflag.ContinueOnError)
+	bindBoolPointer(flagSet, flagName, &boolPointer, "test usage")
+	err := flagSet.Parse(args)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, boolPointer)
 }
 
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
