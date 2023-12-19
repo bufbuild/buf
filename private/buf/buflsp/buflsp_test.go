@@ -34,8 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.lsp.dev/protocol"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 )
 
 func TestBufLsp(t *testing.T) {
@@ -219,7 +217,7 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 	}
 	verbosePrinter := verbose.NewPrinter(appContainer.Stderr(), "test")
 
-	container, err := newContainer(appContainer, "test", logger, verbosePrinter)
+	container, err := appext.NewContainer(appContainer, "test", logger, verbosePrinter)
 	if err != nil {
 		return nil, err
 	}
@@ -259,65 +257,6 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 		return nil, err
 	}
 	return lspServer, nil
-}
-
-type container struct {
-	app.Container
-	nameContainer    appext.NameContainer
-	logContainer     appext.LoggerContainer
-	tracerContainer  appext.TracerContainer
-	verboseContainer appext.VerboseContainer
-}
-
-func newContainer(
-	baseContainer app.Container,
-	appName string,
-	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
-) (*container, error) {
-	nameContainer, err := appext.NewNameContainer(baseContainer, appName)
-	if err != nil {
-		return nil, err
-	}
-	return &container{
-		Container:        baseContainer,
-		nameContainer:    nameContainer,
-		logContainer:     appext.NewLoggerContainer(logger),
-		tracerContainer:  appext.NewTracerContainer(appName),
-		verboseContainer: appext.NewVerboseContainer(verbosePrinter),
-	}, nil
-}
-
-func (c *container) AppName() string {
-	return c.nameContainer.AppName()
-}
-
-func (c *container) ConfigDirPath() string {
-	return c.nameContainer.ConfigDirPath()
-}
-
-func (c *container) CacheDirPath() string {
-	return c.nameContainer.CacheDirPath()
-}
-
-func (c *container) DataDirPath() string {
-	return c.nameContainer.DataDirPath()
-}
-
-func (c *container) Port() (uint16, error) {
-	return c.nameContainer.Port()
-}
-
-func (c *container) Logger() *zap.Logger {
-	return c.logContainer.Logger()
-}
-
-func (c *container) Tracer() trace.Tracer {
-	return c.tracerContainer.Tracer()
-}
-
-func (c *container) VerbosePrinter() verbose.Printer {
-	return c.verboseContainer.VerbosePrinter()
 }
 
 func newEnvFunc(tb testing.TB, cacheDir string) func(string) map[string]string {
