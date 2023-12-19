@@ -92,8 +92,21 @@ func GetBufLockFileForPrefix(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
+	options ...BufLockFileOption,
 ) (BufLockFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, bufLockFileNames, readBufLockFile)
+	return getFileForPrefix(
+		ctx,
+		bucket,
+		prefix,
+		bufLockFileNames,
+		func(
+			reader io.Reader,
+			fileName string,
+			allowJSON bool,
+		) (BufLockFile, error) {
+			return readBufLockFile(ctx, reader, fileName, allowJSON, options...)
+		},
+	)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file version at the given bucket prefix.
@@ -126,13 +139,41 @@ func PutBufLockFileForPrefix(
 // ValidateFileDigests().
 //
 // fileName may be empty.
-func ReadBufLockFile(reader io.Reader, fileName string) (BufLockFile, error) {
-	return readFile(reader, fileName, readBufLockFile)
+func ReadBufLockFile(ctx context.Context, reader io.Reader, fileName string, options ...BufLockFileOption) (BufLockFile, error) {
+	return readFile(
+		reader,
+		fileName,
+		func(
+			reader io.Reader,
+			fileName string,
+			allowJSON bool,
+		) (BufLockFile, error) {
+			return readBufLockFile(ctx, reader, fileName, allowJSON, options...)
+		},
+	)
 }
 
 // WriteBufLockFile writes the BufLockFile to the io.Writer.
 func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
 	return writeFile(writer, bufLockFile.FileName(), bufLockFile, writeBufLockFile)
+}
+
+// BufLockFileOption is an option for getting a new BufLockFile via Get or Read.
+type BufLockFileOption func(*bufLockFileOptions)
+
+// BufLockFileWithDigestResolver returns a new BufLockFileOption that will resolve digests from commits.
+//
+// Pre-approximately-v1.10 of the buf CLI, we did not store digests in buf.lock files, we only stored commits.
+// In these situations, we need to get digests from the BSR based on the commit. All of our new code relies
+// on digests being present, but we are able to backfill them via the CommitService. By having this option, this allows
+// us to do this backfill when reading buf.lock files created by any version of the buf CLI.
+//
+// TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
+// be an option.
+func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, commitID string) (bufcas.Digest, error)) BufLockFileOption {
+	return func(bufLockFileOptions *bufLockFileOptions) {
+		bufLockFileOptions.digestResolver = digestResolver
+	}
 }
 
 // *** PRIVATE ***
@@ -185,10 +226,16 @@ func (*bufLockFile) isBufLockFile() {}
 func (*bufLockFile) isFile()        {}
 
 func readBufLockFile(
+	ctx context.Context,
 	reader io.Reader,
 	fileName string,
 	allowJSON bool,
+	options ...BufLockFileOption,
 ) (BufLockFile, error) {
+	bufLockFileOptions := newBufLockFileOptions()
+	for _, option := range options {
+		option(bufLockFileOptions)
+	}
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -227,8 +274,16 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
+			getDigest := func() (bufcas.Digest, error) {
+				return bufcas.ParseDigest(dep.Digest)
+			}
 			if dep.Digest == "" {
-				return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
+				if bufLockFileOptions.digestResolver == nil {
+					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
+				}
+				getDigest = func() (bufcas.Digest, error) {
+					return bufLockFileOptions.digestResolver(ctx, dep.Commit)
+				}
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {
@@ -238,9 +293,7 @@ func readBufLockFile(
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
 				dep.Commit,
-				func() (bufcas.Digest, error) {
-					return bufcas.ParseDigest(dep.Digest)
-				},
+				getDigest,
 			)
 			if err != nil {
 				return nil, err
@@ -417,4 +470,12 @@ type externalBufLockFileV2 struct {
 type externalBufLockFileDepV2 struct {
 	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
+}
+
+type bufLockFileOptions struct {
+	digestResolver func(ctx context.Context, commitID string) (bufcas.Digest, error)
+}
+
+func newBufLockFileOptions() *bufLockFileOptions {
+	return &bufLockFileOptions{}
 }
