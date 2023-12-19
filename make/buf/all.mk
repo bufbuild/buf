@@ -55,7 +55,7 @@ CMD ?= test
 testbufnew: installbuf
 	# TODO: remove when done with refactor
 	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
-	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/bufsync | grep -v buf\/command\/format | grep -v command\/alpha\/repo\/reposync)
+	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/command\/format)
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 

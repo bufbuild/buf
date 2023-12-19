@@ -106,6 +106,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
+			// TODO: still need to port
 			//format.NewCommand("format", builder),
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
