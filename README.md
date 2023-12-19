@@ -9,11 +9,8 @@
 [![Homebrew](https://img.shields.io/homebrew/v/buf)][badges_homebrew]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
-The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf].
+The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protobuf]. It provides:
 
-<a id="features"></a>
-
-- The ability to manage Protobuf assets on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint_usage] that enforces good API design choices and structure.
 - A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your plugins based on configurable [templates][templates].
