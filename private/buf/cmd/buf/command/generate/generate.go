@@ -502,7 +502,11 @@ type boolPointerValue struct {
 
 func (b *boolPointerValue) String() string {
 	if *b.valuePointer == nil {
-		return "nil"
+		// Returning "false" here. The alternative is to return "nil", in which
+		// case `buf generate --help` prints the command as such:
+		// --include-imports Also generate ... Types (default nil).
+		// We don't want to show "(default nil)" at the end.
+		return "false"
 	}
 	return strconv.FormatBool(**b.valuePointer)
 }
@@ -517,5 +521,8 @@ func (b *boolPointerValue) Set(value string) error {
 }
 
 func (b *boolPointerValue) Type() string {
-	return "bool pointer"
+	// Returning "bool" here because otherwise `buf generate --help` prints this
+	// flag as such:
+	// --include-imports <return value of this function>[=true]   Also generate ...
+	return "bool"
 }
