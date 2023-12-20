@@ -16,6 +16,7 @@ package buflint_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -1116,13 +1117,12 @@ func testLintWithOptions(
 	)
 	require.NoError(t, err)
 
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	if imageModifier != nil {
 		image = imageModifier(image)
 	}
@@ -1134,15 +1134,20 @@ func testLintWithOptions(
 	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
 	require.NotNil(t, lintConfig)
 	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
-	fileAnnotations, err = handler.Check(
+	err = handler.Check(
 		ctx,
 		lintConfig,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

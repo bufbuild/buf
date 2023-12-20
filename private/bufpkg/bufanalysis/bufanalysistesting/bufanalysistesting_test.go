@@ -48,7 +48,7 @@ func TestBasic(t *testing.T) {
 		),
 	}
 	sb := &strings.Builder{}
-	err := bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "text")
+	err := bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "text")
 	require.NoError(t, err)
 	assert.Equal(
 		t,
@@ -58,7 +58,7 @@ path/to/file.proto:2:1:Hello.
 		sb.String(),
 	)
 	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "json")
+	err = bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "json")
 	require.NoError(t, err)
 	assert.Equal(
 		t,
@@ -68,7 +68,7 @@ path/to/file.proto:2:1:Hello.
 		sb.String(),
 	)
 	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "msvs")
+	err = bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "msvs")
 	require.NoError(t, err)
 	assert.Equal(t,
 		`path/to/file.proto(1,1) : error FOO : Hello.
@@ -77,7 +77,7 @@ path/to/file.proto(2,1) : error FOO : Hello.
 		sb.String(),
 	)
 	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "junit")
+	err = bufanalysis.PrintFileAnnotationSet(sb, bufanalysis.NewFileAnnotationSet(fileAnnotations...), "junit")
 	require.NoError(t, err)
 	assert.Equal(t,
 		`<testsuites>
@@ -94,30 +94,32 @@ path/to/file.proto(2,1) : error FOO : Hello.
 		sb.String(),
 	)
 	sb.Reset()
-	err = bufanalysis.PrintFileAnnotations(
+	err = bufanalysis.PrintFileAnnotationSet(
 		sb,
-		append(
-			fileAnnotations,
-			newFileAnnotation(
-				t,
-				"path/to/file.proto",
-				0,
-				0,
-				0,
-				0,
-				"FOO",
-				"Hello.",
-			),
-			newFileAnnotation(
-				t,
-				"",
-				0,
-				0,
-				0,
-				0,
-				"FOO",
-				"Hello.",
-			),
+		bufanalysis.NewFileAnnotationSet(
+			append(
+				fileAnnotations,
+				newFileAnnotation(
+					t,
+					"path/to/file.proto",
+					0,
+					0,
+					0,
+					0,
+					"FOO",
+					"Hello.",
+				),
+				newFileAnnotation(
+					t,
+					"",
+					0,
+					0,
+					0,
+					0,
+					"FOO",
+					"Hello.",
+				),
+			)...,
 		),
 		"github-actions",
 	)

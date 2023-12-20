@@ -16,6 +16,7 @@ package bufbreaking_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -789,23 +790,21 @@ func testBreaking(
 	)
 	require.NoError(t, err)
 
-	previousImage, previousFileAnnotations, err := bufimage.BuildImage(
+	previousImage, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
-	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
@@ -814,16 +813,21 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 	)
-	fileAnnotations, err = handler.Check(
+	err = handler.Check(
 		ctx,
 		breakingConfig,
 		previousImage,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }
