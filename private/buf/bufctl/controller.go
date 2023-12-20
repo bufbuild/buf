@@ -230,7 +230,8 @@ func (c *controller) GetWorkspace(
 	ctx context.Context,
 	sourceOrModuleInput string,
 	options ...FunctionOption,
-) (bufworkspace.Workspace, error) {
+) (_ bufworkspace.Workspace, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -256,7 +257,8 @@ func (c *controller) GetUpdateableWorkspace(
 	ctx context.Context,
 	dirPath string,
 	options ...FunctionOption,
-) (bufworkspace.UpdateableWorkspace, error) {
+) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -272,7 +274,8 @@ func (c *controller) GetImage(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -284,7 +287,8 @@ func (c *controller) GetImageForInputConfig(
 	ctx context.Context,
 	inputConfig bufconfig.InputConfig,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -296,7 +300,8 @@ func (c *controller) GetImageForWorkspace(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -308,7 +313,8 @@ func (c *controller) GetTargetImageWithConfigs(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) ([]ImageWithConfig, error) {
+) (_ []ImageWithConfig, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -396,7 +402,8 @@ func (c *controller) GetProtoFileInfos(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) ([]ProtoFileInfo, error) {
+) (_ []ProtoFileInfo, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -453,39 +460,13 @@ func (c *controller) GetProtoFileInfos(
 	}
 }
 
-// We expect that we only want target files when we call this.
-func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
-	targetFileInfos, err := bufmodule.GetTargetFileInfos(
-		ctx,
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return slicesext.Map(
-		targetFileInfos,
-		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
-			return newModuleProtoFileInfo(fileInfo)
-		},
-	), nil
-}
-
-// Any import filtering is expected to be done before this.
-func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
-	return slicesext.Map(
-		image.Files(),
-		func(imageFile bufimage.ImageFile) ProtoFileInfo {
-			return newImageProtoFileInfo(imageFile)
-		},
-	), nil
-}
-
 func (c *controller) PutImage(
 	ctx context.Context,
 	imageOutput string,
 	image bufimage.Image,
 	options ...FunctionOption,
 ) (retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -534,7 +515,8 @@ func (c *controller) GetMessage(
 	typeName string,
 	defaultMessageEncoding buffetch.MessageEncoding,
 	options ...FunctionOption,
-) (proto.Message, buffetch.MessageEncoding, error) {
+) (_ proto.Message, _ buffetch.MessageEncoding, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -604,7 +586,8 @@ func (c *controller) PutMessage(
 	message proto.Message,
 	defaultMessageEncoding buffetch.MessageEncoding,
 	options ...FunctionOption,
-) error {
+) (retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -959,11 +942,7 @@ func (c *controller) buildImage(
 		options...,
 	)
 	if err != nil {
-		writer := c.container.Stderr()
-		if c.fileAnnotationsToStdout {
-			writer = c.container.Stdout()
-		}
-		return nil, HandleFileAnnotationSetError(writer, c.fileAnnotationErrorFormat, err)
+		return nil, err
 	}
 	return filterImage(image, functionOptions, true)
 }
@@ -1072,6 +1051,59 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 		}
 	}
 	return nil
+}
+
+// handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
+// the FileAnnotationSet to the writer with the given error format while returning ErrFileAnnotation.
+//
+// Otherwise, the original error is returned.
+func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
+	if *retErrAddr == nil {
+		return
+	}
+	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	if errors.As(*retErrAddr, &fileAnnotationSet) {
+		writer := c.container.Stderr()
+		if c.fileAnnotationsToStdout {
+			writer = c.container.Stdout()
+		}
+		if err := bufanalysis.PrintFileAnnotationSet(
+			writer,
+			fileAnnotationSet,
+			c.fileAnnotationErrorFormat,
+		); err != nil {
+			*retErrAddr = err
+			return
+		}
+		*retErrAddr = ErrFileAnnotation
+	}
+}
+
+// We expect that we only want target files when we call this.
+func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Map(
+		targetFileInfos,
+		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
+			return newModuleProtoFileInfo(fileInfo)
+		},
+	), nil
+}
+
+// Any import filtering is expected to be done before this.
+func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
+	return slicesext.Map(
+		image.Files(),
+		func(imageFile bufimage.ImageFile) ProtoFileInfo {
+			return newImageProtoFileInfo(imageFile)
+		},
+	), nil
 }
 
 func bootstrapResolver(
