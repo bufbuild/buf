@@ -1,6 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/bufbuild/protocompile@146b831231f7f7c1a19b09065875b9778d3d5d25
+#GO_GET_PKGS := $(GO_GET_PKGS)
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
@@ -170,7 +169,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-bullseye
-	docker pull golang:$(GOVERSION)-alpine3.18
+	docker pull golang:$(GOVERSION)-alpine3.19
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

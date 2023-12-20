@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// PushServiceName is the fully-qualified name of the PushService service.
@@ -52,6 +52,13 @@ const (
 	// PushServicePushManifestAndBlobsProcedure is the fully-qualified name of the PushService's
 	// PushManifestAndBlobs RPC.
 	PushServicePushManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.PushService/PushManifestAndBlobs"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	pushServiceServiceDescriptor                    = v1alpha1.File_buf_alpha_registry_v1alpha1_push_proto.Services().ByName("PushService")
+	pushServicePushMethodDescriptor                 = pushServiceServiceDescriptor.Methods().ByName("Push")
+	pushServicePushManifestAndBlobsMethodDescriptor = pushServiceServiceDescriptor.Methods().ByName("PushManifestAndBlobs")
 )
 
 // PushServiceClient is a client for the buf.alpha.registry.v1alpha1.PushService service.
@@ -76,12 +83,14 @@ func NewPushServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 		push: connect.NewClient[v1alpha1.PushRequest, v1alpha1.PushResponse](
 			httpClient,
 			baseURL+PushServicePushProcedure,
+			connect.WithSchema(pushServicePushMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		pushManifestAndBlobs: connect.NewClient[v1alpha1.PushManifestAndBlobsRequest, v1alpha1.PushManifestAndBlobsResponse](
 			httpClient,
 			baseURL+PushServicePushManifestAndBlobsProcedure,
+			connect.WithSchema(pushServicePushManifestAndBlobsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -122,12 +131,14 @@ func NewPushServiceHandler(svc PushServiceHandler, opts ...connect.HandlerOption
 	pushServicePushHandler := connect.NewUnaryHandler(
 		PushServicePushProcedure,
 		svc.Push,
+		connect.WithSchema(pushServicePushMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	pushServicePushManifestAndBlobsHandler := connect.NewUnaryHandler(
 		PushServicePushManifestAndBlobsProcedure,
 		svc.PushManifestAndBlobs,
+		connect.WithSchema(pushServicePushManifestAndBlobsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

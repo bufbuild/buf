@@ -2,18 +2,15 @@
 
 # Buf
 
-[![License](https://img.shields.io/github/license/bufbuild/buf?color=blue)][badges_license]
-[![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges_release]
-[![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges_ci]
-[![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges_docker]
-[![Homebrew](https://img.shields.io/homebrew/v/buf)][badges_homebrew]
+[![License](https://img.shields.io/github/license/bufbuild/buf?color=blue)](https://github.com/bufbuild/buf/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)](https://github.com/bufbuild/buf/releases)
+[![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)](https://github.com/bufbuild/buf/actions?workflow=ci)
+[![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
+[![Homebrew](https://img.shields.io/homebrew/v/buf)](https://github.com/bufbuild/homebrew-buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
 
-The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf].
+The [`buf`][buf] CLI is the best tool for working with [Protocol Buffers][protobuf]. It provides:
 
-<a id="features"></a>
-
-- The ability to manage Protobuf assets on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint_usage] that enforces good API design choices and structure.
 - A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your plugins based on configurable [templates][templates].
@@ -108,12 +105,6 @@ For updates on the Buf CLI, [follow this repo on GitHub][repo].
 
 For feature requests, bugs, or technical questions, email us at [dev@buf.build][email_dev]. For general inquiries or inclusion in our upcoming feature betas, email us at [info@buf.build][email_info].
 
-[badges_aur]: https://aur.archlinux.org/packages/buf
-[badges_ci]: https://github.com/bufbuild/buf/actions?workflow=ci
-[badges_docker]: https://hub.docker.com/r/bufbuild/buf
-[badges_homebrew]: https://github.com/bufbuild/homebrew-buf
-[badges_license]: https://github.com/bufbuild/buf/blob/main/LICENSE
-[badges_release]: https://github.com/bufbuild/buf/releases
 [badges_slack]: https://buf.build/links/slack
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary

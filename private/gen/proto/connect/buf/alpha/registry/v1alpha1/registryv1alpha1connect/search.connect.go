@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SearchServiceName is the fully-qualified name of the SearchService service.
@@ -57,6 +57,15 @@ const (
 	// SearchServiceSearchModuleContentProcedure is the fully-qualified name of the SearchService's
 	// SearchModuleContent RPC.
 	SearchServiceSearchModuleContentProcedure = "/buf.alpha.registry.v1alpha1.SearchService/SearchModuleContent"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	searchServiceServiceDescriptor                   = v1alpha1.File_buf_alpha_registry_v1alpha1_search_proto.Services().ByName("SearchService")
+	searchServiceSearchMethodDescriptor              = searchServiceServiceDescriptor.Methods().ByName("Search")
+	searchServiceSearchTagMethodDescriptor           = searchServiceServiceDescriptor.Methods().ByName("SearchTag")
+	searchServiceSearchDraftMethodDescriptor         = searchServiceServiceDescriptor.Methods().ByName("SearchDraft")
+	searchServiceSearchModuleContentMethodDescriptor = searchServiceServiceDescriptor.Methods().ByName("SearchModuleContent")
 )
 
 // SearchServiceClient is a client for the buf.alpha.registry.v1alpha1.SearchService service.
@@ -84,24 +93,28 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		search: connect.NewClient[v1alpha1.SearchRequest, v1alpha1.SearchResponse](
 			httpClient,
 			baseURL+SearchServiceSearchProcedure,
+			connect.WithSchema(searchServiceSearchMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchTag: connect.NewClient[v1alpha1.SearchTagRequest, v1alpha1.SearchTagResponse](
 			httpClient,
 			baseURL+SearchServiceSearchTagProcedure,
+			connect.WithSchema(searchServiceSearchTagMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchDraft: connect.NewClient[v1alpha1.SearchDraftRequest, v1alpha1.SearchDraftResponse](
 			httpClient,
 			baseURL+SearchServiceSearchDraftProcedure,
+			connect.WithSchema(searchServiceSearchDraftMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		searchModuleContent: connect.NewClient[v1alpha1.SearchModuleContentRequest, v1alpha1.SearchModuleContentResponse](
 			httpClient,
 			baseURL+SearchServiceSearchModuleContentProcedure,
+			connect.WithSchema(searchServiceSearchModuleContentMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -158,24 +171,28 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 	searchServiceSearchHandler := connect.NewUnaryHandler(
 		SearchServiceSearchProcedure,
 		svc.Search,
+		connect.WithSchema(searchServiceSearchMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchTagHandler := connect.NewUnaryHandler(
 		SearchServiceSearchTagProcedure,
 		svc.SearchTag,
+		connect.WithSchema(searchServiceSearchTagMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchDraftHandler := connect.NewUnaryHandler(
 		SearchServiceSearchDraftProcedure,
 		svc.SearchDraft,
+		connect.WithSchema(searchServiceSearchDraftMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	searchServiceSearchModuleContentHandler := connect.NewUnaryHandler(
 		SearchServiceSearchModuleContentProcedure,
 		svc.SearchModuleContent,
+		connect.WithSchema(searchServiceSearchModuleContentMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
