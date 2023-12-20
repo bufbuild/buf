@@ -452,7 +452,7 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 				return nil, err
 			}
 			// This also has the effect of copying the slice.
-			return slicesext.ToUniqueSorted(fastscanResult.Imports), nil
+			return slicesext.ToUniqueSorted(slicesext.Map(fastscanResult.Imports, func(imp fastscan.Import) string { return imp.Path })), nil
 		},
 		func() (string, error) {
 			if fileType != FileTypeProto {
@@ -577,7 +577,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	fastscanResult, err = fastscan.Scan(readObjectCloser)
+	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
 		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
 	}

@@ -42,6 +42,10 @@ type Manifest interface {
 	// The paths of the given FileNodes are guaranteed to be unique.
 	// The iteration order will be the sorted order of the paths.
 	FileNodes() []FileNode
+	// GetFileNode gets the FileNode for the given path.
+	//
+	// Returns nil if the path does not exist.
+	GetFileNode(path string) FileNode
 	// GetDigest gets the Digest for the given path.
 	//
 	// Returns nil if the path does not exist.
@@ -151,9 +155,13 @@ func (m *manifest) FileNodes() []FileNode {
 	return m.sortedUniqueFileNodes
 }
 
+func (m *manifest) GetFileNode(path string) FileNode {
+	return m.pathToFileNode[path]
+}
+
 func (m *manifest) GetDigest(path string) Digest {
-	fileNode, ok := m.pathToFileNode[path]
-	if !ok {
+	fileNode := m.GetFileNode(path)
+	if fileNode == nil {
 		return nil
 	}
 	return fileNode.Digest()
