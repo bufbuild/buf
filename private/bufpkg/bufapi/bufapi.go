@@ -38,6 +38,8 @@ func NewClientProvider(clientConfig *connectclient.Config) ClientProvider {
 }
 
 // NewNopClientProvider returns a new ClientProvider that provides unimplemented services.
+//
+// Should be used for testing only.
 func NewNopClientProvider() ClientProvider {
 	return newNopClientProvider()
 }
