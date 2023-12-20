@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -127,28 +126,17 @@ func run(
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
 	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			env.ErrorFormat,
-		); err != nil {
-			return err
-		}
 		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
 		// but this also makes us consistent with the rest of buf
-		return bufctl.ErrFileAnnotation
+		return bufctl.HandleFileAnnotationSetError(container.Stderr(), env.ErrorFormat, err)
 	}
-
 	if env.PrintFreeFieldNumbers {
 		fileInfos, err := bufmodule.GetTargetFileInfos(
 			ctx,

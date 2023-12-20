@@ -952,28 +952,18 @@ func (c *controller) buildImage(
 	if functionOptions.imageExcludeSourceInfo {
 		options = append(options, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		c.tracer,
 		moduleReadBucket,
 		options...,
 	)
 	if err != nil {
-		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
 		writer := c.container.Stderr()
 		if c.fileAnnotationsToStdout {
 			writer = c.container.Stdout()
 		}
-		if err := bufanalysis.PrintFileAnnotations(
-			writer,
-			fileAnnotations,
-			c.fileAnnotationErrorFormat,
-		); err != nil {
-			return nil, err
-		}
-		return nil, ErrFileAnnotation
+		return nil, HandleFileAnnotationSetError(writer, c.fileAnnotationErrorFormat, err)
 	}
 	return filterImage(image, functionOptions, true)
 }

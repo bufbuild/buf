@@ -49,11 +49,13 @@ type Handler interface {
 	// The image should have source code info for this to work properly.
 	//
 	// Images should *not* be filtered with regards to imports before passing to this function.
+	//
+	// An error of type bufanalysis.FileAnnotationSet will be returned on breaking failure.
 	Check(
 		ctx context.Context,
 		config bufconfig.LintConfig,
 		image bufimage.Image,
-	) ([]bufanalysis.FileAnnotation, error)
+	) error
 }
 
 // NewHandler returns a new Handler.
@@ -126,19 +128,16 @@ func GetAllRulesAndCategoriesV2() []string {
 	return internal.AllCategoriesAndIDsForVersionSpec(buflintv2.VersionSpec)
 }
 
-// PrintFileAnnotationsConfigIgnoreYAMLV1 prints the FileAnnotations to the Writer
+// PrintFileAnnotationSetConfigIgnoreYAMLV1 prints the FileAnnotationSet to the Writer
 // for the config-ignore-yaml format.
 //
 // TODO: This is messed.
-func PrintFileAnnotationsConfigIgnoreYAMLV1(
+func PrintFileAnnotationSetConfigIgnoreYAMLV1(
 	writer io.Writer,
-	fileAnnotations []bufanalysis.FileAnnotation,
+	fileAnnotationSet bufanalysis.FileAnnotationSet,
 ) error {
-	if len(fileAnnotations) == 0 {
-		return nil
-	}
 	ignoreIDToPathMap := make(map[string]map[string]struct{})
-	for _, fileAnnotation := range fileAnnotations {
+	for _, fileAnnotation := range fileAnnotationSet.FileAnnotations() {
 		fileInfo := fileAnnotation.FileInfo()
 		if fileInfo == nil || fileAnnotation.Type() == "" {
 			continue

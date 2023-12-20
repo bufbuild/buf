@@ -39,23 +39,23 @@ func buildImage(
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	excludeSourceCodeInfo bool,
 	noParallelism bool,
-) (_ Image, _ []bufanalysis.FileAnnotation, retErr error) {
+) (_ Image, retErr error) {
 	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
 
 	if !moduleReadBucket.ShouldBeSelfContained() {
-		return nil, nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
+		return nil, syserror.New("passed a ModuleReadBucket to BuildImage that was not expected to be self-contained")
 	}
 	moduleReadBucket = bufmodule.ModuleReadBucketWithOnlyProtoFiles(moduleReadBucket)
 	parserAccessorHandler := newParserAccessorHandler(ctx, moduleReadBucket)
 	targetFileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if len(targetFileInfos) == 0 {
 		// If we had no no target files within the module after path filtering, this is an error.
 		// We could have a better user error than this. This gets back to the lack of allowNotExist.
-		return nil, nil, bufmodule.ErrNoTargetProtoFiles
+		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	paths := bufmodule.FileInfoPaths(targetFileInfos)
 
@@ -67,15 +67,11 @@ func buildImage(
 		noParallelism,
 	)
 	if buildResult.Err != nil {
-		return nil, nil, buildResult.Err
+		return nil, buildResult.Err
 	}
-	if len(buildResult.FileAnnotations) > 0 {
-		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(buildResult.FileAnnotations), nil
-	}
-
 	fileDescriptors, err := checkAndSortFileDescriptors(buildResult.FileDescriptors, paths)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	image, err := getImage(
 		ctx,
@@ -86,9 +82,9 @@ func buildImage(
 		buildResult.FilenameToUnusedDependencyFilenames,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return image, nil, nil
+	return image, nil
 }
 
 func getBuildResult(
@@ -131,18 +127,17 @@ func getBuildResult(
 					nil,
 					nil,
 					nil,
-					nil,
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := bufprotocompile.FileAnnotationsForErrorsWithPos(
+			fileAnnotationSet, err := bufprotocompile.FileAnnotationSetForErrorsWithPos(
 				errorsWithPos,
 				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
-				return newBuildResult(nil, nil, nil, nil, err)
+				return newBuildResult(nil, nil, nil, err)
 			}
-			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
+			return newBuildResult(nil, nil, nil, fileAnnotationSet)
 		}
 		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
 			fileAnnotation, err := bufprotocompile.FileAnnotationForErrorWithPos(
@@ -150,15 +145,14 @@ func getBuildResult(
 				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
-				return newBuildResult(nil, nil, nil, nil, err)
+				return newBuildResult(nil, nil, nil, err)
 			}
-			return newBuildResult(nil, nil, nil, []bufanalysis.FileAnnotation{fileAnnotation}, nil)
+			return newBuildResult(nil, nil, nil, bufanalysis.NewFileAnnotationSet(fileAnnotation))
 		}
-		return newBuildResult(nil, nil, nil, nil, err)
+		return newBuildResult(nil, nil, nil, err)
 	} else if len(errorsWithPos) > 0 {
 		// https://github.com/jhump/protoreflect/pull/331
 		return newBuildResult(
-			nil,
 			nil,
 			nil,
 			nil,
@@ -167,7 +161,6 @@ func getBuildResult(
 	}
 	if len(compiledFiles) != len(paths) {
 		return newBuildResult(
-			nil,
 			nil,
 			nil,
 			nil,
@@ -181,7 +174,6 @@ func getBuildResult(
 		// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
 		if path != filename {
 			return newBuildResult(
-				nil,
 				nil,
 				nil,
 				nil,
@@ -203,7 +195,6 @@ func getBuildResult(
 		fileDescriptors,
 		syntaxUnspecifiedFilenames,
 		filenameToUnusedDependencyFilenames,
-		nil,
 		nil,
 	)
 }
@@ -399,7 +390,6 @@ type buildResult struct {
 	FileDescriptors                     []protoreflect.FileDescriptor
 	SyntaxUnspecifiedFilenames          map[string]struct{}
 	FilenameToUnusedDependencyFilenames map[string]map[string]struct{}
-	FileAnnotations                     []bufanalysis.FileAnnotation
 	Err                                 error
 }
 
@@ -407,14 +397,12 @@ func newBuildResult(
 	fileDescriptors []protoreflect.FileDescriptor,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
-	fileAnnotations []bufanalysis.FileAnnotation,
 	err error,
 ) *buildResult {
 	return &buildResult{
 		FileDescriptors:                     fileDescriptors,
 		SyntaxUnspecifiedFilenames:          syntaxUnspecifiedFilenames,
 		FilenameToUnusedDependencyFilenames: filenameToUnusedDependencyFilenames,
-		FileAnnotations:                     fileAnnotations,
 		Err:                                 err,
 	}
 }

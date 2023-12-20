@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buftesting"
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -76,10 +75,9 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 		false,
 	)
 
-	image, bufAnnotations, bufErr := fuzzBuild(ctx, dir.AbsPath())
+	image, bufErr := fuzzBuild(ctx, dir.AbsPath())
 	return newFuzzResult(
 		runner,
-		bufAnnotations,
 		bufErr,
 		protocErr,
 		actualProtocFileDescriptorSet,
@@ -88,10 +86,10 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 }
 
 // fuzzBuild does a builder.Build for a fuzz test.
-func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
+func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, error) {
 	moduleSet, err := bufmoduletesting.NewModuleSetForDirPath(dirPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	return bufimage.BuildImage(
 		ctx,
@@ -143,7 +141,6 @@ func untxtar(data []byte, destDirPath string) error {
 
 type fuzzResult struct {
 	runner                        command.Runner
-	bufAnnotations                []bufanalysis.FileAnnotation
 	bufErr                        error
 	protocErr                     error
 	actualProtocFileDescriptorSet *descriptorpb.FileDescriptorSet
@@ -152,7 +149,6 @@ type fuzzResult struct {
 
 func newFuzzResult(
 	runner command.Runner,
-	bufAnnotations []bufanalysis.FileAnnotation,
 	bufErr error,
 	protocErr error,
 	actualProtocFileDescriptorSet *descriptorpb.FileDescriptorSet,
@@ -160,7 +156,6 @@ func newFuzzResult(
 ) *fuzzResult {
 	return &fuzzResult{
 		runner:                        runner,
-		bufAnnotations:                bufAnnotations,
 		bufErr:                        bufErr,
 		protocErr:                     protocErr,
 		actualProtocFileDescriptorSet: actualProtocFileDescriptorSet,
@@ -184,16 +179,13 @@ func (f *fuzzResult) panicOrN(ctx context.Context) int {
 // error returns an error that should cause Fuzz to panic.
 func (f *fuzzResult) error(ctx context.Context) error {
 	if f.protocErr != nil {
-		if f.bufErr == nil && len(f.bufAnnotations) == 0 {
+		if f.bufErr == nil {
 			return fmt.Errorf("protoc has error but buf does not: %v", f.protocErr)
 		}
 		return nil
 	}
 	if f.bufErr != nil {
 		return fmt.Errorf("buf has error but protoc does not: %v", f.bufErr)
-	}
-	if len(f.bufAnnotations) > 0 {
-		return fmt.Errorf("buf has file annotations but protoc has no error: %v", f.bufAnnotations)
 	}
 	image := bufimage.ImageWithoutImports(f.image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)

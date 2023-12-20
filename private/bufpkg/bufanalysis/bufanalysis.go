@@ -112,11 +112,8 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
-	// Stringer returns the string representation of this annotation.
+	// Stringer returns the string representation for this FileAnnotation.
 	fmt.Stringer
-	// error returns an error for this FileAnnotation. It will use the text format
-	// to create an error message.
-	error
 
 	// FileInfo is the FileInfo for this annotation.
 	//
@@ -174,12 +171,15 @@ func NewFileAnnotation(
 
 // FileAnnotationSet is a set of FileAnnotations.
 type FileAnnotationSet interface {
+	// Stringer returns the string representation for this FileAnnotationSet.
+	fmt.Stringer
 	// error returns an error for this FileAnnotationSet. It will use the text format
 	// to create an error message.
 	error
 
 	// FileAnnotations returns the FileAnnotations in the set.
 	//
+	// This will always be non-empty.
 	// These will be deduplicated and sorted.
 	FileAnnotations() []FileAnnotation
 
@@ -187,6 +187,8 @@ type FileAnnotationSet interface {
 }
 
 // NewFileAnnotationSet returns a new FileAnnotationSet.
+//
+// If len(fileAnnotations) is 0, this returns nil.
 func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
 	return newFileAnnotationSet(fileAnnotations)
 }

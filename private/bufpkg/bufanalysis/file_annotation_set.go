@@ -26,6 +26,9 @@ type fileAnnotationSet struct {
 }
 
 func newFileAnnotationSet(fileAnnotations []FileAnnotation) *fileAnnotationSet {
+	if len(fileAnnotations) == 0 {
+		return nil
+	}
 	return &fileAnnotationSet{
 		fileAnnotations: deduplicateAndSortFileAnnotations(fileAnnotations),
 	}
@@ -35,7 +38,7 @@ func (f *fileAnnotationSet) FileAnnotations() []FileAnnotation {
 	return f.fileAnnotations
 }
 
-func (f *fileAnnotationSet) Error() string {
+func (f *fileAnnotationSet) String() string {
 	var sb strings.Builder
 	for i, fileAnnotation := range f.fileAnnotations {
 		_, _ = sb.WriteString(fileAnnotation.String())
@@ -44,6 +47,10 @@ func (f *fileAnnotationSet) Error() string {
 		}
 	}
 	return sb.String()
+}
+
+func (f *fileAnnotationSet) Error() string {
+	return f.String()
 }
 
 func (*fileAnnotationSet) isFileAnnotationSet() {}

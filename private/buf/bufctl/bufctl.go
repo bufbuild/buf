@@ -14,7 +14,13 @@
 
 package bufctl
 
-import "github.com/bufbuild/buf/private/pkg/app"
+import (
+	"errors"
+	"io"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/pkg/app"
+)
 
 const (
 	// ExitCodeFileAnnotation is the exit code used when we print file annotations.
@@ -33,3 +39,22 @@ var (
 	// We also exit with 100 to be able to distinguish user-parsable errors from system errors.
 	ErrFileAnnotation = app.NewError(ExitCodeFileAnnotation, "")
 )
+
+// HandleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
+// the FileAnnotationSet to the writer with the given error format while returning ErrFileAnnotation.
+//
+// Otherwise, the original error is returned.
+func HandleFileAnnotationSetError(writer io.Writer, errorFormat string, err error) error {
+	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	if errors.As(err, &fileAnnotationSet) {
+		if err := bufanalysis.PrintFileAnnotationSet(
+			writer,
+			fileAnnotationSet,
+			errorFormat,
+		); err != nil {
+			return err
+		}
+		return ErrFileAnnotation
+	}
+	return err
+}

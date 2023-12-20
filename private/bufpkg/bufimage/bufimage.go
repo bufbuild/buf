@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -144,8 +143,7 @@ func NewImage(imageFiles []ImageFile) (Image, error) {
 
 // BuildImage runs compilation.
 //
-// Only one of Image and FileAnnotations will be returned.
-//
+// An error of type FileAnnotationSet may be returned. It is up to the caller to parse this if needed.
 // FileAnnotations will use external file paths.
 //
 // The given ModuleReadBucket must be self-contained.
@@ -159,7 +157,7 @@ func BuildImage(
 	tracer tracing.Tracer,
 	moduleReadBucket bufmodule.ModuleReadBucket,
 	options ...BuildImageOption,
-) (Image, []bufanalysis.FileAnnotation, error) {
+) (Image, error) {
 	buildImageOptions := newBuildImageOptions()
 	for _, option := range options {
 		option(buildImageOptions)

@@ -131,21 +131,26 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
+	if err := bufbreaking.NewHandler(container.Logger(), tracing.NopTracer).Check(
 		ctx,
 		moduleConfig.BreakingConfig(),
 		againstImage,
 		image,
-	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		buffer := bytes.NewBuffer(nil)
-		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			return err
+	); err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			buffer := bytes.NewBuffer(nil)
+			if err := bufanalysis.PrintFileAnnotationSet(
+				buffer,
+				fileAnnotationSet,
+				externalConfig.ErrorFormat,
+			); err != nil {
+				return err
+			}
+			responseWriter.AddError(strings.TrimSpace(buffer.String()))
+			return nil
 		}
-		responseWriter.AddError(strings.TrimSpace(buffer.String()))
+		return err
 	}
 	return nil
 }

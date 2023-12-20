@@ -64,10 +64,12 @@ func RunnerWithIgnorePrefix(ignorePrefix string) RunnerOption {
 }
 
 // Check runs the Rules.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
+//
+// An error of type bufanalysis.FileAnnotationSet will be returned on a rule failure.
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) (retErr error) {
 	rules := config.Rules
 	if len(rules) == 0 {
-		return nil, nil
+		return nil
 	}
 	ctx, span := r.tracer.Start(
 		ctx,
@@ -98,17 +100,19 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	for i := 0; i < len(rules); i++ {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return ctx.Err()
 		case result := <-resultC:
 			fileAnnotations = append(fileAnnotations, result.FileAnnotations...)
 			err = multierr.Append(err, result.Err)
 		}
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
-	bufanalysis.SortFileAnnotations(fileAnnotations)
-	return fileAnnotations, nil
+	if len(fileAnnotations) > 0 {
+		return bufanalysis.NewFileAnnotationSet(fileAnnotations...)
+	}
+	return nil
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
