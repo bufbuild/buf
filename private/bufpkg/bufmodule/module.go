@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/protocompile/parser/fastscan"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -529,6 +530,11 @@ func getModuleDepsRec(
 				if errors.Is(err, fs.ErrNotExist) {
 					// Strip any PathError and just get to the point.
 					err = fs.ErrNotExist
+				}
+				var syntaxError fastscan.SyntaxError
+				if errors.As(err, &syntaxError) {
+					// If a syntax error, the error already contains path information, just return directly.
+					return syntaxError
 				}
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}

@@ -579,7 +579,9 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	}()
 	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
-		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
+		// The error is already typed and contains path information if it is a syntax error.
+		// Use errors.Is on fastscan.SyntaxError.
+		return fastscan.Result{}, err
 	}
 	return fastscanResult, nil
 }

@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -135,10 +135,9 @@ func getBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := getFileAnnotations(
-				ctx,
-				parserAccessorHandler,
+			fileAnnotations, err := bufprotocompile.FileAnnotationsForErrorsWithPos(
 				errorsWithPos,
+				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
 				return newBuildResult(nil, nil, nil, nil, err)
@@ -146,15 +145,14 @@ func getBuildResult(
 			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
 		}
 		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
-			fileAnnotations, err := getFileAnnotations(
-				ctx,
-				parserAccessorHandler,
-				[]reporter.ErrorWithPos{errorWithPos},
+			fileAnnotation, err := bufprotocompile.FileAnnotationForErrorWithPos(
+				errorWithPos,
+				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
 				return newBuildResult(nil, nil, nil, nil, err)
 			}
-			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
+			return newBuildResult(nil, nil, nil, []bufanalysis.FileAnnotation{fileAnnotation}, nil)
 		}
 		return newBuildResult(nil, nil, nil, nil, err)
 	} else if len(errorsWithPos) > 0 {
@@ -397,75 +395,6 @@ func maybeAddUnusedImport(
 	unusedImportFilenames[errorUnusedImport.UnusedImport()] = struct{}{}
 }
 
-// getFileAnnotations gets the FileAnnotations for the ErrorWithPos errors.
-func getFileAnnotations(
-	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
-	errorsWithPos []reporter.ErrorWithPos,
-) ([]bufanalysis.FileAnnotation, error) {
-	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
-	for _, errorWithPos := range errorsWithPos {
-		fileAnnotation, err := getFileAnnotation(
-			ctx,
-			parserAccessorHandler,
-			errorWithPos,
-		)
-		if err != nil {
-			return nil, err
-		}
-		fileAnnotations = append(fileAnnotations, fileAnnotation)
-	}
-	return fileAnnotations, nil
-}
-
-// getFileAnnotation gets the FileAnnotation for the ErrorWithPos error.
-func getFileAnnotation(
-	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
-	errorWithPos reporter.ErrorWithPos,
-) (bufanalysis.FileAnnotation, error) {
-	var fileInfo bufanalysis.FileInfo
-	var startLine int
-	var startColumn int
-	var endLine int
-	var endColumn int
-	typeString := "COMPILE"
-	message := "Compile error."
-	// this should never happen
-	// maybe we should error
-	if errorWithPos.Unwrap() != nil {
-		message = errorWithPos.Unwrap().Error()
-	}
-	sourcePos := errorWithPos.GetPosition()
-	if sourcePos.Filename != "" {
-		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
-		if err != nil {
-			return nil, err
-		}
-		fileInfo = newFileInfo(
-			path,
-			parserAccessorHandler.ExternalPath(path),
-		)
-	}
-	if sourcePos.Line > 0 {
-		startLine = sourcePos.Line
-		endLine = sourcePos.Line
-	}
-	if sourcePos.Col > 0 {
-		startColumn = sourcePos.Col
-		endColumn = sourcePos.Col
-	}
-	return bufanalysis.NewFileAnnotation(
-		fileInfo,
-		startLine,
-		startColumn,
-		endLine,
-		endColumn,
-		typeString,
-		message,
-	), nil
-}
-
 type buildResult struct {
 	FileDescriptors                     []protoreflect.FileDescriptor
 	SyntaxUnspecifiedFilenames          map[string]struct{}
@@ -488,26 +417,6 @@ func newBuildResult(
 		FileAnnotations:                     fileAnnotations,
 		Err:                                 err,
 	}
-}
-
-type fileInfo struct {
-	path         string
-	externalPath string
-}
-
-func newFileInfo(path string, externalPath string) *fileInfo {
-	return &fileInfo{
-		path:         path,
-		externalPath: externalPath,
-	}
-}
-
-func (f *fileInfo) Path() string {
-	return f.path
-}
-
-func (f *fileInfo) ExternalPath() string {
-	return f.externalPath
 }
 
 type buildImageOptions struct {
