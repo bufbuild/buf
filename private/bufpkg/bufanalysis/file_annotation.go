@@ -105,3 +105,9 @@ func (f *fileAnnotation) String() string {
 	_, _ = buffer.WriteString(message)
 	return buffer.String()
 }
+
+func (f *fileAnnotation) Error() string {
+	return f.String()
+}
+
+func (*fileAnnotation) isFileAnnotation() {}
