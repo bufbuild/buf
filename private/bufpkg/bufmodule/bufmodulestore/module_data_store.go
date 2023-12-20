@@ -20,11 +20,9 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
@@ -49,11 +47,10 @@ type ModuleDataStore interface {
 // or at least make this optional.
 func NewModuleDataStore(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
 	bucket storage.ReadWriteBucket,
 	options ...ModuleDataStoreOption,
 ) ModuleDataStore {
-	return newModuleDataStore(logger, clientProvider, bucket, options...)
+	return newModuleDataStore(logger, bucket, options...)
 }
 
 // ModuleDataStoreOption is an option for a new ModuleDataStore.
@@ -72,23 +69,20 @@ func ModuleDataStoreWithTar() ModuleDataStoreOption {
 /// *** PRIVATE ***
 
 type moduleDataStore struct {
-	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
-	bucket         storage.ReadWriteBucket
+	logger *zap.Logger
+	bucket storage.ReadWriteBucket
 
 	tar bool
 }
 
 func newModuleDataStore(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
 	bucket storage.ReadWriteBucket,
 	options ...ModuleDataStoreOption,
 ) *moduleDataStore {
 	moduleDataStore := &moduleDataStore{
-		logger:         logger,
-		clientProvider: clientProvider,
-		bucket:         bucket,
+		logger: logger,
+		bucket: bucket,
 	}
 	for _, option := range options {
 		option(moduleDataStore)
@@ -145,17 +139,9 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	}
 	// We rely on the buf.lock file being the last file to be written in the store.
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
-	// result in bad data being overwritten.
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
-		ctx,
-		bucket,
-		".",
-		bufconfig.BufLockFileWithDigestResolver(
-			func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error) {
-				return bufmoduleapi.CommitIDToDigest(ctx, p.clientProvider, remote, commitID)
-			},
-		),
-	)
+	// result in bad data being overwritten. We also do not pass the BufLockFileWithDigestResolver
+	// opition when reading this file, because we have complete control over this bucket.
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
 	p.logDebugModuleFullNameAndDigest(
 		moduleFullName,
 		digest,

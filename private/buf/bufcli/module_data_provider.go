@@ -120,7 +120,6 @@ func newModuleDataProvider(
 		delegateReader,
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
-			clientProvider,
 			cacheBucket,
 		),
 	), nil

@@ -77,7 +77,6 @@ func testCacheBasic(t *testing.T, tar bool) {
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
 			zap.NewNop(),
-			nil,
 			storagemem.NewReadWriteBucket(),
 			moduleDataStoreOptions...,
 		),
