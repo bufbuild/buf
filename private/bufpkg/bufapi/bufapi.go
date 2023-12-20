@@ -20,6 +20,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
+// NopClientProvider is a ClientProvider that provides unimplemented services.
+//
+// Should be used for testing only.
+var NopClientProvider ClientProvider = nopClientProvider{}
+
 // ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
 	BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient
@@ -35,13 +40,6 @@ type ClientProvider interface {
 // NewClientProvider returns a new ClientProvider.
 func NewClientProvider(clientConfig *connectclient.Config) ClientProvider {
 	return newClientProvider(clientConfig)
-}
-
-// NewNopClientProvider returns a new ClientProvider that provides unimplemented services.
-//
-// Should be used for testing only.
-func NewNopClientProvider() ClientProvider {
-	return newNopClientProvider()
 }
 
 // *** PRIVATE ***
@@ -122,38 +120,34 @@ func (c *clientProvider) VCSCommitServiceClient(registryHostname string) modulev
 
 type nopClientProvider struct{}
 
-func newNopClientProvider() *nopClientProvider {
-	return &nopClientProvider{}
-}
-
-func (n *nopClientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
+func (nopClientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
 	return modulev1beta1connect.UnimplementedBranchServiceHandler{}
 }
 
-func (n *nopClientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
+func (nopClientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
 	return modulev1beta1connect.UnimplementedCommitServiceHandler{}
 }
 
-func (n *nopClientProvider) ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient {
+func (nopClientProvider) ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient {
 	return modulev1beta1connect.UnimplementedModuleServiceHandler{}
 }
 
-func (n *nopClientProvider) OrganizationServiceClient(registryHostname string) ownerv1beta1connect.OrganizationServiceClient {
+func (nopClientProvider) OrganizationServiceClient(registryHostname string) ownerv1beta1connect.OrganizationServiceClient {
 	return ownerv1beta1connect.UnimplementedOrganizationServiceHandler{}
 }
 
-func (n *nopClientProvider) OwnerServiceClient(registryHostname string) ownerv1beta1connect.OwnerServiceClient {
+func (nopClientProvider) OwnerServiceClient(registryHostname string) ownerv1beta1connect.OwnerServiceClient {
 	return ownerv1beta1connect.UnimplementedOwnerServiceHandler{}
 }
 
-func (n *nopClientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
+func (nopClientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
 	return modulev1beta1connect.UnimplementedTagServiceHandler{}
 }
 
-func (n *nopClientProvider) UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient {
+func (nopClientProvider) UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient {
 	return ownerv1beta1connect.UnimplementedUserServiceHandler{}
 }
 
-func (n *nopClientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
+func (nopClientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
 	return modulev1beta1connect.UnimplementedVCSCommitServiceHandler{}
 }

@@ -1113,7 +1113,7 @@ func testLintWithOptions(
 		zap.NewNop(),
 		tracing.NopTracer,
 		readWriteBucket,
-		bufapi.NewNopClientProvider(),
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)

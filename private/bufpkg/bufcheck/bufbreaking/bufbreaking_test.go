@@ -778,7 +778,7 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 		previousReadWriteBucket,
-		bufapi.NewNopClientProvider(),
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
@@ -787,7 +787,7 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 		readWriteBucket,
-		bufapi.NewNopClientProvider(),
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
