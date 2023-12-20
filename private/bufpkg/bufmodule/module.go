@@ -532,6 +532,7 @@ func getModuleDepsRec(
 					// If a FileAnnotationSet, the error already contains path information, just return directly.
 					//
 					// We also specially handle FileAnnotationSets for exit code 100.
+					// TODO: Should we just warn?
 					return fileAnnotationSet
 				}
 				if errors.Is(err, fs.ErrNotExist) {
