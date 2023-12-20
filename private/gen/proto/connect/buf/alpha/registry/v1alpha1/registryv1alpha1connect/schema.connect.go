@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SchemaServiceName is the fully-qualified name of the SchemaService service.
@@ -52,6 +52,13 @@ const (
 	// SchemaServiceConvertMessageProcedure is the fully-qualified name of the SchemaService's
 	// ConvertMessage RPC.
 	SchemaServiceConvertMessageProcedure = "/buf.alpha.registry.v1alpha1.SchemaService/ConvertMessage"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	schemaServiceServiceDescriptor              = v1alpha1.File_buf_alpha_registry_v1alpha1_schema_proto.Services().ByName("SchemaService")
+	schemaServiceGetSchemaMethodDescriptor      = schemaServiceServiceDescriptor.Methods().ByName("GetSchema")
+	schemaServiceConvertMessageMethodDescriptor = schemaServiceServiceDescriptor.Methods().ByName("ConvertMessage")
 )
 
 // SchemaServiceClient is a client for the buf.alpha.registry.v1alpha1.SchemaService service.
@@ -77,13 +84,15 @@ func NewSchemaServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		getSchema: connect.NewClient[v1alpha1.GetSchemaRequest, v1alpha1.GetSchemaResponse](
 			httpClient,
 			baseURL+SchemaServiceGetSchemaProcedure,
+			connect.WithSchema(schemaServiceGetSchemaMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		convertMessage: connect.NewClient[v1alpha1.ConvertMessageRequest, v1alpha1.ConvertMessageResponse](
 			httpClient,
 			baseURL+SchemaServiceConvertMessageProcedure,
-			opts...,
+			connect.WithSchema(schemaServiceConvertMessageMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -124,13 +133,15 @@ func NewSchemaServiceHandler(svc SchemaServiceHandler, opts ...connect.HandlerOp
 	schemaServiceGetSchemaHandler := connect.NewUnaryHandler(
 		SchemaServiceGetSchemaProcedure,
 		svc.GetSchema,
+		connect.WithSchema(schemaServiceGetSchemaMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	schemaServiceConvertMessageHandler := connect.NewUnaryHandler(
 		SchemaServiceConvertMessageProcedure,
 		svc.ConvertMessage,
-		opts...,
+		connect.WithSchema(schemaServiceConvertMessageMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.SchemaService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

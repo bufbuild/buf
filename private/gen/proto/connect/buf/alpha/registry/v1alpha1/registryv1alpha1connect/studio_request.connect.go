@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// StudioRequestServiceName is the fully-qualified name of the StudioRequestService service.
@@ -59,6 +59,15 @@ const (
 	// StudioRequestServiceListStudioRequestsProcedure is the fully-qualified name of the
 	// StudioRequestService's ListStudioRequests RPC.
 	StudioRequestServiceListStudioRequestsProcedure = "/buf.alpha.registry.v1alpha1.StudioRequestService/ListStudioRequests"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	studioRequestServiceServiceDescriptor                   = v1alpha1.File_buf_alpha_registry_v1alpha1_studio_request_proto.Services().ByName("StudioRequestService")
+	studioRequestServiceCreateStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("CreateStudioRequest")
+	studioRequestServiceRenameStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("RenameStudioRequest")
+	studioRequestServiceDeleteStudioRequestMethodDescriptor = studioRequestServiceServiceDescriptor.Methods().ByName("DeleteStudioRequest")
+	studioRequestServiceListStudioRequestsMethodDescriptor  = studioRequestServiceServiceDescriptor.Methods().ByName("ListStudioRequests")
 )
 
 // StudioRequestServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioRequestService
@@ -90,22 +99,26 @@ func NewStudioRequestServiceClient(httpClient connect.HTTPClient, baseURL string
 		createStudioRequest: connect.NewClient[v1alpha1.CreateStudioRequestRequest, v1alpha1.CreateStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceCreateStudioRequestProcedure,
-			opts...,
+			connect.WithSchema(studioRequestServiceCreateStudioRequestMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		renameStudioRequest: connect.NewClient[v1alpha1.RenameStudioRequestRequest, v1alpha1.RenameStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceRenameStudioRequestProcedure,
-			opts...,
+			connect.WithSchema(studioRequestServiceRenameStudioRequestMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		deleteStudioRequest: connect.NewClient[v1alpha1.DeleteStudioRequestRequest, v1alpha1.DeleteStudioRequestResponse](
 			httpClient,
 			baseURL+StudioRequestServiceDeleteStudioRequestProcedure,
+			connect.WithSchema(studioRequestServiceDeleteStudioRequestMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		listStudioRequests: connect.NewClient[v1alpha1.ListStudioRequestsRequest, v1alpha1.ListStudioRequestsResponse](
 			httpClient,
 			baseURL+StudioRequestServiceListStudioRequestsProcedure,
+			connect.WithSchema(studioRequestServiceListStudioRequestsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -164,22 +177,26 @@ func NewStudioRequestServiceHandler(svc StudioRequestServiceHandler, opts ...con
 	studioRequestServiceCreateStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceCreateStudioRequestProcedure,
 		svc.CreateStudioRequest,
-		opts...,
+		connect.WithSchema(studioRequestServiceCreateStudioRequestMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceRenameStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceRenameStudioRequestProcedure,
 		svc.RenameStudioRequest,
-		opts...,
+		connect.WithSchema(studioRequestServiceRenameStudioRequestMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceDeleteStudioRequestHandler := connect.NewUnaryHandler(
 		StudioRequestServiceDeleteStudioRequestProcedure,
 		svc.DeleteStudioRequest,
+		connect.WithSchema(studioRequestServiceDeleteStudioRequestMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioRequestServiceListStudioRequestsHandler := connect.NewUnaryHandler(
 		StudioRequestServiceListStudioRequestsProcedure,
 		svc.ListStudioRequests,
+		connect.WithSchema(studioRequestServiceListStudioRequestsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

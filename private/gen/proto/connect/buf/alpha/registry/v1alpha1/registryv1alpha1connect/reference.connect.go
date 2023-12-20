@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ReferenceServiceName is the fully-qualified name of the ReferenceService service.
@@ -53,6 +53,13 @@ const (
 	// ReferenceServiceListGitCommitsForReferenceProcedure is the fully-qualified name of the
 	// ReferenceService's ListGitCommitsForReference RPC.
 	ReferenceServiceListGitCommitsForReferenceProcedure = "/buf.alpha.registry.v1alpha1.ReferenceService/ListGitCommitsForReference"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	referenceServiceServiceDescriptor                          = v1alpha1.File_buf_alpha_registry_v1alpha1_reference_proto.Services().ByName("ReferenceService")
+	referenceServiceGetReferenceByNameMethodDescriptor         = referenceServiceServiceDescriptor.Methods().ByName("GetReferenceByName")
+	referenceServiceListGitCommitsForReferenceMethodDescriptor = referenceServiceServiceDescriptor.Methods().ByName("ListGitCommitsForReference")
 )
 
 // ReferenceServiceClient is a client for the buf.alpha.registry.v1alpha1.ReferenceService service.
@@ -79,12 +86,14 @@ func NewReferenceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 		getReferenceByName: connect.NewClient[v1alpha1.GetReferenceByNameRequest, v1alpha1.GetReferenceByNameResponse](
 			httpClient,
 			baseURL+ReferenceServiceGetReferenceByNameProcedure,
+			connect.WithSchema(referenceServiceGetReferenceByNameMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listGitCommitsForReference: connect.NewClient[v1alpha1.ListGitCommitsForReferenceRequest, v1alpha1.ListGitCommitsForReferenceResponse](
 			httpClient,
 			baseURL+ReferenceServiceListGitCommitsForReferenceProcedure,
+			connect.WithSchema(referenceServiceListGitCommitsForReferenceMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -128,12 +137,14 @@ func NewReferenceServiceHandler(svc ReferenceServiceHandler, opts ...connect.Han
 	referenceServiceGetReferenceByNameHandler := connect.NewUnaryHandler(
 		ReferenceServiceGetReferenceByNameProcedure,
 		svc.GetReferenceByName,
+		connect.WithSchema(referenceServiceGetReferenceByNameMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	referenceServiceListGitCommitsForReferenceHandler := connect.NewUnaryHandler(
 		ReferenceServiceListGitCommitsForReferenceProcedure,
 		svc.ListGitCommitsForReference,
+		connect.WithSchema(referenceServiceListGitCommitsForReferenceMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

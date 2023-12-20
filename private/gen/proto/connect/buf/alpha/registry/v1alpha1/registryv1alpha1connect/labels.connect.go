@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// LabelServiceName is the fully-qualified name of the LabelService service.
@@ -59,6 +59,15 @@ const (
 	LabelServiceGetLabelsInNamespaceProcedure = "/buf.alpha.registry.v1alpha1.LabelService/GetLabelsInNamespace"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	labelServiceServiceDescriptor                    = v1alpha1.File_buf_alpha_registry_v1alpha1_labels_proto.Services().ByName("LabelService")
+	labelServiceCreateLabelMethodDescriptor          = labelServiceServiceDescriptor.Methods().ByName("CreateLabel")
+	labelServiceMoveLabelMethodDescriptor            = labelServiceServiceDescriptor.Methods().ByName("MoveLabel")
+	labelServiceGetLabelsMethodDescriptor            = labelServiceServiceDescriptor.Methods().ByName("GetLabels")
+	labelServiceGetLabelsInNamespaceMethodDescriptor = labelServiceServiceDescriptor.Methods().ByName("GetLabelsInNamespace")
+)
+
 // LabelServiceClient is a client for the buf.alpha.registry.v1alpha1.LabelService service.
 type LabelServiceClient interface {
 	CreateLabel(context.Context, *connect.Request[v1alpha1.CreateLabelRequest]) (*connect.Response[v1alpha1.CreateLabelResponse], error)
@@ -82,23 +91,27 @@ func NewLabelServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 		createLabel: connect.NewClient[v1alpha1.CreateLabelRequest, v1alpha1.CreateLabelResponse](
 			httpClient,
 			baseURL+LabelServiceCreateLabelProcedure,
+			connect.WithSchema(labelServiceCreateLabelMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		moveLabel: connect.NewClient[v1alpha1.MoveLabelRequest, v1alpha1.MoveLabelResponse](
 			httpClient,
 			baseURL+LabelServiceMoveLabelProcedure,
-			opts...,
+			connect.WithSchema(labelServiceMoveLabelMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getLabels: connect.NewClient[v1alpha1.GetLabelsRequest, v1alpha1.GetLabelsResponse](
 			httpClient,
 			baseURL+LabelServiceGetLabelsProcedure,
+			connect.WithSchema(labelServiceGetLabelsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getLabelsInNamespace: connect.NewClient[v1alpha1.GetLabelsInNamespaceRequest, v1alpha1.GetLabelsInNamespaceResponse](
 			httpClient,
 			baseURL+LabelServiceGetLabelsInNamespaceProcedure,
+			connect.WithSchema(labelServiceGetLabelsInNamespaceMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -152,23 +165,27 @@ func NewLabelServiceHandler(svc LabelServiceHandler, opts ...connect.HandlerOpti
 	labelServiceCreateLabelHandler := connect.NewUnaryHandler(
 		LabelServiceCreateLabelProcedure,
 		svc.CreateLabel,
+		connect.WithSchema(labelServiceCreateLabelMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	labelServiceMoveLabelHandler := connect.NewUnaryHandler(
 		LabelServiceMoveLabelProcedure,
 		svc.MoveLabel,
-		opts...,
+		connect.WithSchema(labelServiceMoveLabelMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	labelServiceGetLabelsHandler := connect.NewUnaryHandler(
 		LabelServiceGetLabelsProcedure,
 		svc.GetLabels,
+		connect.WithSchema(labelServiceGetLabelsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	labelServiceGetLabelsInNamespaceHandler := connect.NewUnaryHandler(
 		LabelServiceGetLabelsInNamespaceProcedure,
 		svc.GetLabelsInNamespace,
+		connect.WithSchema(labelServiceGetLabelsInNamespaceMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
