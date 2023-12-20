@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -65,7 +66,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
-		nil,
+		bufapi.NewNopClientProvider(),
 		bsrProvider,
 		WithTargetSubDirPath(
 			"finance/portfolio/proto",
@@ -142,7 +143,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
-		nil,
+		bufapi.NewNopClientProvider(),
 		bsrProvider,
 		WithTargetSubDirPath(
 			"common/money/proto",
@@ -234,7 +235,7 @@ func TestUnusedDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
-		nil,
+		bufapi.NewNopClientProvider(),
 		bsrProvider,
 	)
 	require.NoError(t, err)
@@ -273,7 +274,7 @@ func TestUndeclaredDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
-		nil,
+		bufapi.NewNopClientProvider(),
 		bsrProvider,
 	)
 	require.NoError(t, err)
