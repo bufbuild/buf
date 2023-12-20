@@ -19,8 +19,11 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -107,10 +110,11 @@ func NewWorkspaceForBucket(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	bucket storage.ReadBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	return newWorkspaceForBucket(ctx, logger, tracer, bucket, moduleDataProvider, options...)
+	return newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForModuleKey wraps the ModuleKey into a workspace, returning defaults
@@ -346,6 +350,7 @@ func newWorkspaceForBucket(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	bucket storage.ReadBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (_ *workspace, retErr error) {
@@ -372,6 +377,7 @@ func newWorkspaceForBucket(
 				ctx,
 				logger,
 				bucket,
+				clientProvider,
 				moduleDataProvider,
 				config,
 				[]string{config.subDirPath},
@@ -382,6 +388,7 @@ func newWorkspaceForBucket(
 				ctx,
 				logger,
 				bucket,
+				clientProvider,
 				moduleDataProvider,
 				config,
 				config.subDirPath,
@@ -422,6 +429,7 @@ func newWorkspaceForBucket(
 					ctx,
 					logger,
 					bucket,
+					clientProvider,
 					moduleDataProvider,
 					config,
 					bufWorkYAMLDirPaths,
@@ -438,6 +446,7 @@ func newWorkspaceForBucket(
 				ctx,
 				logger,
 				bucket,
+				clientProvider,
 				moduleDataProvider,
 				config,
 				curDirPath,
@@ -461,6 +470,7 @@ func newWorkspaceForBucket(
 		ctx,
 		logger,
 		bucket,
+		clientProvider,
 		moduleDataProvider,
 		config,
 		[]string{config.subDirPath},
@@ -472,6 +482,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	ctx context.Context,
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
 	bufYAMLV2FileDirPath string,
@@ -555,7 +566,16 @@ func newWorkspaceForBucketBufYAMLV2(
 			),
 		)
 	}
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, bufYAMLV2FileDirPath)
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+		ctx,
+		bucket,
+		bufYAMLV2FileDirPath,
+		bufconfig.BufLockFileWithDigestResolver(
+			func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
+				return bufmoduleapi.CommitIDToDigest(ctx, clientProvider, remote, commitID)
+			},
+		),
+	)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			return nil, err
@@ -586,6 +606,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	ctx context.Context,
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
 	moduleDirPaths []string,
@@ -628,7 +649,14 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRefs...)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, moduleDirPath)
+		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+			ctx,
+			bucket,
+			moduleDirPath,
+			bufconfig.BufLockFileWithDigestResolver(func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error) {
+				return bufmoduleapi.CommitIDToDigest(ctx, clientProvider, remote, commitID)
+			}),
+		)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err

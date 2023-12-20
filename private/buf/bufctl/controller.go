@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -138,6 +139,7 @@ func NewController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
+	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	httpClient *http.Client,
@@ -149,6 +151,7 @@ func NewController(
 		logger,
 		tracer,
 		container,
+		clientProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
 		httpClient,
@@ -169,6 +172,7 @@ type controller struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
+	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 
 	disableSymlinks           bool
@@ -186,6 +190,7 @@ func newController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
+	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	httpClient *http.Client,
@@ -197,6 +202,7 @@ func newController(
 		logger:             logger,
 		tracer:             tracer,
 		container:          container,
+		clientProvider:     clientProvider,
 		moduleDataProvider: moduleDataProvider,
 	}
 	for _, option := range options {
@@ -752,6 +758,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		c.logger,
 		c.tracer,
 		readBucketCloser,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
@@ -792,6 +799,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		c.logger,
 		c.tracer,
 		readBucketCloser,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
@@ -829,6 +837,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		c.logger,
 		c.tracer,
 		readWriteBucket,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),

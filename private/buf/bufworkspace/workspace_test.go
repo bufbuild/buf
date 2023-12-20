@@ -65,6 +65,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		nil,
 		bsrProvider,
 		WithTargetSubDirPath(
 			"finance/portfolio/proto",
@@ -141,6 +142,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		nil,
 		bsrProvider,
 		WithTargetSubDirPath(
 			"common/money/proto",
@@ -232,6 +234,7 @@ func TestUnusedDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		nil,
 		bsrProvider,
 	)
 	require.NoError(t, err)
@@ -270,6 +273,7 @@ func TestUndeclaredDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		nil,
 		bsrProvider,
 	)
 	require.NoError(t, err)
