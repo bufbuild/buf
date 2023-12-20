@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -1112,7 +1113,7 @@ func testLintWithOptions(
 		zap.NewNop(),
 		tracing.NopTracer,
 		readWriteBucket,
-		nil,
+		bufapi.NewNopClientProvider(),
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
