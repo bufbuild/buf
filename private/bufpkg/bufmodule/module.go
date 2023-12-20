@@ -533,7 +533,7 @@ func getModuleDepsRec(
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
 			for _, imp := range fastscanResult.Imports {
-				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
+				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp.Path)
 				if err != nil {
 					if errors.Is(err, errIsWKT) {
 						// Do not include as a dependency.
@@ -555,7 +555,7 @@ func getModuleDepsRec(
 					// We may want to actually remove the warning here. It'll result a warning and
 					// an error if somet cases.
 					if errors.Is(err, fs.ErrNotExist) {
-						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp)
+						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp.Path)
 						continue
 						//// Strip any PathError and just get to the point.
 						//err = fs.ErrNotExist
