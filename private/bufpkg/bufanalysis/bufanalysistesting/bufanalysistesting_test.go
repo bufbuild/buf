@@ -125,10 +125,10 @@ path/to/file.proto(2,1) : error FOO : Hello.
 	)
 	require.NoError(t, err)
 	assert.Equal(t,
-		`::error file=path/to/file.proto,line=1,endLine=1::Hello.
-::error file=path/to/file.proto,line=2,col=1,endLine=2,endColumn=1::Hello.
+		`::error file=<input>::Hello.
 ::error file=path/to/file.proto::Hello.
-::error file=<input>::Hello.
+::error file=path/to/file.proto,line=1,endLine=1::Hello.
+::error file=path/to/file.proto,line=2,col=1,endLine=2,endColumn=1::Hello.
 `,
 		sb.String(),
 	)
