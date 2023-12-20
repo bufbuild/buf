@@ -388,7 +388,6 @@ func newWorkspaceForBucket(
 				ctx,
 				logger,
 				bucket,
-				clientProvider,
 				moduleDataProvider,
 				config,
 				config.subDirPath,
@@ -446,7 +445,6 @@ func newWorkspaceForBucket(
 				ctx,
 				logger,
 				bucket,
-				clientProvider,
 				moduleDataProvider,
 				config,
 				curDirPath,
@@ -482,7 +480,6 @@ func newWorkspaceForBucketBufYAMLV2(
 	ctx context.Context,
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
-	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	config *workspaceBucketConfig,
 	bufYAMLV2FileDirPath string,
@@ -570,11 +567,8 @@ func newWorkspaceForBucketBufYAMLV2(
 		ctx,
 		bucket,
 		bufYAMLV2FileDirPath,
-		bufconfig.BufLockFileWithDigestResolver(
-			func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
-				return bufmoduleapi.CommitIDToDigest(ctx, clientProvider, remote, commitID)
-			},
-		),
+		// We are not passing BufLockFileWithDigestResolver here because a buf.lock
+		// v2 is expected to have digests
 	)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
