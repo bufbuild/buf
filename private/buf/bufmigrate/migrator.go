@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -297,6 +298,11 @@ func (m *migrator) addModuleDirectory(
 		ctx,
 		m.rootBucket,
 		moduleDir,
+		bufconfig.BufLockFileWithDigestResolver(
+			func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
+				return bufmoduleapi.CommitIDToDigest(ctx, m.clientProvider, remote, commitID)
+			},
+		),
 	)
 	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
 		return nil

@@ -131,7 +131,6 @@ func run(
 	return bufmigrate.Migrate(
 		ctx,
 		container.Logger(),
-		// TODO: Do we want to add a flag --disable-symlinks?
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
 		bufapi.NewClientProvider(clientConfig),
 		migrateOptions...,
