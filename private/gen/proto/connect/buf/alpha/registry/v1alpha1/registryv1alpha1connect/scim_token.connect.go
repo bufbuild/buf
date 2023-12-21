@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SCIMTokenServiceName is the fully-qualified name of the SCIMTokenService service.
@@ -56,6 +56,14 @@ const (
 	// SCIMTokenServiceDeleteSCIMTokenProcedure is the fully-qualified name of the SCIMTokenService's
 	// DeleteSCIMToken RPC.
 	SCIMTokenServiceDeleteSCIMTokenProcedure = "/buf.alpha.registry.v1alpha1.SCIMTokenService/DeleteSCIMToken"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	sCIMTokenServiceServiceDescriptor               = v1alpha1.File_buf_alpha_registry_v1alpha1_scim_token_proto.Services().ByName("SCIMTokenService")
+	sCIMTokenServiceCreateSCIMTokenMethodDescriptor = sCIMTokenServiceServiceDescriptor.Methods().ByName("CreateSCIMToken")
+	sCIMTokenServiceListSCIMTokensMethodDescriptor  = sCIMTokenServiceServiceDescriptor.Methods().ByName("ListSCIMTokens")
+	sCIMTokenServiceDeleteSCIMTokenMethodDescriptor = sCIMTokenServiceServiceDescriptor.Methods().ByName("DeleteSCIMToken")
 )
 
 // SCIMTokenServiceClient is a client for the buf.alpha.registry.v1alpha1.SCIMTokenService service.
@@ -88,17 +96,20 @@ func NewSCIMTokenServiceClient(httpClient connect.HTTPClient, baseURL string, op
 		createSCIMToken: connect.NewClient[v1alpha1.CreateSCIMTokenRequest, v1alpha1.CreateSCIMTokenResponse](
 			httpClient,
 			baseURL+SCIMTokenServiceCreateSCIMTokenProcedure,
-			opts...,
+			connect.WithSchema(sCIMTokenServiceCreateSCIMTokenMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		listSCIMTokens: connect.NewClient[v1alpha1.ListSCIMTokensRequest, v1alpha1.ListSCIMTokensResponse](
 			httpClient,
 			baseURL+SCIMTokenServiceListSCIMTokensProcedure,
+			connect.WithSchema(sCIMTokenServiceListSCIMTokensMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteSCIMToken: connect.NewClient[v1alpha1.DeleteSCIMTokenRequest, v1alpha1.DeleteSCIMTokenResponse](
 			httpClient,
 			baseURL+SCIMTokenServiceDeleteSCIMTokenProcedure,
+			connect.WithSchema(sCIMTokenServiceDeleteSCIMTokenMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -153,17 +164,20 @@ func NewSCIMTokenServiceHandler(svc SCIMTokenServiceHandler, opts ...connect.Han
 	sCIMTokenServiceCreateSCIMTokenHandler := connect.NewUnaryHandler(
 		SCIMTokenServiceCreateSCIMTokenProcedure,
 		svc.CreateSCIMToken,
-		opts...,
+		connect.WithSchema(sCIMTokenServiceCreateSCIMTokenMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	sCIMTokenServiceListSCIMTokensHandler := connect.NewUnaryHandler(
 		SCIMTokenServiceListSCIMTokensProcedure,
 		svc.ListSCIMTokens,
+		connect.WithSchema(sCIMTokenServiceListSCIMTokensMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	sCIMTokenServiceDeleteSCIMTokenHandler := connect.NewUnaryHandler(
 		SCIMTokenServiceDeleteSCIMTokenProcedure,
 		svc.DeleteSCIMToken,
+		connect.WithSchema(sCIMTokenServiceDeleteSCIMTokenMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)

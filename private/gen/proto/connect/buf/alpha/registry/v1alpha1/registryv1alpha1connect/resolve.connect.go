@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ResolveServiceName is the fully-qualified name of the ResolveService service.
@@ -72,6 +72,19 @@ const (
 	LocalResolveServiceGetLocalModulePinsProcedure = "/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	resolveServiceServiceDescriptor                       = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("ResolveService")
+	resolveServiceGetModulePinsMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetModulePins")
+	resolveServiceGetGoVersionMethodDescriptor            = resolveServiceServiceDescriptor.Methods().ByName("GetGoVersion")
+	resolveServiceGetSwiftVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetSwiftVersion")
+	resolveServiceGetMavenVersionMethodDescriptor         = resolveServiceServiceDescriptor.Methods().ByName("GetMavenVersion")
+	resolveServiceGetNPMVersionMethodDescriptor           = resolveServiceServiceDescriptor.Methods().ByName("GetNPMVersion")
+	resolveServiceGetPythonVersionMethodDescriptor        = resolveServiceServiceDescriptor.Methods().ByName("GetPythonVersion")
+	localResolveServiceServiceDescriptor                  = v1alpha1.File_buf_alpha_registry_v1alpha1_resolve_proto.Services().ByName("LocalResolveService")
+	localResolveServiceGetLocalModulePinsMethodDescriptor = localResolveServiceServiceDescriptor.Methods().ByName("GetLocalModulePins")
+)
+
 // ResolveServiceClient is a client for the buf.alpha.registry.v1alpha1.ResolveService service.
 type ResolveServiceClient interface {
 	// GetModulePins finds all the latest digests and respective dependencies of
@@ -107,36 +120,42 @@ func NewResolveServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 		getModulePins: connect.NewClient[v1alpha1.GetModulePinsRequest, v1alpha1.GetModulePinsResponse](
 			httpClient,
 			baseURL+ResolveServiceGetModulePinsProcedure,
+			connect.WithSchema(resolveServiceGetModulePinsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getGoVersion: connect.NewClient[v1alpha1.GetGoVersionRequest, v1alpha1.GetGoVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetGoVersionProcedure,
+			connect.WithSchema(resolveServiceGetGoVersionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getSwiftVersion: connect.NewClient[v1alpha1.GetSwiftVersionRequest, v1alpha1.GetSwiftVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetSwiftVersionProcedure,
+			connect.WithSchema(resolveServiceGetSwiftVersionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getMavenVersion: connect.NewClient[v1alpha1.GetMavenVersionRequest, v1alpha1.GetMavenVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetMavenVersionProcedure,
+			connect.WithSchema(resolveServiceGetMavenVersionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getNPMVersion: connect.NewClient[v1alpha1.GetNPMVersionRequest, v1alpha1.GetNPMVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetNPMVersionProcedure,
+			connect.WithSchema(resolveServiceGetNPMVersionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getPythonVersion: connect.NewClient[v1alpha1.GetPythonVersionRequest, v1alpha1.GetPythonVersionResponse](
 			httpClient,
 			baseURL+ResolveServiceGetPythonVersionProcedure,
+			connect.WithSchema(resolveServiceGetPythonVersionMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -215,36 +234,42 @@ func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect.Handler
 	resolveServiceGetModulePinsHandler := connect.NewUnaryHandler(
 		ResolveServiceGetModulePinsProcedure,
 		svc.GetModulePins,
+		connect.WithSchema(resolveServiceGetModulePinsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetGoVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetGoVersionProcedure,
 		svc.GetGoVersion,
+		connect.WithSchema(resolveServiceGetGoVersionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetSwiftVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetSwiftVersionProcedure,
 		svc.GetSwiftVersion,
+		connect.WithSchema(resolveServiceGetSwiftVersionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetMavenVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetMavenVersionProcedure,
 		svc.GetMavenVersion,
+		connect.WithSchema(resolveServiceGetMavenVersionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetNPMVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetNPMVersionProcedure,
 		svc.GetNPMVersion,
+		connect.WithSchema(resolveServiceGetNPMVersionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	resolveServiceGetPythonVersionHandler := connect.NewUnaryHandler(
 		ResolveServiceGetPythonVersionProcedure,
 		svc.GetPythonVersion,
+		connect.WithSchema(resolveServiceGetPythonVersionMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -327,6 +352,7 @@ func NewLocalResolveServiceClient(httpClient connect.HTTPClient, baseURL string,
 		getLocalModulePins: connect.NewClient[v1alpha1.GetLocalModulePinsRequest, v1alpha1.GetLocalModulePinsResponse](
 			httpClient,
 			baseURL+LocalResolveServiceGetLocalModulePinsProcedure,
+			connect.WithSchema(localResolveServiceGetLocalModulePinsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -370,6 +396,7 @@ func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...conne
 	localResolveServiceGetLocalModulePinsHandler := connect.NewUnaryHandler(
 		LocalResolveServiceGetLocalModulePinsProcedure,
 		svc.GetLocalModulePins,
+		connect.WithSchema(localResolveServiceGetLocalModulePinsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

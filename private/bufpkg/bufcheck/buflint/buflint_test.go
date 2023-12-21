@@ -16,6 +16,7 @@ package buflint_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -1112,17 +1114,17 @@ func testLintWithOptions(
 		zap.NewNop(),
 		tracing.NopTracer,
 		readWriteBucket,
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
 
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	if imageModifier != nil {
 		image = imageModifier(image)
 	}
@@ -1134,15 +1136,20 @@ func testLintWithOptions(
 	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
 	require.NotNil(t, lintConfig)
 	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
-	fileAnnotations, err = handler.Check(
+	err = handler.Check(
 		ctx,
 		lintConfig,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

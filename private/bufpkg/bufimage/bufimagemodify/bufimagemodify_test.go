@@ -813,14 +813,13 @@ func testGetImageFromDirs(
 	if !includeSourceInfo {
 		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		context.Background(),
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	require.NoError(t, err)
-	require.Empty(t, annotations)
 	return image
 }
 

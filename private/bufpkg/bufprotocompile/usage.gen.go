@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package gittest
+package bufprotocompile
 
 import _ "github.com/bufbuild/buf/private/usage"

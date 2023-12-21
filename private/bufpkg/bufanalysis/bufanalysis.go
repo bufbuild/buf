@@ -15,10 +15,8 @@
 package bufanalysis
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"io"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -114,7 +112,7 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
-	// Stringer returns the string representation of this annotation.
+	// Stringer returns the string representation for this FileAnnotation.
 	fmt.Stringer
 
 	// FileInfo is the FileInfo for this annotation.
@@ -146,6 +144,8 @@ type FileAnnotation interface {
 	Type() string
 	// Message is the message of the annotation.
 	Message() string
+
+	isFileAnnotation()
 }
 
 // NewFileAnnotation returns a new FileAnnotation.
@@ -169,40 +169,32 @@ func NewFileAnnotation(
 	)
 }
 
-// SortFileAnnotations sorts the FileAnnotations.
-//
-// The order of sorting is:
-//
-//	ExternalPath
-//	StartLine
-//	StartColumn
-//	Type
-//	Message
-//	EndLine
-//	EndColumn
-func SortFileAnnotations(fileAnnotations []FileAnnotation) {
-	sort.Stable(sortFileAnnotations(fileAnnotations))
+// FileAnnotationSet is a set of FileAnnotations.
+type FileAnnotationSet interface {
+	// Stringer returns the string representation for this FileAnnotationSet.
+	fmt.Stringer
+	// error returns an error for this FileAnnotationSet. It will use the text format
+	// to create an error message.
+	error
+
+	// FileAnnotations returns the FileAnnotations in the set.
+	//
+	// This will always be non-empty.
+	// These will be deduplicated and sorted.
+	FileAnnotations() []FileAnnotation
+
+	isFileAnnotationSet()
 }
 
-// DeduplicateAndSortFileAnnotations deduplicates the FileAnnotations based on their
-// string representation and sorts them according to the order specified in SortFileAnnotations.
-func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) []FileAnnotation {
-	deduplicated := make([]FileAnnotation, 0, len(fileAnnotations))
-	seen := make(map[string]struct{}, len(fileAnnotations))
-	for _, fileAnnotation := range fileAnnotations {
-		key := hash(fileAnnotation)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		deduplicated = append(deduplicated, fileAnnotation)
-	}
-	SortFileAnnotations(deduplicated)
-	return deduplicated
+// NewFileAnnotationSet returns a new FileAnnotationSet.
+//
+// If len(fileAnnotations) is 0, this returns nil.
+func NewFileAnnotationSet(fileAnnotations ...FileAnnotation) FileAnnotationSet {
+	return newFileAnnotationSet(fileAnnotations)
 }
 
 // PrintFileAnnotations prints the file annotations separated by newlines.
-func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, formatString string) error {
+func PrintFileAnnotationSet(writer io.Writer, fileAnnotationSet FileAnnotationSet, formatString string) error {
 	format, err := ParseFormat(formatString)
 	if err != nil {
 		return err
@@ -210,106 +202,16 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 
 	switch format {
 	case FormatText:
-		return printAsText(writer, fileAnnotations)
+		return printAsText(writer, fileAnnotationSet.FileAnnotations())
 	case FormatJSON:
-		return printAsJSON(writer, fileAnnotations)
+		return printAsJSON(writer, fileAnnotationSet.FileAnnotations())
 	case FormatMSVS:
-		return printAsMSVS(writer, fileAnnotations)
+		return printAsMSVS(writer, fileAnnotationSet.FileAnnotations())
 	case FormatJUnit:
-		return printAsJUnit(writer, fileAnnotations)
+		return printAsJUnit(writer, fileAnnotationSet.FileAnnotations())
 	case FormatGithubActions:
-		return printAsGithubActions(writer, fileAnnotations)
+		return printAsGithubActions(writer, fileAnnotationSet.FileAnnotations())
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
-}
-
-// hash returns a hash value that uniquely identifies the given FileAnnotation.
-func hash(fileAnnotation FileAnnotation) string {
-	path := ""
-	if fileInfo := fileAnnotation.FileInfo(); fileInfo != nil {
-		path = fileInfo.ExternalPath()
-	}
-	hash := sha256.New()
-	_, _ = hash.Write([]byte(path))
-	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.StartLine())))
-	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.StartColumn())))
-	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.EndLine())))
-	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.EndColumn())))
-	_, _ = hash.Write([]byte(fileAnnotation.Type()))
-	_, _ = hash.Write([]byte(fileAnnotation.Message()))
-	return string(hash.Sum(nil))
-}
-
-type sortFileAnnotations []FileAnnotation
-
-func (a sortFileAnnotations) Len() int               { return len(a) }
-func (a sortFileAnnotations) Swap(i int, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortFileAnnotations) Less(i int, j int) bool { return fileAnnotationCompareTo(a[i], a[j]) < 0 }
-
-// fileAnnotationCompareTo returns a value less than 0 if a < b, a value
-// greater than 0 if a > b, and 0 if a == b.
-func fileAnnotationCompareTo(a FileAnnotation, b FileAnnotation) int {
-	if a == nil && b == nil {
-		return 0
-	}
-	if a == nil && b != nil {
-		return -1
-	}
-	if a != nil && b == nil {
-		return 1
-	}
-	aFileInfo := a.FileInfo()
-	bFileInfo := b.FileInfo()
-	if aFileInfo == nil && bFileInfo != nil {
-		return -1
-	}
-	if aFileInfo != nil && bFileInfo == nil {
-		return 1
-	}
-	if aFileInfo != nil && bFileInfo != nil {
-		if aFileInfo.ExternalPath() < bFileInfo.ExternalPath() {
-			return -1
-		}
-		if aFileInfo.ExternalPath() > bFileInfo.ExternalPath() {
-			return 1
-		}
-	}
-	if a.StartLine() < b.StartLine() {
-		return -1
-	}
-	if a.StartLine() > b.StartLine() {
-		return 1
-	}
-	if a.StartColumn() < b.StartColumn() {
-		return -1
-	}
-	if a.StartColumn() > b.StartColumn() {
-		return 1
-	}
-	if a.Type() < b.Type() {
-		return -1
-	}
-	if a.Type() > b.Type() {
-		return 1
-	}
-	if a.Message() < b.Message() {
-		return -1
-	}
-	if a.Message() > b.Message() {
-		return 1
-	}
-	if a.EndLine() < b.EndLine() {
-		return -1
-	}
-	if a.EndLine() > b.EndLine() {
-		return 1
-	}
-	if a.EndColumn() < b.EndColumn() {
-		return -1
-	}
-	if a.EndColumn() > b.EndColumn() {
-		return 1
-	}
-	return 0
 }
