@@ -40,11 +40,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 type migrator struct {
-	logger         *zap.Logger
+	messageWriter  io.Writer
 	clientProvider bufapi.ClientProvider
 	// the bucket at "."
 	rootBucket storage.ReadWriteBucket
@@ -62,13 +61,14 @@ type migrator struct {
 }
 
 func newMigrator(
-	logger *zap.Logger,
+	// usually stderr
+	messageWriter io.Writer,
 	clientProvider bufapi.ClientProvider,
 	rootBucket storage.ReadWriteBucket,
 	destinationDir string,
 ) *migrator {
 	return &migrator{
-		logger:                   logger,
+		messageWriter:            messageWriter,
 		clientProvider:           clientProvider,
 		destinationDir:           destinationDir,
 		rootBucket:               rootBucket,
@@ -93,11 +93,12 @@ func (m *migrator) addBufGenYAML(
 		return err
 	}
 	if bufGenYAML.FileVersion() == bufconfig.FileVersionV2 {
-		m.logger.Sugar().Warnf("%s is already in v2", bufGenYAMLPath)
+		m.warnf("%s is a v2 file, no migration required", bufGenYAMLPath)
 		return nil
 	}
 	if typeConfig := bufGenYAML.GenerateConfig().GenerateTypeConfig(); typeConfig != nil && len(typeConfig.IncludeTypes()) > 0 {
-		m.logger.Sugar().Warnf(
+		// TODO: what does this sentence mean? Get someone else to read it and understand it without any explanation.
+		m.warnf(
 			"%s has types configuration and is migrated to v2 without it. To add these types your v2 configuration, first add an input and add these types to it.",
 		)
 	}
@@ -111,7 +112,8 @@ func (m *migrator) addBufGenYAML(
 	return nil
 }
 
-func (m *migrator) addWorkspace(
+// TODO: document is workspaceDirectory always relative to root of bucket?
+func (m *migrator) addWorkspaceDirectory(
 	ctx context.Context,
 	workspaceDirectory string,
 ) (retErr error) {
@@ -121,7 +123,7 @@ func (m *migrator) addWorkspace(
 		workspaceDirectory,
 	)
 	if errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("%q does not have a workspace configuration file", workspaceDirectory)
+		return fmt.Errorf("%q does not have a workspace configuration file (i.e. typically a buf.work.yaml)", workspaceDirectory)
 	}
 	if err != nil {
 		return err
@@ -135,7 +137,8 @@ func (m *migrator) addWorkspace(
 	return nil
 }
 
-// both buf.yaml and buf.lock
+// both buf.yaml and buf.lock TODO what does this mean?
+// TODO: document is workspaceDirectory always relative to root of bucket?
 func (m *migrator) addModuleDirectory(
 	ctx context.Context,
 	// moduleDir is the relative path (relative to ".") to the module directory
@@ -212,7 +215,7 @@ func (m *migrator) addModuleDirectory(
 		// module configs, but they cannot share the same module full name.
 		moduleFullName := moduleConfig.ModuleFullName()
 		if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
-			m.logger.Sugar().Warnf(
+			m.warnf(
 				"%s has name %s and multiple roots. These roots are now separate unnamed modules.",
 				bufYAMLPath,
 				moduleFullName.String(),
@@ -288,7 +291,7 @@ func (m *migrator) addModuleDirectory(
 		}
 		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
 	case bufconfig.FileVersionV2:
-		m.logger.Sugar().Warnf("%s is already at v2", bufYAMLPath)
+		m.warnf("%s is already at v2", bufYAMLPath)
 		return nil
 	default:
 		return syserror.Newf("unexpected version: %v", bufYAML.FileVersion())
@@ -327,13 +330,9 @@ func (m *migrator) addModuleDirectory(
 	return nil
 }
 
-func (m *migrator) migrateAsDryRun(
-	ctx context.Context,
-	writer io.Writer,
-) (retErr error) {
-	fmt.Fprintf(
-		writer,
-		"In an actual run, these files will be removed:\n%s\n\nThe following files will be overwritten or created:\n\n",
+func (m *migrator) migrateAsDryRun(ctx context.Context) (retErr error) {
+	m.infof(
+		"In an actual run, these files will be removed:\n%s\n\nThe following files will be overwritten or created:\n",
 		strings.Join(slicesext.MapKeysToSortedSlice(m.filesToDelete), "\n"),
 	)
 	if len(m.moduleConfigs) > 0 {
@@ -345,9 +344,8 @@ func (m *migrator) migrateAsDryRun(
 		if err := bufconfig.WriteBufYAMLFile(&bufYAMLBuffer, migratedBufYAML); err != nil {
 			return err
 		}
-		fmt.Fprintf(
-			writer,
-			"%s:\n%s\n",
+		m.infof(
+			"%s:\n%s",
 			filepath.Join(m.destinationDir, bufconfig.DefaultBufYAMLFileName),
 			bufYAMLBuffer.String(),
 		)
@@ -356,9 +354,8 @@ func (m *migrator) migrateAsDryRun(
 			if err := bufconfig.WriteBufLockFile(&bufLockBuffer, migratedBufLock); err != nil {
 				return err
 			}
-			fmt.Fprintf(
-				writer,
-				"%s:\n%s\n",
+			m.infof(
+				"%s:\n%s",
 				filepath.Join(m.destinationDir, bufconfig.DefaultBufLockFileName),
 				bufLockBuffer.String(),
 			)
@@ -369,9 +366,8 @@ func (m *migrator) migrateAsDryRun(
 		if err := bufconfig.WriteBufGenYAMLFile(&bufGenYAMLBuffer, migratedBufGenYAML); err != nil {
 			return err
 		}
-		fmt.Fprintf(
-			writer,
-			"%s will be written:\n%s\n",
+		m.infof(
+			"%s will be written:\n%s",
 			bufGenYAMLPath,
 			bufGenYAMLBuffer.String(),
 		)
@@ -585,6 +581,22 @@ func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, paren
 	}
 	m.moduleNameToParentFile[moduleConfig.ModuleFullName().String()] = parentFile
 	return nil
+}
+
+func (m *migrator) info(message string) {
+	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("%s\n", message)))
+}
+
+func (m *migrator) infof(format string, args ...any) {
+	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("%s\n", fmt.Sprintf(format, args...))))
+}
+
+func (m *migrator) warn(message string) {
+	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("Warning: %s\n", message)))
+}
+
+func (m *migrator) warnf(format string, args ...any) {
+	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("Warning: %s\n", fmt.Sprintf(format, args...))))
 }
 
 func resolvedDeclaredAndLockedDependencies(
