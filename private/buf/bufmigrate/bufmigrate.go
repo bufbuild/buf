@@ -25,7 +25,7 @@ import (
 
 // Migrate migrates buf configuration files.
 //
-// TODO:  document behavior with different examples of module and workspace directories, ie what happens
+// TODO: document behavior with different examples of module and workspace directories, ie what happens
 // when I specify a module directory that is within a workspace directory I always specify, what happens
 // if I don't specify the module directory, what if I only specify some module directories in a
 // workspace directory, etc.
