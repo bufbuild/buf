@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -200,21 +199,20 @@ Insertion points are processed in the order the plugins are specified in the tem
 }
 
 type flags struct {
-	Template        string
-	BaseOutDirPath  string
-	ErrorFormat     string
-	Files           []string
-	Config          string
-	Paths           []string
-	IncludeImports  bool
-	IncludeWKT      bool
-	ExcludePaths    []string
-	DisableSymlinks bool
+	Template               string
+	BaseOutDirPath         string
+	ErrorFormat            string
+	Files                  []string
+	Config                 string
+	Paths                  []string
+	IncludeImportsOverride *bool
+	IncludeWKTOverride     *bool
+	ExcludePaths           []string
+	DisableSymlinks        bool
 	// We may be able to bind two flags to one string slice but I don't
 	// want to find out what will break if we do.
 	Types           []string
 	TypesDeprecated []string
-	Migrate         bool
 	// special
 	InputHashtag string
 }
@@ -228,18 +226,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
-	flagSet.BoolVar(
-		&f.IncludeImports,
+	bindBoolPointer(
+		flagSet,
 		includeImportsFlagName,
-		false,
+		&f.IncludeImportsOverride,
 		"Also generate all imports except for Well-Known Types",
 	)
-	flagSet.BoolVar(
-		&f.IncludeWKT,
+	bindBoolPointer(
+		flagSet,
 		includeWKTFlagName,
-		false,
+		&f.IncludeWKTOverride,
 		fmt.Sprintf(
-			"Also generate Well-Known Types. Cannot be set without --%s",
+			"Also generate Well-Known Types. Cannot be set to true without setting --%s to true",
 			includeImportsFlagName,
 		),
 	)
@@ -283,12 +281,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The types (package, message, enum, extension, service, method) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types. Flag usage overrides buf.gen.yaml",
 	)
-	flagSet.BoolVar(
-		&f.Migrate,
-		migrateFlagName,
-		false,
-		"Migrate the generation template to the latest version",
-	)
 	_ = flagSet.MarkDeprecated(typeDeprecatedFlagName, fmt.Sprintf("Use --%s instead", typeFlagName))
 	_ = flagSet.MarkHidden(typeDeprecatedFlagName)
 }
@@ -299,12 +291,14 @@ func run(
 	flags *flags,
 ) (retErr error) {
 	logger := container.Logger()
-	if flags.IncludeWKT && !flags.IncludeImports {
-		// You need to set --include-imports if you set --include-wkt, which isn’t great. The alternative is to have
-		// --include-wkt implicitly set --include-imports, but this could be surprising. Or we could rename
-		// --include-wkt to --include-imports-and/with-wkt. But the summary is that the flag only makes sense
-		// in the context of including imports.
-		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s", includeWKTFlagName, includeImportsFlagName)
+	if flags.IncludeWKTOverride != nil &&
+		*flags.IncludeWKTOverride &&
+		(flags.IncludeImportsOverride == nil || !*flags.IncludeImportsOverride) {
+		// You need to set --include-imports to true if you set --include-wkt to true, which isn’t great.
+		// The alternative is to have --include-wkt implicitly set --include-imports, but this could be surprising.
+		// Or we could rename --include-wkt to --include-imports-and/with-wkt. But the summary is that the flag
+		// only makes sense in the context of including imports.
+		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s to true without setting --%s to true", includeWKTFlagName, includeImportsFlagName)
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
@@ -345,22 +339,6 @@ func run(
 		if err != nil {
 			return err
 		}
-		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
-				ctx,
-				logger,
-				bufGenYAMLFile,
-				input,
-				*flags,
-			)
-			if err != nil {
-				return err
-			}
-			if err := bufconfig.PutBufGenYAMLFileForPrefix(ctx, bucket, ".", migratedBufGenYAMLFile); err != nil {
-				return err
-			}
-			// TODO: perhaps print a message
-		}
 	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
 		// We should not read from a bucket at "." because this path can jump context.
 		configFile, err := os.Open(flags.Template)
@@ -371,32 +349,10 @@ func run(
 		if err != nil {
 			return err
 		}
-		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			migratedBufGenYAMLFile, err := getBufGenYAMLFileWithFlagEquivalence(
-				ctx,
-				logger,
-				bufGenYAMLFile,
-				input,
-				*flags,
-			)
-			if err != nil {
-				return err
-			}
-			if err := bufconfig.WriteBufGenYAMLFile(configFile, migratedBufGenYAMLFile); err != nil {
-				return err
-			}
-			// TODO: perhaps print a message
-		}
 	default:
 		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
 		if err != nil {
 			return err
-		}
-		if flags.Migrate && bufGenYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			return fmt.Errorf(
-				"invalid template: %q, migration can only apply to a file on disk with extension .yaml, .yml or .json",
-				flags.Template,
-			)
 		}
 	}
 	images, err := getInputImages(
@@ -416,16 +372,16 @@ func run(
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
-	if flags.IncludeImports {
+	if flags.IncludeImportsOverride != nil {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeImports(),
+			bufgen.GenerateWithIncludeImportsOverride(*flags.IncludeImportsOverride),
 		)
 	}
-	if flags.IncludeWKT {
+	if flags.IncludeWKTOverride != nil {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeWellKnownTypes(),
+			bufgen.GenerateWithIncludeWellKnownTypesOverride(*flags.IncludeWKTOverride),
 		)
 	}
 	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
@@ -524,67 +480,44 @@ func getInputImages(
 	return inputImages, nil
 }
 
-// getBufGenYAMLFileWithFlagEquivalence returns a buf gen yaml file the same as
-// the given one, except that it is overriden by flags.
-// This is called only for migration. Input will be used regardless if it's empty.
-func getBufGenYAMLFileWithFlagEquivalence(
-	ctx context.Context,
-	logger *zap.Logger,
-	bufGenYAMLFile bufconfig.BufGenYAMLFile,
-	input string,
-	flags flags,
-) (bufconfig.BufGenYAMLFile, error) {
-	if input == "" {
-		input = "."
-	}
-	inputConfig, err := buffetch.GetInputConfigForString(
-		ctx,
-		buffetch.NewRefParser(logger),
-		input,
-	)
-	if err != nil {
-		return nil, err
-	}
-	var includeTypes []string
-	if bufGenYAMLFile.GenerateConfig().GenerateTypeConfig() != nil {
-		includeTypes = bufGenYAMLFile.GenerateConfig().GenerateTypeConfig().IncludeTypes()
-	}
-	if len(flags.Types) > 0 {
-		includeTypes = flags.Types
-	}
-	inputConfig, err = bufconfig.NewInputConfigWithTargets(
-		inputConfig,
-		flags.Paths,
-		flags.ExcludePaths,
-		includeTypes,
-	)
-	if err != nil {
-		return nil, err
-	}
-	pluginConfigs, err := slicesext.MapError(
-		bufGenYAMLFile.GenerateConfig().GeneratePluginConfigs(),
-		func(pluginConfig bufconfig.GeneratePluginConfig) (bufconfig.GeneratePluginConfig, error) {
-			return bufconfig.NewGeneratePluginWithIncludeImportsAndWKT(
-				pluginConfig,
-				flags.IncludeImports,
-				flags.IncludeWKT,
-			)
+// TODO: where does this belong? A flagsext package?
+// value must not be nil.
+func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage string) {
+	flag := flagSet.VarPF(
+		&boolPointerValue{
+			valuePointer: value,
 		},
+		name,
+		"",
+		usage,
 	)
-	if err != nil {
-		return nil, err
+	flag.NoOptDefVal = "true"
+}
+
+// Implements pflag.Value.
+type boolPointerValue struct {
+	// This must not be nil at construction time.
+	valuePointer **bool
+}
+
+func (b *boolPointerValue) Type() string {
+	// From the CLI users' perspective, this is just a bool.
+	return "bool"
+}
+
+func (b *boolPointerValue) String() string {
+	if *b.valuePointer == nil {
+		// From the CLI users' perspective, this is just false.
+		return "false"
 	}
-	generateConfig, err := bufconfig.NewGenerateConfig(
-		pluginConfigs,
-		bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
-		nil,
-	)
+	return strconv.FormatBool(**b.valuePointer)
+}
+
+func (b *boolPointerValue) Set(value string) error {
+	parsedValue, err := strconv.ParseBool(value)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return bufconfig.NewBufGenYAMLFile(
-		bufconfig.FileVersionV2,
-		generateConfig,
-		[]bufconfig.InputConfig{inputConfig},
-	), nil
+	*b.valuePointer = &parsedValue
+	return nil
 }

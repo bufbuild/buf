@@ -121,22 +121,31 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 	}
 }
 
-// GenerateWithIncludeImports says to also generate imports.
+// GenerateWithIncludeImportsOverride is a strict override on whether imports are
+// generated. This overrides IncludeImports from the GeneratePluginConfig.
 //
-// Note that this does NOT result in the Well-Known Types being generated, use
-// GenerateWithIncludeWellKnownTypes to include the Well-Known Types.
-func GenerateWithIncludeImports() GenerateOption {
+// This option has presence, i.e. setting this option to false is not the same
+// as not setting it, as the latter does not override the config.
+//
+// Note that this does NOT result in the Well-Known Types being generated when
+// set to true, use GenerateWithIncludeWellKnownTypes to include the Well-Known Types.
+func GenerateWithIncludeImportsOverride(includeImports bool) GenerateOption {
 	return func(generateOptions *generateOptions) {
-		generateOptions.includeImports = true
+		generateOptions.includeImportsOverride = &includeImports
 	}
 }
 
-// GenerateWithIncludeWellKnownTypes says to also generate well known types.
+// GenerateWithIncludeWellKnownTypesOverride is a strict override on whether the
+// well known types are generated. This overrides IncludeWKT from the GeneratePluginConfig.
 //
-// This option has no effect if GenerateWithIncludeImports is not set.
-func GenerateWithIncludeWellKnownTypes() GenerateOption {
+// This option has presence, i.e. setting this option to false is not the same
+// as not setting it, as the latter does not override the config.
+//
+// Setting this option to true has no effect if GenerateWithIncludeImports is not
+// set to true.
+func GenerateWithIncludeWellKnownTypesOverride(includeWellKnownTypes bool) GenerateOption {
 	return func(generateOptions *generateOptions) {
-		generateOptions.includeWellKnownTypes = true
+		generateOptions.includeWellKnownTypesOverride = &includeWellKnownTypes
 	}
 }
 
