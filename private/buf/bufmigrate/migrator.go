@@ -25,16 +25,20 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 type migrator struct {
+	clientProvider bufapi.ClientProvider
 	// the directory where the migrated buf.yaml live, this is useful for computing
 	// module directory paths, and possibly other paths.
 	destinationDir string
@@ -51,10 +55,12 @@ type migrator struct {
 }
 
 func newMigrator(
+	clientProvider bufapi.ClientProvider,
 	rootBucket storage.ReadWriteBucket,
 	destinationDir string,
 ) *migrator {
 	return &migrator{
+		clientProvider:         clientProvider,
 		destinationDir:         destinationDir,
 		rootBucket:             rootBucket,
 		moduleNameToParentFile: map[string]string{},
@@ -126,6 +132,9 @@ func (m *migrator) addModuleDirectory(
 		ctx,
 		m.rootBucket,
 		moduleDir,
+		bufconfig.BufLockFileWithDigestResolver(func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
+			return bufmoduleapi.CommitIDToDigest(ctx, m.clientProvider, remote, commitID)
+		}),
 	)
 	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
 		return nil

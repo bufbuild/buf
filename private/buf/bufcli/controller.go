@@ -40,6 +40,7 @@ func NewController(
 		container.Logger(),
 		tracing.NewTracer(container.Tracer()),
 		container,
+		clientProvider,
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
 		// TODO: Delete defaultHTTPClient and use the one from newConfig

@@ -170,7 +170,7 @@ type BufLockFileOption func(*bufLockFileOptions)
 //
 // TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
 // be an option.
-func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, commitID string) (bufcas.Digest, error)) BufLockFileOption {
+func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error)) BufLockFileOption {
 	return func(bufLockFileOptions *bufLockFileOptions) {
 		bufLockFileOptions.digestResolver = digestResolver
 	}
@@ -282,7 +282,7 @@ func readBufLockFile(
 					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 				}
 				getDigest = func() (bufcas.Digest, error) {
-					return bufLockFileOptions.digestResolver(ctx, dep.Commit)
+					return bufLockFileOptions.digestResolver(ctx, dep.Remote, dep.Commit)
 				}
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
@@ -473,7 +473,11 @@ type externalBufLockFileDepV2 struct {
 }
 
 type bufLockFileOptions struct {
-	digestResolver func(ctx context.Context, commitID string) (bufcas.Digest, error)
+	digestResolver func(
+		ctx context.Context,
+		remote string,
+		commitID string,
+	) (bufcas.Digest, error)
 }
 
 func newBufLockFileOptions() *bufLockFileOptions {
