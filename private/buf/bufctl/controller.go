@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -138,6 +139,7 @@ func NewController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
+	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	httpClient *http.Client,
@@ -149,6 +151,7 @@ func NewController(
 		logger,
 		tracer,
 		container,
+		clientProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
 		httpClient,
@@ -169,6 +172,7 @@ type controller struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
+	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 
 	disableSymlinks           bool
@@ -186,6 +190,7 @@ func newController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
+	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	httpClient *http.Client,
@@ -197,6 +202,7 @@ func newController(
 		logger:             logger,
 		tracer:             tracer,
 		container:          container,
+		clientProvider:     clientProvider,
 		moduleDataProvider: moduleDataProvider,
 	}
 	for _, option := range options {
@@ -230,7 +236,8 @@ func (c *controller) GetWorkspace(
 	ctx context.Context,
 	sourceOrModuleInput string,
 	options ...FunctionOption,
-) (bufworkspace.Workspace, error) {
+) (_ bufworkspace.Workspace, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -256,7 +263,8 @@ func (c *controller) GetUpdateableWorkspace(
 	ctx context.Context,
 	dirPath string,
 	options ...FunctionOption,
-) (bufworkspace.UpdateableWorkspace, error) {
+) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -272,7 +280,8 @@ func (c *controller) GetImage(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -284,7 +293,8 @@ func (c *controller) GetImageForInputConfig(
 	ctx context.Context,
 	inputConfig bufconfig.InputConfig,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -296,7 +306,8 @@ func (c *controller) GetImageForWorkspace(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	options ...FunctionOption,
-) (bufimage.Image, error) {
+) (_ bufimage.Image, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -308,7 +319,8 @@ func (c *controller) GetTargetImageWithConfigs(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) ([]ImageWithConfig, error) {
+) (_ []ImageWithConfig, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -396,7 +408,8 @@ func (c *controller) GetProtoFileInfos(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) ([]ProtoFileInfo, error) {
+) (_ []ProtoFileInfo, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -453,39 +466,13 @@ func (c *controller) GetProtoFileInfos(
 	}
 }
 
-// We expect that we only want target files when we call this.
-func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
-	targetFileInfos, err := bufmodule.GetTargetFileInfos(
-		ctx,
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return slicesext.Map(
-		targetFileInfos,
-		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
-			return newModuleProtoFileInfo(fileInfo)
-		},
-	), nil
-}
-
-// Any import filtering is expected to be done before this.
-func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
-	return slicesext.Map(
-		image.Files(),
-		func(imageFile bufimage.ImageFile) ProtoFileInfo {
-			return newImageProtoFileInfo(imageFile)
-		},
-	), nil
-}
-
 func (c *controller) PutImage(
 	ctx context.Context,
 	imageOutput string,
 	image bufimage.Image,
 	options ...FunctionOption,
 ) (retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -534,7 +521,8 @@ func (c *controller) GetMessage(
 	typeName string,
 	defaultMessageEncoding buffetch.MessageEncoding,
 	options ...FunctionOption,
-) (proto.Message, buffetch.MessageEncoding, error) {
+) (_ proto.Message, _ buffetch.MessageEncoding, retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -604,7 +592,8 @@ func (c *controller) PutMessage(
 	message proto.Message,
 	defaultMessageEncoding buffetch.MessageEncoding,
 	options ...FunctionOption,
-) error {
+) (retErr error) {
+	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
 		option(functionOptions)
@@ -752,6 +741,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		c.logger,
 		c.tracer,
 		readBucketCloser,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
@@ -792,6 +782,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		c.logger,
 		c.tracer,
 		readBucketCloser,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
@@ -829,6 +820,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		c.logger,
 		c.tracer,
 		readWriteBucket,
+		c.clientProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
@@ -952,7 +944,7 @@ func (c *controller) buildImage(
 	if functionOptions.imageExcludeSourceInfo {
 		options = append(options, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		c.tracer,
 		moduleReadBucket,
@@ -960,20 +952,6 @@ func (c *controller) buildImage(
 	)
 	if err != nil {
 		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
-		writer := c.container.Stderr()
-		if c.fileAnnotationsToStdout {
-			writer = c.container.Stdout()
-		}
-		if err := bufanalysis.PrintFileAnnotations(
-			writer,
-			fileAnnotations,
-			c.fileAnnotationErrorFormat,
-		); err != nil {
-			return nil, err
-		}
-		return nil, ErrFileAnnotation
 	}
 	return filterImage(image, functionOptions, true)
 }
@@ -1082,6 +1060,59 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 		}
 	}
 	return nil
+}
+
+// handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
+// the FileAnnotationSet to the writer with the given error format while returning ErrFileAnnotation.
+//
+// Otherwise, the original error is returned.
+func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
+	if *retErrAddr == nil {
+		return
+	}
+	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	if errors.As(*retErrAddr, &fileAnnotationSet) {
+		writer := c.container.Stderr()
+		if c.fileAnnotationsToStdout {
+			writer = c.container.Stdout()
+		}
+		if err := bufanalysis.PrintFileAnnotationSet(
+			writer,
+			fileAnnotationSet,
+			c.fileAnnotationErrorFormat,
+		); err != nil {
+			*retErrAddr = err
+			return
+		}
+		*retErrAddr = ErrFileAnnotation
+	}
+}
+
+// We expect that we only want target files when we call this.
+func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
+	targetFileInfos, err := bufmodule.GetTargetFileInfos(
+		ctx,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.Map(
+		targetFileInfos,
+		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
+			return newModuleProtoFileInfo(fileInfo)
+		},
+	), nil
+}
+
+// Any import filtering is expected to be done before this.
+func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
+	return slicesext.Map(
+		image.Files(),
+		func(imageFile bufimage.ImageFile) ProtoFileInfo {
+			return newImageProtoFileInfo(imageFile)
+		},
+	), nil
 }
 
 func bootstrapResolver(

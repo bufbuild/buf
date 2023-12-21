@@ -16,6 +16,7 @@ package breaking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -202,7 +203,7 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageWithConfig := range imageWithConfigs {
-		fileAnnotations, err := bufbreaking.NewHandler(
+		if err := bufbreaking.NewHandler(
 			container.Logger(),
 			tracing.NewTracer(container.Tracer()),
 		).Check(
@@ -210,16 +211,20 @@ func run(
 			imageWithConfig.BreakingConfig(),
 			againstImageWithConfigs[i],
 			imageWithConfig,
-		)
-		if err != nil {
-			return err
+		); err != nil {
+			var fileAnnotationSet bufanalysis.FileAnnotationSet
+			if errors.As(err, &fileAnnotationSet) {
+				allFileAnnotations = append(allFileAnnotations, fileAnnotationSet.FileAnnotations()...)
+			} else {
+				return err
+			}
 		}
-		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
 	if len(allFileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(
+		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
+		if err := bufanalysis.PrintFileAnnotationSet(
 			container.Stdout(),
-			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
+			allFileAnnotationSet,
 			flags.ErrorFormat,
 		); err != nil {
 			return err

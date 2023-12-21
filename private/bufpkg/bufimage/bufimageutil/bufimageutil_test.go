@@ -17,7 +17,6 @@ package bufimageutil
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"sort"
 	"testing"
@@ -171,14 +170,13 @@ func TestTransitivePublic(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	image, analysis, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
-	require.Empty(t, analysis)
 
 	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
 	require.NoError(t, err)
@@ -207,14 +205,13 @@ func TestTypesFromMainModule(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	image, analysis, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
-	require.Empty(t, analysis)
 
 	dep := moduleSet.GetModuleForOpaqueID("buf.build/repo/dep")
 	require.NotNil(t, dep)
@@ -243,7 +240,7 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	if err != nil {
 		return nil, nil, err
 	}
-	image, analysis, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
@@ -251,9 +248,6 @@ func getImage(ctx context.Context, logger *zap.Logger, testdataDir string, optio
 	)
 	if err != nil {
 		return nil, nil, err
-	}
-	if len(analysis) > 0 {
-		return nil, nil, fmt.Errorf("%d errors in source when building", len(analysis))
 	}
 	return bucket, image, nil
 }

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -544,18 +545,6 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
 ) (fastscanResult fastscan.Result, retErr error) {
-	//defer func() {
-	//if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
-	//checkedEntry.Write(
-	//zap.String("moduleOpaqueID", b.module.OpaqueID()),
-	//zap.String("path", path),
-	//zap.String("resultPackage", fastscanResult.PackageName),
-	//zap.Strings("resultImports", fastscanResult.Imports),
-	//zap.Error(retErr),
-	//)
-	//}
-	//}()
-
 	fileType, err := classifyPathFileType(path)
 	if err != nil {
 		return fastscan.Result{}, err
@@ -579,7 +568,26 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	}()
 	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
-		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
+		var syntaxError fastscan.SyntaxError
+		if errors.As(err, &syntaxError) {
+			fileAnnotationSet, err := bufprotocompile.FileAnnotationSetForErrorsWithPos(
+				syntaxError,
+				bufprotocompile.WithExternalPathResolver(
+					func(path string) string {
+						fileInfo, err := bucket.Stat(ctx, path)
+						if err != nil {
+							return path
+						}
+						return fileInfo.ExternalPath()
+					},
+				),
+			)
+			if err != nil {
+				return fastscan.Result{}, err
+			}
+			return fastscan.Result{}, fileAnnotationSet
+		}
+		return fastscan.Result{}, err
 	}
 	return fastscanResult, nil
 }

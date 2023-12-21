@@ -22,6 +22,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -526,6 +527,14 @@ func getModuleDepsRec(
 			}
 			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
 			if err != nil {
+				var fileAnnotationSet bufanalysis.FileAnnotationSet
+				if errors.As(err, &fileAnnotationSet) {
+					// If a FileAnnotationSet, the error already contains path information, just return directly.
+					//
+					// We also specially handle FileAnnotationSets for exit code 100.
+					// TODO: Should we just warn?
+					return fileAnnotationSet
+				}
 				if errors.Is(err, fs.ErrNotExist) {
 					// Strip any PathError and just get to the point.
 					err = fs.ErrNotExist
