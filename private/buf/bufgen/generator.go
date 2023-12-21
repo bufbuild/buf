@@ -106,8 +106,8 @@ func (g *generator) Generate(
 			image,
 			generateOptions.baseOutDirPath,
 			config.GeneratePluginConfigs(),
-			generateOptions.includeImports,
-			generateOptions.includeWellKnownTypes,
+			generateOptions.includeImportsOverride,
+			generateOptions.includeWellKnownTypesOverride,
 		); err != nil {
 			return err
 		}
@@ -121,16 +121,16 @@ func (g *generator) generateCode(
 	inputImage bufimage.Image,
 	baseOutDir string,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
-	alwaysIncludeImports bool,
-	alwaysIncludeWKT bool,
+	includeImportsOverride *bool,
+	includeWellKnownTypesOverride *bool,
 ) error {
 	responses, err := g.execPlugins(
 		ctx,
 		container,
 		pluginConfigs,
 		inputImage,
-		alwaysIncludeImports,
-		alwaysIncludeWKT,
+		includeImportsOverride,
+		includeWellKnownTypesOverride,
 		false, // wasm enabled is false
 	)
 	if err != nil {
@@ -170,8 +170,8 @@ func (g *generator) execPlugins(
 	container app.EnvStdioContainer,
 	pluginConfigs []bufconfig.GeneratePluginConfig,
 	image bufimage.Image,
-	alwaysIncludeImports bool,
-	alwaysIncludeWellKnownTypes bool,
+	includeImportsOverride *bool,
+	includeWellKnownTypesOverride *bool,
 	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
@@ -194,14 +194,21 @@ func (g *generator) execPlugins(
 			)
 		} else {
 			jobs = append(jobs, func(ctx context.Context) error {
+				includeImports := currentPluginConfig.IncludeImports()
+				if includeImportsOverride != nil {
+					includeImports = *includeImportsOverride
+				}
+				includeWellKnownTypes := currentPluginConfig.IncludeWKT()
+				if includeWellKnownTypesOverride != nil {
+					includeImports = *includeWellKnownTypesOverride
+				}
 				response, err := g.execLocalPlugin(
 					ctx,
 					container,
 					imageProvider,
 					currentPluginConfig,
-					// TODO: can the user override this to false on the command line? i.e. is `buf generate --include-imports=false` possible?
-					alwaysIncludeImports || currentPluginConfig.IncludeImports(),
-					alwaysIncludeWellKnownTypes || currentPluginConfig.IncludeWKT(),
+					includeImports,
+					includeWellKnownTypes,
 					wasmEnabled,
 				)
 				if err != nil {
@@ -224,8 +231,8 @@ func (g *generator) execPlugins(
 					image,
 					remote,
 					indexedPluginConfigs,
-					alwaysIncludeImports,
-					alwaysIncludeWellKnownTypes,
+					includeImportsOverride,
+					includeWellKnownTypesOverride,
 				)
 				if err != nil {
 					return err
@@ -326,15 +333,23 @@ func (g *generator) execRemotePluginsV2(
 	image bufimage.Image,
 	remote string,
 	pluginConfigs []*remotePluginExecArgs,
-	alwaysIncludeImports bool,
-	alwaysIncludeWellKnownTypes bool,
+	includeImportsOverride *bool,
+	includeWellKnownTypesOverride *bool,
 ) ([]*remotePluginExecutionResult, error) {
 	requests := make([]*registryv1alpha1.PluginGenerationRequest, len(pluginConfigs))
 	for i, pluginConfig := range pluginConfigs {
+		includeImports := pluginConfig.PluginConfig.IncludeImports()
+		if includeImportsOverride != nil {
+			includeImports = *includeImportsOverride
+		}
+		includeWellKnwonTypes := pluginConfig.PluginConfig.IncludeWKT()
+		if includeWellKnownTypesOverride != nil {
+			includeImports = *includeWellKnownTypesOverride
+		}
 		request, err := getPluginGenerationRequest(
 			pluginConfig.PluginConfig,
-			alwaysIncludeImports || pluginConfig.PluginConfig.IncludeImports(),
-			alwaysIncludeWellKnownTypes || pluginConfig.PluginConfig.IncludeWKT(),
+			includeImports,
+			includeWellKnwonTypes,
 		)
 		if err != nil {
 			return nil, err
@@ -346,10 +361,8 @@ func (g *generator) execRemotePluginsV2(
 		ctx,
 		connect.NewRequest(
 			&registryv1alpha1.GenerateCodeRequest{
-				Image:                 bufimage.ImageToProtoImage(image),
-				Requests:              requests,
-				IncludeImports:        alwaysIncludeImports,
-				IncludeWellKnownTypes: alwaysIncludeWellKnownTypes,
+				Image:    bufimage.ImageToProtoImage(image),
+				Requests: requests,
 			},
 		),
 	)
@@ -377,7 +390,7 @@ func (g *generator) execRemotePluginsV2(
 func getPluginGenerationRequest(
 	pluginConfig bufconfig.GeneratePluginConfig,
 	includeImports bool,
-	includeWKT bool,
+	includeWellKnownTypes bool,
 ) (*registryv1alpha1.PluginGenerationRequest, error) {
 	var curatedPluginReference *registryv1alpha1.CuratedPluginReference
 	if reference, err := bufpluginref.PluginReferenceForString(pluginConfig.Name(), pluginConfig.Revision()); err == nil {
@@ -399,7 +412,7 @@ func getPluginGenerationRequest(
 		PluginReference:       curatedPluginReference,
 		Options:               options,
 		IncludeImports:        &includeImports,
-		IncludeWellKnownTypes: &includeWKT,
+		IncludeWellKnownTypes: &includeWellKnownTypes,
 	}, nil
 }
 
@@ -436,10 +449,10 @@ func validateResponses(
 
 type generateOptions struct {
 	// plugin specific options:
-	baseOutDirPath        string
-	includeImports        bool
-	includeWellKnownTypes bool
-	wasmEnabled           bool
+	baseOutDirPath                string
+	includeImportsOverride        *bool
+	includeWellKnownTypesOverride *bool
+	wasmEnabled                   bool
 }
 
 func newGenerateOptions() *generateOptions {
