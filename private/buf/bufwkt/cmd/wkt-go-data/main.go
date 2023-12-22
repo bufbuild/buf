@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"go/format"
 	"io"
@@ -161,25 +162,26 @@ func getProtosourceFiles(
 		return nil, err
 	}
 	module := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NewTracer(container.Tracer()),
 		module,
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	if err != nil {
-		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdouot
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			"text",
-		); err != nil {
-			return nil, err
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			// stderr since we do output to stdouot
+			if err := bufanalysis.PrintFileAnnotationSet(
+				container.Stderr(),
+				fileAnnotationSet,
+				"text",
+			); err != nil {
+				return nil, err
+			}
+			return nil, failedError
 		}
-		return nil, failedError
+		return nil, err
 	}
 	return protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 }

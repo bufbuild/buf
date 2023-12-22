@@ -140,6 +140,10 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// We rely on the buf.lock file being the last file to be written in the store.
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
 	// result in bad data being overwritten.
+	//
+	// We also do not pass the BufLockFileWithDigestResolver opition when reading the lock file,
+	// because we have complete control over this bucket and can expect all lock files in the
+	// module data store to have digests.
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
 	p.logDebugModuleFullNameAndDigest(
 		moduleFullName,

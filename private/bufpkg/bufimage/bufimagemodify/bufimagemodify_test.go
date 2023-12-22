@@ -158,7 +158,6 @@ func TestModifyImage(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
 				err := Modify(
-					context.Background(),
 					image,
 					testcase.config,
 				)
@@ -185,7 +184,7 @@ func TestModifyImageFile(
 		description                           string
 		dirPathToModuleFullName               map[string]string
 		config                                bufconfig.GenerateManagedConfig
-		modifyFunc                            func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig) error
+		modifyFunc                            func(internal.MarkSweeper, bufimage.ImageFile, bufconfig.GenerateManagedConfig, ...ModifyOption) error
 		filePathToExpectedOptions             map[string]*descriptorpb.FileOptions
 		filePathToExpectedMarkedLocationPaths map[string][][]int32
 	}{
@@ -814,14 +813,13 @@ func testGetImageFromDirs(
 	if !includeSourceInfo {
 		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		context.Background(),
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	require.NoError(t, err)
-	require.Empty(t, annotations)
 	return image
 }
 
@@ -833,7 +831,7 @@ func newTestManagedDisableRule(
 	fileOption bufconfig.FileOption,
 	fieldOption bufconfig.FieldOption,
 ) bufconfig.ManagedDisableRule {
-	disable, err := bufconfig.NewDisableRule(
+	disable, err := bufconfig.NewManagedDisableRule(
 		path,
 		moduleFullName,
 		fieldName,
@@ -851,7 +849,7 @@ func newTestFileOptionOverrideRule(
 	fileOption bufconfig.FileOption,
 	value interface{},
 ) bufconfig.ManagedOverrideRule {
-	fileOptionOverride, err := bufconfig.NewFileOptionOverrideRule(
+	fileOptionOverride, err := bufconfig.NewManagedOverrideRuleForFileOption(
 		path,
 		moduleFullName,
 		fileOption,
@@ -869,7 +867,7 @@ func newTestFieldOptionOverrideRule(
 	fieldOption bufconfig.FieldOption,
 	value interface{},
 ) bufconfig.ManagedOverrideRule {
-	fieldOptionOverrid, err := bufconfig.NewFieldOptionOverrideRule(
+	fieldOptionOverrid, err := bufconfig.NewManagedOverrideRuleForFieldOption(
 		path,
 		moduleFullName,
 		bufconfig.FileOptionPhpMetadataNamespace.String(),

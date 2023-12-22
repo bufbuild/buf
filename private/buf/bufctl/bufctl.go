@@ -14,7 +14,9 @@
 
 package bufctl
 
-import "github.com/bufbuild/buf/private/pkg/app"
+import (
+	"github.com/bufbuild/buf/private/pkg/app"
+)
 
 const (
 	// ExitCodeFileAnnotation is the exit code used when we print file annotations.

@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
@@ -41,12 +40,14 @@ type Handler interface {
 	// does not need to have source code info.
 	//
 	// Images should be filtered with regards to imports before passing to this function.
+	//
+	// An error of type bufanalysis.FileAnnotationSet will be returned on breaking failure.
 	Check(
 		ctx context.Context,
 		config bufconfig.BreakingConfig,
 		previousImage bufimage.Image,
 		image bufimage.Image,
-	) ([]bufanalysis.FileAnnotation, error)
+	) error
 }
 
 // NewHandler returns a new Handler.

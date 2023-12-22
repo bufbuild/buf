@@ -21,7 +21,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -29,8 +29,8 @@ import (
 // Migrate migrate buf configuration files.
 func Migrate(
 	ctx context.Context,
+	clientProvider bufapi.ClientProvider,
 	storageProvider storageos.Provider,
-	commitService modulev1beta1connect.CommitServiceClient,
 	options ...MigrateOption,
 ) (retErr error) {
 	migrateOptions := newMigrateOptions()
@@ -61,6 +61,7 @@ func Migrate(
 		return err
 	}
 	migrator := newMigrator(
+		clientProvider,
 		bucket,
 		destinationDir,
 	)

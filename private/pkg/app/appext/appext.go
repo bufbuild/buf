@@ -30,6 +30,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -102,6 +103,9 @@ func NewTracerContainer(appName string) TracerContainer {
 
 // VerboseContainer provides a verbose.Printer.
 type VerboseContainer interface {
+	// VerboseEnabled returns true if verbose mode is enabled.
+	VerboseEnabled() bool
+	// VerbosePrinter returns a verbose.Printer to use for verbose printing.
 	VerbosePrinter() verbose.Printer
 }
 
@@ -174,6 +178,13 @@ func BuilderWithTracing() BuilderOption {
 func BuilderWithInterceptor(interceptor Interceptor) BuilderOption {
 	return func(builder *builder) {
 		builder.interceptors = append(builder.interceptors, interceptor)
+	}
+}
+
+// BuilderWithDefaultLogLevel adds the given default log level.
+func BuilderWithDefaultLogLevel(defaultLogLevel zapcore.Level) BuilderOption {
+	return func(builder *builder) {
+		builder.defaultLogLevel = defaultLogLevel
 	}
 }
 

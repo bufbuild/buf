@@ -34,8 +34,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+// DefaultBufYAMLFileName is the default buf.yaml file name.
+const DefaultBufYAMLFileName = "buf.yaml"
+
 var (
-	bufYAML = newFileName("buf.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
+	bufYAML = newFileName(DefaultBufYAMLFileName, FileVersionV1Beta1, FileVersionV1, FileVersionV2)
 	// Originally we thought we were going to move to buf.mod, and had this around for
 	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
 	// we released with it, however.
@@ -47,6 +50,11 @@ var (
 type BufYAMLFile interface {
 	File
 
+	// FileName returns the name of the file when the BufYAMLFile was read.
+	//
+	// If there was no file name, this returns empty. This can happen when the BufYAMLFile
+	// is created via ReadBufYAMLFile, for example.
+	FileName() string
 	// ModuleConfigs returns the ModuleConfigs for the File.
 	//
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
@@ -74,7 +82,7 @@ func NewBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (BufYAMLFile, error) {
-	return newBufYAMLFile(fileVersion, moduleConfigs, configuredDepModuleRefs)
+	return newBufYAMLFile(fileVersion, "", moduleConfigs, configuredDepModuleRefs)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
@@ -100,6 +108,7 @@ func GetBufYAMLFileForPrefix(
 // buf.gen.yamls, or anything of the like, and was very concentrated on "because Bazel."
 func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
 	var data []byte
+	var fileName string
 	var err error
 	switch filepath.Ext(override) {
 	case ".json", ".yaml", ".yml":
@@ -107,10 +116,11 @@ func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
 		if err != nil {
 			return nil, fmt.Errorf("could not read file: %v", err)
 		}
+		fileName = filepath.Base(fileName)
 	default:
 		data = []byte(override)
 	}
-	return ReadBufYAMLFile(bytes.NewReader(data))
+	return ReadBufYAMLFile(bytes.NewReader(data), fileName)
 }
 
 // GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override,
@@ -152,25 +162,29 @@ func PutBufYAMLFileForPrefix(
 }
 
 // ReadBufYAMLFile reads the BufYAMLFile from the io.Reader.
-func ReadBufYAMLFile(reader io.Reader) (BufYAMLFile, error) {
-	return readFile(reader, "config file", readBufYAMLFile)
+//
+// fileName may be empty.
+func ReadBufYAMLFile(reader io.Reader, fileName string) (BufYAMLFile, error) {
+	return readFile(reader, fileName, readBufYAMLFile)
 }
 
 // WriteBufYAMLFile writes the BufYAMLFile to the io.Writer.
 func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
-	return writeFile(writer, "config file", bufYAMLFile, writeBufYAMLFile)
+	return writeFile(writer, bufYAMLFile.FileName(), bufYAMLFile, writeBufYAMLFile)
 }
 
 // *** PRIVATE ***
 
 type bufYAMLFile struct {
 	fileVersion             FileVersion
+	fileName                string
 	moduleConfigs           []ModuleConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
 func newBufYAMLFile(
 	fileVersion FileVersion,
+	fileName string,
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
@@ -245,7 +259,7 @@ func newBufYAMLFile(
 		configuredDepModuleRefs,
 		func(i int, j int) bool {
 			return configuredDepModuleRefs[i].ModuleFullName().String() <
-				configuredDepModuleRefs[i].ModuleFullName().String()
+				configuredDepModuleRefs[j].ModuleFullName().String()
 		},
 	)
 	return &bufYAMLFile{
@@ -257,6 +271,10 @@ func newBufYAMLFile(
 
 func (c *bufYAMLFile) FileVersion() FileVersion {
 	return c.fileVersion
+}
+
+func (c *bufYAMLFile) FileName() string {
+	return c.fileName
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
@@ -272,7 +290,7 @@ func (*bufYAMLFile) isFile()        {}
 
 // TODO: port tests from bufmoduleconfig, buflintconfig, bufbreakingconfig
 // TODO: We need to validate all paths on ignore, excludes, etc
-func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
+func readBufYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufYAMLFile, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -306,26 +324,37 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		if err != nil {
 			return nil, err
 		}
+		// TODO: we do no validation of paths now
+		lintConfig, err := getLintConfigForExternalLint(
+			fileVersion,
+			externalBufYAMLFile.Lint,
+			normalpath.NormalizeAndValidate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		// TODO: we do no validation of paths now
+		breakingConfig, err := getBreakingConfigForExternalBreaking(
+			fileVersion,
+			externalBufYAMLFile.Breaking,
+			normalpath.NormalizeAndValidate,
+		)
+		if err != nil {
+			return nil, err
+		}
 		moduleConfig, err := newModuleConfig(
 			"",
 			moduleFullName,
 			rootToExcludes,
-			// TODO: we do no validation of paths now
-			getLintConfigForExternalLint(
-				fileVersion,
-				externalBufYAMLFile.Lint,
-			),
-			// TODO: we do no validation of paths now
-			getBreakingConfigForExternalBreaking(
-				fileVersion,
-				externalBufYAMLFile.Breaking,
-			),
+			lintConfig,
+			breakingConfig,
 		)
 		if err != nil {
 			return nil, err
 		}
 		return newBufYAMLFile(
 			fileVersion,
+			fileName,
 			[]ModuleConfig{
 				moduleConfig,
 			},
@@ -389,20 +418,41 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 			if err != nil {
 				return nil, err
 			}
+			validateAndTransformPath := func(pathInWorkspace string) (string, error) {
+				pathInWorkspace, err := normalpath.NormalizeAndValidate(pathInWorkspace)
+				if err != nil {
+					// user error
+					return "", fmt.Errorf("invalid path: %w", err)
+				}
+				if !normalpath.EqualsOrContainsPath(dirPath, pathInWorkspace, normalpath.Relative) {
+					return "", fmt.Errorf("%q does not reside within module directory %q", pathInWorkspace, dirPath)
+				}
+				return filepath.Rel(dirPath, pathInWorkspace)
+			}
+			// TODO: we do no validation of paths now
+			lintConfig, err := getLintConfigForExternalLint(
+				fileVersion,
+				externalModule.Lint,
+				validateAndTransformPath,
+			)
+			if err != nil {
+				return nil, err
+			}
+			// TODO: we do no validation of paths now
+			breakingConfig, err := getBreakingConfigForExternalBreaking(
+				fileVersion,
+				externalModule.Breaking,
+				validateAndTransformPath,
+			)
+			if err != nil {
+				return nil, err
+			}
 			moduleConfig, err := newModuleConfig(
 				dirPath,
 				moduleFullName,
 				rootToExcludes,
-				// TODO: we do no validation of paths now
-				getLintConfigForExternalLint(
-					fileVersion,
-					externalModule.Lint,
-				),
-				// TODO: we do no validation of paths now
-				getBreakingConfigForExternalBreaking(
-					fileVersion,
-					externalModule.Breaking,
-				),
+				lintConfig,
+				breakingConfig,
 			)
 			if err != nil {
 				return nil, err
@@ -415,6 +465,7 @@ func readBufYAMLFile(reader io.Reader, allowJSON bool) (BufYAMLFile, error) {
 		}
 		return newBufYAMLFile(
 			fileVersion,
+			fileName,
 			moduleConfigs,
 			configuredDepModuleRefs,
 		)
@@ -507,8 +558,9 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			},
 		)
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			moduleDirPath := moduleConfig.DirPath()
 			externalModule := externalBufYAMLFileModuleV2{
-				Directory: moduleConfig.DirPath(),
+				Directory: moduleDirPath,
 			}
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
@@ -526,8 +578,14 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			lintConfig := moduleConfig.LintConfig()
 			externalModule.Lint.Use = lintConfig.UseIDsAndCategories()
 			externalModule.Lint.Except = lintConfig.ExceptIDsAndCategories()
-			externalModule.Lint.Ignore = lintConfig.IgnorePaths()
-			externalModule.Lint.IgnoreOnly = lintConfig.IgnoreIDOrCategoryToPaths()
+			joinDirPath := func(importPath string) string {
+				return filepath.Join(moduleDirPath, importPath)
+			}
+			externalModule.Lint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+			externalModule.Lint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
+			for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
+				externalModule.Lint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+			}
 			externalModule.Lint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
 			externalModule.Lint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
 			externalModule.Lint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
@@ -537,8 +595,11 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			breakingConfig := moduleConfig.BreakingConfig()
 			externalModule.Breaking.Use = breakingConfig.UseIDsAndCategories()
 			externalModule.Breaking.Except = breakingConfig.ExceptIDsAndCategories()
-			externalModule.Breaking.Ignore = breakingConfig.IgnorePaths()
-			externalModule.Breaking.IgnoreOnly = breakingConfig.IgnoreIDOrCategoryToPaths()
+			externalModule.Breaking.Ignore = slicesext.Map(breakingConfig.IgnorePaths(), joinDirPath)
+			externalModule.Breaking.IgnoreOnly = make(map[string][]string, len(breakingConfig.IgnoreIDOrCategoryToPaths()))
+			for idOrCategory, importPaths := range breakingConfig.IgnoreIDOrCategoryToPaths() {
+				externalModule.Breaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+			}
 			externalModule.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
@@ -642,14 +703,33 @@ func getConfiguredDepModuleRefsForExternalDeps(
 func getLintConfigForExternalLint(
 	fileVersion FileVersion,
 	externalLint externalBufYAMLFileLintV1Beta1V1V2,
-) LintConfig {
+	pathTransformFunc func(string) (string, error),
+) (LintConfig, error) {
+	ignore, err := slicesext.MapError(
+		externalLint.Ignore,
+		pathTransformFunc,
+	)
+	if err != nil {
+		return nil, err
+	}
+	ignoreOnly := make(map[string][]string)
+	for idOrCategory, specifiedPaths := range externalLint.IgnoreOnly {
+		transformedPaths, err := slicesext.MapError(
+			specifiedPaths,
+			pathTransformFunc,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ignoreOnly[idOrCategory] = transformedPaths
+	}
 	return newLintConfig(
 		newCheckConfig(
 			fileVersion,
 			externalLint.Use,
 			externalLint.Except,
-			externalLint.Ignore,
-			externalLint.IgnoreOnly,
+			ignore,
+			ignoreOnly,
 		),
 		externalLint.EnumZeroValueSuffix,
 		externalLint.RPCAllowSameRequestResponse,
@@ -657,23 +737,42 @@ func getLintConfigForExternalLint(
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
 		externalLint.AllowCommentIgnores,
-	)
+	), nil
 }
 
 func getBreakingConfigForExternalBreaking(
 	fileVersion FileVersion,
 	externalBreaking externalBufYAMLFileBreakingV1Beta1V1V2,
-) BreakingConfig {
+	pathTransformFunc func(string) (string, error),
+) (BreakingConfig, error) {
+	ignore, err := slicesext.MapError(
+		externalBreaking.Ignore,
+		pathTransformFunc,
+	)
+	if err != nil {
+		return nil, err
+	}
+	ignoreOnly := make(map[string][]string)
+	for idOrCategory, specifiedPaths := range externalBreaking.IgnoreOnly {
+		transformedPaths, err := slicesext.MapError(
+			specifiedPaths,
+			pathTransformFunc,
+		)
+		if err != nil {
+			return nil, err
+		}
+		ignoreOnly[idOrCategory] = transformedPaths
+	}
 	return newBreakingConfig(
 		newCheckConfig(
 			fileVersion,
 			externalBreaking.Use,
 			externalBreaking.Except,
-			externalBreaking.Ignore,
-			externalBreaking.IgnoreOnly,
+			ignore,
+			ignoreOnly,
 		),
 		externalBreaking.IgnoreUnstablePackages,
-	)
+	), nil
 }
 
 // externalBufYAMLFileV1Beta1V1 represents the v1 or v1beta1 buf.yaml file, which have

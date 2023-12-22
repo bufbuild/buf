@@ -20,6 +20,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
+// NopClientProvider is a ClientProvider that provides unimplemented services.
+//
+// Should be used for testing only.
+var NopClientProvider ClientProvider = nopClientProvider{}
+
 // ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
 	BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient
@@ -111,4 +116,38 @@ func (c *clientProvider) VCSCommitServiceClient(registryHostname string) modulev
 		registryHostname,
 		modulev1beta1connect.NewVCSCommitServiceClient,
 	)
+}
+
+type nopClientProvider struct{}
+
+func (nopClientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
+	return modulev1beta1connect.UnimplementedBranchServiceHandler{}
+}
+
+func (nopClientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
+	return modulev1beta1connect.UnimplementedCommitServiceHandler{}
+}
+
+func (nopClientProvider) ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient {
+	return modulev1beta1connect.UnimplementedModuleServiceHandler{}
+}
+
+func (nopClientProvider) OrganizationServiceClient(registryHostname string) ownerv1beta1connect.OrganizationServiceClient {
+	return ownerv1beta1connect.UnimplementedOrganizationServiceHandler{}
+}
+
+func (nopClientProvider) OwnerServiceClient(registryHostname string) ownerv1beta1connect.OwnerServiceClient {
+	return ownerv1beta1connect.UnimplementedOwnerServiceHandler{}
+}
+
+func (nopClientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
+	return modulev1beta1connect.UnimplementedTagServiceHandler{}
+}
+
+func (nopClientProvider) UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient {
+	return ownerv1beta1connect.UnimplementedUserServiceHandler{}
+}
+
+func (nopClientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
+	return modulev1beta1connect.UnimplementedVCSCommitServiceHandler{}
 }

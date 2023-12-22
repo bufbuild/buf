@@ -22,6 +22,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -526,6 +527,14 @@ func getModuleDepsRec(
 			}
 			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
 			if err != nil {
+				var fileAnnotationSet bufanalysis.FileAnnotationSet
+				if errors.As(err, &fileAnnotationSet) {
+					// If a FileAnnotationSet, the error already contains path information, just return directly.
+					//
+					// We also specially handle FileAnnotationSets for exit code 100.
+					// TODO: Should we just warn?
+					return fileAnnotationSet
+				}
 				if errors.Is(err, fs.ErrNotExist) {
 					// Strip any PathError and just get to the point.
 					err = fs.ErrNotExist
@@ -533,7 +542,7 @@ func getModuleDepsRec(
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
 			for _, imp := range fastscanResult.Imports {
-				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp)
+				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp.Path)
 				if err != nil {
 					if errors.Is(err, errIsWKT) {
 						// Do not include as a dependency.
@@ -555,7 +564,7 @@ func getModuleDepsRec(
 					// We may want to actually remove the warning here. It'll result a warning and
 					// an error if somet cases.
 					if errors.Is(err, fs.ErrNotExist) {
-						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp)
+						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp.Path)
 						continue
 						//// Strip any PathError and just get to the point.
 						//err = fs.ErrNotExist

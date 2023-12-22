@@ -16,6 +16,7 @@ package lint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -134,36 +135,35 @@ func run(
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
-		//fmt.Println("here")
-		//for _, file := range imageWithConfig.Files() {
-		//fmt.Println(file.Path(), !file.IsImport())
-		//}
-		fileAnnotations, err := buflint.NewHandler(
+		if err := buflint.NewHandler(
 			container.Logger(),
 			tracing.NewTracer(container.Tracer()),
 		).Check(
 			ctx,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
-		)
-		if err != nil {
-			return err
+		); err != nil {
+			var fileAnnotationSet bufanalysis.FileAnnotationSet
+			if errors.As(err, &fileAnnotationSet) {
+				allFileAnnotations = append(allFileAnnotations, fileAnnotationSet.FileAnnotations()...)
+			} else {
+				return err
+			}
 		}
-		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
-	allFileAnnotations = bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
 	if len(allFileAnnotations) > 0 {
+		allFileAnnotationSet := bufanalysis.NewFileAnnotationSet(allFileAnnotations...)
 		if flags.ErrorFormat == "config-ignore-yaml" {
-			if err := buflint.PrintFileAnnotationsConfigIgnoreYAMLV1(
+			if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
 				container.Stdout(),
-				allFileAnnotations,
+				allFileAnnotationSet,
 			); err != nil {
 				return err
 			}
 		} else {
-			if err := bufanalysis.PrintFileAnnotations(
+			if err := bufanalysis.PrintFileAnnotationSet(
 				container.Stdout(),
-				allFileAnnotations,
+				allFileAnnotationSet,
 				flags.ErrorFormat,
 			); err != nil {
 				return err

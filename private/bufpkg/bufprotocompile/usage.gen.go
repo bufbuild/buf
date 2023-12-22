@@ -12,33 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufsync
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/pkg/git"
-)
+package bufprotocompile
 
-type taggedCommit struct {
-	commit git.Commit
-	tags   []string
-}
-
-func newTaggedCommit(
-	commit git.Commit,
-	tags []string,
-) *taggedCommit {
-	return &taggedCommit{
-		commit: commit,
-		tags:   tags,
-	}
-}
-
-func (m *taggedCommit) Commit() git.Commit {
-	return m.commit
-}
-
-func (m *taggedCommit) Tags() []string {
-	return m.tags
-}
-
-var _ TaggedCommit = (*taggedCommit)(nil)
+import _ "github.com/bufbuild/buf/private/usage"
