@@ -202,6 +202,7 @@ func newBufLockFile(
 	)
 	bufLockFile := &bufLockFile{
 		fileVersion:   fileVersion,
+		fileName:      fileName,
 		depModuleKeys: depModuleKeys,
 	}
 	if err := validateV1AndV1Beta1DepsHaveCommits(bufLockFile); err != nil {
