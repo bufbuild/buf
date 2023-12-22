@@ -264,6 +264,7 @@ func newBufYAMLFile(
 	)
 	return &bufYAMLFile{
 		fileVersion:             fileVersion,
+		fileName:                fileName,
 		moduleConfigs:           moduleConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil

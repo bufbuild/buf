@@ -17,24 +17,46 @@ package bufmigrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
 
 // Migrate migrates buf configuration files.
 //
-// TODO: document behavior with different examples of module and workspace directories, ie what happens
-// when I specify a module directory that is within a workspace directory I always specify, what happens
-// if I don't specify the module directory, what if I only specify some module directories in a
-// workspace directory, etc.
+// A buf.yaml v2 is written if any workspace directory or module directory is
+// specified. The modules directories in the buf.yaml v2 will contain:
+//
+//   - directories at moduleDirPaths
+//   - directories pointed to by buf.work.yamls at workspaceDirPaths
+//
+// More specifically:
+//
+//   - If a workspace is specified, then all of its module directories are also migrated,
+//     regardless whether these module directories are specified in moduleDirPaths. Same
+//     behavior with multiple workspaces. For example, if workspace foo has directories
+//     bar and baz, then specifying foo, foo + bar and foo + bar + baz are the same.
+//   - If a workspace is specfied, and modules not from this workspace are specified, the
+//     buf.yaml will contain all directories from the workspace, as well as the module
+//     directories specified.
+//   - If only module directories are specified, then the buf.yaml will contain exactly
+//     these directories.
+//   - If a module specified is within some workspace not from workspaceDirPaths, we migrate
+//     the module directory only (updating/deciding on this behavior is still a TODO).
+//   - If only one workspace directory is specified and no module directory is specified,
+//     the buf.yaml will be written at <workspace directory>/buf.yaml. Otherwise, it will
+//     be written at ./buf.yaml.
+//
+// Each generation template will be overwritten by a file in v2.
 func Migrate(
 	ctx context.Context,
 	messageWriter io.Writer,
 	storageProvider storageos.Provider,
 	clientProvider bufapi.ClientProvider,
-	// TODO: use these values
 	workspaceDirPaths []string,
 	moduleDirPaths []string,
 	generateTemplatePaths []string,
@@ -44,9 +66,38 @@ func Migrate(
 	for _, option := range options {
 		option(migrateOptions)
 	}
-	if migrateOptions.workspaceDirectory == "" && len(migrateOptions.moduleDirectories) == 0 && len(migrateOptions.bufGenYAMLPaths) == 0 {
+	if len(workspaceDirPaths) == 0 && len(moduleDirPaths) == 0 && len(generateTemplatePaths) == 0 {
 		return errors.New("no directory or file specified")
 	}
+	var err error
+	// Directories cannot jump context because in the migrated buf.yaml v2, each
+	// directory path cannot jump context. I.e. it's not valid to have `- directory: ..`
+	// in a buf.yaml v2.
+	workspaceDirPaths, err = slicesext.MapError(
+		workspaceDirPaths,
+		func(workspaceDirPath string) (string, error) {
+			if !filepath.IsLocal(workspaceDirPath) {
+				return "", fmt.Errorf("%s is not a relative path", workspaceDirPath)
+			}
+			return filepath.Clean(workspaceDirPath), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	moduleDirPaths, err = slicesext.MapError(
+		moduleDirPaths,
+		func(moduleDirPath string) (string, error) {
+			if !filepath.IsLocal(moduleDirPath) {
+				return "", fmt.Errorf("%s is not a relative path", moduleDirPath)
+			}
+			return filepath.Clean(moduleDirPath), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	generateTemplatePaths = slicesext.Map(generateTemplatePaths, filepath.Clean)
 	bucket, err := storageProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -55,8 +106,8 @@ func Migrate(
 		return err
 	}
 	destionationDirectory := "."
-	if migrateOptions.workspaceDirectory != "" && len(migrateOptions.moduleDirectories) == 0 {
-		destionationDirectory = migrateOptions.workspaceDirectory
+	if len(workspaceDirPaths) == 1 && len(moduleDirPaths) == 0 {
+		destionationDirectory = workspaceDirPaths[0]
 	}
 	migrator := newMigrator(
 		messageWriter,
@@ -64,18 +115,18 @@ func Migrate(
 		bucket,
 		destionationDirectory,
 	)
-	if migrateOptions.workspaceDirectory != "" {
-		// TODO: should we allow multiple workspaces?
+	for _, workspaceDirPath := range workspaceDirPaths {
 		if err := migrator.addWorkspaceDirectory(
 			ctx,
-			migrateOptions.workspaceDirectory,
+			workspaceDirPath,
 		); err != nil {
 			return err
 		}
 	}
-	for _, bufYAMLPath := range migrateOptions.moduleDirectories {
-		// TODO: read upwards to make sure it's not in a workspace
+	for _, bufYAMLPath := range moduleDirPaths {
+		// TODO: read upwards to make sure it's not in a workspace.
 		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
+		// The logic for this is in getMapPathAndSubDirPath from buffetch/internal
 		if err := migrator.addModuleDirectory(
 			ctx,
 			bufYAMLPath,
@@ -83,7 +134,7 @@ func Migrate(
 			return err
 		}
 	}
-	for _, bufGenYAMLPath := range migrateOptions.bufGenYAMLPaths {
+	for _, bufGenYAMLPath := range generateTemplatePaths {
 		if err := migrator.addBufGenYAML(bufGenYAMLPath); err != nil {
 			return err
 		}
@@ -97,54 +148,17 @@ func Migrate(
 // MigrateOption is a migrate option.
 type MigrateOption func(*migrateOptions)
 
-// MigrateAsDryRun write to the writer the summary of the changes to be made,
-// without writing to the disk.
+// MigrateAsDryRun print the summary of the changes to be made, without writing to the disk.
 func MigrateAsDryRun() MigrateOption {
 	return func(migrateOptions *migrateOptions) {
 		migrateOptions.dryRun = true
 	}
 }
 
-// TODO: move this validaton inside Migrate
-
-//// MigrateWorkspaceDirectory migrates buf.work.yaml, and all buf.yamls in directories
-//// pointed to by this workspace, as well as their co-resident buf.locks.
-//func MigrateWorkspaceDirectory(directory string) (MigrateOption, error) {
-//// TODO: Looking at IsLocal's doc, it seems to validate for what we want: relative and does not jump context.
-//if !filepath.IsLocal(directory) {
-//return nil, fmt.Errorf("%s is not a relative path", directory)
-//}
-//return func(migrateOptions *migrateOptions) {
-//migrateOptions.workspaceDirectory = filepath.Clean(directory)
-//}, nil
-//}
-
-//// MigrateModuleDirectories migrates buf.yamls buf.locks in directories.
-//func MigrateModuleDirectories(directories []string) (MigrateOption, error) {
-//for _, path := range directories {
-//if !filepath.IsLocal(path) {
-//return nil, fmt.Errorf("%s is not a relative path", path)
-//}
-//}
-//return func(migrateOptions *migrateOptions) {
-//migrateOptions.moduleDirectories = slicesext.Map(directories, filepath.Clean)
-//}, nil
-//}
-
-//// MigrateGenerationTemplates migrates buf.gen.yamls.
-//func MigrateGenerationTemplates(paths []string) MigrateOption {
-//return func(migrateOptions *migrateOptions) {
-//migrateOptions.bufGenYAMLPaths = slicesext.Map(paths, filepath.Clean)
-//}
-//}
-
 /// *** PRIVATE ***
 
 type migrateOptions struct {
 	dryRun bool
-	//workspaceDirectory string
-	//moduleDirectories  []string
-	//bufGenYAMLPaths    []string
 }
 
 func newMigrateOptions() *migrateOptions {

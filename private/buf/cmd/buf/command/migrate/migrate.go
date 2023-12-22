@@ -16,7 +16,6 @@ package migrate
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
@@ -28,10 +27,10 @@ import (
 )
 
 const (
-	workspaceDirectoryFlagName = "workspace"
-	moduleDirectoriesFlagName  = "module"
-	bufGenYAMLPathFlagName     = "template"
-	dryRunFlagName             = "dry-run"
+	workspaceDirectoriesFlagName = "workspace"
+	moduleDirectoriesFlagName    = "module"
+	bufGenYAMLPathFlagName       = "template"
+	dryRunFlagName               = "dry-run"
 )
 
 // NewCommand returns a new Command.
@@ -55,10 +54,10 @@ func NewCommand(
 }
 
 type flags struct {
-	WorkspaceDirectory string
-	ModuleDirectories  []string
-	BufGenYAMLPath     []string
-	DryRun             bool
+	WorkspaceDirPaths []string
+	ModuleDirPaths    []string
+	BufGenYAMLPaths   []string
+	DryRun            bool
 }
 
 func newFlags() *flags {
@@ -66,17 +65,17 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.WorkspaceDirectory,
-		workspaceDirectoryFlagName,
-		"",
-		"The workspace directory to migrate. Its buf.work.yaml, buf.yamls and buf.locks will be migrated.",
+	flagSet.StringSliceVar(
+		&f.WorkspaceDirPaths,
+		workspaceDirectoriesFlagName,
+		nil,
+		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated.",
 	)
 	flagSet.StringSliceVar(
-		&f.ModuleDirectories,
+		&f.ModuleDirPaths,
 		moduleDirectoriesFlagName,
 		nil,
-		"The buf.yamls to migrate. Its buf.yaml and buf.lock will be migrated",
+		"The module directories to migrate. buf.yaml and buf.lock will be migrated",
 	)
 	flagSet.BoolVar(
 		&f.DryRun,
@@ -85,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"Print the changes to be made without writing to the disk",
 	)
 	flagSet.StringSliceVar(
-		&f.BufGenYAMLPath,
+		&f.BufGenYAMLPaths,
 		bufGenYAMLPathFlagName,
 		nil,
 		"The paths to the generation templates to migrate",
@@ -98,31 +97,8 @@ func run(
 	flags *flags,
 ) error {
 	var migrateOptions []bufmigrate.MigrateOption
-	if flags.WorkspaceDirectory != "" {
-		option, err := bufmigrate.MigrateWorkspaceDirectory(flags.WorkspaceDirectory)
-		if err != nil {
-			return err
-		}
-		migrateOptions = append(migrateOptions, option)
-	}
-	if len(flags.ModuleDirectories) > 0 {
-		option, err := bufmigrate.MigrateModuleDirectories(flags.ModuleDirectories)
-		if err != nil {
-			return err
-		}
-		migrateOptions = append(migrateOptions, option)
-	}
-	if len(flags.BufGenYAMLPath) > 0 {
-		migrateOptions = append(
-			migrateOptions,
-			bufmigrate.MigrateGenerationTemplates(flags.BufGenYAMLPath),
-		)
-	}
-	if len(migrateOptions) == 0 {
-		return errors.New("no directories or files specified")
-	}
 	if flags.DryRun {
-		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun(container.Stdout()))
+		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun())
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -130,9 +106,12 @@ func run(
 	}
 	return bufmigrate.Migrate(
 		ctx,
-		container.Logger(),
+		container.Stderr(),
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
 		bufapi.NewClientProvider(clientConfig),
+		flags.WorkspaceDirPaths,
+		flags.ModuleDirPaths,
+		flags.BufGenYAMLPaths,
 		migrateOptions...,
 	)
 }
