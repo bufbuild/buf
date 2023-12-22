@@ -417,7 +417,7 @@ func getInputImages(
 	inputSpecified string,
 	bufGenYAMLFile bufconfig.BufGenYAMLFile,
 	moduleConfigOverride string,
-	includePathsOverride []string,
+	targetPathsOverride []string,
 	excludePathsOverride []string,
 	includeTypesOverride []string,
 ) ([]bufimage.Image, error) {
@@ -440,7 +440,7 @@ func getInputImages(
 			ctx,
 			input,
 			bufctl.WithConfigOverride(moduleConfigOverride),
-			bufctl.WithTargetPaths(includePathsOverride, excludePathsOverride),
+			bufctl.WithTargetPaths(targetPathsOverride, excludePathsOverride),
 			bufctl.WithImageTypes(includeTypes),
 		)
 		if err != nil {
@@ -449,9 +449,9 @@ func getInputImages(
 		inputImages = []bufimage.Image{inputImage}
 	} else {
 		for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
-			includePaths := inputConfig.IncludePaths()
-			if len(includePathsOverride) > 0 {
-				includePaths = includePathsOverride
+			targetPaths := inputConfig.TargetPaths()
+			if len(targetPathsOverride) > 0 {
+				targetPaths = targetPathsOverride
 			}
 			excludePaths := inputConfig.ExcludePaths()
 			if len(excludePathsOverride) > 0 {
@@ -459,7 +459,6 @@ func getInputImages(
 			}
 			// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
 			// because it is always nil.
-			// TODO: document the above in godoc
 			includeTypes := inputConfig.IncludeTypes()
 			if len(includeTypesOverride) > 0 {
 				includeTypes = includeTypesOverride
@@ -468,7 +467,7 @@ func getInputImages(
 				ctx,
 				inputConfig,
 				bufctl.WithConfigOverride(moduleConfigOverride),
-				bufctl.WithTargetPaths(includePaths, excludePaths),
+				bufctl.WithTargetPaths(targetPaths, excludePaths),
 				bufctl.WithImageTypes(includeTypes),
 			)
 			if err != nil {
