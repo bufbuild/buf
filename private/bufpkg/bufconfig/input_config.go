@@ -149,12 +149,11 @@ type InputConfig interface {
 	// IncludePackageFiles returns other files in the same package as the proto file,
 	// not empty only if format is proto file.
 	IncludePackageFiles() bool
-	// TargetPaths returns paths to generate for. Empty value means to generate for all paths.
+	// TargetPaths returns paths to generate for. An empty slice means to generate for all paths.
 	TargetPaths() []string
 	// ExcludePaths returns paths not to generate for.
 	ExcludePaths() []string
-	// IncludeTypes returns the types to generate. If GenerateConfig.GenerateTypeConfig()
-	// returns a non-empty list of types.
+	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
 	IncludeTypes() []string
 
 	isInputConfig()
