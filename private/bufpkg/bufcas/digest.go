@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/crypto/sha3"
 )
@@ -44,12 +43,6 @@ var (
 	}
 	stringToDigestType = map[string]DigestType{
 		"shake256": DigestTypeShake256,
-	}
-	digestTypeToProto = map[DigestType]storagev1beta1.Digest_Type{
-		DigestTypeShake256: storagev1beta1.Digest_TYPE_SHAKE256,
-	}
-	protoToDigestType = map[storagev1beta1.Digest_Type]DigestType{
-		storagev1beta1.Digest_TYPE_SHAKE256: DigestTypeShake256,
 	}
 )
 
