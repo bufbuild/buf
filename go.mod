@@ -3,10 +3,10 @@ module github.com/bufbuild/buf
 go 1.19
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.31.0-20231115204500-e097f827e652.2
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.12.0-20231111212044-1119bf4b707e.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.31.0-20231205222057-ac336d436f46.2
-	connectrpc.com/connect v1.13.0
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20231115204500-e097f827e652.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20231223221557-fe21a92a8116.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20231223221557-fe21a92a8116.1
+	connectrpc.com/connect v1.14.0
 	connectrpc.com/otelconnect v0.6.0
 	github.com/bufbuild/protocompile v0.7.2-0.20231213152359-72d7e6858968
 	github.com/bufbuild/protovalidate-go v0.4.3
@@ -42,7 +42,7 @@ require (
 	golang.org/x/sync v0.5.0
 	golang.org/x/term v0.15.0
 	golang.org/x/tools v0.16.0
-	google.golang.org/protobuf v1.31.1-0.20231027082548-f4a6c1f6e5c1
+	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
