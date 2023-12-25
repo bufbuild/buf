@@ -22,10 +22,8 @@ import (
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -86,50 +84,20 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 ) (bufmodule.ModuleData, error) {
 	registryHostname := moduleKey.ModuleFullName().Registry()
 
-	commitID := moduleKey.CommitID()
-	var resourceRef *modulev1beta1.ResourceRef
-	// CommitID is optional.
-	if commitID == "" {
-		// Naming differently to make sure we differentiate between this and the
-		// retrieved digest below.
-		moduleKeyDigest, err := moduleKey.Digest()
-		if err != nil {
-			return nil, err
-		}
-		protoModuleKeyDigest, err := bufcas.DigestToProto(moduleKeyDigest)
-		if err != nil {
-			return nil, err
-		}
-		resourceRef = &modulev1beta1.ResourceRef{
-			Value: &modulev1beta1.ResourceRef_Name_{
-				Name: &modulev1beta1.ResourceRef_Name{
-					Owner:  moduleKey.ModuleFullName().Owner(),
-					Module: moduleKey.ModuleFullName().Name(),
-					Child: &modulev1beta1.ResourceRef_Name_Digest{
-						Digest: protoModuleKeyDigest,
-					},
-				},
-			},
-		}
-	} else {
-		// Note that we could actually just use the Digest. We don't wnat to have to invoke
-		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
-		resourceRef = &modulev1beta1.ResourceRef{
-			Value: &modulev1beta1.ResourceRef_Id{
-				Id: commitID,
-			},
-		}
+	protoResourceRef, err := getProtoResourceRefForModuleKey(moduleKey)
+	if err != nil {
+		return nil, err
 	}
-
-	response, err := a.clientProvider.CommitServiceClient(registryHostname).GetCommitNodes(
+	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.GetCommitNodesRequest{
-				Values: []*modulev1beta1.GetCommitNodesRequest_Value{
+			&modulev1beta1.DownloadRequest{
+				Values: []*modulev1beta1.DownloadRequest_Value{
 					{
-						ResourceRef: resourceRef,
+						ResourceRef: protoResourceRef,
 					},
 				},
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)
@@ -139,56 +107,68 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		}
 		return nil, err
 	}
-	if len(response.Msg.CommitNodes) != 1 {
-		return nil, fmt.Errorf("expected 1 CommitNode, got %d", len(response.Msg.CommitNodes))
+	if len(response.Msg.References) != 1 {
+		return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
 	}
-	protoCommitNode := response.Msg.CommitNodes[0]
-
-	protoModule, err := a.getProtoModuleForModuleID(
+	commitIDToCommit, err := getCommitIDToCommitForProtoDownloadResponse(response.Msg)
+	if err != nil {
+		return nil, err
+	}
+	commitIDToBucket, err := getCommitIDToBucketForProtoDownloadResponse(response.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return a.getModuleDataForProtoDownloadResponseReference(
 		ctx,
 		registryHostname,
-		protoCommitNode.Commit.ModuleId,
+		moduleKey,
+		commitIDToCommit,
+		commitIDToBucket,
+		response.Msg.References[0],
+	)
+}
+
+func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
+	ctx context.Context,
+	registryHostname string,
+	moduleKey bufmodule.ModuleKey,
+	commitIDToCommit map[string]*modulev1beta1.Commit,
+	commitIDToBucket map[string]storage.ReadBucket,
+	protoReference *modulev1beta1.DownloadResponse_Reference,
+) (bufmodule.ModuleData, error) {
+	commit, ok := commitIDToCommit[protoReference.CommitId]
+	if !ok {
+		return nil, fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
+	}
+	bucket, ok := commitIDToBucket[protoReference.CommitId]
+	if !ok {
+		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
+	}
+	depProtoCommits, err := slicesext.MapError(
+		protoReference.DepCommitIds,
+		func(commitID string) (*modulev1beta1.Commit, error) {
+
+			commit, ok := commitIDToCommit[commitID]
+			if !ok {
+				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", commitID)
+			}
+			return commit, nil
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
-	}
-
-	digest, err := bufcas.ProtoToDigest(protoCommitNode.Commit.Digest)
+	returnedDigest, err := ProtoToDigest(commit.Digest)
 	if err != nil {
 		return nil, err
-	}
-
-	// CommitID is optional.
-	if commitID == "" {
-		// If we did not have a commitID, make a new ModuleKey with the retrieved commitID.
-		// All remote Modules must have a commitID.
-		moduleKey, err = bufmodule.NewModuleKey(
-			moduleKey.ModuleFullName(),
-			protoCommitNode.Commit.Id,
-			// *** Use the Digest from the moduleKey, NOT from the protoCommitNode. ***
-			// We use this for tamper-proofing, see comment below.
-			moduleKey.Digest,
-		)
 	}
 	return bufmodule.NewModuleData(
 		moduleKey,
 		func() (storage.ReadBucket, error) {
-			return a.getBucketForProtoFileNodes(
-				ctx,
-				registryHostname,
-				protoCommitNode.Commit.ModuleId,
-				protoCommitNode.FileNodes,
-			)
+			return bucket, nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
-			return a.getModuleKeysForProtoCommits(
-				ctx,
-				registryHostname,
-				protoCommitNode.Deps,
-			)
+			return a.getModuleKeysForProtoCommits(ctx, registryHostname, depProtoCommits)
 		},
 		// TODO: Is this enough for tamper-proofing? With this, we are just calculating the
 		// digest that we got back from the API, as opposed to re-calculating the digest based
@@ -197,84 +177,8 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		//
 		// We could go a step further and calculate based on the actual data, but doing this lazily
 		// is additional work (but very possible).
-		bufmodule.ModuleDataWithActualDigest(digest),
+		bufmodule.ModuleDataWithActualDigest(returnedDigest),
 	)
-}
-
-// TODO: We could call this for multiple Modules at once and then feed the results out to the individual
-// ModuleDatas that needed them, this is a lot of work though, can do later if we want to optimize.
-func (a *moduleDataProvider) getBucketForProtoFileNodes(
-	ctx context.Context,
-	registryHostname string,
-	moduleID string,
-	protoFileNodes []*storagev1beta1.FileNode,
-) (storage.ReadBucket, error) {
-	commitServiceClient := a.clientProvider.CommitServiceClient(registryHostname)
-	// TODO: we could de-dupe this.
-	protoDigests := slicesext.Map(
-		protoFileNodes,
-		func(protoFileNode *storagev1beta1.FileNode) *storagev1beta1.Digest {
-			return protoFileNode.Digest
-		},
-	)
-	protoDigestChunks := slicesext.ToChunks(protoDigests, 250)
-	var blobs []bufcas.Blob
-	for _, protoDigestChunk := range protoDigestChunks {
-		response, err := commitServiceClient.GetBlobs(
-			ctx,
-			connect.NewRequest(
-				&modulev1beta1.GetBlobsRequest{
-					Values: []*modulev1beta1.GetBlobsRequest_Value{
-						{
-							ModuleRef: &modulev1beta1.ModuleRef{
-								Value: &modulev1beta1.ModuleRef_Id{
-									Id: moduleID,
-								},
-							},
-							BlobDigests: protoDigestChunk,
-						},
-					},
-				},
-			),
-		)
-		if err != nil {
-			return nil, err
-		}
-		if len(response.Msg.Values) != 1 {
-			return nil, fmt.Errorf("expected 1 GetBlobsResponse.Value, got %d", len(response.Msg.Values))
-		}
-		value := response.Msg.Values[0]
-		if len(value.Blobs) != len(protoDigestChunk) {
-			return nil, fmt.Errorf("expected 1 Blob, got %d", len(value.Blobs))
-		}
-		chunkBlobs, err := bufcas.ProtoToBlobs(value.Blobs)
-		if err != nil {
-			return nil, err
-		}
-		blobs = append(blobs, chunkBlobs...)
-	}
-
-	fileNodes, err := bufcas.ProtoToFileNodes(protoFileNodes)
-	if err != nil {
-		return nil, err
-	}
-	manifest, err := bufcas.NewManifest(fileNodes)
-	if err != nil {
-		return nil, err
-	}
-	blobSet, err := bufcas.NewBlobSet(blobs)
-	if err != nil {
-		return nil, err
-	}
-	fileSet, err := bufcas.NewFileSet(manifest, blobSet)
-	if err != nil {
-		return nil, err
-	}
-	bucket := storagemem.NewReadWriteBucket()
-	if err := bufcas.PutFileSetToBucket(ctx, fileSet, bucket); err != nil {
-		return nil, err
-	}
-	return bucket, nil
 }
 
 // TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
@@ -330,8 +234,8 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	return bufmodule.NewModuleKey(
 		moduleFullName,
 		protoCommit.Id,
-		func() (bufcas.Digest, error) {
-			return bufcas.ProtoToDigest(protoCommit.Digest)
+		func() (bufmodule.Digest, error) {
+			return ProtoToDigest(protoCommit.Digest)
 		},
 	)
 }
@@ -382,4 +286,67 @@ func (a *moduleDataProvider) getProtoOwnerForOwnerID(ctx context.Context, regist
 		return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
 	}
 	return response.Msg.Owners[0], nil
+}
+
+func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
+	// CommitID is optional.
+	if commitID := moduleKey.CommitID(); commitID != "" {
+		// Note that we could actually just use the Digest. We don't wnat to have to invoke
+		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
+		return &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Id{
+				Id: commitID,
+			},
+		}, nil
+	}
+	// Naming differently to make sure we differentiate between this and the
+	// retrieved digest below.
+	moduleKeyDigest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
+	protoModuleKeyDigest, err := DigestToProto(moduleKeyDigest)
+	if err != nil {
+		return nil, err
+	}
+	return &modulev1beta1.ResourceRef{
+		Value: &modulev1beta1.ResourceRef_Name_{
+			Name: &modulev1beta1.ResourceRef_Name{
+				Owner:  moduleKey.ModuleFullName().Owner(),
+				Module: moduleKey.ModuleFullName().Name(),
+				Child: &modulev1beta1.ResourceRef_Name_Digest{
+					Digest: protoModuleKeyDigest,
+				},
+			},
+		},
+	}, nil
+}
+
+func getCommitIDToCommitForProtoDownloadResponse(
+	protoDownloadResponse *modulev1beta1.DownloadResponse,
+) (map[string]*modulev1beta1.Commit, error) {
+	return slicesext.ToUniqueValuesMapError(
+		protoDownloadResponse.Commits,
+		func(protoCommit *modulev1beta1.Commit) (string, error) {
+			return protoCommit.Id, nil
+		},
+	)
+}
+
+func getCommitIDToBucketForProtoDownloadResponse(
+	protoDownloadResponse *modulev1beta1.DownloadResponse,
+) (map[string]storage.ReadBucket, error) {
+	commitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
+	for _, protoContent := range protoDownloadResponse.Contents {
+		pathToData := make(map[string][]byte, len(protoContent.Files))
+		for _, protoFile := range protoContent.Files {
+			pathToData[protoFile.Path] = protoFile.Content
+		}
+		bucket, err := storagemem.NewReadBucket(pathToData)
+		if err != nil {
+			return nil, err
+		}
+		commitIDToBucket[protoContent.CommitId] = bucket
+	}
+	return commitIDToBucket, nil
 }
