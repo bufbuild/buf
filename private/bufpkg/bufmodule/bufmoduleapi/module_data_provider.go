@@ -118,6 +118,15 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
+	if err := a.warnIfDeprecated(
+		ctx,
+		registryHostname,
+		moduleKey,
+		commitIDToCommit,
+		response.Msg.References[0],
+	); err != nil {
+		return nil, err
+	}
 	return a.getModuleDataForProtoDownloadResponseReference(
 		ctx,
 		registryHostname,
@@ -126,6 +135,31 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		commitIDToBucket,
 		response.Msg.References[0],
 	)
+}
+
+func (a *moduleDataProvider) warnIfDeprecated(
+	ctx context.Context,
+	registryHostname string,
+	moduleKey bufmodule.ModuleKey,
+	commitIDToCommit map[string]*modulev1beta1.Commit,
+	protoReference *modulev1beta1.DownloadResponse_Reference,
+) error {
+	protoCommit, ok := commitIDToCommit[protoReference.CommitId]
+	if !ok {
+		return fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
+	}
+	protoModule, err := a.getProtoModuleForModuleID(
+		ctx,
+		registryHostname,
+		protoCommit.ModuleId,
+	)
+	if err != nil {
+		return err
+	}
+	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+	}
+	return nil
 }
 
 func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
@@ -209,9 +243,6 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
 	if err != nil {
 		return nil, err
-	}
-	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
 	}
 	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
 	if err != nil {
