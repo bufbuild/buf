@@ -20,7 +20,6 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
@@ -647,9 +646,11 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			ctx,
 			bucket,
 			moduleDirPath,
-			bufconfig.BufLockFileWithDigestResolver(func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error) {
-				return bufmoduleapi.DigestForCommitID(ctx, clientProvider, remote, commitID)
-			}),
+			bufconfig.BufLockFileWithDigestResolver(
+				func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error) {
+					return bufmoduleapi.DigestForCommitID(ctx, clientProvider, remote, commitID)
+				},
+			),
 		)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
