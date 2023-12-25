@@ -56,7 +56,15 @@ func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewModuleFullName(registry, owner, name)
+	moduleFullName, err := NewModuleFullName(registry, owner, name)
+	if err != nil {
+		return nil, &ParseError{
+			typeString: "module name",
+			input:      moduleFullNameString,
+			err:        err,
+		}
+	}
+	return moduleFullName, nil
 }
 
 // ModuleFullNameEqual returns true if the ModuleFullNames are equal.

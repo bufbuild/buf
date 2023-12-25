@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/crypto/sha3"
 )
@@ -95,6 +96,21 @@ type Digest interface {
 	isDigest()
 }
 
+// NewDigest returns a new Digest for the value.
+func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
+	digestOptions := newDigestOptions()
+	for _, option := range options {
+		option(digestOptions)
+	}
+	if digestOptions.digestType == 0 {
+		digestOptions.digestType = DigestTypeShake256
+	}
+	if err := validateDigestParameters(digestOptions.digestType, value); err != nil {
+		return nil, err
+	}
+	return newDigest(digestOptions.digestType, value), nil
+}
+
 // NewDigestForContent creates a new Digest based on the given content read from the Reader.
 //
 // A valid Digest is returned, even in the case of empty content.
@@ -136,10 +152,20 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 //
 // Digests are sorted by string value, and then concatenated with newlines. The resulting
 // content is then turned into a Digest.
+//
+// All digests must be of the same type.
 func NewDigestForDigests(digests []Digest, options ...DigestOption) (Digest, error) {
 	digestStrings := make([]string, len(digests))
+	digestTypes := make(map[DigestType]struct{})
 	for i, digest := range digests {
 		digestStrings[i] = digest.String()
+		digestTypes[digest.Type()] = struct{}{}
+	}
+	if len(digestTypes) > 1 {
+		return nil, syserror.Newf(
+			"multiple DigestTypes passed to NewDigestForDigests: %s",
+			strings.Join(slicesext.Map(slicesext.MapKeysToSortedSlice(digestTypes), DigestType.String), ", "),
+		)
 	}
 	sort.Strings(digestStrings)
 	return NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")), options...)

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufcas
+package bufmodule
 
 import (
 	"strings"
 )
 
-// ParseError is an error that occurred during parsing.
+// parseError is an error that occurred during parsing.
 //
 // This is returned by all Parse.* functions in this package.
 type ParseError struct {

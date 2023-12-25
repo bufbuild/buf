@@ -436,7 +436,6 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 			defer func() {
 				retErr = multierr.Append(retErr, file.Close())
 			}()
-			// TODO: what about digest type?
 			digest, err := bufcas.NewDigestForContent(file)
 			if err != nil {
 				return err
@@ -455,11 +454,7 @@ func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBu
 	if err != nil {
 		return nil, err
 	}
-	manifestBlob, err := bufcas.ManifestToBlob(manifest)
-	if err != nil {
-		return nil, err
-	}
-	return manifestBlob.Digest(), nil
+	return bufcas.ManifestToDigest(manifest)
 }
 
 // getModuleDeps gets the actual dependencies for the Module.
