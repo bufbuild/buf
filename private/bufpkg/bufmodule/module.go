@@ -23,12 +23,10 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -89,7 +87,11 @@ type Module interface {
 	CommitID() string
 
 	// Digest returns the Module digest.
-	Digest() (bufcas.Digest, error)
+	//
+	// Note this is *not* a bufcas.Digest - this is a module Digest. bufcas.Digest are a lower-level
+	// type that just deal in terms of files and content. A module Digest is a specific algorithm
+	// applied to a set of files and dependencies.
+	Digest() (Digest, error)
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
@@ -244,7 +246,7 @@ type module struct {
 
 	moduleSet ModuleSet
 
-	getDigest     func() (bufcas.Digest, error)
+	getDigest     func() (Digest, error)
 	getModuleDeps func() ([]ModuleDep, error)
 }
 
@@ -302,7 +304,7 @@ func newModule(
 	}
 	module.ModuleReadBucket = moduleReadBucket
 	module.getDigest = sync.OnceValues(
-		func() (bufcas.Digest, error) {
+		func() (Digest, error) {
 			return moduleDigestB5(ctx, module)
 		},
 	)
@@ -336,7 +338,7 @@ func (m *module) CommitID() string {
 	return m.commitID
 }
 
-func (m *module) Digest() (bufcas.Digest, error) {
+func (m *module) Digest() (Digest, error) {
 	return m.getDigest()
 }
 
@@ -373,7 +375,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
 	newModule.getDigest = sync.OnceValues(
-		func() (bufcas.Digest, error) {
+		func() (Digest, error) {
 			return moduleDigestB5(newModule.ctx, newModule)
 		},
 	)
@@ -391,71 +393,6 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 
 func (*module) isModuleInfo() {}
 func (*module) isModule()     {}
-
-// moduleDigestB5 computes a b5 Digest for the given Module.
-//
-// A Module Digest is a composite Digest of all Module Files, and all Module dependencies.
-//
-// All Files are added to a bufcas.Manifest, which is then turned into a bufcas.Blob.
-// The Digest of the Blob, along with all Digests of the dependencies, are then sorted,
-// and then digested themselves as content.
-//
-// Note that the name of the Module and any of its dependencies has no effect on the Digest.
-func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
-	fileDigest, err := moduleReadBucketDigestB5(ctx, module)
-	if err != nil {
-		return nil, err
-	}
-	moduleDeps, err := module.ModuleDeps()
-	if err != nil {
-		return nil, err
-	}
-	digests := []bufcas.Digest{fileDigest}
-	for _, moduleDep := range moduleDeps {
-		digest, err := moduleDep.Digest()
-		if err != nil {
-			return nil, err
-		}
-		digests = append(digests, digest)
-	}
-
-	// NewDigestForDigests deals with sorting.
-	// TODO: what about digest type? We likely need a new B5 type.
-	return bufcas.NewDigestForDigests(digests)
-}
-
-func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {
-	var fileNodes []bufcas.FileNode
-	if err := moduleReadBucket.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) (retErr error) {
-			file, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			digest, err := bufcas.NewDigestForContent(file)
-			if err != nil {
-				return err
-			}
-			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
-			if err != nil {
-				return err
-			}
-			fileNodes = append(fileNodes, fileNode)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	manifest, err := bufcas.NewManifest(fileNodes)
-	if err != nil {
-		return nil, err
-	}
-	return bufcas.ManifestToDigest(manifest)
-}
 
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(

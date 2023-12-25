@@ -16,14 +16,17 @@ package bufmodule
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -212,3 +215,82 @@ func (d *digest) String() string {
 }
 
 func (*digest) isDigest() {}
+
+// moduleDigestB5 computes a b5 Digest for the given Module.
+//
+// A Module Digest is a composite Digest of all Module Files, and all Module dependencies.
+//
+// All Files are added to a bufcas.Manifest, which is then turned into a bufcas.Digest.
+// The file bufcas.Digest, along with all Digests of the dependencies, are then sorted,
+// and then digested themselves as content.
+//
+// Note that the name of the Module and any of its dependencies has no effect on the Digest.
+func moduleDigestB5(ctx context.Context, module Module) (Digest, error) {
+	// First, compute the shake256 bufcas.Digest of the files. This will include a
+	// sorted list of file names and their digests.
+	fileCASDigest, err := moduleReadBucketCASDigest(ctx, module)
+	if err != nil {
+		return nil, err
+	}
+	// Next, we get the b5 digests of all the dependencies and sort their string representations.
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	moduleDepDigestStrings := make([]string, len(moduleDeps))
+	for i, moduleDep := range moduleDeps {
+		moduleDepDigest, err := moduleDep.Digest()
+		if err != nil {
+			return nil, err
+		}
+		if moduleDepDigest.Type() != DigestTypeB5 {
+			// Even if the buf.lock file had a b4 digest, we should still end up retrieving the b5
+			// digest from the BSR, we should never have a b5 digest here.
+			return nil, syserror.Newf("trying to compute b5 Digest with dependency %q digest of type %v", moduleDep.OpaqueID(), moduleDepDigest.Type())
+		}
+		moduleDepDigestStrings[i] = moduleDepDigest.String()
+	}
+	sort.Strings(moduleDepDigestStrings)
+	// Now, place the file digest first, then the sorted dependency digests afterwards.
+	digestStrings := append([]string{fileCASDigest.String()}, moduleDepDigestStrings...)
+	// Join these strings together with newlines, and make a new shake256 digest.
+	digestOfDigests, err := bufcas.NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")))
+	if err != nil {
+		return nil, err
+	}
+	// The resulting digest is a b5 digest.
+	return NewDigest(DigestTypeB5, digestOfDigests)
+}
+
+func moduleReadBucketCASDigest(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {
+	var fileNodes []bufcas.FileNode
+	if err := moduleReadBucket.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) (retErr error) {
+			file, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, file.Close())
+			}()
+			digest, err := bufcas.NewDigestForContent(file)
+			if err != nil {
+				return err
+			}
+			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
+			if err != nil {
+				return err
+			}
+			fileNodes = append(fileNodes, fileNode)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	manifest, err := bufcas.NewManifest(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	return bufcas.ManifestToDigest(manifest)
+}
