@@ -17,8 +17,6 @@ package bufmodule
 import (
 	"errors"
 	"sync"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -39,7 +37,11 @@ type ModuleKey interface {
 	// this is present in those situations.
 	CommitID() string
 	// Digest returns the Module digest.
-	Digest() (bufcas.Digest, error)
+	//
+	// Note this is *not* a bufcas.Digest - this is a module Digest. bufcas.Digest are a lower-level
+	// type that just deal in terms of files and content. A module Digest is a specific algorithm
+	// applied to a set of files and dependencies.
+	Digest() (Digest, error)
 
 	isModuleKey()
 }
@@ -54,7 +56,7 @@ type ModuleKey interface {
 func NewModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getDigest func() (bufcas.Digest, error),
+	getDigest func() (Digest, error),
 ) (ModuleKey, error) {
 	return newModuleKey(
 		moduleFullName,
@@ -69,13 +71,13 @@ type moduleKey struct {
 	moduleFullName ModuleFullName
 	commitID       string
 
-	getDigest func() (bufcas.Digest, error)
+	getDigest func() (Digest, error)
 }
 
 func newModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getDigest func() (bufcas.Digest, error),
+	getDigest func() (Digest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
@@ -95,7 +97,7 @@ func (m *moduleKey) CommitID() string {
 	return m.commitID
 }
 
-func (m *moduleKey) Digest() (bufcas.Digest, error) {
+func (m *moduleKey) Digest() (Digest, error) {
 	return m.getDigest()
 }
 

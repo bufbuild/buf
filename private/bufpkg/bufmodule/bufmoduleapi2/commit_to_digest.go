@@ -22,7 +22,7 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
 // DigestForCommitID resolves the commit ID by calling the CommitService to get
@@ -32,7 +32,7 @@ func DigestForCommitID(
 	clientProvider bufapi.ClientProvider,
 	remote string,
 	commitID string,
-) (bufcas.Digest, error) {
+) (bufmodule.Digest, error) {
 	response, err := clientProvider.CommitServiceClient(remote).GetCommits(
 		ctx,
 		connect.NewRequest(

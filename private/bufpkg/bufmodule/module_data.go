@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -72,7 +71,9 @@ type ModuleDataOption func(*moduleData)
 // be compared with the Digest from the ModuleKey, and if they are unequal, an error is returned.
 //
 // This is used for tamper-proofing.
-func ModuleDataWithActualDigest(actualDigest bufcas.Digest) ModuleDataOption {
+//
+// TODO: This doesn't actually work for tamper-proofing, refactor.
+func ModuleDataWithActualDigest(actualDigest Digest) ModuleDataOption {
 	return func(moduleData *moduleData) {
 		moduleData.actualDigest = actualDigest
 	}
@@ -86,7 +87,7 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	actualDigest             bufcas.Digest
+	actualDigest             Digest
 	// May be nil after construction.
 	checkDigest func() error
 }
@@ -112,7 +113,7 @@ func newModuleData(
 				if err != nil {
 					return err
 				}
-				if !bufcas.DigestEqual(expectedDigest, moduleData.actualDigest) {
+				if !DigestEqual(expectedDigest, moduleData.actualDigest) {
 					moduleString := moduleKey.ModuleFullName().String()
 					if commitID := moduleKey.CommitID(); commitID != "" {
 						moduleString = moduleString + ":" + commitID
