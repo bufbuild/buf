@@ -20,11 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/crypto/sha3"
 )
@@ -146,29 +144,6 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
 	}
-}
-
-// NewDigestForDigests returns a new Digest for the given Digests.
-//
-// Digests are sorted by string value, and then concatenated with newlines. The resulting
-// content is then turned into a Digest.
-//
-// All digests must be of the same type.
-func NewDigestForDigests(digests []Digest, options ...DigestOption) (Digest, error) {
-	digestStrings := make([]string, len(digests))
-	digestTypes := make(map[DigestType]struct{})
-	for i, digest := range digests {
-		digestStrings[i] = digest.String()
-		digestTypes[digest.Type()] = struct{}{}
-	}
-	if len(digestTypes) > 1 {
-		return nil, syserror.Newf(
-			"multiple DigestTypes passed to NewDigestForDigests: %s",
-			strings.Join(slicesext.Map(slicesext.MapKeysToSortedSlice(digestTypes), DigestType.String), ", "),
-		)
-	}
-	sort.Strings(digestStrings)
-	return NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")), options...)
 }
 
 // DigestOption is an option for a new Digest.
