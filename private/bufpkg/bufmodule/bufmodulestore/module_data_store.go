@@ -20,7 +20,6 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -173,7 +172,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 
 func (p *moduleDataStore) getReadBucketForDir(
 	moduleFullName bufmodule.ModuleFullName,
-	digest bufcas.Digest,
+	digest bufmodule.Digest,
 ) storage.ReadBucket {
 	dirPath := getModuleStoreDirPath(moduleFullName, digest)
 	p.logDebugModuleFullNameAndDigest(
@@ -188,7 +187,7 @@ func (p *moduleDataStore) getReadBucketForDir(
 func (p *moduleDataStore) getReadBucketForTar(
 	ctx context.Context,
 	moduleFullName bufmodule.ModuleFullName,
-	digest bufcas.Digest,
+	digest bufmodule.Digest,
 ) (_ storage.ReadBucket, retErr error) {
 	tarPath := getModuleStoreTarPath(moduleFullName, digest)
 	defer func() {
@@ -272,7 +271,7 @@ func (p *moduleDataStore) putModuleData(
 
 func (p *moduleDataStore) getWriteBucketForDir(
 	moduleFullName bufmodule.ModuleFullName,
-	digest bufcas.Digest,
+	digest bufmodule.Digest,
 ) storage.WriteBucket {
 	dirPath := getModuleStoreDirPath(moduleFullName, digest)
 	p.logDebugModuleFullNameAndDigest(
@@ -286,7 +285,7 @@ func (p *moduleDataStore) getWriteBucketForDir(
 
 func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	moduleFullName bufmodule.ModuleFullName,
-	digest bufcas.Digest,
+	digest bufmodule.Digest,
 ) (storage.WriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
@@ -323,7 +322,7 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 
 func (p *moduleDataStore) logDebugModuleFullNameAndDigest(
 	moduleFullName bufmodule.ModuleFullName,
-	digest bufcas.Digest,
+	digest bufmodule.Digest,
 	message string,
 	fields ...zap.Field,
 ) {
@@ -345,7 +344,7 @@ func (p *moduleDataStore) logDebugModuleFullNameAndDigest(
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
 // e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
 // "buf.build/acme/weather/shake256/12345".
-func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
+func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufmodule.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
 		moduleFullName.Owner(),
@@ -360,7 +359,7 @@ func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufca
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}.tar",
 // e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
 // "buf.build/acme/weather/shake256/12345.tar".
-func getModuleStoreTarPath(moduleFullName bufmodule.ModuleFullName, digest bufcas.Digest) string {
+func getModuleStoreTarPath(moduleFullName bufmodule.ModuleFullName, digest bufmodule.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
 		moduleFullName.Owner(),

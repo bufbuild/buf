@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -170,7 +169,7 @@ type BufLockFileOption func(*bufLockFileOptions)
 //
 // TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
 // be an option.
-func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error)) BufLockFileOption {
+func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error)) BufLockFileOption {
 	return func(bufLockFileOptions *bufLockFileOptions) {
 		bufLockFileOptions.digestResolver = digestResolver
 	}
@@ -274,14 +273,14 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
-			getDigest := func() (bufcas.Digest, error) {
-				return bufcas.ParseDigest(dep.Digest)
+			getDigest := func() (bufmodule.Digest, error) {
+				return bufmodule.ParseDigest(dep.Digest)
 			}
 			if dep.Digest == "" {
 				if bufLockFileOptions.digestResolver == nil {
 					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 				}
-				getDigest = func() (bufcas.Digest, error) {
+				getDigest = func() (bufmodule.Digest, error) {
 					return bufLockFileOptions.digestResolver(ctx, dep.Remote, dep.Commit)
 				}
 			}
@@ -327,8 +326,8 @@ func readBufLockFile(
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
 				"",
-				func() (bufcas.Digest, error) {
-					return bufcas.ParseDigest(dep.Digest)
+				func() (bufmodule.Digest, error) {
+					return bufmodule.ParseDigest(dep.Digest)
 				},
 			)
 			if err != nil {
@@ -477,7 +476,7 @@ type bufLockFileOptions struct {
 		ctx context.Context,
 		remote string,
 		commitID string,
-	) (bufcas.Digest, error)
+	) (bufmodule.Digest, error)
 }
 
 func newBufLockFileOptions() *bufLockFileOptions {

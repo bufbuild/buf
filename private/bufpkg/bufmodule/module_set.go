@@ -21,7 +21,6 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
@@ -60,14 +59,14 @@ type ModuleSet interface {
 	//
 	// Returns nil if there is no Module with the given BucketID.
 	GetModuleForBucketID(bucketID string) Module
-	// GetModuleForDigest gets the MOdule for the Digest, if it exists.
+	// GetModuleForDigest gets the Module for the Digest, if it exists.
 	//
 	// Note that this function will result in Digest() being called on every Module in
 	// the ModuleSet, which is potentially expensive.
 	//
 	// Returns nil if there is no Module with the given Digest.
 	// Returns an error if there was an error when calling Digest() on a Module.
-	GetModuleForDigest(digest bufcas.Digest) (Module, error)
+	GetModuleForDigest(digest Digest) (Module, error)
 
 	// WithTargetOpaqueIDs returns a new ModuleSet that changes the targeted Modules to
 	// the Modules with the specified OpaqueIDs.
@@ -289,7 +288,7 @@ func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
 	return m.bucketIDToModule[bucketID]
 }
 
-func (m *moduleSet) GetModuleForDigest(digest bufcas.Digest) (Module, error) {
+func (m *moduleSet) GetModuleForDigest(digest Digest) (Module, error) {
 	digestStringToModule, err := m.getDigestStringToModule()
 	if err != nil {
 		return nil, err
