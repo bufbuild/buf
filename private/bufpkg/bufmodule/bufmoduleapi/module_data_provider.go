@@ -210,6 +210,9 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	if err != nil {
 		return nil, err
 	}
+	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
+		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+	}
 	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
 	if err != nil {
 		return nil, err
