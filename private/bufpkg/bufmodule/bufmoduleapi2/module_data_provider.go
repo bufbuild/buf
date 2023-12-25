@@ -17,11 +17,17 @@ package bufmoduleapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"go.uber.org/zap"
 )
 
@@ -82,11 +88,204 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
+	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
+		ctx,
+		connect.NewRequest(
+			&modulev1beta1.DownloadRequest{
+				Values: []*modulev1beta1.DownloadRequest_Value{
+					{
+						ResourceRef: protoResourceRef,
+					},
+				},
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.ModuleFullName().String(), Err: fs.ErrNotExist}
+		}
+		return nil, err
+	}
+	if len(response.Msg.References) != 1 {
+		return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
+	}
+	commitIDToCommit, err := getCommitIDToCommitForProtoDownloadResponse(response.Msg)
+	if err != nil {
+		return nil, err
+	}
+	commitIDToBucket, err := getCommitIDToBucketForProtoDownloadResponse(response.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return a.getModuleDataForProtoDownloadResponseReference(
+		ctx,
+		registryHostname,
+		moduleKey,
+		commitIDToCommit,
+		commitIDToBucket,
+		response.Msg.References[0],
+	)
+}
 
-	_ = registryHostname
-	_ = protoResourceRef
+func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
+	ctx context.Context,
+	registryHostname string,
+	moduleKey bufmodule.ModuleKey,
+	commitIDToCommit map[string]*modulev1beta1.Commit,
+	commitIDToBucket map[string]storage.ReadBucket,
+	protoReference *modulev1beta1.DownloadResponse_Reference,
+) (bufmodule.ModuleData, error) {
+	commit, ok := commitIDToCommit[protoReference.CommitId]
+	if !ok {
+		return nil, fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
+	}
+	bucket, ok := commitIDToBucket[protoReference.CommitId]
+	if !ok {
+		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
+	}
+	depProtoCommits, err := slicesext.MapError(
+		protoReference.DepCommitIds,
+		func(commitID string) (*modulev1beta1.Commit, error) {
 
-	return nil, errors.New("TODO")
+			commit, ok := commitIDToCommit[commitID]
+			if !ok {
+				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", commitID)
+			}
+			return commit, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	returnedDigest, err := ProtoToDigest(commit.Digest)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleData(
+		moduleKey,
+		func() (storage.ReadBucket, error) {
+			return bucket, nil
+		},
+		func() ([]bufmodule.ModuleKey, error) {
+			return a.getModuleKeysForProtoCommits(ctx, registryHostname, depProtoCommits)
+		},
+		// TODO: Is this enough for tamper-proofing? With this, we are just calculating the
+		// digest that we got back from the API, as opposed to re-calculating the digest based
+		// on the data. This is saying we trust the API to produce the correct digest for the
+		// data it is returning. An argument could be made we should not, but that argument is shaky.
+		//
+		// We could go a step further and calculate based on the actual data, but doing this lazily
+		// is additional work (but very possible).
+		bufmodule.ModuleDataWithActualDigest(returnedDigest),
+	)
+}
+
+// TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
+// We can do this later if we want to optimize. There's other coalescing we could do inside
+// this function too (single call for one moduleID, single call for one ownerID, get
+// multiple moduleIDs at once, multiple ownerIDs at once, etc). Lots of room for optimization.
+func (a *moduleDataProvider) getModuleKeysForProtoCommits(
+	ctx context.Context,
+	registryHostname string,
+	protoCommits []*modulev1beta1.Commit,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys := make([]bufmodule.ModuleKey, len(protoCommits))
+	for i, protoCommit := range protoCommits {
+		moduleKey, err := a.getModuleKeyForProtoCommit(ctx, registryHostname, protoCommit)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[i] = moduleKey
+	}
+	return moduleKeys, nil
+}
+
+func (a *moduleDataProvider) getModuleKeyForProtoCommit(
+	ctx context.Context,
+	registryHostname string,
+	protoCommit *modulev1beta1.Commit,
+) (bufmodule.ModuleKey, error) {
+	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
+	if err != nil {
+		return nil, err
+	}
+	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
+	if err != nil {
+		return nil, err
+	}
+	var ownerName string
+	switch {
+	case protoOwner.GetUser() != nil:
+		ownerName = protoOwner.GetUser().Name
+	case protoOwner.GetOrganization() != nil:
+		ownerName = protoOwner.GetOrganization().Name
+	default:
+		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
+	}
+	moduleFullName, err := bufmodule.NewModuleFullName(
+		registryHostname,
+		ownerName,
+		protoModule.Name,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleKey(
+		moduleFullName,
+		protoCommit.Id,
+		func() (bufmodule.Digest, error) {
+			return ProtoToDigest(protoCommit.Digest)
+		},
+	)
+}
+
+func (a *moduleDataProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
+	response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
+		ctx,
+		connect.NewRequest(
+			&modulev1beta1.GetModulesRequest{
+				ModuleRefs: []*modulev1beta1.ModuleRef{
+					{
+						Value: &modulev1beta1.ModuleRef_Id{
+							Id: moduleID,
+						},
+					},
+				},
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Msg.Modules) != 1 {
+		return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
+	}
+	return response.Msg.Modules[0], nil
+}
+
+func (a *moduleDataProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
+	response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
+		ctx,
+		connect.NewRequest(
+			&ownerv1beta1.GetOwnersRequest{
+				OwnerRefs: []*ownerv1beta1.OwnerRef{
+					{
+						Value: &ownerv1beta1.OwnerRef_Id{
+							Id: ownerID,
+						},
+					},
+				},
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Msg.Owners) != 1 {
+		return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+	}
+	return response.Msg.Owners[0], nil
 }
 
 func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
@@ -121,4 +320,33 @@ func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1be
 			},
 		},
 	}, nil
+}
+
+func getCommitIDToCommitForProtoDownloadResponse(
+	protoDownloadResponse *modulev1beta1.DownloadResponse,
+) (map[string]*modulev1beta1.Commit, error) {
+	return slicesext.ToUniqueValuesMapError(
+		protoDownloadResponse.Commits,
+		func(protoCommit *modulev1beta1.Commit) (string, error) {
+			return protoCommit.Id, nil
+		},
+	)
+}
+
+func getCommitIDToBucketForProtoDownloadResponse(
+	protoDownloadResponse *modulev1beta1.DownloadResponse,
+) (map[string]storage.ReadBucket, error) {
+	commitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
+	for _, protoContent := range protoDownloadResponse.Contents {
+		pathToData := make(map[string][]byte, len(protoContent.Files))
+		for _, protoFile := range protoContent.Files {
+			pathToData[protoFile.Path] = protoFile.Content
+		}
+		bucket, err := storagemem.NewReadBucket(pathToData)
+		if err != nil {
+			return nil, err
+		}
+		commitIDToBucket[protoContent.CommitId] = bucket
+	}
+	return commitIDToBucket, nil
 }
