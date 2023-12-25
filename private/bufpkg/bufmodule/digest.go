@@ -71,7 +71,7 @@ func ParseDigestType(s string) (DigestType, error) {
 	d, ok := stringToDigestType[s]
 	if !ok {
 		return 0, &ParseError{
-			typeString: "digest type",
+			typeString: "module digest type",
 			input:      s,
 			err:        fmt.Errorf("unknown type: %q", s),
 		}
@@ -129,7 +129,7 @@ func ParseDigest(s string) (Digest, error) {
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
 		return nil, &ParseError{
-			typeString: "digest",
+			typeString: "module digest",
 			input:      s,
 			err:        errors.New(`must in the form "digest_type:digest_hex_value"`),
 		}
@@ -137,7 +137,7 @@ func ParseDigest(s string) (Digest, error) {
 	digestType, err := ParseDigestType(digestTypeString)
 	if err != nil {
 		return nil, &ParseError{
-			typeString: "digest",
+			typeString: "module digest",
 			input:      s,
 			err:        err,
 		}
@@ -145,7 +145,7 @@ func ParseDigest(s string) (Digest, error) {
 	value, err := hex.DecodeString(hexValue)
 	if err != nil {
 		return nil, &ParseError{
-			typeString: "digest",
+			typeString: "module digest",
 			input:      s,
 			err:        errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
 		}
@@ -156,7 +156,7 @@ func ParseDigest(s string) (Digest, error) {
 		if err != nil {
 			return nil, err
 		}
-		return newDigest(digestType, bufcasDigest), nil
+		return NewDigest(digestType, bufcasDigest)
 	default:
 		return nil, syserror.Newf("unknown module DigestType: %v", digestType)
 	}

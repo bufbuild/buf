@@ -52,19 +52,20 @@ func NewModuleFullName(
 
 // ParseModuleFullName parses a ModuleFullName from a string in the form "registry/owner/name".
 func ParseModuleFullName(moduleFullNameString string) (ModuleFullName, error) {
+	// parseModuleFullNameComponents returns ParseErrors.
 	registry, owner, name, err := parseModuleFullNameComponents(moduleFullNameString)
 	if err != nil {
 		return nil, err
 	}
-	moduleFullName, err := NewModuleFullName(registry, owner, name)
-	if err != nil {
+	if err := validateModuleFullNameParameters(registry, owner, name); err != nil {
 		return nil, &ParseError{
 			typeString: "module name",
 			input:      moduleFullNameString,
 			err:        err,
 		}
 	}
-	return moduleFullName, nil
+	// We don't rely on constructors for ParseErrors.
+	return NewModuleFullName(registry, owner, name)
 }
 
 // ModuleFullNameEqual returns true if the ModuleFullNames are equal.
@@ -91,23 +92,8 @@ func newModuleFullName(
 	owner string,
 	name string,
 ) (*moduleFullName, error) {
-	if registry == "" {
-		return nil, errors.New("registry is empty")
-	}
-	if _, err := netext.ValidateHostname(registry); err != nil {
-		return nil, fmt.Errorf("registry %q is not a valid hostname: %w", registry, err)
-	}
-	if owner == "" {
-		return nil, errors.New("owner is empty")
-	}
-	if strings.Contains(owner, "/") {
-		return nil, fmt.Errorf("owner %q cannot contain slashes", owner)
-	}
-	if name == "" {
-		return nil, errors.New("name is empty")
-	}
-	if strings.Contains(name, "/") {
-		return nil, fmt.Errorf("name %q cannot contain slashes", name)
+	if err := validateModuleFullNameParameters(registry, owner, name); err != nil {
+		return nil, err
 	}
 	return &moduleFullName{
 		registry: registry,
@@ -133,3 +119,29 @@ func (m *moduleFullName) String() string {
 }
 
 func (*moduleFullName) isModuleFullName() {}
+
+func validateModuleFullNameParameters(
+	registry string,
+	owner string,
+	name string,
+) error {
+	if registry == "" {
+		return errors.New("registry is empty")
+	}
+	if _, err := netext.ValidateHostname(registry); err != nil {
+		return fmt.Errorf("registry %q is not a valid hostname: %w", registry, err)
+	}
+	if owner == "" {
+		return errors.New("owner is empty")
+	}
+	if strings.Contains(owner, "/") {
+		return fmt.Errorf("owner %q cannot contain slashes", owner)
+	}
+	if name == "" {
+		return errors.New("name is empty")
+	}
+	if strings.Contains(name, "/") {
+		return fmt.Errorf("name %q cannot contain slashes", name)
+	}
+	return nil
+}
