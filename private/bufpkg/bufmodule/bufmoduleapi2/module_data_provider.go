@@ -19,6 +19,7 @@ import (
 	"errors"
 	"io/fs"
 
+	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
@@ -75,5 +76,49 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
+	registryHostname := moduleKey.ModuleFullName().Registry()
+
+	protoResourceRef, err := getProtoResourceRefForModuleKey(moduleKey)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = registryHostname
+	_ = protoResourceRef
+
 	return nil, errors.New("TODO")
+}
+
+func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
+	// CommitID is optional.
+	if commitID := moduleKey.CommitID(); commitID != "" {
+		// Note that we could actually just use the Digest. We don't wnat to have to invoke
+		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
+		return &modulev1beta1.ResourceRef{
+			Value: &modulev1beta1.ResourceRef_Id{
+				Id: commitID,
+			},
+		}, nil
+	}
+	// Naming differently to make sure we differentiate between this and the
+	// retrieved digest below.
+	moduleKeyDigest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
+	protoModuleKeyDigest, err := DigestToProto(moduleKeyDigest)
+	if err != nil {
+		return nil, err
+	}
+	return &modulev1beta1.ResourceRef{
+		Value: &modulev1beta1.ResourceRef_Name_{
+			Name: &modulev1beta1.ResourceRef_Name{
+				Owner:  moduleKey.ModuleFullName().Owner(),
+				Module: moduleKey.ModuleFullName().Name(),
+				Child: &modulev1beta1.ResourceRef_Name_Digest{
+					Digest: protoModuleKeyDigest,
+				},
+			},
+		},
+	}, nil
 }
