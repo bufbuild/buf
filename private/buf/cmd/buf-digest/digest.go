@@ -89,11 +89,11 @@ func run(
 		return err
 	}
 	for _, module := range moduleSet.Modules() {
-		digest, err := module.Digest()
+		moduleDigest, err := module.ModuleDigest()
 		if err != nil {
 			return err
 		}
-		if _, err := container.Stdout().Write([]byte(module.OpaqueID() + " " + digest.String() + "\n")); err != nil {
+		if _, err := container.Stdout().Write([]byte(module.OpaqueID() + " " + moduleDigest.String() + "\n")); err != nil {
 			return err
 		}
 	}

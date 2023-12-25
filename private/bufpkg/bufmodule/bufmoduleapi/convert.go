@@ -23,36 +23,36 @@ import (
 )
 
 var (
-	digestTypeToProto = map[bufmodule.DigestType]modulev1beta1.DigestType{
-		bufmodule.DigestTypeB4: modulev1beta1.DigestType_DIGEST_TYPE_B4,
-		bufmodule.DigestTypeB5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+	moduleDigestTypeToProto = map[bufmodule.ModuleDigestType]modulev1beta1.DigestType{
+		bufmodule.ModuleDigestTypeB4: modulev1beta1.DigestType_DIGEST_TYPE_B4,
+		bufmodule.ModuleDigestTypeB5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 	}
-	protoToDigestType = map[modulev1beta1.DigestType]bufmodule.DigestType{
-		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.DigestTypeB4,
-		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.DigestTypeB5,
+	protoToModuleDigestType = map[modulev1beta1.DigestType]bufmodule.ModuleDigestType{
+		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.ModuleDigestTypeB4,
+		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.ModuleDigestTypeB5,
 	}
 )
 
-// digestToProto converts the given Digest to a proto Digest.
-func digestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
-	protoDigestType, ok := digestTypeToProto[digest.Type()]
+// moduleDigestToProto converts the given ModuleDigest to a proto Digest.
+func moduleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Digest, error) {
+	protoDigestType, ok := moduleDigestTypeToProto[moduleDigest.Type()]
 	// Technically we have already done this validation but just to be safe.
 	if !ok {
-		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
+		return nil, fmt.Errorf("unknown ModuleDigestType: %v", moduleDigest.Type())
 	}
 	protoDigest := &modulev1beta1.Digest{
 		Type:  protoDigestType,
-		Value: digest.Value(),
+		Value: moduleDigest.Value(),
 	}
 	return protoDigest, nil
 }
 
-// protoToDigest converts the given proto Digest to a Digest.
+// protoToModuleDigest converts the given proto Digest to a ModuleDigest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func protoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
-	digestType, ok := protoToDigestType[protoDigest.Type]
+func protoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDigest, error) {
+	moduleDigestType, ok := protoToModuleDigestType[protoDigest.Type]
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
 	}
@@ -60,5 +60,5 @@ func protoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) 
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewDigest(digestType, bufcasDigest)
+	return bufmodule.NewModuleDigest(moduleDigestType, bufcasDigest)
 }

@@ -30,48 +30,48 @@ import (
 )
 
 const (
-	// DigestTypeB4 represents the b4 digest type.
+	// ModuleDigestTypeB4 represents the b4 module digest type.
 	//
 	// This represents the pre-refactor shake256 digest type, and the string value of
 	// this is "shake256" for backwards-compatibility reasons.
-	DigestTypeB4 DigestType = iota + 1
-	// DigestTypeB5 represents the b5 digest type.
+	ModuleDigestTypeB4 ModuleDigestType = iota + 1
+	// ModuleDigestTypeB5 represents the b5 digest type.
 	//
 	// This is the newest digest type, and should generally be used. The string value
 	// of this is "b5".
-	DigestTypeB5
+	ModuleDigestTypeB5
 )
 
 var (
-	digestTypeToString = map[DigestType]string{
-		DigestTypeB4: "shake256",
-		DigestTypeB5: "b5",
+	moduleDigestTypeToString = map[ModuleDigestType]string{
+		ModuleDigestTypeB4: "shake256",
+		ModuleDigestTypeB5: "b5",
 	}
-	stringToDigestType = map[string]DigestType{
-		"shake256": DigestTypeB4,
-		"b5":       DigestTypeB5,
+	stringToModuleDigestType = map[string]ModuleDigestType{
+		"shake256": ModuleDigestTypeB4,
+		"b5":       ModuleDigestTypeB5,
 	}
 )
 
-// DigestType is a type of digest.
-type DigestType int
+// ModuleDigestType is a type of digest.
+type ModuleDigestType int
 
-// String prints the string representation of the DigestType.
-func (d DigestType) String() string {
-	s, ok := digestTypeToString[d]
+// String prints the string representation of the ModuleDigestType.
+func (d ModuleDigestType) String() string {
+	s, ok := moduleDigestTypeToString[d]
 	if !ok {
 		return strconv.Itoa(int(d))
 	}
 	return s
 }
 
-// ParseDigestType parses a DigestType from its string representation.
+// ParseModuleDigestType parses a ModuleDigestType from its string representation.
 //
-// This reverses DigestType.String().
+// This reverses ModuleDigestType.String().
 //
 // Returns an error of type *ParseError if thie string could not be parsed.
-func ParseDigestType(s string) (DigestType, error) {
-	d, ok := stringToDigestType[s]
+func ParseModuleDigestType(s string) (ModuleDigestType, error) {
+	d, ok := stringToModuleDigestType[s]
 	if !ok {
 		return 0, &ParseError{
 			typeString: "module digest type",
@@ -82,52 +82,52 @@ func ParseDigestType(s string) (DigestType, error) {
 	return d, nil
 }
 
-// Digest is a digest of some content.
+// ModuleDigest is a digest of some content.
 //
-// It consists of a DigestType and a digest value.
-type Digest interface {
+// It consists of a ModuleDigestType and a digest value.
+type ModuleDigest interface {
 	// String() prints typeString:hexValue.
 	fmt.Stringer
 
 	// Type returns the type of digest.
 	// Always a valid value.
-	Type() DigestType
+	Type() ModuleDigestType
 	// Value returns the digest value.
 	//
 	// Always non-empty.
 	Value() []byte
 
-	isDigest()
+	isModuleDigest()
 }
 
-// NewDigest creates a new Digest.
-func NewDigest(digestType DigestType, bufcasDigest bufcas.Digest) (Digest, error) {
-	switch digestType {
-	case DigestTypeB4, DigestTypeB5:
+// NewModuleDigest creates a new ModuleDigest.
+func NewModuleDigest(moduleDigestType ModuleDigestType, bufcasDigest bufcas.Digest) (ModuleDigest, error) {
+	switch moduleDigestType {
+	case ModuleDigestTypeB4, ModuleDigestTypeB5:
 		if bufcasDigest.Type() != bufcas.DigestTypeShake256 {
 			return nil, syserror.Newf(
-				"trying to create a %v module Digest for a cas Digest of type %v",
-				digestType,
+				"trying to create a %v ModuleDigest for a cas Digest of type %v",
+				moduleDigestType,
 				bufcasDigest.Type(),
 			)
 		}
-		return newDigest(digestType, bufcasDigest), nil
+		return newModuleDigest(moduleDigestType, bufcasDigest), nil
 	default:
 		// This is a system error.
-		return nil, syserror.Newf("unknown module DigestType: %v", digestType)
+		return nil, syserror.Newf("unknown ModuleDigestType: %v", moduleDigestType)
 	}
 }
 
-// ParseDigest parses a Digest from its string representation.
+// ParseModuleDigest parses a ModuleDigest from its string representation.
 //
-// A Digest string is of the form typeString:hexValue.
+// A ModuleDigest string is of the form typeString:hexValue.
 // The string is expected to be non-empty, If not, an error is treutned.
 //
-// This reverses Digest.String().
-func ParseDigest(s string) (Digest, error) {
+// This reverses ModuleDigest.String().
+func ParseModuleDigest(s string) (ModuleDigest, error) {
 	if s == "" {
 		// This should be considered a system error.
-		return nil, errors.New("empty string passed to ParseDigest")
+		return nil, errors.New("empty string passed to ParseModuleDigest")
 	}
 	digestTypeString, hexValue, ok := strings.Cut(s, ":")
 	if !ok {
@@ -137,7 +137,7 @@ func ParseDigest(s string) (Digest, error) {
 			err:        errors.New(`must in the form "digest_type:digest_hex_value"`),
 		}
 	}
-	digestType, err := ParseDigestType(digestTypeString)
+	moduleDigestType, err := ParseModuleDigestType(digestTypeString)
 	if err != nil {
 		return nil, &ParseError{
 			typeString: "module digest",
@@ -153,24 +153,24 @@ func ParseDigest(s string) (Digest, error) {
 			err:        errors.New(`could not parse hex: must in the form "digest_type:digest_hex_value"`),
 		}
 	}
-	switch digestType {
-	case DigestTypeB4, DigestTypeB5:
+	switch moduleDigestType {
+	case ModuleDigestTypeB4, ModuleDigestTypeB5:
 		bufcasDigest, err := bufcas.NewDigest(value)
 		if err != nil {
 			return nil, err
 		}
-		return NewDigest(digestType, bufcasDigest)
+		return NewModuleDigest(moduleDigestType, bufcasDigest)
 	default:
-		return nil, syserror.Newf("unknown module DigestType: %v", digestType)
+		return nil, syserror.Newf("unknown ModuleDigestType: %v", moduleDigestType)
 	}
 }
 
-// DigestEqual returns true if the given Digests are considered equal.
+// ModuleDigestEqual returns true if the given ModuleDigests are considered equal.
 //
-// If both Digests are nil, this returns true.
+// If both ModuleDigests are nil, this returns true.
 //
-// This check both the DigestType and Digest value.
-func DigestEqual(a Digest, b Digest) bool {
+// This checks both the ModuleDigestType and ModuleDigest value.
+func ModuleDigestEqual(a ModuleDigest, b ModuleDigest) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
@@ -185,47 +185,47 @@ func DigestEqual(a Digest, b Digest) bool {
 
 /// *** PRIVATE ***
 
-type digest struct {
-	digestType   DigestType
-	bufcasDigest bufcas.Digest
+type moduleDigest struct {
+	moduleDigestType ModuleDigestType
+	bufcasDigest     bufcas.Digest
 	// Cache as we call String pretty often.
 	// We could do this lazily but not worth it.
 	stringValue string
 }
 
 // validation should occur outside of this function.
-func newDigest(digestType DigestType, bufcasDigest bufcas.Digest) *digest {
-	return &digest{
-		digestType:   digestType,
-		bufcasDigest: bufcasDigest,
-		stringValue:  digestType.String() + ":" + hex.EncodeToString(bufcasDigest.Value()),
+func newModuleDigest(moduleDigestType ModuleDigestType, bufcasDigest bufcas.Digest) *moduleDigest {
+	return &moduleDigest{
+		moduleDigestType: moduleDigestType,
+		bufcasDigest:     bufcasDigest,
+		stringValue:      moduleDigestType.String() + ":" + hex.EncodeToString(bufcasDigest.Value()),
 	}
 }
 
-func (d *digest) Type() DigestType {
-	return d.digestType
+func (d *moduleDigest) Type() ModuleDigestType {
+	return d.moduleDigestType
 }
 
-func (d *digest) Value() []byte {
+func (d *moduleDigest) Value() []byte {
 	return d.bufcasDigest.Value()
 }
 
-func (d *digest) String() string {
+func (d *moduleDigest) String() string {
 	return d.stringValue
 }
 
-func (*digest) isDigest() {}
+func (*moduleDigest) isModuleDigest() {}
 
-// moduleDigestB5 computes a b5 Digest for the given Module.
+// moduleModuleDigestB5 computes a b5 ModuleDigest for the given Module.
 //
-// A Module Digest is a composite Digest of all Module Files, and all Module dependencies.
+// A ModuleDigest is a composite digest of all Module Files, and all Module dependencies.
 //
 // All Files are added to a bufcas.Manifest, which is then turned into a bufcas.Digest.
-// The file bufcas.Digest, along with all Digests of the dependencies, are then sorted,
+// The file bufcas.Digest, along with all ModuleDigests of the dependencies, are then sorted,
 // and then digested themselves as content.
 //
-// Note that the name of the Module and any of its dependencies has no effect on the Digest.
-func moduleDigestB5(ctx context.Context, module Module) (Digest, error) {
+// Note that the name of the Module and any of its dependencies has no effect on the ModuleDigest.
+func moduleDigestB5(ctx context.Context, module Module) (ModuleDigest, error) {
 	// First, compute the shake256 bufcas.Digest of the files. This will include a
 	// sorted list of file names and their digests.
 	fileCASDigest, err := moduleReadBucketCASDigest(ctx, module)
@@ -239,11 +239,11 @@ func moduleDigestB5(ctx context.Context, module Module) (Digest, error) {
 	}
 	moduleDepDigestStrings := make([]string, len(moduleDeps))
 	for i, moduleDep := range moduleDeps {
-		moduleDepDigest, err := moduleDep.Digest()
+		moduleDepDigest, err := moduleDep.ModuleDigest()
 		if err != nil {
 			return nil, err
 		}
-		if moduleDepDigest.Type() != DigestTypeB5 {
+		if moduleDepDigest.Type() != ModuleDigestTypeB5 {
 			// Even if the buf.lock file had a b4 digest, we should still end up retrieving the b5
 			// digest from the BSR, we should never have a b5 digest here.
 			return nil, syserror.Newf("trying to compute b5 Digest with dependency %q digest of type %v", moduleDep.OpaqueID(), moduleDepDigest.Type())
@@ -259,7 +259,7 @@ func moduleDigestB5(ctx context.Context, module Module) (Digest, error) {
 		return nil, err
 	}
 	// The resulting digest is a b5 digest.
-	return NewDigest(DigestTypeB5, digestOfDigests)
+	return NewModuleDigest(ModuleDigestTypeB5, digestOfDigests)
 }
 
 func moduleReadBucketCASDigest(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {

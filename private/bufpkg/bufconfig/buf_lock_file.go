@@ -160,7 +160,7 @@ func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
 // BufLockFileOption is an option for getting a new BufLockFile via Get or Read.
 type BufLockFileOption func(*bufLockFileOptions)
 
-// BufLockFileWithDigestResolver returns a new BufLockFileOption that will resolve digests from commits.
+// BufLockFileWithModuleDigestResolver returns a new BufLockFileOption that will resolve digests from commits.
 //
 // Pre-approximately-v1.10 of the buf CLI, we did not store digests in buf.lock files, we only stored commits.
 // In these situations, we need to get digests from the BSR based on the commit. All of our new code relies
@@ -169,9 +169,11 @@ type BufLockFileOption func(*bufLockFileOptions)
 //
 // TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
 // be an option.
-func BufLockFileWithDigestResolver(digestResolver func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error)) BufLockFileOption {
+func BufLockFileWithModuleDigestResolver(
+	moduleDigestResolver func(ctx context.Context, remote string, commitID string) (bufmodule.ModuleDigest, error),
+) BufLockFileOption {
 	return func(bufLockFileOptions *bufLockFileOptions) {
-		bufLockFileOptions.digestResolver = digestResolver
+		bufLockFileOptions.moduleDigestResolver = moduleDigestResolver
 	}
 }
 
@@ -273,15 +275,15 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
-			getDigest := func() (bufmodule.Digest, error) {
-				return bufmodule.ParseDigest(dep.Digest)
+			getModuleDigest := func() (bufmodule.ModuleDigest, error) {
+				return bufmodule.ParseModuleDigest(dep.Digest)
 			}
 			if dep.Digest == "" {
-				if bufLockFileOptions.digestResolver == nil {
+				if bufLockFileOptions.moduleDigestResolver == nil {
 					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 				}
-				getDigest = func() (bufmodule.Digest, error) {
-					return bufLockFileOptions.digestResolver(ctx, dep.Remote, dep.Commit)
+				getModuleDigest = func() (bufmodule.ModuleDigest, error) {
+					return bufLockFileOptions.moduleDigestResolver(ctx, dep.Remote, dep.Commit)
 				}
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
@@ -292,7 +294,7 @@ func readBufLockFile(
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
 				dep.Commit,
-				getDigest,
+				getModuleDigest,
 			)
 			if err != nil {
 				return nil, err
@@ -326,8 +328,8 @@ func readBufLockFile(
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
 				"",
-				func() (bufmodule.Digest, error) {
-					return bufmodule.ParseDigest(dep.Digest)
+				func() (bufmodule.ModuleDigest, error) {
+					return bufmodule.ParseModuleDigest(dep.Digest)
 				},
 			)
 			if err != nil {
@@ -357,7 +359,7 @@ func writeBufLockFile(
 			Deps:    make([]externalBufLockFileDepV1Beta1V1, len(depModuleKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
-			digest, err := depModuleKey.Digest()
+			moduleDigest, err := depModuleKey.ModuleDigest()
 			if err != nil {
 				return err
 			}
@@ -366,7 +368,7 @@ func writeBufLockFile(
 				Owner:      depModuleKey.ModuleFullName().Owner(),
 				Repository: depModuleKey.ModuleFullName().Name(),
 				Commit:     depModuleKey.CommitID(),
-				Digest:     digest.String(),
+				Digest:     moduleDigest.String(),
 			}
 		}
 		// No need to sort - depModuleKeys is already sorted by ModuleFullName
@@ -383,13 +385,13 @@ func writeBufLockFile(
 			Deps:    make([]externalBufLockFileDepV2, len(depModuleKeys)),
 		}
 		for i, depModuleKey := range depModuleKeys {
-			digest, err := depModuleKey.Digest()
+			moduleDigest, err := depModuleKey.ModuleDigest()
 			if err != nil {
 				return err
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
 				Name:   depModuleKey.ModuleFullName().String(),
-				Digest: digest.String(),
+				Digest: moduleDigest.String(),
 			}
 		}
 		// No need to sort - depModuleKeys is already sorted by ModuleFullName
@@ -472,11 +474,11 @@ type externalBufLockFileDepV2 struct {
 }
 
 type bufLockFileOptions struct {
-	digestResolver func(
+	moduleDigestResolver func(
 		ctx context.Context,
 		remote string,
 		commitID string,
-	) (bufmodule.Digest, error)
+	) (bufmodule.ModuleDigest, error)
 }
 
 func newBufLockFileOptions() *bufLockFileOptions {

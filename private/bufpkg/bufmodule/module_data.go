@@ -64,18 +64,18 @@ func NewModuleData(
 // ModuleDataOption is an option when constructing a ModuleData.
 type ModuleDataOption func(*moduleData)
 
-// ModuleDataWithActualDigest returns a new ModuleDataOption that specifies the actual
-// Digest of the ModuleData as retrieved.
+// ModuleDataWithActualModuleDigest returns a new ModuleDataOption that specifies the actual
+// ModuleDigest of the ModuleData as retrieved.
 //
-// If this is given, when Bucket() or DeclaredDepModuleKeys() is called, this Digest will
-// be compared with the Digest from the ModuleKey, and if they are unequal, an error is returned.
+// If this is given, when Bucket() or DeclaredDepModuleKeys() is called, this ModuleDigest will
+// be compared with the ModuleDigest from the ModuleKey, and if they are unequal, an error is returned.
 //
 // This is used for tamper-proofing.
 //
 // TODO: This doesn't actually work for tamper-proofing, refactor.
-func ModuleDataWithActualDigest(actualDigest Digest) ModuleDataOption {
+func ModuleDataWithActualModuleDigest(actualModuleDigest ModuleDigest) ModuleDataOption {
 	return func(moduleData *moduleData) {
-		moduleData.actualDigest = actualDigest
+		moduleData.actualModuleDigest = actualModuleDigest
 	}
 }
 
@@ -87,9 +87,9 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	actualDigest             Digest
+	actualModuleDigest       ModuleDigest
 	// May be nil after construction.
-	checkDigest func() error
+	checkModuleDigest func() error
 }
 
 func newModuleData(
@@ -106,22 +106,22 @@ func newModuleData(
 	for _, option := range options {
 		option(moduleData)
 	}
-	if moduleData.actualDigest != nil {
-		moduleData.checkDigest = sync.OnceValue(
+	if moduleData.actualModuleDigest != nil {
+		moduleData.checkModuleDigest = sync.OnceValue(
 			func() error {
-				expectedDigest, err := moduleKey.Digest()
+				expectedModuleDigest, err := moduleKey.ModuleDigest()
 				if err != nil {
 					return err
 				}
-				if !DigestEqual(expectedDigest, moduleData.actualDigest) {
+				if !ModuleDigestEqual(expectedModuleDigest, moduleData.actualModuleDigest) {
 					moduleString := moduleKey.ModuleFullName().String()
 					if commitID := moduleKey.CommitID(); commitID != "" {
 						moduleString = moduleString + ":" + commitID
 					}
 					return fmt.Errorf(
-						"expected Digest %q, got Digest %q, for Module %q",
-						expectedDigest.String(),
-						moduleData.actualDigest.String(),
+						"expected ModuleDigest %q, got ModuleDigest %q, for Module %q",
+						expectedModuleDigest.String(),
+						moduleData.actualModuleDigest.String(),
 						moduleString,
 					)
 				}
@@ -137,8 +137,8 @@ func (m *moduleData) ModuleKey() ModuleKey {
 }
 
 func (m *moduleData) Bucket() (storage.ReadBucket, error) {
-	if m.checkDigest != nil {
-		if err := m.checkDigest(); err != nil {
+	if m.checkModuleDigest != nil {
+		if err := m.checkModuleDigest(); err != nil {
 			return nil, err
 		}
 	}
@@ -153,8 +153,8 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	// in ModuleSetBuilder right away. However, we still do the lazy-loading here, in the case
 	// where ModuleData is loaded outside of a ModuleSetBuilder and users may defer calling this
 	// function if it is not needed.
-	if m.checkDigest != nil {
-		if err := m.checkDigest(); err != nil {
+	if m.checkModuleDigest != nil {
+		if err := m.checkModuleDigest(); err != nil {
 			return nil, err
 		}
 	}

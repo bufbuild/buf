@@ -183,7 +183,7 @@ func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 		moduleKey, err := bufmodule.NewModuleKey(
 			moduleFullName,
 			commitID,
-			module.Digest,
+			module.ModuleDigest,
 		)
 		if err != nil {
 			return nil, err

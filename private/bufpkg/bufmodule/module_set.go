@@ -59,14 +59,14 @@ type ModuleSet interface {
 	//
 	// Returns nil if there is no Module with the given BucketID.
 	GetModuleForBucketID(bucketID string) Module
-	// GetModuleForDigest gets the Module for the Digest, if it exists.
+	// GetModuleForModuleDigest gets the Module for the ModuleDigest, if it exists.
 	//
-	// Note that this function will result in Digest() being called on every Module in
+	// Note that this function will result in ModuleDigest() being called on every Module in
 	// the ModuleSet, which is potentially expensive.
 	//
 	// Returns nil if there is no Module with the given Digest.
 	// Returns an error if there was an error when calling Digest() on a Module.
-	GetModuleForDigest(digest Digest) (Module, error)
+	GetModuleForModuleDigest(moduleDigest ModuleDigest) (Module, error)
 
 	// WithTargetOpaqueIDs returns a new ModuleSet that changes the targeted Modules to
 	// the Modules with the specified OpaqueIDs.
@@ -195,11 +195,11 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 // moduleSet
 
 type moduleSet struct {
-	modules                      []Module
-	moduleFullNameStringToModule map[string]Module
-	opaqueIDToModule             map[string]Module
-	bucketIDToModule             map[string]Module
-	getDigestStringToModule      func() (map[string]Module, error)
+	modules                       []Module
+	moduleFullNameStringToModule  map[string]Module
+	opaqueIDToModule              map[string]Module
+	bucketIDToModule              map[string]Module
+	getModuleDigestStringToModule func() (map[string]Module, error)
 
 	// filePathToModule is a cache of filePath -> module.
 	//
@@ -243,24 +243,24 @@ func newModuleSet(
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
-		getDigestStringToModule: sync.OnceValues(
+		getModuleDigestStringToModule: sync.OnceValues(
 			func() (map[string]Module, error) {
-				digestStringToModule := make(map[string]Module, len(modules))
+				moduleDigestStringToModule := make(map[string]Module, len(modules))
 				for _, module := range modules {
-					digest, err := module.Digest()
+					moduleDigest, err := module.ModuleDigest()
 					if err != nil {
 						return nil, err
 					}
-					digestString := digest.String()
-					if _, ok := digestStringToModule[digestString]; ok {
+					moduleDigestString := moduleDigest.String()
+					if _, ok := moduleDigestStringToModule[moduleDigestString]; ok {
 						// Note that because we do this lazily, we're not getting built-in validation here
-						// that a ModuleSet has unique Digests until we load them lazily. That's the best
+						// that a ModuleSet has unique ModuleDigests until we load them lazily. That's the best
 						// we can do, and is likely OK.
-						return nil, fmt.Errorf("duplicate Digest %q within ModuleSet", digestString)
+						return nil, fmt.Errorf("duplicate ModuleDigest %q within ModuleSet", moduleDigestString)
 					}
-					digestStringToModule[digestString] = module
+					moduleDigestStringToModule[moduleDigestString] = module
 				}
-				return digestStringToModule, nil
+				return moduleDigestStringToModule, nil
 			},
 		),
 	}
@@ -288,12 +288,12 @@ func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
 	return m.bucketIDToModule[bucketID]
 }
 
-func (m *moduleSet) GetModuleForDigest(digest Digest) (Module, error) {
-	digestStringToModule, err := m.getDigestStringToModule()
+func (m *moduleSet) GetModuleForModuleDigest(moduleDigest ModuleDigest) (Module, error) {
+	moduleDigestStringToModule, err := m.getModuleDigestStringToModule()
 	if err != nil {
 		return nil, err
 	}
-	return digestStringToModule[digest.String()], nil
+	return moduleDigestStringToModule[moduleDigest.String()], nil
 }
 
 func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) {

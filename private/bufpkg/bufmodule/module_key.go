@@ -36,12 +36,12 @@ type ModuleKey interface {
 	// v1beta1 or v1 buf.lock files) where this is required. It is up to the caller to verify
 	// this is present in those situations.
 	CommitID() string
-	// Digest returns the Module digest.
+	// ModuleDigest returns the Module digest.
 	//
-	// Note this is *not* a bufcas.Digest - this is a module Digest. bufcas.Digest are a lower-level
-	// type that just deal in terms of files and content. A module Digest is a specific algorithm
+	// Note this is *not* a bufcas.Digest - this is a ModuleDigest. bufcas.Digests are a lower-level
+	// type that just deal in terms of files and content. A Moduleigest is a specific algorithm
 	// applied to a set of files and dependencies.
-	Digest() (Digest, error)
+	ModuleDigest() (ModuleDigest, error)
 
 	isModuleKey()
 }
@@ -50,18 +50,18 @@ type ModuleKey interface {
 //
 // Note that commit is optional.
 //
-// The Digest will be loaded lazily if needed. Note this means that NewModuleKey does
-// *not* validate the digest. If you need to validate the digest, call Digest() and evaluate
+// The ModuleDigest will be loaded lazily if needed. Note this means that NewModuleKey does
+// *not* validate the digest. If you need to validate the digest, call ModuleDigest() and evaluate
 // the returned error.
 func NewModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getDigest func() (Digest, error),
+	getModuleDigest func() (ModuleDigest, error),
 ) (ModuleKey, error) {
 	return newModuleKey(
 		moduleFullName,
 		commitID,
-		getDigest,
+		getModuleDigest,
 	)
 }
 
@@ -71,21 +71,21 @@ type moduleKey struct {
 	moduleFullName ModuleFullName
 	commitID       string
 
-	getDigest func() (Digest, error)
+	getModuleDigest func() (ModuleDigest, error)
 }
 
 func newModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getDigest func() (Digest, error),
+	getModuleDigest func() (ModuleDigest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
 	}
 	return &moduleKey{
-		moduleFullName: moduleFullName,
-		commitID:       commitID,
-		getDigest:      sync.OnceValues(getDigest),
+		moduleFullName:  moduleFullName,
+		commitID:        commitID,
+		getModuleDigest: sync.OnceValues(getModuleDigest),
 	}, nil
 }
 
@@ -97,8 +97,8 @@ func (m *moduleKey) CommitID() string {
 	return m.commitID
 }
 
-func (m *moduleKey) Digest() (Digest, error) {
-	return m.getDigest()
+func (m *moduleKey) ModuleDigest() (ModuleDigest, error) {
+	return m.getModuleDigest()
 }
 
 func (*moduleKey) isModuleKey() {}

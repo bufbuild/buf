@@ -158,7 +158,7 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	if err != nil {
 		return nil, err
 	}
-	returnedDigest, err := protoToDigest(commit.Digest)
+	returnedDigest, err := protoToModuleDigest(commit.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 		//
 		// We could go a step further and calculate based on the actual data, but doing this lazily
 		// is additional work (but very possible).
-		bufmodule.ModuleDataWithActualDigest(returnedDigest),
+		bufmodule.ModuleDataWithActualModuleDigest(returnedDigest),
 	)
 }
 
@@ -234,8 +234,8 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	return bufmodule.NewModuleKey(
 		moduleFullName,
 		protoCommit.Id,
-		func() (bufmodule.Digest, error) {
-			return protoToDigest(protoCommit.Digest)
+		func() (bufmodule.ModuleDigest, error) {
+			return protoToModuleDigest(protoCommit.Digest)
 		},
 	)
 }
@@ -301,11 +301,11 @@ func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1be
 	}
 	// Naming differently to make sure we differentiate between this and the
 	// retrieved digest below.
-	moduleKeyDigest, err := moduleKey.Digest()
+	moduleKeyDigest, err := moduleKey.ModuleDigest()
 	if err != nil {
 		return nil, err
 	}
-	protoModuleKeyDigest, err := digestToProto(moduleKeyDigest)
+	protoModuleKeyDigest, err := moduleDigestToProto(moduleKeyDigest)
 	if err != nil {
 		return nil, err
 	}

@@ -81,19 +81,19 @@ type Module interface {
 	// ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
-	// Digest returns the Module digest.
+	// ModuleDigest returns the Module digest.
 	//
-	// Note this is *not* a bufcas.Digest - this is a module Digest. bufcas.Digest are a lower-level
-	// type that just deal in terms of files and content. A module Digest is a specific algorithm
+	// Note this is *not* a bufcas.Digest - this is a ModuleDigest. bufcas.Digests are a lower-level
+	// type that just deal in terms of files and content. A ModuleDigest is a specific algorithm
 	// applied to a set of files and dependencies.
-	Digest() (Digest, error)
+	ModuleDigest() (ModuleDigest, error)
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
 	// This list is pruned - only Modules that this Module actually depends on via import statements
 	// within its .proto files will be returned.
 	//
-	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
+	// Dependencies with the same ModuleFullName will always have the same Commits and ModuleDigests.
 	//
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
@@ -159,7 +159,7 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),
 		module.CommitID(),
-		module.Digest,
+		module.ModuleDigest,
 	)
 }
 
@@ -241,8 +241,8 @@ type module struct {
 
 	moduleSet ModuleSet
 
-	getDigest     func() (Digest, error)
-	getModuleDeps func() ([]ModuleDep, error)
+	getModuleDigest func() (ModuleDigest, error)
+	getModuleDeps   func() ([]ModuleDep, error)
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
@@ -298,8 +298,8 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getDigest = sync.OnceValues(
-		func() (Digest, error) {
+	module.getModuleDigest = sync.OnceValues(
+		func() (ModuleDigest, error) {
 			return moduleDigestB5(ctx, module)
 		},
 	)
@@ -333,8 +333,8 @@ func (m *module) CommitID() string {
 	return m.commitID
 }
 
-func (m *module) Digest() (Digest, error) {
-	return m.getDigest()
+func (m *module) ModuleDigest() (ModuleDigest, error) {
+	return m.getModuleDigest()
 }
 
 func (m *module) ModuleDeps() ([]ModuleDep, error) {
@@ -369,8 +369,8 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getDigest = sync.OnceValues(
-		func() (Digest, error) {
+	newModule.getModuleDigest = sync.OnceValues(
+		func() (ModuleDigest, error) {
 			return moduleDigestB5(newModule.ctx, newModule)
 		},
 	)
