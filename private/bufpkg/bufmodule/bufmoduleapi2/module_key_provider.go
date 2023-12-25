@@ -23,7 +23,6 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"go.uber.org/zap"
 )
@@ -82,9 +81,9 @@ func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, module
 		// Note we don't have to resolve owner_name and module_name since we already have them.
 		moduleRef.ModuleFullName(),
 		protoCommit.Id,
-		func() (bufcas.Digest, error) {
+		func() (bufmodule.Digest, error) {
 			// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
-			return bufcas.ProtoToDigest(protoCommit.Digest)
+			return ProtoToDigest(protoCommit.Digest)
 		},
 	)
 }
