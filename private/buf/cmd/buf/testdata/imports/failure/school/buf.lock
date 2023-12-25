@@ -2,4 +2,4 @@
 version: v2
 deps:
   - name: bufbuild.test/bufbot/students
-    digest: shake256:1d21cbbba4b739bd11c3a928172680cbe2e5e27c0ca272bb510b08f660518819b015c6fa7aeee3ad74fdb748cc1c8eacb43aa0c502e7c33863526ee8bd5c6be6
+    digest: b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70
