@@ -55,6 +55,5 @@ func DigestForCommitID(
 	if len(response.Msg.Commits) != 1 {
 		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
 	}
-	commit := response.Msg.Commits[0]
-	return bufcas
+	return ProtoToDigest(response.Msg.Commits[0].Digest)
 }
