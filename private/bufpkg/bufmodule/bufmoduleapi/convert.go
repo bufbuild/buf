@@ -33,8 +33,8 @@ var (
 	}
 )
 
-// DigestToProto converts the given Digest to a proto Digest.
-func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
+// digestToProto converts the given Digest to a proto Digest.
+func digestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
 	protoDigestType, ok := digestTypeToProto[digest.Type()]
 	// Technically we have already done this validation but just to be safe.
 	if !ok {
@@ -47,11 +47,11 @@ func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
 	return protoDigest, nil
 }
 
-// ProtoToDigest converts the given proto Digest to a Digest.
+// protoToDigest converts the given proto Digest to a Digest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
+func protoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
 	digestType, ok := protoToDigestType[protoDigest.Type]
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)

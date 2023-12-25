@@ -158,7 +158,7 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	if err != nil {
 		return nil, err
 	}
-	returnedDigest, err := ProtoToDigest(commit.Digest)
+	returnedDigest, err := protoToDigest(commit.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 		moduleFullName,
 		protoCommit.Id,
 		func() (bufmodule.Digest, error) {
-			return ProtoToDigest(protoCommit.Digest)
+			return protoToDigest(protoCommit.Digest)
 		},
 	)
 }
@@ -305,7 +305,7 @@ func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1be
 	if err != nil {
 		return nil, err
 	}
-	protoModuleKeyDigest, err := DigestToProto(moduleKeyDigest)
+	protoModuleKeyDigest, err := digestToProto(moduleKeyDigest)
 	if err != nil {
 		return nil, err
 	}
