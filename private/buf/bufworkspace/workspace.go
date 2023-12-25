@@ -648,7 +648,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			bucket,
 			moduleDirPath,
 			bufconfig.BufLockFileWithDigestResolver(func(ctx context.Context, remote string, commitID string) (bufcas.Digest, error) {
-				return bufmoduleapi.CommitIDToDigest(ctx, clientProvider, remote, commitID)
+				return bufmoduleapi.DigestForCommitID(ctx, clientProvider, remote, commitID)
 			}),
 		)
 		if err != nil {

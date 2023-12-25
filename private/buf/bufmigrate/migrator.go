@@ -133,7 +133,7 @@ func (m *migrator) addModuleDirectory(
 		m.rootBucket,
 		moduleDir,
 		bufconfig.BufLockFileWithDigestResolver(func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
-			return bufmoduleapi.CommitIDToDigest(ctx, m.clientProvider, remote, commitID)
+			return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID)
 		}),
 	)
 	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
