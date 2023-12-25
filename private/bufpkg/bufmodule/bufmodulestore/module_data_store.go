@@ -342,8 +342,8 @@ func (p *moduleDataStore) logDebugModuleFullNameAndDigest(
 // Returns the module's path within the store if storing individual files.
 //
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
-// e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
-// "buf.build/acme/weather/shake256/12345".
+// e.g. the module "buf.build/acme/weather" with digest "b5:12345" will return
+// "buf.build/acme/weather/b5/12345".
 func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufmodule.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
@@ -357,8 +357,8 @@ func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, digest bufmo
 // Returns the module's path within the store if storing tar files.
 //
 // This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}.tar",
-// e.g. the module "buf.build/acme/weather" with digest "shake256:12345" will return
-// "buf.build/acme/weather/shake256/12345.tar".
+// e.g. the module "buf.build/acme/weather" with digest "b5:12345" will return
+// "buf.build/acme/weather/b5/12345.tar".
 func getModuleStoreTarPath(moduleFullName bufmodule.ModuleFullName, digest bufmodule.Digest) string {
 	return normalpath.Join(
 		moduleFullName.Registry(),
