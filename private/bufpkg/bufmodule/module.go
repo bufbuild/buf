@@ -249,7 +249,8 @@ type module struct {
 func newModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	getBucket func() (storage.ReadBucket, error),
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
+	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
 	commitID string,
@@ -278,6 +279,7 @@ func newModule(
 	module := &module{
 		ctx:            ctx,
 		logger:         logger,
+		getBucket:      syncOnceValuesGetBucketWithStorageMatcherApplied,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -287,7 +289,7 @@ func newModule(
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
 		logger,
-		getBucket,
+		syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module,
 		targetPaths,
 		targetExcludePaths,
@@ -298,16 +300,8 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getModuleDigest = sync.OnceValues(
-		func() (ModuleDigest, error) {
-			return moduleDigestB5(ctx, module)
-		},
-	)
-	module.getModuleDeps = sync.OnceValues(
-		func() ([]ModuleDep, error) {
-			return getModuleDeps(ctx, logger, module)
-		},
-	)
+	module.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(module))
+	module.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
 
@@ -358,6 +352,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	newModule := &module{
 		ctx:            m.ctx,
 		logger:         m.logger,
+		getBucket:      m.getBucket,
 		bucketID:       m.bucketID,
 		moduleFullName: m.moduleFullName,
 		commitID:       m.commitID,
@@ -369,16 +364,8 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getModuleDigest = sync.OnceValues(
-		func() (ModuleDigest, error) {
-			return moduleDigestB5(newModule.ctx, newModule)
-		},
-	)
-	newModule.getModuleDeps = sync.OnceValues(
-		func() ([]ModuleDep, error) {
-			return getModuleDeps(newModule.ctx, newModule.logger, newModule)
-		},
-	)
+	newModule.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(newModule))
+	newModule.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
 
@@ -388,3 +375,23 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 
 func (*module) isModuleInfo() {}
 func (*module) isModule()     {}
+
+func newGetModuleDigestFuncForModule(module *module) func() (ModuleDigest, error) {
+	return func() (ModuleDigest, error) {
+		bucket, err := module.getBucket()
+		if err != nil {
+			return nil, err
+		}
+		moduleDeps, err := module.ModuleDeps()
+		if err != nil {
+			return nil, err
+		}
+		return getB5ModuleDigest(module.ctx, bucket, moduleDeps)
+	}
+}
+
+func newGetModuleDepsFuncForModule(module *module) func() ([]ModuleDep, error) {
+	return func() ([]ModuleDep, error) {
+		return getModuleDeps(module.ctx, module.logger, module)
+	}
+}

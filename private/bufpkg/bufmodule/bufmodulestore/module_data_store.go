@@ -155,6 +155,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		return nil, err
 	}
 	return bufmodule.NewModuleData(
+		ctx,
 		moduleKey,
 		func() (storage.ReadBucket, error) {
 			// It is OK that this ReadBucket contains the buf.lock; the buf.lock will be ignored. See
@@ -164,10 +165,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		func() ([]bufmodule.ModuleKey, error) {
 			return bufLockFile.DepModuleKeys(), nil
 		},
-		// This will do tamper-proofing.
-		// TODO: No it won't.
-		bufmodule.ModuleDataWithActualModuleDigest(moduleDigest),
-	)
+	), nil
 }
 
 func (p *moduleDataStore) getReadBucketForDir(

@@ -241,9 +241,12 @@ func (b *moduleSetBuilder) AddLocalModule(
 	module, err := newModule(
 		b.ctx,
 		b.logger,
-		func() (storage.ReadBucket, error) {
-			return bucket, nil
-		},
+		getSyncOnceValuesGetBucketWithStorageMatcherApplied(
+			b.ctx,
+			func() (storage.ReadBucket, error) {
+				return bucket, nil
+			},
+		),
 		bucketID,
 		localModuleOptions.moduleFullName,
 		localModuleOptions.commitID,
@@ -413,6 +416,10 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 	module, err := newModule(
 		b.ctx,
 		b.logger,
+		// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
+		// only be constructed via NewModuleData.
+		//
+		// TODO: This is a bit shady.
 		moduleData.Bucket,
 		"",
 		moduleData.ModuleKey().ModuleFullName(),

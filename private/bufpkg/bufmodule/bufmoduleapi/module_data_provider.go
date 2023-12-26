@@ -170,10 +170,6 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	commitIDToBucket map[string]storage.ReadBucket,
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) (bufmodule.ModuleData, error) {
-	commit, ok := commitIDToCommit[protoReference.CommitId]
-	if !ok {
-		return nil, fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
-	}
 	bucket, ok := commitIDToBucket[protoReference.CommitId]
 	if !ok {
 		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
@@ -192,11 +188,8 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	if err != nil {
 		return nil, err
 	}
-	returnedDigest, err := protoToModuleDigest(commit.Digest)
-	if err != nil {
-		return nil, err
-	}
 	return bufmodule.NewModuleData(
+		ctx,
 		moduleKey,
 		func() (storage.ReadBucket, error) {
 			return bucket, nil
@@ -204,15 +197,7 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 		func() ([]bufmodule.ModuleKey, error) {
 			return a.getModuleKeysForProtoCommits(ctx, registryHostname, depProtoCommits)
 		},
-		// TODO: Is this enough for tamper-proofing? With this, we are just calculating the
-		// digest that we got back from the API, as opposed to re-calculating the digest based
-		// on the data. This is saying we trust the API to produce the correct digest for the
-		// data it is returning. An argument could be made we should not, but that argument is shaky.
-		//
-		// We could go a step further and calculate based on the actual data, but doing this lazily
-		// is additional work (but very possible).
-		bufmodule.ModuleDataWithActualModuleDigest(returnedDigest),
-	)
+	), nil
 }
 
 // TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
