@@ -148,6 +148,9 @@ func (m *moduleData) ModuleKey() ModuleKey {
 }
 
 func (m *moduleData) Bucket() (storage.ReadBucket, error) {
+	if err := m.checkModuleDigest(); err != nil {
+		return nil, err
+	}
 	return m.getBucket()
 }
 
@@ -159,6 +162,9 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	// in ModuleSetBuilder right away. However, we still do the lazy-loading here, in the case
 	// where ModuleData is loaded outside of a ModuleSetBuilder and users may defer calling this
 	// function if it is not needed.
+	if err := m.checkModuleDigest(); err != nil {
+		return nil, err
+	}
 	return m.getDeclaredDepModuleKeys()
 }
 
