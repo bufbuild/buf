@@ -42,7 +42,7 @@ func TestValidImportFromCache(t *testing.T) {
 	)
 }
 
-func TestValidImportFromCorruptedCache(t *testing.T) {
+func TestValidImportFromCorruptedCachefile(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 0, nil,
@@ -56,7 +56,7 @@ func TestValidImportFromCorruptedCache(t *testing.T) {
 		`Failure: verification failed for module bufbuild.test/bufbot/people: expected module digest "b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465" but downloaded data had digest "b5:fbb4d43ed11ddcd1ff1c3ee0b97b573360208f602c4ac3a3b9a4be9bbdf00b99fdfd4180d1d326a547b298417b094e2b9c00b431c66b13732d1227795c3b26d2"`,
 		func(use string) map[string]string {
 			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache"),
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
 			}
 		},
 		nil,
