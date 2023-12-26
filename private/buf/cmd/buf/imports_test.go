@@ -42,13 +42,8 @@ func TestValidImportFromCache(t *testing.T) {
 	)
 }
 
-func TestValidImportFromCorruptedCachefile(t *testing.T) {
+func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 	t.Parallel()
-	testRunStderrWithCache(
-		t, nil, 0, nil,
-		"build",
-		filepath.Join("testdata", "imports", "success", "students"),
-	)
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
@@ -62,6 +57,24 @@ func TestValidImportFromCorruptedCachefile(t *testing.T) {
 		nil,
 		"build",
 		filepath.Join("testdata", "imports", "success", "students"),
+	)
+}
+
+func TestValidImportFromCorruptedCacheDep(t *testing.T) {
+	t.Parallel()
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		1,
+		`Failure: verification failed for module bufbuild.test/bufbot/students: expected module digest "b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70" but downloaded data had digest "b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c"`,
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),
+			}
+		},
+		nil,
+		"build",
+		filepath.Join("testdata", "imports", "success", "school"),
 	)
 }
 
