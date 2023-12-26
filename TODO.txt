@@ -3,9 +3,9 @@
   - generate
   - push
 
-- new digest format - figure out with API
 - new buf migrate command
 - Figure out if we can be less strict and fail less with fastscan
+- Make v1 buf.lock buf mod update work
 
 - lots of QA, especially around workspace file searching, target paths
 - document behavior of file searching, config override
@@ -71,3 +71,12 @@ NEW ALGORITHM
 - Take workspace_paths, assign to modules in the controlling workspace
 - Split workspace_paths into <module_path, module_target_path>
 - Take workspace_exclude_paths, use to delete module_paths, otherwise create module_target_exclude_paths
+
+
+STUFF FOR COMMITS
+
+- Can't get rid of them
+- Make UploadRequest split into content and ResourceRefs
+- Use Digests for ResourceRefs for now
+- Go back and make CommitID a first-class citizen (ModuleKey, etc)
+- Add CommitID to buf.lock v2

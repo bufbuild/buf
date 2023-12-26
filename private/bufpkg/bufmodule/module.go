@@ -90,8 +90,11 @@ type Module interface {
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
-	// This list is pruned - only Modules that this Module actually depends on via import statements
-	// within its .proto files will be returned.
+	// Includes transitive dependencies. Use ModuleDep.IsDirect() to determine in a dependency is direct
+	// or transitive.
+	//
+	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
+	// via import statements within its .proto files will be returned.
 	//
 	// Dependencies with the same ModuleFullName will always have the same Commits and ModuleDigests.
 	//

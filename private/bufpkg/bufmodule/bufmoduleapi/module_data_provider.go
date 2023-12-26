@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"go.uber.org/zap"
 )
 
@@ -357,11 +356,7 @@ func getCommitIDToBucketForProtoDownloadResponse(
 ) (map[string]storage.ReadBucket, error) {
 	commitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
 	for _, protoContent := range protoDownloadResponse.Contents {
-		pathToData := make(map[string][]byte, len(protoContent.Files))
-		for _, protoFile := range protoContent.Files {
-			pathToData[protoFile.Path] = protoFile.Content
-		}
-		bucket, err := storagemem.NewReadBucket(pathToData)
+		bucket, err := protoFilesToBucket(protoContent.Files)
 		if err != nil {
 			return nil, err
 		}

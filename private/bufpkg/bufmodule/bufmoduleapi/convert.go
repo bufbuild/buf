@@ -15,11 +15,15 @@
 package bufmoduleapi
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
 var (
@@ -61,4 +65,47 @@ func protoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDig
 		return nil, err
 	}
 	return bufmodule.NewModuleDigest(moduleDigestType, bufcasDigest)
+}
+
+// It is assumed that the bucket is already filtered to just module files.
+func bucketToProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modulev1beta1.File, error) {
+	var protoFiles []*modulev1beta1.File
+	if err := storage.WalkReadObjects(
+		ctx,
+		bucket,
+		"",
+		func(readObject storage.ReadObject) error {
+			data, err := ioutil.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
+			protoFiles = append(
+				protoFiles,
+				&modulev1beta1.File{
+					Path:    readObject.Path(),
+					Content: data,
+				},
+			)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return protoFiles, nil
+}
+
+func protoFilesToBucket(protoFiles []*modulev1beta1.File) (storage.ReadBucket, error) {
+	pathToData := make(map[string][]byte, len(protoFiles))
+	for _, protoFile := range protoFiles {
+		pathToData[protoFile.Path] = protoFile.Content
+	}
+	return storagemem.NewReadBucket(pathToData)
+}
+
+func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabelRef {
+	return &modulev1beta1.ScopedLabelRef{
+		Value: &modulev1beta1.ScopedLabelRef_Name{
+			Name: labelName,
+		},
+	}
 }
