@@ -105,6 +105,10 @@ issues:
       path: private/buf/buffetch/internal/reader_test.go
       text: "missing the call to method parallel"
     - linters:
+        - nilerr
+      # We actually just want to warn on this error.
+      path: private/buf/buflsp/buflsp.go
+    - linters:
         - paralleltest
       # Parallelizing TestPlainPostHandlerTLS and TestPlainPostHandlerH2C
       # makes this test flaky.
