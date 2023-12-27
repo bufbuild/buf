@@ -36,6 +36,9 @@ import (
 //
 // Right now, we error if the Modules do not all have the same registry. However, this may cause issues
 // with legagy federation situations TODO.
+//
+// TODO: This function should either move directly into push, or the create helpers in push should
+// move into this package.
 func NewUploadRequest(
 	ctx context.Context,
 	moduleSet bufmodule.ModuleSet,
@@ -55,7 +58,6 @@ func NewUploadRequest(
 			return nil, newRequireModuleFullNameOnUploadError(module)
 		}
 	}
-
 	// Validate we're all within one registry for now.
 	if registryHostnames := slicesext.ToUniqueSorted(
 		slicesext.Map(

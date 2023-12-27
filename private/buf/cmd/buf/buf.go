@@ -112,7 +112,6 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
-			// TODO: still need to port
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),

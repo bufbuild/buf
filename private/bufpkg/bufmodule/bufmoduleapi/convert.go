@@ -37,6 +37,20 @@ var (
 	}
 )
 
+// ParseModuleVisibility parses the ModuleVisibility from the string.
+func ParseModuleVisibility(s string) (modulev1beta1.ModuleVisibility, error) {
+	switch s {
+	case "public":
+		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
+	case "private":
+		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("unknown visibility: %q", s)
+	}
+}
+
+// *** PRIVATE ***
+
 // moduleDigestToProto converts the given ModuleDigest to a proto Digest.
 func moduleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Digest, error) {
 	protoDigestType, ok := moduleDigestTypeToProto[moduleDigest.Type()]
