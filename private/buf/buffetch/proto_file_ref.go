@@ -38,6 +38,18 @@ func (r *protoFileRef) IncludePackageFiles() bool {
 	return r.protoFileRef.IncludePackageFiles()
 }
 
+func (r *protoFileRef) IsDevPath() bool {
+	switch r.protoFileRef.FileScheme() {
+	case internal.FileSchemeStdio,
+		internal.FileSchemeStdin,
+		internal.FileSchemeStdout,
+		internal.FileSchemeNull:
+		return true
+	default:
+		return false
+	}
+}
+
 func (r *protoFileRef) internalRef() internal.Ref {
 	return r.protoFileRef
 }
@@ -51,3 +63,5 @@ func (r *protoFileRef) internalProtoFileRef() internal.ProtoFileRef {
 }
 
 func (*protoFileRef) isSourceOrModuleRef() {}
+
+func (*protoFileRef) isDirOrProtoFileRef() {}

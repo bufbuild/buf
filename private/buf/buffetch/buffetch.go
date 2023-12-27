@@ -69,6 +69,10 @@ var (
 	//
 	// This does not include deprecated formats.
 	SourceOrModuleFormatsString = stringutil.SliceToString(sourceOrModuleFormatsNotDeprecated)
+	// DirOrProtoFileFormats is the string representation of all dir or proto file formats.
+	//
+	// This does not include deprecated formats.
+	DirOrProtoFileFormatsString = stringutil.SliceToString(dirOrProtoFileFormats)
 	// AllFormatsString is the string representation of all formats.
 	//
 	// This does not include deprecated formats.
@@ -105,6 +109,11 @@ type SourceOrModuleRef interface {
 	isSourceOrModuleRef()
 }
 
+// DirOrProtoFileRef is a directory or proto file reference.
+type DirOrProtoFileRef interface {
+	isDirOrProtoFileRef()
+}
+
 // SourceRef is a source bucket reference.
 type SourceRef interface {
 	SourceOrModuleRef
@@ -113,6 +122,9 @@ type SourceRef interface {
 
 // DirRef is a dir bucket reference.
 type DirRef interface {
+	SourceRef
+	DirOrProtoFileRef
+	DirPath() string
 	internalDirRef() internal.DirRef
 }
 
@@ -125,7 +137,10 @@ type ModuleRef interface {
 // ProtoFileRef is a proto file reference.
 type ProtoFileRef interface {
 	SourceRef
+	DirOrProtoFileRef
 	ProtoFilePath() string
+	// True if the FileScheme is Stdio, Stdout, Stdin, or Null.
+	IsDevPath() bool
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
 }
@@ -152,15 +167,34 @@ type SourceRefParser interface {
 	) (SourceRef, error)
 }
 
-// DirRefParser is a dif ref parser for Buf.
+// DirRefParser is a dir ref parser for Buf.
 type DirRefParser interface {
-	// GetDirRef gets the reference for the source file.
+	// GetDirRef gets the reference for the value.
+	//
+	// The value cannot be stdin, stdout, or stderr.
 	GetDirRef(ctx context.Context, value string) (DirRef, error)
-	// GetDirRefForInputConfig gets the reference for the source file.
+	// GetDirRefForInputConfig gets the reference for the InputConfig.
+	//
+	// The input cannot be stdin, stdout, or stderr.
 	GetDirRefForInputConfig(
 		ctx context.Context,
 		inputConfig bufconfig.InputConfig,
 	) (DirRef, error)
+}
+
+// DirOrProtoFileRefParser is a dir or proto file ref parser for Buf.
+type DirOrProtoFileRefParser interface {
+	// GetDirOrProtoFileRef gets the reference for the value.
+	//
+	// The value cannot be stdin, stdout, or stderr.
+	GetDirOrProtoFileRef(ctx context.Context, value string) (DirOrProtoFileRef, error)
+	// GetDirOrProtoFileRefForInputConfig gets the reference for the InputConfig.
+	//
+	// The input cannot be stdin, stdout, or stderr.
+	GetDirOrProtoFileRefForInputConfig(
+		ctx context.Context,
+		inputConfig bufconfig.InputConfig,
+	) (DirOrProtoFileRef, error)
 }
 
 // ModuleRefParser is a source ref parser for Buf.
@@ -233,6 +267,11 @@ func NewSourceRefParser(logger *zap.Logger) SourceRefParser {
 // NewDirRefParser returns a new RefParser for dirs only.
 func NewDirRefParser(logger *zap.Logger) DirRefParser {
 	return newDirRefParser(logger)
+}
+
+// NewDirOrProtoFileRefParser returns a new RefParser for dirs only.
+func NewDirOrProtoFileRefParser(logger *zap.Logger) DirOrProtoFileRefParser {
+	return newDirOrProtoFileRefParser(logger)
 }
 
 // NewModuleRefParser returns a new RefParser for modules only.
@@ -415,6 +454,25 @@ func NewWriter(
 	logger *zap.Logger,
 ) Writer {
 	return newWriter(
+		logger,
+	)
+}
+
+// ProtoFileWriter is a writer of proto files.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoFileWriter returns a new ProtoFileWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
 		logger,
 	)
 }

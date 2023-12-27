@@ -185,6 +185,7 @@ type ProtoFileRef interface {
 	Path() string
 	// IncludePackageFiles says to include the same package files TODO update comment
 	IncludePackageFiles() bool
+	FileScheme() FileScheme
 	protoFileRef()
 }
 
@@ -319,6 +320,18 @@ func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
 type ParsedProtoFileRef interface {
 	ProtoFileRef
 	HasFormat
+}
+
+// NewDirectParsedProtoFileRef returns a new ParsedProtoFileRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedProtoFileRef(
+	format string,
+	path string,
+	fileScheme FileScheme,
+	includePackageFiles bool,
+) ParsedProtoFileRef {
+	return newDirectProtoFileRef(format, path, fileScheme, includePackageFiles)
 }
 
 // ParsedGitRef is a parsed GitRef.
@@ -488,6 +501,25 @@ func NewWriter(
 	return newWriter(
 		logger,
 		options...,
+	)
+}
+
+// ProtoFileWriter is a writer of ProtoFiles.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoWriter returns a new ProtoWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
+		logger,
 	)
 }
 

@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
@@ -106,8 +107,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
-			// TODO: still need to port
-			//format.NewCommand("format", builder),
+			format.NewCommand("format", builder),
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),

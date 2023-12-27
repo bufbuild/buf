@@ -15,37 +15,32 @@
 package buffetch
 
 import (
+	"context"
+	"io"
+
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"go.uber.org/zap"
 )
 
-var _ DirRef = &dirRef{}
-
-type dirRef struct {
-	iDirRef internal.DirRef
+type protoFileWriter struct {
+	internalProtoFileWriter internal.ProtoFileWriter
 }
 
-func newDirRef(iDirRef internal.DirRef) *dirRef {
-	return &dirRef{
-		iDirRef: iDirRef,
+func newProtoFileWriter(
+	logger *zap.Logger,
+) *protoFileWriter {
+	return &protoFileWriter{
+		internalProtoFileWriter: internal.NewProtoFileWriter(
+			logger,
+		),
 	}
 }
 
-func (r *dirRef) DirPath() string {
-	return r.iDirRef.Path()
+func (w *protoFileWriter) PutProtoFile(
+	ctx context.Context,
+	container app.EnvStdoutContainer,
+	protoFileRef ProtoFileRef,
+) (io.WriteCloser, error) {
+	return w.internalProtoFileWriter.PutProtoFile(ctx, container, protoFileRef.internalProtoFileRef())
 }
-
-func (r *dirRef) internalRef() internal.Ref {
-	return r.iDirRef
-}
-
-func (r *dirRef) internalBucketRef() internal.BucketRef {
-	return r.iDirRef
-}
-
-func (r *dirRef) internalDirRef() internal.DirRef {
-	return r.iDirRef
-}
-
-func (*dirRef) isSourceOrModuleRef() {}
-
-func (*dirRef) isDirOrProtoFileRef() {}

@@ -1,12 +1,8 @@
-- last commands:
-  - format
-  - generate
-  - push
-
-- new buf migrate command
 - Figure out if we can be less strict and fail less with fastscan
 - Make v1 buf.lock buf mod update work
 - update buf generate help documentation
+- fix buf format
+- make buf migrate do auto-search
 
 - lots of QA, especially around workspace file searching, target paths
 - document behavior of file searching, config override
