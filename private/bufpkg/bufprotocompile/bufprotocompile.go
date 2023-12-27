@@ -74,17 +74,21 @@ func FileAnnotationForErrorWithPos(
 	), nil
 }
 
-// FileAnnotationForErrorWithPos returns new FileAnnotations for the ErrorsWithPos.
-func FileAnnotationsForErrorsWithPos(
+// FileAnnotationSetForErrorWithPos returns new FileAnnotations for the ErrorsWithPos.
+func FileAnnotationSetForErrorsWithPos(
 	errorsWithPos []reporter.ErrorWithPos,
 	options ...FileAnnotationOption,
-) ([]bufanalysis.FileAnnotation, error) {
-	return slicesext.MapError(
+) (bufanalysis.FileAnnotationSet, error) {
+	fileAnnotations, err := slicesext.MapError(
 		errorsWithPos,
 		func(errorWithPos reporter.ErrorWithPos) (bufanalysis.FileAnnotation, error) {
 			return FileAnnotationForErrorWithPos(errorWithPos, options...)
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+	return bufanalysis.NewFileAnnotationSet(fileAnnotations...), nil
 }
 
 // FileAnnotationOption is an option when creating a FileAnnotation.

@@ -206,7 +206,7 @@ func findControllingWorkspace(
 			return newFindControllingWorkspaceResult(true, nil), nil
 		}
 		if prefix == originalSubDirPath {
-			// We've referred to our workspace file directy, we're good to go.
+			// We've referred to our workspace file directly, we're good to go.
 			return newFindControllingWorkspaceResult(true, nil), nil
 		}
 		dirPathMap := make(map[string]struct{})

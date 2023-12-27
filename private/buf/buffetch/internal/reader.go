@@ -573,7 +573,7 @@ func getReadWriteBucketForOS(
 		return nil, err
 	}
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		"/",
+		string(os.PathSeparator),
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -674,10 +674,13 @@ func getReadBucketCloserForOSProtoFile(
 		return nil, err
 	}
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		"/",
+		string(os.PathSeparator),
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
+	if err != nil {
+		return nil, err
+	}
 	// mapPath is the path to the bucket that contains a buf.yaml.
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, terminate, err := getMapPathAndSubDirPath(
@@ -839,8 +842,8 @@ func attemptToFixOSRootBucketPathErrors(err error) error {
 			return err
 		}
 		pwd = normalpath.Normalize(pwd)
-		if normalpath.EqualsOrContainsPath(pwd, "/"+pathError.Path, normalpath.Absolute) {
-			relPath, err := normalpath.Rel(pwd, "/"+pathError.Path)
+		if normalpath.EqualsOrContainsPath(pwd, string(os.PathSeparator)+pathError.Path, normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, string(os.PathSeparator)+pathError.Path)
 			// Just ignore if this errors and do nothing.
 			if err == nil {
 				// Making a copy just to be super-safe.

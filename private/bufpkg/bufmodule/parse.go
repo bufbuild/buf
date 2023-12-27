@@ -15,7 +15,7 @@
 package bufmodule
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -67,9 +67,17 @@ func parseModuleRefComponents(path string) (registry string, owner string, name 
 }
 
 func newInvalidModuleFullNameStringError(s string) error {
-	return fmt.Errorf("invalid module name %q: must be in the form registry/owner/name", s)
+	return &ParseError{
+		typeString: "module name",
+		input:      s,
+		err:        errors.New("must be in the form registry/owner/name"),
+	}
 }
 
 func newInvalidModuleRefStringError(s string) error {
-	return fmt.Errorf("invalid module reference %q: must be in the form registry/owner/name[:ref]", s)
+	return &ParseError{
+		typeString: "module reference",
+		input:      s,
+		err:        errors.New("must be in the form registry/owner/name[:ref]"),
+	}
 }

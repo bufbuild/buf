@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -96,33 +97,34 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := buflint.NewHandler(logger, tracing.NopTracer).Check(
+	if err := buflint.NewHandler(logger, tracing.NopTracer).Check(
 		ctx,
 		moduleConfig.LintConfig(),
 		image,
-	)
-	if err != nil {
-		return err
-	}
-	if fileAnnotations := bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations); len(fileAnnotations) > 0 {
-		buffer := bytes.NewBuffer(nil)
-		if externalConfig.ErrorFormat == "config-ignore-yaml" {
-			if err := buflint.PrintFileAnnotationsConfigIgnoreYAMLV1(
-				buffer,
-				fileAnnotations,
-			); err != nil {
-				return err
+	); err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			buffer := bytes.NewBuffer(nil)
+			if externalConfig.ErrorFormat == "config-ignore-yaml" {
+				if err := buflint.PrintFileAnnotationSetConfigIgnoreYAMLV1(
+					buffer,
+					fileAnnotationSet,
+				); err != nil {
+					return err
+				}
+			} else {
+				if err := bufanalysis.PrintFileAnnotationSet(
+					buffer,
+					fileAnnotationSet,
+					externalConfig.ErrorFormat,
+				); err != nil {
+					return err
+				}
 			}
-		} else {
-			if err := bufanalysis.PrintFileAnnotations(
-				buffer,
-				fileAnnotations,
-				externalConfig.ErrorFormat,
-			); err != nil {
-				return err
-			}
+			responseWriter.AddError(strings.TrimSpace(buffer.String()))
+			return nil
 		}
-		responseWriter.AddError(strings.TrimSpace(buffer.String()))
+		return err
 	}
 	return nil
 }

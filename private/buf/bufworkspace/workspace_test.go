@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -65,6 +66,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		bufapi.NopClientProvider,
 		bsrProvider,
 		WithTargetSubDirPath(
 			"finance/portfolio/proto",
@@ -141,6 +143,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		bufapi.NopClientProvider,
 		bsrProvider,
 		WithTargetSubDirPath(
 			"common/money/proto",
@@ -208,6 +211,7 @@ func TestProtoc(t *testing.T) {
 }
 
 func TestUnusedDep(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -232,6 +236,7 @@ func TestUnusedDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		bufapi.NopClientProvider,
 		bsrProvider,
 	)
 	require.NoError(t, err)
@@ -246,6 +251,7 @@ func TestUnusedDep(t *testing.T) {
 }
 
 func TestUndeclaredDep(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -270,6 +276,7 @@ func TestUndeclaredDep(t *testing.T) {
 		zap.NewNop(),
 		tracing.NopTracer,
 		bucket,
+		bufapi.NopClientProvider,
 		bsrProvider,
 	)
 	require.NoError(t, err)

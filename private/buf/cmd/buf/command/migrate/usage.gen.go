@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmigrate
+// Generated. DO NOT EDIT.
 
-import "testing"
+package migrate
 
-func TestMigrate(t *testing.T) {
-	// TODO
-	t.Parallel()
-}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -304,7 +304,7 @@ func TestOptionPanic(t *testing.T) {
 	require.NotPanics(t, func() {
 		moduleSet, err := bufmoduletesting.NewModuleSetForDirPath(filepath.Join("testdata", "optionpanic"))
 		require.NoError(t, err)
-		_, _, err = bufimage.BuildImage(
+		_, err = bufimage.BuildImage(
 			context.Background(),
 			tracing.NopTracer,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
@@ -347,14 +347,18 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string, parallelism
 	if !parallelism {
 		options = append(options, bufimage.WithNoParallelism())
 	}
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		context.Background(),
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
+	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	if errors.As(err, &fileAnnotationSet) {
+		return image, fileAnnotationSet.FileAnnotations()
+	}
 	require.NoError(t, err)
-	return image, fileAnnotations
+	return image, nil
 }
 
 func testGetImageFilePaths(image bufimage.Image) []string {

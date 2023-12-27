@@ -74,7 +74,7 @@ type WorkspaceOption interface {
 // target paths, but we specified WorkspaceWithTargetPaths, then those modules
 // need to be built as non-targeted.
 //
-// Theese paths have to  be within the subDirPath, if it exists.
+// These paths have to  be within the subDirPath, if it exists.
 func WithTargetPaths(targetPaths []string, targetExcludePaths []string) WorkspaceOption {
 	return &workspaceTargetPathsOption{
 		targetPaths:        targetPaths,

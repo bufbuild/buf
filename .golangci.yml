@@ -83,19 +83,119 @@ linters:
 issues:
   exclude-rules:
     - linters:
+        - gosec
+      # G101 checks for hardcoded credentials, and the variables named "*Password*
+      # trip this off.
+      path: private/buf/bufcli/env.go
+      text: "G101:"
+    - linters:
+        - containedctx
+      # Type must implement an interface whose methods do not accept context. But this
+      # implementation makes RPC calls, which need a context. So we allow creator of the
+      # type to provide a context at value creation (instead of using context.Background()).
+      path: private/buf/bufcurl/reflection_resolver.go
+    - linters:
+        - gosec
+      # We verify manually so that we can emit verbose output while doing so.
+      path: private/buf/bufcurl/tls.go
+      text: "G402:"
+    - linters:
+        - paralleltest
+      # This test shouldn't run in parallel as it needs osext.Getwd.
+      path: private/buf/buffetch/internal/reader_test.go
+      text: "missing the call to method parallel"
+    - linters:
+        - paralleltest
+      # Parallelizing TestPlainPostHandlerTLS and TestPlainPostHandlerH2C
+      # makes this test flaky.
+      path: private/buf/bufstudioagent/bufstudioagent_test.go
+      text: "missing the call to method parallel"
+    - linters:
+        - paralleltest
+      # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
+      # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
+      # because they all call createZipFromDir on the same path, writing to the same file.
+      path: private/buf/cmd/buf/workspace_test.go
+      text: "missing the call to method parallel"
+    - linters:
         - forbidigo
-      # this is one of two files we want to allow exec.Cmd functions in
-      path: private/pkg/command/runner.go
+      # This is a legacy usage of os.Getwd we're not bothering to port yet.
+      path: private/buf/cmd/buf/command/alpha/protoc/protoc_test.go
+      text: "os.Getwd"
+    - linters:
+        - dogsled
+      # One function call doesn't care about most of the returned destructured values. The
+      # dogsled linter complains about it. (Value of this linter is unclear...)
+      path: private/buf/cmd/buf/command/curl/curl.go
+    - linters:
+        - forbidigo
+      # This is a legacy usage of os.Getwd we're not bothering to port yet.
+      path: private/buf/cmd/buf/command/generate/generate_test.go
+      text: "os.Getwd"
+    - linters:
+        - gochecknoinits
+      # we actually want to use this init to create a protovalidate.Validator
+      path: private/bufpkg/bufcas/proto.go
+    - linters:
+        - gochecknoinits
+      # we actually want to use init here
+      path: private/bufpkg/bufconfig/module_config.go
+    - linters:
+        - gosec
+      # We don't need a cryptographically secure RNG for these tests, and a
+      # deterministic RNG is actually nice for test repeatability.
+      path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
+      text: "G404:"
+    - linters:
+        - paralleltest
+      # This test shouldn't run in parallel as it allocates a lot of memory.
+      path: private/bufpkg/bufimage/build_image_unix_test.go
+      text: "missing the call to method parallel"
+    - linters:
+        - containedctx
+      # we actually want to embed a context here
+      path: private/bufpkg/bufimage/parser_accessor_handler.go
+    - linters:
+        - containedctx
+      # we actually want to embed a context here
+      path: private/bufpkg/bufmodule/module.go
+    - linters:
+        - containedctx
+      # we actually want to embed a context here
+      path: private/bufpkg/bufmodule/module_set_builder.go
+    - linters:
+        - gochecknoinits
+      # we actually want to use init here
+      path: private/bufpkg/bufmodule/paths.go
+    - linters:
+        - forbidigo
+      # we want to use errgroup here
+      path: private/bufpkg/bufplugin/bufplugindocker/docker.go
+      text: "use of `errgroup"
     - linters:
         - forbidigo
       # this is one of two files we want to allow exec.Cmd functions in
       path: private/pkg/command/process.go
     - linters:
         - forbidigo
-      # we use os.Rename here to rename files in the same directory
-      # This is safe (we aren't traversing filesystem boundaries).
-      path: private/pkg/storage/storageos/bucket.go
-      text: "os.Rename"
+      # this is one of two files we want to allow exec.Cmd functions in
+      path: private/pkg/command/runner.go
+    - linters:
+        - gosec
+      # G204 checks that exec.Command is not called with non-constants.
+      path: private/pkg/command/runner.go
+      text: "G204:"
+    - linters:
+        - gosec
+      # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions
+      # only versions of go < 1.6.3 are affected.
+      path: private/pkg/git/git_test.go
+      text: "G504:"
+    - linters:
+        - wastedassign
+      # netrc/internal is a library largely copied in from an external repository with attribution.
+      # We try to make minimal edits.
+      path: private/pkg/netrc/internal/internal.go
     - linters:
         - forbidigo
       # We cache os.Getwd in osext, osext is the entrypoint.
@@ -107,9 +207,6 @@ issues:
       path: private/pkg/osext/osext.go
       text: "os.Chdir"
     - linters:
-        - stylecheck
-      text: "ST1005:"
-    - linters:
         - errcheck
       # headers.go has casts with values from contexts that should fail if there
       # is no error, but it would be very unidiomatic to return an error from
@@ -117,122 +214,35 @@ issues:
       # context values within this file
       path: private/pkg/rpc/headers.go
     - linters:
-        - gosec
-      # G101 checks for hardcoded credentials, and the variables named "*Password*
-      # trip this off.
-      path: private/buf/bufcli/bufcli.go
-      text: "G101:"
-    - linters:
-        - gosec
-      # G204 checks that exec.Command is not called with non-constants.
-      path: private/pkg/command/runner.go
-      text: "G204:"
-    - linters:
-        - wastedassign
-      # netrc/internal is a library largely copied in from an external repository with attribution.
-      # We try to make minimal edits.
-      path: private/pkg/netrc/internal/internal.go
-      # we actually want to use this init to create a protovalidate.Validator
-    - linters:
-        - gochecknoinits
-      path: private/bufpkg/bufcas/proto.go
-      # we actually want to use this init in testing
-    - linters:
-        - gochecknoinits
-      path: private/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go
-      # we actually want to use this init
-    - linters:
-        - gochecknoinits
-      path: private/usage/usage.go
-      # we actually want to embed a context here
+        - forbidigo
+      # we use os.Rename here to rename files in the same directory
+      # This is safe (we aren't traversing filesystem boundaries).
+      path: private/pkg/storage/storageos/bucket.go
+      text: "os.Rename"
     - linters:
         - containedctx
-      path: private/bufpkg/bufmodule/bufmoduleprotoparse/path_resolver.go
       # we actually want to embed a context here
-    - linters:
-        - containedctx
       path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go
+    - linters:
+        - forbidigo
       # we actually want to use errgroup when starting an HTTP server
-    - linters:
-        - forbidigo
       path: private/pkg/transport/http/httpserver/httpserver.go
-      text: "use of `errgroup"
-      # we want to use errgroup here
-    - linters:
-        - forbidigo
-      path: private/bufpkg/bufplugin/bufplugindocker/docker.go
-      text: "use of `errgroup"
-    - linters:
-        - containedctx
-      path: private/bufpkg/bufmodule/bufmoduleprotocompile
-      # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions only versions of go < 1.6.3 are affected.
-    - linters:
-        - gosec
-      path: private/pkg/git/git_test.go
-      text: "G504:"
     - linters:
         - stylecheck
-      path: private/bufpkg/bufapimodule/module_resolver_test.go
-      text: "ST1003:"
+      text: "ST1005:"
     - linters:
-        - dogsled
-      # One function call doesn't care about most of the returned destructured values. The
-      # dogsled linter complains about it. (Value of this linter is unclear...)
-      path: private/buf/cmd/buf/command/curl/curl.go
-    - linters:
-        - containedctx
-      # Type must implement an interface whose methods do not accept context. But this
-      # implementation makes RPC calls, which need a context. So we allow creator of the
-      # type to provide a context at value creation (instead of using context.Background()).
-      path: private/buf/bufcurl/reflection_resolver.go
-    # We deprecated all the definitions in plugin.proto but we still implement them.
+        - gochecknoinits
+      # we actually want to use this init
+      path: private/usage/usage.go
     - linters:
         - staticcheck
+      # We deprecated all the definitions in plugin.proto but we still implement them.
       text: "buf/alpha/registry/v1alpha1/plugin.proto is marked as deprecated"
-    # We deprecated all the definitions in generate.proto but we still implement them.
     - linters:
         - staticcheck
+      # We deprecated all the definitions in generate.proto but we still implement them.
       text: "buf/alpha/registry/v1alpha1/generate.proto is marked as deprecated"
-    # We need to handle this field in descriptor.proto.
     - linters:
         - staticcheck
+      # We need to handle this field in descriptor.proto.
       text: "GetDeprecatedLegacyJsonFieldConflicts is deprecated"
-    # We verify manually so that we can emit verbose output while doing so.
-    - linters:
-        - gosec
-      text: "G402:"
-      path: private/buf/bufcurl/tls.go
-    # We don't need a cryptographically secure RNG for these tests, and a
-    # deterministic RNG is actually nice for test repeatability.
-    - linters:
-        - gosec
-      text: "G404:"
-      path: private/bufpkg/bufimage/bufimageutil/.*_test\.go
-    # This test shouldn't run in parallel as it allocates a lot of memory.
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
-    # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
-    # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
-    # because they all call createZipFromDir on the same path, writing to the same file.
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/buf/cmd/buf/workspace_test.go
-    # Parallelizing TestPlainPostHandlerTLS and TestPlainPostHandlerH2C
-    # makes this test flaky.
-    - linters:
-        - paralleltest
-      path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
-      text: "missing the call to method parallel"
-    # Buf sync branches are not synced (nor tested) in parallel
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/buf/bufsync/commits_to_sync_test.go
-    # A git repo is not safe to read concurrently, since it has a single object reader.
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/pkg/git/repository_test.go

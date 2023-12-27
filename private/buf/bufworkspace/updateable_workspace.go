@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -48,10 +49,11 @@ func NewUpdateableWorkspaceForBucket(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	bucket storage.ReadWriteBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, moduleDataProvider, options...)
+	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
 }
 
 // *** PRIVATE ***
@@ -67,10 +69,11 @@ func newUpdateableWorkspaceForBucket(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	bucket storage.ReadWriteBucket,
+	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
-	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, moduleDataProvider, options...)
+	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
 	if err != nil {
 		return nil, err
 	}

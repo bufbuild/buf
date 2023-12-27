@@ -183,12 +183,13 @@ func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 		moduleKey, err := bufmodule.NewModuleKey(
 			moduleFullName,
 			commitID,
-			module.Digest,
+			module.ModuleDigest,
 		)
 		if err != nil {
 			return nil, err
 		}
-		moduleData, err := bufmodule.NewModuleData(
+		moduleData := bufmodule.NewModuleData(
+			ctx,
 			moduleKey,
 			func() (storage.ReadBucket, error) {
 				return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
@@ -206,9 +207,6 @@ func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 				)
 			},
 		)
-		if err != nil {
-			return nil, err
-		}
 		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
 	return optionalModuleDatas, nil

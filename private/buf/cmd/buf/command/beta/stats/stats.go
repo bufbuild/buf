@@ -101,6 +101,9 @@ func run(
 		ctx,
 		input,
 	)
+	if err != nil {
+		return err
+	}
 	stats, err := protostat.GetStats(
 		ctx,
 		protostatstorage.NewFileWalker(
@@ -111,6 +114,9 @@ func run(
 			),
 		),
 	)
+	if err != nil {
+		return err
+	}
 	return bufprint.NewStatsPrinter(container.Stdout()).PrintStats(
 		ctx,
 		format,

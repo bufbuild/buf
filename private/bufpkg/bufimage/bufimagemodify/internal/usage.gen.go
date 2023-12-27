@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufcasalpha
+package internal
 
 import _ "github.com/bufbuild/buf/private/usage"

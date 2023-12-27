@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package migratev1
+package migrate
 
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -25,10 +27,10 @@ import (
 )
 
 const (
-	// TODO: buf-work-yaml or bufwork-yaml?
-	bufWorkYAMLPathFlagName = "buf-work-yaml"
-	bufYAMLPathsFlagName    = "buf-yaml"
-	dryRunFlagName          = "dry-run"
+	workspaceDirectoriesFlagName = "workspace"
+	moduleDirectoriesFlagName    = "module"
+	bufGenYAMLPathFlagName       = "template"
+	dryRunFlagName               = "dry-run"
 )
 
 // NewCommand returns a new Command.
@@ -38,13 +40,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		// TODO: update if we are taking a directory as input
 		Use:   name,
 		Short: `Migrate configuration to the latest version`,
-		Long: `Migrate any v1 and v1beta1 configuration files in the directory to the latest version.
-Defaults to the current directory if not specified.`,
-		// TODO: update if we are taking a directory as input
-		Args: appcmd.MaximumNArgs(0),
+		Long:  `Migrate configuration files at the specified directories or paths to the latest version.`,
+		Args:  appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -55,9 +54,10 @@ Defaults to the current directory if not specified.`,
 }
 
 type flags struct {
-	BufWorkYAMLPath string
-	BufYAMLPaths    []string
-	DryRun          bool
+	WorkspaceDirPaths []string
+	ModuleDirPaths    []string
+	BufGenYAMLPaths   []string
+	DryRun            bool
 }
 
 func newFlags() *flags {
@@ -65,23 +65,29 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.BufWorkYAMLPath,
-		bufWorkYAMLPathFlagName,
-		"",
-		"The buf.work.yaml to migrate",
+	flagSet.StringSliceVar(
+		&f.WorkspaceDirPaths,
+		workspaceDirectoriesFlagName,
+		nil,
+		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated.",
 	)
 	flagSet.StringSliceVar(
-		&f.BufYAMLPaths,
-		bufYAMLPathsFlagName,
+		&f.ModuleDirPaths,
+		moduleDirectoriesFlagName,
 		nil,
-		"The buf.yamls to migrate. Must not be included by the workspace specified",
+		"The module directories to migrate. buf.yaml and buf.lock will be migrated",
 	)
 	flagSet.BoolVar(
 		&f.DryRun,
 		dryRunFlagName,
 		false,
-		"Print the changes to be made, without writing to the disk",
+		"Print the changes to be made without writing to the disk",
+	)
+	flagSet.StringSliceVar(
+		&f.BufGenYAMLPaths,
+		bufGenYAMLPathFlagName,
+		nil,
+		"The paths to the generation templates to migrate",
 	)
 }
 
@@ -91,29 +97,21 @@ func run(
 	flags *flags,
 ) error {
 	var migrateOptions []bufmigrate.MigrateOption
-	if flags.BufWorkYAMLPath != "" {
-		option, err := bufmigrate.MigrateBufWorkYAMLFile(flags.BufWorkYAMLPath)
-		if err != nil {
-			return err
-		}
-		migrateOptions = append(migrateOptions, option)
-	}
-	if len(flags.BufYAMLPaths) > 0 {
-		option, err := bufmigrate.MigrateBufYAMLFile(flags.BufYAMLPaths)
-		if err != nil {
-			return err
-		}
-		migrateOptions = append(migrateOptions, option)
-	}
 	if flags.DryRun {
-		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun(container.Stdout()))
+		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun())
+	}
+	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	if err != nil {
+		return err
 	}
 	return bufmigrate.Migrate(
 		ctx,
-		// TODO: Do we want to add a flag --disable-symlinks?
+		container.Stderr(),
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
-		// TODO: pass an actual client when implemented on server
-		nil,
+		bufapi.NewClientProvider(clientConfig),
+		flags.WorkspaceDirPaths,
+		flags.ModuleDirPaths,
+		flags.BufGenYAMLPaths,
 		migrateOptions...,
 	)
 }
