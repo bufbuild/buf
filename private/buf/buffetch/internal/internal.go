@@ -504,6 +504,25 @@ func NewWriter(
 	)
 }
 
+// ProtoFileWriter is a writer of ProtoFiles.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoWriter returns a new ProtoWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
+		logger,
+	)
+}
+
 // RawRef is an unprocessed ref used for WithRefProcessor.
 //
 // A RawRefProcessor will allow modifications to a RawRef before continuing parsing.

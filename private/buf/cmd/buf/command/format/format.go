@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -54,14 +53,6 @@ const (
 	writeFlagName           = "write"
 	writeFlagShortName      = "w"
 )
-
-const (
-	outputTypeStdout outputType = iota + 1
-	outputTypeDir
-	outputTypeFile
-)
-
-type outputType int
 
 // NewCommand returns a new Command.
 func NewCommand(
@@ -257,29 +248,17 @@ func run(
 		return err
 	}
 	if flags.Write {
+		if flags.Output != "-" {
+			return fmt.Errorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
+		}
 		// We abuse ExternalPaths below to say that if flags.Write is set, just write over
 		// the ExternalPath. Also, you can only really use flags.Write if you have a dir
-		// or proto file. So, we abuse getOutputTypeAndPath to determine if we have a writable source.
-		sourceOutputType, sourceOutputPath, err := getOutputTypeAndPath(ctx, container, source)
-		if err != nil {
+		// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
+		if _, err := getDirOrProtoFileRef(ctx, container, source); err != nil {
 			return fmt.Errorf("invalid input %q when using --%s: %w", source, writeFlagName, err)
 		}
-		switch sourceOutputType {
-		case outputTypeStdout:
-			return fmt.Errorf("invalid input %q when using --%s: cannot also writeto stdout", source, writeFlagName)
-		case outputTypeDir:
-		case outputTypeFile:
-			// We should be percolating this from buffetch, but we're not.
-			if app.IsDevStdout(sourceOutputPath) {
-				return fmt.Errorf("invalid input %q when using --%s: cannot also write to stdout", source, writeFlagName)
-			}
-		default:
-			return syserror.Newf("unknown outputType: %v", sourceOutputType)
-		}
 	}
-	// This is for the flags.Output flag. This is separate from flags.Write.
-	// It is valid to have a non-stdout flags.Output
-	outputType, outputPath, err := getOutputTypeAndPath(ctx, container, flags.Output)
+	dirOrProtoFileRef, err := getDirOrProtoFileRef(ctx, container, flags.Output)
 	if err != nil {
 		return err
 	}
@@ -366,83 +345,32 @@ func run(
 		)
 	}
 	// Both flags.Diff and flags.Write not set, do output logic.
-	switch outputType {
-	case outputTypeStdout:
-		if err := writeToFile(ctx, formattedReadBucket, container.Stdout()); err != nil {
+	switch t := dirOrProtoFileRef.(type) {
+	case buffetch.DirRef:
+		if err := writeToDir(ctx, flags.DisableSymlinks, formattedReadBucket, t); err != nil {
 			return err
 		}
-	case outputTypeDir:
-		if err := writeToDir(ctx, flags.DisableSymlinks, formattedReadBucket, outputPath); err != nil {
-			return err
-		}
-	case outputTypeFile:
-		var writer io.Writer
-		if app.IsDevStdout(outputPath) {
-			writer = container.Stdout()
-		} else {
-			file, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			writer = file
-		}
-		if err := writeToFile(ctx, formattedReadBucket, writer); err != nil {
+	case buffetch.ProtoFileRef:
+		if err := writeToProtoFile(ctx, container, formattedReadBucket, t); err != nil {
 			return err
 		}
 	default:
-		return syserror.Newf("unknown outputType: %v", outputType)
-	}
-	if flags.ExitCode && diffExists {
-		return bufctl.ErrFileAnnotation
+		return syserror.Newf("unknown buffetch.DirOrProtoFileRef: %v", dirOrProtoFileRef)
 	}
 	return nil
-}
-
-func writeToFile(
-	ctx context.Context,
-	formattedReadBucket storage.ReadBucket,
-	writer io.Writer,
-) error {
-	return storage.WalkReadObjects(
-		ctx,
-		formattedReadBucket,
-		"",
-		func(readObject storage.ReadObject) error {
-			data, err := io.ReadAll(readObject)
-			if err != nil {
-				return err
-			}
-			if _, err := writer.Write(data); err != nil {
-				return err
-			}
-			return nil
-		},
-	)
 }
 
 func writeToDir(
 	ctx context.Context,
 	disableSymlinks bool,
 	formattedReadBucket storage.ReadBucket,
-	dirPath string,
+	dirRef buffetch.DirRef,
 ) error {
-	// OK to use os.Stat instead of os.LStat here as this is CLI-only
-	if _, err := os.Stat(dirPath); err != nil {
-		// We don't need to check fileInfo.IsDir() because it's
-		// already handled by the storageosProvider.
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(dirPath, 0755); err != nil {
-				return err
-			}
-			// We could os.RemoveAll if there is a non-nil retErr, but we're
-			// not going to just to be safe.
-		}
+	if err := createDirIfNotExists(dirRef.DirPath()); err != nil {
+		return err
 	}
 	readWriteBucket, err := newStorageosProvider(disableSymlinks).NewReadWriteBucket(
-		dirPath,
+		dirRef.DirPath(),
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
@@ -458,39 +386,79 @@ func writeToDir(
 	return err
 }
 
-func getOutputTypeAndPath(
+func writeToProtoFile(
 	ctx context.Context,
 	container appext.Container,
-	output string,
-) (outputType, string, error) {
-	outputDirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(
-		container.Logger(),
-	).GetDirOrProtoFileRef(ctx, output)
+	formattedReadBucket storage.ReadBucket,
+	protoFileRef buffetch.ProtoFileRef,
+) (retErr error) {
+	writeCloser, err := buffetch.NewProtoFileWriter(container.Logger()).PutProtoFile(
+		ctx,
+		container,
+		protoFileRef,
+	)
 	if err != nil {
-		return 0, "", err
+		return err
 	}
-	switch t := outputDirOrProtoFileRef.(type) {
-	case buffetch.DirRef:
-		return outputTypeDir, t.DirPath(), nil
-	case buffetch.ProtoFileRef:
-		if t.IncludePackageFiles() {
-			// We should have a better answer here. Right now, it's
-			// possible that the other files in the same package are defined
-			// in a remote dependency, which makes it impossible to rewrite
-			// in-place.
-			//
-			// In the case that the user uses the -w flag, we'll either need
-			// to return an error, or omit the file that it can't rewrite in-place
-			// (potentially including a debug log).
-			return 0, "", errors.New("cannot specify include_package_files=true with format")
+	defer func() {
+		retErr = multierr.Append(retErr, writeCloser.Close())
+	}()
+	return storage.WalkReadObjects(
+		ctx,
+		formattedReadBucket,
+		"",
+		func(readObject storage.ReadObject) error {
+			data, err := io.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
+			if _, err := writeCloser.Write(data); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+func createDirIfNotExists(dirPath string) error {
+	// OK to use os.Stat instead of os.LStat here as this is CLI-only
+	if _, err := os.Stat(dirPath); err != nil {
+		// We don't need to check fileInfo.IsDir() because it's
+		// already handled by the storageosProvider.
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
+				return err
+			}
+			// We could os.RemoveAll if the overall command exits without error, but we're
+			// not going to, just to be safe.
 		}
-		if t.IsStdio() {
-			return outputTypeStdout, "", nil
-		}
-		return outputTypeFile, t.ProtoFilePath(), nil
-	default:
-		return 0, "", syserror.Newf("invalid bufetch.DirOrProtoFileRef: %T", outputDirOrProtoFileRef)
 	}
+	return nil
+}
+
+func getDirOrProtoFileRef(
+	ctx context.Context,
+	container appext.Container,
+	value string,
+) (buffetch.DirOrProtoFileRef, error) {
+	dirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(
+		container.Logger(),
+	).GetDirOrProtoFileRef(ctx, value)
+	if err != nil {
+		return nil, err
+	}
+	if protoFileRef, ok := dirOrProtoFileRef.(buffetch.ProtoFileRef); ok && protoFileRef.IncludePackageFiles() {
+		// We should have a better answer here. Right now, it's
+		// possible that the other files in the same package are defined
+		// in a remote dependency, which makes it impossible to rewrite
+		// in-place.
+		//
+		// In the case that the user uses the -w flag, we'll either need
+		// to return an error, or omit the file that it can't rewrite in-place
+		// (potentially including a debug log).
+		return nil, errors.New("cannot specify include_package_files=true with format")
+	}
+	return dirOrProtoFileRef, nil
 }
 
 func newStorageosProvider(disableSymlinks bool) storageos.Provider {

@@ -139,7 +139,8 @@ type ProtoFileRef interface {
 	SourceRef
 	DirOrProtoFileRef
 	ProtoFilePath() string
-	IsStdio() bool
+	// True if the FileScheme is Stdio, Stdout, Stdin, or Null.
+	IsDevPath() bool
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
 }
@@ -453,6 +454,25 @@ func NewWriter(
 	logger *zap.Logger,
 ) Writer {
 	return newWriter(
+		logger,
+	)
+}
+
+// ProtoFileWriter is a writer of proto files.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoFileWriter returns a new ProtoFileWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
 		logger,
 	)
 }
