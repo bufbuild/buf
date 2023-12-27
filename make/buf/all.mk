@@ -174,16 +174,3 @@ endif
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
-
-.PHONY: gofuzz
-gofuzz: $(GO_FUZZ)
-	@rm -rf $(TMP)/gofuzz
-	@mkdir -p $(TMP)/gofuzz $(TMP)/gofuzz/corpus
-	# go-fuzz-build requires github.com/dvyukov/go-fuzz be in go.mod, but we don't need that dependency otherwise.
-	# This adds go-fuzz-dep to go.mod, runs go-fuzz-build, then restores go.mod.
-	cp go.mod $(TMP)/go.mod.bak; cp go.sum $(TMP)/go.sum.bak
-	go get github.com/dvyukov/go-fuzz/go-fuzz-dep@$(GO_FUZZ_VERSION)
-	cd ./private/bufpkg/bufimage/bufimagefuzz; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
-	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
-	cp private/bufpkg/bufimage/bufimagefuzz/corpus/* $(TMP)/gofuzz/corpus
-	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz
