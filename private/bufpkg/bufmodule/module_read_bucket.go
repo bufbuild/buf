@@ -850,6 +850,10 @@ func (s *storageReadBucket) Stat(ctx context.Context, path string) (storage.Obje
 }
 
 func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
+	if err != nil {
+		return err
+	}
 	return s.delegate.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {

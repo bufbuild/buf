@@ -30,28 +30,39 @@ import (
 
 // FormatModuleSet formats and writes the target files into a read bucket.
 func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ storage.ReadBucket, retErr error) {
-	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
-	fileInfos, err := bufmodule.GetTargetFileInfos(ctx, moduleReadBucket)
+	return FormatBucket(
+		ctx,
+		bufmodule.ModuleReadBucketToStorageReadBucket(
+			bufmodule.ModuleReadBucketWithOnlyTargetFiles(
+				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+			),
+		),
+	)
+}
+
+// FormatBucket formats the .proto files in the bucket and returns a new bucket with the formatted files.
+func FormatBucket(ctx context.Context, bucket storage.ReadBucket) (_ storage.ReadBucket, retErr error) {
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	paths, err := storage.AllPaths(ctx, storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")), "")
 	if err != nil {
 		return nil, err
 	}
-	readWriteBucket := storagemem.NewReadWriteBucket()
-	jobs := make([]func(context.Context) error, len(fileInfos))
-	for i, fileInfo := range fileInfos {
-		fileInfo := fileInfo
+	jobs := make([]func(context.Context) error, len(paths))
+	for i, path := range paths {
+		path := path
 		jobs[i] = func(ctx context.Context) (retErr error) {
-			moduleFile, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
+			readObjectCloser, err := bucket.Get(ctx, path)
 			if err != nil {
 				return err
 			}
 			defer func() {
-				retErr = multierr.Append(retErr, moduleFile.Close())
+				retErr = multierr.Append(retErr, readObjectCloser.Close())
 			}()
-			fileNode, err := parser.Parse(moduleFile.ExternalPath(), moduleFile, reporter.NewHandler(nil))
+			fileNode, err := parser.Parse(readObjectCloser.ExternalPath(), readObjectCloser, reporter.NewHandler(nil))
 			if err != nil {
 				return err
 			}
-			writeObjectCloser, err := readWriteBucket.Put(ctx, moduleFile.Path())
+			writeObjectCloser, err := readWriteBucket.Put(ctx, path)
 			if err != nil {
 				return err
 			}
@@ -61,7 +72,7 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ stor
 			if err := FormatFileNode(writeObjectCloser, fileNode); err != nil {
 				return err
 			}
-			return writeObjectCloser.SetExternalPath(moduleFile.ExternalPath())
+			return writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath())
 		}
 	}
 	if err := thread.Parallelize(ctx, jobs); err != nil {

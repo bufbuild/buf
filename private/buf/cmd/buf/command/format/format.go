@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -248,6 +250,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	outputSourceOrModuleRef, err := buffetch.NewRefParser(logger).GetSourceRef(ctx, flags.Output)
 	runner := command.NewRunner()
 	controller, err := bufcli.NewController(
 		container,
@@ -282,7 +285,12 @@ func run(
 	}
 
 	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
-	formattedReadBucket, err := bufformat.FormatModuleSet(ctx, workspace)
+	//paths, err := storage.AllPaths(ctx, originalReadBucket, "")
+	//if err != nil {
+	//return err
+	//}
+	//fmt.Println("original:\n" + strings.Join(paths, "\n") + "\n")
+	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket)
 	if err != nil {
 		return err
 	}
@@ -298,13 +306,50 @@ func run(
 	); err != nil {
 		return err
 	}
-	diffPresent := diffBuffer.Len() > 0
-	if flags.Diff {
+	diffExists := diffBuffer.Len() > 0
+
+	if flags.Diff && diffExists {
 		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
 			return err
 		}
 	}
-	if flags.ExitCode && diffPresent {
+	if flags.Rewrite {
+		if err := storage.WalkReadObjects(
+			ctx,
+			formattedReadBucket,
+			"",
+			func(readObject storage.ReadObject) error {
+				// We use os.OpenFile here instead of storage.Copy for a few reasons.
+				//
+				// storage.Copy operates on normal paths, so the copied content is always placed
+				// relative to the bucket's root (as expected). The rewrite in-place behavior can
+				// be rephrased as writing to the same bucket as the input (e.g. buf format proto -o proto).
+				//
+				// Now, if the user asks to rewrite an entire workspace (i.e. a directory containing
+				// a buf.work.yaml), we would need to call storage.Copy for each of the directories
+				// defined in the workspace. This involves parsing the buf.work.yaml and creating
+				// a storage.Bucket for each of the directories.
+				//
+				// It's simpler to just copy the files in-place based on their external path since
+				// it's the same behavior for single files, directories, and workspaces.
+				file, err := os.OpenFile(readObject.ExternalPath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if err != nil {
+					return err
+				}
+				defer func() {
+					retErr = multierr.Append(retErr, file.Close())
+				}()
+				if _, err := file.ReadFrom(formattedReadObject); err != nil {
+					return err
+				}
+				return nil
+			},
+		); err != nil {
+			return false, err
+		}
+		return diffPresent, nil
+	}
+	if flags.ExitCode && diffExists {
 		return bufctl.ErrFileAnnotation
 	}
 	return nil

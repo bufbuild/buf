@@ -1173,6 +1173,59 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		),
 		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar#format=binpb",
 	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"foo",
+		),
+		nil,
+		"foo",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"internal/testdata/direndsinproto.proto",
+		),
+		nil,
+		"internal/testdata/direndsinproto.proto",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"foo.proto",
+			false,
+		),
+		nil,
+		"foo.proto",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"foo.proto",
+		),
+		nil,
+		"foo.proto#format=dir",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"foo.proto",
+			true,
+		),
+		nil,
+		"foo.proto#include_package_files=true",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		nil,
+		newInvalidDirOrProtoFilePathError("-"),
+		"-",
+	)
 }
 
 func TestGetParsedRefError(t *testing.T) {
@@ -1322,6 +1375,31 @@ func testGetParsedRef(
 	value string,
 ) {
 	parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(
+		context.Background(),
+		value,
+		allFormats,
+	)
+	if expectedErr != nil {
+		if err == nil {
+			assert.Equal(t, nil, parsedRef, "expected error")
+		} else {
+			assert.Equal(t, expectedErr, err)
+		}
+	} else {
+		assert.NoError(t, err)
+		if err == nil {
+			assert.Equal(t, expectedParsedRef, parsedRef)
+		}
+	}
+}
+
+func testGetParsedDirOrProtoFileRef(
+	t *testing.T,
+	expectedParsedRef internal.ParsedRef,
+	expectedErr error,
+	value string,
+) {
+	parsedRef, err := newDirOrProtoFileRefParser(zap.NewNop()).getParsedRef(
 		context.Background(),
 		value,
 		allFormats,

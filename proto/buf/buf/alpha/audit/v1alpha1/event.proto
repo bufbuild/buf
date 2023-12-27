@@ -23,7 +23,7 @@ import "google/protobuf/timestamp.proto";
 
 // ActorType is the type of actor that caused the audited event.
 enum ActorType {
-  ACTOR_TYPE_UNSPECIFIED = 0;
+ACTOR_TYPE_UNSPECIFIED = 0;
   ACTOR_TYPE_USER = 1;
   ACTOR_TYPE_SYSTEM = 2;
 }

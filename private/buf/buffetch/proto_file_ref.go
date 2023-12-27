@@ -51,3 +51,5 @@ func (r *protoFileRef) internalProtoFileRef() internal.ProtoFileRef {
 }
 
 func (*protoFileRef) isSourceOrModuleRef() {}
+
+func (*protoFileRef) isDirOrProtoFileRef() {}

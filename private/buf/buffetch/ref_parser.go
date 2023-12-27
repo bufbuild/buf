@@ -151,6 +151,7 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 			),
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
 	}
 }
@@ -162,6 +163,18 @@ func newDirRefParser(logger *zap.Logger) *refParser {
 			logger,
 			internal.WithRawRefProcessor(processRawRefDir),
 			internal.WithDirFormat(formatDir),
+		),
+	}
+}
+
+func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger,
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefDirOrProtoFile),
+			internal.WithDirFormat(formatDir),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
 	}
 }
@@ -201,6 +214,7 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
 			internal.WithModuleFormat(formatMod),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
 	}
 }
@@ -419,6 +433,42 @@ func (a *refParser) GetDirRefForInputConfig(
 	return newDirRef(parsedDirRef), nil
 }
 
+func (a *refParser) GetDirOrProtoFileRef(
+	ctx context.Context,
+	value string,
+) (DirOrProtoFileRef, error) {
+	parsedRef, err := a.getParsedRef(ctx, value, dirOrProtoFileFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("invalid ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetDirOrProtoFileRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (DirOrProtoFileRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, dirOrProtoFileFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("invalid ParsedRef type: %T", parsedRef)
+	}
+}
+
 func (a *refParser) GetModuleRef(
 	ctx context.Context,
 	value string,
@@ -501,7 +551,7 @@ func processRawRef(rawRef *internal.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
-	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
+	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
 		format = formatBinpb
 	} else {
 		switch filepath.Ext(rawRef.Path) {
@@ -554,17 +604,13 @@ func processRawRef(rawRef *internal.RawRef) error {
 			compressionType = internal.CompressionTypeGzip
 		case ".git":
 			format = formatGit
-			// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
-			// it falls through to the `default` case.
 		case ".proto":
 			fileInfo, err := os.Stat(rawRef.Path)
-			if err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+			if err == nil && fileInfo.IsDir() {
+				format = formatDir
+			} else {
+				format = formatProtoFile
 			}
-			if fileInfo != nil && fileInfo.IsDir() {
-				return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
-			}
-			format = formatProtoFile
 		default:
 			var err error
 			format, err = assumeModuleOrDir(rawRef.Path)
@@ -579,7 +625,6 @@ func processRawRef(rawRef *internal.RawRef) error {
 }
 
 func processRawRefSource(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
@@ -608,6 +653,13 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
 		format = formatGit
+	case ".proto":
+		fileInfo, err := os.Stat(rawRef.Path)
+		if err == nil && fileInfo.IsDir() {
+			format = formatDir
+		} else {
+			format = formatProtoFile
+		}
 	default:
 		format = formatDir
 	}
@@ -617,12 +669,35 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 }
 
 func processRawRefDir(rawRef *internal.RawRef) error {
+	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
+		return newInvalidDirPathError(rawRef.Path)
+	}
 	rawRef.Format = formatDir
 	return nil
 }
 
+func processRawRefDirOrProtoFile(rawRef *internal.RawRef) error {
+	var format string
+	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
+		return newInvalidDirOrProtoFilePathError(rawRef.Path)
+	} else {
+		switch filepath.Ext(rawRef.Path) {
+		case ".proto":
+			fileInfo, err := os.Stat(rawRef.Path)
+			if err == nil && fileInfo.IsDir() {
+				format = formatDir
+			} else {
+				format = formatProtoFile
+			}
+		default:
+			format = formatDir
+		}
+		rawRef.Format = format
+	}
+	return nil
+}
+
 func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
@@ -651,6 +726,15 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
 		format = formatGit
+	case ".proto":
+		fileInfo, err := os.Stat(rawRef.Path)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+		}
+		if fileInfo != nil && fileInfo.IsDir() {
+			return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
+		}
+		format = formatProtoFile
 	default:
 		var err error
 		format, err = assumeModuleOrDir(rawRef.Path)
@@ -762,6 +846,14 @@ func assumeModuleOrDir(path string) (string, error) {
 	}
 	// cannot be parsed into a module, assume dir for here
 	return formatDir, nil
+}
+
+func newInvalidDirPathError(path string) error {
+	return fmt.Errorf("path provided is not a valid directory: %s", path)
+}
+
+func newInvalidDirOrProtoFilePathError(path string) error {
+	return fmt.Errorf("path provided is not a valid directory or proto file: %s", path)
 }
 
 type messageRefParserOptions struct {
