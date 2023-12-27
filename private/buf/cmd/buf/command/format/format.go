@@ -323,21 +323,25 @@ func run(
 		return err
 	}
 	diffExists := diffBuffer.Len() > 0
+	defer func() {
+		if retErr == nil && flags.ExitCode && diffExists {
+			retErr = bufctl.ErrFileAnnotation
+		}
+	}()
 
-	if flags.Diff && diffExists {
-		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
-			return err
+	if flags.Diff {
+		if diffExists {
+			if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
+				return err
+			}
 		}
 		// If we haven't overridden the output flag and havent set write, we can stop here.
 		if flags.Output == "-" && !flags.Write {
-			if flags.ExitCode && diffExists {
-				return bufctl.ErrFileAnnotation
-			}
 			return nil
 		}
 	}
 	if flags.Write {
-		if err := storage.WalkReadObjects(
+		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
 			"",
@@ -359,10 +363,9 @@ func run(
 				}
 				return nil
 			},
-		); err != nil {
-			return err
-		}
+		)
 	}
+	// Both flags.Diff and flags.Write not set, do output logic.
 	switch outputType {
 	case outputTypeStdout:
 		if err := writeToFile(ctx, formattedReadBucket, container.Stdout()); err != nil {
