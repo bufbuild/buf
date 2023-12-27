@@ -218,17 +218,17 @@ func newFuzzResult(
 }
 
 // panicOrN panics if there is an error or returns the appropriate value for Fuzz to return.
-func (f *fuzzResult) panicOrN(ctx context.Context) int {
-	if err := f.error(ctx); err != nil {
-		panic(err.Error())
-	}
-	// This will return 1 for valid protobufs and 0 for invalid in order to encourage the fuzzer to generate more
-	// realistic looking data.
-	if f.protocErr == nil {
-		return 1
-	}
-	return 0
-}
+//func (f *fuzzResult) panicOrN(ctx context.Context) int {
+//if err := f.error(ctx); err != nil {
+//panic(err.Error())
+//}
+//// This will return 1 for valid protobufs and 0 for invalid in order to encourage the fuzzer to generate more
+//// realistic looking data.
+//if f.protocErr == nil {
+//return 1
+//}
+//return 0
+//}
 
 // error returns an error that should cause Fuzz to panic.
 func (f *fuzzResult) error(ctx context.Context) error {
