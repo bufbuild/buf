@@ -117,7 +117,7 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -134,7 +134,7 @@ bufgenerateprotogoclient:
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
-	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
