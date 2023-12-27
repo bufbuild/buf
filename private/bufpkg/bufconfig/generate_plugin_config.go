@@ -21,7 +21,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -63,6 +62,23 @@ const (
 	// We defer further classification to the plugin executor. In v2 the exact
 	// plugin config type is always specified and it will never be just local.
 	PluginConfigTypeLocal
+)
+
+var (
+	// ProtocProxyPluginNames are the names of the plugins that should be proxied through protoc
+	// in the absence of a binary.
+	ProtocProxyPluginNames = map[string]struct{}{
+		"cpp":    {},
+		"csharp": {},
+		"java":   {},
+		"js":     {},
+		"objc":   {},
+		"php":    {},
+		"python": {},
+		"pyi":    {},
+		"ruby":   {},
+		"kotlin": {},
+	}
 )
 
 // GeneratePluginConfig is a configuration for a plugin.
@@ -662,7 +678,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 			externalPluginConfigV2.Binary = binaryName
 			break
 		}
-		if _, isProtocBuiltin := bufpluginexec.ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
+		if _, isProtocBuiltin := ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
 			externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
 			break
 		}

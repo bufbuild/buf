@@ -31,6 +31,7 @@ LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.5.1
+GO_FUZZ_VERSION := 7955ebc9f2de3517b13dcac8425fcbe7da75287a
 # Comment out to use released buf
 #BUF_GO_INSTALL_PATH := ./cmd/buf
 
