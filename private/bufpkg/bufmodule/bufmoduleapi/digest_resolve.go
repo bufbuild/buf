@@ -55,5 +55,5 @@ func ModuleDigestForCommitID(
 	if len(response.Msg.Commits) != 1 {
 		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
 	}
-	return protoToModuleDigest(response.Msg.Commits[0].Digest)
+	return ProtoToModuleDigest(response.Msg.Commits[0].Digest)
 }

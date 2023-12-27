@@ -122,7 +122,7 @@ func NewUploadRequest(
 					if err != nil {
 						return nil, err
 					}
-					protoDigest, err := moduleDigestToProto(moduleDigest)
+					protoDigest, err := ModuleDigestToProto(moduleDigest)
 					if err != nil {
 						return nil, err
 					}

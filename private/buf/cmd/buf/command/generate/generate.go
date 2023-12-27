@@ -52,7 +52,6 @@ const (
 	disableSymlinksFlagName     = "disable-symlinks"
 	typeFlagName                = "type"
 	typeDeprecatedFlagName      = "include-types"
-	migrateFlagName             = "migrate"
 )
 
 // NewCommand returns a new Command.

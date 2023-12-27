@@ -264,6 +264,7 @@ func newBufYAMLFile(
 	)
 	return &bufYAMLFile{
 		fileVersion:             fileVersion,
+		fileName:                fileName,
 		moduleConfigs:           moduleConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
@@ -559,6 +560,9 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		)
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
+			joinDirPath := func(importPath string) string {
+				return filepath.Join(moduleDirPath, importPath)
+			}
 			externalModule := externalBufYAMLFileModuleV2{
 				Directory: moduleDirPath,
 			}
@@ -573,14 +577,11 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			if !ok {
 				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
-			externalModule.Excludes = excludes
+			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
 			// All already sorted.
 			lintConfig := moduleConfig.LintConfig()
 			externalModule.Lint.Use = lintConfig.UseIDsAndCategories()
 			externalModule.Lint.Except = lintConfig.ExceptIDsAndCategories()
-			joinDirPath := func(importPath string) string {
-				return filepath.Join(moduleDirPath, importPath)
-			}
 			externalModule.Lint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
 			externalModule.Lint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
 			for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {

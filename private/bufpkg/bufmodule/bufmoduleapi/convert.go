@@ -49,10 +49,8 @@ func ParseModuleVisibility(s string) (modulev1beta1.ModuleVisibility, error) {
 	}
 }
 
-// *** PRIVATE ***
-
-// moduleDigestToProto converts the given ModuleDigest to a proto Digest.
-func moduleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Digest, error) {
+// ModuleDigestToProto converts the given ModuleDigest to a proto Digest.
+func ModuleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Digest, error) {
 	protoDigestType, ok := moduleDigestTypeToProto[moduleDigest.Type()]
 	// Technically we have already done this validation but just to be safe.
 	if !ok {
@@ -65,11 +63,11 @@ func moduleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Di
 	return protoDigest, nil
 }
 
-// protoToModuleDigest converts the given proto Digest to a ModuleDigest.
+// ProtoToModuleDigest converts the given proto Digest to a ModuleDigest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func protoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDigest, error) {
+func ProtoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDigest, error) {
 	moduleDigestType, ok := protoToModuleDigestType[protoDigest.Type]
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
@@ -80,6 +78,8 @@ func protoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDig
 	}
 	return bufmodule.NewModuleDigest(moduleDigestType, bufcasDigest)
 }
+
+// *** PRIVATE ***
 
 // It is assumed that the bucket is already filtered to just module files.
 func bucketToProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modulev1beta1.File, error) {

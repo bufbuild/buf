@@ -83,7 +83,7 @@ func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, module
 		protoCommit.Id,
 		func() (bufmodule.ModuleDigest, error) {
 			// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
-			return protoToModuleDigest(protoCommit.Digest)
+			return ProtoToModuleDigest(protoCommit.Digest)
 		},
 	)
 }

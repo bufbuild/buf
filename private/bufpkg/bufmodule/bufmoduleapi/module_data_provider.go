@@ -252,7 +252,7 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 		moduleFullName,
 		protoCommit.Id,
 		func() (bufmodule.ModuleDigest, error) {
-			return protoToModuleDigest(protoCommit.Digest)
+			return ProtoToModuleDigest(protoCommit.Digest)
 		},
 	)
 }
@@ -322,7 +322,7 @@ func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1be
 	if err != nil {
 		return nil, err
 	}
-	protoModuleKeyDigest, err := moduleDigestToProto(moduleKeyDigest)
+	protoModuleKeyDigest, err := ModuleDigestToProto(moduleKeyDigest)
 	if err != nil {
 		return nil, err
 	}

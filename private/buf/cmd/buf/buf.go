@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -66,6 +65,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
@@ -112,6 +112,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
+			migrate.NewCommand("migrate", builder),
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
@@ -141,7 +142,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
 					graph.NewCommand("graph", builder),
-					migratev1.NewCommand("migrate-v1", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					studioagent.NewCommand("studio-agent", builder),
