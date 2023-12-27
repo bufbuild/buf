@@ -112,7 +112,7 @@ type ManagedOverrideRule interface {
 	// managed mode for.
 	ModuleFullName() string
 	// FieldName is the fully qualified name for the field to disable managed
-	// mode for. This is guranteed to be empty is FileOption is not empty.
+	// mode for. This is guaranteed to be empty is FileOption is not empty.
 	FieldName() string
 	// FileOption returns the file option to disable managed mode for. This is
 	// guaranteed to be empty (FileOptionUnspecified) if FieldName is empty.

@@ -157,6 +157,9 @@ func run(
 				workspace,
 			),
 		)
+		if err != nil {
+			return err
+		}
 		var filePaths []string
 		for _, fileInfo := range fileInfos {
 			filePaths = append(filePaths, fileInfo.Path())

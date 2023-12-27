@@ -73,7 +73,7 @@ type GeneratePluginConfig interface {
 	Name() string
 	// Out returns the output directory for generation. This is never empty.
 	Out() string
-	// Opt returns the plugin options as a comma seperated string.
+	// Opt returns the plugin options as a comma separated string.
 	Opt() string
 	// IncludeImports returns whether to generate code for imported files. This
 	// is always false in v1.
@@ -188,7 +188,7 @@ func NewProtocBuiltinPluginConfig(
 }
 
 // NewGeneratePluginWithIncludeImportsAndWKT returns a GeneratePluginConfig the
-// same as the input, with include imports and include wkt overriden.
+// same as the input, with include imports and include wkt overridden.
 func NewGeneratePluginWithIncludeImportsAndWKT(
 	config GeneratePluginConfig,
 	includeImports bool,

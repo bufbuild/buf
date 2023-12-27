@@ -120,7 +120,7 @@ issues:
         - gosec
       # G101 checks for hardcoded credentials, and the variables named "*Password*
       # trip this off.
-      path: private/buf/bufcli/bufcli.go
+      path: private/buf/bufcli/env.go
       text: "G101:"
     - linters:
         - gosec
@@ -144,6 +144,10 @@ issues:
     - linters:
         - containedctx
       path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go
+      # we actually want to embed a context here
+    - linters:
+        - containedctx
+      path: private/bufpkg/bufimage/parser_accessor_handler.go
       # we actually want to use errgroup when starting an HTTP server
     - linters:
         - forbidigo
@@ -198,6 +202,11 @@ issues:
         - paralleltest
       text: "missing the call to method parallel"
       path: private/bufpkg/bufimage/bufimage/build_image_unix_test.go
+    # This test shouldn't run in parallel as it needs osext.Getwd.
+    - linters:
+        - paralleltest
+      text: "missing the call to method parallel"
+      path: private/buf/buffetch/internal/reader_test.go
     # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
     # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
     # because they all call createZipFromDir on the same path, writing to the same file.

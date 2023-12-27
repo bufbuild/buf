@@ -190,6 +190,9 @@ func run(
 		moduleSet,
 		bufmoduleapi.UploadRequestWithLabels(combineLabelLikeFlags(flags)...),
 	)
+	if err != nil {
+		return err
+	}
 	response, err := clientProvider.UploadServiceClient(singleRegistryHostname).Upload(
 		ctx,
 		connect.NewRequest(protoUploadRequest),

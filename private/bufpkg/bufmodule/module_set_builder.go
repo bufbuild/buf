@@ -528,7 +528,6 @@ func getUniqueSortedAddedModulesByOpaqueID(ctx context.Context, addedModules []*
 		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
 			alreadySeenOpaqueIDs[opaqueID] = struct{}{}
 			uniqueAddedModules = append(uniqueAddedModules, addedModule)
-		} else {
 		}
 	}
 	sort.Slice(

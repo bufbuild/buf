@@ -170,6 +170,9 @@ func run(
 			return bufmodule.ModuleToModuleKey(remoteDep)
 		},
 	)
+	if err != nil {
+		return err
+	}
 	transitiveDepNameToModuleKey := slicesext.ToValuesMap(
 		transitiveDepModuleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {

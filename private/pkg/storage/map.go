@@ -274,9 +274,9 @@ func (*mapWriteBucketCloser) SetExternalPathSupported() bool {
 	return false
 }
 
-func (r *mapWriteBucketCloser) Close() error {
-	if r.closeFunc != nil {
-		return r.closeFunc()
+func (w *mapWriteBucketCloser) Close() error {
+	if w.closeFunc != nil {
+		return w.closeFunc()
 	}
 	return nil
 }

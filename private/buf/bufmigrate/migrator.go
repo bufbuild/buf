@@ -78,7 +78,9 @@ func (m *migrator) addWorkspaceDirectory(
 	// TODO: get path properly
 	m.seenFiles[filepath.Join(workspaceDir, "buf.work.yaml")] = struct{}{}
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace))
+		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDir, moduleDirRelativeToWorkspace)); err != nil {
+			return err
+		}
 	}
 	return nil
 }

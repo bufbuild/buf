@@ -37,5 +37,3 @@ func (r *dirRef) internalRef() internal.Ref {
 func (r *dirRef) internalDirRef() internal.DirRef {
 	return r.iDirRef
 }
-
-func (*dirRef) isDirRef() {}

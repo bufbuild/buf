@@ -120,6 +120,9 @@ func run(
 		ctx,
 		input,
 	)
+	if err != nil {
+		return err
+	}
 	stats, err := protostat.GetStats(
 		ctx,
 		protostatstorage.NewFileWalker(
@@ -130,6 +133,9 @@ func run(
 			),
 		),
 	)
+	if err != nil {
+		return err
+	}
 	tmpl, err := template.New("tmpl").Parse(tmplCopy)
 	if err != nil {
 		return err

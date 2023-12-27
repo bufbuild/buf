@@ -678,6 +678,9 @@ func getReadBucketCloserForOSProtoFile(
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
+	if err != nil {
+		return nil, err
+	}
 	// mapPath is the path to the bucket that contains a buf.yaml.
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, terminate, err := getMapPathAndSubDirPath(

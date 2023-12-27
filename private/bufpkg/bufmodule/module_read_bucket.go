@@ -383,7 +383,6 @@ func (b *moduleReadBucket) WalkFileInfos(
 		// We can't determine if the Module had any .proto file paths, as we only walked
 		// the target paths. We don't return any value from protoFileTracker.validate().
 		return nil
-
 	}
 	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
 		return err

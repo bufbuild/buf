@@ -376,8 +376,7 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 	m.moduleSet = moduleSet
 }
 
-func (*module) isModuleInfo() {}
-func (*module) isModule()     {}
+func (*module) isModule() {}
 
 func newGetModuleDigestFuncForModule(module *module) func() (ModuleDigest, error) {
 	return func() (ModuleDigest, error) {
