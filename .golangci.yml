@@ -118,14 +118,28 @@ issues:
       path: private/buf/cmd/buf/workspace_test.go
       text: "missing the call to method parallel"
     - linters:
+        - forbidigo
+      # This is a legacy usage of os.Getwd we're not bothering to port yet.
+      path: private/buf/cmd/buf/command/alpha/protoc/protoc_test.go
+      text: "os.Getwd"
+    - linters:
         - dogsled
       # One function call doesn't care about most of the returned destructured values. The
       # dogsled linter complains about it. (Value of this linter is unclear...)
       path: private/buf/cmd/buf/command/curl/curl.go
     - linters:
+        - forbidigo
+      # This is a legacy usage of os.Getwd we're not bothering to port yet.
+      path: private/buf/cmd/buf/command/generate/generate_test.go
+      text: "os.Getwd"
+    - linters:
         - gochecknoinits
       # we actually want to use this init to create a protovalidate.Validator
       path: private/bufpkg/bufcas/proto.go
+    - linters:
+        - gochecknoinits
+      # we actually want to use init here
+      path: private/bufpkg/bufconfig/module_config.go
     - linters:
         - gosec
       # We don't need a cryptographically secure RNG for these tests, and a
@@ -141,6 +155,18 @@ issues:
         - containedctx
       # we actually want to embed a context here
       path: private/bufpkg/bufimage/parser_accessor_handler.go
+    - linters:
+        - containedctx
+      # we actually want to embed a context here
+      path: private/bufpkg/bufmodule/module.go
+    - linters:
+        - containedctx
+      # we actually want to embed a context here
+      path: private/bufpkg/bufmodule/module_set_builder.go
+    - linters:
+        - gochecknoinits
+      # we actually want to use init here
+      path: private/bufpkg/bufmodule/paths.go
     - linters:
         - forbidigo
       # we want to use errgroup here
@@ -208,7 +234,6 @@ issues:
         - gochecknoinits
       # we actually want to use this init
       path: private/usage/usage.go
-      text: "use of `errgroup"
     - linters:
         - staticcheck
       # We deprecated all the definitions in plugin.proto but we still implement them.

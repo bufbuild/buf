@@ -81,13 +81,6 @@ func parseFileVersion(
 	return c, nil
 }
 
-func validateFileVersionKnown(fileVersion FileVersion) error {
-	if _, ok := fileVersionToString[fileVersion]; !ok {
-		return fmt.Errorf("unknown file version: %v", fileVersion)
-	}
-	return nil
-}
-
 // externalFileVersion represents just the version component of any file.
 type externalFileVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`

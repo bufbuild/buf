@@ -28,11 +28,6 @@ const (
 )
 
 var (
-	allFileTypes = []FileType{
-		FileTypeProto,
-		FileTypeDoc,
-		FileTypeLicense,
-	}
 	fileTypeToString = map[FileType]string{
 		FileTypeProto:   "proto",
 		FileTypeDoc:     "doc",

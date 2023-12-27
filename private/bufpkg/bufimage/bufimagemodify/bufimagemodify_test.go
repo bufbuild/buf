@@ -861,22 +861,3 @@ func newTestFileOptionOverrideRule(
 	require.NoError(t, err)
 	return fileOptionOverride
 }
-
-func newTestFieldOptionOverrideRule(
-	t *testing.T,
-	path string,
-	moduleFullName string,
-	fieldName string,
-	fieldOption bufconfig.FieldOption,
-	value interface{},
-) bufconfig.ManagedOverrideRule {
-	fieldOptionOverrid, err := bufconfig.NewManagedOverrideRuleForFieldOption(
-		path,
-		moduleFullName,
-		bufconfig.FileOptionPhpMetadataNamespace.String(),
-		fieldOption,
-		value,
-	)
-	require.NoError(t, err)
-	return fieldOptionOverrid
-}

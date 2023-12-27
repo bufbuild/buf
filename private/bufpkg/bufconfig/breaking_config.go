@@ -17,16 +17,8 @@ package bufconfig
 var (
 	DefaultBreakingConfig BreakingConfig = defaultBreakingConfigV1
 
-	defaultBreakingConfigV1Beta1 = NewBreakingConfig(
-		defaultCheckConfigV1Beta1,
-		false,
-	)
 	defaultBreakingConfigV1 = NewBreakingConfig(
 		defaultCheckConfigV1,
-		false,
-	)
-	defaultBreakingConfigV2 = NewBreakingConfig(
-		defaultCheckConfigV2,
 		false,
 	)
 )

@@ -638,10 +638,6 @@ func (m *migrator) infof(format string, args ...any) {
 	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("%s\n", fmt.Sprintf(format, args...))))
 }
 
-func (m *migrator) warn(message string) {
-	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("Warning: %s\n", message)))
-}
-
 func (m *migrator) warnf(format string, args ...any) {
 	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("Warning: %s\n", fmt.Sprintf(format, args...))))
 }

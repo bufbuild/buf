@@ -17,26 +17,8 @@ package bufconfig
 var (
 	DefaultLintConfig LintConfig = defaultLintConfigV1
 
-	defaultLintConfigV1Beta1 = NewLintConfig(
-		defaultCheckConfigV1Beta1,
-		"",
-		false,
-		false,
-		false,
-		"",
-		false,
-	)
 	defaultLintConfigV1 = NewLintConfig(
 		defaultCheckConfigV1,
-		"",
-		false,
-		false,
-		false,
-		"",
-		false,
-	)
-	defaultLintConfigV2 = NewLintConfig(
-		defaultCheckConfigV2,
 		"",
 		false,
 		false,
