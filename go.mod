@@ -59,7 +59,6 @@ require (
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/dvyukov/go-fuzz v0.0.0-20231214143802-7955ebc9f2de // indirect
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
