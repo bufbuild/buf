@@ -136,18 +136,10 @@ issues:
     - linters:
         - gochecknoinits
       path: private/bufpkg/bufcas/proto.go
-      # we actually want to use this init in testing
-    - linters:
-        - gochecknoinits
-      path: private/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go
       # we actually want to use this init
     - linters:
         - gochecknoinits
       path: private/usage/usage.go
-      # we actually want to embed a context here
-    - linters:
-        - containedctx
-      path: private/bufpkg/bufmodule/bufmoduleprotoparse/path_resolver.go
       # we actually want to embed a context here
     - linters:
         - containedctx
@@ -162,18 +154,11 @@ issues:
         - forbidigo
       path: private/bufpkg/bufplugin/bufplugindocker/docker.go
       text: "use of `errgroup"
-    - linters:
-        - containedctx
-      path: private/bufpkg/bufmodule/bufmoduleprotocompile
       # We should be able to use net/http/cgi in a unit test, in addition the CVE mentions only versions of go < 1.6.3 are affected.
     - linters:
         - gosec
       path: private/pkg/git/git_test.go
       text: "G504:"
-    - linters:
-        - stylecheck
-      path: private/bufpkg/bufapimodule/module_resolver_test.go
-      text: "ST1003:"
     - linters:
         - dogsled
       # One function call doesn't care about most of the returned destructured values. The
@@ -212,7 +197,7 @@ issues:
     - linters:
         - paralleltest
       text: "missing the call to method parallel"
-      path: private/bufpkg/bufimage/bufimagebuild/builder_unix_test.go
+      path: private/bufpkg/bufimage/bufimage/build_image_unix_test.go
     # TestWorkspaceArchiveDir, TestWorkspaceWithInvalidArchivePathFail
     # and TestWorkspaceWithInvalidArchiveAbsolutePathFail cannot run in parallel
     # because they all call createZipFromDir on the same path, writing to the same file.
@@ -224,15 +209,5 @@ issues:
     # makes this test flaky.
     - linters:
         - paralleltest
-      path: private/bufpkg/bufstudioagent/bufstudioagent_test.go
+      path: private/buf/bufstudioagent/bufstudioagent_test.go
       text: "missing the call to method parallel"
-    # Buf sync branches are not synced (nor tested) in parallel
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/buf/bufsync/commits_to_sync_test.go
-    # A git repo is not safe to read concurrently, since it has a single object reader.
-    - linters:
-        - paralleltest
-      text: "missing the call to method parallel"
-      path: private/pkg/git/repository_test.go

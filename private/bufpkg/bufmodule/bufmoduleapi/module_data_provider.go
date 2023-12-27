@@ -176,7 +176,6 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	depProtoCommits, err := slicesext.MapError(
 		protoReference.DepCommitIds,
 		func(commitID string) (*modulev1beta1.Commit, error) {
-
 			commit, ok := commitIDToCommit[commitID]
 			if !ok {
 				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", commitID)
@@ -309,7 +308,7 @@ func (a *moduleDataProvider) getProtoOwnerForOwnerID(ctx context.Context, regist
 func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
 	// CommitID is optional.
 	if commitID := moduleKey.CommitID(); commitID != "" {
-		// Note that we could actually just use the Digest. We don't wnat to have to invoke
+		// Note that we could actually just use the Digest. We don't want to have to invoke
 		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
 		return &modulev1beta1.ResourceRef{
 			Value: &modulev1beta1.ResourceRef_Id{

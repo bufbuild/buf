@@ -27,7 +27,7 @@ const (
 	// MalformedDepTypeUndeclared says that the dep was a transitive remote dependency of the
 	// workspace, but was not declared in the buf.yaml.
 	MalformedDepTypeUndeclared MalformedDepType = iota + 1
-	// MalformedDepTypeUnused says that teh dep was declared in the buf.yaml but was not used.
+	// MalformedDepTypeUnused says that the dep was declared in the buf.yaml but was not used.
 	MalformedDepTypeUnused
 )
 

@@ -28,10 +28,12 @@ import (
 )
 
 func TestCacheBasicDir(t *testing.T) {
+	t.Parallel()
 	testCacheBasic(t, false)
 }
 
 func TestCacheBasicTar(t *testing.T) {
+	t.Parallel()
 	testCacheBasic(t, true)
 }
 

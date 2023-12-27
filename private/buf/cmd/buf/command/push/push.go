@@ -281,7 +281,6 @@ func validateTargetModulesExist(
 									},
 								},
 							}
-
 						},
 					),
 				},

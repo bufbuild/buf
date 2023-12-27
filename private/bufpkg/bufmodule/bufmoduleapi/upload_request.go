@@ -17,7 +17,6 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
@@ -95,7 +94,7 @@ func NewUploadRequest(
 			if err != nil {
 				return nil, err
 			}
-			depProtoResourceRefs := make([]*modulev1beta1.ResourceRef, len(moduleDeps))
+			depProtoResourceRefs := make([]*modulev1beta1.ResourceRef, 0, len(moduleDeps))
 			for _, moduleDep := range moduleDeps {
 				moduleFullName := moduleDep.ModuleFullName()
 				if moduleFullName == nil {
@@ -195,36 +194,6 @@ func UploadRequestWithLabels(labels ...string) UploadRequestOption {
 }
 
 // *** PRIVATE ***
-
-// Sorted by opaqueID.
-func getTargetModulesAndDependencies(moduleSet bufmodule.ModuleSet) ([]bufmodule.Module, error) {
-	// ModuleSetToDAG only starts at target Modules, so this is an easy way to get the OpaqueIDs of
-	// the Modules we care about. No other reason we're using this.
-	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
-	if err != nil {
-		return nil, err
-	}
-	var opaqueIDs []string
-	if err := graph.WalkNodes(
-		func(opaqueID string, _ []string, _ []string) error {
-			opaqueIDs = append(opaqueIDs, opaqueID)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	sort.Strings(opaqueIDs)
-	return slicesext.MapError(
-		opaqueIDs,
-		func(opaqueID string) (bufmodule.Module, error) {
-			module := moduleSet.GetModuleForOpaqueID(opaqueID)
-			if module == nil {
-				return nil, syserror.Newf("no Module for OpaqueID %q", opaqueID)
-			}
-			return module, nil
-		},
-	)
-}
 
 func getOpaqueIDToProtoModuleRef(modules []bufmodule.Module) (map[string]*modulev1beta1.ModuleRef, error) {
 	opaqueIDToProtoModuleRef := make(map[string]*modulev1beta1.ModuleRef, len(modules))

@@ -17,7 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -89,7 +89,7 @@ func bucketToProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modu
 		bucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			data, err := ioutil.ReadAll(readObject)
+			data, err := io.ReadAll(readObject)
 			if err != nil {
 				return err
 			}

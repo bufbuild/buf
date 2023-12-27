@@ -121,6 +121,9 @@ func run(
 			return bufmodule.ModuleToModuleKey(remoteDep)
 		},
 	)
+	if err != nil {
+		return err
+	}
 	depNameToModuleKey := slicesext.ToValuesMap(
 		depModuleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
@@ -173,7 +176,7 @@ func run(
 			return moduleKey.ModuleFullName().String()
 		},
 	)
-	// Our result buf.lock needs to have everyting in deps. We will only use the new values from bufYAMLNameToModuleKey
+	// Our result buf.lock needs to have everything in deps. We will only use the new values from bufYAMLNameToModuleKey
 	// if either (1) onlyNameMap is empty (2) they are within onlyNameMap, AND they are a remote dependency.
 	//
 	// Note we deleted unused dependencies from bufYAMLNameToModuleKey above.
