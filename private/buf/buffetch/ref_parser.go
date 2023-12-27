@@ -669,9 +669,6 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 }
 
 func processRawRefDir(rawRef *internal.RawRef) error {
-	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
-		return newInvalidDirPathError(rawRef.Path)
-	}
 	rawRef.Format = formatDir
 	return nil
 }
@@ -679,7 +676,7 @@ func processRawRefDir(rawRef *internal.RawRef) error {
 func processRawRefDirOrProtoFile(rawRef *internal.RawRef) error {
 	var format string
 	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
-		return newInvalidDirOrProtoFilePathError(rawRef.Path)
+		format = formatProtoFile
 	} else {
 		switch filepath.Ext(rawRef.Path) {
 		case ".proto":
@@ -692,8 +689,8 @@ func processRawRefDirOrProtoFile(rawRef *internal.RawRef) error {
 		default:
 			format = formatDir
 		}
-		rawRef.Format = format
 	}
+	rawRef.Format = format
 	return nil
 }
 
@@ -846,14 +843,6 @@ func assumeModuleOrDir(path string) (string, error) {
 	}
 	// cannot be parsed into a module, assume dir for here
 	return formatDir, nil
-}
-
-func newInvalidDirPathError(path string) error {
-	return fmt.Errorf("path provided is not a valid directory: %s", path)
-}
-
-func newInvalidDirOrProtoFilePathError(path string) error {
-	return fmt.Errorf("path provided is not a valid directory or proto file: %s", path)
 }
 
 type messageRefParserOptions struct {

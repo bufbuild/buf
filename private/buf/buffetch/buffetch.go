@@ -139,6 +139,7 @@ type ProtoFileRef interface {
 	SourceRef
 	DirOrProtoFileRef
 	ProtoFilePath() string
+	IsStdio() bool
 	IncludePackageFiles() bool
 	internalProtoFileRef() internal.ProtoFileRef
 }

@@ -185,6 +185,7 @@ type ProtoFileRef interface {
 	Path() string
 	// IncludePackageFiles says to include the same package files TODO update comment
 	IncludePackageFiles() bool
+	FileScheme() FileScheme
 	protoFileRef()
 }
 
@@ -324,8 +325,13 @@ type ParsedProtoFileRef interface {
 // NewDirectParsedProtoFileRef returns a new ParsedProtoFileRef with no validation checks.
 //
 // This should only be used for testing.
-func NewDirectParsedProtoFileRef(format string, path string, includePackageFiles bool) ParsedProtoFileRef {
-	return newDirectProtoFileRef(format, path, includePackageFiles)
+func NewDirectParsedProtoFileRef(
+	format string,
+	path string,
+	fileScheme FileScheme,
+	includePackageFiles bool,
+) ParsedProtoFileRef {
+	return newDirectProtoFileRef(format, path, fileScheme, includePackageFiles)
 }
 
 // ParsedGitRef is a parsed GitRef.

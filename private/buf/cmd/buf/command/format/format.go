@@ -54,6 +54,14 @@ const (
 	writeFlagShortName      = "w"
 )
 
+const (
+	outputTypeStdout outputType = iota + 1
+	outputTypeDir
+	outputTypeFile
+)
+
+type outputType int
+
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
@@ -238,6 +246,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 }
 
+func getOutputTypeAndPath(output string) (outputType, string, error) {
+	if output == "-" {
+		return outputTypeStdout
+	}
+	outputDirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(logger).GetDirOrProtoFileRef(ctx, flags.Output)
+	if err != nil {
+		return nil, err
+	}
+	// if output is app.IsDev.*, it's ok here, we will just treat them as standard files.
+
+}
+
 func run(
 	ctx context.Context,
 	container appext.Container,
@@ -250,7 +270,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputSourceOrModuleRef, err := buffetch.NewRefParser(logger).GetSourceRef(ctx, flags.Output)
 	runner := command.NewRunner()
 	controller, err := bufcli.NewController(
 		container,

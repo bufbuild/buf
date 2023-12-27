@@ -38,6 +38,10 @@ func (r *protoFileRef) IncludePackageFiles() bool {
 	return r.protoFileRef.IncludePackageFiles()
 }
 
+func (r *protoFileRef) IsStdio() bool {
+	return r.protoFileRef.FileScheme() == internal.FileSchemeStdio
+}
+
 func (r *protoFileRef) internalRef() internal.Ref {
 	return r.protoFileRef
 }

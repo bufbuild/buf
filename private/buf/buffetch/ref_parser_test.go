@@ -1196,6 +1196,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		internal.NewDirectParsedProtoFileRef(
 			formatProtoFile,
 			"foo.proto",
+			internal.FileSchemeLocal,
 			false,
 		),
 		nil,
@@ -1215,6 +1216,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		internal.NewDirectParsedProtoFileRef(
 			formatProtoFile,
 			"foo.proto",
+			internal.FileSchemeLocal,
 			true,
 		),
 		nil,
@@ -1222,9 +1224,25 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedDirOrProtoFileRef(
 		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"",
+			internal.FileSchemeStdio,
+			false,
+		),
 		nil,
-		newInvalidDirOrProtoFilePathError("-"),
 		"-",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"",
+			internal.FileSchemeStdio,
+			true,
+		),
+		nil,
+		"-#include_package_files=true",
 	)
 }
 
@@ -1402,7 +1420,7 @@ func testGetParsedDirOrProtoFileRef(
 	parsedRef, err := newDirOrProtoFileRefParser(zap.NewNop()).getParsedRef(
 		context.Background(),
 		value,
-		allFormats,
+		dirOrProtoFileFormats,
 	)
 	if expectedErr != nil {
 		if err == nil {
