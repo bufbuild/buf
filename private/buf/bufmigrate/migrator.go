@@ -28,7 +28,6 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
@@ -336,9 +335,9 @@ func (m *migrator) addModuleDirectory(
 		ctx,
 		m.rootBucket,
 		moduleDir,
-		bufconfig.BufLockFileWithDigestResolver(
-			func(ctx context.Context, remote, commitID string) (bufcas.Digest, error) {
-				return bufmoduleapi.CommitIDToDigest(ctx, m.clientProvider, remote, commitID)
+		bufconfig.BufLockFileWithModuleDigestResolver(
+			func(ctx context.Context, remote, commitID string) (bufmodule.ModuleDigest, error) {
+				return bufmoduleapi.ModuleDigestForCommitID(ctx, m.clientProvider, remote, commitID)
 			},
 		),
 	)
@@ -674,7 +673,9 @@ func resolvedDeclaredAndLockedDependencies(
 			key, err := bufmodule.NewModuleKey(
 				resolvedRef.ModuleFullName(),
 				resolvedCommit.GetId(),
-				func() (bufcas.Digest, error) { return bufcas.ProtoToDigest(resolvedCommit.GetDigest()) },
+				func() (bufmodule.ModuleDigest, error) {
+					return bufmoduleapi.ProtoToModuleDigest(resolvedCommit.GetDigest())
+				},
 			)
 			if err != nil {
 				return nil, nil, err

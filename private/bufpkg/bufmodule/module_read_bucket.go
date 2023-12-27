@@ -21,7 +21,6 @@ import (
 	"io/fs"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/cache"
@@ -263,7 +262,8 @@ type moduleReadBucket struct {
 func newModuleReadBucketForModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	getBucket func() (storage.ReadBucket, error),
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
+	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	module Module,
 	targetPaths []string,
 	targetExcludePaths []string,
@@ -278,16 +278,8 @@ func newModuleReadBucketForModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	return &moduleReadBucket{
-		logger: logger,
-		getBucket: sync.OnceValues(
-			func() (storage.ReadBucket, error) {
-				bucket, err := getBucket()
-				if err != nil {
-					return nil, err
-				}
-				return storage.MapReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
-			},
-		),
+		logger:               logger,
+		getBucket:            syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module:               module,
 		targetPaths:          targetPaths,
 		targetPathMap:        slicesext.ToStructMap(targetPaths),
@@ -391,7 +383,6 @@ func (b *moduleReadBucket) WalkFileInfos(
 		// We can't determine if the Module had any .proto file paths, as we only walked
 		// the target paths. We don't return any value from protoFileTracker.validate().
 		return nil
-
 	}
 	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
 		return err
@@ -402,6 +393,9 @@ func (b *moduleReadBucket) WalkFileInfos(
 func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
 	// We want to avoid sync.OnceValueing getBucket Twice, so we have a special copy function here
 	// instead of calling newModuleReadBucket.
+	//
+	// This technically doesn't matter anymore since we don't sync.OnceValue getBucket inside newModuleReadBucket
+	// anymore, but we keep this around in case we change that back.
 	return &moduleReadBucket{
 		logger:               b.logger,
 		getBucket:            b.getBucket,
@@ -791,16 +785,6 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 			}
 			return f(fileInfo)
 		},
-	)
-}
-
-// getStorageMatcher gets the storage.Matcher that will filter the storage.ReadBucket down to specifically
-// the files that are relevant to a ModuleReadBucket.
-func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.Matcher {
-	return storage.MatchOr(
-		storage.MatchPathExt(".proto"),
-		storage.MatchPathEqual(licenseFilePath),
-		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
 	)
 }
 

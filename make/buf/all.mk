@@ -32,7 +32,7 @@ LICENSE_HEADER_YEAR_RANGE := 2020-2023
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.5.1
 # Comment out to use released buf
-BUF_GO_INSTALL_PATH := ./cmd/buf
+#BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
@@ -117,7 +117,7 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
-	rm -rf private/bufpkg/bufcheck/buflint/testdata/deps
+	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -134,7 +134,7 @@ bufgenerateprotogoclient:
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
-	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/deps/protovalidate
+	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \

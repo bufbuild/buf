@@ -568,10 +568,13 @@ func TestModifyImageFile(
 				// TODO: check include source code info
 				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
 					imageFile := image.GetFile(filePath)
-					testcase.modifyFunc(
-						sweeper,
-						imageFile,
-						testcase.config,
+					require.NoError(
+						t,
+						testcase.modifyFunc(
+							sweeper,
+							imageFile,
+							testcase.config,
+						),
 					)
 					require.NotNil(t, imageFile)
 					require.Empty(

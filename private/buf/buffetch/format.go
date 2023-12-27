@@ -92,10 +92,6 @@ var (
 		formatDir,
 	}
 	// sorted
-	dirFormatsNotDeprecated = []string{
-		formatDir,
-	}
-	// sorted
 	moduleFormats = []string{
 		formatMod,
 	}

@@ -16,19 +16,12 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"io/fs"
-	"sort"
 	"sync"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -88,15 +81,22 @@ type Module interface {
 	// ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
-	// Digest returns the Module digest.
-	Digest() (bufcas.Digest, error)
+	// ModuleDigest returns the Module digest.
+	//
+	// Note this is *not* a bufcas.Digest - this is a ModuleDigest. bufcas.Digests are a lower-level
+	// type that just deal in terms of files and content. A ModuleDigest is a specific algorithm
+	// applied to a set of files and dependencies.
+	ModuleDigest() (ModuleDigest, error)
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
-	// This list is pruned - only Modules that this Module actually depends on via import statements
-	// within its .proto files will be returned.
+	// Includes transitive dependencies. Use ModuleDep.IsDirect() to determine in a dependency is direct
+	// or transitive.
 	//
-	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
+	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
+	// via import statements within its .proto files will be returned.
+	//
+	// Dependencies with the same ModuleFullName will always have the same Commits and ModuleDigests.
 	//
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
@@ -162,7 +162,7 @@ func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),
 		module.CommitID(),
-		module.Digest,
+		module.ModuleDigest,
 	)
 }
 
@@ -244,15 +244,16 @@ type module struct {
 
 	moduleSet ModuleSet
 
-	getDigest     func() (bufcas.Digest, error)
-	getModuleDeps func() ([]ModuleDep, error)
+	getModuleDigest func() (ModuleDigest, error)
+	getModuleDeps   func() ([]ModuleDep, error)
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	getBucket func() (storage.ReadBucket, error),
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
+	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
 	commitID string,
@@ -281,6 +282,7 @@ func newModule(
 	module := &module{
 		ctx:            ctx,
 		logger:         logger,
+		getBucket:      syncOnceValuesGetBucketWithStorageMatcherApplied,
 		bucketID:       bucketID,
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
@@ -290,7 +292,7 @@ func newModule(
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
 		logger,
-		getBucket,
+		syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module,
 		targetPaths,
 		targetExcludePaths,
@@ -301,16 +303,8 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getDigest = sync.OnceValues(
-		func() (bufcas.Digest, error) {
-			return moduleDigestB5(ctx, module)
-		},
-	)
-	module.getModuleDeps = sync.OnceValues(
-		func() ([]ModuleDep, error) {
-			return getModuleDeps(ctx, logger, module)
-		},
-	)
+	module.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(module))
+	module.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
 
@@ -336,8 +330,8 @@ func (m *module) CommitID() string {
 	return m.commitID
 }
 
-func (m *module) Digest() (bufcas.Digest, error) {
-	return m.getDigest()
+func (m *module) ModuleDigest() (ModuleDigest, error) {
+	return m.getModuleDigest()
 }
 
 func (m *module) ModuleDeps() ([]ModuleDep, error) {
@@ -361,6 +355,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	newModule := &module{
 		ctx:            m.ctx,
 		logger:         m.logger,
+		getBucket:      m.getBucket,
 		bucketID:       m.bucketID,
 		moduleFullName: m.moduleFullName,
 		commitID:       m.commitID,
@@ -372,16 +367,8 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getDigest = sync.OnceValues(
-		func() (bufcas.Digest, error) {
-			return moduleDigestB5(newModule.ctx, newModule)
-		},
-	)
-	newModule.getModuleDeps = sync.OnceValues(
-		func() ([]ModuleDep, error) {
-			return getModuleDeps(newModule.ctx, newModule.logger, newModule)
-		},
-	)
+	newModule.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(newModule))
+	newModule.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
 
@@ -389,222 +376,24 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 	m.moduleSet = moduleSet
 }
 
-func (*module) isModuleInfo() {}
-func (*module) isModule()     {}
+func (*module) isModule() {}
 
-// moduleDigestB5 computes a b5 Digest for the given Module.
-//
-// A Module Digest is a composite Digest of all Module Files, and all Module dependencies.
-//
-// All Files are added to a bufcas.Manifest, which is then turned into a bufcas.Blob.
-// The Digest of the Blob, along with all Digests of the dependencies, are then sorted,
-// and then digested themselves as content.
-//
-// Note that the name of the Module and any of its dependencies has no effect on the Digest.
-func moduleDigestB5(ctx context.Context, module Module) (bufcas.Digest, error) {
-	fileDigest, err := moduleReadBucketDigestB5(ctx, module)
-	if err != nil {
-		return nil, err
-	}
-	moduleDeps, err := module.ModuleDeps()
-	if err != nil {
-		return nil, err
-	}
-	digests := []bufcas.Digest{fileDigest}
-	for _, moduleDep := range moduleDeps {
-		digest, err := moduleDep.Digest()
+func newGetModuleDigestFuncForModule(module *module) func() (ModuleDigest, error) {
+	return func() (ModuleDigest, error) {
+		bucket, err := module.getBucket()
 		if err != nil {
 			return nil, err
 		}
-		digests = append(digests, digest)
-	}
-
-	// NewDigestForDigests deals with sorting.
-	// TODO: what about digest type? We likely need a new B5 type.
-	return bufcas.NewDigestForDigests(digests)
-}
-
-func moduleReadBucketDigestB5(ctx context.Context, moduleReadBucket ModuleReadBucket) (bufcas.Digest, error) {
-	var fileNodes []bufcas.FileNode
-	if err := moduleReadBucket.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) (retErr error) {
-			file, err := moduleReadBucket.GetFile(ctx, fileInfo.Path())
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			// TODO: what about digest type?
-			digest, err := bufcas.NewDigestForContent(file)
-			if err != nil {
-				return err
-			}
-			fileNode, err := bufcas.NewFileNode(fileInfo.Path(), digest)
-			if err != nil {
-				return err
-			}
-			fileNodes = append(fileNodes, fileNode)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	manifest, err := bufcas.NewManifest(fileNodes)
-	if err != nil {
-		return nil, err
-	}
-	manifestBlob, err := bufcas.ManifestToBlob(manifest)
-	if err != nil {
-		return nil, err
-	}
-	return manifestBlob.Digest(), nil
-}
-
-// getModuleDeps gets the actual dependencies for the Module.
-func getModuleDeps(
-	ctx context.Context,
-	logger *zap.Logger,
-	module Module,
-) ([]ModuleDep, error) {
-	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
-	if err := getModuleDepsRec(
-		ctx,
-		logger,
-		module,
-		module,
-		make(map[string]struct{}),
-		depOpaqueIDToModuleDep,
-		true,
-	); err != nil {
-		return nil, err
-	}
-	moduleDeps := make([]ModuleDep, 0, len(depOpaqueIDToModuleDep))
-	for _, moduleDep := range depOpaqueIDToModuleDep {
-		moduleDeps = append(moduleDeps, moduleDep)
-	}
-	// Sorting by at least Opaque ID to get a consistent return order for a given call.
-	sort.Slice(
-		moduleDeps,
-		func(i int, j int) bool {
-			return moduleDeps[i].OpaqueID() < moduleDeps[j].OpaqueID()
-		},
-	)
-	return moduleDeps, nil
-}
-
-func getModuleDepsRec(
-	ctx context.Context,
-	logger *zap.Logger,
-	module Module,
-	parentModule Module,
-	visitedOpaqueIDs map[string]struct{},
-	// already discovered deps
-	depOpaqueIDToModuleDep map[string]ModuleDep,
-	isDirect bool,
-) error {
-	opaqueID := module.OpaqueID()
-	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
-		// TODO: detect cycles, this is just making sure we don't recurse
-		return nil
-	}
-	visitedOpaqueIDs[opaqueID] = struct{}{}
-	moduleSet := module.ModuleSet()
-	if moduleSet == nil {
-		// This should never happen.
-		return syserror.New("moduleSet never set on module")
-	}
-	// Doing this BFS so we add all the direct deps to the map first, then if we
-	// see a dep later, it will still be a direct dep in the map, but will be ignored
-	// on recursive calls.
-	var newModuleDeps []ModuleDep
-	if err := module.WalkFileInfos(
-		ctx,
-		func(fileInfo FileInfo) error {
-			if fileInfo.FileType() != FileTypeProto {
-				return nil
-			}
-			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
-			if err != nil {
-				var fileAnnotationSet bufanalysis.FileAnnotationSet
-				if errors.As(err, &fileAnnotationSet) {
-					// If a FileAnnotationSet, the error already contains path information, just return directly.
-					//
-					// We also specially handle FileAnnotationSets for exit code 100.
-					// TODO: Should we just warn?
-					return fileAnnotationSet
-				}
-				if errors.Is(err, fs.ErrNotExist) {
-					// Strip any PathError and just get to the point.
-					err = fs.ErrNotExist
-				}
-				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
-			}
-			for _, imp := range fastscanResult.Imports {
-				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp.Path)
-				if err != nil {
-					if errors.Is(err, errIsWKT) {
-						// Do not include as a dependency.
-						continue
-					}
-					// We don't fail if we can't find an import, but we do provide a warning.
-					// If we fail, we can't be compatible with commands that did pass in the pre-buf-refactor
-					// world. This can happen in cases where you filter with --path and then do a ModuleDeps()
-					// call via say ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles via lint, and
-					// the --path specified is fine, but something else in the ModuleSet is not.
-					//
-					// Return the error and see what happens in integration testing for more details.
-					//
-					// Not great. There's other architecture decisions we could make that are wholesale
-					// different here, and likely involve not using imports to derive dependencies.
-					//
-					// Keeping the error version of this commented out below.
-					//
-					// We may want to actually remove the warning here. It'll result a warning and
-					// an error if somet cases.
-					if errors.Is(err, fs.ErrNotExist) {
-						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp.Path)
-						continue
-						//// Strip any PathError and just get to the point.
-						//err = fs.ErrNotExist
-						//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
-					}
-				}
-				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
-				// If this is in the same module, it's not a dep
-				if potentialDepOpaqueID != opaqueID {
-					// No longer just potential, now real dep.
-					if _, ok := depOpaqueIDToModuleDep[potentialDepOpaqueID]; !ok {
-						moduleDep := newModuleDep(
-							potentialModuleDep,
-							parentModule,
-							isDirect,
-						)
-						depOpaqueIDToModuleDep[potentialDepOpaqueID] = moduleDep
-						newModuleDeps = append(newModuleDeps, moduleDep)
-					}
-				}
-			}
-			return nil
-		},
-	); err != nil {
-		return err
-	}
-	for _, newModuleDep := range newModuleDeps {
-		if err := getModuleDepsRec(
-			ctx,
-			logger,
-			newModuleDep,
-			parentModule,
-			visitedOpaqueIDs,
-			depOpaqueIDToModuleDep,
-			// Always not direct on recursive calls.
-			// We've already added all the direct deps.
-			false,
-		); err != nil {
-			return err
+		moduleDeps, err := module.ModuleDeps()
+		if err != nil {
+			return nil, err
 		}
+		return getB5ModuleDigest(module.ctx, bucket, moduleDeps)
 	}
-	return nil
+}
+
+func newGetModuleDepsFuncForModule(module *module) func() ([]ModuleDep, error) {
+	return func() ([]ModuleDep, error) {
+		return getModuleDeps(module.ctx, module.logger, module)
+	}
 }

@@ -27,14 +27,15 @@ var NopClientProvider ClientProvider = nopClientProvider{}
 
 // ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
-	BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient
 	CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient
+	DownloadServiceClient(registryHostname string) modulev1beta1connect.DownloadServiceClient
+	GraphServiceClient(registryHostname string) modulev1beta1connect.GraphServiceClient
+	LabelServiceClient(registryHostname string) modulev1beta1connect.LabelServiceClient
 	ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient
 	OrganizationServiceClient(registryHostname string) ownerv1beta1connect.OrganizationServiceClient
 	OwnerServiceClient(registryHostname string) ownerv1beta1connect.OwnerServiceClient
-	TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient
+	UploadServiceClient(registryHostname string) modulev1beta1connect.UploadServiceClient
 	UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient
-	VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient
 }
 
 // NewClientProvider returns a new ClientProvider.
@@ -54,19 +55,35 @@ func newClientProvider(clientConfig *connectclient.Config) *clientProvider {
 	}
 }
 
-func (c *clientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registryHostname,
-		modulev1beta1connect.NewBranchServiceClient,
-	)
-}
-
 func (c *clientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registryHostname,
 		modulev1beta1connect.NewCommitServiceClient,
+	)
+}
+
+func (c *clientProvider) DownloadServiceClient(registryHostname string) modulev1beta1connect.DownloadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewDownloadServiceClient,
+	)
+}
+
+func (c *clientProvider) GraphServiceClient(registryHostname string) modulev1beta1connect.GraphServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewGraphServiceClient,
+	)
+}
+
+func (c *clientProvider) LabelServiceClient(registryHostname string) modulev1beta1connect.LabelServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registryHostname,
+		modulev1beta1connect.NewLabelServiceClient,
 	)
 }
 
@@ -94,11 +111,11 @@ func (c *clientProvider) OwnerServiceClient(registryHostname string) ownerv1beta
 	)
 }
 
-func (c *clientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
+func (c *clientProvider) UploadServiceClient(registryHostname string) modulev1beta1connect.UploadServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registryHostname,
-		modulev1beta1connect.NewTagServiceClient,
+		modulev1beta1connect.NewUploadServiceClient,
 	)
 }
 
@@ -110,22 +127,22 @@ func (c *clientProvider) UserServiceClient(registryHostname string) ownerv1beta1
 	)
 }
 
-func (c *clientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registryHostname,
-		modulev1beta1connect.NewVCSCommitServiceClient,
-	)
-}
-
 type nopClientProvider struct{}
-
-func (nopClientProvider) BranchServiceClient(registryHostname string) modulev1beta1connect.BranchServiceClient {
-	return modulev1beta1connect.UnimplementedBranchServiceHandler{}
-}
 
 func (nopClientProvider) CommitServiceClient(registryHostname string) modulev1beta1connect.CommitServiceClient {
 	return modulev1beta1connect.UnimplementedCommitServiceHandler{}
+}
+
+func (nopClientProvider) DownloadServiceClient(registryHostname string) modulev1beta1connect.DownloadServiceClient {
+	return modulev1beta1connect.UnimplementedDownloadServiceHandler{}
+}
+
+func (nopClientProvider) GraphServiceClient(registryHostname string) modulev1beta1connect.GraphServiceClient {
+	return modulev1beta1connect.UnimplementedGraphServiceHandler{}
+}
+
+func (nopClientProvider) LabelServiceClient(registryHostname string) modulev1beta1connect.LabelServiceClient {
+	return modulev1beta1connect.UnimplementedLabelServiceHandler{}
 }
 
 func (nopClientProvider) ModuleServiceClient(registryHostname string) modulev1beta1connect.ModuleServiceClient {
@@ -140,14 +157,10 @@ func (nopClientProvider) OwnerServiceClient(registryHostname string) ownerv1beta
 	return ownerv1beta1connect.UnimplementedOwnerServiceHandler{}
 }
 
-func (nopClientProvider) TagServiceClient(registryHostname string) modulev1beta1connect.TagServiceClient {
-	return modulev1beta1connect.UnimplementedTagServiceHandler{}
+func (nopClientProvider) UploadServiceClient(registryHostname string) modulev1beta1connect.UploadServiceClient {
+	return modulev1beta1connect.UnimplementedUploadServiceHandler{}
 }
 
 func (nopClientProvider) UserServiceClient(registryHostname string) ownerv1beta1connect.UserServiceClient {
 	return ownerv1beta1connect.UnimplementedUserServiceHandler{}
-}
-
-func (nopClientProvider) VCSCommitServiceClient(registryHostname string) modulev1beta1connect.VCSCommitServiceClient {
-	return modulev1beta1connect.UnimplementedVCSCommitServiceHandler{}
 }

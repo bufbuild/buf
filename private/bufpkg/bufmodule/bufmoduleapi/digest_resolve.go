@@ -22,28 +22,27 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
-// CommitIDToDigest resolves the commit ID by calling a commit service and returns
-// the digest.
-func CommitIDToDigest(
+// ModuleDigestForCommitID resolves the commit ID by calling the CommitService to get
+// the Digest for the Commit.
+func ModuleDigestForCommitID(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
 	remote string,
 	commitID string,
-) (bufcas.Digest, error) {
-	response, err := clientProvider.CommitServiceClient(remote).ResolveCommits(
+) (bufmodule.ModuleDigest, error) {
+	response, err := clientProvider.CommitServiceClient(remote).GetCommits(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.ResolveCommitsRequest{
-				ResourceRefs: []*modulev1beta1.ResourceRef{
+			&modulev1beta1.GetCommitsRequest{
+				CommitRefs: []*modulev1beta1.CommitRef{
 					{
-						Value: &modulev1beta1.ResourceRef_Id{
-							Id: commitID,
-						},
+						Id: commitID,
 					},
 				},
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)
@@ -56,6 +55,5 @@ func CommitIDToDigest(
 	if len(response.Msg.Commits) != 1 {
 		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
 	}
-	commit := response.Msg.Commits[0]
-	return bufcas.ProtoToDigest(commit.GetDigest())
+	return ProtoToModuleDigest(response.Msg.Commits[0].Digest)
 }

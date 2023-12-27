@@ -2,4 +2,4 @@
 version: v2
 deps:
   - name: bufbuild.test/workspace/second
-    digest: shake256:a2db383c1a54738e12966b87af5a65d054cfe0da14da3aba40447e65f884d6667cfcc1078fd321d1b36e9436f58846d97de5a8e2481c1b4fae5cea179de29ac7
+    digest: b5:a2db383c1a54738e12966b87af5a65d054cfe0da14da3aba40447e65f884d6667cfcc1078fd321d1b36e9436f58846d97de5a8e2481c1b4fae5cea179de29ac7

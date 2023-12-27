@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -62,4 +63,34 @@ func getDocFilePathForModuleReadBucket(ctx context.Context, bucket ModuleReadBuc
 		}
 	}
 	return ""
+}
+
+// getStorageMatcher gets the storage.Matcher that will filter the storage.ReadBucket down to specifically
+// the files that are relevant to a module.
+func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.Matcher {
+	return storage.MatchOr(
+		storage.MatchPathExt(".proto"),
+		storage.MatchPathEqual(licenseFilePath),
+		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
+	)
+}
+
+// getSyncOnceValuesGetBucketWithStorageMatcherApplied wraps the getBucket function with sync.OnceValues
+// and getStorageMatcher applied.
+//
+// This is used when constructing moduleReadBuckets in moduleSetBuilder, and when getting a bucket for
+// module digest calculations in moduleData.
+func getSyncOnceValuesGetBucketWithStorageMatcherApplied(
+	ctx context.Context,
+	getBucket func() (storage.ReadBucket, error),
+) func() (storage.ReadBucket, error) {
+	return sync.OnceValues(
+		func() (storage.ReadBucket, error) {
+			bucket, err := getBucket()
+			if err != nil {
+				return nil, err
+			}
+			return storage.MapReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
+		},
+	)
 }

@@ -1,4 +1,3 @@
-// InputConfig is an input configuration.
 // Copyright 2020-2023 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -149,12 +148,11 @@ type InputConfig interface {
 	// IncludePackageFiles returns other files in the same package as the proto file,
 	// not empty only if format is proto file.
 	IncludePackageFiles() bool
-	// IncludePaths returns paths to generate for.
-	IncludePaths() []string
+	// TargetPaths returns paths to generate for. An empty slice means to generate for all paths.
+	TargetPaths() []string
 	// ExcludePaths returns paths not to generate for.
 	ExcludePaths() []string
-	// IncludeTypes returns the types to generate. If GenerateConfig.GenerateTypeConfig()
-	// returns a non-empty list of types.
+	// IncludeTypes returns the types to generate. An empty slice means to generate for all types.
 	IncludeTypes() []string
 
 	isInputConfig()
@@ -307,32 +305,6 @@ func NewTextImageInputConfig(
 	}, nil
 }
 
-// NewInputConfigWithTargets returns an input config the same as the passed config,
-// but with include paths, exclude paths and include types overriden.
-func NewInputConfigWithTargets(
-	config InputConfig,
-	includePaths []string,
-	excludePaths []string,
-	includeTypes []string,
-) (InputConfig, error) {
-	originalConfig, ok := config.(*inputConfig)
-	if !ok {
-		return nil, syserror.Newf("unknown implementation of InputConfig: %T", config)
-	}
-	// targetConfig is a copy of the original config.
-	targetConfig := *originalConfig
-	if len(includePaths) > 0 {
-		targetConfig.includePaths = includePaths
-	}
-	if len(excludePaths) > 0 {
-		targetConfig.excludePaths = excludePaths
-	}
-	if len(includeTypes) > 0 {
-		targetConfig.includeTypes = includeTypes
-	}
-	return &targetConfig, nil
-}
-
 // *** PRIVATE ***
 
 type inputConfig struct {
@@ -348,8 +320,8 @@ type inputConfig struct {
 	recurseSubmodules   bool
 	includePackageFiles bool
 	includeTypes        []string
+	targetPaths         []string
 	excludePaths        []string
-	includePaths        []string
 }
 
 func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputConfig, error) {
@@ -495,8 +467,8 @@ func (i *inputConfig) ExcludePaths() []string {
 	return i.excludePaths
 }
 
-func (i *inputConfig) IncludePaths() []string {
-	return i.includePaths
+func (i *inputConfig) TargetPaths() []string {
+	return i.targetPaths
 }
 
 func (i *inputConfig) IncludeTypes() []string {
@@ -556,7 +528,7 @@ func newExternalInputConfigV2FromInputConfig(
 	if inputConfig.IncludePackageFiles() {
 		externalInputConfigV2.IncludePackageFiles = toPointer(inputConfig.IncludePackageFiles())
 	}
-	externalInputConfigV2.IncludePaths = inputConfig.IncludePaths()
+	externalInputConfigV2.TargetPaths = inputConfig.TargetPaths()
 	externalInputConfigV2.ExcludePaths = inputConfig.ExcludePaths()
 	externalInputConfigV2.Types = inputConfig.IncludeTypes()
 	return externalInputConfigV2, nil

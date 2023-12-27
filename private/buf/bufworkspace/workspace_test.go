@@ -211,6 +211,7 @@ func TestProtoc(t *testing.T) {
 }
 
 func TestUnusedDep(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
@@ -250,6 +251,7 @@ func TestUnusedDep(t *testing.T) {
 }
 
 func TestUndeclaredDep(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
