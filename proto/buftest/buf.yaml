@@ -1,0 +1,11 @@
+version: v1
+deps:
+  - buf.build/bufbuild/protovalidate
+lint:
+  use:
+    - DEFAULT
+    - UNARY_RPC
+breaking:
+  use:
+    - WIRE_JSON
+  ignore_unstable_packages: true

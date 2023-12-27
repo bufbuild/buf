@@ -568,10 +568,13 @@ func TestModifyImageFile(
 				// TODO: check include source code info
 				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
 					imageFile := image.GetFile(filePath)
-					testcase.modifyFunc(
-						sweeper,
-						imageFile,
-						testcase.config,
+					require.NoError(
+						t,
+						testcase.modifyFunc(
+							sweeper,
+							imageFile,
+							testcase.config,
+						),
 					)
 					require.NotNil(t, imageFile)
 					require.Empty(
@@ -813,14 +816,13 @@ func testGetImageFromDirs(
 	if !includeSourceInfo {
 		options = []bufimage.BuildImageOption{bufimage.WithExcludeSourceCodeInfo()}
 	}
-	image, annotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		context.Background(),
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		options...,
 	)
 	require.NoError(t, err)
-	require.Empty(t, annotations)
 	return image
 }
 
@@ -858,23 +860,4 @@ func newTestFileOptionOverrideRule(
 	)
 	require.NoError(t, err)
 	return fileOptionOverride
-}
-
-func newTestFieldOptionOverrideRule(
-	t *testing.T,
-	path string,
-	moduleFullName string,
-	fieldName string,
-	fieldOption bufconfig.FieldOption,
-	value interface{},
-) bufconfig.ManagedOverrideRule {
-	fieldOptionOverrid, err := bufconfig.NewManagedOverrideRuleForFieldOption(
-		path,
-		moduleFullName,
-		bufconfig.FileOptionPhpMetadataNamespace.String(),
-		fieldOption,
-		value,
-	)
-	require.NoError(t, err)
-	return fieldOptionOverrid
 }

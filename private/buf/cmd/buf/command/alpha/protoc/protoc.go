@@ -16,6 +16,7 @@ package protoc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -127,28 +128,28 @@ func run(
 	if len(env.PluginNameToPluginInfo) == 0 && !env.IncludeSourceInfo {
 		buildOptions = append(buildOptions, bufimage.WithExcludeSourceCodeInfo())
 	}
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		buildOptions...,
 	)
 	if err != nil {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if errors.As(err, &fileAnnotationSet) {
+			if err := bufanalysis.PrintFileAnnotationSet(
+				container.Stderr(),
+				fileAnnotationSet,
+				env.ErrorFormat,
+			); err != nil {
+				return err
+			}
+			// we do this even though we're in protoc compatibility mode as we just need to do non-zero
+			// but this also makes us consistent with the rest of buf
+			return bufctl.ErrFileAnnotation
+		}
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			env.ErrorFormat,
-		); err != nil {
-			return err
-		}
-		// we do this even though we're in protoc compatibility mode as we just need to do non-zero
-		// but this also makes us consistent with the rest of buf
-		return bufctl.ErrFileAnnotation
-	}
-
 	if env.PrintFreeFieldNumbers {
 		fileInfos, err := bufmodule.GetTargetFileInfos(
 			ctx,
@@ -156,6 +157,9 @@ func run(
 				workspace,
 			),
 		)
+		if err != nil {
+			return err
+		}
 		var filePaths []string
 		for _, fileInfo := range fileInfos {
 			filePaths = append(filePaths, fileInfo.Path())

@@ -16,6 +16,7 @@ package bufbreaking_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -295,8 +297,6 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 		t,
 		"breaking_field_same_type",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 12, 8, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 12, 9, 15, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 6, "FIELD_SAME_TYPE"),
@@ -479,7 +479,6 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 		t,
 		"breaking_message_same_values",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 42, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 7, 13, 53, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -487,7 +486,6 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 5, 21, 44, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 5, 24, 43, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -777,6 +775,7 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 		previousReadWriteBucket,
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
@@ -785,27 +784,26 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 		readWriteBucket,
+		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
 	)
 	require.NoError(t, err)
 
-	previousImage, previousFileAnnotations, err := bufimage.BuildImage(
+	previousImage, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
 		bufimage.WithExcludeSourceCodeInfo(),
 	)
 	require.NoError(t, err)
-	require.Empty(t, previousFileAnnotations)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	image, fileAnnotations, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
 	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
@@ -814,16 +812,21 @@ func testBreaking(
 		zap.NewNop(),
 		tracing.NopTracer,
 	)
-	fileAnnotations, err = handler.Check(
+	err = handler.Check(
 		ctx,
 		breakingConfig,
 		previousImage,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

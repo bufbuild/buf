@@ -28,11 +28,6 @@ const (
 )
 
 var (
-	allFileTypes = []FileType{
-		FileTypeProto,
-		FileTypeDoc,
-		FileTypeLicense,
-	}
 	fileTypeToString = map[FileType]string{
 		FileTypeProto:   "proto",
 		FileTypeDoc:     "doc",
@@ -55,10 +50,19 @@ func (c FileType) String() string {
 	return s
 }
 
+// ParseFileType parses the file type from its string representation.
+//
+// This reverses FileType.String().
+//
+// Returns an error of type *ParseError if thie string could not be parsed.
 func ParseFileType(s string) (FileType, error) {
 	c, ok := stringToFileType[s]
 	if !ok {
-		return 0, fmt.Errorf("unknown FileType: %q", s)
+		return 0, &ParseError{
+			typeString: "module file type",
+			input:      s,
+			err:        fmt.Errorf("unknown type: %q", s),
+		}
 	}
 	return c, nil
 }

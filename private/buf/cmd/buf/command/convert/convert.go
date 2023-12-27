@@ -258,7 +258,7 @@ func wellKnownTypeImage(
 	if err != nil {
 		return nil, err
 	}
-	image, _, err := bufimage.BuildImage(
+	image, err := bufimage.BuildImage(
 		ctx,
 		tracer,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),

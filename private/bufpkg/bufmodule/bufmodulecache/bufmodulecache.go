@@ -154,7 +154,7 @@ func (p *moduleDataProvider) logDebugModuleKey(
 	fields ...zap.Field,
 ) error {
 	if checkedEntry := p.logger.Check(zap.DebugLevel, message); checkedEntry != nil {
-		digest, err := moduleKey.Digest()
+		moduleDigest, err := moduleKey.ModuleDigest()
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func (p *moduleDataProvider) logDebugModuleKey(
 			append(
 				[]zap.Field{
 					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("digest", digest.String()),
+					zap.String("moduleDigest", moduleDigest.String()),
 				},
 				fields...,
 			)...,

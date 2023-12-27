@@ -21,8 +21,8 @@ import (
 	"io/fs"
 	"sort"
 	"strings"
-	"sync"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -262,7 +262,8 @@ type moduleReadBucket struct {
 func newModuleReadBucketForModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	getBucket func() (storage.ReadBucket, error),
+	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
+	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	module Module,
 	targetPaths []string,
 	targetExcludePaths []string,
@@ -277,16 +278,8 @@ func newModuleReadBucketForModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	return &moduleReadBucket{
-		logger: logger,
-		getBucket: sync.OnceValues(
-			func() (storage.ReadBucket, error) {
-				bucket, err := getBucket()
-				if err != nil {
-					return nil, err
-				}
-				return storage.MapReadBucket(bucket, getStorageMatcher(ctx, bucket)), nil
-			},
-		),
+		logger:               logger,
+		getBucket:            syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module:               module,
 		targetPaths:          targetPaths,
 		targetPathMap:        slicesext.ToStructMap(targetPaths),
@@ -390,7 +383,6 @@ func (b *moduleReadBucket) WalkFileInfos(
 		// We can't determine if the Module had any .proto file paths, as we only walked
 		// the target paths. We don't return any value from protoFileTracker.validate().
 		return nil
-
 	}
 	if err := bucket.Walk(ctx, "", targetFileWalkFunc); err != nil {
 		return err
@@ -401,6 +393,9 @@ func (b *moduleReadBucket) WalkFileInfos(
 func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
 	// We want to avoid sync.OnceValueing getBucket Twice, so we have a special copy function here
 	// instead of calling newModuleReadBucket.
+	//
+	// This technically doesn't matter anymore since we don't sync.OnceValue getBucket inside newModuleReadBucket
+	// anymore, but we keep this around in case we change that back.
 	return &moduleReadBucket{
 		logger:               b.logger,
 		getBucket:            b.getBucket,
@@ -452,7 +447,7 @@ func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo s
 				return nil, err
 			}
 			// This also has the effect of copying the slice.
-			return slicesext.ToUniqueSorted(fastscanResult.Imports), nil
+			return slicesext.ToUniqueSorted(slicesext.Map(fastscanResult.Imports, func(imp fastscan.Import) string { return imp.Path })), nil
 		},
 		func() (string, error) {
 			if fileType != FileTypeProto {
@@ -544,18 +539,6 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
 ) (fastscanResult fastscan.Result, retErr error) {
-	//defer func() {
-	//if checkedEntry := b.logger.Check(zap.DebugLevel, "fastscan"); checkedEntry != nil {
-	//checkedEntry.Write(
-	//zap.String("moduleOpaqueID", b.module.OpaqueID()),
-	//zap.String("path", path),
-	//zap.String("resultPackage", fastscanResult.PackageName),
-	//zap.Strings("resultImports", fastscanResult.Imports),
-	//zap.Error(retErr),
-	//)
-	//}
-	//}()
-
 	fileType, err := classifyPathFileType(path)
 	if err != nil {
 		return fastscan.Result{}, err
@@ -577,9 +560,28 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	fastscanResult, err = fastscan.Scan(readObjectCloser)
+	fastscanResult, err = fastscan.Scan(path, readObjectCloser)
 	if err != nil {
-		return fastscan.Result{}, fmt.Errorf("%s had parse error: %w", path, err)
+		var syntaxError fastscan.SyntaxError
+		if errors.As(err, &syntaxError) {
+			fileAnnotationSet, err := bufprotocompile.FileAnnotationSetForErrorsWithPos(
+				syntaxError,
+				bufprotocompile.WithExternalPathResolver(
+					func(path string) string {
+						fileInfo, err := bucket.Stat(ctx, path)
+						if err != nil {
+							return path
+						}
+						return fileInfo.ExternalPath()
+					},
+				),
+			)
+			if err != nil {
+				return fastscan.Result{}, err
+			}
+			return fastscan.Result{}, fileAnnotationSet
+		}
+		return fastscan.Result{}, err
 	}
 	return fastscanResult, nil
 }
@@ -783,16 +785,6 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 			}
 			return f(fileInfo)
 		},
-	)
-}
-
-// getStorageMatcher gets the storage.Matcher that will filter the storage.ReadBucket down to specifically
-// the files that are relevant to a ModuleReadBucket.
-func getStorageMatcher(ctx context.Context, bucket storage.ReadBucket) storage.Matcher {
-	return storage.MatchOr(
-		storage.MatchPathExt(".proto"),
-		storage.MatchPathEqual(licenseFilePath),
-		storage.MatchPathEqual(getDocFilePathForStorageReadBucket(ctx, bucket)),
 	)
 }
 

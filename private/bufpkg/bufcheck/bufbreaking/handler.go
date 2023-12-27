@@ -17,7 +17,6 @@ package bufbreaking
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -51,18 +50,18 @@ func (h *handler) Check(
 	config bufconfig.BreakingConfig,
 	previousImage bufimage.Image,
 	image bufimage.Image,
-) ([]bufanalysis.FileAnnotation, error) {
+) error {
 	previousFiles, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(previousImage.Files())...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	internalConfig, err := internalConfigForConfig(config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	return h.runner.Check(ctx, internalConfig, previousFiles, files)
 }

@@ -527,9 +527,9 @@ type externalInputConfigV2 struct {
 	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
 	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
-	// Types, IncludePaths and ExcludePaths are available for all formats.
+	// Types, TargetPaths and ExcludePaths are available for all formats.
 	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`
-	IncludePaths []string `json:"include_paths,omitempty" yaml:"include_paths,omitempty"`
+	TargetPaths  []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 	ExcludePaths []string `json:"exclude_paths,omitempty" yaml:"exclude_paths,omitempty"`
 	// The following options are available depending on input format.
 	Compression         *string `json:"compression,omitempty" yaml:"compression,omitempty"`

@@ -21,22 +21,8 @@ import (
 )
 
 var (
-	defaultCheckConfigV1Beta1 = NewCheckConfig(
-		FileVersionV1Beta1,
-		nil,
-		nil,
-		nil,
-		nil,
-	)
 	defaultCheckConfigV1 = NewCheckConfig(
 		FileVersionV1,
-		nil,
-		nil,
-		nil,
-		nil,
-	)
-	defaultCheckConfigV2 = NewCheckConfig(
-		FileVersionV2,
 		nil,
 		nil,
 		nil,

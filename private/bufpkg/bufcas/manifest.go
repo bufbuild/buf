@@ -42,6 +42,10 @@ type Manifest interface {
 	// The paths of the given FileNodes are guaranteed to be unique.
 	// The iteration order will be the sorted order of the paths.
 	FileNodes() []FileNode
+	// GetFileNode gets the FileNode for the given path.
+	//
+	// Returns nil if the path does not exist.
+	GetFileNode(path string) FileNode
 	// GetDigest gets the Digest for the given path.
 	//
 	// Returns nil if the path does not exist.
@@ -112,6 +116,13 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 	return NewBlobForContent(strings.NewReader(manifest.String()))
 }
 
+// ManifestToDigest converts the string representation of the given Manifest into a Digest.
+//
+// The Manifest is assumed to be non-nil.
+func ManifestToDigest(manifest Manifest) (Digest, error) {
+	return NewDigestForContent(strings.NewReader(manifest.String()))
+}
+
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
 // # The Blob is assumed to be non-nil
@@ -151,9 +162,13 @@ func (m *manifest) FileNodes() []FileNode {
 	return m.sortedUniqueFileNodes
 }
 
+func (m *manifest) GetFileNode(path string) FileNode {
+	return m.pathToFileNode[path]
+}
+
 func (m *manifest) GetDigest(path string) Digest {
-	fileNode, ok := m.pathToFileNode[path]
-	if !ok {
+	fileNode := m.GetFileNode(path)
+	if fileNode == nil {
 		return nil
 	}
 	return fileNode.Digest()

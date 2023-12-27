@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -51,21 +52,6 @@ const (
 )
 
 var (
-	// ProtocProxyPluginNames are the names of the plugins that should be proxied through protoc
-	// in the absence of a binary.
-	ProtocProxyPluginNames = map[string]struct{}{
-		"cpp":    {},
-		"csharp": {},
-		"java":   {},
-		"js":     {},
-		"objc":   {},
-		"php":    {},
-		"python": {},
-		"pyi":    {},
-		"ruby":   {},
-		"kotlin": {},
-	}
-
 	// DefaultVersion represents the default version to use as compiler version for codegen requests.
 	DefaultVersion = newVersion(
 		defaultMajorVersion,
@@ -171,7 +157,7 @@ func NewHandler(
 
 	// Initialize builtin protoc plugin handler. We always look for protoc-gen-X first,
 	// but if not, check the builtins.
-	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
+	if _, ok := bufconfig.ProtocProxyPluginNames[pluginName]; ok {
 		if handlerOptions.protocPath == "" {
 			handlerOptions.protocPath = "protoc"
 		}

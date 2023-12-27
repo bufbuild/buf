@@ -21,7 +21,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -65,6 +64,23 @@ const (
 	PluginConfigTypeLocal
 )
 
+var (
+	// ProtocProxyPluginNames are the names of the plugins that should be proxied through protoc
+	// in the absence of a binary.
+	ProtocProxyPluginNames = map[string]struct{}{
+		"cpp":    {},
+		"csharp": {},
+		"java":   {},
+		"js":     {},
+		"objc":   {},
+		"php":    {},
+		"python": {},
+		"pyi":    {},
+		"ruby":   {},
+		"kotlin": {},
+	}
+)
+
 // GeneratePluginConfig is a configuration for a plugin.
 type GeneratePluginConfig interface {
 	// Type returns the plugin type. This is never the zero value.
@@ -73,7 +89,7 @@ type GeneratePluginConfig interface {
 	Name() string
 	// Out returns the output directory for generation. This is never empty.
 	Out() string
-	// Opt returns the plugin options as a comma seperated string.
+	// Opt returns the plugin options as a comma separated string.
 	Opt() string
 	// IncludeImports returns whether to generate code for imported files. This
 	// is always false in v1.
@@ -188,7 +204,7 @@ func NewProtocBuiltinPluginConfig(
 }
 
 // NewGeneratePluginWithIncludeImportsAndWKT returns a GeneratePluginConfig the
-// same as the input, with include imports and include wkt overriden.
+// same as the input, with include imports and include wkt overridden.
 func NewGeneratePluginWithIncludeImportsAndWKT(
 	config GeneratePluginConfig,
 	includeImports bool,
@@ -662,7 +678,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 			externalPluginConfigV2.Binary = binaryName
 			break
 		}
-		if _, isProtocBuiltin := bufpluginexec.ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
+		if _, isProtocBuiltin := ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
 			externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
 			break
 		}
