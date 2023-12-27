@@ -1150,13 +1150,6 @@ func testLint(
 	)
 }
 
-func testLintWorkspace(
-	t *testing.T,
-	relDirPath string,
-
-) {
-}
-
 func testLintWithOptions(
 	t *testing.T,
 	relDirPath string,
