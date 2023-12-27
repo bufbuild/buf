@@ -1953,8 +1953,6 @@ func TestConvert(t *testing.T) {
 
 func TestFormat(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	testRunStdout(
 		t,
 		nil,
@@ -2002,8 +2000,6 @@ func TestFormatSingleFile(t *testing.T) {
 
 func TestFormatDiff(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	stdout := bytes.NewBuffer(nil)
 	testRun(
@@ -2041,8 +2037,6 @@ func TestFormatDiff(t *testing.T) {
 // with the --exit-code flag.
 func TestFormatExitCode(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	stdout := bytes.NewBuffer(nil)
 	testRun(
 		t,
