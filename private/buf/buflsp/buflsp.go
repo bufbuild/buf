@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -494,24 +495,29 @@ func (s *server) refreshImage(ctx context.Context, moduleSet bufmodule.ModuleSet
 		return err
 	}
 	diagsByFile := make(map[string][]protocol.Diagnostic)
-	image, buildAnnots, err := bufimage.BuildImage(ctx, tracing.NewTracer(s.container.Tracer()), bucket)
+	image, err := bufimage.BuildImage(ctx, tracing.NewTracer(s.container.Tracer()), bucket)
 	if err != nil {
-		return err
-	}
-	for _, annot := range buildAnnots {
-		diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
-			annotationToDiagnostic(annot, protocol.DiagnosticSeverityError))
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		if !errors.As(err, &fileAnnotationSet) {
+			return err
+		}
+		for _, annot := range fileAnnotationSet.FileAnnotations() {
+			diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
+				annotationToDiagnostic(annot, protocol.DiagnosticSeverityError))
+		}
 	}
 
 	if workspace, ok := moduleSet.(bufworkspace.Workspace); ok && image != nil {
 		for _, module := range moduleSet.Modules() {
-			lintAnnots, err := s.lintHandler.Check(ctx, workspace.GetLintConfigForOpaqueID(module.OpaqueID()), image)
-			if err != nil {
-				return err
-			}
-			for _, annot := range lintAnnots {
-				diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
-					annotationToDiagnostic(annot, protocol.DiagnosticSeverityWarning))
+			if err := s.lintHandler.Check(ctx, workspace.GetLintConfigForOpaqueID(module.OpaqueID()), image); err != nil {
+				var fileAnnotationSet bufanalysis.FileAnnotationSet
+				if !errors.As(err, &fileAnnotationSet) {
+					return err
+				}
+				for _, annot := range fileAnnotationSet.FileAnnotations() {
+					diagsByFile[annot.FileInfo().ExternalPath()] = append(diagsByFile[annot.FileInfo().ExternalPath()],
+						annotationToDiagnostic(annot, protocol.DiagnosticSeverityWarning))
+				}
 			}
 		}
 	}
@@ -536,7 +542,7 @@ func (s *server) localPathForImport(
 	file bufmodule.File,
 ) (string, error) {
 	if workspace == s.wellKnownTypesModuleSet {
-		digest, err := file.Module().Digest()
+		digest, err := file.Module().ModuleDigest()
 		if err != nil {
 			return "", err
 		}
@@ -550,7 +556,7 @@ func (s *server) localPathForImport(
 	if moduleFullName == nil {
 		return "", syserror.Newf("remote module %q had nil ModuleFullName", module.OpaqueID())
 	}
-	digest, err := module.Digest()
+	digest, err := module.ModuleDigest()
 	if err != nil {
 		return "", err
 	}
