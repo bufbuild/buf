@@ -19,12 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"sync"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -243,7 +243,7 @@ func newModuleSet(
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
-		getModuleDigestStringToModule: sync.OnceValues(
+		getModuleDigestStringToModule: syncext.OnceValues(
 			func() (map[string]Module, error) {
 				moduleDigestStringToModule := make(map[string]Module, len(modules))
 				for _, module := range modules {

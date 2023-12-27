@@ -16,11 +16,11 @@ package bufmodule
 
 import (
 	"context"
-	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
@@ -252,7 +252,7 @@ type module struct {
 func newModule(
 	ctx context.Context,
 	logger *zap.Logger,
-	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
+	// This function must already be filtered to include only module files and must be syncext.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
@@ -303,8 +303,8 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(module))
-	module.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(module))
+	module.getModuleDigest = syncext.OnceValues(newGetModuleDigestFuncForModule(module))
+	module.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
 
@@ -351,7 +351,7 @@ func (m *module) ModuleSet() ModuleSet {
 }
 
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
-	// We don't just call newModule directly as we don't want to double sync.OnceValues stuff.
+	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
 		ctx:            m.ctx,
 		logger:         m.logger,
@@ -367,8 +367,8 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getModuleDigest = sync.OnceValues(newGetModuleDigestFuncForModule(newModule))
-	newModule.getModuleDeps = sync.OnceValues(newGetModuleDepsFuncForModule(newModule))
+	newModule.getModuleDigest = syncext.OnceValues(newGetModuleDigestFuncForModule(newModule))
+	newModule.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
 

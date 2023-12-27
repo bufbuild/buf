@@ -15,10 +15,9 @@
 package bufmodule
 
 import (
-	"sync"
-
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 // FileInfo is the file info for a Module file.
@@ -90,8 +89,8 @@ func newFileInfo(
 		module:              module,
 		fileType:            fileType,
 		isTargetFile:        isTargetFile,
-		getProtoFileImports: sync.OnceValues(getProtoFileImports),
-		getProtoFilePackage: sync.OnceValues(getProtoFilePackage),
+		getProtoFileImports: syncext.OnceValues(getProtoFileImports),
+		getProtoFilePackage: syncext.OnceValues(getProtoFilePackage),
 	}
 }
 

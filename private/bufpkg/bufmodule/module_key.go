@@ -16,7 +16,8 @@ package bufmodule
 
 import (
 	"errors"
-	"sync"
+
+	"github.com/bufbuild/buf/private/pkg/syncext"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -85,7 +86,7 @@ func newModuleKey(
 	return &moduleKey{
 		moduleFullName:  moduleFullName,
 		commitID:        commitID,
-		getModuleDigest: sync.OnceValues(getModuleDigest),
+		getModuleDigest: syncext.OnceValues(getModuleDigest),
 	}, nil
 }
 
