@@ -65,11 +65,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-<<<<<<< HEAD
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsp"
-=======
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/migrate"
->>>>>>> bufmod
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
