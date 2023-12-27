@@ -1197,6 +1197,7 @@ func testLintWithOptions(
 		tracing.NopTracer,
 		moduleReadBucket,
 	)
+	require.NoError(t, err)
 	if imageModifier != nil {
 		image = imageModifier(image)
 	}
