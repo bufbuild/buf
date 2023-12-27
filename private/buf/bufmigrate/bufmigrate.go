@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -76,7 +77,9 @@ func Migrate(
 	workspaceDirPaths, err = slicesext.MapError(
 		workspaceDirPaths,
 		func(workspaceDirPath string) (string, error) {
-			if !filepath.IsLocal(workspaceDirPath) {
+			if _, err := normalpath.NormalizeAndValidate(workspaceDirPath); err != nil {
+				// TODO: comment back out when we no longer have to support go 1.19
+				//if !filepath.IsLocal(workspaceDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", workspaceDirPath)
 			}
 			return filepath.Clean(workspaceDirPath), nil
@@ -88,7 +91,9 @@ func Migrate(
 	moduleDirPaths, err = slicesext.MapError(
 		moduleDirPaths,
 		func(moduleDirPath string) (string, error) {
-			if !filepath.IsLocal(moduleDirPath) {
+			if _, err := normalpath.NormalizeAndValidate(moduleDirPath); err != nil {
+				// TODO: comment back out when we no longer have to support go 1.19
+				//if !filepath.IsLocal(moduleDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", moduleDirPath)
 			}
 			return filepath.Clean(moduleDirPath), nil
