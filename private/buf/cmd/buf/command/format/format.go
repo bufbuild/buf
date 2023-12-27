@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
@@ -278,7 +279,7 @@ func run(
 	}
 	// This is for the flags.Output flag. This is separate from flags.Write.
 	// It is valid to have a non-stdout flags.Output
-	outputType, outputPath, err := getOutputTypeAndPath(ctx, container, flags)
+	outputType, outputPath, err := getOutputTypeAndPath(ctx, container, flags.Output)
 	if err != nil {
 		return err
 	}
@@ -327,6 +328,13 @@ func run(
 		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
 			return err
 		}
+		// If we haven't overridden the output flag and havent set write, we can stop here.
+		if flags.Output == "-" && !flags.Write {
+			if flags.ExitCode && diffExists {
+				return bufctl.ErrFileAnnotation
+			}
+			return nil
+		}
 	}
 	if flags.Write {
 		if err := storage.WalkReadObjects(
@@ -357,8 +365,30 @@ func run(
 	}
 	switch outputType {
 	case outputTypeStdout:
+		if err := writeToFile(ctx, formattedReadBucket, container.Stdout()); err != nil {
+			return err
+		}
 	case outputTypeDir:
+		if err := writeToDir(ctx, flags.DisableSymlinks, formattedReadBucket, outputPath); err != nil {
+			return err
+		}
 	case outputTypeFile:
+		var writer io.Writer
+		if app.IsDevStdout(outputPath) {
+			writer = container.Stdout()
+		} else {
+			file, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, file.Close())
+			}()
+			writer = file
+		}
+		if err := writeToFile(ctx, formattedReadBucket, writer); err != nil {
+			return err
+		}
 	default:
 		return syserror.Newf("unknown outputType: %v", outputType)
 	}
@@ -366,6 +396,63 @@ func run(
 		return bufctl.ErrFileAnnotation
 	}
 	return nil
+}
+
+func writeToFile(
+	ctx context.Context,
+	formattedReadBucket storage.ReadBucket,
+	writer io.Writer,
+) error {
+	return storage.WalkReadObjects(
+		ctx,
+		formattedReadBucket,
+		"",
+		func(readObject storage.ReadObject) error {
+			data, err := io.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
+			if _, err := writer.Write(data); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+func writeToDir(
+	ctx context.Context,
+	disableSymlinks bool,
+	formattedReadBucket storage.ReadBucket,
+	dirPath string,
+) error {
+	// OK to use os.Stat instead of os.LStat here as this is CLI-only
+	if _, err := os.Stat(dirPath); err != nil {
+		// We don't need to check fileInfo.IsDir() because it's
+		// already handled by the storageosProvider.
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
+				return err
+			}
+			// We could os.RemoveAll if there is a non-nil retErr, but we're
+			// not going to just to be safe.
+		}
+	}
+	readWriteBucket, err := newStorageosProvider(disableSymlinks).NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	// We don't copy with ExternalPaths, we use Paths.
+	// This is what we were always doing, including pre-refactor.
+	_, err = storage.Copy(
+		ctx,
+		formattedReadBucket,
+		readWriteBucket,
+	)
+	return err
 }
 
 func getOutputTypeAndPath(
@@ -401,4 +488,12 @@ func getOutputTypeAndPath(
 	default:
 		return 0, "", syserror.Newf("invalid bufetch.DirOrProtoFileRef: %T", outputDirOrProtoFileRef)
 	}
+}
+
+func newStorageosProvider(disableSymlinks bool) storageos.Provider {
+	var options []storageos.ProviderOption
+	if !disableSymlinks {
+		options = append(options, storageos.ProviderWithSymlinks())
+	}
+	return storageos.NewProvider(options...)
 }
