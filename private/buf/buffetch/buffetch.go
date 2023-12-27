@@ -269,7 +269,7 @@ func NewDirRefParser(logger *zap.Logger) DirRefParser {
 }
 
 // NewDirOrProtoFileRefParser returns a new RefParser for dirs only.
-func NewDirOrProtiFileRefParser(logger *zap.Logger) DirOrProtoFileRefParser {
+func NewDirOrProtoFileRefParser(logger *zap.Logger) DirOrProtoFileRefParser {
 	return newDirOrProtoFileRefParser(logger)
 }
 

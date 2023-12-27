@@ -17,11 +17,10 @@ package format
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -29,12 +28,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufformat"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 )
@@ -235,7 +235,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"-",
 		fmt.Sprintf(
 			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout`,
-			buffetch.SourceFormatsString,
+			buffetch.DirOrProtoFileFormatsString,
 		),
 	)
 	flagSet.StringVar(
@@ -246,30 +246,43 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 }
 
-func getOutputTypeAndPath(output string) (outputType, string, error) {
-	if output == "-" {
-		return outputTypeStdout
-	}
-	outputDirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(logger).GetDirOrProtoFileRef(ctx, flags.Output)
-	if err != nil {
-		return nil, err
-	}
-	// if output is app.IsDev.*, it's ok here, we will just treat them as standard files.
-
-}
-
 func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if flags.Output != "-" && flags.Write {
-		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
-	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
+	if flags.Write {
+		// We abuse ExternalPaths below to say that if flags.Write is set, just write over
+		// the ExternalPath. Also, you can only really use flags.Write if you have a dir
+		// or proto file. So, we abuse getOutputTypeAndPath to determine if we have a writable source.
+		sourceOutputType, sourceOutputPath, err := getOutputTypeAndPath(ctx, container, source)
+		if err != nil {
+			return fmt.Errorf("invalid input %q when using --%s: %w", source, writeFlagName, err)
+		}
+		switch sourceOutputType {
+		case outputTypeStdout:
+			return fmt.Errorf("invalid input %q when using --%s: cannot also writeto stdout", source, writeFlagName)
+		case outputTypeDir:
+		case outputTypeFile:
+			// We should be percolating this from buffetch, but we're not.
+			if app.IsDevStdout(sourceOutputPath) {
+				return fmt.Errorf("invalid input %q when using --%s: cannot also write to stdout", source, writeFlagName)
+			}
+		default:
+			return syserror.Newf("unknown outputType: %v", sourceOutputType)
+		}
+	}
+	// This is for the flags.Output flag. This is separate from flags.Write.
+	// It is valid to have a non-stdout flags.Output
+	outputType, outputPath, err := getOutputTypeAndPath(ctx, container, flags)
+	if err != nil {
+		return err
+	}
+
 	runner := command.NewRunner()
 	controller, err := bufcli.NewController(
 		container,
@@ -291,24 +304,7 @@ func run(
 	moduleReadBucket := bufmodule.ModuleReadBucketWithOnlyTargetFiles(
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
-
-	fileInfos, err := bufmodule.GetFileInfos(ctx, moduleReadBucket)
-	if err != nil {
-		return err
-	}
-	// An output with a .proto extension could be an output directory but we're going to ignore that
-	// as that's borderline pathological for formatting.
-	if filepath.Ext(flags.Output) == ".proto" && len(fileInfos) > 1 {
-		externalPaths := slicesext.Map(fileInfos, func(fileInfo bufmodule.FileInfo) string { return fileInfo.ExternalPath() })
-		return appcmd.NewInvalidArgumentErrorf("--%s specified as single .proto file but multiple files targeted for formatting: %s", flags.Output, strings.Join(externalPaths, ","))
-	}
-
 	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
-	//paths, err := storage.AllPaths(ctx, originalReadBucket, "")
-	//if err != nil {
-	//return err
-	//}
-	//fmt.Println("original:\n" + strings.Join(paths, "\n") + "\n")
 	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket)
 	if err != nil {
 		return err
@@ -332,25 +328,17 @@ func run(
 			return err
 		}
 	}
-	if flags.Rewrite {
+	if flags.Write {
 		if err := storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
 			"",
 			func(readObject storage.ReadObject) error {
-				// We use os.OpenFile here instead of storage.Copy for a few reasons.
+				// TODO: This is a legacy hack that we shouldn't use. We should not
+				// rely on external paths being writable.
 				//
-				// storage.Copy operates on normal paths, so the copied content is always placed
-				// relative to the bucket's root (as expected). The rewrite in-place behavior can
-				// be rephrased as writing to the same bucket as the input (e.g. buf format proto -o proto).
-				//
-				// Now, if the user asks to rewrite an entire workspace (i.e. a directory containing
-				// a buf.work.yaml), we would need to call storage.Copy for each of the directories
-				// defined in the workspace. This involves parsing the buf.work.yaml and creating
-				// a storage.Bucket for each of the directories.
-				//
-				// It's simpler to just copy the files in-place based on their external path since
-				// it's the same behavior for single files, directories, and workspaces.
+				// We do validation above on the flags.Write flag to quasi-ensure that ExternalPath
+				// will be a real externalPath, but it's not great.
 				file, err := os.OpenFile(readObject.ExternalPath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 				if err != nil {
 					return err
@@ -358,18 +346,59 @@ func run(
 				defer func() {
 					retErr = multierr.Append(retErr, file.Close())
 				}()
-				if _, err := file.ReadFrom(formattedReadObject); err != nil {
+				if _, err := file.ReadFrom(readObject); err != nil {
 					return err
 				}
 				return nil
 			},
 		); err != nil {
-			return false, err
+			return err
 		}
-		return diffPresent, nil
+	}
+	switch outputType {
+	case outputTypeStdout:
+	case outputTypeDir:
+	case outputTypeFile:
+	default:
+		return syserror.Newf("unknown outputType: %v", outputType)
 	}
 	if flags.ExitCode && diffExists {
 		return bufctl.ErrFileAnnotation
 	}
 	return nil
+}
+
+func getOutputTypeAndPath(
+	ctx context.Context,
+	container appext.Container,
+	output string,
+) (outputType, string, error) {
+	outputDirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(
+		container.Logger(),
+	).GetDirOrProtoFileRef(ctx, output)
+	if err != nil {
+		return 0, "", err
+	}
+	switch t := outputDirOrProtoFileRef.(type) {
+	case buffetch.DirRef:
+		return outputTypeDir, t.DirPath(), nil
+	case buffetch.ProtoFileRef:
+		if t.IncludePackageFiles() {
+			// We should have a better answer here. Right now, it's
+			// possible that the other files in the same package are defined
+			// in a remote dependency, which makes it impossible to rewrite
+			// in-place.
+			//
+			// In the case that the user uses the -w flag, we'll either need
+			// to return an error, or omit the file that it can't rewrite in-place
+			// (potentially including a debug log).
+			return 0, "", errors.New("cannot specify include_package_files=true with format")
+		}
+		if t.IsStdio() {
+			return outputTypeStdout, "", nil
+		}
+		return outputTypeFile, t.ProtoFilePath(), nil
+	default:
+		return 0, "", syserror.Newf("invalid bufetch.DirOrProtoFileRef: %T", outputDirOrProtoFileRef)
+	}
 }
