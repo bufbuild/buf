@@ -76,6 +76,7 @@ func NewUploadRequest(
 	)
 
 	// We only add references for target Modules.
+	// TODO: We should add references for any module without a CommitID! See below!
 	targetOpaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(targetModules)
 	if err != nil {
 		return nil, err
