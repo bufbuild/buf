@@ -5,7 +5,7 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	private/buf/bufwkt/cmd/wkt-go-data \
-	private/buf/cmd/buf-digest \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
