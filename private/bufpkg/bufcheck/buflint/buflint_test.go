@@ -1168,7 +1168,6 @@ func testLintWithOptions(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	var options []bufworkspace.WorkspaceBucketOption
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
 		ctx,
 		zap.NewNop(),
@@ -1176,19 +1175,19 @@ func testLintWithOptions(
 		readWriteBucket,
 		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
-		options...,
 	)
 	require.NoError(t, err)
 
-	if moduleFullNameString == "" {
-		// opaqueID
-		moduleFullNameString = "."
+	// the module full name string represents the opaque ID of the module
+	opaqueID := moduleFullNameString
+	if opaqueID == "" {
+		opaqueID = "."
 	}
 
 	// build the image for the specified module string (opaqueID)
-	moduleSet, err := workspace.WithTargetOpaqueIDs(moduleFullNameString)
+	moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
 	require.NoError(t, err)
-	module := moduleSet.GetModuleForOpaqueID(moduleFullNameString)
+	module := moduleSet.GetModuleForOpaqueID(opaqueID)
 	require.NotNil(t, module)
 	moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
 	require.NoError(t, err)
@@ -1202,7 +1201,7 @@ func testLintWithOptions(
 		image = imageModifier(image)
 	}
 
-	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
+	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
 	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
 	err = handler.Check(
