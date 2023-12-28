@@ -711,7 +711,6 @@ func getReadBucketCloserForOSProtoFile(
 				return nil, err
 			}
 			protoTerminateFileDirPath = normalpath.Normalize(pwd)
-
 		} else {
 			protoTerminateFileDirPath = "."
 		}
