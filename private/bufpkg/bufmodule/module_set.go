@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -65,14 +64,6 @@ type ModuleSet interface {
 	//
 	// Returns nil if there is no Module with the given CommitID.
 	GetModuleForCommitID(commitID string) Module
-	// GetModuleForModuleDigest gets the Module for the ModuleDigest, if it exists.
-	//
-	// Note that this function will result in ModuleDigest() being called on every Module in
-	// the ModuleSet, which is potentially expensive.
-	//
-	// Returns nil if there is no Module with the given Digest.
-	// Returns an error if there was an error when calling Digest() on a Module.
-	GetModuleForModuleDigest(moduleDigest ModuleDigest) (Module, error)
 
 	// WithTargetOpaqueIDs returns a new ModuleSet that changes the targeted Modules to
 	// the Modules with the specified OpaqueIDs.
@@ -201,12 +192,11 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
 // moduleSet
 
 type moduleSet struct {
-	modules                       []Module
-	moduleFullNameStringToModule  map[string]Module
-	opaqueIDToModule              map[string]Module
-	bucketIDToModule              map[string]Module
-	commitIDToModule              map[string]Module
-	getModuleDigestStringToModule func() (map[string]Module, error)
+	modules                      []Module
+	moduleFullNameStringToModule map[string]Module
+	opaqueIDToModule             map[string]Module
+	bucketIDToModule             map[string]Module
+	commitIDToModule             map[string]Module
 
 	// filePathToModule is a cache of filePath -> module.
 	//
@@ -260,26 +250,6 @@ func newModuleSet(
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
 		commitIDToModule:             commitIDToModule,
-		getModuleDigestStringToModule: syncext.OnceValues(
-			func() (map[string]Module, error) {
-				moduleDigestStringToModule := make(map[string]Module, len(modules))
-				for _, module := range modules {
-					moduleDigest, err := module.ModuleDigest()
-					if err != nil {
-						return nil, err
-					}
-					moduleDigestString := moduleDigest.String()
-					if _, ok := moduleDigestStringToModule[moduleDigestString]; ok {
-						// Note that because we do this lazily, we're not getting built-in validation here
-						// that a ModuleSet has unique ModuleDigests until we load them lazily. That's the best
-						// we can do, and is likely OK.
-						return nil, fmt.Errorf("duplicate ModuleDigest %q within ModuleSet", moduleDigestString)
-					}
-					moduleDigestStringToModule[moduleDigestString] = module
-				}
-				return moduleDigestStringToModule, nil
-			},
-		),
 	}
 	for _, module := range modules {
 		module.setModuleSet(moduleSet)
@@ -307,14 +277,6 @@ func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
 
 func (m *moduleSet) GetModuleForCommitID(commitID string) Module {
 	return m.commitIDToModule[commitID]
-}
-
-func (m *moduleSet) GetModuleForModuleDigest(moduleDigest ModuleDigest) (Module, error) {
-	moduleDigestStringToModule, err := m.getModuleDigestStringToModule()
-	if err != nil {
-		return nil, err
-	}
-	return moduleDigestStringToModule[moduleDigest.String()], nil
 }
 
 func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) {
