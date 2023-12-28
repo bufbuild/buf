@@ -106,6 +106,7 @@ func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, modu
 						},
 					},
 				},
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)
