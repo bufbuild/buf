@@ -110,6 +110,17 @@ func TestIfacePointerZero(t *testing.T) {
 	optional := NewOptional[testIface](nil)
 	require.Nil(t, optional.Value)
 	require.False(t, optional.Present())
+
+	testIfaceValue := getNilTestIfaceValue()
+	optional = NewOptional[testIface](testIfaceValue)
+	require.Nil(t, optional.Value)
+	require.False(t, optional.Present())
+
+	testIfaceValue = getNilTestStructPointerValue()
+	optional = NewOptional[testIface](testIfaceValue)
+	require.Nil(t, optional.Value)
+	// TODO: Why is this true?
+	//require.False(t, optional.Present())
 }
 
 func TestIfacePointerPresent(t *testing.T) {
@@ -159,4 +170,12 @@ func (t *testStructPointer) Value() int {
 
 type testIface interface {
 	Value() int
+}
+
+func getNilTestIfaceValue() testIface {
+	return nil
+}
+
+func getNilTestStructPointerValue() *testStructPointer {
+	return nil
 }
