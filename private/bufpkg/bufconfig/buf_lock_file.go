@@ -57,17 +57,8 @@ type BufLockFile interface {
 	FileName() string
 	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
 	//
-	// Note that ModuleKeys may not have CommitIDs with FileVersionV2.
-	// CommitIDs are required for v1beta1 and v1 buf.lock files. Their existence will be verified
-	// when calling NewFile or WriteFile for FileVersionV1Beta1 or FileVersionV1, and therefor
-	// if FileVersion() is FileVersionV1Beta1 or FileVersionV1, all ModuleKeys will have CommitIDs.
-	//
 	// All ModuleKeys will have unique ModuleFullNames.
 	// ModuleKeys are sorted by ModuleFullName.
-	//
-	// TODO: We need to add DigestTypes for all the deprecated digests. We then can handle
-	// the fact that they're deprecated outside of this package. Another option is to add a
-	// buflock.DeprecatedDigestTypeError to return from Digest(), and then handle that downstream.
 	DepModuleKeys() []bufmodule.ModuleKey
 
 	isBufLockFile()
@@ -318,6 +309,9 @@ func readBufLockFile(
 			if err != nil {
 				return nil, fmt.Errorf("invalid module name: %w", err)
 			}
+			if dep.Commit == "" {
+				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
+			}
 			if dep.Digest == "" {
 				return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 			}
@@ -328,7 +322,7 @@ func readBufLockFile(
 			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
-				"",
+				dep.Commit,
 				func() (bufmodule.ModuleDigest, error) {
 					return bufmodule.ParseModuleDigest(dep.Digest)
 				},
@@ -392,6 +386,7 @@ func writeBufLockFile(
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
 				Name:   depModuleKey.ModuleFullName().String(),
+				Commit: depModuleKey.CommitID(),
 				Digest: moduleDigest.String(),
 			}
 		}
@@ -471,6 +466,7 @@ type externalBufLockFileV2 struct {
 // externalBufLockFileDepV2 represents a single dep within a v2 buf.lock file.
 type externalBufLockFileDepV2 struct {
 	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
