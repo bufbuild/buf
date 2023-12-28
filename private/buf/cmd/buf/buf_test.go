@@ -1974,8 +1974,6 @@ message Object {
 
 func TestFormatSingleFile(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -2066,8 +2064,6 @@ func TestFormatExitCode(t *testing.T) {
 // equivalent to the original result.
 func TestFormatEquivalence(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -2110,15 +2106,13 @@ func TestFormatEquivalence(t *testing.T) {
 
 func TestFormatInvalidFlagCombination(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
 		"",
-		`Failure: --output cannot be used with --write`,
+		`Failure: cannot use --output when using --write`,
 		"format",
 		filepath.Join("testdata", "format", "diff"),
 		"-w",
