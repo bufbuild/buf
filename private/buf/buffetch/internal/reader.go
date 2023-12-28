@@ -606,7 +606,7 @@ func getReadWriteBucketForOS(
 	// Make bucket on: os.PathSeparator + returnMapPath (since absolute)
 	var bucketPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = string(os.PathSeparator) + mapPath
+		bucketPath = normalpath.Join("/", mapPath)
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
@@ -674,7 +674,7 @@ func getReadBucketCloserForOSProtoFile(
 		return nil, err
 	}
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		string(os.PathSeparator),
+		"/",
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -699,6 +699,12 @@ func getReadBucketCloserForOSProtoFile(
 	if !terminate {
 		// If we did not find a buf.yaml or buf.work.yaml, use the current directory.
 		// If the ProtoFileRef path was absolute, use an absolute path, otherwise relative.
+		//
+		// However, if the current directory does not contain the .proto file, we cannot use it,
+		// as we need the bucket to encapsulate the .proto file. In this case, we fall back
+		// to using the absolute directory of the .proto file. We need to do this because
+		// PathForExternalPath (defined in getReadWriteBucketForOS) needs to make sure that
+		// a given path can be made relative to the bucket, and be normalized and validated.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
 			pwd, err := osext.Getwd()
 			if err != nil {
@@ -708,16 +714,29 @@ func getReadBucketCloserForOSProtoFile(
 		} else {
 			protoTerminateFileDirPath = "."
 		}
-		logger.Debug(
-			"did not find enclosing module or workspace for proto file ref",
-			zap.String("protoFilePath", protoFilePath),
-			zap.String("defaultingToPwd", protoTerminateFileDirPath),
-		)
+		absProtoTerminateFileDirPath, err := normalpath.NormalizeAndAbsolute(protoTerminateFileDirPath)
+		if err != nil {
+			return nil, err
+		}
+		if !normalpath.EqualsOrContainsPath(absProtoFileDirPath, absProtoTerminateFileDirPath, normalpath.Absolute) {
+			logger.Debug(
+				"did not find enclosing module or workspace for proto file ref and pwd does not encapsulate proto file",
+				zap.String("protoFilePath", protoFilePath),
+				zap.String("defaultingToAbsProtoFileDirPath", absProtoFileDirPath),
+			)
+			protoTerminateFileDirPath = absProtoFileDirPath
+		} else {
+			logger.Debug(
+				"did not find enclosing module or workspace for proto file ref",
+				zap.String("protoFilePath", protoFilePath),
+				zap.String("defaultingToPwd", protoTerminateFileDirPath),
+			)
+		}
 	} else {
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			protoTerminateFileDirPath = string(os.PathSeparator) + mapPath
+			protoTerminateFileDirPath = normalpath.Join("/", mapPath)
 		} else {
 			pwd, err := osext.Getwd()
 			if err != nil {
@@ -842,8 +861,8 @@ func attemptToFixOSRootBucketPathErrors(err error) error {
 			return err
 		}
 		pwd = normalpath.Normalize(pwd)
-		if normalpath.EqualsOrContainsPath(pwd, string(os.PathSeparator)+pathError.Path, normalpath.Absolute) {
-			relPath, err := normalpath.Rel(pwd, string(os.PathSeparator)+pathError.Path)
+		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join("/", pathError.Path), normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, normalpath.Join("/", pathError.Path))
 			// Just ignore if this errors and do nothing.
 			if err == nil {
 				// Making a copy just to be super-safe.

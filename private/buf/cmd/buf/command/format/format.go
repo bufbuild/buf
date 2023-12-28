@@ -247,19 +247,44 @@ func run(
 	if err != nil {
 		return err
 	}
+	// We use getDirOrProtoFileRef to see if we have a valid DirOrProtoFileRef, and if so,
+	// whether or not we have IncludePackageFiles Set.
+	//
+	// We abuse ExternalPaths below to say that if flags.Write is set, just write over
+	// the ExternalPath, You can only really use flags.Write if you have a dir
+	// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
+	// if flags.Write is set
+	//
+	// We also want to check that if we have a ProtoFileRef, we don't have IncludePackageFiles
+	// set, regardless of if flags.Write is set.
+	sourceDirOrProtoFileRef, sourceDirOrProtoFileRefErr := getDirOrProtoFileRef(ctx, container, source)
+	if sourceDirOrProtoFileRefErr == nil {
+		if err := validateNoIncludePackageFiles(sourceDirOrProtoFileRef); err != nil {
+			return err
+		}
+	}
 	if flags.Write {
 		if flags.Output != "-" {
-			return fmt.Errorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
+			return appcmd.NewInvalidArgumentErrorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
 		}
 		// We abuse ExternalPaths below to say that if flags.Write is set, just write over
 		// the ExternalPath. Also, you can only really use flags.Write if you have a dir
 		// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
-		if _, err := getDirOrProtoFileRef(ctx, container, source); err != nil {
-			return fmt.Errorf("invalid input %q when using --%s: %w", source, writeFlagName, err)
+		if sourceDirOrProtoFileRefErr != nil {
+			if errors.Is(sourceDirOrProtoFileRefErr, buffetch.ErrModuleFormatDetectedForDirOrProtoFileRef) {
+				return appcmd.NewInvalidArgumentErrorf("invalid input %q when using --%s: must be a directory or proto file", source, writeFlagName)
+			}
+			return appcmd.NewInvalidArgumentErrorf("invalid input %q when using --%s: %v", source, writeFlagName, sourceDirOrProtoFileRefErr)
 		}
 	}
 	dirOrProtoFileRef, err := getDirOrProtoFileRef(ctx, container, flags.Output)
 	if err != nil {
+		if errors.Is(err, buffetch.ErrModuleFormatDetectedForDirOrProtoFileRef) {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be a directory or proto file", outputFlagName)
+		}
+		return err
+	}
+	if err := validateNoIncludePackageFiles(dirOrProtoFileRef); err != nil {
 		return err
 	}
 
@@ -355,7 +380,7 @@ func run(
 			return err
 		}
 	default:
-		return syserror.Newf("unknown buffetch.DirOrProtoFileRef: %v", dirOrProtoFileRef)
+		return syserror.Newf("buffetch ref type must be dir or proto file: %T", dirOrProtoFileRef)
 	}
 	return nil
 }
@@ -441,12 +466,12 @@ func getDirOrProtoFileRef(
 	container appext.Container,
 	value string,
 ) (buffetch.DirOrProtoFileRef, error) {
-	dirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(
+	return buffetch.NewDirOrProtoFileRefParser(
 		container.Logger(),
 	).GetDirOrProtoFileRef(ctx, value)
-	if err != nil {
-		return nil, err
-	}
+}
+
+func validateNoIncludePackageFiles(dirOrProtoFileRef buffetch.DirOrProtoFileRef) error {
 	if protoFileRef, ok := dirOrProtoFileRef.(buffetch.ProtoFileRef); ok && protoFileRef.IncludePackageFiles() {
 		// We should have a better answer here. Right now, it's
 		// possible that the other files in the same package are defined
@@ -456,9 +481,9 @@ func getDirOrProtoFileRef(
 		// In the case that the user uses the -w flag, we'll either need
 		// to return an error, or omit the file that it can't rewrite in-place
 		// (potentially including a debug log).
-		return nil, errors.New("cannot specify include_package_files=true with format")
+		return appcmd.NewInvalidArgumentError("cannot specify include_package_files=true with format")
 	}
-	return dirOrProtoFileRef, nil
+	return nil
 }
 
 func newStorageosProvider(disableSymlinks bool) storageos.Provider {

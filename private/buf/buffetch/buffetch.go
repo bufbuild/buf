@@ -16,6 +16,7 @@ package buffetch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,6 +78,11 @@ var (
 	//
 	// This does not include deprecated formats.
 	AllFormatsString = stringutil.SliceToString(allFormatsNotDeprecated)
+
+	// ErrModuleFormatDetectedForDirOrProtoFileRef is the error returned if a module is the
+	// detected format in the DirOrProtoFileRefParser. We have a special heuristic to determine
+	// if a path is a module or directory, and if a user specifies a suspected module, we want to error.
+	ErrModuleFormatDetectedForDirOrProtoFileRef = errors.New("module format detected when parsing dir or proto file refs")
 )
 
 // MessageEncoding is the encoding of the message.
