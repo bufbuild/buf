@@ -22,9 +22,6 @@ import (
 
 // ModuleKey provides identifying information for a Module.
 //
-// All fields of a ModuleKey are required. This is as opposed to a Module, where many common
-// fields are optional.
-//
 // ModuleKeys are returned from ModuleKeyProvider, and represent a Module's complete identity.
 // They also match to what we store in buf.lock files. ModuleKeys can be used to get Modules
 // via a ModuleProvider.
