@@ -29,8 +29,6 @@ type ModuleKeyProvider interface {
 	// If there is an error, no OptionalModuleKeys will be returned.
 	// If a ModuleKey is not found, the OptionalModuleKey will have Found() equal to false, otherwise
 	// the OptionalModuleKey will have Found() equal to true with non-nil ModuleKey.
-	//
-	// All ModuleKeys will have CommitID set.
 	GetOptionalModuleKeysForModuleRefs(context.Context, ...ModuleRef) ([]OptionalModuleKey, error)
 }
 

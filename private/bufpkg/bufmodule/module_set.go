@@ -42,6 +42,8 @@ type ModuleSet interface {
 	// This will consist of both targets and non-targets.
 	// All dependencies of all Modules will be in this list, that is this list is self-contained.
 	//
+	// All Modules will have unique ModuleDigests and CommitIDs.
+	//
 	// These will be sorted by OpaqueID.
 	Modules() []Module
 
@@ -59,6 +61,10 @@ type ModuleSet interface {
 	//
 	// Returns nil if there is no Module with the given BucketID.
 	GetModuleForBucketID(bucketID string) Module
+	// GetModuleForCommitID gets the Module for the CommitID, if it exists.
+	//
+	// Returns nil if there is no Module with the given CommitID.
+	GetModuleForCommitID(commitID string) Module
 	// GetModuleForModuleDigest gets the Module for the ModuleDigest, if it exists.
 	//
 	// Note that this function will result in ModuleDigest() being called on every Module in
@@ -199,6 +205,7 @@ type moduleSet struct {
 	moduleFullNameStringToModule  map[string]Module
 	opaqueIDToModule              map[string]Module
 	bucketIDToModule              map[string]Module
+	commitIDToModule              map[string]Module
 	getModuleDigestStringToModule func() (map[string]Module, error)
 
 	// filePathToModule is a cache of filePath -> module.
@@ -214,6 +221,7 @@ func newModuleSet(
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
 	opaqueIDToModule := make(map[string]Module, len(modules))
 	bucketIDToModule := make(map[string]Module, len(modules))
+	commitIDToModule := make(map[string]Module, len(modules))
 	for _, module := range modules {
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
@@ -237,12 +245,21 @@ func newModuleSet(
 			}
 			bucketIDToModule[bucketID] = module
 		}
+		commitID := module.CommitID()
+		if commitID != "" {
+			if _, ok := commitIDToModule[commitID]; ok {
+				// This should never happen.
+				return nil, syserror.Newf("duplicate CommitID %q when constructing ModuleSet", commitID)
+			}
+			commitIDToModule[commitID] = module
+		}
 	}
 	moduleSet := &moduleSet{
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
 		bucketIDToModule:             bucketIDToModule,
+		commitIDToModule:             commitIDToModule,
 		getModuleDigestStringToModule: syncext.OnceValues(
 			func() (map[string]Module, error) {
 				moduleDigestStringToModule := make(map[string]Module, len(modules))
@@ -286,6 +303,10 @@ func (m *moduleSet) GetModuleForOpaqueID(opaqueID string) Module {
 
 func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
 	return m.bucketIDToModule[bucketID]
+}
+
+func (m *moduleSet) GetModuleForCommitID(commitID string) Module {
+	return m.commitIDToModule[commitID]
 }
 
 func (m *moduleSet) GetModuleForModuleDigest(moduleDigest ModuleDigest) (Module, error) {

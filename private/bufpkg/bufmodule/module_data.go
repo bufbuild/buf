@@ -30,8 +30,6 @@ import (
 type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
 	//
-	// A ModuleKey from a ModuleData may not have a CommitID set.
-	//
 	// The Digest from this ModuleKey is used for tamper-proofing. It will be checked against
 	// the actual data downloaded before Bucket() or DeclaredDepModuleKeys() returns.
 	ModuleKey() ModuleKey
@@ -126,13 +124,9 @@ func newModuleData(
 				return err
 			}
 			if !ModuleDigestEqual(expectedModuleDigest, actualModuleDigest) {
-				moduleString := moduleKey.ModuleFullName().String()
-				if commitID := moduleKey.CommitID(); commitID != "" {
-					moduleString = moduleString + ":" + commitID
-				}
 				return fmt.Errorf(
 					"verification failed for module %s: expected module digest %q but downloaded data had digest %q",
-					moduleString,
+					moduleKey.ModuleFullName().String()+":"+moduleKey.CommitID(),
 					expectedModuleDigest.String(),
 					actualModuleDigest.String(),
 				)

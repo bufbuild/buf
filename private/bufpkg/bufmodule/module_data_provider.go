@@ -32,10 +32,6 @@ type ModuleDataProvider interface {
 	// If there is an error, no ModuleDatas will be returned.
 	// If a ModuleData is not found, the OptionalModuleData will have Found() equal to false, otherwise
 	// the OptionalModuleData will have Found() equal to true with non-nil ModuleData.
-	//
-	// If the input ModuleKey had a CommitID set, this the returned ModuleData will also have a CommitID
-	// set. This is important for i.e. v1beta1 and v1 buf.lock files, where we want to make sure we keep
-	// the reference to the CommitID, even if we did not have it stored in our cache.
 	GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error)
 }
 

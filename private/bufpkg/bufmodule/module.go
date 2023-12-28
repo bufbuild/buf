@@ -77,8 +77,9 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
-	// May be empty. Callers should not rely on this value being present. If
-	// ModuleFullName is nil, this will always be empty.
+	// May be empty. Callers should not rely on this value being present.
+	//
+	// If ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
 	// ModuleDigest returns the Module digest.
@@ -157,7 +158,7 @@ type Module interface {
 
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
-// The given Module must have a ModuleFullName, otherwise this will return error.
+// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
 func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),
@@ -272,12 +273,13 @@ func newModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	if bucketID == "" && moduleFullName == nil {
-		// This is a system error.
 		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
 	if !isLocal && moduleFullName == nil {
-		// This is a system error.
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
+	}
+	if moduleFullName == nil && commitID != "" {
+		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
 	module := &module{
 		ctx:            ctx,

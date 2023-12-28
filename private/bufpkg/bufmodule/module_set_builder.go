@@ -403,14 +403,6 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 			moduleData.ModuleKey().ModuleFullName().String(),
 		)
 	}
-	if remoteModuleKey.CommitID() != "" && moduleData.ModuleKey().CommitID() == "" {
-		return nil, syserror.Newf(
-			"got empty CommitID for retrieved ModuleKey from a ModuleDataProvider "+
-				"when input ModuleKey had ModuleFullName %q and CommitID %q",
-			remoteModuleKey.ModuleFullName().String(),
-			remoteModuleKey.CommitID(),
-		)
-	}
 
 	// TODO: normalize and validate all paths
 	module, err := newModule(
