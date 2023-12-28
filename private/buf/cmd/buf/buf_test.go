@@ -2123,14 +2123,13 @@ func TestFormatInvalidFlagCombination(t *testing.T) {
 
 func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: --write cannot be used with module reference inputs`,
+		[]string{
+			`Failure: invalid input "buf.build/acme/weather" when using --write: must be a directory or proto file`,
+		},
 		"format",
 		"buf.build/acme/weather",
 		"-w",
@@ -2343,6 +2342,22 @@ func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode i
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		// we do not want warnings to be part of our stderr test calculation
+		append(
+			args,
+			"--no-warn",
+		)...,
+	)
+}
+
+func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderrContains(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderrPartials,
 		internaltesting.NewEnvFunc(t),
 		stdin,
 		// we do not want warnings to be part of our stderr test calculation

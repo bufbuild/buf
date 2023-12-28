@@ -54,6 +54,8 @@ const (
 	writeFlagShortName      = "w"
 )
 
+var errNotDirOrProtoFileRef = errors.New("not a DirRef or ProtoFileRef")
+
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
@@ -249,17 +251,22 @@ func run(
 	}
 	if flags.Write {
 		if flags.Output != "-" {
-			return fmt.Errorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
+			return appcmd.NewInvalidArgumentErrorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
 		}
 		// We abuse ExternalPaths below to say that if flags.Write is set, just write over
 		// the ExternalPath. Also, you can only really use flags.Write if you have a dir
 		// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
 		if _, err := getDirOrProtoFileRef(ctx, container, source); err != nil {
-			return fmt.Errorf("invalid input %q when using --%s: %w", source, writeFlagName, err)
+			if errors.Is(err, errNotDirOrProtoFileRef) {
+				return appcmd.NewInvalidArgumentErrorf("invalid input %q when using --%s: must be a directory or proto file", source, writeFlagName)
+			}
 		}
 	}
 	dirOrProtoFileRef, err := getDirOrProtoFileRef(ctx, container, flags.Output)
 	if err != nil {
+		if errors.Is(err, errNotDirOrProtoFileRef) {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be a directory or proto file", outputFlagName)
+		}
 		return err
 	}
 
@@ -441,11 +448,18 @@ func getDirOrProtoFileRef(
 	container appext.Container,
 	value string,
 ) (buffetch.DirOrProtoFileRef, error) {
-	dirOrProtoFileRef, err := buffetch.NewDirOrProtoFileRefParser(
+	// We need to use SourceOrModuleRefParser as it differentiates between all the reference
+	// types, specifically between modules and dirs. We want to make sure we have a dir
+	// or proto file ref, not something else.
+	sourceOrModuleRef, err := buffetch.NewSourceOrModuleRefParser(
 		container.Logger(),
-	).GetDirOrProtoFileRef(ctx, value)
+	).GetSourceOrModuleRef(ctx, value)
 	if err != nil {
 		return nil, err
+	}
+	dirOrProtoFileRef, ok := sourceOrModuleRef.(buffetch.DirOrProtoFileRef)
+	if !ok {
+		return nil, errNotDirOrProtoFileRef
 	}
 	if protoFileRef, ok := dirOrProtoFileRef.(buffetch.ProtoFileRef); ok && protoFileRef.IncludePackageFiles() {
 		// We should have a better answer here. Right now, it's
@@ -456,7 +470,7 @@ func getDirOrProtoFileRef(
 		// In the case that the user uses the -w flag, we'll either need
 		// to return an error, or omit the file that it can't rewrite in-place
 		// (potentially including a debug log).
-		return nil, errors.New("cannot specify include_package_files=true with format")
+		return nil, appcmd.NewInvalidArgumentError("cannot specify include_package_files=true with format")
 	}
 	return dirOrProtoFileRef, nil
 }
