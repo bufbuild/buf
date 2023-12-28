@@ -17,6 +17,8 @@ package bufmodule
 import (
 	"context"
 	"io/fs"
+
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -60,6 +62,14 @@ func GetModuleDatasForModuleKeys(
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error) {
-	return nil, nil
+func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(
+	_ context.Context,
+	moduleKeys ...ModuleKey,
+) ([]OptionalModuleData, error) {
+	return slicesext.Map(
+		moduleKeys,
+		func(ModuleKey) OptionalModuleData {
+			return NewOptionalModuleData(nil)
+		},
+	), nil
 }
