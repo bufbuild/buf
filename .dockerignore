@@ -15,6 +15,7 @@ private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-wri
 private/buf/cmd/buf/command/alpha/protoc/test.txt
 private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
+private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-new-commit-id
 private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 private/pkg/bandeps/cmd/bandeps/bandeps
 private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
