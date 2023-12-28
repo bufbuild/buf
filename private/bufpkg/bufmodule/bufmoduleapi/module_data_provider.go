@@ -25,6 +25,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -61,12 +62,21 @@ func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys ...bufmodule.ModuleKey,
 ) ([]bufmodule.OptionalModuleData, error) {
+	// We don't want to persist these across calls - this could grow over time and this cache
+	// isn't an LRU cache, and the information also may change over time.
+	var protoModuleCache cache.Cache[string, *modulev1beta1.Module]
+	var protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner]
 	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
 	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
 	// Make sure to respect 250 max.
 	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
-		moduleData, err := a.getModuleDataForModuleKey(ctx, moduleKey)
+		moduleData, err := a.getModuleDataForModuleKey(
+			ctx,
+			protoModuleCache,
+			protoOwnerCache,
+			moduleKey,
+		)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
@@ -79,21 +89,23 @@ func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 
 func (a *moduleDataProvider) getModuleDataForModuleKey(
 	ctx context.Context,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
 	registryHostname := moduleKey.ModuleFullName().Registry()
 
-	protoResourceRef, err := getProtoResourceRefForModuleKey(moduleKey)
-	if err != nil {
-		return nil, err
-	}
 	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
 				Values: []*modulev1beta1.DownloadRequest_Value{
 					{
-						ResourceRef: protoResourceRef,
+						ResourceRef: &modulev1beta1.ResourceRef{
+							Value: &modulev1beta1.ResourceRef_Id{
+								Id: moduleKey.CommitID(),
+							},
+						},
 					},
 				},
 				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
@@ -122,6 +134,7 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		registryHostname,
 		moduleKey,
 		commitIDToCommit,
+		protoModuleCache,
 		response.Msg.References[0],
 	); err != nil {
 		return nil, err
@@ -132,6 +145,8 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		moduleKey,
 		commitIDToCommit,
 		commitIDToBucket,
+		protoModuleCache,
+		protoOwnerCache,
 		response.Msg.References[0],
 	)
 }
@@ -141,6 +156,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	registryHostname string,
 	moduleKey bufmodule.ModuleKey,
 	commitIDToCommit map[string]*modulev1beta1.Commit,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) error {
 	protoCommit, ok := commitIDToCommit[protoReference.CommitId]
@@ -150,6 +166,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	protoModule, err := a.getProtoModuleForModuleID(
 		ctx,
 		registryHostname,
+		protoModuleCache,
 		protoCommit.ModuleId,
 	)
 	if err != nil {
@@ -167,6 +184,8 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	moduleKey bufmodule.ModuleKey,
 	commitIDToCommit map[string]*modulev1beta1.Commit,
 	commitIDToBucket map[string]storage.ReadBucket,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) (bufmodule.ModuleData, error) {
 	bucket, ok := commitIDToBucket[protoReference.CommitId]
@@ -193,7 +212,13 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 			return bucket, nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
-			return a.getModuleKeysForProtoCommits(ctx, registryHostname, depProtoCommits)
+			return a.getModuleKeysForProtoCommits(
+				ctx,
+				registryHostname,
+				protoModuleCache,
+				protoOwnerCache,
+				depProtoCommits,
+			)
 		},
 	), nil
 }
@@ -205,11 +230,19 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 func (a *moduleDataProvider) getModuleKeysForProtoCommits(
 	ctx context.Context,
 	registryHostname string,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
 	protoCommits []*modulev1beta1.Commit,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys := make([]bufmodule.ModuleKey, len(protoCommits))
 	for i, protoCommit := range protoCommits {
-		moduleKey, err := a.getModuleKeyForProtoCommit(ctx, registryHostname, protoCommit)
+		moduleKey, err := a.getModuleKeyForProtoCommit(
+			ctx,
+			registryHostname,
+			protoModuleCache,
+			protoOwnerCache,
+			protoCommit,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -221,13 +254,15 @@ func (a *moduleDataProvider) getModuleKeysForProtoCommits(
 func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	ctx context.Context,
 	registryHostname string,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
 	protoCommit *modulev1beta1.Commit,
 ) (bufmodule.ModuleKey, error) {
-	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoCommit.ModuleId)
+	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoModuleCache, protoCommit.ModuleId)
 	if err != nil {
 		return nil, err
 	}
-	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoCommit.OwnerId)
+	protoOwner, err := a.getProtoOwnerForOwnerID(ctx, registryHostname, protoOwnerCache, protoCommit.OwnerId)
 	if err != nil {
 		return nil, err
 	}
@@ -257,84 +292,78 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	)
 }
 
-func (a *moduleDataProvider) getProtoModuleForModuleID(ctx context.Context, registryHostname string, moduleID string) (*modulev1beta1.Module, error) {
-	response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetModulesRequest{
-				ModuleRefs: []*modulev1beta1.ModuleRef{
-					{
-						Value: &modulev1beta1.ModuleRef_Id{
-							Id: moduleID,
+func (a *moduleDataProvider) getProtoModuleForModuleID(
+	ctx context.Context,
+	registryHostname string,
+	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	moduleID string,
+) (*modulev1beta1.Module, error) {
+	return protoModuleCache.GetOrAdd(
+		registryHostname+"/"+moduleID,
+		func() (*modulev1beta1.Module, error) {
+			response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
+				ctx,
+				connect.NewRequest(
+					&modulev1beta1.GetModulesRequest{
+						ModuleRefs: []*modulev1beta1.ModuleRef{
+							{
+								Value: &modulev1beta1.ModuleRef_Id{
+									Id: moduleID,
+								},
+							},
 						},
 					},
-				},
-			},
-		),
+				),
+			)
+			if err != nil {
+				return nil, err
+			}
+			if len(response.Msg.Modules) != 1 {
+				return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
+			}
+			return response.Msg.Modules[0], nil
+		},
 	)
-	if err != nil {
-		return nil, err
-	}
-	if len(response.Msg.Modules) != 1 {
-		return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
-	}
-	return response.Msg.Modules[0], nil
 }
 
-func (a *moduleDataProvider) getProtoOwnerForOwnerID(ctx context.Context, registryHostname string, ownerID string) (*ownerv1beta1.Owner, error) {
-	response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
-		ctx,
-		connect.NewRequest(
-			&ownerv1beta1.GetOwnersRequest{
-				OwnerRefs: []*ownerv1beta1.OwnerRef{
-					{
-						Value: &ownerv1beta1.OwnerRef_Id{
-							Id: ownerID,
+func (a *moduleDataProvider) getProtoOwnerForOwnerID(
+	ctx context.Context,
+	registryHostname string,
+	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	ownerID string,
+) (*ownerv1beta1.Owner, error) {
+	return protoOwnerCache.GetOrAdd(
+		registryHostname+"/"+ownerID,
+		func() (*ownerv1beta1.Owner, error) {
+			response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
+				ctx,
+				connect.NewRequest(
+					&ownerv1beta1.GetOwnersRequest{
+						OwnerRefs: []*ownerv1beta1.OwnerRef{
+							{
+								Value: &ownerv1beta1.OwnerRef_Id{
+									Id: ownerID,
+								},
+							},
 						},
 					},
-				},
-			},
-		),
+				),
+			)
+			if err != nil {
+				return nil, err
+			}
+			if len(response.Msg.Owners) != 1 {
+				return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+			}
+			return response.Msg.Owners[0], nil
+		},
 	)
-	if err != nil {
-		return nil, err
-	}
-	if len(response.Msg.Owners) != 1 {
-		return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
-	}
-	return response.Msg.Owners[0], nil
 }
 
 func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
-	// CommitID is optional.
-	if commitID := moduleKey.CommitID(); commitID != "" {
-		// Note that we could actually just use the Digest. We don't want to have to invoke
-		// moduleKey.Digest() unnecessarily, as this could cause unnecessary lazy loading.
-		return &modulev1beta1.ResourceRef{
-			Value: &modulev1beta1.ResourceRef_Id{
-				Id: commitID,
-			},
-		}, nil
-	}
-	// Naming differently to make sure we differentiate between this and the
-	// retrieved digest below.
-	moduleKeyDigest, err := moduleKey.ModuleDigest()
-	if err != nil {
-		return nil, err
-	}
-	protoModuleKeyDigest, err := ModuleDigestToProto(moduleKeyDigest)
-	if err != nil {
-		return nil, err
-	}
 	return &modulev1beta1.ResourceRef{
-		Value: &modulev1beta1.ResourceRef_Name_{
-			Name: &modulev1beta1.ResourceRef_Name{
-				Owner:  moduleKey.ModuleFullName().Owner(),
-				Module: moduleKey.ModuleFullName().Name(),
-				Child: &modulev1beta1.ResourceRef_Name_Digest{
-					Digest: protoModuleKeyDigest,
-				},
-			},
+		Value: &modulev1beta1.ResourceRef_Id{
+			Id: moduleKey.CommitID(),
 		},
 	}, nil
 }
