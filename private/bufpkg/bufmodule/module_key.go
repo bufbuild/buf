@@ -16,8 +16,10 @@ package bufmodule
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/syncext"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -30,7 +32,10 @@ type ModuleKey interface {
 	//
 	// Always present.
 	ModuleFullName() ModuleFullName
-	// CommitID returns the BSR ID of the Commit.
+	// CommitID returns the ID of the Commit.
+	//
+	// A CommitID is always a dashless UUID.
+	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
 	//
 	// Always present.
 	CommitID() string
@@ -81,6 +86,9 @@ func newModuleKey(
 	if commitID == "" {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
+	if err := validateCommitID(commitID); err != nil {
+		return nil, err
+	}
 	return &moduleKey{
 		moduleFullName:  moduleFullName,
 		commitID:        commitID,
@@ -101,3 +109,10 @@ func (m *moduleKey) ModuleDigest() (ModuleDigest, error) {
 }
 
 func (*moduleKey) isModuleKey() {}
+
+func validateCommitID(commitID string) error {
+	if err := uuidutil.ValidateDashless(commitID); err != nil {
+		return fmt.Errorf("invalid commit ID %s: %w", commitID, err)
+	}
+	return nil
+}

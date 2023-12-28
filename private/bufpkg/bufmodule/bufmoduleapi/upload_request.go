@@ -123,11 +123,15 @@ func NewUploadRequest(
 						// in the workspace. In this case, we need to add their data to the upload.
 						return nil, fmt.Errorf("did not have a commit ID for a non-target module dependency %q", moduleDep.OpaqueID())
 					}
+					protoCommitID, err := CommitIDToProto(commitID)
+					if err != nil {
+						return nil, err
+					}
 					depProtoResourceRefs = append(
 						depProtoResourceRefs,
 						&modulev1beta1.ResourceRef{
 							Value: &modulev1beta1.ResourceRef_Id{
-								Id: commitID,
+								Id: protoCommitID,
 							},
 						},
 					)

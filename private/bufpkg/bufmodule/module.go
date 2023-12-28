@@ -77,6 +77,8 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
+	// A CommitID is always a dashless UUID.
+	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
 	// May be empty. Callers should not rely on this value being present.
 	//
 	// If ModuleFullName is nil, this will always be empty.
@@ -280,6 +282,11 @@ func newModule(
 	}
 	if moduleFullName == nil && commitID != "" {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
+	}
+	if commitID != "" {
+		if err := validateCommitID(commitID); err != nil {
+			return nil, err
+		}
 	}
 	module := &module{
 		ctx:            ctx,

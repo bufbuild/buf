@@ -33,6 +33,10 @@ func ModuleDigestForCommitID(
 	remote string,
 	commitID string,
 ) (bufmodule.ModuleDigest, error) {
+	protoCommitID, err := CommitIDToProto(commitID)
+	if err != nil {
+		return nil, err
+	}
 	response, err := clientProvider.CommitServiceClient(remote).ResolveCommits(
 		ctx,
 		connect.NewRequest(
@@ -40,7 +44,7 @@ func ModuleDigestForCommitID(
 				ResourceRefs: []*modulev1beta1.ResourceRef{
 					{
 						Value: &modulev1beta1.ResourceRef_Id{
-							Id: commitID,
+							Id: protoCommitID,
 						},
 					},
 				},

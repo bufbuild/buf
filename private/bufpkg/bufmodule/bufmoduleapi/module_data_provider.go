@@ -95,6 +95,10 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 ) (bufmodule.ModuleData, error) {
 	registryHostname := moduleKey.ModuleFullName().Registry()
 
+	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
+	if err != nil {
+		return nil, err
+	}
 	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
 		ctx,
 		connect.NewRequest(
@@ -103,7 +107,7 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 					{
 						ResourceRef: &modulev1beta1.ResourceRef{
 							Value: &modulev1beta1.ResourceRef_Id{
-								Id: moduleKey.CommitID(),
+								Id: protoCommitID,
 							},
 						},
 					},
@@ -121,11 +125,11 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 	if len(response.Msg.References) != 1 {
 		return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
 	}
-	commitIDToCommit, err := getCommitIDToCommitForProtoDownloadResponse(response.Msg)
+	protoCommitIDToCommit, err := getProtoCommitIDToCommitForProtoDownloadResponse(response.Msg)
 	if err != nil {
 		return nil, err
 	}
-	commitIDToBucket, err := getCommitIDToBucketForProtoDownloadResponse(response.Msg)
+	protoCommitIDToBucket, err := getProtoCommitIDToBucketForProtoDownloadResponse(response.Msg)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +137,7 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		ctx,
 		registryHostname,
 		moduleKey,
-		commitIDToCommit,
+		protoCommitIDToCommit,
 		protoModuleCache,
 		response.Msg.References[0],
 	); err != nil {
@@ -143,8 +147,8 @@ func (a *moduleDataProvider) getModuleDataForModuleKey(
 		ctx,
 		registryHostname,
 		moduleKey,
-		commitIDToCommit,
-		commitIDToBucket,
+		protoCommitIDToCommit,
+		protoCommitIDToBucket,
 		protoModuleCache,
 		protoOwnerCache,
 		response.Msg.References[0],
@@ -155,11 +159,11 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	ctx context.Context,
 	registryHostname string,
 	moduleKey bufmodule.ModuleKey,
-	commitIDToCommit map[string]*modulev1beta1.Commit,
+	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
 	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) error {
-	protoCommit, ok := commitIDToCommit[protoReference.CommitId]
+	protoCommit, ok := protoCommitIDToCommit[protoReference.CommitId]
 	if !ok {
 		return fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
 	}
@@ -182,22 +186,22 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	ctx context.Context,
 	registryHostname string,
 	moduleKey bufmodule.ModuleKey,
-	commitIDToCommit map[string]*modulev1beta1.Commit,
-	commitIDToBucket map[string]storage.ReadBucket,
+	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
+	protoCommitIDToBucket map[string]storage.ReadBucket,
 	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
 	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) (bufmodule.ModuleData, error) {
-	bucket, ok := commitIDToBucket[protoReference.CommitId]
+	bucket, ok := protoCommitIDToBucket[protoReference.CommitId]
 	if !ok {
 		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
 	}
 	depProtoCommits, err := slicesext.MapError(
 		protoReference.DepCommitIds,
-		func(commitID string) (*modulev1beta1.Commit, error) {
-			commit, ok := commitIDToCommit[commitID]
+		func(protoCommitID string) (*modulev1beta1.Commit, error) {
+			commit, ok := protoCommitIDToCommit[protoCommitID]
 			if !ok {
-				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", commitID)
+				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", protoCommitID)
 			}
 			return commit, nil
 		},
@@ -283,9 +287,13 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	if err != nil {
 		return nil, err
 	}
+	commitID, err := ProtoToCommitID(protoCommit.Id)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodule.NewModuleKey(
 		moduleFullName,
-		protoCommit.Id,
+		commitID,
 		func() (bufmodule.ModuleDigest, error) {
 			return ProtoToModuleDigest(protoCommit.Digest)
 		},
@@ -361,14 +369,18 @@ func (a *moduleDataProvider) getProtoOwnerForOwnerID(
 }
 
 func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
+	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
+	if err != nil {
+		return nil, err
+	}
 	return &modulev1beta1.ResourceRef{
 		Value: &modulev1beta1.ResourceRef_Id{
-			Id: moduleKey.CommitID(),
+			Id: protoCommitID,
 		},
 	}, nil
 }
 
-func getCommitIDToCommitForProtoDownloadResponse(
+func getProtoCommitIDToCommitForProtoDownloadResponse(
 	protoDownloadResponse *modulev1beta1.DownloadResponse,
 ) (map[string]*modulev1beta1.Commit, error) {
 	return slicesext.ToUniqueValuesMapError(
@@ -379,16 +391,16 @@ func getCommitIDToCommitForProtoDownloadResponse(
 	)
 }
 
-func getCommitIDToBucketForProtoDownloadResponse(
+func getProtoCommitIDToBucketForProtoDownloadResponse(
 	protoDownloadResponse *modulev1beta1.DownloadResponse,
 ) (map[string]storage.ReadBucket, error) {
-	commitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
+	protoCommitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
 	for _, protoContent := range protoDownloadResponse.Contents {
 		bucket, err := protoFilesToBucket(protoContent.Files)
 		if err != nil {
 			return nil, err
 		}
-		commitIDToBucket[protoContent.CommitId] = bucket
+		protoCommitIDToBucket[protoContent.CommitId] = bucket
 	}
-	return commitIDToBucket, nil
+	return protoCommitIDToBucket, nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +35,7 @@ import (
 //
 // Name is the ModuleFullName string. When creating an OmniProvider, Name is required.
 //
-// CommitID is optional, and can be any string, but it must be unique across all ModuleDatas.
+// CommitID is optional, but it must be unique across all ModuleDatas.
 // If CommitID is not set, a mock commitID is created if Name is set.
 type ModuleData struct {
 	Name        string
@@ -119,6 +120,17 @@ func NewModuleSetForBucket(
 			Bucket: bucket,
 		},
 	)
+}
+
+// NewCommitID returns a new CommitID.
+//
+// This is a dashless UUID.
+func NewCommitID() (string, error) {
+	id, err := uuidutil.New()
+	if err != nil {
+		return "", err
+	}
+	return uuidutil.ToDashless(id)
 }
 
 // *** PRIVATE ***
@@ -275,8 +287,10 @@ func addModuleDataToModuleSetBuilder(
 		}
 		commitID := moduleData.CommitID
 		if commitID == "" {
-			// Not actually a realistic commitID, may need to change later if we validate Commit IDs.
-			commitID = fmt.Sprintf("omniProviderCommit-%d", index)
+			commitID, err = NewCommitID()
+			if err != nil {
+				return err
+			}
 		}
 		localModuleOptions = []bufmodule.LocalModuleOption{
 			bufmodule.LocalModuleWithModuleFullNameAndCommitID(moduleFullName, commitID),
