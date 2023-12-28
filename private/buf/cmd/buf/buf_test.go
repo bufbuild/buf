@@ -2153,8 +2153,6 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdoutStderrNoWarn(
 		t,
