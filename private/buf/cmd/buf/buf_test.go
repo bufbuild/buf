@@ -2107,12 +2107,13 @@ func TestFormatEquivalence(t *testing.T) {
 func TestFormatInvalidFlagCombination(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: cannot use --output when using --write`,
+		[]string{
+			`Failure: cannot use --output when using --write`,
+		},
 		"format",
 		filepath.Join("testdata", "format", "diff"),
 		"-w",
@@ -2138,14 +2139,13 @@ func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 
 func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: this command does not support including package files`,
+		[]string{
+			"Failure: cannot specify include_package_files=true with format",
+		},
 		"format",
 		filepath.Join("testdata", "format", "simple", "simple.proto#include_package_files=true"),
 	)

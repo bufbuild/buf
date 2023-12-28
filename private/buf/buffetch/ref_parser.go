@@ -237,7 +237,7 @@ func (a *refParser) GetRef(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -267,7 +267,7 @@ func (a *refParser) GetRefForInputConfig(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -293,7 +293,7 @@ func (a *refParser) GetSourceOrModuleRef(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -319,7 +319,7 @@ func (a *refParser) GetSourceOrModuleRefForInputConfig(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
-		return newSourceRef(t), nil
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -687,7 +687,14 @@ func processRawRefDirOrProtoFile(rawRef *internal.RawRef) error {
 				format = formatProtoFile
 			}
 		default:
-			format = formatDir
+			var err error
+			format, err = assumeModuleOrDir(rawRef.Path)
+			if err != nil {
+				return err
+			}
+			if format == formatMod {
+				return ErrModuleFormatDetectedForDirOrProtoFileRef
+			}
 		}
 	}
 	rawRef.Format = format
