@@ -2,6 +2,7 @@
 - Make v1 buf.lock buf mod update work
 - update buf generate help documentation
 - make buf migrate do auto-search
+- Dependency resolution
 
 - lots of QA, especially around workspace file searching, target paths
 - document behavior of file searching, config override
