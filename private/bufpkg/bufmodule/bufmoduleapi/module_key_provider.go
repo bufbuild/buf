@@ -93,10 +93,10 @@ func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, module
 }
 
 func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef bufmodule.ModuleRef) (*modulev1beta1.Commit, error) {
-	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).ResolveCommits(
+	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).GetCommits(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.ResolveCommitsRequest{
+			&modulev1beta1.GetCommitsRequest{
 				ResourceRefs: []*modulev1beta1.ResourceRef{
 					{
 						Value: &modulev1beta1.ResourceRef_Name_{

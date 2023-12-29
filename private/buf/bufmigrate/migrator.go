@@ -709,10 +709,10 @@ func getModuleToRefToCommit(
 			continue
 		}
 		moduleFullName := moduleRef.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
 			ctx,
 			connect.NewRequest(
-				&modulev1beta1.ResolveCommitsRequest{
+				&modulev1beta1.GetCommitsRequest{
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Name_{
@@ -754,10 +754,10 @@ func getCommitIDToCommit(
 	commitIDToCommit := make(map[string]*modulev1beta1.Commit)
 	for _, moduleKey := range moduleKeys {
 		moduleFullName := moduleKey.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
 			ctx,
 			connect.NewRequest(
-				&modulev1beta1.ResolveCommitsRequest{
+				&modulev1beta1.GetCommitsRequest{
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Id{

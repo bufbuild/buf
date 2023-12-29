@@ -37,10 +37,10 @@ func DigestForCommitID(
 	if err != nil {
 		return nil, err
 	}
-	response, err := clientProvider.CommitServiceClient(remote).ResolveCommits(
+	response, err := clientProvider.CommitServiceClient(remote).GetCommits(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.ResolveCommitsRequest{
+			&modulev1beta1.GetCommitsRequest{
 				ResourceRefs: []*modulev1beta1.ResourceRef{
 					{
 						Value: &modulev1beta1.ResourceRef_Id{
