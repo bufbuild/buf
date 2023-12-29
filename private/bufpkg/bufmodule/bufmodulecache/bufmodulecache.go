@@ -154,15 +154,11 @@ func (p *moduleDataProvider) logDebugModuleKey(
 	fields ...zap.Field,
 ) error {
 	if checkedEntry := p.logger.Check(zap.DebugLevel, message); checkedEntry != nil {
-		moduleDigest, err := moduleKey.ModuleDigest()
-		if err != nil {
-			return err
-		}
 		checkedEntry.Write(
 			append(
 				[]zap.Field{
 					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("moduleDigest", moduleDigest.String()),
+					zap.String("commitID", moduleKey.CommitID()),
 				},
 				fields...,
 			)...,
