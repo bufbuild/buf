@@ -104,7 +104,7 @@ func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, modu
 								Owner:  moduleRef.ModuleFullName().Owner(),
 								Module: moduleRef.ModuleFullName().Name(),
 								Child: &modulev1beta1.ResourceRef_Name_Ref{
-									// TODO: What to do about commit IDs?
+									// TODO: What to do about commit IDs? Need to be dashful.
 									Ref: moduleRef.Ref(),
 								},
 							},
