@@ -15,7 +15,6 @@
 package bufmodule
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -24,13 +23,8 @@ import (
 
 // Commit represents a Commit on the BSR.
 type Commit interface {
-	// ID returns the ID of the Commit.
-	//
-	// A CommitID is always a dashless UUID.
-	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
-	ID() string
 	// ModuleKey returns the ModuleKey for the Commit.
-	ModuleKey() (ModuleKey, error)
+	ModuleKey() ModuleKey
 	// CreateTime returns the time the Commit was created on the BSR.
 	CreateTime() (time.Time, error)
 
@@ -39,13 +33,11 @@ type Commit interface {
 
 // NewCommit returns a new Commit.
 func NewCommit(
-	id string,
-	getModuleKey func() (ModuleKey, error),
+	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
 ) (Commit, error) {
 	return newCommit(
-		id,
-		getModuleKey,
+		moduleKey,
 		getCreateTime,
 	)
 }
@@ -72,35 +64,22 @@ func NewOptionalCommit(commit Commit) OptionalCommit {
 // *** PRIVATE ***
 
 type commit struct {
-	id            string
-	getModuleKey  func() (ModuleKey, error)
+	moduleKey     ModuleKey
 	getCreateTime func() (time.Time, error)
 }
 
 func newCommit(
-	id string,
-	getModuleKey func() (ModuleKey, error),
+	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
 ) (*commit, error) {
-	if id == "" {
-		return nil, errors.New("empty commitID when constructing Commit")
-	}
-	if err := validateCommitID(id); err != nil {
-		return nil, err
-	}
 	return &commit{
-		id:            id,
-		getModuleKey:  getModuleKey,
+		moduleKey:     moduleKey,
 		getCreateTime: getCreateTime,
 	}, nil
 }
 
-func (c *commit) ID() string {
-	return c.id
-}
-
-func (c *commit) ModuleKey() (ModuleKey, error) {
-	return c.getModuleKey()
+func (c *commit) ModuleKey() ModuleKey {
+	return c.moduleKey
 }
 
 func (c *commit) CreateTime() (time.Time, error) {

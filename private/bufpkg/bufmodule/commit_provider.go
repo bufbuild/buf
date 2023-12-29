@@ -19,34 +19,32 @@ import (
 	"io/fs"
 )
 
-// CommitProvider provides Commits for CommitIDs.
+// CommitProvider provides Commits for ModuleKeys.
 type CommitProvider interface {
-	// GetCommitsForCommitIDs gets the Commits for the given CommitIDs.
+	// GetCommitsForModuleKeys gets the Commits for the given ModuleKeys.
 	//
-	// Resolution of the CommitIDs is done per the CommitID documentation.
-	//
-	// If there is no error, the length of the OptionalCommits returned will match the length of the CommitIDs.
+	// If there is no error, the length of the OptionalCommits returned will match the length of the ModuleKeys.
 	// If there is an error, no OptionalCommits will be returned.
 	// If a Commit is not found, the OptionalCommit will have Found() equal to false, otherwise
 	// the OptionalCommit will have Found() equal to true with non-nil Commit.
-	GetOptionalCommitsForCommitIDs(context.Context, ...string) ([]OptionalCommit, error)
+	GetOptionalCommitsForModuleKeys(context.Context, ...ModuleKey) ([]OptionalCommit, error)
 }
 
-// GetCommitsForCommitIDs calls GetOptionalCommitsForCommitIDs, returning an error
-// with fs.ErrNotExist if any CommitID is not found.
-func GetCommitsForCommitIDs(
+// GetCommitsForModuleKeys calls GetOptionalCommitsForModuleKeys, returning an error
+// with fs.ErrNotExist if any ModuleKey is not found.
+func GetCommitsForModuleKeys(
 	ctx context.Context,
 	commitProvider CommitProvider,
-	commitIDs ...string,
+	moduleKeys ...ModuleKey,
 ) ([]Commit, error) {
-	optionalCommits, err := commitProvider.GetOptionalCommitsForCommitIDs(ctx, commitIDs...)
+	optionalCommits, err := commitProvider.GetOptionalCommitsForModuleKeys(ctx, moduleKeys...)
 	if err != nil {
 		return nil, err
 	}
 	commits := make([]Commit, len(optionalCommits))
 	for i, optionalCommit := range optionalCommits {
 		if !optionalCommit.Found() {
-			return nil, &fs.PathError{Op: "read", Path: commitIDs[i], Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
 		}
 		commits[i] = optionalCommit.Commit()
 	}

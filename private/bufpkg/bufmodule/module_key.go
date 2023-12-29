@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/syncext"
 )
@@ -26,6 +27,9 @@ import (
 // They also match to what we store in buf.lock files. ModuleKeys can be used to get Modules
 // via a ModuleProvider.
 type ModuleKey interface {
+	// String returns "registry/owner/name:commitID".
+	fmt.Stringer
+
 	// ModuleFullName returns the full name of the Module.
 	//
 	// Always present.
@@ -123,6 +127,10 @@ func (m *moduleKey) CommitID() string {
 
 func (m *moduleKey) Digest() (Digest, error) {
 	return m.getDigest()
+}
+
+func (m *moduleKey) String() string {
+	return m.moduleFullName.String() + ":" + m.commitID
 }
 
 func (*moduleKey) isModuleKey() {}

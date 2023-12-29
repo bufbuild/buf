@@ -51,7 +51,7 @@ func GetModuleDatasForModuleKeys(
 	moduleDatas := make([]ModuleData, len(optionalModuleDatas))
 	for i, optionalModuleData := range optionalModuleDatas {
 		if !optionalModuleData.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].ModuleFullName().String(), Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
 		}
 		moduleDatas[i] = optionalModuleData.ModuleData()
 	}
