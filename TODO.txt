@@ -50,7 +50,7 @@ NEW ALGORITHM
 
 - Take input, list<paths>, list<excluded_paths> -> suspected_workspace_bucket, list<workspace_paths>, list<workspace_exclude_paths>
   - .git#subdir=proto --path proto/foo --path proto/bar.proto --exclude-path proto/baz -> .git, [proto/foo, proto/bar.proto] [proto/baz]
-  - work/mod --path work/mod/foo --path work/mod/bar.proto -> wor, [mod/foo, mod/bar.proto]
+  - work/mod --path work/mod/foo --path work/mod/bar.proto -> work, [mod/foo, mod/bar.proto]
   - Treat subdir like any other filter path, deduplicate them
   - Treat a dirRef input path like any other filter path on "/", deduplicate them
   - So that is, if workspace is at .. and you pass buf build foo --path foo/bar --path foo/baz, you get .. -> foo/bar, foo/baz
@@ -69,14 +69,8 @@ NEW ALGORITHM
 - Split workspace_paths into <module_path, module_target_path>
 - Take workspace_exclude_paths, use to delete module_paths, otherwise create module_target_exclude_paths
 
+ExternalPathForPath
 
-STUFF FOR COMMITS
-
-- Can't get rid of them
-- Make UploadRequest split into content and ResourceRefs
-- Use Digests for ResourceRefs for now
-- Go back and make CommitID a first-class citizen (ModuleKey, etc)
-- Add CommitID to buf.lock v2
 
 STUFF FOR DEP RESOLUTION
 
@@ -88,3 +82,6 @@ STUFF FOR DEP RESOLUTION
 - In ModuleSetBuilder, do a Download call for all remote deps, let Download figure out the tree
   - exclude anything that is local, the rest gets added
 - Think about hacing GetModuleKeysForModuleRefs also do resolution? We're not doing this properly right now either
+
+For buf mod update with v1, perhaps we just tell the ModuleSetBuilder to prefer remote modules over local, and then
+we're good?
