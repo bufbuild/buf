@@ -16,7 +16,6 @@ package bufmodulestore
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"io/fs"
 
@@ -122,19 +121,15 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
-	moduleFullName := moduleKey.ModuleFullName()
-	moduleDigest, err := moduleKey.ModuleDigest()
-	if err != nil {
-		return nil, err
-	}
 	var bucket storage.ReadBucket
+	var err error
 	if p.tar {
-		bucket, err = p.getReadBucketForTar(ctx, moduleFullName, moduleDigest)
+		bucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		bucket = p.getReadBucketForDir(moduleFullName, moduleDigest)
+		bucket = p.getReadBucketForDir(moduleKey)
 	}
 	// We rely on the buf.lock file being the last file to be written in the store.
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
@@ -144,9 +139,8 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// because we have complete control over this bucket and can expect all lock files in the
 	// module data store to have digests.
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
-	p.logDebugModuleFullNameAndModuleDigest(
-		moduleFullName,
-		moduleDigest,
+	p.logDebugModuleKey(
+		moduleKey,
 		"module store get buf.lock",
 		zap.Bool("found", err == nil),
 		zap.Error(err),
@@ -169,13 +163,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 }
 
 func (p *moduleDataStore) getReadBucketForDir(
-	moduleFullName bufmodule.ModuleFullName,
-	moduleDigest bufmodule.ModuleDigest,
+	moduleKey bufmodule.ModuleKey,
 ) storage.ReadBucket {
-	dirPath := getModuleStoreDirPath(moduleFullName, moduleDigest)
-	p.logDebugModuleFullNameAndModuleDigest(
-		moduleFullName,
-		moduleDigest,
+	dirPath := getModuleStoreDirPath(moduleKey)
+	p.logDebugModuleKey(
+		moduleKey,
 		"module store get dir read bucket",
 		zap.String("dirPath", dirPath),
 	)
@@ -184,14 +176,12 @@ func (p *moduleDataStore) getReadBucketForDir(
 
 func (p *moduleDataStore) getReadBucketForTar(
 	ctx context.Context,
-	moduleFullName bufmodule.ModuleFullName,
-	moduleDigest bufmodule.ModuleDigest,
+	moduleKey bufmodule.ModuleKey,
 ) (_ storage.ReadBucket, retErr error) {
-	tarPath := getModuleStoreTarPath(moduleFullName, moduleDigest)
+	tarPath := getModuleStoreTarPath(moduleKey)
 	defer func() {
-		p.logDebugModuleFullNameAndModuleDigest(
-			moduleFullName,
-			moduleDigest,
+		p.logDebugModuleKey(
+			moduleKey,
 			"module store get tar read bucket",
 			zap.String("tarPath", tarPath),
 			zap.Bool("found", retErr == nil),
@@ -223,15 +213,10 @@ func (p *moduleDataStore) putModuleData(
 	moduleData bufmodule.ModuleData,
 ) (retErr error) {
 	moduleKey := moduleData.ModuleKey()
-	moduleFullName := moduleKey.ModuleFullName()
-	moduleDigest, err := moduleKey.ModuleDigest()
-	if err != nil {
-		return err
-	}
 	var bucket storage.WriteBucket
 	if p.tar {
 		var callback func(ctx context.Context) error
-		bucket, callback = p.getWriteBucketAndCallbackForTar(moduleFullName, moduleDigest)
+		bucket, callback = p.getWriteBucketAndCallbackForTar(moduleKey)
 		defer func() {
 			if retErr == nil {
 				// Only call the callback if we have had no error.
@@ -239,7 +224,7 @@ func (p *moduleDataStore) putModuleData(
 			}
 		}()
 	} else {
-		bucket = p.getWriteBucketForDir(moduleFullName, moduleDigest)
+		bucket = p.getWriteBucketForDir(moduleKey)
 	}
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
@@ -268,13 +253,11 @@ func (p *moduleDataStore) putModuleData(
 }
 
 func (p *moduleDataStore) getWriteBucketForDir(
-	moduleFullName bufmodule.ModuleFullName,
-	moduleDigest bufmodule.ModuleDigest,
+	moduleKey bufmodule.ModuleKey,
 ) storage.WriteBucket {
-	dirPath := getModuleStoreDirPath(moduleFullName, moduleDigest)
-	p.logDebugModuleFullNameAndModuleDigest(
-		moduleFullName,
-		moduleDigest,
+	dirPath := getModuleStoreDirPath(moduleKey)
+	p.logDebugModuleKey(
+		moduleKey,
 		"module store put dir write bucket",
 		zap.String("dirPath", dirPath),
 	)
@@ -282,16 +265,14 @@ func (p *moduleDataStore) getWriteBucketForDir(
 }
 
 func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
-	moduleFullName bufmodule.ModuleFullName,
-	moduleDigest bufmodule.ModuleDigest,
+	moduleKey bufmodule.ModuleKey,
 ) (storage.WriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
-		tarPath := getModuleStoreTarPath(moduleFullName, moduleDigest)
+		tarPath := getModuleStoreTarPath(moduleKey)
 		defer func() {
-			p.logDebugModuleFullNameAndModuleDigest(
-				moduleFullName,
-				moduleDigest,
+			p.logDebugModuleKey(
+				moduleKey,
 				"module store put tar to write bucket",
 				zap.String("tarPath", tarPath),
 				zap.Bool("found", retErr == nil),
@@ -318,18 +299,13 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 	}
 }
 
-func (p *moduleDataStore) logDebugModuleFullNameAndModuleDigest(
-	moduleFullName bufmodule.ModuleFullName,
-	moduleDigest bufmodule.ModuleDigest,
-	message string,
-	fields ...zap.Field,
-) {
+func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	if checkedEntry := p.logger.Check(zap.DebugLevel, message); checkedEntry != nil {
 		checkedEntry.Write(
 			append(
 				[]zap.Field{
-					zap.String("moduleFullName", moduleFullName.String()),
-					zap.String("moduleDigest", moduleDigest.String()),
+					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
+					zap.String("commitID", moduleKey.CommitID()),
 				},
 				fields...,
 			)...,
@@ -339,30 +315,28 @@ func (p *moduleDataStore) logDebugModuleFullNameAndModuleDigest(
 
 // Returns the module's path within the store if storing individual files.
 //
-// This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}",
-// e.g. the module "buf.build/acme/weather" with digest "b5:12345" will return
-// "buf.build/acme/weather/b5/12345".
-func getModuleStoreDirPath(moduleFullName bufmodule.ModuleFullName, moduleDigest bufmodule.ModuleDigest) string {
+// This is "registry/owner/name/${COMMIT_ID}",
+// e.g. the module "buf.build/acme/weather" with commit "12345" will return
+// "buf.build/acme/weather/12345".
+func getModuleStoreDirPath(moduleKey bufmodule.ModuleKey) string {
 	return normalpath.Join(
-		moduleFullName.Registry(),
-		moduleFullName.Owner(),
-		moduleFullName.Name(),
-		moduleDigest.Type().String(),
-		hex.EncodeToString(moduleDigest.Value()),
+		moduleKey.ModuleFullName().Registry(),
+		moduleKey.ModuleFullName().Owner(),
+		moduleKey.ModuleFullName().Name(),
+		moduleKey.CommitID(),
 	)
 }
 
 // Returns the module's path within the store if storing tar files.
 //
-// This is "registry/owner/name/${DIGEST_TYPE}/${DIGEST}.tar",
-// e.g. the module "buf.build/acme/weather" with digest "b5:12345" will return
-// "buf.build/acme/weather/b5/12345.tar".
-func getModuleStoreTarPath(moduleFullName bufmodule.ModuleFullName, moduleDigest bufmodule.ModuleDigest) string {
+// This is "registry/owner/name/${COMMIT_ID}.tar",
+// e.g. the module "buf.build/acme/weather" with commit "12345" will return
+// "buf.build/acme/weather/12345.tar".
+func getModuleStoreTarPath(moduleKey bufmodule.ModuleKey) string {
 	return normalpath.Join(
-		moduleFullName.Registry(),
-		moduleFullName.Owner(),
-		moduleFullName.Name(),
-		moduleDigest.Type().String(),
-		hex.EncodeToString(moduleDigest.Value())+".tar",
+		moduleKey.ModuleFullName().Registry(),
+		moduleKey.ModuleFullName().Owner(),
+		moduleKey.ModuleFullName().Name(),
+		moduleKey.CommitID()+".tar",
 	)
 }
