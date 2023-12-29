@@ -46,10 +46,10 @@ type ModuleDatasResult interface {
 // ModuleStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
 	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
-	GetModuleDatasForModuleKeys(context.Context, ...bufmodule.ModuleKey) (ModuleDatasResult, error)
+	GetModuleDatasForModuleKeys(context.Context, []bufmodule.ModuleKey) (ModuleDatasResult, error)
 
 	// Put puts the ModuleDatas to the store.
-	PutModuleDatas(ctx context.Context, moduleDatas ...bufmodule.ModuleData) error
+	PutModuleDatas(ctx context.Context, moduleDatas []bufmodule.ModuleData) error
 }
 
 // NewModuleDataStore returns a new ModuleDataStore for the given bucket.
@@ -107,7 +107,7 @@ func newModuleDataStore(
 
 func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
+	moduleKeys []bufmodule.ModuleKey,
 ) (ModuleDatasResult, error) {
 	var foundModuleDatas []bufmodule.ModuleData
 	var notFoundModuleKeys []bufmodule.ModuleKey
@@ -127,7 +127,7 @@ func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 
 func (p *moduleDataStore) PutModuleDatas(
 	ctx context.Context,
-	moduleDatas ...bufmodule.ModuleData,
+	moduleDatas []bufmodule.ModuleData,
 ) error {
 	for _, moduleData := range moduleDatas {
 		if err := p.putModuleData(ctx, moduleData); err != nil {

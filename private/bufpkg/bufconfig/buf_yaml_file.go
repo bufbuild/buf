@@ -218,36 +218,11 @@ func newBufYAMLFile(
 		return nil, fmt.Errorf("module directory %q seen more than once", strings.Join(duplicateModuleConfigDirPaths, ", "))
 	}
 	// Zero values are not added to duplicates.
-	duplicateModuleConfigFullNameStrings := slicesext.Duplicates(
-		slicesext.Map(
-			moduleConfigs,
-			func(moduleConfig ModuleConfig) string {
-				if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
-					return moduleFullName.String()
-				}
-				return ""
-			},
-		),
-	)
-	if len(duplicateModuleConfigFullNameStrings) > 0 {
-		return nil, fmt.Errorf("module name %q seen more than once", strings.Join(duplicateModuleConfigFullNameStrings, ", "))
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleConfigs); err != nil {
+		return nil, err
 	}
-	duplicateDepModuleFullNames := slicesext.Duplicates(
-		slicesext.Map(
-			configuredDepModuleRefs,
-			func(moduleRef bufmodule.ModuleRef) string {
-				return moduleRef.ModuleFullName().String()
-			},
-		),
-	)
-	if len(duplicateDepModuleFullNames) > 0 {
-		return nil, fmt.Errorf(
-			"dep with module name %q seen more than once",
-			strings.Join(
-				duplicateDepModuleFullNames,
-				", ",
-			),
-		)
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(configuredDepModuleRefs); err != nil {
+		return nil, err
 	}
 	sort.Slice(
 		moduleConfigs,

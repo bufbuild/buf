@@ -59,14 +59,26 @@ func newModuleDataProvider(
 	}
 }
 
-func (p *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
+func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	cachedOptionalModuleDatas, err := p.store.GetOptionalModuleDatasForModuleKeys(ctx, moduleKeys...)
+	moduleKeys []bufmodule.ModuleKey,
+	options ...bufmodule.GetModuleDatasForModuleKeysOption,
+) ([]bufmodule.ModuleData, error) {
+	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
+	}
+
+	moduleDatas := make([]bufmodule.ModuleData, 0, len(moduleKeys))
+
+	storeModuleDatasResult, err := p.store.GetModuleDatasForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
+	moduleDatas = append(moduleDatas, storeModuleDatasResult.FoundModuleDatas()...)
+
+	//for _, notFoundModuleKey := range storeModuleDatasResult.NotFoundModuleKeys()
+
 	resultOptionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
 	// The indexes within moduleKeys of the ModuleKeys that did not have a cached ModuleData.
 	// We will then fetch these specific ModuleKeys in one shot from the delegate.
@@ -133,8 +145,8 @@ func (p *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 			resultOptionalModuleDatas[missedModuleKeysIndex] = missedOptionalModuleDatas[i]
 		}
 	}
-	p.moduleKeysRetrieved.Add(int64(len(resultOptionalModuleDatas)))
-	p.moduleKeysHit.Add(int64(len(resultOptionalModuleDatas) - len(missedModuleKeysIndexes)))
+	p.moduleKeysRetrieved.Add(int64(len(storeModuleDatasResult.FoundModuleDatas())))
+	p.moduleKeysHit.Add(int64(len(storeModuleDatasResult.NotFoundModuleKeys())))
 	return resultOptionalModuleDatas, nil
 }
 

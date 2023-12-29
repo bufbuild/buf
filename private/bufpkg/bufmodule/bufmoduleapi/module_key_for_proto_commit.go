@@ -23,10 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-// TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
-// We can do this later if we want to optimize. There's other coalescing we could do inside
-// this function too (single call for one moduleID, single call for one ownerID, get
-// multiple moduleIDs at once, multiple ownerIDs at once, etc). Lots of room for optimization.
 func getModuleKeysForProtoCommits(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,

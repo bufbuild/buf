@@ -42,3 +42,20 @@ func getKeyToIndexedValues[K comparable, V any](values []V, f func(V) K) map[K][
 func getValuesForIndexedValues[T any](indexedValues []*indexedValue[T]) []T {
 	return slicesext.Map(indexedValues, func(indexedValue *indexedValue[T]) T { return indexedValue.Value })
 }
+
+// toValuesMap transforms the input slice into a map from f(V) -> []V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// TODO: move to slicesext, refactor ToValuesMap to do []V, make others unique.
+func toValuesMap[K comparable, V any](s []V, f func(V) K) map[K][]V {
+	var zero K
+	m := make(map[K][]V)
+	for _, v := range s {
+		k := f(v)
+		if k != zero {
+			m[k] = append(m[k], v)
+		}
+	}
+	return m
+}

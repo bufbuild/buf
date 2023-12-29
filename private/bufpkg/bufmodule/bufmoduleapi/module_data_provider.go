@@ -16,9 +16,9 @@ package bufmoduleapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
+	"sort"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
@@ -55,34 +55,106 @@ func newModuleDataProvider(
 		clientProvider: clientProvider,
 	}
 }
-
-func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
+func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
+	moduleKeys []bufmodule.ModuleKey,
+	options ...bufmodule.GetModuleDatasForModuleKeysOption,
+) ([]bufmodule.ModuleData, error) {
+	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
+	}
+
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
-	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
-	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
-	// Make sure to respect 250 max.
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		moduleData, err := a.getModuleDataForModuleKey(
+
+	registryToModuleKeys := toValuesMap(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().Registry()
+		},
+	)
+	moduleDatas := make([]bufmodule.ModuleData, 0, len(moduleKeys))
+	for registry, iModuleKeys := range registryToModuleKeys {
+		iModuleDatas, err := a.getModuleDatasForRegistryAndModuleKeys(
 			ctx,
 			protoModuleProvider,
 			protoOwnerProvider,
-			moduleKey,
+			registry,
+			iModuleKeys,
+			getModuleDatasForModuleKeysOptions.IncludeDepModuleDatas(),
 		)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
+			return nil, err
 		}
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
+		moduleDatas = append(moduleDatas, iModuleDatas...)
 	}
-	return optionalModuleDatas, nil
+	sort.Slice(
+		moduleDatas,
+		func(i int, j int) bool {
+			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
+		},
+	)
+	return moduleDatas, nil
+}
+
+func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
+	ctx context.Context,
+	protoModuleProvider *protoModuleProvider,
+	protoOwnerProvider *protoOwnerProvider,
+	registry string,
+	moduleKeys []bufmodule.ModuleKey,
+	includeDepModuleDatas bool,
+) ([]bufmodule.ModuleData, error) {
+	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+}
+
+func (a *moduleDataProvider) getProtoGraphForRegistryAndModuleKeys(
+	ctx context.Context,
+	registry string,
+	moduleKeys []bufmodule.ModuleKey,
+) (*modulev1beta1.Graph, error) {
+	protoCommitIDs, err := slicesext.MapError(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) (string, error) {
+			return CommitIDToProto(moduleKey.CommitID())
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	response, err := a.clientProvider.GraphServiceClient(registry).GetGraph(
+		ctx,
+		connect.NewRequest(
+			&modulev1beta1.GetGraphRequest{
+				// TODO: chunking
+				ResourceRefs: slicesext.Map(
+					protoCommitIDs,
+					func(protoCommitID string) *modulev1beta1.ResourceRef {
+						return &modulev1beta1.ResourceRef{
+							Value: &modulev1beta1.ResourceRef_Id{
+								Id: protoCommitID,
+							},
+						}
+					},
+				),
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
+		}
+		return nil, err
+	}
+	return response.Msg.Graph, nil
 }
 
 func (a *moduleDataProvider) getModuleDataForModuleKey(

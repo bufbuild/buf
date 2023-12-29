@@ -79,6 +79,42 @@ func ModuleFullNameEqual(one ModuleFullName, two ModuleFullName) bool {
 	return one.String() == two.String()
 }
 
+// HasModuleFullName is any type that has a ModuleFullName() function.
+type HasModuleFullName interface {
+	// ModuleFullName returns the ModuleullName.
+	//
+	// May be empty.
+	ModuleFullName() ModuleFullName
+}
+
+// ModuleFullNameStringToValue maps the values that implement HasModuleFullName to a map
+// from ModuleFullName string to the unique value that has this ModuleFullName.
+//
+// If any value has a nil ModuleFullName, this value is not added to the map. Therefore,
+// for types that potentially have a nil ModuleFullName, you cannot reply on this function
+// returning a map of the same length as the input values.
+//
+// Returns error if there are values with duplicate ModuleFullNames.
+func ModuleFullNameStringToUniqueValue[T HasModuleFullName, S ~[]T](values S) (map[string]T, error) {
+	m := make(map[string]T, len(values))
+	for _, value := range values {
+		moduleFullName := value.ModuleFullName()
+		if moduleFullName == nil {
+			continue
+		}
+		existingValue, ok := m[moduleFullName.String()]
+		if ok {
+			return nil, fmt.Errorf(
+				"duplicate module names in input: %q, %q",
+				existingValue.ModuleFullName().String(),
+				moduleFullName.String(),
+			)
+		}
+		m[moduleFullName.String()] = value
+	}
+	return m, nil
+}
+
 // *** PRIVATE ***
 
 type moduleFullName struct {
