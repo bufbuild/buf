@@ -103,11 +103,13 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		moduleRefExtdep1,
-		moduleRefExtdep2,
-		moduleRefExtdep3,
-		moduleRefExtdep4,
-		moduleRefModule2,
+		[]bufmodule.ModuleRef{
+			moduleRefExtdep1,
+			moduleRefExtdep2,
+			moduleRefExtdep3,
+			moduleRefExtdep4,
+			moduleRefModule2,
+		},
 	)
 	require.NoError(t, err)
 	for _, moduleKey := range moduleKeys {
@@ -235,7 +237,7 @@ func TestBasic(t *testing.T) {
 	// that we expect.
 	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
 	require.NoError(t, err)
-	dagtest.RequireGraphEqual(
+	dagtest.RequireComparableGraphEqual(
 		t,
 		[]dagtest.ExpectedNode[string]{
 			{
