@@ -13,3 +13,9 @@ buf-digest \
   private/buf/cmd/buf/testdata/imports/success/people \
   private/buf/cmd/buf/testdata/imports/success/students
 ```
+
+To make new commit IDs:
+
+```
+buf-new-commit-id
+```

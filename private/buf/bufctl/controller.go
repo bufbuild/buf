@@ -142,6 +142,7 @@ func NewController(
 	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
 	gitClonerOptions git.ClonerOptions,
@@ -154,6 +155,7 @@ func NewController(
 		clientProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
+		commitProvider,
 		httpClient,
 		httpauthAuthenticator,
 		gitClonerOptions,
@@ -174,6 +176,7 @@ type controller struct {
 	container          app.EnvStdioContainer
 	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
+	commitProvider     bufmodule.CommitProvider
 
 	disableSymlinks           bool
 	fileAnnotationErrorFormat string
@@ -193,6 +196,7 @@ func newController(
 	clientProvider bufapi.ClientProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
 	gitClonerOptions git.ClonerOptions,
@@ -204,6 +208,7 @@ func newController(
 		container:          container,
 		clientProvider:     clientProvider,
 		moduleDataProvider: moduleDataProvider,
+		commitProvider:     commitProvider,
 	}
 	for _, option := range options {
 		option(controller)

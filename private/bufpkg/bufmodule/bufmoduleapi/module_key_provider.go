@@ -77,22 +77,26 @@ func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, module
 	if err != nil {
 		return nil, err
 	}
+	commitID, err := ProtoToCommitID(protoCommit.Id)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodule.NewModuleKey(
 		// Note we don't have to resolve owner_name and module_name since we already have them.
 		moduleRef.ModuleFullName(),
-		protoCommit.Id,
-		func() (bufmodule.ModuleDigest, error) {
+		commitID,
+		func() (bufmodule.Digest, error) {
 			// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
-			return ProtoToModuleDigest(protoCommit.Digest)
+			return ProtoToDigest(protoCommit.Digest)
 		},
 	)
 }
 
 func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef bufmodule.ModuleRef) (*modulev1beta1.Commit, error) {
-	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).ResolveCommits(
+	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).GetCommits(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.ResolveCommitsRequest{
+			&modulev1beta1.GetCommitsRequest{
 				ResourceRefs: []*modulev1beta1.ResourceRef{
 					{
 						Value: &modulev1beta1.ResourceRef_Name_{
@@ -100,12 +104,14 @@ func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, modu
 								Owner:  moduleRef.ModuleFullName().Owner(),
 								Module: moduleRef.ModuleFullName().Name(),
 								Child: &modulev1beta1.ResourceRef_Name_Ref{
+									// TODO: What to do about commit IDs? Need to be dashful.
 									Ref: moduleRef.Ref(),
 								},
 							},
 						},
 					},
 				},
+				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)

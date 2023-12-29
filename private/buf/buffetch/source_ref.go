@@ -22,17 +22,11 @@ var _ SourceRef = &sourceRef{}
 
 type sourceRef struct {
 	bucketRef internal.BucketRef
-	dirPath   string
 }
 
 func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
-	var dirPath string
-	if dirRef, ok := bucketRef.(internal.DirRef); ok {
-		dirPath = dirRef.Path()
-	}
 	return &sourceRef{
 		bucketRef: bucketRef,
-		dirPath:   dirPath,
 	}
 }
 

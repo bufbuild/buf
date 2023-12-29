@@ -77,16 +77,19 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
-	// May be empty. Callers should not rely on this value being present. If
-	// ModuleFullName is nil, this will always be empty.
+	// A CommitID is always a dashless UUID.
+	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
+	// May be empty. Callers should not rely on this value being present.
+	//
+	// If ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
-	// ModuleDigest returns the Module digest.
+	// Digest returns the Module digest.
 	//
-	// Note this is *not* a bufcas.Digest - this is a ModuleDigest. bufcas.Digests are a lower-level
-	// type that just deal in terms of files and content. A ModuleDigest is a specific algorithm
+	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
+	// type that just deal in terms of files and content. A Digest is a specific algorithm
 	// applied to a set of files and dependencies.
-	ModuleDigest() (ModuleDigest, error)
+	Digest() (Digest, error)
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
@@ -96,7 +99,7 @@ type Module interface {
 	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
 	// via import statements within its .proto files will be returned.
 	//
-	// Dependencies with the same ModuleFullName will always have the same Commits and ModuleDigests.
+	// Dependencies with the same ModuleFullName will always have the same Commits and Digests.
 	//
 	// Sorted by OpaqueID.
 	ModuleDeps() ([]ModuleDep, error)
@@ -157,12 +160,12 @@ type Module interface {
 
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
-// The given Module must have a ModuleFullName, otherwise this will return error.
+// The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
 func ModuleToModuleKey(module Module) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),
 		module.CommitID(),
-		module.ModuleDigest,
+		module.Digest,
 	)
 }
 
@@ -244,8 +247,8 @@ type module struct {
 
 	moduleSet ModuleSet
 
-	getModuleDigest func() (ModuleDigest, error)
-	getModuleDeps   func() ([]ModuleDep, error)
+	getDigest     func() (Digest, error)
+	getModuleDeps func() ([]ModuleDep, error)
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
@@ -272,12 +275,18 @@ func newModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	if bucketID == "" && moduleFullName == nil {
-		// This is a system error.
 		return nil, syserror.New("bucketID was empty and moduleFullName was nil when constructing a Module, one of these must be set")
 	}
 	if !isLocal && moduleFullName == nil {
-		// This is a system error.
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
+	}
+	if moduleFullName == nil && commitID != "" {
+		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
+	}
+	if commitID != "" {
+		if err := validateCommitID(commitID); err != nil {
+			return nil, err
+		}
 	}
 	module := &module{
 		ctx:            ctx,
@@ -303,7 +312,7 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getModuleDigest = syncext.OnceValues(newGetModuleDigestFuncForModule(module))
+	module.getDigest = syncext.OnceValues(newGetDigestFuncForModule(module))
 	module.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
@@ -330,8 +339,8 @@ func (m *module) CommitID() string {
 	return m.commitID
 }
 
-func (m *module) ModuleDigest() (ModuleDigest, error) {
-	return m.getModuleDigest()
+func (m *module) Digest() (Digest, error) {
+	return m.getDigest()
 }
 
 func (m *module) ModuleDeps() ([]ModuleDep, error) {
@@ -367,7 +376,7 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getModuleDigest = syncext.OnceValues(newGetModuleDigestFuncForModule(newModule))
+	newModule.getDigest = syncext.OnceValues(newGetDigestFuncForModule(newModule))
 	newModule.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
@@ -378,8 +387,8 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 
 func (*module) isModule() {}
 
-func newGetModuleDigestFuncForModule(module *module) func() (ModuleDigest, error) {
-	return func() (ModuleDigest, error) {
+func newGetDigestFuncForModule(module *module) func() (Digest, error) {
+	return func() (Digest, error) {
 		bucket, err := module.getBucket()
 		if err != nil {
 			return nil, err
@@ -388,7 +397,7 @@ func newGetModuleDigestFuncForModule(module *module) func() (ModuleDigest, error
 		if err != nil {
 			return nil, err
 		}
-		return getB5ModuleDigest(module.ctx, bucket, moduleDeps)
+		return getB5Digest(module.ctx, bucket, moduleDeps)
 	}
 }
 

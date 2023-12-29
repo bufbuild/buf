@@ -36,6 +36,10 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
+	commitProvider, err := newCommitProvider(container, clientProvider)
+	if err != nil {
+		return nil, err
+	}
 	return bufctl.NewController(
 		container.Logger(),
 		tracing.NewTracer(container.Tracer()),
@@ -43,6 +47,7 @@ func NewController(
 		clientProvider,
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
+		commitProvider,
 		// TODO: Delete defaultHTTPClient and use the one from newConfig
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,

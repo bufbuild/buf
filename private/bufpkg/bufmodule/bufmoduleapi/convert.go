@@ -24,16 +24,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 var (
-	moduleDigestTypeToProto = map[bufmodule.ModuleDigestType]modulev1beta1.DigestType{
-		bufmodule.ModuleDigestTypeB4: modulev1beta1.DigestType_DIGEST_TYPE_B4,
-		bufmodule.ModuleDigestTypeB5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+	digestTypeToProto = map[bufmodule.DigestType]modulev1beta1.DigestType{
+		bufmodule.DigestTypeB4: modulev1beta1.DigestType_DIGEST_TYPE_B4,
+		bufmodule.DigestTypeB5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 	}
-	protoToModuleDigestType = map[modulev1beta1.DigestType]bufmodule.ModuleDigestType{
-		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.ModuleDigestTypeB4,
-		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.ModuleDigestTypeB5,
+	protoToDigestType = map[modulev1beta1.DigestType]bufmodule.DigestType{
+		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.DigestTypeB4,
+		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.DigestTypeB5,
 	}
 )
 
@@ -49,26 +50,48 @@ func ParseModuleVisibility(s string) (modulev1beta1.ModuleVisibility, error) {
 	}
 }
 
-// ModuleDigestToProto converts the given ModuleDigest to a proto Digest.
-func ModuleDigestToProto(moduleDigest bufmodule.ModuleDigest) (*modulev1beta1.Digest, error) {
-	protoDigestType, ok := moduleDigestTypeToProto[moduleDigest.Type()]
+// CommitIDToProto converts the CommitID to a BSR Commit ID.
+//
+// This just takes a dashless UUID and converts it to a dashful UUID.
+func CommitIDToProto(commitID string) (string, error) {
+	protoCommitID, err := uuidutil.FromDashless(commitID)
+	if err != nil {
+		return "", fmt.Errorf("invalid commit ID %s: %w", commitID, err)
+	}
+	return protoCommitID.String(), nil
+}
+
+// ProtoToCommitID converts the BSR Commit ID to a CommitID.
+//
+// This just takes a dashless UUID and converts it to a dashful UUID.
+func ProtoToCommitID(protoCommitID string) (string, error) {
+	id, err := uuidutil.FromString(protoCommitID)
+	if err != nil {
+		return "", fmt.Errorf("invalid BSR commit ID %s: %w", protoCommitID, err)
+	}
+	return uuidutil.ToDashless(id)
+}
+
+// DigestToProto converts the given Digest to a proto Digest.
+func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
+	protoDigestType, ok := digestTypeToProto[digest.Type()]
 	// Technically we have already done this validation but just to be safe.
 	if !ok {
-		return nil, fmt.Errorf("unknown ModuleDigestType: %v", moduleDigest.Type())
+		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
 	}
 	protoDigest := &modulev1beta1.Digest{
 		Type:  protoDigestType,
-		Value: moduleDigest.Value(),
+		Value: digest.Value(),
 	}
 	return protoDigest, nil
 }
 
-// ProtoToModuleDigest converts the given proto Digest to a ModuleDigest.
+// ProtoToDigest converts the given proto Digest to a Digest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func ProtoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDigest, error) {
-	moduleDigestType, ok := protoToModuleDigestType[protoDigest.Type]
+func ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
+	digestType, ok := protoToDigestType[protoDigest.Type]
 	if !ok {
 		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
 	}
@@ -76,7 +99,7 @@ func ProtoToModuleDigest(protoDigest *modulev1beta1.Digest) (bufmodule.ModuleDig
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleDigest(moduleDigestType, bufcasDigest)
+	return bufmodule.NewDigest(digestType, bufcasDigest)
 }
 
 // *** PRIVATE ***

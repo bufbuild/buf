@@ -92,6 +92,11 @@ var (
 		formatDir,
 	}
 	// sorted
+	dirOrProtoFileFormats = []string{
+		formatDir,
+		formatProtoFile,
+	}
+	// sorted
 	moduleFormats = []string{
 		formatMod,
 	}

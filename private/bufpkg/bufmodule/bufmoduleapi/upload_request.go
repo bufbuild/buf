@@ -76,6 +76,7 @@ func NewUploadRequest(
 	)
 
 	// We only add references for target Modules.
+	// TODO: We should add references for any module without a CommitID! See below!
 	targetOpaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(targetModules)
 	if err != nil {
 		return nil, err
@@ -116,27 +117,21 @@ func NewUploadRequest(
 						},
 					)
 				} else {
-					// If the dependency is not a target, we need to specify a full ResourceRef
-					// to it. For now, we specify a Digest, but we should change this to Commit TODO.
-					moduleDigest, err := moduleDep.ModuleDigest()
-					if err != nil {
-						return nil, err
+					commitID := moduleDep.CommitID()
+					if commitID == "" {
+						// TODO: THIS IS A MAJOR TODO. We might NOT have commit IDs for other modules
+						// in the workspace. In this case, we need to add their data to the upload.
+						return nil, fmt.Errorf("did not have a commit ID for a non-target module dependency %q", moduleDep.OpaqueID())
 					}
-					protoDigest, err := ModuleDigestToProto(moduleDigest)
+					protoCommitID, err := CommitIDToProto(commitID)
 					if err != nil {
 						return nil, err
 					}
 					depProtoResourceRefs = append(
 						depProtoResourceRefs,
 						&modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Name_{
-								Name: &modulev1beta1.ResourceRef_Name{
-									Owner:  moduleFullName.Owner(),
-									Module: moduleFullName.Name(),
-									Child: &modulev1beta1.ResourceRef_Name_Digest{
-										Digest: protoDigest,
-									},
-								},
+							Value: &modulev1beta1.ResourceRef_Id{
+								Id: protoCommitID,
 							},
 						},
 					)

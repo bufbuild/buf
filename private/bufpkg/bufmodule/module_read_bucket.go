@@ -96,11 +96,24 @@ type ModuleReadBucket interface {
 // WalkFileInfosOption is an option for WalkFileInfos
 type WalkFileInfosOption func(*walkFileInfosOptions)
 
+// WalkFileInfosWithOnlyTargetFiles returns a new WalkFileInfosOption that only walks the target files.
+func WalkFileInfosWithOnlyTargetFiles() WalkFileInfosOption {
+	return func(walkFileInfosOptions *walkFileInfosOptions) {
+		walkFileInfosOptions.onlyTargetFiles = true
+	}
+}
+
 // ModuleReadBucketToStorageReadBucket converts the given ModuleReadBucket to a storage.ReadBucket.
 //
-// All target and non-target Files are added.
+// All Files (whether targets or non-targets) are added.
 func ModuleReadBucketToStorageReadBucket(bucket ModuleReadBucket) storage.ReadBucket {
 	return newStorageReadBucket(bucket)
+}
+
+// ModuleReadBucketWithOnlyTargetFiles returns a new ModuleReadBucket that only contains
+// target Files.
+func ModuleReadBucketWithOnlyTargetFiles(moduleReadBucket ModuleReadBucket) ModuleReadBucket {
+	return newTargetedModuleReadBucket(moduleReadBucket)
 }
 
 // ModuleReadBucketWithOnlyFileTypes returns a new ModuleReadBucket that only contains the given
@@ -153,12 +166,10 @@ func GetTargetFileInfos(ctx context.Context, moduleReadBucket ModuleReadBucket) 
 	if err := moduleReadBucket.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {
-			if !fileInfo.IsTargetFile() {
-				return nil
-			}
 			fileInfos = append(fileInfos, fileInfo)
 			return nil
 		},
+		WalkFileInfosWithOnlyTargetFiles(),
 	); err != nil {
 		return nil, err
 	}
@@ -183,7 +194,7 @@ func GetFilePaths(ctx context.Context, moduleReadBucket ModuleReadBucket) ([]str
 	return slicesext.Map(fileInfos, func(fileInfo FileInfo) string { return fileInfo.Path() }), nil
 }
 
-// GetTargerFilePaths is a convenience function that gets all the target
+// GetTargetFilePaths is a convenience function that gets all the target
 // file paths for the ModuleReadBucket.
 //
 // Sorted.
@@ -586,6 +597,68 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	return fastscanResult, nil
 }
 
+// targetedModuleReadBucket
+
+type targetedModuleReadBucket struct {
+	delegate ModuleReadBucket
+}
+
+func newTargetedModuleReadBucket(delegate ModuleReadBucket) *targetedModuleReadBucket {
+	return &targetedModuleReadBucket{
+		delegate: delegate,
+	}
+}
+
+func (t *targetedModuleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+	// Stat'ing the targeted bucket, not the delegate.
+	if _, err := t.StatFileInfo(ctx, path); err != nil {
+		return nil, err
+	}
+	return t.delegate.GetFile(ctx, path)
+}
+
+func (t *targetedModuleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+	fileInfo, err := t.delegate.StatFileInfo(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	if !fileInfo.IsTargetFile() {
+		return nil, &fs.PathError{Op: "stat", Path: path, Err: fs.ErrNotExist}
+	}
+	return fileInfo, nil
+}
+
+func (t *targetedModuleReadBucket) WalkFileInfos(
+	ctx context.Context,
+	fn func(FileInfo) error,
+	options ...WalkFileInfosOption,
+) error {
+	return t.delegate.WalkFileInfos(
+		ctx,
+		func(fileInfo FileInfo) error {
+			return fn(fileInfo)
+		},
+		append(
+			options,
+			WalkFileInfosWithOnlyTargetFiles(),
+		)...,
+	)
+}
+
+func (*targetedModuleReadBucket) ShouldBeSelfContained() bool {
+	// We've filtered out non-target files, this should not be considered self-contained.
+	return false
+}
+
+func (t *targetedModuleReadBucket) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
+	if _, err := t.StatFileInfo(ctx, path); err != nil {
+		return fastscan.Result{}, err
+	}
+	return t.delegate.getFastscanResultForPath(ctx, path)
+}
+
+func (*targetedModuleReadBucket) isModuleReadBucket() {}
+
 // filteredModuleReadBucket
 
 type filteredModuleReadBucket struct {
@@ -777,6 +850,10 @@ func (s *storageReadBucket) Stat(ctx context.Context, path string) (storage.Obje
 }
 
 func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
+	if err != nil {
+		return err
+	}
 	return s.delegate.WalkFileInfos(
 		ctx,
 		func(fileInfo FileInfo) error {

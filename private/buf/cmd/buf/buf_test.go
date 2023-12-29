@@ -1953,8 +1953,6 @@ func TestConvert(t *testing.T) {
 
 func TestFormat(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	testRunStdout(
 		t,
 		nil,
@@ -1976,8 +1974,6 @@ message Object {
 
 func TestFormatSingleFile(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -2002,8 +1998,6 @@ func TestFormatSingleFile(t *testing.T) {
 
 func TestFormatDiff(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	stdout := bytes.NewBuffer(nil)
 	testRun(
@@ -2041,8 +2035,6 @@ func TestFormatDiff(t *testing.T) {
 // with the --exit-code flag.
 func TestFormatExitCode(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	stdout := bytes.NewBuffer(nil)
 	testRun(
 		t,
@@ -2072,8 +2064,6 @@ func TestFormatExitCode(t *testing.T) {
 // equivalent to the original result.
 func TestFormatEquivalence(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -2116,15 +2106,14 @@ func TestFormatEquivalence(t *testing.T) {
 
 func TestFormatInvalidFlagCombination(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: --output cannot be used with --write`,
+		[]string{
+			`Failure: cannot use --output when using --write`,
+		},
 		"format",
 		filepath.Join("testdata", "format", "diff"),
 		"-w",
@@ -2135,14 +2124,13 @@ func TestFormatInvalidFlagCombination(t *testing.T) {
 
 func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: --write cannot be used with module reference inputs`,
+		[]string{
+			`Failure: invalid input "buf.build/acme/weather" when using --write: must be a directory or proto file`,
+		},
 		"format",
 		"buf.build/acme/weather",
 		"-w",
@@ -2151,14 +2139,13 @@ func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 
 func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
-	testRunStdoutStderrNoWarn(
+	testRunStderrContainsNoWarn(
 		t,
 		nil,
 		1,
-		"",
-		`Failure: this command does not support including package files`,
+		[]string{
+			"Failure: cannot specify include_package_files=true with format",
+		},
 		"format",
 		filepath.Join("testdata", "format", "simple", "simple.proto#include_package_files=true"),
 	)
@@ -2166,8 +2153,6 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 
 func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
 	tempDir := t.TempDir()
 	testRunStdoutStderrNoWarn(
 		t,
@@ -2355,6 +2340,22 @@ func testRunStdoutStderrNoWarn(t *testing.T, stdin io.Reader, expectedExitCode i
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		// we do not want warnings to be part of our stderr test calculation
+		append(
+			args,
+			"--no-warn",
+		)...,
+	)
+}
+
+func testRunStderrContainsNoWarn(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderrContains(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderrPartials,
 		internaltesting.NewEnvFunc(t),
 		stdin,
 		// we do not want warnings to be part of our stderr test calculation

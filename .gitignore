@@ -10,11 +10,12 @@
 /cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 /private/buf/buftesting/cache/
 /private/buf/bufwkt/cmd/wkt-go-data/wkt-go-data
-/private/buf/cmd/buf-digest/buf-digest
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /private/buf/cmd/buf/command/alpha/protoc/test.txt
 /private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
+/private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
+/private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id/buf-new-commit-id
 /private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
 /private/pkg/bandeps/cmd/bandeps/bandeps
 /private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged

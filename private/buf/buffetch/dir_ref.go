@@ -30,10 +30,22 @@ func newDirRef(iDirRef internal.DirRef) *dirRef {
 	}
 }
 
+func (r *dirRef) DirPath() string {
+	return r.iDirRef.Path()
+}
+
 func (r *dirRef) internalRef() internal.Ref {
+	return r.iDirRef
+}
+
+func (r *dirRef) internalBucketRef() internal.BucketRef {
 	return r.iDirRef
 }
 
 func (r *dirRef) internalDirRef() internal.DirRef {
 	return r.iDirRef
 }
+
+func (*dirRef) isSourceOrModuleRef() {}
+
+func (*dirRef) isDirOrProtoFileRef() {}

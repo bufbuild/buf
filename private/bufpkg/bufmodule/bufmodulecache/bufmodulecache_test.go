@@ -27,46 +27,85 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCacheBasicDir(t *testing.T) {
+func TestCommitProviderBasic(t *testing.T) {
 	t.Parallel()
-	testCacheBasic(t, false)
-}
 
-func TestCacheBasicTar(t *testing.T) {
-	t.Parallel()
-	testCacheBasic(t, true)
-}
-
-func testCacheBasic(t *testing.T, tar bool) {
 	ctx := context.Background()
 
-	bsrProvider, err := bufmoduletesting.NewOmniProvider(
-		bufmoduletesting.ModuleData{
-			Name: "buf.build/foo/mod1",
-			PathToData: map[string][]byte{
-				"mod1.proto": []byte(
-					`syntax = proto3; package mod1;`,
-				),
-			},
-		},
-		bufmoduletesting.ModuleData{
-			Name: "buf.build/foo/mod2",
-			PathToData: map[string][]byte{
-				"mod2.proto": []byte(
-					`syntax = proto3; package mod2; import "mod1.proto";`,
-				),
-			},
-		},
-		bufmoduletesting.ModuleData{
-			Name: "buf.build/foo/mod3",
-			PathToData: map[string][]byte{
-				"mod3.proto": []byte(
-					`syntax = proto3; package mod3;`,
-				),
-			},
-		},
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+
+	cacheProvider := newCommitProvider(
+		zap.NewNop(),
+		bsrProvider,
+		bufmodulestore.NewCommitStore(
+			zap.NewNop(),
+			storagemem.NewReadWriteBucket(),
+		),
+	)
+
+	commits, err := bufmodule.GetCommitsForModuleKeys(
+		ctx,
+		cacheProvider,
+		moduleKeys...,
 	)
 	require.NoError(t, err)
+	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.getModuleKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+
+	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
+	commits, err = bufmodule.GetCommitsForModuleKeys(
+		ctx,
+		cacheProvider,
+		moduleKeys...,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.getModuleKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+}
+
+func TestModuleDataProviderBasicDir(t *testing.T) {
+	t.Parallel()
+	testModuleDataProviderBasic(t, false)
+}
+
+func TestModuleDataProviderBasicTar(t *testing.T) {
+	t.Parallel()
+	testModuleDataProviderBasic(t, true)
+}
+
+func testModuleDataProviderBasic(t *testing.T, tar bool) {
+	ctx := context.Background()
+
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+
 	var moduleDataStoreOptions []bufmodulestore.ModuleDataStoreOption
 	if tar {
 		moduleDataStoreOptions = append(
@@ -83,22 +122,6 @@ func testCacheBasic(t *testing.T, tar bool) {
 			moduleDataStoreOptions...,
 		),
 	)
-
-	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
-	require.NoError(t, err)
-	moduleRefMod2, err := bufmodule.NewModuleRef("buf.build", "foo", "mod2", "")
-	require.NoError(t, err)
-	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
-	require.NoError(t, err)
-	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
-		ctx,
-		bsrProvider,
-		moduleRefMod1,
-		// Switching order on purpose.
-		moduleRefMod3,
-		moduleRefMod2,
-	)
-	require.NoError(t, err)
 
 	moduleDatas, err := bufmodule.GetModuleDatasForModuleKeys(
 		ctx,
@@ -146,4 +169,50 @@ func testCacheBasic(t *testing.T, tar bool) {
 			},
 		),
 	)
+}
+
+func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmoduletesting.OmniProvider, []bufmodule.ModuleKey) {
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/mod1",
+			PathToData: map[string][]byte{
+				"mod1.proto": []byte(
+					`syntax = proto3; package mod1;`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/mod2",
+			PathToData: map[string][]byte{
+				"mod2.proto": []byte(
+					`syntax = proto3; package mod2; import "mod1.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/mod3",
+			PathToData: map[string][]byte{
+				"mod3.proto": []byte(
+					`syntax = proto3; package mod3;`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+	moduleRefMod1, err := bufmodule.NewModuleRef("buf.build", "foo", "mod1", "")
+	require.NoError(t, err)
+	moduleRefMod2, err := bufmodule.NewModuleRef("buf.build", "foo", "mod2", "")
+	require.NoError(t, err)
+	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
+	require.NoError(t, err)
+	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+		ctx,
+		bsrProvider,
+		moduleRefMod1,
+		// Switching order on purpose.
+		moduleRefMod3,
+		moduleRefMod2,
+	)
+	require.NoError(t, err)
+	return bsrProvider, moduleKeys
 }

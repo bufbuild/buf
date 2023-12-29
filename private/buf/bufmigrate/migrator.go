@@ -335,9 +335,9 @@ func (m *migrator) addModuleDirectory(
 		ctx,
 		m.rootBucket,
 		moduleDir,
-		bufconfig.BufLockFileWithModuleDigestResolver(
-			func(ctx context.Context, remote, commitID string) (bufmodule.ModuleDigest, error) {
-				return bufmoduleapi.ModuleDigestForCommitID(ctx, m.clientProvider, remote, commitID)
+		bufconfig.BufLockFileWithDigestResolver(
+			func(ctx context.Context, remote, commitID string) (bufmodule.Digest, error) {
+				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID)
 			},
 		),
 	)
@@ -669,8 +669,8 @@ func resolvedDeclaredAndLockedDependencies(
 			key, err := bufmodule.NewModuleKey(
 				resolvedRef.ModuleFullName(),
 				resolvedCommit.GetId(),
-				func() (bufmodule.ModuleDigest, error) {
-					return bufmoduleapi.ProtoToModuleDigest(resolvedCommit.GetDigest())
+				func() (bufmodule.Digest, error) {
+					return bufmoduleapi.ProtoToDigest(resolvedCommit.GetDigest())
 				},
 			)
 			if err != nil {
@@ -709,10 +709,10 @@ func getModuleToRefToCommit(
 			continue
 		}
 		moduleFullName := moduleRef.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
 			ctx,
 			connect.NewRequest(
-				&modulev1beta1.ResolveCommitsRequest{
+				&modulev1beta1.GetCommitsRequest{
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Name_{
@@ -754,10 +754,10 @@ func getCommitIDToCommit(
 	commitIDToCommit := make(map[string]*modulev1beta1.Commit)
 	for _, moduleKey := range moduleKeys {
 		moduleFullName := moduleKey.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).ResolveCommits(
+		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
 			ctx,
 			connect.NewRequest(
-				&modulev1beta1.ResolveCommitsRequest{
+				&modulev1beta1.GetCommitsRequest{
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Id{

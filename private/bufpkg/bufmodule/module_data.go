@@ -30,8 +30,6 @@ import (
 type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
 	//
-	// A ModuleKey from a ModuleData may not have a CommitID set.
-	//
 	// The Digest from this ModuleKey is used for tamper-proofing. It will be checked against
 	// the actual data downloaded before Bucket() or DeclaredDepModuleKeys() returns.
 	ModuleKey() ModuleKey
@@ -67,6 +65,25 @@ func NewModuleData(
 	)
 }
 
+// OptionalModuleData is a result from a ModuleDataProvider.
+//
+// It returns whether or not the ModuleData was found, and a non-nil
+// ModuleData if the ModuleData was found.
+type OptionalModuleData interface {
+	ModuleData() ModuleData
+	Found() bool
+
+	isOptionalModuleData()
+}
+
+// NewOptionalModuleData returns a new OptionalModuleData.
+//
+// As opposed to most functions in this codebase, the input ModuleData can be nil.
+// If it is nil, then Found() will return false.
+func NewOptionalModuleData(moduleData ModuleData) OptionalModuleData {
+	return newOptionalModuleData(moduleData)
+}
+
 // *** PRIVATE ***
 
 // moduleData
@@ -76,7 +93,7 @@ type moduleData struct {
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
 
-	checkModuleDigest func() error
+	checkDigest func() error
 }
 
 func newModuleData(
@@ -90,7 +107,7 @@ func newModuleData(
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
 	}
-	moduleData.checkModuleDigest = syncext.OnceValue(
+	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
 			bucket, err := moduleData.getBucket()
 			if err != nil {
@@ -100,11 +117,11 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			expectedModuleDigest, err := moduleKey.ModuleDigest()
+			expectedDigest, err := moduleKey.Digest()
 			if err != nil {
 				return err
 			}
-			// This isn't the ModuleDigest as computed by the Module exactly, as the Module uses
+			// This isn't the Digest as computed by the Module exactly, as the Module uses
 			// file imports to determine what the dependencies are. However, this is checking whether
 			// or not the digest of the returned information matches the digest we expected, which is
 			// what we need for this use case (tamper-proofing). What we are looking for is "does the
@@ -115,9 +132,9 @@ func newModuleData(
 			// tamper-proofing failing.
 			//
 			// This mismatch is a bit weird, however, and also results in us effectively computing
-			// the digest twice for any remote module: once here, and once within Module.ModuleDigest,
+			// the digest twice for any remote module: once here, and once within Module.Digest,
 			// which does have a slight performance hit.
-			actualModuleDigest, err := getB5ModuleDigest(
+			actualDigest, err := getB5Digest(
 				ctx,
 				bucket,
 				declaredDepModuleKeys,
@@ -125,16 +142,12 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			if !ModuleDigestEqual(expectedModuleDigest, actualModuleDigest) {
-				moduleString := moduleKey.ModuleFullName().String()
-				if commitID := moduleKey.CommitID(); commitID != "" {
-					moduleString = moduleString + ":" + commitID
-				}
+			if !DigestEqual(expectedDigest, actualDigest) {
 				return fmt.Errorf(
-					"verification failed for module %s: expected module digest %q but downloaded data had digest %q",
-					moduleString,
-					expectedModuleDigest.String(),
-					actualModuleDigest.String(),
+					"verification failed for module %s: expected digest %q but downloaded data had digest %q",
+					moduleKey.String(),
+					expectedDigest.String(),
+					actualDigest.String(),
 				)
 			}
 			return nil
@@ -148,7 +161,7 @@ func (m *moduleData) ModuleKey() ModuleKey {
 }
 
 func (m *moduleData) Bucket() (storage.ReadBucket, error) {
-	if err := m.checkModuleDigest(); err != nil {
+	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
 	return m.getBucket()
@@ -162,10 +175,30 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	// in ModuleSetBuilder right away. However, we still do the lazy-loading here, in the case
 	// where ModuleData is loaded outside of a ModuleSetBuilder and users may defer calling this
 	// function if it is not needed.
-	if err := m.checkModuleDigest(); err != nil {
+	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
 	return m.getDeclaredDepModuleKeys()
 }
 
 func (*moduleData) isModuleData() {}
+
+type optionalModuleData struct {
+	moduleData ModuleData
+}
+
+func newOptionalModuleData(moduleData ModuleData) *optionalModuleData {
+	return &optionalModuleData{
+		moduleData: moduleData,
+	}
+}
+
+func (o *optionalModuleData) ModuleData() ModuleData {
+	return o.moduleData
+}
+
+func (o *optionalModuleData) Found() bool {
+	return o.moduleData != nil
+}
+
+func (*optionalModuleData) isOptionalModuleData() {}

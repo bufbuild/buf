@@ -17,6 +17,8 @@ package bufmodule
 import (
 	"context"
 	"io/fs"
+
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -32,10 +34,6 @@ type ModuleDataProvider interface {
 	// If there is an error, no ModuleDatas will be returned.
 	// If a ModuleData is not found, the OptionalModuleData will have Found() equal to false, otherwise
 	// the OptionalModuleData will have Found() equal to true with non-nil ModuleData.
-	//
-	// If the input ModuleKey had a CommitID set, this the returned ModuleData will also have a CommitID
-	// set. This is important for i.e. v1beta1 and v1 buf.lock files, where we want to make sure we keep
-	// the reference to the CommitID, even if we did not have it stored in our cache.
 	GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error)
 }
 
@@ -53,7 +51,7 @@ func GetModuleDatasForModuleKeys(
 	moduleDatas := make([]ModuleData, len(optionalModuleDatas))
 	for i, optionalModuleData := range optionalModuleDatas {
 		if !optionalModuleData.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].ModuleFullName().String(), Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
 		}
 		moduleDatas[i] = optionalModuleData.ModuleData()
 	}
@@ -64,6 +62,14 @@ func GetModuleDatasForModuleKeys(
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error) {
-	return nil, nil
+func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(
+	_ context.Context,
+	moduleKeys ...ModuleKey,
+) ([]OptionalModuleData, error) {
+	return slicesext.Map(
+		moduleKeys,
+		func(ModuleKey) OptionalModuleData {
+			return NewOptionalModuleData(nil)
+		},
+	), nil
 }
