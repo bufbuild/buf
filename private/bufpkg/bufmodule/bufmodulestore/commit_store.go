@@ -228,8 +228,8 @@ func getCommitStoreFilePath(moduleKey bufmodule.ModuleKey) string {
 // and persistence layers, and a bufmodule.Commit does not have all the information that
 // a modulev1beta1.Commit has.
 type externalCommit struct {
-	CreateTime time.Time
-	Digest     string
+	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
 // isComplete returns true if all the information we currently expect to be on
