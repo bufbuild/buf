@@ -45,6 +45,7 @@ var (
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
 		v2CacheModuleRelDirPath,
+		v3CacheModuleRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
