@@ -87,3 +87,4 @@ STUFF FOR DEP RESOLUTION
 - Download implicitly figures out the dep tree
 - In ModuleSetBuilder, do a Download call for all remote deps, let Download figure out the tree
   - exclude anything that is local, the rest gets added
+- Think about hacing GetModuleKeysForModuleRefs also do resolution? We're not doing this properly right now either
