@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -29,17 +30,24 @@ import (
 	"go.uber.org/zap"
 )
 
+// 2023-01-01 at 12:00 UTC
+var mockTime = time.Unix(1672574400, 0)
+
 // ModuleData is the data needed to construct a Module in test.
 //
 // Exactly one of PathToData, Bucket, DirPath must be set.
 //
 // Name is the ModuleFullName string. When creating an OmniProvider, Name is required.
 //
-// CommitID is optional, but it must be unique across all ModuleDatas.
-// If CommitID is not set, a mock commitID is created if Name is set.
+// CommitID is optional, but it must be unique across all ModuleDatas. If CommitID is not set,
+// a mock commitID is created if Name is set.
+//
+// CreateTime is optional. If CreateTime is not set, a mock create Time is created. This create
+// time is the same for all data without a Time.
 type ModuleData struct {
 	Name        string
 	CommitID    string
+	CreateTime  time.Time
 	DirPath     string
 	PathToData  map[string][]byte
 	Bucket      storage.ReadBucket
@@ -50,6 +58,7 @@ type ModuleData struct {
 type OmniProvider interface {
 	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleDataProvider
+	bufmodule.CommitProvider
 	bufmodule.ModuleSet
 }
 
@@ -71,7 +80,7 @@ func NewOmniProvider(
 func NewModuleSet(
 	moduleDatas ...ModuleData,
 ) (bufmodule.ModuleSet, error) {
-	return newModuleSet(moduleDatas, false)
+	return newModuleSet(moduleDatas, false, nil)
 }
 
 // NewModuleSetForDirPath returns a new ModuleSet for the directory path.
@@ -137,17 +146,20 @@ func NewCommitID() (string, error) {
 
 type omniProvider struct {
 	bufmodule.ModuleSet
+	commitIDToCreateTime map[string]time.Time
 }
 
 func newOmniProvider(
 	moduleDatas []ModuleData,
 ) (*omniProvider, error) {
-	moduleSet, err := newModuleSet(moduleDatas, true)
+	commitIDToCreateTime := make(map[string]time.Time)
+	moduleSet, err := newModuleSet(moduleDatas, true, commitIDToCreateTime)
 	if err != nil {
 		return nil, err
 	}
 	return &omniProvider{
-		ModuleSet: moduleSet,
+		ModuleSet:            moduleSet,
+		commitIDToCreateTime: commitIDToCreateTime,
 	}, nil
 }
 
@@ -224,13 +236,44 @@ func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
 	return optionalModuleDatas, nil
 }
 
-func newModuleSet(moduleDatas []ModuleData, requireName bool) (bufmodule.ModuleSet, error) {
+func (o *omniProvider) GetOptionalCommitsForModuleKeys(
+	ctx context.Context,
+	moduleKeys ...bufmodule.ModuleKey,
+) ([]bufmodule.OptionalCommit, error) {
+	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
+		if !ok {
+			optionalCommits[i] = bufmodule.NewOptionalCommit(nil)
+			continue
+		}
+		commit, err := bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return createTime, nil
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		optionalCommits[i] = bufmodule.NewOptionalCommit(commit)
+	}
+	return optionalCommits, nil
+}
+
+func newModuleSet(
+	moduleDatas []ModuleData,
+	requireName bool,
+	// may be nil
+	commitIDToCreateTime map[string]time.Time,
+) (bufmodule.ModuleSet, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), zap.NewNop(), bufmodule.NopModuleDataProvider)
 	for i, moduleData := range moduleDatas {
 		if err := addModuleDataToModuleSetBuilder(
 			moduleSetBuilder,
 			moduleData,
 			requireName,
+			commitIDToCreateTime,
 			i,
 		); err != nil {
 			return nil, err
@@ -243,6 +286,8 @@ func addModuleDataToModuleSetBuilder(
 	moduleSetBuilder bufmodule.ModuleSetBuilder,
 	moduleData ModuleData,
 	requireName bool,
+	// may be nil
+	commitIDToCreateTime map[string]time.Time,
 	index int,
 ) error {
 	if boolCount(
@@ -291,6 +336,13 @@ func addModuleDataToModuleSetBuilder(
 			if err != nil {
 				return err
 			}
+		}
+		if commitIDToCreateTime != nil {
+			createTime := moduleData.CreateTime
+			if createTime.IsZero() {
+				createTime = mockTime
+			}
+			commitIDToCreateTime[commitID] = createTime
 		}
 		localModuleOptions = []bufmodule.LocalModuleOption{
 			bufmodule.LocalModuleWithModuleFullNameAndCommitID(moduleFullName, commitID),

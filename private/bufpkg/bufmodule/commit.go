@@ -159,7 +159,7 @@ func (o *optionalCommit) Found() bool {
 func (*optionalCommit) isOptionalCommit() {}
 
 type commitOptions struct {
-	recievedDigest Digegst
+	recievedDigest Digest
 }
 
 func newCommitOptions() *commitOptions {

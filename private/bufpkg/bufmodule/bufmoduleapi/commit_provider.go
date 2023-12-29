@@ -130,6 +130,6 @@ func (a *commitProvider) getCommitForModuleKey(
 		func() (time.Time, error) {
 			return protoCommit.CreateTime.AsTime(), nil
 		},
-		budmodule.CommitWithRecievedDigest(recievedDigest),
+		bufmodule.CommitWithRecievedDigest(recievedDigest),
 	)
 }
