@@ -144,8 +144,8 @@ func newModuleData(
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
 				return fmt.Errorf(
-					"verification failed for module %s: expected module digest %q but downloaded data had digest %q",
-					moduleKey.ModuleFullName().String()+":"+moduleKey.CommitID(),
+					"verification failed for module %s: expected digest %q but downloaded data had digest %q",
+					moduleKey.String(),
 					expectedDigest.String(),
 					actualDigest.String(),
 				)

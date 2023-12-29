@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -35,11 +36,28 @@ type Commit interface {
 func NewCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
+	options ...CommitOption,
 ) (Commit, error) {
 	return newCommit(
 		moduleKey,
 		getCreateTime,
+		options...,
 	)
+}
+
+// CommitOption is an option for a new Commit.
+type CommitOption func(*commitOptions)
+
+// CommitWithRecievedDigest returns a new CommitOption that specifies the Digest
+// that was recieved when creating the Commit.
+//
+// When CreateTime() or other lazy methods are called, if this Digest is specified, it
+// will be checked against the Digest in ModuleKey, and if there is a difference,
+// an error will be returned.
+func CommitWithRecievedDigest(recievedDigest Digest) CommitOption {
+	return func(commitOptions *commitOptions) {
+		commitOptions.recievedDigest = recievedDigest
+	}
 }
 
 // OptionalCommit is a result from a CommitProvider.
@@ -66,16 +84,43 @@ func NewOptionalCommit(commit Commit) OptionalCommit {
 type commit struct {
 	moduleKey     ModuleKey
 	getCreateTime func() (time.Time, error)
+
+	checkDigest func() error
 }
 
 func newCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
+	options ...CommitOption,
 ) (*commit, error) {
-	return &commit{
+	commitOptions := newCommitOptions()
+	for _, option := range options {
+		option(commitOptions)
+	}
+	commit := &commit{
 		moduleKey:     moduleKey,
-		getCreateTime: getCreateTime,
-	}, nil
+		getCreateTime: sync.OnceValues(getCreateTime),
+	}
+	if commitOptions.recievedDigest != nil {
+		commit.checkDigest = sync.OnceValue(
+			func() error {
+				digest, err := moduleKey.Digest()
+				if err != nil {
+					return err
+				}
+				if !DigestEqual(digest, commitOptions.recievedDigest) {
+					return fmt.Errorf(
+						"verification failed for commit %s: expected digest %q but downloaded commit had digest %q",
+						moduleKey.String(),
+						digest.String(),
+						commitOptions.recievedDigest.String(),
+					)
+				}
+				return nil
+			},
+		)
+	}
+	return commit, nil
 }
 
 func (c *commit) ModuleKey() ModuleKey {
@@ -83,6 +128,11 @@ func (c *commit) ModuleKey() ModuleKey {
 }
 
 func (c *commit) CreateTime() (time.Time, error) {
+	if c.checkDigest != nil {
+		if err := c.checkDigest(); err != nil {
+			return time.Time{}, err
+		}
+	}
 	return c.getCreateTime()
 }
 
@@ -107,6 +157,14 @@ func (o *optionalCommit) Found() bool {
 }
 
 func (*optionalCommit) isOptionalCommit() {}
+
+type commitOptions struct {
+	recievedDigest Digegst
+}
+
+func newCommitOptions() *commitOptions {
+	return &commitOptions{}
+}
 
 func validateCommitID(commitID string) error {
 	if err := uuidutil.ValidateDashless(commitID); err != nil {
