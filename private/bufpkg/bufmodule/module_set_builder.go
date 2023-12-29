@@ -93,6 +93,12 @@ type ModuleSetBuilder interface {
 	// Build builds the Modules into a ModuleSet.
 	//
 	// Any errors from Add* calls will be returned here as well.
+	//
+	// For future consideration, `Build` can take ...buildOption. A use case for this
+	// would be for workspaces to have a unified/top-level README and/or LICENSE file.
+	// The workspace at build time can pass `BuildWithREADME` and/or `BuildWithLicense` for
+	// the module set. Then each module in the module set can refer to this through the module
+	// set as needed.
 	Build() (ModuleSet, error)
 
 	isModuleSetBuilder()

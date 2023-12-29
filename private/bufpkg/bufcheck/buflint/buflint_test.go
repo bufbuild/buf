@@ -977,6 +977,65 @@ func TestRunIgnores4(t *testing.T) {
 	)
 }
 
+func TestRunV2WorkspaceIgnores(t *testing.T) {
+	t.Parallel()
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores1",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar1/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf1.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo1/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores2",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar2/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf2.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+	testLintWithOptions(
+		t,
+		"v2/ignores",
+		"ignores3",
+		nil,
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "bar3/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf3.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "foo3/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+}
+
 func TestCommentIgnoresOff(t *testing.T) {
 	t.Parallel()
 	testLint(
@@ -1119,21 +1178,30 @@ func testLintWithOptions(
 	)
 	require.NoError(t, err)
 
+	// the module full name string represents the opaque ID of the module
+	opaqueID := moduleFullNameString
+	if opaqueID == "" {
+		opaqueID = "."
+	}
+
+	// build the image for the specified module string (opaqueID)
+	moduleSet, err := workspace.WithTargetOpaqueIDs(opaqueID)
+	require.NoError(t, err)
+	module := moduleSet.GetModuleForOpaqueID(opaqueID)
+	require.NotNil(t, module)
+	moduleReadBucket, err := bufmodule.ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module)
+	require.NoError(t, err)
 	image, err := bufimage.BuildImage(
 		ctx,
 		tracing.NopTracer,
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+		moduleReadBucket,
 	)
 	require.NoError(t, err)
 	if imageModifier != nil {
 		image = imageModifier(image)
 	}
 
-	if moduleFullNameString == "" {
-		// opaqueID
-		moduleFullNameString = "."
-	}
-	lintConfig := workspace.GetLintConfigForOpaqueID(moduleFullNameString)
+	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
 	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
 	err = handler.Check(

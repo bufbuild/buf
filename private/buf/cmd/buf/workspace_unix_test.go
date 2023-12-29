@@ -36,6 +36,15 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "symlink"),
 	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		``,
+		filepath.FromSlash(`testdata/workspace/fail/v2/symlink/b/b.proto:5:8:stat c.proto: file does not exist`),
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "v2", "symlink"),
+	)
 }
 
 func TestWorkspaceSymlink(t *testing.T) {
@@ -72,11 +81,42 @@ func TestWorkspaceSymlink(t *testing.T) {
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "symlink"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "workspace", "success", "v2", "symlink"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/workspace/success/v2/symlink/a/a.proto
+        testdata/workspace/success/v2/symlink/b/b.proto
+        testdata/workspace/success/v2/symlink/c/c.proto`),
+		"ls-files",
+		filepath.Join("testdata", "workspace", "success", "v2", "symlink"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/v2/symlink/a/a.proto:3:1:Files with package "a" must be within a directory "a" relative to root but were in directory ".".
+        testdata/workspace/success/v2/symlink/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".
+        testdata/workspace/success/v2/symlink/b/b.proto:3:1:Files with package "b" must be within a directory "b" relative to root but were in directory ".".
+        testdata/workspace/success/v2/symlink/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".
+        testdata/workspace/success/v2/symlink/c/c.proto:3:1:Files with package "c" must be within a directory "c" relative to root but were in directory ".".
+        testdata/workspace/success/v2/symlink/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "v2", "symlink"),
+	)
 }
 
 func TestWorkspaceAbsoluteFail(t *testing.T) {
 	t.Parallel()
-	// The buf.work.yaml file cannot specify absolute paths.
+	// The workspace file (v1: buf.work.yaml, v2: buf.yaml) cannot specify absolute paths.
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -85,6 +125,15 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		`Failure: decode testdata/workspace/fail/absolute/buf.work.yaml: directory "/home/buf" is invalid: /home/buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute"),
+	)
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: decode testdata/workspace/fail/v2/absolute/buf.yaml: invalid module directory: /home/buf: expected to be relative`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "v2", "absolute"),
 	)
 }
 
@@ -140,5 +189,51 @@ func TestWorkspaceGit(t *testing.T) {
 		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/dir/proto",
 		"--path",
 		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
+		"--path",
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "v2", "dir", "proto", "rpc.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto/rpc.proto`),
+		"ls-files",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
+		"lint",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`),
+		"lint",
+		"../../../../.git#ref=HEAD,subdir=private/buf/cmd/buf/testdata/workspace/success/v2/dir/proto",
+		"--path",
+		filepath.Join("private", "buf", "cmd", "buf", "testdata", "workspace", "success", "v2", "dir", "proto", "rpc.proto"),
 	)
 }
