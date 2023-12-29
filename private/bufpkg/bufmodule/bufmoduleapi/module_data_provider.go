@@ -73,8 +73,8 @@ func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 	for i, moduleKey := range moduleKeys {
 		moduleData, err := a.getModuleDataForModuleKey(
 			ctx,
-			protoModuleCache,
-			protoOwnerCache,
+			&protoModuleCache,
+			&protoOwnerCache,
 			moduleKey,
 		)
 		if err != nil {
@@ -89,8 +89,8 @@ func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
 
 func (a *moduleDataProvider) getModuleDataForModuleKey(
 	ctx context.Context,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache *cache.Cache[string, *ownerv1beta1.Owner],
 	moduleKey bufmodule.ModuleKey,
 ) (bufmodule.ModuleData, error) {
 	registryHostname := moduleKey.ModuleFullName().Registry()
@@ -160,7 +160,7 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	registryHostname string,
 	moduleKey bufmodule.ModuleKey,
 	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) error {
 	protoCommit, ok := protoCommitIDToCommit[protoReference.CommitId]
@@ -188,8 +188,8 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 	moduleKey bufmodule.ModuleKey,
 	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
 	protoCommitIDToBucket map[string]storage.ReadBucket,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache *cache.Cache[string, *ownerv1beta1.Owner],
 	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) (bufmodule.ModuleData, error) {
 	bucket, ok := protoCommitIDToBucket[protoReference.CommitId]
@@ -234,8 +234,8 @@ func (a *moduleDataProvider) getModuleDataForProtoDownloadResponseReference(
 func (a *moduleDataProvider) getModuleKeysForProtoCommits(
 	ctx context.Context,
 	registryHostname string,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache *cache.Cache[string, *ownerv1beta1.Owner],
 	protoCommits []*modulev1beta1.Commit,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys := make([]bufmodule.ModuleKey, len(protoCommits))
@@ -258,8 +258,8 @@ func (a *moduleDataProvider) getModuleKeysForProtoCommits(
 func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	ctx context.Context,
 	registryHostname string,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
+	protoOwnerCache *cache.Cache[string, *ownerv1beta1.Owner],
 	protoCommit *modulev1beta1.Commit,
 ) (bufmodule.ModuleKey, error) {
 	protoModule, err := a.getProtoModuleForModuleID(ctx, registryHostname, protoModuleCache, protoCommit.ModuleId)
@@ -303,7 +303,7 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 func (a *moduleDataProvider) getProtoModuleForModuleID(
 	ctx context.Context,
 	registryHostname string,
-	protoModuleCache cache.Cache[string, *modulev1beta1.Module],
+	protoModuleCache *cache.Cache[string, *modulev1beta1.Module],
 	moduleID string,
 ) (*modulev1beta1.Module, error) {
 	return protoModuleCache.GetOrAdd(
@@ -337,7 +337,7 @@ func (a *moduleDataProvider) getProtoModuleForModuleID(
 func (a *moduleDataProvider) getProtoOwnerForOwnerID(
 	ctx context.Context,
 	registryHostname string,
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner],
+	protoOwnerCache *cache.Cache[string, *ownerv1beta1.Owner],
 	ownerID string,
 ) (*ownerv1beta1.Owner, error) {
 	return protoOwnerCache.GetOrAdd(
@@ -366,18 +366,6 @@ func (a *moduleDataProvider) getProtoOwnerForOwnerID(
 			return response.Msg.Owners[0], nil
 		},
 	)
-}
-
-func getProtoResourceRefForModuleKey(moduleKey bufmodule.ModuleKey) (*modulev1beta1.ResourceRef, error) {
-	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
-	if err != nil {
-		return nil, err
-	}
-	return &modulev1beta1.ResourceRef{
-		Value: &modulev1beta1.ResourceRef_Id{
-			Id: protoCommitID,
-		},
-	}, nil
 }
 
 func getProtoCommitIDToCommitForProtoDownloadResponse(
