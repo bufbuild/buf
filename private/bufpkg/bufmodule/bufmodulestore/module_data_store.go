@@ -29,9 +29,24 @@ import (
 	"go.uber.org/zap"
 )
 
+// ModuleDatasResult is a result for a get of ModuleData.
+type ModuleDatasResult interface {
+	// FoundModuleDatas is the ModuleDatas that were found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	FoundModuleDatas() []bufmodule.ModuleData
+	// NotFoundModuleKeys is the input ModuleKeys that were not found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	NotFoundModuleKeys() []bufmodule.ModuleKey
+
+	isModuleDatasResult()
+}
+
 // ModuleStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
-	bufmodule.ModuleDataProvider
+	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
+	GetModuleDatasForModuleKeys(context.Context, ...bufmodule.ModuleKey) (ModuleDatasResult, error)
 
 	// Put puts the ModuleDatas to the store.
 	PutModuleDatas(ctx context.Context, moduleDatas ...bufmodule.ModuleData) error
@@ -90,21 +105,24 @@ func newModuleDataStore(
 	return moduleDataStore
 }
 
-func (p *moduleDataStore) GetOptionalModuleDatasForModuleKeys(
+func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
+) (ModuleDatasResult, error) {
+	var foundModuleDatas []bufmodule.ModuleData
+	var notFoundModuleKeys []bufmodule.ModuleKey
+	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
 			}
+			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
+		} else {
+			foundModuleDatas = append(foundModuleDatas, moduleData)
 		}
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
-	return optionalModuleDatas, nil
+	return newModuleDatasResult(foundModuleDatas, notFoundModuleKeys), nil
 }
 
 func (p *moduleDataStore) PutModuleDatas(
@@ -292,6 +310,31 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }
+
+type moduleDatasResult struct {
+	foundModuleDatas   []bufmodule.ModuleData
+	notFoundModuleKeys []bufmodule.ModuleKey
+}
+
+func newModuleDatasResult(
+	foundModuleDatas []bufmodule.ModuleData,
+	notFoundModuleKeys []bufmodule.ModuleKey,
+) *moduleDatasResult {
+	return &moduleDatasResult{
+		foundModuleDatas:   foundModuleDatas,
+		notFoundModuleKeys: notFoundModuleKeys,
+	}
+}
+
+func (r *moduleDatasResult) FoundModuleDatas() []bufmodule.ModuleData {
+	return r.foundModuleDatas
+}
+
+func (r *moduleDatasResult) NotFoundModuleKeys() []bufmodule.ModuleKey {
+	return r.notFoundModuleKeys
+}
+
+func (*moduleDatasResult) isModuleDatasResult() {}
 
 // Returns the module's path within the store if storing individual files.
 //
