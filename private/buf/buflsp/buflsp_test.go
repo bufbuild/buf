@@ -39,7 +39,7 @@ import (
 
 func TestBufLsp(t *testing.T) {
 	t.Parallel()
-	lspServer, doc, err := newTestBufLspWith(t, "../../../proto/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
+	lspServer, doc, err := newTestBufLspWith(t, "testdata/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,6 +236,7 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 		tracing.NewTracer(container.Tracer()),
 		container,
 		bufapi.NopClientProvider,
+		omniProvider,
 		omniProvider,
 		omniProvider,
 		http.DefaultClient,
