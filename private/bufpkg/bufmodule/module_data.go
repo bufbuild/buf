@@ -65,6 +65,25 @@ func NewModuleData(
 	)
 }
 
+// OptionalModuleData is a result from a ModuleDataProvider.
+//
+// It returns whether or not the ModuleData was found, and a non-nil
+// ModuleData if the ModuleData was found.
+type OptionalModuleData interface {
+	ModuleData() ModuleData
+	Found() bool
+
+	isOptionalModuleData()
+}
+
+// NewOptionalModuleData returns a new OptionalModuleData.
+//
+// As opposed to most functions in this codebase, the input ModuleData can be nil.
+// If it is nil, then Found() will return false.
+func NewOptionalModuleData(moduleData ModuleData) OptionalModuleData {
+	return newOptionalModuleData(moduleData)
+}
+
 // *** PRIVATE ***
 
 // moduleData
@@ -163,3 +182,23 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 }
 
 func (*moduleData) isModuleData() {}
+
+type optionalModuleData struct {
+	moduleData ModuleData
+}
+
+func newOptionalModuleData(moduleData ModuleData) *optionalModuleData {
+	return &optionalModuleData{
+		moduleData: moduleData,
+	}
+}
+
+func (o *optionalModuleData) ModuleData() ModuleData {
+	return o.moduleData
+}
+
+func (o *optionalModuleData) Found() bool {
+	return o.moduleData != nil
+}
+
+func (*optionalModuleData) isOptionalModuleData() {}

@@ -16,10 +16,8 @@ package bufmodule
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/syncext"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -66,6 +64,25 @@ func NewModuleKey(
 	)
 }
 
+// OptionalModuleKey is a result from a ModuleKeyProvider.
+//
+// It returns whether or not the ModuleKey was found, and a non-nil
+// ModuleKey if the ModuleKey was found.
+type OptionalModuleKey interface {
+	ModuleKey() ModuleKey
+	Found() bool
+
+	isOptionalModuleKey()
+}
+
+// NewOptionalModuleKey returns a new OptionalModuleKey.
+//
+// As opposed to most functions in this codebase, the input ModuleKey can be nil.
+// If it is nil, then Found() will return false.
+func NewOptionalModuleKey(moduleKey ModuleKey) OptionalModuleKey {
+	return newOptionalModuleKey(moduleKey)
+}
+
 // *** PRIVATE ***
 
 type moduleKey struct {
@@ -110,9 +127,22 @@ func (m *moduleKey) Digest() (Digest, error) {
 
 func (*moduleKey) isModuleKey() {}
 
-func validateCommitID(commitID string) error {
-	if err := uuidutil.ValidateDashless(commitID); err != nil {
-		return fmt.Errorf("invalid commit ID %s: %w", commitID, err)
-	}
-	return nil
+type optionalModuleKey struct {
+	moduleKey ModuleKey
 }
+
+func newOptionalModuleKey(moduleKey ModuleKey) *optionalModuleKey {
+	return &optionalModuleKey{
+		moduleKey: moduleKey,
+	}
+}
+
+func (o *optionalModuleKey) ModuleKey() ModuleKey {
+	return o.moduleKey
+}
+
+func (o *optionalModuleKey) Found() bool {
+	return o.moduleKey != nil
+}
+
+func (*optionalModuleKey) isOptionalModuleKey() {}
