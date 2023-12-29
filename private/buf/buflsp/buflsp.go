@@ -123,8 +123,8 @@ func newServer(
 				buflsp.lock.Lock()
 				if entry, ok := buflsp.fileCache[event.Name]; ok {
 					if entry.moduleSet != nil {
-						if err := buflsp.refreshImage(context.Background(), entry.moduleSet, entry.bucket); err != nil {
-							buflsp.logger.Sugar().Errorf("refreshImage error: %s", err)
+						if err := buflsp.refreshImage(ctx, entry.moduleSet, entry.bucket); err != nil {
+							buflsp.logger.Sugar().Errorf("failed to build new image: %s", err)
 						}
 					}
 				}
@@ -585,7 +585,7 @@ func (s *server) decrementReferenceCount(entry *fileEntry) {
 		}
 		if !entry.isRemote {
 			if err := s.fileWatcher.Remove(entry.document.URI.Filename()); err != nil {
-				s.logger.Sugar().Errorf("fileWatcher.Remove error: %s", err)
+				s.logger.Sugar().Errorf("error removing file from watcher: %s", err)
 			}
 		}
 		delete(s.fileCache, entry.document.URI.Filename())
