@@ -15,16 +15,20 @@
 package bufmodulestore
 
 import (
-	"context"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"go.uber.org/zap"
 )
 
-// ModuleDataWriter writes ModulesDatas.
-//
-// This is implemented by ModuleDataStore, and can be created for a storage.ReadWriteBucket
-// with NewModuleDataStore.
-type ModuleDataWriter interface {
-	// PutModuleDatas puts the ModuleDatas to the store.
-	PutModuleDatas(ctx context.Context, moduleDatas ...bufmodule.ModuleData) error
+func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
+	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
+		checkedEntry.Write(
+			append(
+				[]zap.Field{
+					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
+					zap.String("commitID", moduleKey.CommitID()),
+				},
+				fields...,
+			)...,
+		)
+	}
 }

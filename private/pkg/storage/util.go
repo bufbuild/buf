@@ -43,8 +43,8 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 }
 
 // PutPath puts the data at the path.
-func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte) (retErr error) {
-	writeObject, err := writeBucket.Put(ctx, path)
+func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte, options ...PutOption) (retErr error) {
+	writeObject, err := writeBucket.Put(ctx, path, options...)
 	if err != nil {
 		return err
 	}

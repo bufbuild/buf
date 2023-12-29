@@ -13,3 +13,22 @@
 // limitations under the License.
 
 package bufmodulecache
+
+import (
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"go.uber.org/zap"
+)
+
+func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
+	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
+		checkedEntry.Write(
+			append(
+				[]zap.Field{
+					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
+					zap.String("commitID", moduleKey.CommitID()),
+				},
+				fields...,
+			)...,
+		)
+	}
+}
