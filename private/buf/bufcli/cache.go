@@ -45,7 +45,8 @@ var (
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
 		v2CacheModuleRelDirPath,
-		v3CacheModuleRelDirPath,
+		v3CacheFilesRelDirPath,
+		v3CacheCommitsRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
@@ -80,10 +81,14 @@ var (
 	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
 	// v1CacheModuleSumRelDirPath with a cache implementation using content addressable storage.
 	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
-	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
+	// v3CacheFilesRelDirPath is the relative path to the files cache directory in its newest iteration.
 	//
 	// Normalized.
-	v3CacheModuleRelDirPath = normalpath.Join("v3", "module")
+	v3CacheFilesRelDirPath = normalpath.Join("v3", "files")
+	// v3CacheCommitsRelDirPath is the relative path to the commits cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CacheCommitsRelDirPath = normalpath.Join("v3", "commits")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -101,14 +106,29 @@ func NewModuleDataProvider(container appext.Container) (bufmodule.ModuleDataProv
 	)
 }
 
+// NewCommitProvider returns a new CommitProvider while creating the
+// required cache directories.
+func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, error) {
+	clientConfig, err := NewConnectClientConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	return newCommitProvider(
+		container,
+		bufapi.NewClientProvider(
+			clientConfig,
+		),
+	)
+}
+
 func newModuleDataProvider(
 	container appext.Container,
 	clientProvider bufapi.ClientProvider,
 ) (bufmodule.ModuleDataProvider, error) {
-	if err := createCacheDir(container.CacheDirPath(), v3CacheModuleRelDirPath); err != nil {
+	if err := createCacheDir(container.CacheDirPath(), v3CacheFilesRelDirPath); err != nil {
 		return nil, err
 	}
-	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheModuleRelDirPath)
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheFilesRelDirPath)
 	delegateReader := bufmoduleapi.NewModuleDataProvider(container.Logger(), clientProvider)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
@@ -120,6 +140,31 @@ func newModuleDataProvider(
 		container.Logger(),
 		delegateReader,
 		bufmodulestore.NewModuleDataStore(
+			container.Logger(),
+			cacheBucket,
+		),
+	), nil
+}
+
+func newCommitProvider(
+	container appext.Container,
+	clientProvider bufapi.ClientProvider,
+) (bufmodule.CommitProvider, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CacheCommitsRelDirPath); err != nil {
+		return nil, err
+	}
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheCommitsRelDirPath)
+	delegateReader := bufmoduleapi.NewCommitProvider(container.Logger(), clientProvider)
+	// No symlinks.
+	storageosProvider := storageos.NewProvider()
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodulecache.NewCommitProvider(
+		container.Logger(),
+		delegateReader,
+		bufmodulestore.NewCommitStore(
 			container.Logger(),
 			cacheBucket,
 		),
