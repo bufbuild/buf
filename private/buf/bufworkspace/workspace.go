@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -88,9 +89,11 @@ type Workspace interface {
 	//
 	// These come from buf.yaml files.
 	//
-	// The ModuleRefs in this list may *not* be unique by ModuleFullName. When doing items
-	// such as buf mod update, it is up to the caller to resolve conflicts. For example,
-	// with v1 buf.yaml, this is a union of the deps in the buf.yaml files in the workspace.
+	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
+	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
+	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
+	// will be returned - we have no way to resolve what the user intended.
 	//
 	// Sorted.
 	//
@@ -592,6 +595,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	if err != nil {
 		return nil, err
 	}
+	// bufYAMLFile.ConfiguredDepModuleRefs() is unique by ModuleFullName.
 	return newWorkspaceForModuleSet(moduleSet, logger, bucketIDToModuleConfig, bufYAMLFile.ConfiguredDepModuleRefs())
 }
 
@@ -619,6 +623,8 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
+	// We use this to detect different refs across different files.
+	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)
 	var allConfiguredDepModuleRefs []bufmodule.ModuleRef
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -640,7 +646,19 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		if err != nil {
 			return nil, err
 		}
-		allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRefs...)
+		for _, configuredDepModuleRef := range configuredDepModuleRefs {
+			moduleFullNameString := configuredDepModuleRef.ModuleFullName().String()
+			configuredDepModuleRefString := configuredDepModuleRef.String()
+			existingConfiguredDepModuleRefString, ok := moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString]
+			if !ok {
+				// We haven't encountered a ModuleRef with this ModuleFullName yet, add it.
+				allConfiguredDepModuleRefs = append(allConfiguredDepModuleRefs, configuredDepModuleRef)
+				moduleFullNameStringToConfiguredDepModuleRefString[moduleFullNameString] = configuredDepModuleRefString
+			} else if configuredDepModuleRefString != existingConfiguredDepModuleRefString {
+				// We encountered the same ModuleRef by ModuleFullName, but with a different Ref.
+				return nil, fmt.Errorf("found different refs for the same module within buf.yaml deps in the workspace: %s %s", configuredDepModuleRefString, existingConfiguredDepModuleRefString)
+			}
+		}
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
 		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 			ctx,
@@ -716,6 +734,7 @@ func newWorkspaceForModuleSet(
 	moduleSet bufmodule.ModuleSet,
 	logger *zap.Logger,
 	bucketIDToModuleConfig map[string]bufconfig.ModuleConfig,
+	// Expected to already be unique by ModuleFullName.
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
