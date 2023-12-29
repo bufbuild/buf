@@ -237,7 +237,7 @@ func TestBasic(t *testing.T) {
 	// that we expect.
 	graph, err := bufmodule.ModuleSetToDAG(moduleSet)
 	require.NoError(t, err)
-	dagtest.RequireComparableGraphEqual(
+	dagtest.RequireGraphEqual(
 		t,
 		[]dagtest.ExpectedNode[string]{
 			{
@@ -276,20 +276,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		graph,
-	)
-	topoSort, err := graph.TopoSort("buf.build/bar/module2")
-	require.NoError(t, err)
-	require.Equal(
-		t,
-		[]string{
-			"buf.build/foo/extdep1",
-			"buf.build/foo/extdep4",
-			"buf.build/foo/extdep3",
-			"buf.build/foo/extdep2",
-			"path/to/module1",
-			"buf.build/bar/module2",
-		},
-		topoSort,
+		bufmodule.Module.OpaqueID,
 	)
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)

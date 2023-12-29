@@ -173,18 +173,18 @@ func ModuleSetRemoteOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(ModuleSetRemoteModules(moduleSet))
 }
 
-// ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
+// ModuleSetToDAG gets a DAG of the given ModuleSet.
 //
 // This only starts at target Modules. If a Module is not part of a graph
 // with a target Module as a source, it will not be added.
-func ModuleSetToDAG(moduleSet ModuleSet) (*dag.ComparableGraph[string], error) {
-	comparableGraph := dag.NewComparableGraph[string]()
+func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[Module, string], error) {
+	graph := dag.NewGraph[Module, string](Module.OpaqueID)
 	for _, module := range ModuleSetTargetModules(moduleSet) {
-		if err := moduleSetToDAGRec(module, comparableGraph); err != nil {
+		if err := moduleSetToDAGRec(module, graph); err != nil {
 			return nil, err
 		}
 	}
-	return comparableGraph, nil
+	return graph, nil
 }
 
 // *** PRIVATE ***
@@ -344,16 +344,16 @@ func (*moduleSet) isModuleSet() {}
 
 func moduleSetToDAGRec(
 	module Module,
-	comparableGraph *dag.ComparableGraph[string],
+	graph *dag.Graph[Module, string],
 ) error {
-	comparableGraph.AddNode(module.OpaqueID())
+	graph.AddNode(module)
 	directModuleDeps, err := ModuleDirectModuleDeps(module)
 	if err != nil {
 		return err
 	}
 	for _, directModuleDep := range directModuleDeps {
-		comparableGraph.AddEdge(module.OpaqueID(), directModuleDep.OpaqueID())
-		if err := moduleSetToDAGRec(directModuleDep, comparableGraph); err != nil {
+		graph.AddEdge(module, directModuleDep)
+		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
 			return err
 		}
 	}
