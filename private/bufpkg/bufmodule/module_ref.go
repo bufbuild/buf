@@ -25,6 +25,8 @@ type ModuleRef interface {
 	fmt.Stringer
 
 	// ModuleFullName returns the full name of the Module.
+	//
+	// Always present.
 	ModuleFullName() ModuleFullName
 	// Ref returns the reference within the Module.
 	//

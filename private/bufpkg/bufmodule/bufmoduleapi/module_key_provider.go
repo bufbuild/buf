@@ -16,7 +16,6 @@ package bufmoduleapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 
@@ -24,6 +23,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/zap"
 )
 
@@ -52,77 +52,105 @@ func newModuleKeyProvider(
 	}
 }
 
-func (a *moduleKeyProvider) GetOptionalModuleKeysForModuleRefs(
+func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
 	moduleRefs ...bufmodule.ModuleRef,
-) ([]bufmodule.OptionalModuleKey, error) {
-	// TODO: Do the work to coalesce ModuleRefs by registry hostname, make calls out to the CommitService
-	// per registry, then get back the resulting data, and order it in the same order as the input ModuleRefs.
-	// Make sure to respect 250 max.
-	optionalModuleKeys := make([]bufmodule.OptionalModuleKey, len(moduleRefs))
-	for i, moduleRef := range moduleRefs {
-		moduleKey, err := a.getModuleKeyForModuleRef(ctx, moduleRef)
-		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
-		}
-		optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(moduleKey)
-	}
-	return optionalModuleKeys, nil
-}
-
-func (a *moduleKeyProvider) getModuleKeyForModuleRef(ctx context.Context, moduleRef bufmodule.ModuleRef) (bufmodule.ModuleKey, error) {
-	protoCommit, err := a.getProtoCommitForModuleRef(ctx, moduleRef)
-	if err != nil {
-		return nil, err
-	}
-	commitID, err := ProtoToCommitID(protoCommit.Id)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleKey(
-		// Note we don't have to resolve owner_name and module_name since we already have them.
-		moduleRef.ModuleFullName(),
-		commitID,
-		func() (bufmodule.Digest, error) {
-			// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
-			return ProtoToDigest(protoCommit.Digest)
+) ([]bufmodule.ModuleKey, error) {
+	registryToIndexedModuleRefs := getKeyToIndexedValues(
+		moduleRefs,
+		func(moduleRef bufmodule.ModuleRef) string {
+			return moduleRef.ModuleFullName().Registry()
 		},
 	)
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	for registry, indexedModuleRefs := range registryToIndexedModuleRefs {
+		registryModuleKeys, err := a.getModuleKeysForRegistryAndModuleRefs(
+			ctx,
+			registry,
+			getValuesForIndexedValues(indexedModuleRefs),
+		)
+		if err != nil {
+			return nil, err
+		}
+		for i, registryModuleKey := range registryModuleKeys {
+			moduleKeys[indexedModuleRefs[i].Index] = registryModuleKey
+		}
+	}
+	return moduleKeys, nil
 }
 
-func (a *moduleKeyProvider) getProtoCommitForModuleRef(ctx context.Context, moduleRef bufmodule.ModuleRef) (*modulev1beta1.Commit, error) {
-	response, err := a.clientProvider.CommitServiceClient(moduleRef.ModuleFullName().Registry()).GetCommits(
+func (a *moduleKeyProvider) getModuleKeysForRegistryAndModuleRefs(
+	ctx context.Context,
+	registry string,
+	moduleRefs []bufmodule.ModuleRef,
+) ([]bufmodule.ModuleKey, error) {
+	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, moduleRefs)
+	if err != nil {
+		return nil, err
+	}
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	for i, protoCommit := range protoCommits {
+		commitID, err := ProtoToCommitID(protoCommit.Id)
+		if err != nil {
+			return nil, err
+		}
+		moduleKey, err := bufmodule.NewModuleKey(
+			// Note we don't have to resolve owner_name and module_name since we already have them.
+			moduleRefs[i].ModuleFullName(),
+			commitID,
+			func() (bufmodule.Digest, error) {
+				// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
+				return ProtoToDigest(protoCommit.Digest)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[i] = moduleKey
+	}
+	return moduleKeys, nil
+}
+
+func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
+	ctx context.Context,
+	registry string,
+	moduleRefs []bufmodule.ModuleRef,
+) ([]*modulev1beta1.Commit, error) {
+	response, err := a.clientProvider.CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{
-				ResourceRefs: []*modulev1beta1.ResourceRef{
-					{
-						Value: &modulev1beta1.ResourceRef_Name_{
-							Name: &modulev1beta1.ResourceRef_Name{
-								Owner:  moduleRef.ModuleFullName().Owner(),
-								Module: moduleRef.ModuleFullName().Name(),
-								Child: &modulev1beta1.ResourceRef_Name_Ref{
-									// TODO: What to do about commit IDs? Need to be dashful.
-									Ref: moduleRef.Ref(),
+				// TODO: chunking
+				ResourceRefs: slicesext.Map(
+					moduleRefs,
+					func(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
+						return &modulev1beta1.ResourceRef{
+							Value: &modulev1beta1.ResourceRef_Name_{
+								Name: &modulev1beta1.ResourceRef_Name{
+									Owner:  moduleRef.ModuleFullName().Owner(),
+									Module: moduleRef.ModuleFullName().Name(),
+									Child: &modulev1beta1.ResourceRef_Name_Ref{
+										// TODO: What to do about commit IDs? Need to be dashful.
+										Ref: moduleRef.Ref(),
+									},
 								},
 							},
-						},
+						}
 					},
-				},
+				),
 				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleRef out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != 1 {
-		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
+	if len(response.Msg.Commits) != len(moduleRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(moduleRefs), len(response.Msg.Commits))
 	}
-	return response.Msg.Commits[0], nil
+	return response.Msg.Commits, nil
 }

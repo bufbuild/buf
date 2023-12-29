@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -163,24 +164,23 @@ func newOmniProvider(
 	}, nil
 }
 
-func (o *omniProvider) GetOptionalModuleKeysForModuleRefs(
+func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
 	moduleRefs ...bufmodule.ModuleRef,
-) ([]bufmodule.OptionalModuleKey, error) {
-	optionalModuleKeys := make([]bufmodule.OptionalModuleKey, len(moduleRefs))
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
 		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 		if module == nil {
-			optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(nil)
-			continue
+			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
 		moduleKey, err := bufmodule.ModuleToModuleKey(module)
 		if err != nil {
 			return nil, err
 		}
-		optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(moduleKey)
+		moduleKeys[i] = moduleKey
 	}
-	return optionalModuleKeys, nil
+	return moduleKeys, nil
 }
 
 func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(

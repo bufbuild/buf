@@ -205,9 +205,8 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 	require.NoError(t, err)
 	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
-	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		bsrProvider,
 		moduleRefMod1,
 		// Switching order on purpose.
 		moduleRefMod3,
