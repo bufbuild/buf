@@ -48,15 +48,15 @@ func NewCommit(
 // CommitOption is an option for a new Commit.
 type CommitOption func(*commitOptions)
 
-// CommitWithRecievedDigest returns a new CommitOption that specifies the Digest
-// that was recieved when creating the Commit.
+// CommitWithReceivedDigest returns a new CommitOption that specifies the Digest
+// that was received when creating the Commit.
 //
 // When CreateTime() or other lazy methods are called, if this Digest is specified, it
 // will be checked against the Digest in ModuleKey, and if there is a difference,
 // an error will be returned.
-func CommitWithRecievedDigest(recievedDigest Digest) CommitOption {
+func CommitWithReceivedDigest(receivedDigest Digest) CommitOption {
 	return func(commitOptions *commitOptions) {
-		commitOptions.recievedDigest = recievedDigest
+		commitOptions.receivedDigest = receivedDigest
 	}
 }
 
@@ -101,19 +101,19 @@ func newCommit(
 		moduleKey:     moduleKey,
 		getCreateTime: sync.OnceValues(getCreateTime),
 	}
-	if commitOptions.recievedDigest != nil {
+	if commitOptions.receivedDigest != nil {
 		commit.checkDigest = sync.OnceValue(
 			func() error {
 				digest, err := moduleKey.Digest()
 				if err != nil {
 					return err
 				}
-				if !DigestEqual(digest, commitOptions.recievedDigest) {
+				if !DigestEqual(digest, commitOptions.receivedDigest) {
 					return fmt.Errorf(
 						"verification failed for commit %s: expected digest %q but downloaded commit had digest %q",
 						moduleKey.String(),
 						digest.String(),
-						commitOptions.recievedDigest.String(),
+						commitOptions.receivedDigest.String(),
 					)
 				}
 				return nil
@@ -159,7 +159,7 @@ func (o *optionalCommit) Found() bool {
 func (*optionalCommit) isOptionalCommit() {}
 
 type commitOptions struct {
-	recievedDigest Digest
+	receivedDigest Digest
 }
 
 func newCommitOptions() *commitOptions {

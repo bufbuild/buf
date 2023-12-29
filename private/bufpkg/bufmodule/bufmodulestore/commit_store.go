@@ -127,7 +127,7 @@ func (p *commitStore) getCommitForModuleKey(
 		func() (time.Time, error) {
 			return externalCommit.CreateTime, nil
 		},
-		bufmodule.CommitWithRecievedDigest(digest),
+		bufmodule.CommitWithReceivedDigest(digest),
 	)
 }
 
