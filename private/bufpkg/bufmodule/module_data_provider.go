@@ -17,8 +17,6 @@ package bufmodule
 import (
 	"context"
 	"io/fs"
-
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -28,48 +26,71 @@ var (
 
 // ModuleDataProvider provides ModulesDatas.
 type ModuleDataProvider interface {
-	// GetModuleDataForModuleKey gets the ModuleDatas for the ModuleKeys.
+	// GetModuleDatasForModuleKeys gets the ModuleDatas for the ModuleKeys, and optionally
+	// the dependencies of the ModuleKeys.
 	//
-	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeys.
-	// If there is an error, no ModuleDatas will be returned.
-	// If a ModuleData is not found, the OptionalModuleData will have Found() equal to false, otherwise
-	// the OptionalModuleData will have Found() equal to true with non-nil ModuleData.
-	GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error)
+	// Returned  ModuleDatas will be unique by ModuleFullName and sorted by ModuleFullName.
+	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
+	GetModuleDatasForModuleKeys(context.Context, []ModuleKey) ([]ModuleData, error)
 }
 
-// GetModuleDatasForModuleKeys calls GetOptionalModuleDatasForModuleKeys, returning an error
-// with fs.ErrNotExist if any ModuleData is not found.
-func GetModuleDatasForModuleKeys(
-	ctx context.Context,
-	moduleDataProvider ModuleDataProvider,
-	moduleKeys ...ModuleKey,
-) ([]ModuleData, error) {
-	optionalModuleDatas, err := moduleDataProvider.GetOptionalModuleDatasForModuleKeys(ctx, moduleKeys...)
-	if err != nil {
-		return nil, err
+// GetModuleDatasForModuleKeysOption is an option for GetModuleDatasForModuleKeys.
+type GetModuleDatasForModuleKeysOption func(*getModuleDatasForModuleKeysOptions)
+
+// WithIncludeDepModuleDatas returns a new GetModuleDatasForModuleKeysOption that says
+// to also return the dependency ModuleDatas.
+func WithIncludeDepModuleDatas() GetModuleDatasForModuleKeysOption {
+	return func(getModuleDatasForModuleKeysOptions *getModuleDatasForModuleKeysOptions) {
+		getModuleDatasForModuleKeysOptions.includeDepModuleDatas = true
 	}
-	moduleDatas := make([]ModuleData, len(optionalModuleDatas))
-	for i, optionalModuleData := range optionalModuleDatas {
-		if !optionalModuleData.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
-		}
-		moduleDatas[i] = optionalModuleData.ModuleData()
-	}
-	return moduleDatas, nil
 }
 
-// nopModuleDataProvider
+// GetModuleDatasForModuleKeysOptions are parsed options for GetModuleDatasForModuleKeys.
+//
+// This will be used by implementations of ModuleDataProvider. Users of ModuleDataProvider
+// do not need to be concerned with this type.
+type GetModuleDatasForModuleKeysOptions interface {
+	// IncludeDepModuleDatas says to also return the dependency ModuleDatas.
+	IncludeDepModuleDatas() bool
+
+	isGetModuleDatasForModuleKeysOptions()
+}
+
+// NewGetModuleDatasForModuleKeysOptions returns a new GetModuleDatasForModuleKeysOptions.
+//
+// This will be used by implementations of ModuleDataProvider. Users of ModuleDataProvider
+// do not need to be concerned with this function.
+func NewGetModuleDatasForModuleKeysOptions(
+	options ...GetModuleDatasForModuleKeysOption,
+) GetModuleDatasForModuleKeysOptions {
+	getModuleDatasForModuleKeysOptions := newGetModulDatasForModuleKeysOptions()
+	for _, option := range options {
+		option(getModuleDatasForModuleKeysOptions)
+	}
+	return getModuleDatasForModuleKeysOptions
+}
+
+// *** PRIVATE ***
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(
+func (nopModuleDataProvider) GetModuleDatasForModuleKeys(
 	_ context.Context,
-	moduleKeys ...ModuleKey,
-) ([]OptionalModuleData, error) {
-	return slicesext.Map(
-		moduleKeys,
-		func(ModuleKey) OptionalModuleData {
-			return NewOptionalModuleData(nil)
-		},
-	), nil
+	_ []ModuleKey,
+) ([]ModuleData, error) {
+	return nil, fs.ErrNotExist
 }
+
+type getModuleDatasForModuleKeysOptions struct {
+	includeDepModuleDatas bool
+}
+
+func newGetModulDatasForModuleKeysOptions() *getModuleDatasForModuleKeysOptions {
+	return &getModuleDatasForModuleKeysOptions{}
+}
+
+func (g *getModuleDatasForModuleKeysOptions) IncludeDepModuleDatas() bool {
+	return g.includeDepModuleDatas
+}
+
+func (*getModuleDatasForModuleKeysOptions) isGetModuleDatasForModuleKeysOptions() {}

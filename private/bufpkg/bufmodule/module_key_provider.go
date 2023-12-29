@@ -22,9 +22,10 @@ import (
 type ModuleKeyProvider interface {
 	// GetModuleKeysForModuleRefs gets the ModuleKeys for the given ModuleRefs.
 	//
-	// Resolution of the ModuleRefs is done per the ModuleRef documentation.
+	// Returned ModuleKeys will be in the same order as the input ModuleRefs.
 	//
 	// If there is no error, the length of the ModuleKeys returned will match the length of the ModuleRefs.
 	// If there is an error, no ModuleKeys will be returned.
-	GetModuleKeysForModuleRefs(context.Context, ...ModuleRef) ([]ModuleKey, error)
+	// If any ModuleRef is not found, an error with fs.ErrNotExist will be returned.
+	GetModuleKeysForModuleRefs(context.Context, []ModuleRef) ([]ModuleKey, error)
 }
