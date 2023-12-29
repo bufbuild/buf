@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -26,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
@@ -166,7 +167,7 @@ func newOmniProvider(
 
 func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs ...bufmodule.ModuleRef,
+	moduleRefs []bufmodule.ModuleRef,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
@@ -183,57 +184,99 @@ func (o *omniProvider) GetModuleKeysForModuleRefs(
 	return moduleKeys, nil
 }
 
-func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
+func (o *omniProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
-		if module == nil {
-			optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(nil)
-			continue
-		}
-		// Need to use moduleKey from module, as we need CommitID if present.
-		moduleFullName := module.ModuleFullName()
-		if moduleFullName == nil {
-			return nil, errors.New("must set TestModuleData.Name if using OmniProvider as a ModuleDataProvider")
-		}
-		commitID := module.CommitID()
-		if commitID == "" {
-			// This is a system error, we should have done this during omniProvider construction.
-			return nil, syserror.Newf("no commitID for TestModuleData with name %q", moduleFullName.String())
-		}
-		moduleKey, err := bufmodule.NewModuleKey(
-			moduleFullName,
-			commitID,
-			module.Digest,
-		)
-		if err != nil {
+	moduleKeys []bufmodule.ModuleKey,
+	options ...bufmodule.GetModuleDatasForModuleKeysOption,
+) ([]bufmodule.ModuleData, error) {
+	duplicateModuleConfigFullNameStrings := slicesext.Duplicates(
+		slicesext.Map(
+			moduleKeys,
+			func(moduleKey bufmodule.ModuleKey) string {
+				return moduleKey.ModuleFullName().String()
+			},
+		),
+	)
+	if len(duplicateModuleConfigFullNameStrings) > 0 {
+		return nil, fmt.Errorf("module names %q seen more than once", strings.Join(duplicateModuleConfigFullNameStrings, ", "))
+	}
+
+	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
+	moduleFullNameStringToModuleData := make(map[string]bufmodule.ModuleData, len(moduleKeys))
+	for _, moduleKey := range moduleKeys {
+		if err := o.populateModuleDatasForModuleKeyRec(
+			ctx,
+			moduleFullNameStringToModuleData,
+			moduleKey,
+			getModuleDatasForModuleKeysOptions.IncludeDepModuleDatas(),
+		); err != nil {
 			return nil, err
 		}
-		moduleData := bufmodule.NewModuleData(
-			ctx,
-			moduleKey,
-			func() (storage.ReadBucket, error) {
-				return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
-			},
-			func() ([]bufmodule.ModuleKey, error) {
-				moduleDeps, err := module.ModuleDeps()
-				if err != nil {
-					return nil, err
-				}
-				return slicesext.MapError(
-					moduleDeps,
-					func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
-						return bufmodule.ModuleToModuleKey(moduleDep)
-					},
-				)
-			},
-		)
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
-	return optionalModuleDatas, nil
+	moduleDatas := slicesext.MapValuesToSlice(moduleFullNameStringToModuleData)
+	sort.Slice(
+		moduleDatas,
+		func(i int, j int) bool {
+			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
+		},
+	)
+	return moduleDatas, nil
+}
+
+func (o *omniProvider) populateModuleDatasForModuleKeyRec(
+	ctx context.Context,
+	moduleFullNameStringToModuleData map[string]bufmodule.ModuleData,
+	moduleKey bufmodule.ModuleKey,
+	includeDepModuleDatas bool,
+) error {
+	if _, ok := moduleFullNameStringToModuleData[moduleKey.ModuleFullName().String()]; ok {
+		return nil
+	}
+
+	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	if module == nil {
+		return &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+	}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return err
+	}
+	declaredDepModuleKeys, err := slicesext.MapError(
+
+		moduleDeps,
+		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(moduleDep)
+		},
+	)
+	if err != nil {
+		return err
+	}
+	moduleData := bufmodule.NewModuleData(
+		ctx,
+		moduleKey,
+		func() (storage.ReadBucket, error) {
+			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
+		},
+		func() ([]bufmodule.ModuleKey, error) {
+			return declaredDepModuleKeys, nil
+		},
+	)
+	moduleFullNameStringToModuleData[moduleKey.ModuleFullName().String()] = moduleData
+
+	if includeDepModuleDatas {
+		for _, declaredDepModuleKey := range declaredDepModuleKeys {
+			if err := o.populateModuleDatasForModuleKeyRec(
+				ctx,
+				moduleFullNameStringToModuleData,
+				declaredDepModuleKey,
+				includeDepModuleDatas,
+			); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (o *omniProvider) GetOptionalCommitsForModuleKeys(

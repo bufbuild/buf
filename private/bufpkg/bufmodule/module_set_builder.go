@@ -387,10 +387,9 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 	}
 	alreadySeenOpaqueIDs[opaqueID] = struct{}{}
 
-	moduleDatas, err := GetModuleDatasForModuleKeys(
+	moduleDatas, err := b.moduleDataProvider.GetModuleDatasForModuleKeys(
 		b.ctx,
-		b.moduleDataProvider,
-		remoteModuleKey,
+		[]ModuleKey{remoteModuleKey},
 	)
 	if err != nil {
 		return nil, err

@@ -349,7 +349,7 @@ func (r *reader) getModuleKey(
 	}
 	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		moduleRef.ModuleRef(),
+		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
 	)
 	if err != nil {
 		return nil, err

@@ -29,9 +29,16 @@ type ModuleDataProvider interface {
 	// GetModuleDatasForModuleKeys gets the ModuleDatas for the ModuleKeys, and optionally
 	// the dependencies of the ModuleKeys.
 	//
-	// Returned  ModuleDatas will be unique by ModuleFullName and sorted by ModuleFullName.
+	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
+	// may error if this is not the case.
+	//
+	// Returned ModuleDatas will be unique by ModuleFullName and sorted by ModuleFullName.
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
-	GetModuleDatasForModuleKeys(context.Context, []ModuleKey) ([]ModuleData, error)
+	GetModuleDatasForModuleKeys(
+		context.Context,
+		[]ModuleKey,
+		...GetModuleDatasForModuleKeysOption,
+	) ([]ModuleData, error)
 }
 
 // GetModuleDatasForModuleKeysOption is an option for GetModuleDatasForModuleKeys.
@@ -61,7 +68,7 @@ type GetModuleDatasForModuleKeysOptions interface {
 // This will be used by implementations of ModuleDataProvider. Users of ModuleDataProvider
 // do not need to be concerned with this function.
 func NewGetModuleDatasForModuleKeysOptions(
-	options ...GetModuleDatasForModuleKeysOption,
+	options []GetModuleDatasForModuleKeysOption,
 ) GetModuleDatasForModuleKeysOptions {
 	getModuleDatasForModuleKeysOptions := newGetModulDatasForModuleKeysOptions()
 	for _, option := range options {
@@ -75,8 +82,9 @@ func NewGetModuleDatasForModuleKeysOptions(
 type nopModuleDataProvider struct{}
 
 func (nopModuleDataProvider) GetModuleDatasForModuleKeys(
-	_ context.Context,
-	_ []ModuleKey,
+	context.Context,
+	[]ModuleKey,
+	...GetModuleDatasForModuleKeysOption,
 ) ([]ModuleData, error) {
 	return nil, fs.ErrNotExist
 }
