@@ -183,8 +183,10 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	filename := params.TextDocument.URI.Filename()
+
 	// Check if it is already open.
-	if entry, ok := s.fileCache[params.TextDocument.URI.Filename()]; ok {
+	if entry, ok := s.fileCache[filename]; ok {
 		entry.refCount++
 		if _, err := entry.updateText(ctx, s, params.TextDocument.Text); err != nil {
 			return err
@@ -196,13 +198,13 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		s.container.CacheDirPath(),
 		lspWellKnownTypesCacheRelDirPath,
 	)
-	if strings.HasPrefix(normalpath.Normalize(params.TextDocument.URI.Filename()), wellKnownTypesCachePath) {
+	if strings.HasPrefix(normalpath.Normalize(filename), wellKnownTypesCachePath) {
 		moduleSet = s.wellKnownTypesModuleSet
 	} else {
 		var err error
-		workspace, err := s.controller.GetWorkspace(ctx, params.TextDocument.URI.Filename())
+		workspace, err := s.controller.GetWorkspace(ctx, filename)
 		if err != nil {
-			s.logger.Warn("could not determine workspace", zap.Error(err))
+			s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
 			// Continue anyways if this fails.
 		}
 		if workspace != nil {
