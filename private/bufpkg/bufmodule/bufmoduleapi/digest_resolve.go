@@ -25,14 +25,14 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
-// ModuleDigestForCommitID resolves the commit ID by calling the CommitService to get
+// DigestForCommitID resolves the commit ID by calling the CommitService to get
 // the Digest for the Commit.
-func ModuleDigestForCommitID(
+func DigestForCommitID(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
 	remote string,
 	commitID string,
-) (bufmodule.ModuleDigest, error) {
+) (bufmodule.Digest, error) {
 	protoCommitID, err := CommitIDToProto(commitID)
 	if err != nil {
 		return nil, err
@@ -61,5 +61,5 @@ func ModuleDigestForCommitID(
 	if len(response.Msg.Commits) != 1 {
 		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
 	}
-	return ProtoToModuleDigest(response.Msg.Commits[0].Digest)
+	return ProtoToDigest(response.Msg.Commits[0].Digest)
 }

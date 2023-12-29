@@ -74,7 +74,7 @@ type moduleData struct {
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
 
-	checkModuleDigest func() error
+	checkDigest func() error
 }
 
 func newModuleData(
@@ -88,7 +88,7 @@ func newModuleData(
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
 	}
-	moduleData.checkModuleDigest = syncext.OnceValue(
+	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
 			bucket, err := moduleData.getBucket()
 			if err != nil {
@@ -98,11 +98,11 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			expectedModuleDigest, err := moduleKey.ModuleDigest()
+			expectedDigest, err := moduleKey.Digest()
 			if err != nil {
 				return err
 			}
-			// This isn't the ModuleDigest as computed by the Module exactly, as the Module uses
+			// This isn't the Digest as computed by the Module exactly, as the Module uses
 			// file imports to determine what the dependencies are. However, this is checking whether
 			// or not the digest of the returned information matches the digest we expected, which is
 			// what we need for this use case (tamper-proofing). What we are looking for is "does the
@@ -113,9 +113,9 @@ func newModuleData(
 			// tamper-proofing failing.
 			//
 			// This mismatch is a bit weird, however, and also results in us effectively computing
-			// the digest twice for any remote module: once here, and once within Module.ModuleDigest,
+			// the digest twice for any remote module: once here, and once within Module.Digest,
 			// which does have a slight performance hit.
-			actualModuleDigest, err := getB5ModuleDigest(
+			actualDigest, err := getB5Digest(
 				ctx,
 				bucket,
 				declaredDepModuleKeys,
@@ -123,12 +123,12 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			if !ModuleDigestEqual(expectedModuleDigest, actualModuleDigest) {
+			if !DigestEqual(expectedDigest, actualDigest) {
 				return fmt.Errorf(
 					"verification failed for module %s: expected module digest %q but downloaded data had digest %q",
 					moduleKey.ModuleFullName().String()+":"+moduleKey.CommitID(),
-					expectedModuleDigest.String(),
-					actualModuleDigest.String(),
+					expectedDigest.String(),
+					actualDigest.String(),
 				)
 			}
 			return nil
@@ -142,7 +142,7 @@ func (m *moduleData) ModuleKey() ModuleKey {
 }
 
 func (m *moduleData) Bucket() (storage.ReadBucket, error) {
-	if err := m.checkModuleDigest(); err != nil {
+	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
 	return m.getBucket()
@@ -156,7 +156,7 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	// in ModuleSetBuilder right away. However, we still do the lazy-loading here, in the case
 	// where ModuleData is loaded outside of a ModuleSetBuilder and users may defer calling this
 	// function if it is not needed.
-	if err := m.checkModuleDigest(); err != nil {
+	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
 	return m.getDeclaredDepModuleKeys()

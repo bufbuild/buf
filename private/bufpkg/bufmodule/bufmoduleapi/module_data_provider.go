@@ -294,8 +294,8 @@ func (a *moduleDataProvider) getModuleKeyForProtoCommit(
 	return bufmodule.NewModuleKey(
 		moduleFullName,
 		commitID,
-		func() (bufmodule.ModuleDigest, error) {
-			return ProtoToModuleDigest(protoCommit.Digest)
+		func() (bufmodule.Digest, error) {
+			return ProtoToDigest(protoCommit.Digest)
 		},
 	)
 }

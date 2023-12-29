@@ -135,7 +135,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	// If the buf.lock does not exist, we act as if there is no value in the store, which will
 	// result in bad data being overwritten.
 	//
-	// We also do not pass the BufLockFileWithModuleDigestResolver opition when reading the lock file,
+	// We also do not pass the BufLockFileWithDigestResolver opition when reading the lock file,
 	// because we have complete control over this bucket and can expect all lock files in the
 	// module data store to have digests.
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")

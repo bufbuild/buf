@@ -335,9 +335,9 @@ func (m *migrator) addModuleDirectory(
 		ctx,
 		m.rootBucket,
 		moduleDir,
-		bufconfig.BufLockFileWithModuleDigestResolver(
-			func(ctx context.Context, remote, commitID string) (bufmodule.ModuleDigest, error) {
-				return bufmoduleapi.ModuleDigestForCommitID(ctx, m.clientProvider, remote, commitID)
+		bufconfig.BufLockFileWithDigestResolver(
+			func(ctx context.Context, remote, commitID string) (bufmodule.Digest, error) {
+				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID)
 			},
 		),
 	)
@@ -669,8 +669,8 @@ func resolvedDeclaredAndLockedDependencies(
 			key, err := bufmodule.NewModuleKey(
 				resolvedRef.ModuleFullName(),
 				resolvedCommit.GetId(),
-				func() (bufmodule.ModuleDigest, error) {
-					return bufmoduleapi.ProtoToModuleDigest(resolvedCommit.GetDigest())
+				func() (bufmodule.Digest, error) {
+					return bufmoduleapi.ProtoToDigest(resolvedCommit.GetDigest())
 				},
 			)
 			if err != nil {

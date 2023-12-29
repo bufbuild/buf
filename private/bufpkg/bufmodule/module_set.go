@@ -41,7 +41,7 @@ type ModuleSet interface {
 	// This will consist of both targets and non-targets.
 	// All dependencies of all Modules will be in this list, that is this list is self-contained.
 	//
-	// All Modules will have unique ModuleDigests and CommitIDs.
+	// All Modules will have unique Digests and CommitIDs.
 	//
 	// These will be sorted by OpaqueID.
 	Modules() []Module

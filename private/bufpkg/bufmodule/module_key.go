@@ -39,30 +39,30 @@ type ModuleKey interface {
 	//
 	// Always present.
 	CommitID() string
-	// ModuleDigest returns the Module digest.
+	// Digest returns the Module digest.
 	//
-	// Note this is *not* a bufcas.Digest - this is a ModuleDigest. bufcas.Digests are a lower-level
+	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
 	// type that just deal in terms of files and content. A Moduleigest is a specific algorithm
 	// applied to a set of files and dependencies.
-	ModuleDigest() (ModuleDigest, error)
+	Digest() (Digest, error)
 
 	isModuleKey()
 }
 
 // NewModuleKey returns a new ModuleKey.
 //
-// The ModuleDigest will be loaded lazily if needed. Note this means that NewModuleKey does
-// *not* validate the digest. If you need to validate the digest, call ModuleDigest() and evaluate
+// The Digest will be loaded lazily if needed. Note this means that NewModuleKey does
+// *not* validate the digest. If you need to validate the digest, call Digest() and evaluate
 // the returned error.
 func NewModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getModuleDigest func() (ModuleDigest, error),
+	getDigest func() (Digest, error),
 ) (ModuleKey, error) {
 	return newModuleKey(
 		moduleFullName,
 		commitID,
-		getModuleDigest,
+		getDigest,
 	)
 }
 
@@ -72,13 +72,13 @@ type moduleKey struct {
 	moduleFullName ModuleFullName
 	commitID       string
 
-	getModuleDigest func() (ModuleDigest, error)
+	getDigest func() (Digest, error)
 }
 
 func newModuleKey(
 	moduleFullName ModuleFullName,
 	commitID string,
-	getModuleDigest func() (ModuleDigest, error),
+	getDigest func() (Digest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
@@ -90,9 +90,9 @@ func newModuleKey(
 		return nil, err
 	}
 	return &moduleKey{
-		moduleFullName:  moduleFullName,
-		commitID:        commitID,
-		getModuleDigest: syncext.OnceValues(getModuleDigest),
+		moduleFullName: moduleFullName,
+		commitID:       commitID,
+		getDigest:      syncext.OnceValues(getDigest),
 	}, nil
 }
 
@@ -104,8 +104,8 @@ func (m *moduleKey) CommitID() string {
 	return m.commitID
 }
 
-func (m *moduleKey) ModuleDigest() (ModuleDigest, error) {
-	return m.getModuleDigest()
+func (m *moduleKey) Digest() (Digest, error) {
+	return m.getDigest()
 }
 
 func (*moduleKey) isModuleKey() {}
