@@ -138,17 +138,31 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 
 func TestOutputFlag(t *testing.T) {
 	t.Parallel()
-	tempDirPath := t.TempDir()
-	testRunSuccess(
-		t,
-		"--output",
-		tempDirPath,
-		"--template",
-		filepath.Join("testdata", "simple", "buf.gen.yaml"),
-		filepath.Join("testdata", "simple"),
-	)
-	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.NoError(t, err)
+	for _, paths := range []struct {
+		template string
+		dir      string
+	}{
+		// v1 buf.gen.yaml, v1 module
+		{filepath.Join("testdata", "simple", "buf.gen.yaml"), filepath.Join("testdata", "simple")},
+		// v1 buf.gen.yaml, v2 module
+		{filepath.Join("testdata", "simple", "buf.gen.yaml"), filepath.Join("testdata", "v2", "simple")},
+		// v2 buf.gen.yaml, v1 module
+		{filepath.Join("testdata", "v2", "simple", "buf.gen.yaml"), filepath.Join("testdata", "simple")},
+		// v2 buf.gen.yaml, v2 module
+		{filepath.Join("testdata", "v2", "simple", "buf.gen.yaml"), filepath.Join("testdata", "v2", "simple")},
+	} {
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			"--output",
+			tempDirPath,
+			"--template",
+			paths.template,
+			paths.dir,
+		)
+		_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+		require.NoError(t, err)
+	}
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
@@ -187,6 +201,23 @@ func TestGenerateDuplicatePlugins(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGenerateDuplicatePluginsV2(t *testing.T) {
+	t.Parallel()
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "v2", "duplicate_plugins", "buf.gen.yaml"),
+		filepath.Join("testdata", "v2", "duplicate_plugins"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "foo", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
 func TestOutputWithPathEqualToExclude(t *testing.T) {
 	// TODO: un-skip this once --path and --exclude-path are updated
 	t.Skip()
@@ -213,9 +244,12 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 func TestGenerateInsertionPoint(t *testing.T) {
 	t.Parallel()
 	runner := command.NewRunner()
-	testGenerateInsertionPoint(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
-	testGenerateInsertionPoint(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
-	testGenerateInsertionPoint(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV1(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPointV1(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV1(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV2(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPointV2(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV2(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
 }
 
 func TestGenerateInsertionPointFail(t *testing.T) {
@@ -235,6 +269,32 @@ plugins:
 		``,
 		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
 		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
+func TestGenerateInsertionPointFailV2(t *testing.T) {
+	t.Parallel()
+	successTemplate := `
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: gen/proto/insertion
+  - protoc_builtin: insertion-point-writer
+    out: .
+managed:
+ enabled: false
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
+		filepath.Join("testdata", "v2", "simple"), // The input directory is irrelevant for these insertion points.
 		"--template",
 		successTemplate,
 		"-o",
@@ -266,12 +326,40 @@ plugins:
 	)
 }
 
+func TestGenerateDuplicateFileFailV2(t *testing.T) {
+	t.Parallel()
+	successTemplate := `
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: .
+  - protoc_builtin: insertion-point-receiver
+    out: .
+managed:
+  enabled: false
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "insertion-point-receiver" and again by plugin "insertion-point-receiver"`,
+		filepath.Join("testdata", "v2", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
 func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 	t.Parallel()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
-	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
+	testGenerateInsertionPointMixedPathsFailV1(t, ".", wd)
+	testGenerateInsertionPointMixedPathsFailV1(t, wd, ".")
+	testGenerateInsertionPointMixedPathsFailV2(t, ".", wd)
+	testGenerateInsertionPointMixedPathsFailV2(t, wd, ".")
 }
 
 func TestBoolPointerFlagTrue(t *testing.T) {
@@ -297,21 +385,62 @@ func TestBoolPointerFlagUnspecified(t *testing.T) {
 	testParseBoolPointer(t, "test-name", nil)
 }
 
-func testGenerateInsertionPoint(
+func testGenerateInsertionPointV1(
 	t *testing.T,
 	runner command.Runner,
 	receiverOut string,
 	writerOut string,
 	expectedOutputPath string,
 ) {
-	successTemplate := `
+	testGenerateInsertionPoint(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+		`
 version: v1
 plugins:
   - name: insertion-point-receiver
     out: %s
   - name: insertion-point-writer
     out: %s
-`
+`,
+	)
+}
+
+func testGenerateInsertionPointV2(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
+	testGenerateInsertionPoint(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+		`
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: %s
+  - protoc_builtin: insertion-point-writer
+    out: %s
+`,
+	)
+}
+
+func testGenerateInsertionPoint(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+	successTemplate string,
+) {
 	storageosProvider := storageos.NewProvider()
 	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
 		context.Background(),
@@ -334,18 +463,55 @@ plugins:
 	require.Empty(t, string(diff))
 }
 
-// testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
-// able to generate to the same output directory, even if the absolute path points to the
-// same place. This is equivalent to protoc's behavior.
-func testGenerateInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOut string) {
-	successTemplate := `
+func testGenerateInsertionPointMixedPathsFailV1(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+) {
+	testGenerateInsertionPointMixedPathsFail(
+		t,
+		receiverOut,
+		writerOut,
+		`
 version: v1
 plugins:
   - name: insertion-point-receiver
     out: %s
   - name: insertion-point-writer
     out: %s
-`
+`,
+	)
+}
+
+func testGenerateInsertionPointMixedPathsFailV2(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+) {
+	testGenerateInsertionPointMixedPathsFail(
+		t,
+		receiverOut,
+		writerOut,
+		`
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: %s
+  - protoc_builtin: insertion-point-writer
+    out: %s
+`,
+	)
+}
+
+// testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
+// able to generate to the same output directory, even if the absolute path points to the
+// same place. This is equivalent to protoc's behavior.
+func testGenerateInsertionPointMixedPathsFail(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+	successTemplate string,
+) {
 	testRunStdoutStderr(
 		t,
 		nil,
