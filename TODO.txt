@@ -77,3 +77,13 @@ STUFF FOR COMMITS
 - Use Digests for ResourceRefs for now
 - Go back and make CommitID a first-class citizen (ModuleKey, etc)
 - Add CommitID to buf.lock v2
+
+STUFF FOR DEP RESOLUTION
+
+- Change GetOptionalModuleKeysForModuleRefs into straight GetModuleKeysForModuleRefs - no need for optional
+- Have only the bufmodulestore deal in Optionals for ModuleData
+- Revamp to ModuleDataProvider to get recursive dependencies, don't try to match it up with ModuleKeyProvider
+- Use include_dep_content on ModuleDataProvider
+- Download implicitly figures out the dep tree
+- In ModuleSetBuilder, do a Download call for all remote deps, let Download figure out the tree
+  - exclude anything that is local, the rest gets added
