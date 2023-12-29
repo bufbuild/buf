@@ -542,7 +542,7 @@ func (s *server) localPathForImport(
 	file bufmodule.File,
 ) (string, error) {
 	if workspace == s.wellKnownTypesModuleSet {
-		digest, err := file.Module().ModuleDigest()
+		digest, err := file.Module().Digest()
 		if err != nil {
 			return "", err
 		}
@@ -556,7 +556,7 @@ func (s *server) localPathForImport(
 	if moduleFullName == nil {
 		return "", syserror.Newf("remote module %q had nil ModuleFullName", module.OpaqueID())
 	}
-	digest, err := module.ModuleDigest()
+	digest, err := module.Digest()
 	if err != nil {
 		return "", err
 	}
