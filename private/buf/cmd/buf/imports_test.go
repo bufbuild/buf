@@ -121,12 +121,11 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 
 func TestInvalidImportFromTransitive(t *testing.T) {
 	t.Parallel()
+	// We actually want to verify that there are no warnings now. Transitive dependencies not declared
+	// in your buf.yaml are acceptable now.
 	testRunStderrWithCache(
 		t, nil, 0,
-		[]string{
-			"WARN",
-			`Module bufbuild.test/bufbot/people is a transitive remote dependency not declared in your buf.yaml deps. Add bufbuild.test/bufbot/people to your deps.`,
-		},
+		[]string{},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
 	)
@@ -136,12 +135,9 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 0,
-		[]string{
-			"WARN",
-			// a -> c
-			`Module bufbuild.test/workspace/second is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
-			`Module bufbuild.test/workspace/third is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
-		},
+		// We actually want to verify that there are no warnings now. deps in your v1 buf.yaml may actually
+		// have an effect - they can affect your buf.lock.
+		[]string{},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),
 	)
