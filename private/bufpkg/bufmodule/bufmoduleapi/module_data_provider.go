@@ -67,10 +67,9 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 		return nil, err
 	}
 
-	// We don't want to persist these across calls - this could grow over time and this cache
+	// We don't want to persist this across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
-	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
 
 	registryToModuleKeys := toValuesMap(
 		moduleKeys,
@@ -83,7 +82,6 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 		iModuleDatas, err := a.getModuleDatasForRegistryAndModuleKeys(
 			ctx,
 			protoModuleProvider,
-			protoOwnerProvider,
 			registry,
 			iModuleKeys,
 		)
@@ -104,7 +102,6 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleData, error) {
