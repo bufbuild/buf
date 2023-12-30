@@ -28,8 +28,6 @@ import (
 )
 
 // NewCommitProvider returns a new CommitProvider for the given API client.
-//
-// A warning is printed to the logger if a given Module is deprecated.
 func NewCommitProvider(
 	logger *zap.Logger,
 	clientProvider bufapi.ClientProvider,

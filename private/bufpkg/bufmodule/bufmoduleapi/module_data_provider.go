@@ -17,14 +17,10 @@ package bufmoduleapi
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"sort"
 
-	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/zap"
 )
 
@@ -103,55 +99,7 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleData, error) {
-	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys)
-	if err != nil {
-		return nil, err
-	}
-	_ = protoGraph
 	return nil, errors.New("unimplemented getModuleDatasForRegistryAndModuleKeys")
-}
-
-func (a *moduleDataProvider) getProtoGraphForRegistryAndModuleKeys(
-	ctx context.Context,
-	registry string,
-	moduleKeys []bufmodule.ModuleKey,
-) (*modulev1beta1.Graph, error) {
-	protoCommitIDs, err := slicesext.MapError(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return CommitIDToProto(moduleKey.CommitID())
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	response, err := a.clientProvider.GraphServiceClient(registry).GetGraph(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetGraphRequest{
-				// TODO: chunking
-				ResourceRefs: slicesext.Map(
-					protoCommitIDs,
-					func(protoCommitID string) *modulev1beta1.ResourceRef {
-						return &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
-							},
-						}
-					},
-				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
-			},
-		),
-	)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
-	}
-	return response.Msg.Graph, nil
 }
 
 //func (a *moduleDataProvider) getModuleDataForModuleKey(

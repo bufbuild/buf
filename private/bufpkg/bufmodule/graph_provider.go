@@ -20,9 +20,16 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 )
 
-// DAGProvider provides directed acyclic graphs for ModuleKeys.
-type DAGProvider interface {
-	// GetGraphForModuleKeys gets the DAG for the given ModuleKeys.
+// GraphProvider provides directed acyclic graphs for ModuleKeys.
+type GraphProvider interface {
+	// GetGraphForModuleKeys gets the Graph for the given ModuleKeys.
+	//
+	// The key will be the ModuleKey.CommitID().
+	//
+	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
+	// may error if this is not the case.
+	//
+	// The input ModuleKeys must all have the same registry. An error will be returned otherwise.
 	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
 	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[string, ModuleKey], error)
