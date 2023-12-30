@@ -238,6 +238,7 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 			func() (time.Time, error) {
 				return createTime, nil
 			},
+			moduleKey.Digest,
 		)
 	}
 	return commits, nil

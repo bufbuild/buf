@@ -118,15 +118,13 @@ func (a *commitProvider) getCommitForModuleKey(
 		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
 	}
 	protoCommit := response.Msg.Commits[0]
-	receivedDigest, err := ProtoToDigest(protoCommit.Digest)
-	if err != nil {
-		return nil, err
-	}
 	return bufmodule.NewCommit(
 		moduleKey,
 		func() (time.Time, error) {
 			return protoCommit.CreateTime.AsTime(), nil
 		},
-		bufmodule.CommitWithReceivedDigest(receivedDigest),
+		func() (bufmodule.Digest, error) {
+			return ProtoToDigest(protoCommit.Digest)
+		},
 	), nil
 }

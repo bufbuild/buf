@@ -28,6 +28,15 @@ type Commit interface {
 	ModuleKey() ModuleKey
 	// CreateTime returns the time the Commit was created on the BSR.
 	CreateTime() (time.Time, error)
+	// Digest returns the digest of the content of the Commit.
+	//
+	// This is the Digest as retrieved from the BSR - it relies on the BSR
+	// correctly calculating digests.
+	//
+	// When CreateTime() or other lazy methods are called, this Digest will be checked
+	// against the Digest in ModuleKey, and if there is a difference,
+	// an error will be returned.
+	Digest() (Digest, error)
 
 	isCommit()
 }
@@ -36,28 +45,13 @@ type Commit interface {
 func NewCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	options ...CommitOption,
+	getDigest func() (Digest, error),
 ) Commit {
 	return newCommit(
 		moduleKey,
 		getCreateTime,
-		options...,
+		getDigest,
 	)
-}
-
-// CommitOption is an option for a new Commit.
-type CommitOption func(*commitOptions)
-
-// CommitWithReceivedDigest returns a new CommitOption that specifies the Digest
-// that was received when creating the Commit.
-//
-// When CreateTime() or other lazy methods are called, if this Digest is specified, it
-// will be checked against the Digest in ModuleKey, and if there is a difference,
-// an error will be returned.
-func CommitWithReceivedDigest(receivedDigest Digest) CommitOption {
-	return func(commitOptions *commitOptions) {
-		commitOptions.receivedDigest = receivedDigest
-	}
 }
 
 // *** PRIVATE ***
@@ -65,43 +59,39 @@ func CommitWithReceivedDigest(receivedDigest Digest) CommitOption {
 type commit struct {
 	moduleKey     ModuleKey
 	getCreateTime func() (time.Time, error)
-
-	checkDigest func() error
+	getDigest     func() (Digest, error)
 }
 
 func newCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	options ...CommitOption,
+	getDigest func() (Digest, error),
 ) *commit {
-	commitOptions := newCommitOptions()
-	for _, option := range options {
-		option(commitOptions)
-	}
-	commit := &commit{
+	return &commit{
 		moduleKey:     moduleKey,
 		getCreateTime: sync.OnceValues(getCreateTime),
-	}
-	if commitOptions.receivedDigest != nil {
-		commit.checkDigest = sync.OnceValue(
-			func() error {
-				digest, err := moduleKey.Digest()
+		getDigest: sync.OnceValues(
+			func() (Digest, error) {
+				digest, err := getDigest()
 				if err != nil {
-					return err
+					return nil, err
 				}
-				if !DigestEqual(digest, commitOptions.receivedDigest) {
-					return fmt.Errorf(
+				moduleKeyDigest, err := moduleKey.Digest()
+				if err != nil {
+					return nil, err
+				}
+				if !DigestEqual(digest, moduleKeyDigest) {
+					return nil, fmt.Errorf(
 						"verification failed for commit %s: expected digest %q but downloaded commit had digest %q",
 						moduleKey.String(),
+						moduleKeyDigest.String(),
 						digest.String(),
-						commitOptions.receivedDigest.String(),
 					)
 				}
-				return nil
+				return digest, nil
 			},
-		)
+		),
 	}
-	return commit
 }
 
 func (c *commit) ModuleKey() ModuleKey {
@@ -109,12 +99,14 @@ func (c *commit) ModuleKey() ModuleKey {
 }
 
 func (c *commit) CreateTime() (time.Time, error) {
-	if c.checkDigest != nil {
-		if err := c.checkDigest(); err != nil {
-			return time.Time{}, err
-		}
+	if _, err := c.getDigest(); err != nil {
+		return time.Time{}, err
 	}
 	return c.getCreateTime()
+}
+
+func (c *commit) Digest() (Digest, error) {
+	return c.getDigest()
 }
 
 func (*commit) isCommit() {}
