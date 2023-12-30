@@ -1048,24 +1048,11 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 	}
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUndeclared:
+		case bufworkspace.MalformedDepTypeUnused:
 			c.logger.Sugar().Warnf(
-				"Module %s is a transitive remote dependency not declared in your buf.yaml deps. Add %s to your deps.",
-				malformedDep.ModuleFullName(),
+				`Module %s is declared in your buf.yaml deps but is unused.`,
 				malformedDep.ModuleFullName(),
 			)
-		case bufworkspace.MalformedDepTypeUnused:
-			if workspace.GetModuleForModuleFullName(malformedDep.ModuleFullName()) != nil {
-				c.logger.Sugar().Warnf(
-					`Module %s is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
-					malformedDep.ModuleFullName(),
-				)
-			} else {
-				c.logger.Sugar().Warnf(
-					`Module %s is declared in your buf.yaml deps but is unused.`,
-					malformedDep.ModuleFullName(),
-				)
-			}
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}

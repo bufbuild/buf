@@ -144,10 +144,15 @@ func Copy[T any](s []T) []T {
 }
 
 // ToStructMap converts the slice to a map with struct{} values.
+//
+// Zero values of T are not added to the map.
 func ToStructMap[T comparable](s []T) map[T]struct{} {
+	var zero T
 	m := make(map[T]struct{}, len(s))
 	for _, e := range s {
-		m[e] = struct{}{}
+		if e != zero {
+			m[e] = struct{}{}
+		}
 	}
 	return m
 }
