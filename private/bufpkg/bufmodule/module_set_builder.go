@@ -460,7 +460,7 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 	return allModules, nil
 }
 
-const doTransitiveRemoteModules = false
+const doTransitiveRemoteModules = true
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
 	b.errs = append(b.errs, err)
