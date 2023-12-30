@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -95,6 +96,14 @@ func run(
 	}
 	updateableWorkspace, err := controller.GetUpdateableWorkspace(ctx, dirPath)
 	if err != nil {
+		return err
+	}
+	// Make sure the workspace builds.
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		updateableWorkspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
 		return err
 	}
 	onlyNameMap, err := getOnlyNameMapForModuleSet(updateableWorkspace, flags.Only)
@@ -186,6 +195,8 @@ func run(
 	if err != nil {
 		return err
 	}
+	// TODO: Make sure the workspace builds again. This will also have the side effect of doing tamper-proofing
+	// Revert the update if the workspace does not build.
 	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
 }
 
