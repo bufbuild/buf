@@ -177,8 +177,8 @@ func ModuleSetRemoteOpaqueIDs(moduleSet ModuleSet) []string {
 //
 // This only starts at target Modules. If a Module is not part of a graph
 // with a target Module as a source, it will not be added.
-func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[Module, string], error) {
-	graph := dag.NewGraph[Module, string](Module.OpaqueID)
+func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string, Module], error) {
+	graph := dag.NewGraph[string, Module](Module.OpaqueID)
 	for _, module := range ModuleSetTargetModules(moduleSet) {
 		if err := moduleSetToDAGRec(module, graph); err != nil {
 			return nil, err
@@ -344,7 +344,7 @@ func (*moduleSet) isModuleSet() {}
 
 func moduleSetToDAGRec(
 	module Module,
-	graph *dag.Graph[Module, string],
+	graph *dag.Graph[string, Module],
 ) error {
 	graph.AddNode(module)
 	directModuleDeps, err := ModuleDirectModuleDeps(module)
