@@ -85,14 +85,6 @@ func run(
 	if container.NumArgs() > 0 {
 		dirPath = container.Arg(0)
 	}
-	onlyModuleFullNames := make([]bufmodule.ModuleFullName, len(flags.Only))
-	for i, only := range flags.Only {
-		onlyModuleFullName, err := bufmodule.ParseModuleFullName(only)
-		if err != nil {
-			return appcmd.NewInvalidArgumentErrorf("--%s value %q is not a valid module name", onlyFlagName, only)
-		}
-		onlyModuleFullNames[i] = onlyModuleFullName
-	}
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
@@ -105,7 +97,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	onlyNameMap, err := getOnlyNameMap(updateableWorkspace, onlyModuleFullNames)
+	onlyNameMap, err := getOnlyNameMapForModuleSet(updateableWorkspace, flags.Only)
 	if err != nil {
 		return err
 	}
@@ -217,14 +209,22 @@ func run(
 // Returns the dependencies and transitive dependencies to be updated.
 //
 // Returns nil if onlyModuleFullNames was empty.
-func getOnlyNameMap(
+func getOnlyNameMapForModuleSet(
 	moduleSet bufmodule.ModuleSet,
-	onlyModuleFullNames []bufmodule.ModuleFullName,
+	onlyNames []string,
 ) (map[string]struct{}, error) {
-	if len(onlyModuleFullNames) == 0 {
+	if len(onlyNames) == 0 {
 		return nil, nil
 	}
-	onlyNameMap := make(map[string]struct{})
+	onlyModuleFullNames := make([]bufmodule.ModuleFullName, len(onlyNames))
+	for i, onlyName := range onlyNames {
+		onlyModuleFullName, err := bufmodule.ParseModuleFullName(onlyName)
+		if err != nil {
+			return nil, appcmd.NewInvalidArgumentErrorf("--%s value %q is not a valid module name", onlyFlagName, onlyName)
+		}
+		onlyModuleFullNames[i] = onlyModuleFullName
+	}
+	onlyNameMap := make(map[string]struct{}, len(onlyModuleFullNames))
 	for _, onlyModuleFullName := range onlyModuleFullNames {
 		module := moduleSet.GetModuleForModuleFullName(onlyModuleFullName)
 		if module == nil {
