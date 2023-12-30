@@ -249,6 +249,8 @@ func newWorkspaceForModuleKey(
 		}
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
+	// TODO: Get the transitive dependencies, manually add them here. Then, we can make
+	// it so that AddRemoteModule does not deal with transitive dependencies.
 	moduleSetBuilder.AddRemoteModule(
 		moduleKey,
 		true,

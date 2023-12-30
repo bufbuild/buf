@@ -3,6 +3,7 @@
 - update buf generate help documentation
 - make buf migrate do auto-search
 - Dependency resolution
+- Make AddRemoteModule not take transitive dependencies
 
 - lots of QA, especially around workspace file searching, target paths
 - document behavior of file searching, config override
@@ -71,18 +72,5 @@ NEW ALGORITHM
 
 ExternalPathForPath
 
-
-STUFF FOR DEP RESOLUTION
-
-- Have only the bufmodulestore deal in Optionals for ModuleData
-- Revamp to ModuleDataProvider to get recursive dependencies, don't try to match it up with ModuleKeyProvider
-- Use include_dep_content on ModuleDataProvider
-- Download implicitly figures out the dep tree
-- In ModuleSetBuilder, do a Download call for all remote deps, let Download figure out the tree
-  - exclude anything that is local, the rest gets added
-- Think about hacing GetModuleKeysForModuleRefs also do resolution? We're not doing this properly right now either
-
 For buf mod update with v1, perhaps we just tell the ModuleSetBuilder to prefer remote modules over local, and then
 we're good?
-
-Make sure there's no cycles in calls to ModuleDataProviders
