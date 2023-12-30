@@ -16,12 +16,11 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
+	"sort"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/zap"
 )
 
@@ -59,87 +58,41 @@ func newCommitProvider(
 	}
 }
 
-// There has to be some way to make this common with moduleDataProvider, but it's too complicated
-// for now. The optional types not being generic doesn't help. But we should be able to find
-// commonality.
-
-func (p *commitProvider) GetOptionalCommitsForModuleKeys(
+func (p *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
-	cachedOptionalCommits, err := p.store.GetOptionalCommitsForModuleKeys(ctx, moduleKeys...)
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
+	storeCommitsResult, err := p.store.GetCommitsForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
-	resultOptionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
-	// The indexes within moduleKeys of the ModuleKeys that did not have a cached Commit.
-	// We will then fetch these specific ModuleKeys in one shot from the delegate.
-	var missedModuleKeysIndexes []int
-	for i, cachedOptionalCommit := range cachedOptionalCommits {
-		p.logDebugModuleKey(
-			moduleKeys[i],
-			"module commits cache get",
-			zap.Bool("found", cachedOptionalCommit.Found()),
-		)
-		if cachedOptionalCommit.Found() {
-			// We put the cached Commit at the specific location it is expected to be returned,
-			// given that the returned Commit order must match the input ModuleKey order.
-			resultOptionalCommits[i] = cachedOptionalCommit
-		} else {
-			missedModuleKeysIndexes = append(missedModuleKeysIndexes, i)
-		}
+	foundCommits := storeCommitsResult.FoundCommits()
+	notFoundModuleKeys := storeCommitsResult.NotFoundModuleKeys()
+	delegateCommits, err := p.delegate.GetCommitsForModuleKeys(
+		ctx,
+		notFoundModuleKeys,
+	)
+	if err != nil {
+		return nil, err
 	}
-	if len(missedModuleKeysIndexes) > 0 {
-		missedOptionalCommits, err := p.delegate.GetOptionalCommitsForModuleKeys(
-			ctx,
-			// Map the indexes of to the actual ModuleKeys.
-			slicesext.Map(
-				missedModuleKeysIndexes,
-				func(i int) bufmodule.ModuleKey { return moduleKeys[i] },
-			)...,
-		)
-		if err != nil {
-			return nil, err
-		}
-		// Just a sanity check.
-		if len(missedOptionalCommits) != len(missedModuleKeysIndexes) {
-			return nil, fmt.Errorf(
-				"expected %d Commits, got %d",
-				len(missedModuleKeysIndexes),
-				len(missedOptionalCommits),
-			)
-		}
-		// Put the found Commits into the store.
-		if err := p.store.PutCommits(
-			ctx,
-			slicesext.Map(
-				// Get just the OptionalCommits that were found.
-				slicesext.Filter(
-					missedOptionalCommits,
-					func(optionalCommit bufmodule.OptionalCommit) bool {
-						return optionalCommit.Found()
-					},
-				),
-				// Get found OptionalCommit -> Commit.
-				func(optionalCommit bufmodule.OptionalCommit) bufmodule.Commit {
-					return optionalCommit.Commit()
-				},
-			)...,
-		); err != nil {
-			return nil, err
-		}
-		for i, missedModuleKeysIndex := range missedModuleKeysIndexes {
-			// i is the index within missedOptionalCommits, while missedModuleKeysIndex is the index
-			// within missedModuleKeysIndexes, and consequently moduleKeys.
-			//
-			// Put in the specific location we expect the OptionalCommit to be returned.
-			// Put in regardless of whether it was found.
-			resultOptionalCommits[missedModuleKeysIndex] = missedOptionalCommits[i]
-		}
+	if err := p.store.PutCommits(
+		ctx,
+		delegateCommits,
+	); err != nil {
+		return nil, err
 	}
-	p.moduleKeysRetrieved.Add(int64(len(resultOptionalCommits)))
-	p.moduleKeysHit.Add(int64(len(resultOptionalCommits) - len(missedModuleKeysIndexes)))
-	return resultOptionalCommits, nil
+
+	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
+	p.moduleKeysHit.Add(int64(len(foundCommits)))
+
+	commits := append(foundCommits, delegateCommits...)
+	sort.Slice(
+		commits,
+		func(i int, j int) bool {
+			return commits[i].ModuleKey().ModuleFullName().String() < commits[j].ModuleKey().ModuleFullName().String()
+		},
+	)
+	return commits, nil
 }
 
 func (p *commitProvider) getModuleKeysRetrieved() int {
@@ -148,8 +101,4 @@ func (p *commitProvider) getModuleKeysRetrieved() int {
 
 func (p *commitProvider) getModuleKeysHit() int {
 	return int(p.moduleKeysHit.Load())
-}
-
-func (p *commitProvider) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }

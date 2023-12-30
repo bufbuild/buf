@@ -43,10 +43,9 @@ func TestCommitProviderBasic(t *testing.T) {
 		),
 	)
 
-	commits, err := bufmodule.GetCommitsForModuleKeys(
+	commits, err := cacheProvider.GetCommitsForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
@@ -55,8 +54,8 @@ func TestCommitProviderBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod3",
 			"buf.build/foo/mod2",
+			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			commits,
@@ -67,10 +66,9 @@ func TestCommitProviderBasic(t *testing.T) {
 	)
 
 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-	commits, err = bufmodule.GetCommitsForModuleKeys(
+	commits, err = cacheProvider.GetCommitsForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
@@ -78,9 +76,9 @@ func TestCommitProviderBasic(t *testing.T) {
 	require.Equal(
 		t,
 		[]string{
-			"buf.build/foo/mod3",
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
+			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			commits,

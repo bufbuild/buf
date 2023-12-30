@@ -29,7 +29,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ModuleDatasResult is a result for a get of ModuleData.
+// ModuleDatasResult is a result for a get of ModuleDatas.
 type ModuleDatasResult interface {
 	// FoundModuleDatas is the ModuleDatas that were found.
 	//

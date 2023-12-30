@@ -16,7 +16,6 @@ package bufmoduleapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"time"
@@ -55,10 +54,10 @@ func newCommitProvider(
 	}
 }
 
-func (a *commitProvider) GetOptionalCommitsForModuleKeys(
+func (a *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
@@ -66,22 +65,20 @@ func (a *commitProvider) GetOptionalCommitsForModuleKeys(
 	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
 	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
 	// Make sure to respect 250 max.
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
+	commits := make([]bufmodule.Commit, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
-		moduleData, err := a.getCommitForModuleKey(
+		commit, err := a.getCommitForModuleKey(
 			ctx,
 			protoModuleProvider,
 			protoOwnerProvider,
 			moduleKey,
 		)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
+			return nil, err
 		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(moduleData)
+		commits[i] = commit
 	}
-	return optionalCommits, nil
+	return commits, nil
 }
 
 func (a *commitProvider) getCommitForModuleKey(
@@ -131,5 +128,5 @@ func (a *commitProvider) getCommitForModuleKey(
 			return protoCommit.CreateTime.AsTime(), nil
 		},
 		bufmodule.CommitWithReceivedDigest(receivedDigest),
-	)
+	), nil
 }

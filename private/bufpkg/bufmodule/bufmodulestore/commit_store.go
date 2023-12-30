@@ -29,12 +29,27 @@ import (
 	"go.uber.org/zap"
 )
 
+// CommitsResult is a result for a get of Commits.
+type CommitsResult interface {
+	// FoundCommits is the Commits that were found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	FoundCommits() []bufmodule.Commit
+	// NotFoundModuleKeys is the input ModuleKeys that were not found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	NotFoundModuleKeys() []bufmodule.ModuleKey
+
+	isCommitsResult()
+}
+
 // ModuleStore reads and writes ModulesDatas.
 type CommitStore interface {
-	bufmodule.CommitProvider
+	// GetCommitsForModuleKey gets the Commits from the store for the ModuleKeys.
+	GetCommitsForModuleKeys(context.Context, []bufmodule.ModuleKey) (CommitsResult, error)
 
 	// Put puts the Commits to the store.
-	PutCommits(ctx context.Context, commits ...bufmodule.Commit) error
+	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
 }
 
 // NewCommitStore returns a new CommitStore for the given bucket.
@@ -66,26 +81,29 @@ func newCommitStore(
 	}
 }
 
-func (p *commitStore) GetOptionalCommitsForModuleKeys(
+func (p *commitStore) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
+	moduleKeys []bufmodule.ModuleKey,
+) (CommitsResult, error) {
+	var foundCommits []bufmodule.Commit
+	var notFoundModuleKeys []bufmodule.ModuleKey
+	for _, moduleKey := range moduleKeys {
 		commit, err := p.getCommitForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
 			}
+			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
+		} else {
+			foundCommits = append(foundCommits, commit)
 		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(commit)
 	}
-	return optionalCommits, nil
+	return newCommitsResult(foundCommits, notFoundModuleKeys), nil
 }
 
 func (p *commitStore) PutCommits(
 	ctx context.Context,
-	commits ...bufmodule.Commit,
+	commits []bufmodule.Commit,
 ) error {
 	for _, commit := range commits {
 		if err := p.putCommit(ctx, commit); err != nil {
@@ -128,7 +146,7 @@ func (p *commitStore) getCommitForModuleKey(
 			return externalCommit.CreateTime, nil
 		},
 		bufmodule.CommitWithReceivedDigest(digest),
-	)
+	), nil
 }
 
 func (p *commitStore) putCommit(
@@ -201,6 +219,31 @@ func (p *commitStore) deleteInvalidCommitFile(
 func (p *commitStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }
+
+type commitsResult struct {
+	foundCommits       []bufmodule.Commit
+	notFoundModuleKeys []bufmodule.ModuleKey
+}
+
+func newCommitsResult(
+	foundCommits []bufmodule.Commit,
+	notFoundModuleKeys []bufmodule.ModuleKey,
+) *commitsResult {
+	return &commitsResult{
+		foundCommits:       foundCommits,
+		notFoundModuleKeys: notFoundModuleKeys,
+	}
+}
+
+func (r *commitsResult) FoundCommits() []bufmodule.Commit {
+	return r.foundCommits
+}
+
+func (r *commitsResult) NotFoundModuleKeys() []bufmodule.ModuleKey {
+	return r.notFoundModuleKeys
+}
+
+func (*commitsResult) isCommitsResult() {}
 
 // Returns the directory path within the store for the module.
 //

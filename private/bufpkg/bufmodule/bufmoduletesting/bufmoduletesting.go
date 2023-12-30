@@ -223,6 +223,26 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 	return moduleDatas, nil
 }
 
+func (o *omniProvider) GetCommitsForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
+	commits := make([]bufmodule.Commit, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
+		if !ok {
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+		}
+		commits[i] = bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return createTime, nil
+			},
+		)
+	}
+	return commits, nil
+}
+
 func (o *omniProvider) populateModuleDatasForModuleKeyRec(
 	ctx context.Context,
 	moduleFullNameStringToModuleData map[string]bufmodule.ModuleData,
@@ -277,31 +297,6 @@ func (o *omniProvider) populateModuleDatasForModuleKeyRec(
 	}
 
 	return nil
-}
-
-func (o *omniProvider) GetOptionalCommitsForModuleKeys(
-	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
-		if !ok {
-			optionalCommits[i] = bufmodule.NewOptionalCommit(nil)
-			continue
-		}
-		commit, err := bufmodule.NewCommit(
-			moduleKey,
-			func() (time.Time, error) {
-				return createTime, nil
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(commit)
-	}
-	return optionalCommits, nil
 }
 
 func newModuleSet(

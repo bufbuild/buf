@@ -37,7 +37,7 @@ func NewCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
 	options ...CommitOption,
-) (Commit, error) {
+) Commit {
 	return newCommit(
 		moduleKey,
 		getCreateTime,
@@ -60,25 +60,6 @@ func CommitWithReceivedDigest(receivedDigest Digest) CommitOption {
 	}
 }
 
-// OptionalCommit is a result from a CommitProvider.
-//
-// It returns whether or not the Commit was found, and a non-nil
-// Commit if the Commit was found.
-type OptionalCommit interface {
-	Commit() Commit
-	Found() bool
-
-	isOptionalCommit()
-}
-
-// NewOptionalCommit returns a new OptionalCommit.
-//
-// As opposed to most functions in this codebase, the input Commit can be nil.
-// If it is nil, then Found() will return false.
-func NewOptionalCommit(commit Commit) OptionalCommit {
-	return newOptionalCommit(commit)
-}
-
 // *** PRIVATE ***
 
 type commit struct {
@@ -92,7 +73,7 @@ func newCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
 	options ...CommitOption,
-) (*commit, error) {
+) *commit {
 	commitOptions := newCommitOptions()
 	for _, option := range options {
 		option(commitOptions)
@@ -120,7 +101,7 @@ func newCommit(
 			},
 		)
 	}
-	return commit, nil
+	return commit
 }
 
 func (c *commit) ModuleKey() ModuleKey {
@@ -137,26 +118,6 @@ func (c *commit) CreateTime() (time.Time, error) {
 }
 
 func (*commit) isCommit() {}
-
-type optionalCommit struct {
-	commit Commit
-}
-
-func newOptionalCommit(commit Commit) *optionalCommit {
-	return &optionalCommit{
-		commit: commit,
-	}
-}
-
-func (o *optionalCommit) Commit() Commit {
-	return o.commit
-}
-
-func (o *optionalCommit) Found() bool {
-	return o.commit != nil
-}
-
-func (*optionalCommit) isOptionalCommit() {}
 
 type commitOptions struct {
 	receivedDigest Digest
