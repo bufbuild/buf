@@ -30,8 +30,9 @@ import (
 func NewModuleDataProvider(
 	logger *zap.Logger,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, clientProvider)
+	return newModuleDataProvider(logger, clientProvider, graphProvider)
 }
 
 // *** PRIVATE ***
@@ -39,15 +40,18 @@ func NewModuleDataProvider(
 type moduleDataProvider struct {
 	logger         *zap.Logger
 	clientProvider bufapi.ClientProvider
+	graphProvider  bufmodule.GraphProvider
 }
 
 func newModuleDataProvider(
 	logger *zap.Logger,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
+		graphProvider:  graphProvider,
 	}
 }
 func (a *moduleDataProvider) GetModuleDatasForModuleKeys(

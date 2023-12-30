@@ -129,7 +129,14 @@ func newModuleDataProvider(
 		return nil, err
 	}
 	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheFilesRelDirPath)
-	delegateReader := bufmoduleapi.NewModuleDataProvider(container.Logger(), clientProvider)
+	delegateModuleDataProvider := bufmoduleapi.NewModuleDataProvider(
+		container.Logger(),
+		clientProvider,
+		bufmoduleapi.NewGraphProvider(
+			container.Logger(),
+			clientProvider,
+		),
+	)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
 	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
@@ -138,7 +145,7 @@ func newModuleDataProvider(
 	}
 	return bufmodulecache.NewModuleDataProvider(
 		container.Logger(),
-		delegateReader,
+		delegateModuleDataProvider,
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
 			cacheBucket,
