@@ -73,6 +73,20 @@ func (g *ComparableGraph[Value]) NumEdges() int {
 	return g.Graph().NumEdges()
 }
 
+// OutboundNodes returns the nodes that are outbound from the node for the key.
+//
+// Returns error if there is no node for the key
+func (g *ComparableGraph[Value]) OutboundNodes(key Value) ([]Value, error) {
+	return g.Graph().OutboundNodes(key)
+}
+
+// InboundNodes returns the nodes that are inbound to the node for the key.
+//
+// Returns error if there is no node for the key
+func (g *ComparableGraph[Value]) InboundNodes(key Value) ([]Value, error) {
+	return g.Graph().InboundNodes(key)
+}
+
 // WalkNodes visited each node in the Graph based on insertion order.
 //
 // f is called for each node. The first argument is the key for the node,

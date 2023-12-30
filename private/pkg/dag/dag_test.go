@@ -373,6 +373,38 @@ func TestNumEdges(t *testing.T) {
 	)
 }
 
+func TestInboundNodes(t *testing.T) {
+	t.Parallel()
+	setupGraph := func(graph *dag.ComparableGraph[string]) {
+		graph.AddEdge("a", "b")
+		graph.AddEdge("a", "d")
+		graph.AddEdge("b", "c")
+		graph.AddEdge("c", "d")
+		graph.AddEdge("e", "b")
+		graph.AddNode("f")
+	}
+	testInboundNodesSuccess(t, setupGraph, "d", []string{"a", "c"})
+	testInboundNodesSuccess(t, setupGraph, "b", []string{"a", "e"})
+	testInboundNodesSuccess(t, setupGraph, "a", []string{})
+	testInboundNodesSuccess(t, setupGraph, "f", []string{})
+}
+
+func TestOutboundodes(t *testing.T) {
+	t.Parallel()
+	setupGraph := func(graph *dag.ComparableGraph[string]) {
+		graph.AddEdge("a", "b")
+		graph.AddEdge("a", "d")
+		graph.AddEdge("b", "c")
+		graph.AddEdge("c", "d")
+		graph.AddEdge("e", "b")
+		graph.AddNode("f")
+	}
+	testOutboundNodesSuccess(t, setupGraph, "a", []string{"b", "d"})
+	testOutboundNodesSuccess(t, setupGraph, "b", []string{"c"})
+	testOutboundNodesSuccess(t, setupGraph, "d", []string{})
+	testOutboundNodesSuccess(t, setupGraph, "f", []string{})
+}
+
 func TestDOTString(t *testing.T) {
 	t.Parallel()
 	testDOTStringSuccess(
@@ -520,6 +552,32 @@ func testNumEdgesSuccess(
 	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	require.Equal(t, expected, graph.NumEdges())
+}
+
+func testInboundNodesSuccess(
+	t *testing.T,
+	setupGraph func(*dag.ComparableGraph[string]),
+	key string,
+	expected []string,
+) {
+	graph := dag.NewComparableGraph[string]()
+	setupGraph(graph)
+	actual, err := graph.InboundNodes(key)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
+func testOutboundNodesSuccess(
+	t *testing.T,
+	setupGraph func(*dag.ComparableGraph[string]),
+	key string,
+	expected []string,
+) {
+	graph := dag.NewComparableGraph[string]()
+	setupGraph(graph)
+	actual, err := graph.OutboundNodes(key)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
 }
 
 func testDOTStringSuccess(

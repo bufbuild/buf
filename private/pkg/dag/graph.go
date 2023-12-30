@@ -100,6 +100,34 @@ func (g *Graph[Key, Value]) NumEdges() int {
 	return numEdges
 }
 
+// InboundNodes returns the nodes that are inbound to the node for the key.
+//
+// Returns error if there is no node for the key
+func (g *Graph[Key, Value]) InboundNodes(key Key) ([]Value, error) {
+	if err := g.checkInit(); err != nil {
+		return nil, err
+	}
+	node, ok := g.keyToNode[key]
+	if !ok {
+		return nil, fmt.Errorf("key not present: %v", key)
+	}
+	return g.getValuesForKeys(node.inboundEdges)
+}
+
+// OutboundNodes returns the nodes that are outbound from the node for the key.
+//
+// Returns error if there is no node for the key
+func (g *Graph[Key, Value]) OutboundNodes(key Key) ([]Value, error) {
+	if err := g.checkInit(); err != nil {
+		return nil, err
+	}
+	node, ok := g.keyToNode[key]
+	if !ok {
+		return nil, fmt.Errorf("key not present: %v", key)
+	}
+	return g.getValuesForKeys(node.outboundEdges)
+}
+
 // WalkNodes visited each node in the Graph based on insertion order.
 //
 // f is called for each node. The first argument is the key for the node,
@@ -114,7 +142,7 @@ func (g *Graph[Key, Value]) WalkNodes(f func(Value, []Value, []Value) error) err
 		if !ok {
 			return fmt.Errorf("key not present: %v", key)
 		}
-		key, err := g.getValueForKey(key)
+		value, err := g.getValueForKey(key)
 		if err != nil {
 			return err
 		}
@@ -126,7 +154,7 @@ func (g *Graph[Key, Value]) WalkNodes(f func(Value, []Value, []Value) error) err
 		if err != nil {
 			return err
 		}
-		if err := f(key, inboundValues, outboundValues); err != nil {
+		if err := f(value, inboundValues, outboundValues); err != nil {
 			return err
 		}
 	}
