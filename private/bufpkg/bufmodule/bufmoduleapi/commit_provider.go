@@ -16,12 +16,9 @@ package bufmoduleapi
 
 import (
 	"context"
-	"fmt"
-	"io/fs"
 	"time"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -105,38 +102,12 @@ func (a *commitProvider) getCommitsForRegistryAndModuleKeys(
 		return nil, err
 	}
 	protoCommitIDs := slicesext.MapKeysToSortedSlice(protoCommitIDToModuleKey)
-
-	response, err := a.clientProvider.CommitServiceClient(registry).GetCommits(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetCommitsRequest{
-				// TODO: chunking
-				ResourceRefs: slicesext.Map(
-					protoCommitIDs,
-					func(protoCommitID string) *modulev1beta1.ResourceRef {
-						return &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
-							},
-						}
-					},
-				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
-			},
-		),
-	)
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(moduleKeys) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(moduleKeys), len(response.Msg.Commits))
-	}
 	return slicesext.MapError(
-		response.Msg.Commits,
+		protoCommits,
 		func(protoCommit *modulev1beta1.Commit) (bufmodule.Commit, error) {
 			moduleKey, ok := protoCommitIDToModuleKey[protoCommit.Id]
 			if !ok {
