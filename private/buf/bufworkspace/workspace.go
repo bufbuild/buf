@@ -251,8 +251,7 @@ func newWorkspaceForModuleKey(
 		}
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
-	// TODO: Get the transitive dependencies, manually add them here. Then, we can make
-	// it so that AddRemoteModule does not deal with transitive dependencies.
+	// Add the input ModuleKey with path filters.
 	moduleSetBuilder.AddRemoteModule(
 		moduleKey,
 		true,
@@ -261,6 +260,19 @@ func newWorkspaceForModuleKey(
 			config.targetExcludePaths,
 		),
 	)
+	graph, err := graphProvider.GetGraphForModuleKeys(ctx, []bufmodule.ModuleKey{moduleKey})
+	if err != nil {
+		return nil, err
+	}
+	if err := graph.WalkNodes(func(node bufmodule.ModuleKey, _ []bufmodule.ModuleKey, _ []bufmodule.ModuleKey) error {
+		if node.CommitID() != moduleKey.CommitID() {
+			// Add the dependency ModuleKey with no path filters.
+			moduleSetBuilder.AddRemoteModule(node, false)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {
 		return nil, err

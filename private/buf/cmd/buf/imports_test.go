@@ -57,6 +57,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 		nil,
 		"build",
 		filepath.Join("testdata", "imports", "success", "students"),
+		"--no-warn",
 	)
 }
 
@@ -75,6 +76,7 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 		nil,
 		"build",
 		filepath.Join("testdata", "imports", "success", "school"),
+		"--no-warn",
 	)
 }
 
