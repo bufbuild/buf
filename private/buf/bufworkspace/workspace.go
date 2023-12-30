@@ -129,10 +129,11 @@ func NewWorkspaceForModuleKey(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	moduleKey bufmodule.ModuleKey,
+	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	return newWorkspaceForModuleKey(ctx, logger, tracer, moduleKey, moduleDataProvider, options...)
+	return newWorkspaceForModuleKey(ctx, logger, tracer, moduleKey, graphProvider, moduleDataProvider, options...)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -194,6 +195,7 @@ func newWorkspaceForModuleKey(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	moduleKey bufmodule.ModuleKey,
+	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (*workspace, error) {

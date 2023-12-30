@@ -140,6 +140,7 @@ func NewController(
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -153,6 +154,7 @@ func NewController(
 		tracer,
 		container,
 		clientProvider,
+		graphProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
 		commitProvider,
@@ -176,6 +178,7 @@ type controller struct {
 	container          app.EnvStdioContainer
 	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
+	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
 
 	disableSymlinks           bool
@@ -194,6 +197,7 @@ func newController(
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -207,6 +211,7 @@ func newController(
 		tracer:             tracer,
 		container:          container,
 		clientProvider:     clientProvider,
+		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
 	}
@@ -854,6 +859,7 @@ func (c *controller) getWorkspaceForModuleRef(
 		c.logger,
 		c.tracer,
 		moduleKey,
+		c.graphProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
