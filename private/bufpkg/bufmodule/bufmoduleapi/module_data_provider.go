@@ -225,6 +225,12 @@ func (a *moduleDataProvider) getProtoContentsForRegistryAndModuleKeys(
 	return response.Msg.Contents, nil
 }
 
+// In the future, we might want to add State, Visibility, etc as parameters to bufmodule.Module, to
+// match what we are doing with Commit and Graph to some degree, and then bring this warning
+// out of the ModuleDataProvider. However, if we did this, this has unintended consequences - right now,
+// by this being here, we only warn when we don't have the module in the cache, which we sort of want?
+// State is a property only on the BSR, it's not a property on a per-commit basis, so this gets into
+// weird territory.
 func (a *moduleDataProvider) warnIfDeprecated(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,

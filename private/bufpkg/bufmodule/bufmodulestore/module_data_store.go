@@ -211,6 +211,10 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
+	// TODO: We probably do *not* want to use buf.lock files for the cache. This is hard-tying
+	// the API and persistence layers, and gives us less flexibility. We likely want to do
+	// something like what we are doing in the commitStore, where we have a separate externalCommit
+	// object that we check for completeness.
 	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys)
 	if err != nil {
 		return err
