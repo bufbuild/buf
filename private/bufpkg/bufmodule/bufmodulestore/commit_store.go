@@ -29,24 +29,17 @@ import (
 	"go.uber.org/zap"
 )
 
-// CommitsResult is a result for a get of Commits.
-type CommitsResult interface {
-	// FoundCommits is the Commits that were found.
-	//
-	// Ordered by the order of input ModuleKeys.
-	FoundCommits() []bufmodule.Commit
-	// NotFoundModuleKeys is the input ModuleKeys that were not found.
-	//
-	// Ordered by the order of input ModuleKeys.
-	NotFoundModuleKeys() []bufmodule.ModuleKey
-
-	isCommitsResult()
-}
-
 // ModuleStore reads and writes ModulesDatas.
 type CommitStore interface {
 	// GetCommitsForModuleKey gets the Commits from the store for the ModuleKeys.
-	GetCommitsForModuleKeys(context.Context, []bufmodule.ModuleKey) (CommitsResult, error)
+	//
+	// Returns the found Commits, and the input ModuleKeys that were not found, each
+	// ordered by the order of the input ModuleKeys.
+	GetCommitsForModuleKeys(context.Context, []bufmodule.ModuleKey) (
+		foundCommits []bufmodule.Commit,
+		notFoundModuleKeys []bufmodule.ModuleKey,
+		err error,
+	)
 
 	// Put puts the Commits to the store.
 	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
@@ -84,21 +77,21 @@ func newCommitStore(
 func (p *commitStore) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (CommitsResult, error) {
+) ([]bufmodule.Commit, []bufmodule.ModuleKey, error) {
 	var foundCommits []bufmodule.Commit
 	var notFoundModuleKeys []bufmodule.ModuleKey
 	for _, moduleKey := range moduleKeys {
 		commit, err := p.getCommitForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
+				return nil, nil, err
 			}
 			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
 		} else {
 			foundCommits = append(foundCommits, commit)
 		}
 	}
-	return newCommitsResult(foundCommits, notFoundModuleKeys), nil
+	return foundCommits, notFoundModuleKeys, nil
 }
 
 func (p *commitStore) PutCommits(
@@ -219,31 +212,6 @@ func (p *commitStore) deleteInvalidCommitFile(
 func (p *commitStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }
-
-type commitsResult struct {
-	foundCommits       []bufmodule.Commit
-	notFoundModuleKeys []bufmodule.ModuleKey
-}
-
-func newCommitsResult(
-	foundCommits []bufmodule.Commit,
-	notFoundModuleKeys []bufmodule.ModuleKey,
-) *commitsResult {
-	return &commitsResult{
-		foundCommits:       foundCommits,
-		notFoundModuleKeys: notFoundModuleKeys,
-	}
-}
-
-func (r *commitsResult) FoundCommits() []bufmodule.Commit {
-	return r.foundCommits
-}
-
-func (r *commitsResult) NotFoundModuleKeys() []bufmodule.ModuleKey {
-	return r.notFoundModuleKeys
-}
-
-func (*commitsResult) isCommitsResult() {}
 
 // Returns the directory path within the store for the module.
 //

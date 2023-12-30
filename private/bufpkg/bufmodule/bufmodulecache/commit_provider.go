@@ -62,12 +62,10 @@ func (p *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.Commit, error) {
-	storeCommitsResult, err := p.store.GetCommitsForModuleKeys(ctx, moduleKeys)
+	foundCommits, notFoundModuleKeys, err := p.store.GetCommitsForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
-	foundCommits := storeCommitsResult.FoundCommits()
-	notFoundModuleKeys := storeCommitsResult.NotFoundModuleKeys()
 	delegateCommits, err := p.delegate.GetCommitsForModuleKeys(
 		ctx,
 		notFoundModuleKeys,

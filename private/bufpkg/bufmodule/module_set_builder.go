@@ -76,8 +76,10 @@ type ModuleSetBuilder interface {
 	//
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
 	//
-	// The dependencies of the Module will are automatically added to the ModuleSet.
-	// Note, however, that Modules added with AddLocalModule always take precedence,
+	// The dependencies of the Module will are *not* automatically added to the ModuleSet.
+	// It is the caller's responsibility to add transitive dependencies.
+	//
+	//Modules added with AddLocalModule always take precedence,
 	// so if there are local bucket-based dependencies, these will be used.
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a

@@ -46,7 +46,14 @@ type ModuleDatasResult interface {
 // ModuleStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
 	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
-	GetModuleDatasForModuleKeys(context.Context, []bufmodule.ModuleKey) (ModuleDatasResult, error)
+	//
+	// Returns the found ModuleDatas, and the input ModuleKeys that were not found, each
+	// ordered by the order of the input ModuleKeys.
+	GetModuleDatasForModuleKeys(context.Context, []bufmodule.ModuleKey) (
+		foundModuleDatas []bufmodule.ModuleData,
+		notFoundModuleKeys []bufmodule.ModuleKey,
+		err error,
+	)
 
 	// Put puts the ModuleDatas to the store.
 	PutModuleDatas(ctx context.Context, moduleDatas []bufmodule.ModuleData) error
@@ -108,21 +115,21 @@ func newModuleDataStore(
 func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (ModuleDatasResult, error) {
+) ([]bufmodule.ModuleData, []bufmodule.ModuleKey, error) {
 	var foundModuleDatas []bufmodule.ModuleData
 	var notFoundModuleKeys []bufmodule.ModuleKey
 	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
+				return nil, nil, err
 			}
 			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
 		} else {
 			foundModuleDatas = append(foundModuleDatas, moduleData)
 		}
 	}
-	return newModuleDatasResult(foundModuleDatas, notFoundModuleKeys), nil
+	return foundModuleDatas, notFoundModuleKeys, nil
 }
 
 func (p *moduleDataStore) PutModuleDatas(
@@ -310,31 +317,6 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
 	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }
-
-type moduleDatasResult struct {
-	foundModuleDatas   []bufmodule.ModuleData
-	notFoundModuleKeys []bufmodule.ModuleKey
-}
-
-func newModuleDatasResult(
-	foundModuleDatas []bufmodule.ModuleData,
-	notFoundModuleKeys []bufmodule.ModuleKey,
-) *moduleDatasResult {
-	return &moduleDatasResult{
-		foundModuleDatas:   foundModuleDatas,
-		notFoundModuleKeys: notFoundModuleKeys,
-	}
-}
-
-func (r *moduleDatasResult) FoundModuleDatas() []bufmodule.ModuleData {
-	return r.foundModuleDatas
-}
-
-func (r *moduleDatasResult) NotFoundModuleKeys() []bufmodule.ModuleKey {
-	return r.notFoundModuleKeys
-}
-
-func (*moduleDatasResult) isModuleDatasResult() {}
 
 // Returns the module's path within the store if storing individual files.
 //

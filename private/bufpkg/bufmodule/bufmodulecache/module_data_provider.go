@@ -70,12 +70,10 @@ func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	_ = getModuleDatasForModuleKeysOptions
 	// TODO
 
-	storeModuleDatasResult, err := p.store.GetModuleDatasForModuleKeys(ctx, moduleKeys)
+	foundModuleDatas, notFoundModuleKeys, err := p.store.GetModuleDatasForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
-	foundModuleDatas := storeModuleDatasResult.FoundModuleDatas()
-	notFoundModuleKeys := storeModuleDatasResult.NotFoundModuleKeys()
 	delegateModuleDatas, err := p.delegate.GetModuleDatasForModuleKeys(
 		ctx,
 		notFoundModuleKeys,

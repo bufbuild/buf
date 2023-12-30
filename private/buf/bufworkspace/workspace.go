@@ -578,6 +578,8 @@ func newWorkspaceForBucketBufYAMLV2(
 		}
 	} else {
 		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
+			// DepModuleKeys from a BufLockFile is expected to have all transitive dependencies,
+			// and we can rely on this property.
 			moduleSetBuilder.AddRemoteModule(
 				depModuleKey,
 				false,
@@ -676,6 +678,8 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			}
 		} else {
 			for _, depModuleKey := range bufLockFile.DepModuleKeys() {
+				// DepModuleKeys from a BufLockFile is expected to have all transitive dependencies,
+				// and we can rely on this property.
 				moduleSetBuilder.AddRemoteModule(
 					depModuleKey,
 					false,
