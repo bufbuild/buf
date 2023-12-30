@@ -123,10 +123,9 @@ func testModuleDataProviderBasic(t *testing.T, tar bool) {
 		),
 	)
 
-	moduleDatas, err := bufmodule.GetModuleDatasForModuleKeys(
+	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
@@ -135,8 +134,8 @@ func testModuleDataProviderBasic(t *testing.T, tar bool) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod3",
 			"buf.build/foo/mod2",
+			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			moduleDatas,
@@ -147,10 +146,9 @@ func testModuleDataProviderBasic(t *testing.T, tar bool) {
 	)
 
 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-	moduleDatas, err = bufmodule.GetModuleDatasForModuleKeys(
+	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
@@ -158,9 +156,9 @@ func testModuleDataProviderBasic(t *testing.T, tar bool) {
 	require.Equal(
 		t,
 		[]string{
-			"buf.build/foo/mod3",
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
+			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			moduleDatas,
@@ -207,11 +205,14 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 	require.NoError(t, err)
 	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		moduleRefMod1,
-		// Switching order on purpose.
-		moduleRefMod3,
-		moduleRefMod2,
+		[]bufmodule.ModuleRef{
+			moduleRefMod1,
+			// Switching order on purpose.
+			moduleRefMod3,
+			moduleRefMod2,
+		},
 	)
 	require.NoError(t, err)
+	require.Equal(t, 3, len(moduleKeys))
 	return bsrProvider, moduleKeys
 }

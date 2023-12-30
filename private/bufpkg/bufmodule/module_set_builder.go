@@ -438,25 +438,29 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	for _, declaredDepModuleKey := range declaredDepModuleKeys {
-		// Not a target Module.
-		// If this Module is a target, this will be added by the caller.
-		//
-		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
-		depModules, err := b.getTransitiveModulesForRemoteModuleKey(
-			declaredDepModuleKey,
-			nil,
-			nil,
-			false,
-			alreadySeenOpaqueIDs,
-		)
-		if err != nil {
-			return nil, err
+	if doTransitiveRemoteModules {
+		for _, declaredDepModuleKey := range declaredDepModuleKeys {
+			// Not a target Module.
+			// If this Module is a target, this will be added by the caller.
+			//
+			// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
+			depModules, err := b.getTransitiveModulesForRemoteModuleKey(
+				declaredDepModuleKey,
+				nil,
+				nil,
+				false,
+				alreadySeenOpaqueIDs,
+			)
+			if err != nil {
+				return nil, err
+			}
+			allModules = append(allModules, depModules...)
 		}
-		allModules = append(allModules, depModules...)
 	}
 	return allModules, nil
 }
+
+const doTransitiveRemoteModules = false
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
 	b.errs = append(b.errs, err)

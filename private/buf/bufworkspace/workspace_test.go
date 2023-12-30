@@ -116,6 +116,7 @@ func testBasic(t *testing.T, subDirPath string) {
 			},
 		},
 		graph,
+		bufmodule.Module.OpaqueID,
 	)
 	require.NoError(t, err)
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/bond")

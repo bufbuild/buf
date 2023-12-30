@@ -106,7 +106,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	dotString, err := graph.DOTString(func(s string) string { return s })
+	dotString, err := graph.DOTString(func(module bufmodule.Module) string { return module.OpaqueID() })
 	if err != nil {
 		return err
 	}

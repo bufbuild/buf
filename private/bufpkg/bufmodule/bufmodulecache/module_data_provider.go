@@ -16,12 +16,11 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
+	"sort"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"go.uber.org/zap"
 )
 
@@ -68,86 +67,40 @@ func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
-
-	moduleDatas := make([]bufmodule.ModuleData, 0, len(moduleKeys))
+	_ = getModuleDatasForModuleKeysOptions
 
 	storeModuleDatasResult, err := p.store.GetModuleDatasForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
-	moduleDatas = append(moduleDatas, storeModuleDatasResult.FoundModuleDatas()...)
-
-	//for _, notFoundModuleKey := range storeModuleDatasResult.NotFoundModuleKeys()
-
-	resultOptionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	// The indexes within moduleKeys of the ModuleKeys that did not have a cached ModuleData.
-	// We will then fetch these specific ModuleKeys in one shot from the delegate.
-	var missedModuleKeysIndexes []int
-	for i, cachedOptionalModuleData := range cachedOptionalModuleDatas {
-		p.logDebugModuleKey(
-			moduleKeys[i],
-			"module files cache get",
-			zap.Bool("found", cachedOptionalModuleData.Found()),
-		)
-		if cachedOptionalModuleData.Found() {
-			// We put the cached ModuleData at the specific location it is expected to be returned,
-			// given that the returned ModuleData order must match the input ModuleKey order.
-			resultOptionalModuleDatas[i] = cachedOptionalModuleData
-		} else {
-			missedModuleKeysIndexes = append(missedModuleKeysIndexes, i)
-		}
+	foundModuleDatas := storeModuleDatasResult.FoundModuleDatas()
+	notFoundModuleKeys := storeModuleDatasResult.NotFoundModuleKeys()
+	delegateModuleDatas, err := p.delegate.GetModuleDatasForModuleKeys(
+		ctx,
+		notFoundModuleKeys,
+		options...,
+	)
+	if err != nil {
+		return nil, err
 	}
-	if len(missedModuleKeysIndexes) > 0 {
-		missedOptionalModuleDatas, err := p.delegate.GetOptionalModuleDatasForModuleKeys(
-			ctx,
-			// Map the indexes of to the actual ModuleKeys.
-			slicesext.Map(
-				missedModuleKeysIndexes,
-				func(i int) bufmodule.ModuleKey { return moduleKeys[i] },
-			)...,
-		)
-		if err != nil {
-			return nil, err
-		}
-		// Just a sanity check.
-		if len(missedOptionalModuleDatas) != len(missedModuleKeysIndexes) {
-			return nil, fmt.Errorf(
-				"expected %d ModuleDatas, got %d",
-				len(missedModuleKeysIndexes),
-				len(missedOptionalModuleDatas),
-			)
-		}
-		// Put the found ModuleDatas into the store.
-		if err := p.store.PutModuleDatas(
-			ctx,
-			slicesext.Map(
-				// Get just the OptionalModuleDatas that were found.
-				slicesext.Filter(
-					missedOptionalModuleDatas,
-					func(optionalModuleData bufmodule.OptionalModuleData) bool {
-						return optionalModuleData.Found()
-					},
-				),
-				// Get found OptionalModuleData -> ModuleData.
-				func(optionalModuleData bufmodule.OptionalModuleData) bufmodule.ModuleData {
-					return optionalModuleData.ModuleData()
-				},
-			)...,
-		); err != nil {
-			return nil, err
-		}
-		for i, missedModuleKeysIndex := range missedModuleKeysIndexes {
-			// i is the index within missedOptionalModuleDatas, while missedModuleKeysIndex is the index
-			// within missedModuleKeysIndexes, and consequently moduleKeys.
-			//
-			// Put in the specific location we expect the OptionalModuleData to be returned.
-			// Put in regardless of whether it was found.
-			resultOptionalModuleDatas[missedModuleKeysIndex] = missedOptionalModuleDatas[i]
-		}
+	if err := p.store.PutModuleDatas(
+		ctx,
+		delegateModuleDatas,
+	); err != nil {
+		return nil, err
 	}
-	p.moduleKeysRetrieved.Add(int64(len(storeModuleDatasResult.FoundModuleDatas())))
-	p.moduleKeysHit.Add(int64(len(storeModuleDatasResult.NotFoundModuleKeys())))
-	return resultOptionalModuleDatas, nil
+
+	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
+	p.moduleKeysHit.Add(int64(len(foundModuleDatas)))
+
+	moduleDatas := append(foundModuleDatas, delegateModuleDatas...)
+	sort.Slice(
+		moduleDatas,
+		func(i int, j int) bool {
+			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
+		},
+	)
+	return moduleDatas, nil
 }
 
 func (p *moduleDataProvider) getModuleKeysRetrieved() int {
@@ -156,8 +109,4 @@ func (p *moduleDataProvider) getModuleKeysRetrieved() int {
 
 func (p *moduleDataProvider) getModuleKeysHit() int {
 	return int(p.moduleKeysHit.Load())
-}
-
-func (p *moduleDataProvider) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	logDebugModuleKey(p.logger, moduleKey, message, fields...)
 }

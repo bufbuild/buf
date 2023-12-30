@@ -131,13 +131,9 @@ func run(
 		},
 	)
 	// All the ModuleKeys we get back from buf.yaml.
-	//
-	// TODO: These may have duplicates by ModuleFullName. We don't do any dependency
-	// resolution here. In the below, we're effectively just taking whatever is first
-	// in ConfiguredDepModuleRefs.
 	bufYAMLModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		updateableWorkspace.ConfiguredDepModuleRefs()...,
+		updateableWorkspace.ConfiguredDepModuleRefs(),
 	)
 	if err != nil {
 		return err

@@ -54,7 +54,7 @@ func newModuleKeyProvider(
 
 func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs ...bufmodule.ModuleRef,
+	moduleRefs []bufmodule.ModuleRef,
 ) ([]bufmodule.ModuleKey, error) {
 	registryToIndexedModuleRefs := getKeyToIndexedValues(
 		moduleRefs,

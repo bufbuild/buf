@@ -16,7 +16,7 @@ package bufmoduleapi
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io/fs"
 	"sort"
 
@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
 
@@ -112,6 +111,8 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	if err != nil {
 		return nil, err
 	}
+	_ = protoGraph
+	return nil, errors.New("unimplemented getModuleDatasForRegistryAndModuleKeys")
 }
 
 func (a *moduleDataProvider) getProtoGraphForRegistryAndModuleKeys(
@@ -157,166 +158,166 @@ func (a *moduleDataProvider) getProtoGraphForRegistryAndModuleKeys(
 	return response.Msg.Graph, nil
 }
 
-func (a *moduleDataProvider) getModuleDataForModuleKey(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	moduleKey bufmodule.ModuleKey,
-) (bufmodule.ModuleData, error) {
-	registryHostname := moduleKey.ModuleFullName().Registry()
+//func (a *moduleDataProvider) getModuleDataForModuleKey(
+//ctx context.Context,
+//protoModuleProvider *protoModuleProvider,
+//protoOwnerProvider *protoOwnerProvider,
+//moduleKey bufmodule.ModuleKey,
+//) (bufmodule.ModuleData, error) {
+//registryHostname := moduleKey.ModuleFullName().Registry()
 
-	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
-	if err != nil {
-		return nil, err
-	}
-	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.DownloadRequest{
-				Values: []*modulev1beta1.DownloadRequest_Value{
-					{
-						ResourceRef: &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
-							},
-						},
-					},
-				},
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
-			},
-		),
-	)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
-		}
-		return nil, err
-	}
-	if len(response.Msg.References) != 1 {
-		return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
-	}
-	protoCommitIDToCommit, err := getProtoCommitIDToCommitForProtoDownloadResponse(response.Msg)
-	if err != nil {
-		return nil, err
-	}
-	protoCommitIDToBucket, err := getProtoCommitIDToBucketForProtoDownloadResponse(response.Msg)
-	if err != nil {
-		return nil, err
-	}
-	if err := a.warnIfDeprecated(
-		ctx,
-		protoModuleProvider,
-		protoCommitIDToCommit,
-		registryHostname,
-		moduleKey,
-		response.Msg.References[0],
-	); err != nil {
-		return nil, err
-	}
-	return getModuleDataForProtoDownloadResponseReference(
-		ctx,
-		protoModuleProvider,
-		protoOwnerProvider,
-		protoCommitIDToCommit,
-		protoCommitIDToBucket,
-		registryHostname,
-		moduleKey,
-		response.Msg.References[0],
-	)
-}
+//protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
+//if err != nil {
+//return nil, err
+//}
+//response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
+//ctx,
+//connect.NewRequest(
+//&modulev1beta1.DownloadRequest{
+//Values: []*modulev1beta1.DownloadRequest_Value{
+//{
+//ResourceRef: &modulev1beta1.ResourceRef{
+//Value: &modulev1beta1.ResourceRef_Id{
+//Id: protoCommitID,
+//},
+//},
+//},
+//},
+//DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+//},
+//),
+//)
+//if err != nil {
+//if connect.CodeOf(err) == connect.CodeNotFound {
+//return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+//}
+//return nil, err
+//}
+//if len(response.Msg.References) != 1 {
+//return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
+//}
+//protoCommitIDToCommit, err := getProtoCommitIDToCommitForProtoDownloadResponse(response.Msg)
+//if err != nil {
+//return nil, err
+//}
+//protoCommitIDToBucket, err := getProtoCommitIDToBucketForProtoDownloadResponse(response.Msg)
+//if err != nil {
+//return nil, err
+//}
+//if err := a.warnIfDeprecated(
+//ctx,
+//protoModuleProvider,
+//protoCommitIDToCommit,
+//registryHostname,
+//moduleKey,
+//response.Msg.References[0],
+//); err != nil {
+//return nil, err
+//}
+//return getModuleDataForProtoDownloadResponseReference(
+//ctx,
+//protoModuleProvider,
+//protoOwnerProvider,
+//protoCommitIDToCommit,
+//protoCommitIDToBucket,
+//registryHostname,
+//moduleKey,
+//response.Msg.References[0],
+//)
+//}
 
-func (a *moduleDataProvider) warnIfDeprecated(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
-	registryHostname string,
-	moduleKey bufmodule.ModuleKey,
-	protoReference *modulev1beta1.DownloadResponse_Reference,
-) error {
-	protoCommit, ok := protoCommitIDToCommit[protoReference.CommitId]
-	if !ok {
-		return fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
-	}
-	protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
-		ctx,
-		registryHostname,
-		protoCommit.ModuleId,
-	)
-	if err != nil {
-		return err
-	}
-	if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
-		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
-	}
-	return nil
-}
+//func (a *moduleDataProvider) warnIfDeprecated(
+//ctx context.Context,
+//protoModuleProvider *protoModuleProvider,
+//protoCommitIDToCommit map[string]*modulev1beta1.Commit,
+//registryHostname string,
+//moduleKey bufmodule.ModuleKey,
+//protoReference *modulev1beta1.DownloadResponse_Reference,
+//) error {
+//protoCommit, ok := protoCommitIDToCommit[protoReference.CommitId]
+//if !ok {
+//return fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
+//}
+//protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
+//ctx,
+//registryHostname,
+//protoCommit.ModuleId,
+//)
+//if err != nil {
+//return err
+//}
+//if protoModule.State == modulev1beta1.ModuleState_MODULE_STATE_DEPRECATED {
+//a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
+//}
+//return nil
+//}
 
-func getModuleDataForProtoDownloadResponseReference(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
-	protoCommitIDToBucket map[string]storage.ReadBucket,
-	registryHostname string,
-	moduleKey bufmodule.ModuleKey,
-	protoReference *modulev1beta1.DownloadResponse_Reference,
-) (bufmodule.ModuleData, error) {
-	bucket, ok := protoCommitIDToBucket[protoReference.CommitId]
-	if !ok {
-		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
-	}
-	depProtoCommits, err := slicesext.MapError(
-		protoReference.DepCommitIds,
-		func(protoCommitID string) (*modulev1beta1.Commit, error) {
-			commit, ok := protoCommitIDToCommit[protoCommitID]
-			if !ok {
-				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", protoCommitID)
-			}
-			return commit, nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleData(
-		ctx,
-		moduleKey,
-		func() (storage.ReadBucket, error) {
-			return bucket, nil
-		},
-		func() ([]bufmodule.ModuleKey, error) {
-			return getModuleKeysForProtoCommits(
-				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
-				registryHostname,
-				depProtoCommits,
-			)
-		},
-	), nil
-}
+//func getModuleDataForProtoDownloadResponseReference(
+//ctx context.Context,
+//protoModuleProvider *protoModuleProvider,
+//protoOwnerProvider *protoOwnerProvider,
+//protoCommitIDToCommit map[string]*modulev1beta1.Commit,
+//protoCommitIDToBucket map[string]storage.ReadBucket,
+//registryHostname string,
+//moduleKey bufmodule.ModuleKey,
+//protoReference *modulev1beta1.DownloadResponse_Reference,
+//) (bufmodule.ModuleData, error) {
+//bucket, ok := protoCommitIDToBucket[protoReference.CommitId]
+//if !ok {
+//return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
+//}
+//depProtoCommits, err := slicesext.MapError(
+//protoReference.DepCommitIds,
+//func(protoCommitID string) (*modulev1beta1.Commit, error) {
+//commit, ok := protoCommitIDToCommit[protoCommitID]
+//if !ok {
+//return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", protoCommitID)
+//}
+//return commit, nil
+//},
+//)
+//if err != nil {
+//return nil, err
+//}
+//return bufmodule.NewModuleData(
+//ctx,
+//moduleKey,
+//func() (storage.ReadBucket, error) {
+//return bucket, nil
+//},
+//func() ([]bufmodule.ModuleKey, error) {
+//return getModuleKeysForProtoCommits(
+//ctx,
+//protoModuleProvider,
+//protoOwnerProvider,
+//registryHostname,
+//depProtoCommits,
+//)
+//},
+//), nil
+//}
 
-func getProtoCommitIDToCommitForProtoDownloadResponse(
-	protoDownloadResponse *modulev1beta1.DownloadResponse,
-) (map[string]*modulev1beta1.Commit, error) {
-	return slicesext.ToUniqueValuesMapError(
-		protoDownloadResponse.Commits,
-		func(protoCommit *modulev1beta1.Commit) (string, error) {
-			return protoCommit.Id, nil
-		},
-	)
-}
+//func getProtoCommitIDToCommitForProtoDownloadResponse(
+//protoDownloadResponse *modulev1beta1.DownloadResponse,
+//) (map[string]*modulev1beta1.Commit, error) {
+//return slicesext.ToUniqueValuesMapError(
+//protoDownloadResponse.Commits,
+//func(protoCommit *modulev1beta1.Commit) (string, error) {
+//return protoCommit.Id, nil
+//},
+//)
+//}
 
-func getProtoCommitIDToBucketForProtoDownloadResponse(
-	protoDownloadResponse *modulev1beta1.DownloadResponse,
-) (map[string]storage.ReadBucket, error) {
-	protoCommitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
-	for _, protoContent := range protoDownloadResponse.Contents {
-		bucket, err := protoFilesToBucket(protoContent.Files)
-		if err != nil {
-			return nil, err
-		}
-		protoCommitIDToBucket[protoContent.CommitId] = bucket
-	}
-	return protoCommitIDToBucket, nil
-}
+//func getProtoCommitIDToBucketForProtoDownloadResponse(
+//protoDownloadResponse *modulev1beta1.DownloadResponse,
+//) (map[string]storage.ReadBucket, error) {
+//protoCommitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
+//for _, protoContent := range protoDownloadResponse.Contents {
+//bucket, err := protoFilesToBucket(protoContent.Files)
+//if err != nil {
+//return nil, err
+//}
+//protoCommitIDToBucket[protoContent.CommitId] = bucket
+//}
+//return protoCommitIDToBucket, nil
+//}
