@@ -101,52 +101,46 @@ func run(
 	if err != nil {
 		return err
 	}
-	depModules, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
+	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
 	if err != nil {
 		return err
 	}
 	// All the ModuleKeys we get from the current dependency list in the workspace.
 	// This includes transitive dependencies.
-	depModuleKeys, err := slicesext.MapError(
-		depModules,
-		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(remoteDep)
-		},
-	)
+	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(remoteDeps)
 	if err != nil {
 		return err
 	}
-	depNameToModuleKey := slicesext.ToValuesMap(
-		depModuleKeys,
-		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().String()
-		},
-	)
 	// All the ModuleKeys we get back from buf.yaml.
-	bufYAMLModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
+	//
+	// ModuleKeyProvider provides updated references for all the ModuleKeys.
+	bufYAMLUpdatedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		updateableWorkspace.ConfiguredDepModuleRefs(),
 	)
 	if err != nil {
 		return err
 	}
-	bufYAMLNameToModuleKey := slicesext.ToValuesMap(
-		bufYAMLModuleKeys,
-		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().String()
+	bufYAMLNameToUpdatedModuleKey, err := slicesext.ToUniqueValuesMapError(
+		bufYAMLUpdatedModuleKeys,
+		func(moduleKey bufmodule.ModuleKey) (string, error) {
+			return moduleKey.ModuleFullName().String(), nil
 		},
 	)
-	for bufYAMLName, bufYAMLModuleKey := range bufYAMLNameToModuleKey {
-		if _, ok := depNameToModuleKey[bufYAMLName]; !ok {
+	if err != nil {
+		return err
+	}
+	for bufYAMLName, updatedModuleKey := range bufYAMLNameToUpdatedModuleKey {
+		if _, ok := remoteDepNameToModuleKey[bufYAMLName]; !ok {
 			// In updated list from buf.yaml, but not in dependency list.
 			//
 			// This is an unused module.
 			//
 			// Delete from our update map, we won't write this to buf.lock
-			delete(bufYAMLNameToModuleKey, bufYAMLName)
+			delete(bufYAMLNameToUpdatedModuleKey, bufYAMLName)
 			// We determine if its unused because its local, or if because it is not
 			// a dependency at all.
-			module := updateableWorkspace.GetModuleForModuleFullName(bufYAMLModuleKey.ModuleFullName())
+			module := updateableWorkspace.GetModuleForModuleFullName(updatedModuleKey.ModuleFullName())
 			if module == nil || !module.IsLocal() {
 				container.Logger().Sugar().Warnf("%s is specified in buf.yaml but is not used", bufYAMLName)
 			} else { // module.IsLocal()
@@ -154,37 +148,26 @@ func run(
 			}
 		}
 	}
-	transitiveDepModules := slicesext.Filter(depModules, func(remoteDep bufmodule.RemoteDep) bool { return !remoteDep.IsDirect() })
-	transitiveDepModuleKeys, err := slicesext.MapError(
-		transitiveDepModules,
-		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(remoteDep)
-		},
-	)
+
+	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(remoteDeps)
 	if err != nil {
 		return err
 	}
-	transitiveDepNameToModuleKey := slicesext.ToValuesMap(
-		transitiveDepModuleKeys,
-		func(moduleKey bufmodule.ModuleKey) string {
-			return moduleKey.ModuleFullName().String()
-		},
-	)
 	// Our result buf.lock needs to have everything in deps. We will only use the new values from bufYAMLNameToModuleKey
 	// if either (1) onlyNameMap is empty (2) they are within onlyNameMap, AND they are a remote dependency.
 	//
 	// Note we deleted unused dependencies from bufYAMLNameToModuleKey above.
-	for depName := range depNameToModuleKey {
-		bufYAMLModuleKey, ok := bufYAMLNameToModuleKey[depName]
+	for remoteDepName := range remoteDepNameToModuleKey {
+		updatedModuleKey, ok := bufYAMLNameToUpdatedModuleKey[remoteDepName]
 		if ok {
 			if len(onlyNameMap) > 0 {
-				if _, ok := onlyNameMap[depName]; ok {
+				if _, ok := onlyNameMap[remoteDepName]; ok {
 					// This was a dependency (or transitive dependency) in --only. Update.
-					depNameToModuleKey[depName] = bufYAMLModuleKey
+					remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
 				}
 			} else {
 				// We didn't specify --only. Update indiscriminately.
-				depNameToModuleKey[depName] = bufYAMLModuleKey
+				remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
 			}
 		} else {
 			// This was in our deps list but was not specified in buf.yaml. Check if it was only transitive dependency.
@@ -193,17 +176,66 @@ func run(
 			//
 			// Note if something wasn't PREVIOUSLY specified in our buf.lock, we would have failed on the building
 			// of the workspace, as we just wouldn't have a dep.
-			if _, ok := transitiveDepNameToModuleKey[depName]; !ok {
-				return fmt.Errorf("previously present dependency %q is not longer specified in buf.yaml but is still depended on", depName)
+			if isTransitveRemoteDep(remoteDepName) {
+				return fmt.Errorf("previously present dependency %q is not longer specified in buf.yaml but is still depended on", remoteDepName)
 			}
 		}
 	}
 	// NewBufLockFile will sort the deps.
-	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, slicesext.MapValuesToSlice(depNameToModuleKey))
+	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, slicesext.MapValuesToSlice(remoteDepNameToModuleKey))
 	if err != nil {
 		return err
 	}
 	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
+}
+
+// Returns a function that returns true if the named module is a transitive remote
+// dependency of the Workspace.
+func getIsTransitiveRemoteDepFunc(remoteDeps []bufmodule.RemoteDep) (func(name string) bool, error) {
+	transitiveRemoteDeps := slicesext.Filter(
+		remoteDeps,
+		func(remoteDep bufmodule.RemoteDep) bool {
+			return !remoteDep.IsDirect()
+		},
+	)
+	transitiveRemoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(transitiveRemoteDeps)
+	if err != nil {
+		return nil, err
+	}
+	return func(name string) bool {
+		_, ok := transitiveRemoteDepNameToModuleKey[name]
+		return ok
+	}, nil
+}
+
+// Returns a map from name to ModuleKey.
+//
+// Can be used for Modules, ModuleDeps, RemoteDeps.
+//
+// Expects al Modules to have a ModuleFullName and CommitID. This cannot be used
+// for local Modules.
+//
+// All the ModuleKeys we get from the current dependency list in the workspace.
+// This includes transitive dependencies.
+func getModuleFullNameToModuleKey[T bufmodule.Module, S ~[]T](values S) (map[string]bufmodule.ModuleKey, error) {
+	moduleKeys, err := slicesext.MapError(
+		values,
+		func(module T) (bufmodule.ModuleKey, error) {
+			if module.IsLocal() {
+				return nil, syserror.New("cannot pass local Modules to getModuleFullNameToModuleKey")
+			}
+			return bufmodule.ModuleToModuleKey(module)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.ToUniqueValuesMapError(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) (string, error) {
+			return moduleKey.ModuleFullName().String(), nil
+		},
+	)
 }
 
 // Returns the dependencies and transitive dependencies to be updated.
