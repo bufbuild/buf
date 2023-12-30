@@ -108,7 +108,8 @@ func (a *commitProvider) getCommitForModuleKey(
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
