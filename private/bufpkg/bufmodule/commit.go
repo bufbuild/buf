@@ -111,14 +111,6 @@ func (c *commit) Digest() (Digest, error) {
 
 func (*commit) isCommit() {}
 
-type commitOptions struct {
-	receivedDigest Digest
-}
-
-func newCommitOptions() *commitOptions {
-	return &commitOptions{}
-}
-
 func validateCommitID(commitID string) error {
 	if err := uuidutil.ValidateDashless(commitID); err != nil {
 		return fmt.Errorf("invalid commit ID %s: %w", commitID, err)

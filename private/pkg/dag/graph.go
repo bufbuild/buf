@@ -339,10 +339,6 @@ func (g *Graph[Key, Value]) checkInit() error {
 	return nil
 }
 
-func (g *Graph[Key, Value]) getKeysForValues(values []Value) []Key {
-	return slicesext.Map(values, g.getKeyForValue)
-}
-
 func (g *Graph[Key, Value]) getValuesForKeys(keys []Key) ([]Value, error) {
 	return slicesext.MapError(keys, g.getValueForKey)
 }

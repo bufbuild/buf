@@ -20,29 +20,7 @@ import (
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
-
-func getModuleKeysForProtoCommits(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	registryHostname string,
-	protoCommits []*modulev1beta1.Commit,
-) ([]bufmodule.ModuleKey, error) {
-	return slicesext.MapError(
-		protoCommits,
-		func(protoCommit *modulev1beta1.Commit) (bufmodule.ModuleKey, error) {
-			return getModuleKeyForProtoCommit(
-				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
-				registryHostname,
-				protoCommit,
-			)
-		},
-	)
-}
 
 func getModuleKeyForProtoCommit(
 	ctx context.Context,
