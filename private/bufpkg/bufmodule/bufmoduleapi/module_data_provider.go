@@ -57,9 +57,7 @@ func newModuleDataProvider(
 func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-	options ...bufmodule.GetModuleDatasForModuleKeysOption,
 ) ([]bufmodule.ModuleData, error) {
-	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
@@ -83,7 +81,6 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 			protoOwnerProvider,
 			registry,
 			iModuleKeys,
-			getModuleDatasForModuleKeysOptions.IncludeDepModuleDatas(),
 		)
 		if err != nil {
 			return nil, err
@@ -105,7 +102,6 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	protoOwnerProvider *protoOwnerProvider,
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
-	includeDepModuleDatas bool,
 ) ([]bufmodule.ModuleData, error) {
 	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys)
 	if err != nil {

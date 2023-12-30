@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/fs"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -187,33 +186,19 @@ func (o *omniProvider) GetModuleKeysForModuleRefs(
 func (o *omniProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-	options ...bufmodule.GetModuleDatasForModuleKeysOption,
 ) ([]bufmodule.ModuleData, error) {
-	duplicateModuleConfigFullNameStrings := slicesext.Duplicates(
-		slicesext.Map(
-			moduleKeys,
-			func(moduleKey bufmodule.ModuleKey) string {
-				return moduleKey.ModuleFullName().String()
-			},
-		),
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
+	}
+	moduleDatas, err := slicesext.MapError(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) (bufmodule.ModuleData, error) {
+			return o.getModuleDataForModuleKey(ctx, moduleKey)
+		},
 	)
-	if len(duplicateModuleConfigFullNameStrings) > 0 {
-		return nil, fmt.Errorf("module names %q seen more than once", strings.Join(duplicateModuleConfigFullNameStrings, ", "))
+	if err != nil {
+		return nil, err
 	}
-
-	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
-	moduleFullNameStringToModuleData := make(map[string]bufmodule.ModuleData, len(moduleKeys))
-	for _, moduleKey := range moduleKeys {
-		if err := o.populateModuleDatasForModuleKeyRec(
-			ctx,
-			moduleFullNameStringToModuleData,
-			moduleKey,
-			getModuleDatasForModuleKeysOptions.IncludeDepModuleDatas(),
-		); err != nil {
-			return nil, err
-		}
-	}
-	moduleDatas := slicesext.MapValuesToSlice(moduleFullNameStringToModuleData)
 	sort.Slice(
 		moduleDatas,
 		func(i int, j int) bool {
@@ -244,35 +229,28 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 	return commits, nil
 }
 
-func (o *omniProvider) populateModuleDatasForModuleKeyRec(
+func (o *omniProvider) getModuleDataForModuleKey(
 	ctx context.Context,
-	moduleFullNameStringToModuleData map[string]bufmodule.ModuleData,
 	moduleKey bufmodule.ModuleKey,
-	includeDepModuleDatas bool,
-) error {
-	if _, ok := moduleFullNameStringToModuleData[moduleKey.ModuleFullName().String()]; ok {
-		return nil
-	}
-
+) (bufmodule.ModuleData, error) {
 	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
 	if module == nil {
-		return &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+		return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 	}
 	moduleDeps, err := module.ModuleDeps()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	declaredDepModuleKeys, err := slicesext.MapError(
-
 		moduleDeps,
 		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
 			return bufmodule.ModuleToModuleKey(moduleDep)
 		},
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	moduleData := bufmodule.NewModuleData(
+	return bufmodule.NewModuleData(
 		ctx,
 		moduleKey,
 		func() (storage.ReadBucket, error) {
@@ -281,23 +259,7 @@ func (o *omniProvider) populateModuleDatasForModuleKeyRec(
 		func() ([]bufmodule.ModuleKey, error) {
 			return declaredDepModuleKeys, nil
 		},
-	)
-	moduleFullNameStringToModuleData[moduleKey.ModuleFullName().String()] = moduleData
-
-	if includeDepModuleDatas {
-		for _, declaredDepModuleKey := range declaredDepModuleKeys {
-			if err := o.populateModuleDatasForModuleKeyRec(
-				ctx,
-				moduleFullNameStringToModuleData,
-				declaredDepModuleKey,
-				includeDepModuleDatas,
-			); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	), nil
 }
 
 func newModuleSet(

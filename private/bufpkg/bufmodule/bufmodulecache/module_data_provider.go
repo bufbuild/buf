@@ -16,8 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"sort"
-	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
@@ -38,12 +36,7 @@ func NewModuleDataProvider(
 /// *** PRIVATE ***
 
 type moduleDataProvider struct {
-	logger   *zap.Logger
-	delegate bufmodule.ModuleDataProvider
-	store    bufmodulestore.ModuleDataStore
-
-	moduleKeysRetrieved atomic.Int64
-	moduleKeysHit       atomic.Int64
+	*baseProvider[bufmodule.ModuleData]
 }
 
 func newModuleDataProvider(
@@ -52,60 +45,18 @@ func newModuleDataProvider(
 	store bufmodulestore.ModuleDataStore,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
-		logger:   logger,
-		delegate: delegate,
-		store:    store,
+		baseProvider: newBaseProvider(
+			logger,
+			delegate.GetModuleDatasForModuleKeys,
+			store.GetModuleDatasForModuleKeys,
+			store.PutModuleDatas,
+		),
 	}
 }
 
 func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-	options ...bufmodule.GetModuleDatasForModuleKeysOption,
 ) ([]bufmodule.ModuleData, error) {
-	getModuleDatasForModuleKeysOptions := bufmodule.NewGetModuleDatasForModuleKeysOptions(options)
-	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
-		return nil, err
-	}
-	_ = getModuleDatasForModuleKeysOptions
-	// TODO
-
-	foundModuleDatas, notFoundModuleKeys, err := p.store.GetModuleDatasForModuleKeys(ctx, moduleKeys)
-	if err != nil {
-		return nil, err
-	}
-	delegateModuleDatas, err := p.delegate.GetModuleDatasForModuleKeys(
-		ctx,
-		notFoundModuleKeys,
-		options...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if err := p.store.PutModuleDatas(
-		ctx,
-		delegateModuleDatas,
-	); err != nil {
-		return nil, err
-	}
-
-	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
-	p.moduleKeysHit.Add(int64(len(foundModuleDatas)))
-
-	moduleDatas := append(foundModuleDatas, delegateModuleDatas...)
-	sort.Slice(
-		moduleDatas,
-		func(i int, j int) bool {
-			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
-		},
-	)
-	return moduleDatas, nil
-}
-
-func (p *moduleDataProvider) getModuleKeysRetrieved() int {
-	return int(p.moduleKeysRetrieved.Load())
-}
-
-func (p *moduleDataProvider) getModuleKeysHit() int {
-	return int(p.moduleKeysHit.Load())
+	return p.baseProvider.getValuesForModuleKeys(ctx, moduleKeys)
 }

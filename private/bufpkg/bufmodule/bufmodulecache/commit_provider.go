@@ -16,8 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"sort"
-	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
@@ -38,12 +36,7 @@ func NewCommitProvider(
 /// *** PRIVATE ***
 
 type commitProvider struct {
-	logger   *zap.Logger
-	delegate bufmodule.CommitProvider
-	store    bufmodulestore.CommitStore
-
-	moduleKeysRetrieved atomic.Int64
-	moduleKeysHit       atomic.Int64
+	*baseProvider[bufmodule.Commit]
 }
 
 func newCommitProvider(
@@ -52,9 +45,12 @@ func newCommitProvider(
 	store bufmodulestore.CommitStore,
 ) *commitProvider {
 	return &commitProvider{
-		logger:   logger,
-		delegate: delegate,
-		store:    store,
+		baseProvider: newBaseProvider(
+			logger,
+			delegate.GetCommitsForModuleKeys,
+			store.GetCommitsForModuleKeys,
+			store.PutCommits,
+		),
 	}
 }
 
@@ -62,41 +58,5 @@ func (p *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.Commit, error) {
-	foundCommits, notFoundModuleKeys, err := p.store.GetCommitsForModuleKeys(ctx, moduleKeys)
-	if err != nil {
-		return nil, err
-	}
-	delegateCommits, err := p.delegate.GetCommitsForModuleKeys(
-		ctx,
-		notFoundModuleKeys,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if err := p.store.PutCommits(
-		ctx,
-		delegateCommits,
-	); err != nil {
-		return nil, err
-	}
-
-	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
-	p.moduleKeysHit.Add(int64(len(foundCommits)))
-
-	commits := append(foundCommits, delegateCommits...)
-	sort.Slice(
-		commits,
-		func(i int, j int) bool {
-			return commits[i].ModuleKey().ModuleFullName().String() < commits[j].ModuleKey().ModuleFullName().String()
-		},
-	)
-	return commits, nil
-}
-
-func (p *commitProvider) getModuleKeysRetrieved() int {
-	return int(p.moduleKeysRetrieved.Load())
-}
-
-func (p *commitProvider) getModuleKeysHit() int {
-	return int(p.moduleKeysHit.Load())
+	return p.baseProvider.getValuesForModuleKeys(ctx, moduleKeys)
 }
