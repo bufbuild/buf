@@ -26,12 +26,12 @@ func getModuleKeyForProtoCommit(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	protoOwnerProvider *protoOwnerProvider,
-	registryHostname string,
+	registry string,
 	protoCommit *modulev1beta1.Commit,
 ) (bufmodule.ModuleKey, error) {
 	protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
 		ctx,
-		registryHostname,
+		registry,
 		protoCommit.ModuleId,
 	)
 	if err != nil {
@@ -39,7 +39,7 @@ func getModuleKeyForProtoCommit(
 	}
 	protoOwner, err := protoOwnerProvider.getProtoOwnerForOwnerID(
 		ctx,
-		registryHostname,
+		registry,
 		protoCommit.OwnerId,
 	)
 	if err != nil {
@@ -55,7 +55,7 @@ func getModuleKeyForProtoCommit(
 		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
 	}
 	moduleFullName, err := bufmodule.NewModuleFullName(
-		registryHostname,
+		registry,
 		ownerName,
 		protoModule.Name,
 	)

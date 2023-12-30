@@ -31,13 +31,13 @@ import (
 // isn't an LRU cache, and the information also may change over time.
 type protoOwnerProvider struct {
 	logger          *zap.Logger
-	clientProvider  bufapi.ClientProvider
+	clientProvider  bufapi.OwnerServiceClientProvider
 	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner]
 }
 
 func newProtoOwnerProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.OwnerServiceClientProvider,
 ) *protoOwnerProvider {
 	return &protoOwnerProvider{
 		logger:         logger,
@@ -47,13 +47,13 @@ func newProtoOwnerProvider(
 
 func (a *protoOwnerProvider) getProtoOwnerForOwnerID(
 	ctx context.Context,
-	registryHostname string,
+	registry string,
 	ownerID string,
 ) (*ownerv1beta1.Owner, error) {
 	return a.protoOwnerCache.GetOrAdd(
-		registryHostname+"/"+ownerID,
+		registry+"/"+ownerID,
 		func() (*ownerv1beta1.Owner, error) {
-			response, err := a.clientProvider.OwnerServiceClient(registryHostname).GetOwners(
+			response, err := a.clientProvider.OwnerServiceClient(registry).GetOwners(
 				ctx,
 				connect.NewRequest(
 					&ownerv1beta1.GetOwnersRequest{

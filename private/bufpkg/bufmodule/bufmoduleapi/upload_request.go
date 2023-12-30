@@ -58,14 +58,14 @@ func NewUploadRequest(
 		}
 	}
 	// Validate we're all within one registry for now.
-	if registryHostnames := slicesext.ToUniqueSorted(
+	if registries := slicesext.ToUniqueSorted(
 		slicesext.Map(
 			modules,
 			func(module bufmodule.Module) string { return module.ModuleFullName().Registry() },
 		),
-	); len(registryHostnames) > 1 {
+	); len(registries) > 1 {
 		// TODO: This messes up legacy federation.
-		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registryHostnames, ", "))
+		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
 	}
 
 	// While the API allows different labels per reference, we don't have a use case for this

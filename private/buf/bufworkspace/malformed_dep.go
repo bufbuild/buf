@@ -53,7 +53,7 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
-	localModuleFullNameStringMap := slicesext.ToStructMap(
+	localModuleFullNameStringMap := slicesext.ToStructMapOmitEmpty(
 		slicesext.Map(
 			bufmodule.ModuleSetLocalModules(workspace),
 			func(module bufmodule.Module) string {

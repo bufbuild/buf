@@ -30,7 +30,7 @@ import (
 // NewModuleKeyProvider returns a new ModuleKeyProvider for the given API clients.
 func NewModuleKeyProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.CommitServiceClientProvider,
 ) bufmodule.ModuleKeyProvider {
 	return newModuleKeyProvider(logger, clientProvider)
 }
@@ -39,12 +39,12 @@ func NewModuleKeyProvider(
 
 type moduleKeyProvider struct {
 	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
+	clientProvider bufapi.CommitServiceClientProvider
 }
 
 func newModuleKeyProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.CommitServiceClientProvider,
 ) *moduleKeyProvider {
 	return &moduleKeyProvider{
 		logger:         logger,

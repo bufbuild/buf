@@ -25,7 +25,7 @@ import (
 // the Digest for the Commit.
 func DigestForCommitID(
 	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitID string,
 ) (bufmodule.Digest, error) {

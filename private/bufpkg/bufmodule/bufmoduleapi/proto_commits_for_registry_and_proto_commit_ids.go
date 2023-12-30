@@ -27,7 +27,7 @@ import (
 
 func getProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitID string,
 ) (*modulev1beta1.Commit, error) {
@@ -41,7 +41,7 @@ func getProtoCommitForRegistryAndCommitID(
 
 func getProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitIDs []string,
 ) ([]*modulev1beta1.Commit, error) {

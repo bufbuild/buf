@@ -34,31 +34,46 @@ import (
 // A warning is printed to the logger if a given Module is deprecated.
 func NewModuleDataProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
-	graphProvider bufmodule.GraphProvider,
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, clientProvider, graphProvider)
+	return newModuleDataProvider(logger, clientProvider)
 }
 
 // *** PRIVATE ***
 
 type moduleDataProvider struct {
 	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
-	graphProvider  bufmodule.GraphProvider
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+	}
+	graphProvider bufmodule.GraphProvider
 }
 
 func newModuleDataProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
-	graphProvider bufmodule.GraphProvider,
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) *moduleDataProvider {
 	return &moduleDataProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
-		graphProvider:  graphProvider,
+		graphProvider: NewGraphProvider(
+			logger,
+			clientProvider,
+		),
 	}
 }
+
 func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,

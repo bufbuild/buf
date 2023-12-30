@@ -33,7 +33,11 @@ import (
 // NewGraphProvider returns a new GraphProvider for the given API client.
 func NewGraphProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) bufmodule.GraphProvider {
 	return newGraphProvider(logger, clientProvider)
 }
@@ -42,12 +46,20 @@ func NewGraphProvider(
 
 type graphProvider struct {
 	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
+	clientProvider interface {
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	}
 }
 
 func newGraphProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) *graphProvider {
 	return &graphProvider{
 		logger:         logger,
