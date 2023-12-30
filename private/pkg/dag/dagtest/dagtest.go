@@ -47,27 +47,27 @@ func RequireComparableGraphEqual[Key Ordered](
 	expected []ExpectedNode[Key],
 	comparableGraph *dag.ComparableGraph[Key],
 ) {
-	RequireGraphEqual(t, expected, &comparableGraph.Graph, func(key Key) Key { return key })
+	RequireGraphEqual(t, expected, comparableGraph.Graph(), func(key Key) Key { return key })
 }
 
 // RequireGraphEqual requires that the graph equals the given ExpectedNodes.
 //
 // The order of the input ExpectedNodes does not matter, and the order of
 // the outbound Keys does not matter.
-func RequireGraphEqual[Key any, Ord Ordered](
+func RequireGraphEqual[Key Ordered, Value any](
 	t *testing.T,
-	expected []ExpectedNode[Ord],
-	graph *dag.Graph[Key, Ord],
-	toOrdered func(Key) Ord,
+	expected []ExpectedNode[Key],
+	graph *dag.Graph[Key, Value],
+	toKey func(Value) Key,
 ) {
-	actual := make([]ExpectedNode[Ord], 0, len(expected))
+	actual := make([]ExpectedNode[Key], 0, len(expected))
 	err := graph.WalkNodes(
-		func(key Key, _ []Key, outbound []Key) error {
+		func(value Value, _ []Value, outbound []Value) error {
 			actual = append(
 				actual,
-				ExpectedNode[Ord]{
-					Key:      toOrdered(key),
-					Outbound: slicesext.Map(outbound, toOrdered),
+				ExpectedNode[Key]{
+					Key:      toKey(value),
+					Outbound: slicesext.Map(outbound, toKey),
 				},
 			)
 			return nil
