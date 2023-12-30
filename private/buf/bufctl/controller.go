@@ -1028,12 +1028,12 @@ func (c *controller) buildTargetImageWithConfigs(
 }
 
 // warnDeps warns on either unused deps in your buf.yaml, or transitive deps that were
-// not in your buf.lock.
+// not in your buf.yaml.
 //
 // Only call this if you are building an image. This results in ModuleDeps calls that
 // you don't want to invoke unless you are building - they'll result in import reading,
 // which can cause issues. If this happens for all workspaces, you'll see integration
-// test errors, and correctly so In the pre-refactor world, we only did this with
+// test errors, and correctly so. In the pre-refactor world, we only did this with
 // image building, so we keep it that way for now.
 func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
