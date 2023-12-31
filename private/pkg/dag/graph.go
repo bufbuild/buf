@@ -16,6 +16,7 @@ package dag
 
 import (
 	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 
@@ -237,41 +238,27 @@ func (g *Graph[Key, Value]) TopoSort(start Key) ([]Value, error) {
 // DOTString returns a DOT representation of the graph.
 //
 // valueToString is used to print out the label for each node.
+//
 // https://graphviz.org/doc/info/lang.html
 func (g *Graph[Key, Value]) DOTString(valueToString func(Value) string) (string, error) {
 	if err := g.checkInit(); err != nil {
 		return "", err
 	}
-	keyToIndex := make(map[Key]int)
-	nextIndex := 1
-	var nodeStrings []string
 	var edgeStrings []string
+	seenKeys := make(map[Key]struct{})
 	if err := g.WalkEdges(
 		func(from Value, to Value) error {
-			fromIndex, ok := keyToIndex[g.getKeyForValue(from)]
-			if !ok {
-				fromIndex = nextIndex
-				nextIndex++
-				keyToIndex[g.getKeyForValue(from)] = fromIndex
-				nodeStrings = append(
-					nodeStrings,
-					fmt.Sprintf("%d [label=%q]", fromIndex, valueToString(from)),
-				)
+			seenKeys[g.getKeyForValue(from)] = struct{}{}
+			seenKeys[g.getKeyForValue(to)] = struct{}{}
+			fromName, err := xmlEscape(valueToString(from))
+			if err != nil {
+				return err
 			}
-			toIndex, ok := keyToIndex[g.getKeyForValue(to)]
-			if !ok {
-				toIndex = nextIndex
-				nextIndex++
-				keyToIndex[g.getKeyForValue(to)] = toIndex
-				nodeStrings = append(
-					nodeStrings,
-					fmt.Sprintf("%d [label=%q]", toIndex, valueToString(to)),
-				)
+			toName, err := xmlEscape(valueToString(to))
+			if err != nil {
+				return err
 			}
-			edgeStrings = append(
-				edgeStrings,
-				fmt.Sprintf("%d -> %d", fromIndex, toIndex),
-			)
+			edgeStrings = append(edgeStrings, fmt.Sprintf("%q -> %q", fromName, toName))
 			return nil
 		},
 	); err != nil {
@@ -280,38 +267,35 @@ func (g *Graph[Key, Value]) DOTString(valueToString func(Value) string) (string,
 	// We also want to pick up any nodes that do not have edges, and display them.
 	if err := g.WalkNodes(
 		func(value Value, inboundEdges []Value, outboundEdges []Value) error {
-			if _, ok := keyToIndex[g.getKeyForValue(value)]; ok {
+			key := g.getKeyForValue(value)
+			if _, ok := seenKeys[key]; ok {
 				return nil
 			}
+			seenKeys[key] = struct{}{}
 			if len(inboundEdges) == 0 && len(outboundEdges) == 0 {
-				nodeStrings = append(
-					nodeStrings,
-					fmt.Sprintf("%d [label=%q]", nextIndex, valueToString(value)),
-				)
-				edgeStrings = append(
-					edgeStrings,
-					fmt.Sprintf("%d", nextIndex),
-				)
-				nextIndex++
+				name, err := xmlEscape(valueToString(value))
+				if err != nil {
+					return err
+				}
+				edgeStrings = append(edgeStrings, fmt.Sprintf("%q", name))
 				return nil
 			}
 			// This is a system error.
-			return syserror.Newf("got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges", value, len(inboundEdges), len(outboundEdges))
+			return syserror.Newf(
+				"got node %v with %d inbound edges and %d outbound edges, but this was not processed during WalkEdges",
+				value,
+				len(inboundEdges),
+				len(outboundEdges),
+			)
 		},
 	); err != nil {
 		return "", err
 	}
-	if len(nodeStrings) == 0 {
+	if len(edgeStrings) == 0 {
 		return "digraph {}", nil
 	}
 	buffer := bytes.NewBuffer(nil)
 	_, _ = buffer.WriteString("digraph {\n\n")
-	for _, nodeString := range nodeStrings {
-		_, _ = buffer.WriteString("  ")
-		_, _ = buffer.WriteString(nodeString)
-		_, _ = buffer.WriteString("\n")
-	}
-	_, _ = buffer.WriteString("\n")
 	for _, edgeString := range edgeStrings {
 		_, _ = buffer.WriteString("  ")
 		_, _ = buffer.WriteString(edgeString)
@@ -518,4 +502,12 @@ func (s *orderedSet[Key]) index(item Key) int {
 		return index
 	}
 	return -1
+}
+
+func xmlEscape(s string) (string, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := xml.EscapeText(buffer, []byte(s)); err != nil {
+		return "", err
+	}
+	return buffer.String(), nil
 }

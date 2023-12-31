@@ -116,6 +116,7 @@ func (g *ComparableGraph[Value]) TopoSort(start Value) ([]Value, error) {
 // DOTString returns a DOT representation of the graph.
 //
 // valueToString is used to print out the label for each node.
+//
 // https://graphviz.org/doc/info/lang.html
 func (g *ComparableGraph[Value]) DOTString(valueToString func(Value) string) (string, error) {
 	return g.Graph().DOTString(valueToString)

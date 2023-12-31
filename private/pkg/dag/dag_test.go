@@ -419,19 +419,12 @@ func TestDOTString(t *testing.T) {
 		},
 		`digraph {
 
-  1 [label="a"]
-  2 [label="b"]
-  3 [label="c"]
-  4 [label="d"]
-  5 [label="e"]
-  6 [label="f"]
-
-  1 -> 2
-  2 -> 3
-  3 -> 4
-  1 -> 4
-  5 -> 2
-  6
+  "a" -> "b"
+  "b" -> "c"
+  "c" -> "d"
+  "a" -> "d"
+  "e" -> "b"
+  "f"
 
 }`,
 	)

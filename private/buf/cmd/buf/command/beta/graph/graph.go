@@ -42,8 +42,29 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Print the dependency graph in DOT format",
-		Long:  bufcli.GetSourceOrModuleLong(`the source or module to print for`),
-		Args:  appcmd.MaximumNArgs(1),
+		Long: `As an example, if module "buf.build/foo/bar" depends on "buf.build/foo/baz", and
+"buf.build/foo/baz" depends on "buf.build/foo/bat", the following will be printed:
+
+digraph {
+
+  "buf.build/foo/bar" -> "buf.build/foo/baz"
+  "buf.build/foo/baz" -> "buf.build/foo/bat"
+
+}
+
+The actual text may vary between CLI versions, however it will always be in valid DOT format.
+
+See https://graphviz.org to explore Graphviz and the DOT language.
+Installation of graphviz will vary by platform, but is easy to install using homebrew:
+
+brew install graphviz
+
+You can easily visualize a dependency graph using the dot tool:
+
+buf beta graph | dot -Tpng >| graph.png && open graph.png
+
+` + bufcli.GetSourceOrModuleLong(`the source or module to print the dependency graph for`),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
