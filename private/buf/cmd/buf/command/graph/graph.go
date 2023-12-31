@@ -42,17 +42,20 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Print the dependency graph in DOT format",
-		Long: `As an example, if module "buf.build/foo/bar" depends on "buf.build/foo/baz", and
-"buf.build/foo/baz" depends on "buf.build/foo/bat", the following will be printed:
+		Long: `As an example, if module in directory "src/proto" depends on module "buf.build/foo/bar"
+from the BSR with commit "12345", and "buf.build/foo/bar:12345" depends on module "buf.build/foo/baz"
+from the BSR with commit "67890", the following will be printed:
 
 digraph {
 
-  "buf.build/foo/bar" -> "buf.build/foo/baz"
-  "buf.build/foo/baz" -> "buf.build/foo/bat"
+  "src/proto" -> "buf.build/foo/bar:12345"
+  "buf.build/foo/bar:12345" -> "buf.build/foo/baz:67890"
 
 }
 
-The actual text may vary between CLI versions, however it will always be in valid DOT format.
+The actual output may vary between CLI versions and has no stability guarantees, however the output
+will always be in valid DOT format. If you'd like us to produce an alternative stable format
+(such as a Protobuf message that we serialize to JSON), let us know!
 
 See https://graphviz.org to explore Graphviz and the DOT language.
 Installation of graphviz will vary by platform, but is easy to install using homebrew:
@@ -116,10 +119,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	workspace, err := controller.GetWorkspace(
-		ctx,
-		input,
-	)
+	workspace, err := controller.GetWorkspace(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -127,10 +127,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	dotString, err := graph.DOTString(func(module bufmodule.Module) string { return module.OpaqueID() })
+	dotString, err := graph.DOTString(moduleToString)
 	if err != nil {
 		return err
 	}
 	_, err = fmt.Fprintln(container.Stdout(), dotString)
 	return err
+}
+
+func moduleToString(module bufmodule.Module) string {
+	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+		if commitID := module.CommitID(); commitID != "" {
+			return moduleFullName.String() + ":" + commitID
+		}
+		return moduleFullName.String()
+	}
+	return module.OpaqueID()
 }
