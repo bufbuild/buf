@@ -82,7 +82,7 @@ func newCommit(
 				}
 				if !DigestEqual(digest, moduleKeyDigest) {
 					return nil, fmt.Errorf(
-						"verification failed for commit %s: expected digest %q but downloaded commit had digest %q",
+						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
 						moduleKey.String(),
 						moduleKeyDigest.String(),
 						digest.String(),

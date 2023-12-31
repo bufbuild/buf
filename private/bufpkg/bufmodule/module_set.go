@@ -311,8 +311,15 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
 	for _, module := range m.Modules() {
-		if _, err := module.StatFileInfo(ctx, filePath); err == nil {
+		_, err := module.StatFileInfo(ctx, filePath)
+		if err == nil {
 			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			// This is important! If we have any error other than fs.ErrNotExist, make sure we return that error.
+			// Not doing so results in important errors not being propagated. In the case where this was found,
+			// we ended up returning a fs.ErrNotExist when the underlying error was a digest verification error
+			// that we expected. We want to return the verification error up the stack.
+			return nil, err
 		}
 	}
 	switch len(matchingOpaqueIDs) {
