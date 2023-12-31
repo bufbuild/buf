@@ -16,11 +16,12 @@ package graph
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -39,7 +40,30 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:  name + " <input>",
+		Use:   name + " <input>",
+		Short: "Print the dependency graph in DOT format",
+		Long: `As an example, if module "buf.build/foo/bar" depends on "buf.build/foo/baz", and
+"buf.build/foo/baz" depends on "buf.build/foo/bat", the following will be printed:
+
+digraph {
+
+  "buf.build/foo/bar" -> "buf.build/foo/baz"
+  "buf.build/foo/baz" -> "buf.build/foo/bat"
+
+}
+
+The actual text may vary between CLI versions, however it will always be in valid DOT format.
+
+See https://graphviz.org to explore Graphviz and the DOT language.
+Installation of graphviz will vary by platform, but is easy to install using homebrew:
+
+brew install graphviz
+
+You can easily visualize a dependency graph using the dot tool:
+
+buf graph | dot -Tpng >| graph.png && open graph.png
+
+` + bufcli.GetSourceOrModuleLong(`the source or module to print the dependency graph for`),
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -47,7 +71,6 @@ func NewCommand(
 			},
 		),
 		BindFlags: flags.Bind,
-		Hidden:    true,
 	}
 }
 
@@ -81,5 +104,33 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	return errors.New("buf beta graph is now stable and has been moved to buf graph!")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	if err != nil {
+		return err
+	}
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
+	)
+	if err != nil {
+		return err
+	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		input,
+	)
+	if err != nil {
+		return err
+	}
+	graph, err := bufmodule.ModuleSetToDAG(workspace)
+	if err != nil {
+		return err
+	}
+	dotString, err := graph.DOTString(func(module bufmodule.Module) string { return module.OpaqueID() })
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(container.Stdout(), dotString)
+	return err
 }
