@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 )
@@ -102,8 +103,8 @@ func TestValidImportWKT(t *testing.T) {
 func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:stat nonexistent.proto: file does not exist`)},
+		t, nil, bufctl.ExitCodeFileAnnotation,
+		[]string{filepath.FromSlash(`Failure: testdata/imports/failure/people/people/v1/people1.proto: import "nonexistent.proto": file does not exist`)},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -112,8 +113,8 @@ func TestInvalidNonexistentImport(t *testing.T) {
 func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `stat people/v1/people_nonexistent.proto: file does not exist`},
+		t, nil, bufctl.ExitCodeFileAnnotation,
+		[]string{filepath.FromSlash(`Failure: testdata/imports/failure/students/students/v1/students.proto: `) + `import "people/v1/people_nonexistent.proto": file does not exist`},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)

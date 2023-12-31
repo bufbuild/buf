@@ -15,31 +15,48 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 )
 
 type appError struct {
 	exitCode int
-	message  string
+	err      error
 }
 
-func newAppError(exitCode int, message string) *appError {
+func newAppError(exitCode int, err error) *appError {
 	if exitCode == 0 {
-		message = fmt.Sprintf(
-			"got invalid exit code %d when constructing error (original message was %q)",
+		err = fmt.Errorf(
+			"got invalid exit code %d when constructing appError (original error was %w)",
 			exitCode,
-			message,
+			err,
 		)
 		exitCode = 1
 	}
+	if err == nil {
+		err = errors.New("got nil error when constructing appError")
+	}
 	return &appError{
 		exitCode: exitCode,
-		message:  message,
+		err:      err,
 	}
 }
 
 func (e *appError) Error() string {
-	return e.message
+	if e == nil {
+		return ""
+	}
+	if e.err == nil {
+		return ""
+	}
+	return e.err.Error()
+}
+
+func (e *appError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.err
 }
 
 func printError(container StderrContainer, err error) {

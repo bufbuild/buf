@@ -334,14 +334,21 @@ func Run(ctx context.Context, container Container, f func(context.Context, Conta
 //
 // The exit code cannot be 0.
 func NewError(exitCode int, message string) error {
-	return newAppError(exitCode, message)
+	return newAppError(exitCode, errors.New(message))
 }
 
 // NewErrorf returns a new error that contains an exit code.
 //
 // The exit code cannot be 0.
 func NewErrorf(exitCode int, format string, args ...interface{}) error {
-	return newAppError(exitCode, fmt.Sprintf(format, args...))
+	return newAppError(exitCode, fmt.Errorf(format, args...))
+}
+
+// WrapError returns a new error that contains an exit code.
+//
+// The exit code cannot be 0 and the err cannot be nil.
+func WrapError(exitCode int, err error) error {
+	return newAppError(exitCode, err)
 }
 
 // GetExitCode gets the exit code.

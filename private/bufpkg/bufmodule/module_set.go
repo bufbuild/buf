@@ -317,9 +317,8 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	}
 	switch len(matchingOpaqueIDs) {
 	case 0:
-		// TODO: This is likely a problem now as well, but we do not include WKTs in our
-		// digest calculations. We should discuss whether this is important or not - we could
-		// make an argument that it is not since WKTs are not downloaded in this usage.
+		// We do not include WKTs in our digest calculations. We've determined this is OK since
+		// WKTs are not downloaded and not subject to supply-side attacks.
 		if datawkt.Exists(filePath) {
 			return nil, errIsWKT
 		}

@@ -145,7 +145,6 @@ func getModuleDepsRec(
 					// If a FileAnnotationSet, the error already contains path information, just return directly.
 					//
 					// We also specially handle FileAnnotationSets for exit code 100.
-					// TODO: Should we just warn?
 					return fileAnnotationSet
 				}
 				if errors.Is(err, fs.ErrNotExist) {
@@ -161,28 +160,19 @@ func getModuleDepsRec(
 						// Do not include as a dependency.
 						continue
 					}
-					// We don't fail if we can't find an import, but we do provide a warning.
-					// If we fail, we can't be compatible with commands that did pass in the pre-buf-refactor
-					// world. This can happen in cases where you filter with --path and then do a ModuleDeps()
-					// call via say ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles via lint, and
-					// the --path specified is fine, but something else in the ModuleSet is not.
-					//
-					// Return the error and see what happens in integration testing for more details.
-					//
-					// Not great. There's other architecture decisions we could make that are wholesale
-					// different here, and likely involve not using imports to derive dependencies.
-					//
-					// Keeping the error version of this commented out below.
-					//
-					// We may want to actually remove the warning here. It'll result a warning and
-					// an error if somet cases.
 					if errors.Is(err, fs.ErrNotExist) {
-						logger.Sugar().Warnf("%s: import %q was not found.", fileInfo.Path(), imp.Path)
-						continue
-						//// Strip any PathError and just get to the point.
-						//err = fs.ErrNotExist
-						//return fmt.Errorf("%s: error on import %q: %w", fileInfo.Path(), imp, err)
+						// We specifically handle ImportNotExistErrors with exit code 100 in buf.go.
+						//
+						// We don't want to return a FileAnnotationSet here as we never have line
+						// and column information, and the FileAnnotation will get printed out as 1:1.
+						//
+						// This isn't a FileAnnotation, it's a not exist error, semantically it's different.
+						return &ImportNotExistError{
+							fileInfo:   fileInfo,
+							importPath: imp.Path,
+						}
 					}
+					return err
 				}
 				potentialDepOpaqueID := potentialModuleDep.OpaqueID()
 				// If this is in the same module, it's not a dep

@@ -23,6 +23,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
@@ -78,6 +79,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -277,13 +280,13 @@ func wrapError(err error) error {
 	if err == nil {
 		return nil
 	}
+
 	var connectErr *connect.Error
 	isConnectError := errors.As(err, &connectErr)
 	// If error is empty and not a system error or Connect error, we return it as-is.
 	if !isConnectError && err.Error() == "" {
 		return err
 	}
-
 	if isConnectError {
 		connectCode := connectErr.Code()
 		switch {
@@ -321,6 +324,12 @@ func wrapError(err error) error {
 				"and provide the command you ran, as well as the following message: %w",
 			sysError.Unwrap(),
 		)
+	}
+
+	var importNotExistError *bufmodule.ImportNotExistError
+	if errors.As(err, &importNotExistError) {
+		// There must be a better place to do this, perhaps in the Controller, but this works for now.
+		err = app.WrapError(bufctl.ExitCodeFileAnnotation, importNotExistError)
 	}
 
 	return fmt.Errorf("Failure: %w", err)

@@ -17,6 +17,7 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 )
 
@@ -35,6 +36,43 @@ var (
 	// We do assume flag names here, but we're just going with reality.
 	ErrNoTargetProtoFiles = errors.New("no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.")
 )
+
+// ImportNotExistError is the error returned from ModuleDeps() if an import does not exist.
+//
+// Unwrap() always returns fs.ErrNotExist.
+type ImportNotExistError struct {
+	fileInfo   FileInfo
+	importPath string
+}
+
+// Error implements the error interface.
+func (i *ImportNotExistError) Error() string {
+	if i == nil {
+		return ""
+	}
+	var builder strings.Builder
+	if i.fileInfo != nil {
+		if externalPath := i.fileInfo.ExternalPath(); externalPath != "" {
+			_, _ = builder.WriteString(externalPath)
+			_, _ = builder.WriteString(`: `)
+		}
+	}
+	if i.importPath != "" {
+		_, _ = builder.WriteString(`import "`)
+		_, _ = builder.WriteString(i.importPath)
+		_, _ = builder.WriteString(`": `)
+	}
+	_, _ = builder.WriteString(i.Unwrap().Error())
+	return builder.String()
+}
+
+// Unwrap returns fs.ErrNotExist.
+func (i *ImportNotExistError) Unwrap() error {
+	if i == nil {
+		return nil
+	}
+	return fs.ErrNotExist
+}
 
 // ParseError is an error that occurred during parsing.
 //
@@ -58,6 +96,9 @@ type ParseError struct {
 
 // Error implements the error interface.
 func (p *ParseError) Error() string {
+	if p == nil {
+		return ""
+	}
 	var builder strings.Builder
 	_, _ = builder.WriteString(`could not parse`)
 	if p.typeString != "" {
@@ -77,10 +118,18 @@ func (p *ParseError) Error() string {
 }
 
 // Unwrap returns the underlying error.
-func (p *ParseError) Unwrap() error { return p.err }
+func (p *ParseError) Unwrap() error {
+	if p == nil {
+		return nil
+	}
+	return p.err
+}
 
 // Input returns the input string that was attempted to be parsed.
 func (p *ParseError) Input() string {
+	if p == nil {
+		return ""
+	}
 	return p.input
 }
 

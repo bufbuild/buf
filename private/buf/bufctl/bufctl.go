@@ -22,6 +22,8 @@ const (
 	// ExitCodeFileAnnotation is the exit code used when we print file annotations.
 	//
 	// We use a different exit code to be able to distinguish user-parsable errors from system errors.
+	//
+	// TODO: Rename to something like "ExitCodeCompileError" as we use this for ImportNotExistErrors as well.
 	ExitCodeFileAnnotation = 100
 )
 
