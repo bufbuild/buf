@@ -1,7 +1,5 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20231115204500-e097f827e652.1 h1:u0olL4yf2p7Tl5jfsAK5keaFi+JFJuv1CDHrbiXkxkk=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20231115204500-e097f827e652.1/go.mod h1:tiTMKD8j6Pd/D2WzREoweufjzaJKHZg35f/VGcZ2v3I=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20231205222057-ac336d436f46.1 h1:IOqyoSoI4xrCGUc1PBdr7rbDUMEYX7fondG+fdDDvMo=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20231205222057-ac336d436f46.1/go.mod h1:L+pboYag9Pd0vt+ErAHa7QSdqP0Dzd7S+4OLKlrXNXQ=
 connectrpc.com/connect v1.14.0 h1:PDS+J7uoz5Oui2VEOMcfz6Qft7opQM9hPiKvtGC01pA=
 connectrpc.com/connect v1.14.0/go.mod h1:uoAq5bmhhn43TwhaKdGKN/bZcGtzPW1v+ngDTn5u+8s=
 connectrpc.com/otelconnect v0.6.0 h1:VJAdQL9+sgdUw9+7+J+jq8pQo/h1S7tSFv2+vDcR7bU=
