@@ -17,6 +17,7 @@
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id/buf-new-commit-id
 /private/bufpkg/bufstyle/cmd/bufstyle/bufstyle
+/private/bufpkg/buftesting/cache/
 /private/pkg/bandeps/cmd/bandeps/bandeps
 /private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
 /private/pkg/licenseheader/cmd/license-header/license-header
