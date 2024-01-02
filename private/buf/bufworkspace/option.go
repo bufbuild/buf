@@ -34,10 +34,10 @@ type WorkspaceBucketOption interface {
 // modules being selected, so will "foo", but "foo/bar" will result in only
 // the foo/bar module.
 //
-// A subDirPath of "." is equivalent of not setting this option.
-func WithTargetSubDirPath(subDirPath string) WorkspaceBucketOption {
+// A TargetubDirPath of "." is equivalent of not setting this option.
+func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketOption {
 	return &workspaceTargetSubDirPathOption{
-		subDirPath: subDirPath,
+		targetSubDirPath: targetSubDirPath,
 	}
 }
 
@@ -107,11 +107,11 @@ func WithConfigOverride(configOverride string) WorkspaceOption {
 }
 
 type workspaceTargetSubDirPathOption struct {
-	subDirPath string
+	targetSubDirPath string
 }
 
 func (s *workspaceTargetSubDirPathOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
-	config.subDirPath = s.subDirPath
+	config.targetSubDirPath = s.targetSubDirPath
 }
 
 type workspaceTargetPathsOption struct {
@@ -152,7 +152,7 @@ func (c *workspaceConfigOverrideOption) applyToWorkspaceModuleKeyConfig(config *
 }
 
 type workspaceBucketConfig struct {
-	subDirPath          string
+	targetSubDirPath    string
 	targetPaths         []string
 	targetExcludePaths  []string
 	protoFileTargetPath string
@@ -166,7 +166,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		option.applyToWorkspaceBucketConfig(config)
 	}
 	var err error
-	config.subDirPath, err = normalpath.NormalizeAndValidate(config.subDirPath)
+	config.targetSubDirPath, err = normalpath.NormalizeAndValidate(config.targetSubDirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
 		// applied to them. Which is another argument to do this at a higher level.
 		for _, targetPath := range config.targetPaths {
-			if targetPath == config.subDirPath {
+			if targetPath == config.targetSubDirPath {
 				return nil, errors.New("given input is equal to a value of --path - this has no effect and is disallowed")
 			}
 			// We want this to be deterministic.  We don't have that many paths in almost all cases.
@@ -222,7 +222,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 			}
 		}
 		for _, targetExcludePath := range config.targetExcludePaths {
-			if targetExcludePath == config.subDirPath {
+			if targetExcludePath == config.targetSubDirPath {
 				return nil, errors.New("given input is equal to a value of --exclude-path - this would exclude everything")
 			}
 		}

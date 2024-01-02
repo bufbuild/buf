@@ -395,12 +395,12 @@ func newWorkspaceForBucket(
 		}
 		logger.Debug(
 			"creating new workspace with config override",
-			zap.String("subDirPath", config.subDirPath),
+			zap.String("targetSubDirPath", config.targetSubDirPath),
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			// Operate as if there was no buf.work.yaml, only a v1 buf.yaml at the specified
-			// input path (bucket + config.subDirPath), specifying a single module.
+			// target subdirectory, specifying a single module.
 			return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				ctx,
 				logger,
@@ -408,19 +408,20 @@ func newWorkspaceForBucket(
 				clientProvider,
 				moduleDataProvider,
 				config,
-				[]string{config.subDirPath},
+				[]string{config.targetSubDirPath},
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
 			// Operate as if there was only a v2 buf.yaml at the specified
-			// input path (bucket + config.subDirPath), specifying one more more modules.
+			// input path (bucket + config.targetSubDirPath), specifying one more more modules.
 			return newWorkspaceForBucketBufYAMLV2(
 				ctx,
 				logger,
 				bucket,
 				moduleDataProvider,
 				config,
-				config.subDirPath,
+				config.targetSubDirPath,
+				//".",
 				overrideBufYAMLFile,
 			)
 		default:
@@ -428,20 +429,21 @@ func newWorkspaceForBucket(
 		}
 	}
 
-	// Search for a workspace file that controls config.subDirPath. A workspace file is either
-	// a buf.work.yaml file, or a v2 buf.yaml file, and the file controls config.subDirPath
-	// either (1) we are directly targeting the workspace file, i.e curDirPath == config.subDirPath,
-	// or (2) the workspace file refers to the config.subDirPath. If we find a controlling workspace
+	// Search for a workspace file that controls config.targetSubDirPath. A workspace file is either
+	// a buf.work.yaml file, or a v2 buf.yaml file, and the file controls config.targetSubDirPath
+	// either (1) we are directly targeting the workspace file, i.e curDirPath == config.targetSubDirPath,
+	// or (2) the workspace file refers to the config.targetSubDirPath. If we find a controlling workspace
 	// file, we use this to build our workspace. If we don't we assume that we're just building
-	// a v1 buf.yaml with defaults at config.subDirPath.
-	curDirPath := config.subDirPath
+	// a v1 buf.yaml with defaults at config.targetSubDirPath.
+	curDirPath := config.targetSubDirPath
+	//curDirPath := "."
 	// Loop recursively upwards to "." to check for buf.yamls and buf.work.yamls
 	for {
 		findControllingWorkspaceResult, err := bufconfig.FindControllingWorkspace(
 			ctx,
 			bucket,
 			curDirPath,
-			config.subDirPath,
+			config.targetSubDirPath,
 		)
 		if err != nil {
 			return nil, err
@@ -451,7 +453,7 @@ func newWorkspaceForBucket(
 			if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
 				logger.Debug(
 					"creating new workspace based on v1 buf.work.yaml",
-					zap.String("subDirPath", config.subDirPath),
+					zap.String("targetSubDirPath", config.targetSubDirPath),
 					zap.String("bufWorkYAMLDirPath", curDirPath),
 				)
 				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
@@ -467,7 +469,7 @@ func newWorkspaceForBucket(
 			}
 			logger.Debug(
 				"creating new workspace based on v2 buf.yaml",
-				zap.String("subDirPath", config.subDirPath),
+				zap.String("targetSubDirPath", config.targetSubDirPath),
 				zap.String("bufYAMLDirPath", curDirPath),
 			)
 			// We have a v2 buf.yaml.
@@ -490,10 +492,10 @@ func newWorkspaceForBucket(
 
 	logger.Debug(
 		"creating new workspace with no found buf.work.yaml or buf.yaml",
-		zap.String("subDirPath", config.subDirPath),
+		zap.String("targetSubDirPath", config.targetSubDirPath),
 	)
 	// We did not find any buf.work.yaml or buf.yaml, operate as if a
-	// default v1 buf.yaml was at config.subDirPath.
+	// default v1 buf.yaml was at config.targetSubDirPath.
 	return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		ctx,
 		logger,
@@ -501,7 +503,7 @@ func newWorkspaceForBucket(
 		clientProvider,
 		moduleDataProvider,
 		config,
-		[]string{config.subDirPath},
+		[]string{config.targetSubDirPath},
 		nil,
 	)
 }
@@ -532,15 +534,15 @@ func newWorkspaceForBucketBufYAMLV2(
 		}
 	}
 
-	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
-	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
+	// config.targetSubDirPath is the input targetSubDirPath. We only want to target modules that are inside
+	// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 	// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
 	// and "foo/bar/bat".
 	//
 	// This is new behavior - before, we required that you input an exact match for the module directory path,
 	// but now, we will take all the modules underneath this workspace.
 	isTargetFunc := func(moduleDirPath string) bool {
-		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
+		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
@@ -616,7 +618,7 @@ func newWorkspaceForBucketBufYAMLV2(
 		}
 	}
 	if !hadIsTentativelyTargetModule {
-		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", config.subDirPath, moduleDirPaths)
+		return nil, syserror.Newf("targetSubDirPath %q did not result in any target modules from moduleDirPaths %v", config.targetSubDirPath, moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -642,7 +644,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	// deal with outside of this function.
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
-	// config.subDirPath is the input subDirPath. We only want to target modules that are inside
+	// config.targetSubDirPath is the input subDirPath. We only want to target modules that are inside
 	// this subDirPath. Example: bufWorkYAMLDirPath is "foo", subDirPath is "foo/bar",
 	// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
 	// and "foo/bar/bat".
@@ -650,7 +652,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	// This is new behavior - before, we required that you input an exact match for the module directory path,
 	// but now, we will take all the modules underneath this workspace.
 	isTargetFunc := func(moduleDirPath string) bool {
-		return normalpath.EqualsOrContainsPath(config.subDirPath, moduleDirPath, normalpath.Relative)
+		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
@@ -751,7 +753,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		)
 	}
 	if !hadIsTentativelyTargetModule {
-		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", config.subDirPath, moduleDirPaths)
+		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", config.targetSubDirPath, moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
