@@ -84,16 +84,17 @@ func newUpdateableWorkspaceForBucket(
 }
 
 func (w *updateableWorkspace) PutBufLockFile(ctx context.Context, bufLockFile bufconfig.BufLockFile) error {
-	if !w.isV2BufYAMLWorkspace {
-		// TODO: better error message
-		return errors.New(`migrate to v2 buf.yaml via "buf migrate" to update your buf.lock file`)
-	}
-	if bufLockFile.FileVersion() != bufconfig.FileVersionV2 {
-		// TODO: better error message
-		// This is kind of a system error.
-		return errors.New(`can only update to v2 buf.locks`)
-	}
-	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.bufLockDirPath, bufLockFile)
+	return errors.New("TODO PutBufLockFile")
+	//if !w.isV2BufYAMLWorkspace {
+	//// TODO: better error message
+	//return errors.New(`migrate to v2 buf.yaml via "buf migrate" to update your buf.lock file`)
+	//}
+	//if bufLockFile.FileVersion() != bufconfig.FileVersionV2 {
+	//// TODO: better error message
+	//// This is kind of a system error.
+	//return errors.New(`can only update to v2 buf.locks`)
+	//}
+	//return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.bufLockDirPath, bufLockFile)
 }
 
 func (*updateableWorkspace) isUpdateableWorkspace() {}

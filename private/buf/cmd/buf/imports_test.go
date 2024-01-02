@@ -163,7 +163,7 @@ func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 	testRunStdoutStderr(
 		t, nil, 0,
 		"", // no warnings
-		"beta", "graph",
+		"graph",
 		filepath.Join("testdata", "imports", "success", "workspace", "valid_explicit_deps"),
 	)
 }

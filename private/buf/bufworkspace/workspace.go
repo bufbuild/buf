@@ -165,15 +165,25 @@ type workspace struct {
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
 
-	// Set if this workspace is a buf.yaml-v2-backed workspace.
+	// If true, the workspace was created from b2 buf.yamls, there was one associated
+	// buf.lock, and that buf.lock was also v2.
 	//
-	// This may also be set if there was no buf.yaml in the future, depending on our defaults.
-	// Do not depend on this actually having a v2 buf.yaml
-	isV2BufYAMLWorkspace bool
-	// The path where buf.lock files should be written.
+	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls,
+	// there may be multiple buf.locks (one per module), and those buf.locks
+	// can be assumed to be v1 (and written as v1).
 	//
-	// Only and always set if isV2BufYAMLWorkspace is set.
-	bufLockDirPath string
+	// This is used by updateableWorkspaces.
+	isV2Workspace bool
+	// If isV2Workspace is false, this will be non-nil, and contain a map from
+	// opaqueID to the dir path (relative to the input bucket) of the buf.lock location
+	// for the opaqueID.
+	//
+	// There may or may not actually be an existing buf.lock here, but this is where
+	// to write buf.locks to.
+	//
+	// This is used by updateableWorkspaces, and only makes sense for workspaces
+	// created from buckets.
+	opaqueIDToBufLockDirPath map[string]string
 }
 
 func (w *workspace) GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig {
@@ -389,8 +399,8 @@ func newWorkspaceForBucket(
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			// We did not find any buf.work.yaml or buf.yaml, operate as if a
-			// default v1 buf.yaml was at config.subDirPath.
+			// Operate as if there was no buf.work.yaml, only a v1 buf.yaml at the specified
+			// input path (bucket + config.subDirPath), specifying a single module.
 			return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				ctx,
 				logger,
@@ -402,6 +412,8 @@ func newWorkspaceForBucket(
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
+			// Operate as if there was only a v2 buf.yaml at the specified
+			// input path (bucket + config.subDirPath), specifying one more more modules.
 			return newWorkspaceForBucketBufYAMLV2(
 				ctx,
 				logger,
@@ -584,6 +596,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
+		// buf.lock files live next to the buf.yaml
 		bufYAMLV2FileDirPath,
 		// We are not passing BufLockFileWithDigestResolver here because a buf.lock
 		// v2 is expected to have digests
@@ -681,6 +694,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 			ctx,
 			bucket,
+			// buf.lock files live at the module root
 			moduleDirPath,
 			bufconfig.BufLockFileWithDigestResolver(
 				func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error) {
