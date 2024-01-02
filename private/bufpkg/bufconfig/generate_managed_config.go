@@ -817,7 +817,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		)
 	}
 	return externalGenerateManagedConfigV2{
-		Enabled:  true,
+		Enabled:  managedConfig.Enabled(),
 		Disable:  externalDisables,
 		Override: externalOverrides,
 	}
