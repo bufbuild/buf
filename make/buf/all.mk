@@ -1,5 +1,9 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-#GO_GET_PKGS := $(GO_GET_PKGS)
+# Keep bufbuild/registry pinned at version prior to landing the refactor branch.
+# This allows main to continue to build until it is ready to incorporate changes from the refactor branch.
+BUFBUILD_REGISTRY_VERSION := 20231205222057-ac336d436f46
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go@v1.32.0-$(BUFBUILD_REGISTRY_VERSION).1
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
