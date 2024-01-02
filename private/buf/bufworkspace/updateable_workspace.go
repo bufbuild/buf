@@ -92,6 +92,7 @@ func (w *updateableWorkspace) PutBufLockFile(ctx context.Context, bufLockFile bu
 		// TODO: enable for v1beta1/v1
 		return errors.New(`can only update to v2 buf.locks`)
 	}
+	// TODO: make it so that v2 files only do b5 digests
 	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, ".", bufLockFile)
 }
 
