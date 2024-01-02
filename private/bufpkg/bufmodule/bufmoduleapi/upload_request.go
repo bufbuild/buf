@@ -77,15 +77,15 @@ func NewUploadRequest(
 
 	// We only add references for target Modules.
 	// TODO: We should add references for any module without a CommitID! See below!
-	targetOpaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(targetModules)
+	opaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(modules)
 	if err != nil {
 		return nil, err
 	}
 
-	protoReferences, err := slicesext.MapError(
+	protoContents, err := slicesext.MapError(
 		targetModules,
-		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Reference, error) {
-			protoModuleRef, ok := targetOpaqueIDToProtoModuleRef[module.OpaqueID()]
+		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
+			protoModuleRef, ok := opaqueIDToProtoModuleRef[module.OpaqueID()]
 			if !ok {
 				return nil, syserror.Newf("no Module found for OpaqueID %q", module.OpaqueID())
 			}
@@ -95,51 +95,46 @@ func NewUploadRequest(
 			if err != nil {
 				return nil, err
 			}
-			depProtoResourceRefs := make([]*modulev1beta1.ResourceRef, 0, len(moduleDeps))
+			protoDepRefs := make([]*modulev1beta1.UploadRequest_DepRef, 0, len(moduleDeps))
 			for _, moduleDep := range moduleDeps {
-				moduleFullName := moduleDep.ModuleFullName()
-				if moduleFullName == nil {
+				depModuleFullName := moduleDep.ModuleFullName()
+				if depModuleFullName == nil {
 					return nil, newRequireModuleFullNameOnUploadError(moduleDep)
 				}
-				if moduleDep.IsTarget() {
-					// If the dependency is a target, it will have a corresponding Reference
-					// and Content. As per the Upload documentation, we should only specify the
-					// Module as part of the ResourceRef.
-					depProtoResourceRefs = append(
-						depProtoResourceRefs,
-						&modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Name_{
-								Name: &modulev1beta1.ResourceRef_Name{
-									Owner:  moduleFullName.Owner(),
-									Module: moduleFullName.Name(),
-								},
-							},
-						},
-					)
-				} else {
-					commitID := moduleDep.CommitID()
-					if commitID == "" {
+				depProtoModuleRef, ok := opaqueIDToProtoModuleRef[module.OpaqueID()]
+				if !ok {
+					return nil, syserror.Newf("no Module found for OpaqueID %q", moduleDep.OpaqueID())
+				}
+				var depProtoCommitID string
+				// TODO: This should probably just become !moduleDep.IsLocal()!!!!
+				if !moduleDep.IsTarget() {
+					depCommitID := moduleDep.CommitID()
+					if depCommitID == "" {
 						// TODO: THIS IS A MAJOR TODO. We might NOT have commit IDs for other modules
 						// in the workspace. In this case, we need to add their data to the upload.
 						return nil, fmt.Errorf("did not have a commit ID for a non-target module dependency %q", moduleDep.OpaqueID())
 					}
-					protoCommitID, err := CommitIDToProto(commitID)
+					depProtoCommitID, err = CommitIDToProto(depCommitID)
 					if err != nil {
 						return nil, err
 					}
-					depProtoResourceRefs = append(
-						depProtoResourceRefs,
-						&modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
-							},
-						},
-					)
 				}
+				protoDepRefs = append(
+					protoDepRefs,
+					&modulev1beta1.UploadRequest_DepRef{
+						ModuleRef: depProtoModuleRef,
+						CommitId:  depProtoCommitID,
+					},
+				)
 			}
-			return &modulev1beta1.UploadRequest_Reference{
+			protoFiles, err := bucketToProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
+			if err != nil {
+				return nil, err
+			}
+			return &modulev1beta1.UploadRequest_Content{
 				ModuleRef:       protoModuleRef,
-				DepResourceRefs: depProtoResourceRefs,
+				Files:           protoFiles,
+				DepRefs:         protoDepRefs,
 				ScopedLabelRefs: protoScopedLabelRefs,
 				// TODO: vcs_commit
 			}, nil
@@ -148,31 +143,8 @@ func NewUploadRequest(
 	if err != nil {
 		return nil, err
 	}
-
-	protoContents, err := slicesext.MapError(
-		targetModules,
-		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-			protoModuleRef, ok := targetOpaqueIDToProtoModuleRef[module.OpaqueID()]
-			if !ok {
-				return nil, syserror.Newf("no Module found for OpaqueID %q", module.OpaqueID())
-			}
-			protoFiles, err := bucketToProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
-			if err != nil {
-				return nil, err
-			}
-			return &modulev1beta1.UploadRequest_Content{
-				ModuleRef: protoModuleRef,
-				Files:     protoFiles,
-			}, nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return &modulev1beta1.UploadRequest{
-		References: protoReferences,
-		Contents:   protoContents,
+		Contents: protoContents,
 	}, nil
 }
 

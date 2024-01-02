@@ -196,10 +196,10 @@ func (a *moduleDataProvider) getProtoContentsForRegistryAndModuleKeys(
 									Id: protoCommitID,
 								},
 							},
+							DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 						}
 					},
 				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 			},
 		),
 	)
