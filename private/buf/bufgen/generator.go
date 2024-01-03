@@ -96,6 +96,11 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
+	if !config.GenerateManagedConfig().Enabled() {
+		if len(config.GenerateManagedConfig().Overrides()) != 0 || len(config.GenerateManagedConfig().Disables()) != 0 {
+			g.logger.Sugar().Warn("managed mode configs are set but are not enabled")
+		}
+	}
 	for _, image := range images {
 		if err := bufimagemodify.Modify(image, config.GenerateManagedConfig()); err != nil {
 			return err
