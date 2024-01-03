@@ -145,7 +145,11 @@ func (m *migrator) addWorkspaceDirectory(
 	if err != nil {
 		return err
 	}
-	m.filesToDelete[filepath.Join(workspaceDirectory, bufWorkYAML.FileName())] = struct{}{}
+	objectData := bufWorkYAML.ObjectData()
+	if objectData == nil {
+		return syserror.New("ObjectData was nil on BufWorkYAMLFile created for prefix")
+	}
+	m.filesToDelete[filepath.Join(workspaceDirectory, objectData.Name())] = struct{}{}
 	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
 		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDirectory, moduleDirRelativeToWorkspace)); err != nil {
 			return err
@@ -224,7 +228,11 @@ func (m *migrator) addModuleDirectory(
 	if err != nil {
 		return err
 	}
-	bufYAMLPath := filepath.Join(moduleDir, bufYAML.FileName())
+	objectData := bufYAML.ObjectData()
+	if objectData == nil {
+		return syserror.New("ObjectData was nil on BufYAMLFile created for prefix")
+	}
+	bufYAMLPath := filepath.Join(moduleDir, objectData.Name())
 	// If this module is already visited, we don't add it for a second time. It's
 	// possbile to visit the same module directory twice when the user specifies both
 	// a workspace and a module in this workspace.
@@ -347,7 +355,11 @@ func (m *migrator) addModuleDirectory(
 	if err != nil {
 		return err
 	}
-	bufLockFilePath := filepath.Join(moduleDir, bufLockFile.FileName())
+	objectData = bufLockFile.ObjectData()
+	if objectData == nil {
+		return syserror.New("ObjectData was nil on BufLockFile created for prefix")
+	}
+	bufLockFilePath := filepath.Join(moduleDir, objectData.Name())
 	// We don't need to check whether it's already in the map, but because if it were,
 	// its co-resident buf.yaml would also have been a duplicate and made this
 	// function return at an earlier point.

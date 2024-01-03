@@ -168,6 +168,32 @@ func LocalModuleWithProtoFileTargetPath(
 	}
 }
 
+// LocalModuleWithBufYAMLObjectData returns a new LocalModuleOption that attaches the original
+// source buf.yaml file associated with this module.
+//
+// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
+// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+//
+// This file content is just used for dependency calculations. It is not parsed.
+func LocalModuleWithBufYAMLObjectData(bufYAMLObjectData ObjectData) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.bufYAMLObjectData = bufYAMLObjectData
+	}
+}
+
+// LocalModuleWithBufLockObjectData returns a new LocalModuleOption that attaches the original
+// source buf.yaml file associated with this module.
+//
+// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
+// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+//
+// This file content is just used for dependency calculations. It is not parsed.
+func LocalModuleWithBufLockObjectData(bufLockObjectData ObjectData) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.bufLockObjectData = bufLockObjectData
+	}
+}
+
 // RemoteModuleOption is an option for AddRemoteModule.
 type RemoteModuleOption func(*remoteModuleOptions)
 
@@ -488,6 +514,8 @@ type localModuleOptions struct {
 	targetExcludePaths  []string
 	protoFileTargetPath string
 	includePackageFiles bool
+	bufYAMLObjectData   ObjectData
+	bufLockObjectData   ObjectData
 }
 
 func newLocalModuleOptions() *localModuleOptions {

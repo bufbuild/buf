@@ -32,6 +32,14 @@ type File interface {
 	// FileVersion returns the version of the file.
 	FileVersion() FileVersion
 
+	// ObjectData returns the underlying ObjectData.
+	//
+	// This is non-nil on Files if they were created from storage.ReadBuckets. It is nil
+	// if the File was created via a New constructor or Read method.
+	//
+	// This ObjectData is used for digest calculations.
+	ObjectData() ObjectData
+
 	isFile()
 }
 
@@ -43,14 +51,14 @@ func getFileForPrefix[F File](
 	prefix string,
 	fileNames []*fileName,
 	readFileFunc func(
-		reader io.Reader,
-		fileName string,
+		data []byte,
+		objectData ObjectData,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
 	for _, fileName := range fileNames {
 		path := normalpath.Join(prefix, fileName.Name())
-		readObjectCloser, err := bucket.Get(ctx, path)
+		data, err := storage.ReadPath(ctx, bucket, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
 				continue
@@ -58,14 +66,14 @@ func getFileForPrefix[F File](
 			var f F
 			return f, err
 		}
-		f, err := readFileFunc(readObjectCloser, fileName.Name(), false)
+		f, err := readFileFunc(data, newObjectData(normalpath.Base(path), data), false)
 		if err != nil {
-			return f, multierr.Append(newDecodeError(path, err), readObjectCloser.Close())
+			return f, newDecodeError(path, err)
 		}
 		if err := fileName.CheckSupportedFile(f); err != nil {
-			return f, multierr.Append(newDecodeError(path, err), readObjectCloser.Close())
+			return f, newDecodeError(path, err)
 		}
-		return f, readObjectCloser.Close()
+		return f, nil
 	}
 	var f F
 	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0].Name()), Err: fs.ErrNotExist}
@@ -130,12 +138,17 @@ func readFile[F File](
 	reader io.Reader,
 	fileName string,
 	readFileFunc func(
-		reader io.Reader,
-		fileName string,
+		data []byte,
+		objectData ObjectData,
 		allowJSON bool,
 	) (F, error),
 ) (F, error) {
-	f, err := readFileFunc(reader, fileName, true)
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		var f F
+		return f, err
+	}
+	f, err := readFileFunc(data, nil, true)
 	if err != nil {
 		return f, newDecodeError(fileName, err)
 	}
@@ -144,7 +157,6 @@ func readFile[F File](
 
 func writeFile[F File](
 	writer io.Writer,
-	fileName string,
 	f F,
 	writeFileFunc func(
 		writer io.Writer,
@@ -152,6 +164,10 @@ func writeFile[F File](
 	) error,
 ) error {
 	if err := writeFileFunc(writer, f); err != nil {
+		var fileName string
+		if objectData := f.ObjectData(); objectData != nil {
+			fileName = objectData.Name()
+		}
 		return newDecodeError(fileName, err)
 	}
 	return nil

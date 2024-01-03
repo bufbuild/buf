@@ -50,11 +50,6 @@ var (
 type BufYAMLFile interface {
 	File
 
-	// FileName returns the name of the file when the BufYAMLFile was read.
-	//
-	// If there was no file name, this returns empty. This can happen when the BufYAMLFile
-	// is created via ReadBufYAMLFile, for example.
-	FileName() string
 	// ModuleConfigs returns the ModuleConfigs for the File.
 	//
 	// For v1 buf.yaml, this will only have a single ModuleConfig.
@@ -82,7 +77,7 @@ func NewBufYAMLFile(
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (BufYAMLFile, error) {
-	return newBufYAMLFile(fileVersion, "", moduleConfigs, configuredDepModuleRefs)
+	return newBufYAMLFile(fileVersion, nil, moduleConfigs, configuredDepModuleRefs)
 }
 
 // GetBufYAMLFileForPrefix gets the buf.yaml file at the given bucket prefix.
@@ -120,7 +115,7 @@ func GetBufYAMLFileForOverride(override string) (BufYAMLFile, error) {
 	default:
 		data = []byte(override)
 	}
-	return ReadBufYAMLFile(bytes.NewReader(data), fileName)
+	return readFile(bytes.NewReader(data), fileName, readBufYAMLFile)
 }
 
 // GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override,
@@ -170,21 +165,21 @@ func ReadBufYAMLFile(reader io.Reader, fileName string) (BufYAMLFile, error) {
 
 // WriteBufYAMLFile writes the BufYAMLFile to the io.Writer.
 func WriteBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
-	return writeFile(writer, bufYAMLFile.FileName(), bufYAMLFile, writeBufYAMLFile)
+	return writeFile(writer, bufYAMLFile, writeBufYAMLFile)
 }
 
 // *** PRIVATE ***
 
 type bufYAMLFile struct {
 	fileVersion             FileVersion
-	fileName                string
+	objectData              ObjectData
 	moduleConfigs           []ModuleConfig
 	configuredDepModuleRefs []bufmodule.ModuleRef
 }
 
 func newBufYAMLFile(
 	fileVersion FileVersion,
-	fileName string,
+	objectData ObjectData,
 	moduleConfigs []ModuleConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 ) (*bufYAMLFile, error) {
@@ -239,7 +234,7 @@ func newBufYAMLFile(
 	)
 	return &bufYAMLFile{
 		fileVersion:             fileVersion,
-		fileName:                fileName,
+		objectData:              objectData,
 		moduleConfigs:           moduleConfigs,
 		configuredDepModuleRefs: configuredDepModuleRefs,
 	}, nil
@@ -249,8 +244,8 @@ func (c *bufYAMLFile) FileVersion() FileVersion {
 	return c.fileVersion
 }
 
-func (c *bufYAMLFile) FileName() string {
-	return c.fileName
+func (c *bufYAMLFile) ObjectData() ObjectData {
+	return c.objectData
 }
 
 func (c *bufYAMLFile) ModuleConfigs() []ModuleConfig {
@@ -264,13 +259,12 @@ func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 
-// TODO: port tests from bufmoduleconfig, buflintconfig, bufbreakingconfig
 // TODO: We need to validate all paths on ignore, excludes, etc
-func readBufYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufYAMLFile, error) {
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
+func readBufYAMLFile(
+	data []byte,
+	objectData ObjectData,
+	allowJSON bool,
+) (BufYAMLFile, error) {
 	// We've always required a file version for buf.yaml files.
 	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
 	if err != nil {
@@ -330,7 +324,7 @@ func readBufYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufYAML
 		}
 		return newBufYAMLFile(
 			fileVersion,
-			fileName,
+			objectData,
 			[]ModuleConfig{
 				moduleConfig,
 			},
@@ -441,7 +435,7 @@ func readBufYAMLFile(reader io.Reader, fileName string, allowJSON bool) (BufYAML
 		}
 		return newBufYAMLFile(
 			fileVersion,
-			fileName,
+			objectData,
 			moduleConfigs,
 			configuredDepModuleRefs,
 		)
