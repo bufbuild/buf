@@ -21,7 +21,6 @@ import (
 	"io/fs"
 
 	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -72,10 +71,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.Mod
 	if resp.Manifest == nil {
 		return nil, errors.New("expected non-nil manifest")
 	}
-	fileSet, err := bufcas.ProtoManifestBlobAndBlobsToFileSet(
-		bufcasalpha.AlphaToBlob(resp.Manifest),
-		bufcasalpha.AlphaToBlobs(resp.Blobs),
-	)
+	fileSet, err := bufcasalpha.AlphaManifestBlobAndBlobsToFileSet(resp.Manifest, resp.Blobs)
 	if err != nil {
 		return nil, err
 	}

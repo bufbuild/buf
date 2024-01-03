@@ -172,17 +172,8 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	if err != nil {
 		return err
 	}
-	protoManifestBlob, err := bufcas.ManifestToProtoBlob(fileSet.Manifest())
-	if err != nil {
-		return err
-	}
-	protoBlobs, err := bufcas.BlobSetToProtoBlobs(fileSet.BlobSet())
-	if err != nil {
-		return err
-	}
-	m.manifestBlob = bufcasalpha.BlobToAlpha(protoManifestBlob)
-	m.blobs = bufcasalpha.BlobsToAlpha(protoBlobs)
-	return nil
+	m.manifestBlob, m.blobs, err = bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
+	return err
 }
 
 func withBlobsFromMap(files map[string][]byte) option {

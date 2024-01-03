@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufsync"
 	"github.com/bufbuild/buf/private/buf/bufsync/bufsynctest"
-	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas/bufcasalpha"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
@@ -286,7 +285,7 @@ func (c *testSyncHandler) ManuallyPushModule(
 	manifest *modulev1alpha1.Blob,
 	blobs []*modulev1alpha1.Blob,
 ) {
-	digest, err := bufcas.ProtoToDigest(bufcasalpha.AlphaToDigest(manifest.Digest))
+	digest, err := bufcasalpha.AlphaToDigest(manifest.Digest)
 	require.NoError(t, err)
 	if branchName == "" {
 		// release commit

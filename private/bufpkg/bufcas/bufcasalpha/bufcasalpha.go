@@ -13,69 +13,55 @@
 // limitations under the License.
 
 // Package bufcasalpha temporarily converts v1alpha1 API types to new API types.
-//
-// Minimal validation is done as this is assumed to be done by the bufcas package,
-// and this allows us to have less error returning.
 package bufcasalpha
 
 import (
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
+	"bytes"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
 var (
-	digestTypeToAlpha = map[storagev1beta1.Digest_Type]modulev1alpha1.DigestType{
-		storagev1beta1.Digest_TYPE_SHAKE256: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
+	digestTypeToAlpha = map[bufcas.DigestType]modulev1alpha1.DigestType{
+		bufcas.DigestTypeShake256: modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256,
 	}
-	alphaToDigestType = map[modulev1alpha1.DigestType]storagev1beta1.Digest_Type{
-		modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256: storagev1beta1.Digest_TYPE_SHAKE256,
+	alphaToDigestType = map[modulev1alpha1.DigestType]bufcas.DigestType{
+		modulev1alpha1.DigestType_DIGEST_TYPE_SHAKE256: bufcas.DigestTypeShake256,
 	}
 )
 
-func DigestToAlpha(digest *storagev1beta1.Digest) *modulev1alpha1.Digest {
-	if digest == nil {
-		return nil
-	}
+func DigestToAlpha(digest bufcas.Digest) *modulev1alpha1.Digest {
 	return &modulev1alpha1.Digest{
-		DigestType: digestTypeToAlpha[digest.Type],
-		Digest:     digest.Value,
+		DigestType: digestTypeToAlpha[digest.Type()],
+		Digest:     digest.Value(),
 	}
 }
 
-func AlphaToDigest(alphaDigest *modulev1alpha1.Digest) *storagev1beta1.Digest {
-	if alphaDigest == nil {
-		return nil
-	}
-	return &storagev1beta1.Digest{
-		Type:  alphaToDigestType[alphaDigest.DigestType],
-		Value: alphaDigest.Digest,
-	}
+func AlphaToDigest(alphaDigest *modulev1alpha1.Digest) (bufcas.Digest, error) {
+	return bufcas.NewDigest(
+		alphaDigest.GetDigest(),
+		bufcas.DigestWithDigestType(alphaToDigestType[alphaDigest.GetDigestType()]),
+	)
 }
 
-func BlobToAlpha(blob *storagev1beta1.Blob) *modulev1alpha1.Blob {
-	if blob == nil {
-		return nil
-	}
+func BlobToAlpha(blob bufcas.Blob) *modulev1alpha1.Blob {
 	return &modulev1alpha1.Blob{
-		Digest:  DigestToAlpha(blob.Digest),
-		Content: blob.Content,
+		Digest:  DigestToAlpha(blob.Digest()),
+		Content: blob.Content(),
 	}
 }
 
-func AlphaToBlob(alphaBlob *modulev1alpha1.Blob) *storagev1beta1.Blob {
-	if alphaBlob == nil {
-		return nil
+func AlphaToBlob(alphaBlob *modulev1alpha1.Blob) (bufcas.Blob, error) {
+	digest, err := AlphaToDigest(alphaBlob.GetDigest())
+	if err != nil {
+		return nil, err
 	}
-	return &storagev1beta1.Blob{
-		Digest:  AlphaToDigest(alphaBlob.Digest),
-		Content: alphaBlob.Content,
-	}
+	return bufcas.NewBlobForContent(bytes.NewReader(alphaBlob.GetContent()), bufcas.BlobWithKnownDigest(digest))
 }
 
-func BlobsToAlpha(blobs []*storagev1beta1.Blob) []*modulev1alpha1.Blob {
-	if blobs == nil {
-		return nil
-	}
+func BlobSetToAlpha(blobSet bufcas.BlobSet) []*modulev1alpha1.Blob {
+	blobs := blobSet.Blobs()
 	alphaBlobs := make([]*modulev1alpha1.Blob, len(blobs))
 	for i, blob := range blobs {
 		alphaBlobs[i] = BlobToAlpha(blob)
@@ -83,13 +69,57 @@ func BlobsToAlpha(blobs []*storagev1beta1.Blob) []*modulev1alpha1.Blob {
 	return alphaBlobs
 }
 
-func AlphaToBlobs(alphaBlobs []*modulev1alpha1.Blob) []*storagev1beta1.Blob {
-	if alphaBlobs == nil {
-		return nil
-	}
-	blobs := make([]*storagev1beta1.Blob, len(alphaBlobs))
+func AlphaToBlobSet(alphaBlobs []*modulev1alpha1.Blob) (bufcas.BlobSet, error) {
+	blobs := make([]bufcas.Blob, len(alphaBlobs))
+	var err error
 	for i, alphaBlob := range alphaBlobs {
-		blobs[i] = AlphaToBlob(alphaBlob)
+		blobs[i], err = AlphaToBlob(alphaBlob)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return blobs
+	return bufcas.NewBlobSet(blobs)
+}
+
+func AlphaManifestBlobToManifest(manifestAlphaBlob *modulev1alpha1.Blob) (bufcas.Manifest, error) {
+	manifestBlob, err := AlphaToBlob(manifestAlphaBlob)
+	if err != nil {
+		return nil, err
+	}
+	return bufcas.BlobToManifest(manifestBlob)
+}
+
+func ManifestToAlphaManifestBlob(manifest bufcas.Manifest) (*modulev1alpha1.Blob, error) {
+	manifestBlob, err := bufcas.ManifestToBlob(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return BlobToAlpha(manifestBlob), nil
+}
+
+func AlphaManifestBlobAndBlobsToFileSet(
+	manifestAlphaBlob *modulev1alpha1.Blob,
+	alphaBlobs []*modulev1alpha1.Blob,
+) (bufcas.FileSet, error) {
+	manifestBlob, err := AlphaToBlob(manifestAlphaBlob)
+	if err != nil {
+		return nil, err
+	}
+	manifest, err := bufcas.BlobToManifest(manifestBlob)
+	if err != nil {
+		return nil, err
+	}
+	blobSet, err := AlphaToBlobSet(alphaBlobs)
+	if err != nil {
+		return nil, err
+	}
+	return bufcas.NewFileSet(manifest, blobSet)
+}
+
+func FileSetToAlphaManifestBlobAndBlobs(fileset bufcas.FileSet) (*modulev1alpha1.Blob, []*modulev1alpha1.Blob, error) {
+	manifestBlob, err := bufcas.ManifestToBlob(fileset.Manifest())
+	if err != nil {
+		return nil, nil, err
+	}
+	return BlobToAlpha(manifestBlob), BlobSetToAlpha(fileset.BlobSet()), nil
 }
