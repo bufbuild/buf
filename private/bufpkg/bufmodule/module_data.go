@@ -42,6 +42,15 @@ type ModuleData interface {
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
+	// BufYAMLFileObjectData gets the buf.yaml ObjectData.
+	//
+	// This is used for digest calcuations. It is not used otherwise.
+	//BufYAMLFileObjectData() (ObjectData, error)
+	// BufYAMLFileObjectData gets the buf.lock ObjectData.
+	//
+	// This is used for digest calcuations. It is not used otherwise.
+	//BufLockFileObjectData() (ObjectData, error)
+
 	isModuleData()
 }
 
@@ -56,12 +65,16 @@ func NewModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getBufYAMLFileObjectData func() (ObjectData, error),
+	getBufLockFileObjectData func() (ObjectData, error),
 ) ModuleData {
 	return newModuleData(
 		ctx,
 		moduleKey,
 		getBucket,
 		getDeclaredDepModuleKeys,
+		getBufYAMLFileObjectData,
+		getBufLockFileObjectData,
 	)
 }
 
@@ -73,6 +86,8 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
+	getBufYAMLFileObjectData func() (ObjectData, error)
+	getBufLockFileObjectData func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -82,11 +97,15 @@ func newModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getBufYAMLFileObjectData func() (ObjectData, error),
+	getBufLockFileObjectData func() (ObjectData, error),
 ) *moduleData {
 	moduleData := &moduleData{
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
+		getBufYAMLFileObjectData: syncext.OnceValues(getBufYAMLFileObjectData),
+		getBufLockFileObjectData: syncext.OnceValues(getBufLockFileObjectData),
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {

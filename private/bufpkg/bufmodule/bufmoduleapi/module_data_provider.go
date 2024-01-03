@@ -124,16 +124,12 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	protoContents, err := a.getProtoContentsForRegistryAndModuleKeys(
+	commitIDToProtoContent, err := a.getCommitIDToProtoContentForRegistryAndModuleKeys(
 		ctx,
 		protoModuleProvider,
 		registry,
 		moduleKeys,
 	)
-	if err != nil {
-		return nil, err
-	}
-	commitIDToBucket, err := getCommitIDToBucketForProtoContents(protoContents)
 	if err != nil {
 		return nil, err
 	}
@@ -144,17 +140,25 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 			_ []bufmodule.ModuleKey,
 			depModuleKeys []bufmodule.ModuleKey,
 		) error {
-			bucket, ok := commitIDToBucket[moduleKey.CommitID()]
+			protoContent, ok := commitIDToProtoContent[moduleKey.CommitID()]
 			if !ok {
-				return fmt.Errorf("no files returned for commit id %s", moduleKey.CommitID())
+				return fmt.Errorf("no content returned for commit id %s", moduleKey.CommitID())
 			}
 			moduleDatas = append(
 				moduleDatas,
 				bufmodule.NewModuleData(
 					ctx,
 					moduleKey,
-					func() (storage.ReadBucket, error) { return bucket, nil },
+					func() (storage.ReadBucket, error) {
+						return protoFilesToBucket(protoContent.Files)
+					},
 					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
+					func() (bufmodule.ObjectData, error) {
+						return protoFileToObjectData(protoContent.BufYamlFile)
+					},
+					func() (bufmodule.ObjectData, error) {
+						return protoFileToObjectData(protoContent.BufLockFile)
+					},
 				),
 			)
 			return nil
@@ -165,22 +169,31 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	return moduleDatas, nil
 }
 
-func (a *moduleDataProvider) getProtoContentsForRegistryAndModuleKeys(
+func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
-) ([]*modulev1beta1.DownloadResponse_Content, error) {
-	protoCommitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
+) (map[string]*modulev1beta1.DownloadResponse_Content, error) {
+	commitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) (string, error) {
+			return moduleKey.CommitID(), nil
 			return CommitIDToProto(moduleKey.CommitID())
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	protoCommitIDs := slicesext.MapKeysToSortedSlice(protoCommitIDToModuleKey)
+	protoCommitIDs, err := slicesext.MapError(
+		slicesext.MapKeysToSortedSlice(commitIDToModuleKey),
+		func(commitID string) (string, error) {
+			return CommitIDToProto(commitID)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	response, err := a.clientProvider.DownloadServiceClient(registry).Download(
 		ctx,
@@ -213,19 +226,19 @@ func (a *moduleDataProvider) getProtoContentsForRegistryAndModuleKeys(
 	if len(response.Msg.Contents) != len(moduleKeys) {
 		return nil, fmt.Errorf("expected %d Contents, got %d", len(moduleKeys), len(response.Msg.Contents))
 	}
-	protoCommitIDToProtoContent, err := slicesext.ToUniqueValuesMapError(
+	commitIDToProtoContent, err := slicesext.ToUniqueValuesMapError(
 		response.Msg.Contents,
 		func(protoContent *modulev1beta1.DownloadResponse_Content) (string, error) {
-			return protoContent.Commit.Id, nil
+			return CommitIDToProto(protoContent.Commit.Id)
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	for protoCommitID, moduleKey := range protoCommitIDToModuleKey {
-		protoContent, ok := protoCommitIDToProtoContent[protoCommitID]
+	for commitID, moduleKey := range commitIDToModuleKey {
+		protoContent, ok := commitIDToProtoContent[commitID]
 		if !ok {
-			return nil, fmt.Errorf("no content returned for BSR commit ID %s", protoCommitID)
+			return nil, fmt.Errorf("no content returned for commit ID %s", commitID)
 		}
 		if err := a.warnIfDeprecated(
 			ctx,
@@ -237,7 +250,7 @@ func (a *moduleDataProvider) getProtoContentsForRegistryAndModuleKeys(
 			return nil, err
 		}
 	}
-	return response.Msg.Contents, nil
+	return commitIDToProtoContent, nil
 }
 
 // In the future, we might want to add State, Visibility, etc as parameters to bufmodule.Module, to

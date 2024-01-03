@@ -14,9 +14,49 @@
 
 package bufmodule
 
-// ObjectData matches bufconfig.ObjectData. It is defined as an interface
-// in this package to avoid circular dependencies.
+import "errors"
+
+// ObjectData is individual file data.
+//
+// It matches bufconfig.ObjectData, but is also defined here to avoid circular dependencies.
+// As opposed to most of our interfaces, it does not have a private method limiting its implementation
+// to this package.
+//
+// modulev1beta1.Files can be converted into ObjectDatas.
 type ObjectData interface {
+	// Name returns the file name.
+	//
+	// Always non-empty.
 	Name() string
+	// Data returns the file data.
 	Data() []byte
+}
+
+func NewObjectData(name string, data []byte) (ObjectData, error) {
+	return newObjectData(name, data)
+}
+
+/// *** PRIVATE ***
+
+type objectData struct {
+	name string
+	data []byte
+}
+
+func newObjectData(name string, data []byte) (*objectData, error) {
+	if name == "" {
+		return nil, errors.New("name is empty when constructing an ObjectData")
+	}
+	return &objectData{
+		name: name,
+		data: data,
+	}, nil
+}
+
+func (o *objectData) Name() string {
+	return o.name
+}
+
+func (o *objectData) Data() []byte {
+	return o.data
 }

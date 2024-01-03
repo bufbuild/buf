@@ -22,6 +22,7 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -137,6 +138,10 @@ func protoFilesToBucket(protoFiles []*modulev1beta1.File) (storage.ReadBucket, e
 		pathToData[protoFile.Path] = protoFile.Content
 	}
 	return storagemem.NewReadBucket(pathToData)
+}
+
+func protoFileToObjectData(protoFile *modulev1beta1.File) (bufmodule.ObjectData, error) {
+	return bufmodule.NewObjectData(normalpath.Base(protoFile.Path), protoFile.Content)
 }
 
 func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabelRef {
