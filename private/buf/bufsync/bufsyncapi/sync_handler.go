@@ -447,15 +447,15 @@ func (h *syncHandler) syncCommitModule(
 	if err != nil {
 		return nil, err
 	}
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
+	protoManifestBlob, protoBlobs, err := bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
 	if err != nil {
 		return nil, err
 	}
 	resp, err := service.SyncGitCommit(ctx, connect.NewRequest(&registryv1alpha1.SyncGitCommitRequest{
 		Owner:      moduleIdentity.Owner(),
 		Repository: moduleIdentity.Repository(),
-		Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
-		Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
+		Manifest:   protoManifestBlob,
+		Blobs:      protoBlobs,
 		Hash:       commit.Hash().Hex(),
 		Branch:     branchName,
 		Tags:       tags,

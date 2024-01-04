@@ -116,6 +116,13 @@ func ManifestToBlob(manifest Manifest) (Blob, error) {
 	return NewBlobForContent(strings.NewReader(manifest.String()))
 }
 
+// ManifestToDigest converts the string representation of the given Manifest into a Digest.
+//
+// The Manifest is assumed to be non-nil.
+func ManifestToDigest(manifest Manifest) (Digest, error) {
+	return NewDigestForContent(strings.NewReader(manifest.String()))
+}
+
 // BlobToManifest converts the given Blob representing the string representation of a Manifest into a Manifest.
 //
 // # The Blob is assumed to be non-nil

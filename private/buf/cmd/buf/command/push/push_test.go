@@ -30,7 +30,6 @@ import (
 	"sync"
 	"testing"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
@@ -139,11 +138,7 @@ func TestPushManifestIsSmallerBucket(t *testing.T) {
 	request := mock.PushManifestRequest()
 	require.NotNil(t, request)
 	requestManifest := request.Manifest
-	manifest, err := bufcas.ProtoBlobToManifest(
-		bufcasalpha.AlphaToBlob(
-			requestManifest,
-		),
-	)
+	manifest, err := bufcasalpha.AlphaManifestBlobToManifest(requestManifest)
 	require.NoError(t, err)
 	assert.Nil(t, manifest.GetDigest("baz.file"), "baz.file should not be pushed")
 }
@@ -161,17 +156,16 @@ func TestBucketBlobs(t *testing.T) {
 	ctx := context.Background()
 	fileSet, err := bufcas.NewFileSetForBucket(ctx, bucket)
 	require.NoError(t, err)
-	_, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(protoBlobs))
+	blobs := fileSet.BlobSet().Blobs()
+	assert.Equal(t, 2, len(blobs))
 	digests := make(map[string]struct{})
-	for _, protoBlob := range protoBlobs {
+	for _, blob := range blobs {
 		assert.Equal(
 			t,
-			storagev1beta1.Digest_TYPE_SHAKE256,
-			protoBlob.Digest.Type,
+			bufcas.DigestTypeShake256,
+			blob.Digest().Type(),
 		)
-		hexDigest := hex.EncodeToString(protoBlob.Digest.Value)
+		hexDigest := hex.EncodeToString(blob.Digest().Value())
 		assert.NotContains(t, digests, hexDigest, "duplicated blob")
 		digests[hexDigest] = struct{}{}
 	}

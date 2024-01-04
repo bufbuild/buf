@@ -21,9 +21,6 @@ import (
 // ParseError is an error that occurred during parsing.
 //
 // This is returned by all Parse.* functions in this package.
-//
-// This package should be the only package that creates ParseErrors. All fields are
-// purposefully left private so that this is somewhat enforced.
 type ParseError struct {
 	// typeString is the user-consumable string representing of the type that was attempted to be parsed.
 	//
