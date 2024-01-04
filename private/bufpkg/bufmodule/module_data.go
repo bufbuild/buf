@@ -45,11 +45,11 @@ type ModuleData interface {
 	// BufYAMLFileObjectData gets the buf.yaml ObjectData.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	//BufYAMLFileObjectData() (ObjectData, error)
+	BufYAMLFileObjectData() (ObjectData, error)
 	// BufYAMLFileObjectData gets the buf.lock ObjectData.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	//BufLockFileObjectData() (ObjectData, error)
+	BufLockFileObjectData() (ObjectData, error)
 
 	isModuleData()
 }
@@ -179,6 +179,20 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 		return nil, err
 	}
 	return m.getDeclaredDepModuleKeys()
+}
+
+func (m *moduleData) BufYAMLFileObjectData() (ObjectData, error) {
+	if err := m.checkDigest(); err != nil {
+		return nil, err
+	}
+	return m.getBufYAMLFileObjectData()
+}
+
+func (m *moduleData) BufLockFileObjectData() (ObjectData, error) {
+	if err := m.checkDigest(); err != nil {
+		return nil, err
+	}
+	return m.getBufLockFileObjectData()
 }
 
 func (*moduleData) isModuleData() {}

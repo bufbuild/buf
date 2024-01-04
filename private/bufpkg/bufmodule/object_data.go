@@ -14,7 +14,12 @@
 
 package bufmodule
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+)
 
 // ObjectData is individual file data.
 //
@@ -46,6 +51,9 @@ type objectData struct {
 func newObjectData(name string, data []byte) (*objectData, error) {
 	if name == "" {
 		return nil, errors.New("name is empty when constructing an ObjectData")
+	}
+	if normalpath.Base(name) != name {
+		return nil, fmt.Errorf("expected file name but got file path %q", name)
 	}
 	return &objectData{
 		name: name,
