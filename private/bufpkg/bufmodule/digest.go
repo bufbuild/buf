@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -216,8 +217,21 @@ func (d *digest) String() string {
 
 func (*digest) isDigest() {}
 
-type hasDigest interface {
-	Digest() (Digest, error)
+func getB5DigestForBucketAndModuleDeps(
+	ctx context.Context,
+	bucketWithStorageMatcherApplied storage.ReadBucket,
+	moduleDeps []ModuleDep,
+) (Digest, error) {
+	depModuleKeys, err := slicesext.MapError(
+		moduleDeps,
+		func(moduleDep ModuleDep) (ModuleKey, error) {
+			return ModuleToModuleKey(moduleDep, DigestTypeB5)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return getB5DigestForBucketAndDepModuleKeys(ctx, bucketWithStorageMatcherApplied, depModuleKeys)
 }
 
 // getB5Digest computes a b5 Digest for the given set of module files and dependencies.
@@ -229,10 +243,10 @@ type hasDigest interface {
 // and then digested themselves as content.
 //
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
-func getB5Digest[H hasDigest, S ~[]H](
+func getB5DigestForBucketAndDepModuleKeys(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
-	deps S,
+	depModuleKeys []ModuleKey,
 ) (Digest, error) {
 	// First, compute the shake256 bufcas.Digest of the files. This will include a
 	// sorted list of file names and their digests.
@@ -244,8 +258,8 @@ func getB5Digest[H hasDigest, S ~[]H](
 		return nil, syserror.Newf("trying to compute b5 Digest with files digest of type %v", filesDigest.Type())
 	}
 	// Next, we get the b5 digests of all the dependencies and sort their string representations.
-	depDigestStrings := make([]string, len(deps))
-	for i, dep := range deps {
+	depDigestStrings := make([]string, len(depModuleKeys))
+	for i, dep := range depModuleKeys {
 		depDigest, err := dep.Digest()
 		if err != nil {
 			return nil, err

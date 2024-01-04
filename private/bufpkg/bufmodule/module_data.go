@@ -27,6 +27,8 @@ import (
 // It is not a fully-formed Module; only ModuleSetBuilders (and ModuleSets) can provide Modules.
 //
 // A ModuleData generally represents the data on a Module read from the BSR API or a cache.
+//
+// Tamper-proofing is done as part of every function.
 type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
 	//
@@ -109,6 +111,7 @@ func newModuleData(
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
+			// We have to use the get.* functions so that we don't invoke checkDigest.
 			bucket, err := moduleData.getBucket()
 			if err != nil {
 				return err
@@ -134,7 +137,7 @@ func newModuleData(
 			// This mismatch is a bit weird, however, and also results in us effectively computing
 			// the digest twice for any remote module: once here, and once within Module.Digest,
 			// which does have a slight performance hit.
-			actualDigest, err := getB5Digest(
+			actualDigest, err := getB5DigestForBucketAndDepModuleKeys(
 				ctx,
 				bucket,
 				declaredDepModuleKeys,
