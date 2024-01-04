@@ -31,8 +31,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// 2023-01-01 at 12:00 UTC
-var mockTime = time.Unix(1672574400, 0)
+var (
+	// 2023-01-01 at 12:00 UTC
+	mockTime = time.Unix(1672574400, 0)
+	// We specifically do not rely on the buf.yaml being parseable, this helps test that.
+	mockBufYAMLData = []byte("mock_buf_yaml_data")
+	// We specifically do not rely on the buf.lock being parseable, this helps test that.
+	mockBufLockData = []byte("mock_buf_lock_data")
+)
 
 // ModuleData is the data needed to construct a Module in test.
 //
@@ -258,6 +264,12 @@ func (o *omniProvider) getModuleDataForModuleKey(
 		},
 		func() ([]bufmodule.ModuleKey, error) {
 			return declaredDepModuleKeys, nil
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufmodule.NewObjectData("buf.yaml", mockBufYAMLData)
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufmodule.NewObjectData("buf.lock", mockBufLockData)
 		},
 	), nil
 }
