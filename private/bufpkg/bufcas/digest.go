@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -141,7 +142,7 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 		return newDigest(DigestTypeShake256, value), nil
 	default:
 		// This is a system error.
-		return nil, fmt.Errorf("unknown DigestType: %v", digestOptions.digestType)
+		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
 	}
 }
 
@@ -275,7 +276,7 @@ func validateDigestParameters(digestType DigestType, value []byte) error {
 	default:
 		// This is really always a system error, but little harm in including it here, even
 		// though it'll get converted into a ParseError in parse.
-		return fmt.Errorf(`unknown digest type: %q`, digestType.String())
+		return syserror.Newf(`unknown digest type: %q`, digestType.String())
 	}
 	return nil
 }
