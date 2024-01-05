@@ -16,10 +16,11 @@ package bufmodulecache
 
 import (
 	"context"
-	"sort"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -55,6 +56,15 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]T, error) {
+	commitIDToIndexedModuleKey, err := slicesext.ToUniqueIndexedValuesMap(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.CommitID()
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 	foundValues, notFoundModuleKeys, err := p.storeGetValuesForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
@@ -76,14 +86,20 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
 	p.moduleKeysHit.Add(int64(len(foundValues)))
 
-	values := append(foundValues, delegateValues...)
-	sort.Slice(
-		values,
-		func(i int, j int) bool {
-			return values[i].ModuleKey().ModuleFullName().String() < values[j].ModuleKey().ModuleFullName().String()
+	indexedValues, err := slicesext.MapError(
+		append(foundValues, delegateValues...),
+		func(value T) (slicesext.Indexed[T], error) {
+			indexedModuleKey, ok := commitIDToIndexedModuleKey[value.ModuleKey().CommitID()]
+			if !ok {
+				return slicesext.Indexed[T]{}, syserror.Newf("did not get value from store with commitID %q", value.ModuleKey().CommitID())
+			}
+			return slicesext.Indexed[T]{
+				Value: value,
+				Index: indexedModuleKey.Index,
+			}, nil
 		},
 	)
-	return values, nil
+	return slicesext.IndexedToSortedValues(indexedValues), nil
 }
 
 func (p *baseProvider[T]) getModuleKeysRetrieved() int {

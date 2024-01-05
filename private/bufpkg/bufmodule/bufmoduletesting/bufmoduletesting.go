@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"sort"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -197,22 +196,12 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
-	moduleDatas, err := slicesext.MapError(
+	return slicesext.MapError(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) (bufmodule.ModuleData, error) {
 			return o.getModuleDataForModuleKey(ctx, moduleKey)
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
-	sort.Slice(
-		moduleDatas,
-		func(i int, j int) bool {
-			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
-		},
-	)
-	return moduleDatas, nil
 }
 
 func (o *omniProvider) GetCommitsForModuleKeys(

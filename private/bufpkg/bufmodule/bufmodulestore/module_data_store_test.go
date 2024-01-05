@@ -56,8 +56,8 @@ func testModuleDataStoreBasic(t *testing.T, tar bool) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod2",
 			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
 		},
 		notFoundModuleKeys,
 	)
@@ -74,8 +74,8 @@ func testModuleDataStoreBasic(t *testing.T, tar bool) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod2",
 			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
 		},
 		foundModuleDatas,
 	)
@@ -145,8 +145,8 @@ func testGetModuleKeysAndModuleDatas(t *testing.T, ctx context.Context) ([]bufmo
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod2",
 			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
 		},
 		moduleDatas,
 	)
