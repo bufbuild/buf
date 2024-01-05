@@ -160,11 +160,19 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if p.tar {
 		moduleCacheBucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, p.deleteInvalidModuleData(ctx, moduleKey, err)
+			}
 			return nil, err
 		}
 	} else {
 		moduleCacheBucket = p.getReadWriteBucketForDir(moduleKey)
 	}
+	defer func() {
+		if retErr != nil {
+			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
+		}
+	}()
 	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
 		moduleKey,
@@ -175,11 +183,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if retErr != nil {
-			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
-		}
-	}()
 	var externalModuleData externalModuleData
 	if err := json.Unmarshal(data, &externalModuleData); err != nil {
 		return nil, err

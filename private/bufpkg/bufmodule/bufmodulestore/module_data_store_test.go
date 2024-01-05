@@ -20,7 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -80,6 +82,44 @@ func testModuleDataStoreBasic(t *testing.T, tar bool) {
 		foundModuleDatas,
 	)
 	testRequireModuleKeyNamesEqual(t, nil, notFoundModuleKeys)
+
+	// Corrupt the cache.
+	if tar {
+		require.NoError(t, storage.PutPath(ctx, bucket, getModuleDataStoreTarPath(moduleKeys[0]), []byte("invalid_tar")))
+	} else {
+		require.NoError(
+			t,
+			storage.PutPath(
+				ctx,
+				bucket,
+				normalpath.Join(
+					getModuleDataStoreDirPath(moduleKeys[0]),
+					externalModuleDataFileName,
+				),
+				[]byte("invalid_info_json"),
+			),
+		)
+	}
+	foundModuleDatas, notFoundModuleKeys, err = moduleDataStore.GetModuleDatasForModuleKeys(
+		ctx,
+		moduleKeys,
+	)
+	require.NoError(t, err)
+	testRequireModuleDataNamesEqual(
+		t,
+		[]string{
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
+		},
+		foundModuleDatas,
+	)
+	testRequireModuleKeyNamesEqual(
+		t,
+		[]string{
+			"buf.build/foo/mod1",
+		},
+		notFoundModuleKeys,
+	)
 }
 
 func testGetModuleKeysAndModuleDatas(t *testing.T, ctx context.Context) ([]bufmodule.ModuleKey, []bufmodule.ModuleData) {
