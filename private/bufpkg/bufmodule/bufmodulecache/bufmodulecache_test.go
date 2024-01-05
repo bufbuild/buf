@@ -209,6 +209,7 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 			moduleRefMod3,
 			moduleRefMod2,
 		},
+		bufmodule.DigestTypeB5,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(moduleKeys))

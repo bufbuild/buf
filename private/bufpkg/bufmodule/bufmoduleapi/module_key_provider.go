@@ -55,6 +55,7 @@ func newModuleKeyProvider(
 func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
 	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	registryToIndexedModuleRefs := getKeyToIndexedValues(
 		moduleRefs,
@@ -68,6 +69,7 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 			ctx,
 			registry,
 			getValuesForIndexedValues(indexedModuleRefs),
+			digestType,
 		)
 		if err != nil {
 			return nil, err
@@ -83,8 +85,9 @@ func (a *moduleKeyProvider) getModuleKeysForRegistryAndModuleRefs(
 	ctx context.Context,
 	registry string,
 	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
-	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, moduleRefs)
+	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, moduleRefs, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +118,12 @@ func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
 	ctx context.Context,
 	registry string,
 	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.Commit, error) {
+	protoDigestType, err := digestTypeToProto(digestType)
+	if err != nil {
+		return nil, err
+	}
 	response, err := a.clientProvider.CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
@@ -138,7 +146,7 @@ func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
 						}
 					},
 				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+				DigestType: protoDigestType,
 			},
 		),
 	)

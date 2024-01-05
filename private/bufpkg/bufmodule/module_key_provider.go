@@ -27,5 +27,5 @@ type ModuleKeyProvider interface {
 	// If there is no error, the length of the ModuleKeys returned will match the length of the ModuleRefs.
 	// If there is an error, no ModuleKeys will be returned.
 	// If any ModuleRef is not found, an error with fs.ErrNotExist will be returned.
-	GetModuleKeysForModuleRefs(context.Context, []ModuleRef) ([]ModuleKey, error)
+	GetModuleKeysForModuleRefs(context.Context, []ModuleRef, DigestType) ([]ModuleKey, error)
 }

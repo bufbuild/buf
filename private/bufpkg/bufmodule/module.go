@@ -239,14 +239,14 @@ func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx                   context.Context
-	logger                *zap.Logger
-	getBucket             func() (storage.ReadBucket, error)
-	bucketID              string
-	moduleFullName        ModuleFullName
-	commitID              string
-	isTarget              bool
-	isLocal               bool
+	ctx               context.Context
+	logger            *zap.Logger
+	getBucket         func() (storage.ReadBucket, error)
+	bucketID          string
+	moduleFullName    ModuleFullName
+	commitID          string
+	isTarget          bool
+	isLocal           bool
 	bufYAMLObjectData ObjectData
 	bufLockObjectData ObjectData
 
@@ -296,14 +296,14 @@ func newModule(
 		}
 	}
 	module := &module{
-		ctx:                   ctx,
-		logger:                logger,
-		getBucket:             syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:              bucketID,
-		moduleFullName:        moduleFullName,
-		commitID:              commitID,
-		isTarget:              isTarget,
-		isLocal:               isLocal,
+		ctx:               ctx,
+		logger:            logger,
+		getBucket:         syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:          bucketID,
+		moduleFullName:    moduleFullName,
+		commitID:          commitID,
+		isTarget:          isTarget,
+		isLocal:           isLocal,
 		bufYAMLObjectData: bufYAMLObjectData,
 		bufLockObjectData: bufLockObjectData,
 	}
@@ -351,7 +351,7 @@ func (m *module) CommitID() string {
 func (m *module) Digest(digestType DigestType) (Digest, error) {
 	getDigest, ok := m.digestTypeToGetDigest[digestType]
 	if !ok {
-		return nil, syserror.Newf("DigestType %v was not in module.digestTypeToGetDigest")
+		return nil, syserror.Newf("DigestType %v was not in module.digestTypeToGetDigest", digestType)
 	}
 	return getDigest()
 }
@@ -375,14 +375,14 @@ func (m *module) ModuleSet() ModuleSet {
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
-		ctx:                   m.ctx,
-		logger:                m.logger,
-		getBucket:             m.getBucket,
-		bucketID:              m.bucketID,
-		moduleFullName:        m.moduleFullName,
-		commitID:              m.commitID,
-		isTarget:              isTarget,
-		isLocal:               m.isLocal,
+		ctx:               m.ctx,
+		logger:            m.logger,
+		getBucket:         m.getBucket,
+		bucketID:          m.bucketID,
+		moduleFullName:    m.moduleFullName,
+		commitID:          m.commitID,
+		isTarget:          isTarget,
+		isLocal:           m.isLocal,
 		bufYAMLObjectData: m.bufYAMLObjectData,
 		bufLockObjectData: m.bufLockObjectData,
 	}

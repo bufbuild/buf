@@ -69,7 +69,8 @@ func run(
 	depModuleKeys, err := slicesext.MapError(
 		depModules,
 		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(remoteDep)
+			// TODO: b4 digest types
+			return bufmodule.ModuleToModuleKey(remoteDep, bufmodule.DigestTypeB5)
 		},
 	)
 	if err != nil {

@@ -286,6 +286,8 @@ func (b *moduleSetBuilder) AddLocalModule(
 		localModuleOptions.commitID,
 		isTarget,
 		true,
+		localModuleOptions.bufYAMLObjectData,
+		localModuleOptions.bufLockObjectData,
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
 		localModuleOptions.protoFileTargetPath,
@@ -408,6 +410,14 @@ func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
 			moduleData.ModuleKey().ModuleFullName().String(),
 		)
 	}
+	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+	if err != nil {
+		return nil, err
+	}
+	bufLockObjectData, err := moduleData.BufLockObjectData()
+	if err != nil {
+		return nil, err
+	}
 	// TODO: normalize and validate all paths
 	return newModule(
 		b.ctx,
@@ -422,6 +432,8 @@ func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
 		moduleData.ModuleKey().CommitID(),
 		isTarget,
 		false,
+		bufYAMLObjectData,
+		bufLockObjectData,
 		remoteTargetPaths,
 		remoteTargetExcludePaths,
 		"",

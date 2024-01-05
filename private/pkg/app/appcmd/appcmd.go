@@ -78,14 +78,14 @@ type Command struct {
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
 func NewInvalidArgumentError(message string) error {
-	return newInvalidArgumentError(message)
+	return newInvalidArgumentError(errors.New(message))
 }
 
 // NewInvalidArgumentErrorf creates a new InvalidArgumentError, indicating that
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
-func NewInvalidArgumentErrorf(format string, args ...interface{}) error {
-	return NewInvalidArgumentError(fmt.Sprintf(format, args...))
+func NewInvalidArgumentErrorf(format string, args ...any) error {
+	return newInvalidArgumentError(fmt.Errorf(format, args...))
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.

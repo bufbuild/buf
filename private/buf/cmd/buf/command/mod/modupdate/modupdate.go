@@ -116,7 +116,11 @@ func run(
 	}
 	// All the ModuleKeys we get from the current dependency list in the workspace.
 	// This includes transitive dependencies.
-	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(remoteDeps)
+	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(
+		remoteDeps,
+		// TODO: b4 digest type
+		bufmodule.DigestTypeB5,
+	)
 	if err != nil {
 		return err
 	}
@@ -126,6 +130,8 @@ func run(
 	bufYAMLUpdatedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		updateableWorkspace.ConfiguredDepModuleRefs(),
+		// TODO: b4 digest type
+		bufmodule.DigestTypeB5,
 	)
 	if err != nil {
 		return err
@@ -158,7 +164,11 @@ func run(
 		}
 	}
 
-	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(remoteDeps)
+	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(
+		remoteDeps,
+		// TODO: b4 digest type
+		bufmodule.DigestTypeB5,
+	)
 	if err != nil {
 		return err
 	}
@@ -202,14 +212,17 @@ func run(
 
 // Returns a function that returns true if the named module is a transitive remote
 // dependency of the Workspace.
-func getIsTransitiveRemoteDepFunc(remoteDeps []bufmodule.RemoteDep) (func(name string) bool, error) {
+func getIsTransitiveRemoteDepFunc(
+	remoteDeps []bufmodule.RemoteDep,
+	digestType bufmodule.DigestType,
+) (func(name string) bool, error) {
 	transitiveRemoteDeps := slicesext.Filter(
 		remoteDeps,
 		func(remoteDep bufmodule.RemoteDep) bool {
 			return !remoteDep.IsDirect()
 		},
 	)
-	transitiveRemoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(transitiveRemoteDeps)
+	transitiveRemoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(transitiveRemoteDeps, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -228,14 +241,17 @@ func getIsTransitiveRemoteDepFunc(remoteDeps []bufmodule.RemoteDep) (func(name s
 //
 // All the ModuleKeys we get from the current dependency list in the workspace.
 // This includes transitive dependencies.
-func getModuleFullNameToModuleKey[T bufmodule.Module, S ~[]T](values S) (map[string]bufmodule.ModuleKey, error) {
+func getModuleFullNameToModuleKey[T bufmodule.Module, S ~[]T](
+	values S,
+	digestType bufmodule.DigestType,
+) (map[string]bufmodule.ModuleKey, error) {
 	moduleKeys, err := slicesext.MapError(
 		values,
 		func(module T) (bufmodule.ModuleKey, error) {
 			if module.IsLocal() {
 				return nil, syserror.New("cannot pass local Modules to getModuleFullNameToModuleKey")
 			}
-			return bufmodule.ModuleToModuleKey(module)
+			return bufmodule.ModuleToModuleKey(module, digestType)
 		},
 	)
 	if err != nil {

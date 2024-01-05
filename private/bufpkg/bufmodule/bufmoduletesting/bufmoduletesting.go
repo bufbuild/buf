@@ -173,6 +173,7 @@ func newOmniProvider(
 func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
 	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
 	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
@@ -180,7 +181,7 @@ func (o *omniProvider) GetModuleKeysForModuleRefs(
 		if module == nil {
 			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
-		moduleKey, err := bufmodule.ModuleToModuleKey(module)
+		moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
 		if err != nil {
 			return nil, err
 		}
@@ -247,10 +248,14 @@ func (o *omniProvider) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
 	declaredDepModuleKeys, err := slicesext.MapError(
 		moduleDeps,
 		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(moduleDep)
+			return bufmodule.ModuleToModuleKey(moduleDep, digest.Type())
 		},
 	)
 	if err != nil {

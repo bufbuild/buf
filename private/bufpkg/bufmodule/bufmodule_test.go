@@ -110,6 +110,7 @@ func TestBasic(t *testing.T) {
 			moduleRefExtdep4,
 			moduleRefModule2,
 		},
+		bufmodule.DigestTypeB5,
 	)
 	require.NoError(t, err)
 	for _, moduleKey := range moduleKeys {

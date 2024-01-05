@@ -18,6 +18,7 @@ package slicesext
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 // Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
@@ -282,6 +283,14 @@ func MapValuesToSlice[K comparable, V any](m map[K]V) []V {
 // ToUniqueSorted returns a sorted copy of s with no duplicates.
 func ToUniqueSorted[S ~[]T, T Ordered](s S) S {
 	return MapKeysToSortedSlice(ToStructMap(s))
+}
+
+// ToString prints the slice as [e1,e2,...].
+func ToString[S ~[]T, T fmt.Stringer](s S) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return "[" + strings.Join(Map(s, T.String), ",") + "]"
 }
 
 // Duplicates returns the duplicate values in s.

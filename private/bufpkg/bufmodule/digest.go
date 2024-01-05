@@ -44,6 +44,11 @@ const (
 )
 
 var (
+	// AllDigestTypes are all known DigestTypes.
+	AllDigestTypes = []DigestType{
+		DigestTypeB4,
+		DigestTypeB5,
+	}
 	digestTypeToString = map[DigestType]string{
 		DigestTypeB4: "shake256",
 		DigestTypeB5: "b5",

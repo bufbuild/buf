@@ -16,19 +16,22 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
 const (
-	name        = "buf-digest"
-	depFlagName = "dep"
+	name               = "buf-digest"
+	digestTypeFlagName = "digest-type"
 )
 
 func main() {
@@ -58,19 +61,35 @@ This is not intended to be used outside of development of the buf codebase.`,
 	}
 }
 
-type flags struct{}
+type flags struct {
+	DigestType string
+}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.DigestType,
+		digestTypeFlagName,
+		bufmodule.DigestTypeB5.String(),
+		fmt.Sprintf(
+			"The digest type. Must be one of %s",
+			stringutil.SliceToString(slicesext.Map(bufmodule.AllDigestTypes, bufmodule.DigestType.String)),
+		),
+	)
+}
 
 func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
 ) error {
+	digestType, err := bufmodule.ParseDigestType(flags.DigestType)
+	if err != nil {
+		return appcmd.NewInvalidArgumentErrorf("--%s: %w", digestTypeFlagName, err)
+	}
 	dirPaths := app.Args(container)
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
@@ -89,7 +108,7 @@ func run(
 		return err
 	}
 	for _, module := range moduleSet.Modules() {
-		digest, err := module.Digest()
+		digest, err := module.Digest(digestType)
 		if err != nil {
 			return err
 		}
