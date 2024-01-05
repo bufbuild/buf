@@ -517,9 +517,14 @@ func newWorkspaceForBucketBufYAMLV2(
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
 	var bufYAMLFile bufconfig.BufYAMLFile
+	var bufYAMLObjectData bufmodule.ObjectData
 	var err error
 	if overrideBufYAMLFile != nil {
 		bufYAMLFile = overrideBufYAMLFile
+		// We don't want to have ObjectData for a --config override.
+		// TODO: What happened when you specified a --config pre-refactor with tamper-proofing? We might
+		// have actually still used the buf.yaml for tamper-proofing, if so, we need to attempt to read it
+		// regardless of whether override was specified.
 	} else {
 		bufYAMLFile, err = bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, ".")
 		if err != nil {
@@ -529,6 +534,7 @@ func newWorkspaceForBucketBufYAMLV2(
 		if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
 			return nil, syserror.Newf("expected v2 buf.yaml but got %v", bufYAMLFile.FileVersion())
 		}
+		bufYAMLObjectData = bufYAMLFile.ObjectData()
 	}
 
 	// config.targetSubDirPath is the input targetSubDirPath. We only want to target modules that are inside
@@ -542,6 +548,43 @@ func newWorkspaceForBucketBufYAMLV2(
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
+
+	// TODO: We need to handle when this is nil and still continue to calculate b4s.
+	// We need some way to say "no, we really did try to set the object data, but it wasn't there,
+	// and that was expected".
+	var bufLockObjectData bufmodule.ObjectData
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
+		ctx,
+		bucket,
+		// buf.lock files live next to the buf.yaml
+		".",
+		// We are not passing BufLockFileWithDigestResolver here because a buf.lock
+		// v2 is expected to have digests
+	)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		switch fileVersion := bufLockFile.FileVersion(); fileVersion {
+		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+			// TODO: re-enable once we fix tests
+			//return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
+		case bufconfig.FileVersionV2:
+		default:
+			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+		}
+		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
+			// DepModuleKeys from a BufLockFile is expected to have all transitive dependencies,
+			// and we can rely on this property.
+			moduleSetBuilder.AddRemoteModule(
+				depModuleKey,
+				false,
+			)
+		}
+		bufLockObjectData = bufLockFile.ObjectData()
+	}
+
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
@@ -590,37 +633,15 @@ func newWorkspaceForBucketBufYAMLV2(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
+			bufmodule.LocalModuleWithBufYAMLObjectData(
+				// CANNOT be bufYAMLFile.ObjectData(), we want to not use overrideConfig.
+				bufYAMLObjectData,
+			),
+			bufmodule.LocalModuleWithBufLockObjectData(
+				// CANNOT be bufLockFile.ObjectData(), bufLockFile may be nil
+				bufLockObjectData,
+			),
 		)
-	}
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
-		ctx,
-		bucket,
-		// buf.lock files live next to the buf.yaml
-		".",
-		// We are not passing BufLockFileWithDigestResolver here because a buf.lock
-		// v2 is expected to have digests
-	)
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-	} else {
-		switch fileVersion := bufLockFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			// TODO: re-enable once we fix tests
-			//return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
-		case bufconfig.FileVersionV2:
-		default:
-			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
-		}
-		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
-			// DepModuleKeys from a BufLockFile is expected to have all transitive dependencies,
-			// and we can rely on this property.
-			moduleSetBuilder.AddRemoteModule(
-				depModuleKey,
-				false,
-			)
-		}
 	}
 	if !hadIsTentativelyTargetModule {
 		return nil, syserror.Newf("targetSubDirPath %q did not result in any target modules from moduleDirPaths %v", config.targetSubDirPath, moduleDirPaths)
