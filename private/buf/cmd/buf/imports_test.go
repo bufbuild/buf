@@ -51,7 +51,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 		1,
 		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/people:fc7d540124fd42db92511c19a60a1d98***
 	Expected digest: "b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465"
-	Downloaded data digest: "b5:fbb4d43ed11ddcd1ff1c3ee0b97b573360208f602c4ac3a3b9a4be9bbdf00b99fdfd4180d1d326a547b298417b094e2b9c00b431c66b13732d1227795c3b26d2"`,
+	Downloaded data digest: "b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053"`,
 		func(use string) map[string]string {
 			return map[string]string{
 				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
