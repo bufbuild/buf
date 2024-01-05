@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -416,15 +415,20 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 		if err != nil {
 			return nil, err
 		}
-		moduleDeps, err := module.ModuleDeps()
-		if err != nil {
-			return nil, err
-		}
 		switch digestType {
 		case DigestTypeB4:
-			// TODO
-			return nil, fmt.Errorf("b4 digests are not supported yet")
+			if module.bufYAMLObjectData == nil {
+				return nil, syserror.New("cannot calculate b4 digests without buf.yaml ObjectData")
+			}
+			if module.bufLockObjectData == nil {
+				return nil, syserror.New("cannot calculate b4 digests without buf.lock ObjectData")
+			}
+			return getB4Digest(module.ctx, bucket, module.bufYAMLObjectData, module.bufLockObjectData)
 		case DigestTypeB5:
+			moduleDeps, err := module.ModuleDeps()
+			if err != nil {
+				return nil, err
+			}
 			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
 		default:
 			return nil, syserror.Newf("unknown DigestType: %v", digestType)

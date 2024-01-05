@@ -88,8 +88,8 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	getBufYAMLObjectData func() (ObjectData, error)
-	getBufLockObjectData func() (ObjectData, error)
+	getBufYAMLObjectData     func() (ObjectData, error)
+	getBufLockObjectData     func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -106,8 +106,8 @@ func newModuleData(
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
-		getBufYAMLObjectData: syncext.OnceValues(getBufYAMLObjectData),
-		getBufLockObjectData: syncext.OnceValues(getBufLockObjectData),
+		getBufYAMLObjectData:     syncext.OnceValues(getBufYAMLObjectData),
+		getBufLockObjectData:     syncext.OnceValues(getBufLockObjectData),
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
@@ -116,34 +116,47 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
-			if err != nil {
-				return err
-			}
 			expectedDigest, err := moduleKey.Digest()
 			if err != nil {
 				return err
 			}
-			// This isn't the Digest as computed by the Module exactly, as the Module uses
-			// file imports to determine what the dependencies are. However, this is checking whether
-			// or not the digest of the returned information matches the digest we expected, which is
-			// what we need for this use case (tamper-proofing). What we are looking for is "does the
-			// digest from the ModuleKey match the files and dependencies returned from the remote
-			// provider of the ModuleData?" The mismatch case is that a file import changed/was removed,
-			// which may result in a different computed set of dependencies, but in this case, the
-			// actual files would have changed, which will result in a mismatched digest anyways, and
-			// tamper-proofing failing.
-			//
-			// This mismatch is a bit weird, however, and also results in us effectively computing
-			// the digest twice for any remote module: once here, and once within Module.Digest,
-			// which does have a slight performance hit.
-			actualDigest, err := getB5DigestForBucketAndDepModuleKeys(
-				ctx,
-				bucket,
-				declaredDepModuleKeys,
-			)
-			if err != nil {
-				return err
+			var actualDigest Digest
+			switch expectedDigest.Type() {
+			case DigestTypeB4:
+				bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+				if err != nil {
+					return err
+				}
+				bufLockObjectData, err := moduleData.BufLockObjectData()
+				if err != nil {
+					return err
+				}
+				actualDigest, err = getB4Digest(ctx, bucket, bufYAMLObjectData, bufLockObjectData)
+				if err != nil {
+					return err
+				}
+			case DigestTypeB5:
+				declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
+				if err != nil {
+					return err
+				}
+				// This isn't the Digest as computed by the Module exactly, as the Module uses
+				// file imports to determine what the dependencies are. However, this is checking whether
+				// or not the digest of the returned information matches the digest we expected, which is
+				// what we need for this use case (tamper-proofing). What we are looking for is "does the
+				// digest from the ModuleKey match the files and dependencies returned from the remote
+				// provider of the ModuleData?" The mismatch case is that a file import changed/was removed,
+				// which may result in a different computed set of dependencies, but in this case, the
+				// actual files would have changed, which will result in a mismatched digest anyways, and
+				// tamper-proofing failing.
+				//
+				// This mismatch is a bit weird, however, and also results in us effectively computing
+				// the digest twice for any remote module: once here, and once within Module.Digest,
+				// which does have a slight performance hit.
+				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, declaredDepModuleKeys)
+				if err != nil {
+					return err
+				}
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
 				return fmt.Errorf(

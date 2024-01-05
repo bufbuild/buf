@@ -222,6 +222,60 @@ func (d *digest) String() string {
 
 func (*digest) isDigest() {}
 
+// TODO: We need to test that this actually does the same calculation as before!
+func getB4Digest(
+	ctx context.Context,
+	bucketWithStorageMatcherApplied storage.ReadBucket,
+	bufYAMLObjectData ObjectData,
+	bufLockObjectData ObjectData,
+) (Digest, error) {
+	var fileNodes []bufcas.FileNode
+	if err := storage.WalkReadObjects(
+		ctx,
+		// This is extreme defensive programming. We've gone out of our way to make sure
+		// that the bucket is already filtered, but it's just too important to mess up here.
+		storage.MapReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
+		"",
+		func(readObject storage.ReadObject) error {
+			digest, err := bufcas.NewDigestForContent(readObject)
+			if err != nil {
+				return err
+			}
+			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
+			if err != nil {
+				return err
+			}
+			fileNodes = append(fileNodes, fileNode)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	for _, objectData := range []ObjectData{
+		bufYAMLObjectData,
+		bufLockObjectData,
+	} {
+		digest, err := bufcas.NewDigestForContent(bytes.NewReader(objectData.Data()))
+		if err != nil {
+			return nil, err
+		}
+		fileNode, err := bufcas.NewFileNode(objectData.Name(), digest)
+		if err != nil {
+			return nil, err
+		}
+		fileNodes = append(fileNodes, fileNode)
+	}
+	manifest, err := bufcas.NewManifest(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	bufcasDigest, err := bufcas.ManifestToDigest(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return NewDigest(DigestTypeB4, bufcasDigest)
+}
+
 func getB5DigestForBucketAndModuleDeps(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
@@ -288,7 +342,7 @@ func getB5DigestForBucketAndDepModuleKeys(
 	return NewDigest(DigestTypeB5, digestOfDigests)
 }
 
-// The bucket should have already been filtered to just module fikes.
+// The bucket should have already been filtered to just module files.
 func getFilesDigestForB5Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
