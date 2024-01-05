@@ -1,4 +1,0 @@
-version: v1
-files_dir: files
-buf_yaml_dir: buf_yaml
-buf_lock_dir: buf_lock

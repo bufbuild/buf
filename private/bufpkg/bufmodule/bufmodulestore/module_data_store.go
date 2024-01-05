@@ -16,12 +16,12 @@ package bufmodulestore
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -33,7 +33,7 @@ import (
 
 var (
 	externalModuleDataVersion    = "v1"
-	externalModuleDataFileName   = "info.json"
+	externalModuleDataFileName   = "module.yaml"
 	externalModuleDataFilesDir   = "files"
 	externalModuleDataBufYAMLDir = "buf_yaml"
 	externalModuleDataBufLockDir = "buf_lock"
@@ -154,7 +154,7 @@ func (p *moduleDataStore) PutModuleDatas(
 func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
-) (_ bufmodule.ModuleData, retErr error) {
+) (retValue bufmodule.ModuleData, retErr error) {
 	var moduleCacheBucket storage.ReadBucket
 	var err error
 	if p.tar {
@@ -184,11 +184,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		return nil, err
 	}
 	var externalModuleData externalModuleData
-	if err := json.Unmarshal(data, &externalModuleData); err != nil {
+	if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
 		return nil, err
 	}
 	if !externalModuleData.isValid() {
-		return nil, err
+		return nil, fmt.Errorf("invalid %s from cache for %s: %+v", externalModuleDataFileName, moduleKey.String(), externalModuleData)
 	}
 	// We don't want to do this lazily (or anything else in this function) as we want to
 	// make sure everything we have is valid before returning so we can auto-correct
@@ -220,8 +220,8 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	// We rely on the info.json file being the last file to be written in the store.
-	// If info.json does not exist, we act as if there is no value in the store, which will
+	// We rely on the module.yaml file being the last file to be written in the store.
+	// If module.yaml does not exist, we act as if there is no value in the store, which will
 	// result in bad data being overwritten.
 	return bufmodule.NewModuleData(
 		ctx,
@@ -343,12 +343,12 @@ func (p *moduleDataStore) putModuleData(
 	}
 	externalModuleData.BufLockFile = bufLockFilePath
 
-	data, err := json.Marshal(externalModuleData)
+	data, err := encoding.MarshalYAML(externalModuleData)
 	if err != nil {
 		return err
 	}
-	// Put the info.json last, so that we only have a info.json if the cache is finished writing.
-	// We can use the existence of the info.json file to say whether or not the cache contains a
+	// Put the module.yaml last, so that we only have a module.yaml if the cache is finished writing.
+	// We can use the existence of the module.yaml file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
 	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
 }

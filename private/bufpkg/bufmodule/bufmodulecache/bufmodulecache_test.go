@@ -54,8 +54,8 @@ func TestCommitProviderBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod2",
 			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
 		},
 		slicesext.Map(
 			commits,
@@ -76,9 +76,9 @@ func TestCommitProviderBasic(t *testing.T) {
 	require.Equal(
 		t,
 		[]string{
+			"buf.build/foo/mod3",
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
-			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			commits,
@@ -115,8 +115,8 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		t,
 		[]string{
 			"buf.build/foo/mod1",
-			"buf.build/foo/mod2",
 			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
 		},
 		slicesext.Map(
 			moduleDatas,
@@ -137,9 +137,9 @@ func TestModuleDataProviderBasic(t *testing.T) {
 	require.Equal(
 		t,
 		[]string{
+			"buf.build/foo/mod3",
 			"buf.build/foo/mod1",
 			"buf.build/foo/mod2",
-			"buf.build/foo/mod3",
 		},
 		slicesext.Map(
 			moduleDatas,
