@@ -74,9 +74,6 @@ type ModuleDataStore interface {
 // It is assumed that the ModuleDataStore has complete control of the bucket.
 //
 // This is typically used to interact with a cache directory.
-//
-// TODO: make self-correcting. Just delete and return not found if there is an error on read,
-// or at least make this optional.
 func NewModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,

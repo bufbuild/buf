@@ -28,10 +28,13 @@ var (
 type ModuleDataProvider interface {
 	// GetModuleDatasForModuleKeys gets the ModuleDatas for the ModuleKeys.
 	//
+	// Returned ModuleDatas will be in the same order as the input ModuleKeys.
+	//
 	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
 	// may error if this is not the case.
 	//
-	// Returned ModuleDatas will be unique by ModuleFullName and sorted by ModuleFullName.
+	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeyss.
+	// If there is an error, no ModuleDatas will be returned.
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
 	GetModuleDatasForModuleKeys(
 		context.Context,

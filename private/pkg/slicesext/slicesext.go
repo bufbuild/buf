@@ -31,6 +31,42 @@ type Ordered interface {
 		~string
 }
 
+// IndexedValue is a value that had an index within a slice.
+type IndexedValue[T any] struct {
+	Value T
+	Index int
+}
+
+func KeyToIndexedValues[K comparable, V any](values []V, f func(V) K) map[K][]IndexedValue[V] {
+	keyToIndexedValues := make(map[K][]IndexedValue[V])
+	for i, value := range values {
+		key := f(value)
+		keyToIndexedValues[key] = append(
+			keyToIndexedValues[key],
+			IndexedValue[V]{
+				Value: value,
+				Index: i,
+			},
+		)
+	}
+	return keyToIndexedValues
+}
+
+func KeyToUniqueIndexedValue[K comparable, V any](values []V, f func(V) K) (map[K]IndexedValue[V], error) {
+	keyToIndexedValue := make(map[K]IndexedValue[V])
+	for i, value := range values {
+		key := f(value)
+		if _, ok := keyToIndexedValue[key]; ok {
+			return nil, fmt.Errorf("duplicate key: %v", key)
+		}
+		keyToIndexedValue[key] = IndexedValue[V]{
+			Value: value,
+			Index: i,
+		}
+	}
+	return keyToIndexedValue, nil
+}
+
 // Filter filters the slice to only the values where f returns true.
 func Filter[T any](s []T, f func(T) bool) []T {
 	sf := make([]T, 0, len(s))
@@ -222,7 +258,7 @@ func ToUniqueValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (m
 		}
 		if k != zero {
 			if _, ok := m[k]; ok {
-				return nil, fmt.Errorf("key %v is duplicated", k)
+				return nil, fmt.Errorf("duplicate key: %v", k)
 			}
 			m[k] = v
 		}

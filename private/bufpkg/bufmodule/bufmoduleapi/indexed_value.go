@@ -14,7 +14,11 @@
 
 package bufmoduleapi
 
-import "github.com/bufbuild/buf/private/pkg/slicesext"
+import (
+	"fmt"
+
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+)
 
 type indexedValue[T any] struct {
 	Index int
@@ -31,31 +35,27 @@ func newIndexedValue[T any](index int, value T) *indexedValue[T] {
 func getKeyToIndexedValues[K comparable, V any](values []V, f func(V) K) map[K][]*indexedValue[V] {
 	keyToIndexedValues := make(map[K][]*indexedValue[V])
 	for i, value := range values {
-		keyToIndexedValues[f(value)] = append(
-			keyToIndexedValues[f(value)],
+		key := f(value)
+		keyToIndexedValues[key] = append(
+			keyToIndexedValues[key],
 			newIndexedValue(i, value),
 		)
 	}
 	return keyToIndexedValues
 }
 
-func getValuesForIndexedValues[T any](indexedValues []*indexedValue[T]) []T {
-	return slicesext.Map(indexedValues, func(indexedValue *indexedValue[T]) T { return indexedValue.Value })
+func getKeyToUniqueIndexedValue[K comparable, V any](values []V, f func(V) K) (map[K]*indexedValue[V], error) {
+	keyToIndexedValue := make(map[K]*indexedValue[V])
+	for i, value := range values {
+		key := f(value)
+		if _, ok := keyToIndexedValue[key]; ok {
+			return nil, fmt.Errorf("duplicate key: %v", key)
+		}
+		keyToIndexedValue[key] = newIndexedValue(i, value)
+	}
+	return keyToIndexedValue, nil
 }
 
-// toValuesMap transforms the input slice into a map from f(V) -> []V.
-//
-// If f(V) is the zero value of K, nothing is added to the map.
-//
-// TODO: move to slicesext, refactor ToValuesMap to do []V, make others unique.
-func toValuesMap[K comparable, V any](s []V, f func(V) K) map[K][]V {
-	var zero K
-	m := make(map[K][]V)
-	for _, v := range s {
-		k := f(v)
-		if k != zero {
-			m[k] = append(m[k], v)
-		}
-	}
-	return m
+func getValuesForIndexedValues[T any](indexedValues []*indexedValue[T]) []T {
+	return slicesext.Map(indexedValues, func(indexedValue *indexedValue[T]) T { return indexedValue.Value })
 }

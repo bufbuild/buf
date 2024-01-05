@@ -89,35 +89,18 @@ func TestCommitProviderBasic(t *testing.T) {
 	)
 }
 
-func TestModuleDataProviderBasicDir(t *testing.T) {
+func TestModuleDataProviderBasic(t *testing.T) {
 	t.Parallel()
-	testModuleDataProviderBasic(t, false)
-}
-
-func TestModuleDataProviderBasicTar(t *testing.T) {
-	t.Parallel()
-	testModuleDataProviderBasic(t, true)
-}
-
-func testModuleDataProviderBasic(t *testing.T, tar bool) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 
-	var moduleDataStoreOptions []bufmodulestore.ModuleDataStoreOption
-	if tar {
-		moduleDataStoreOptions = append(
-			moduleDataStoreOptions,
-			bufmodulestore.ModuleDataStoreWithTar(),
-		)
-	}
 	cacheProvider := newModuleDataProvider(
 		zap.NewNop(),
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
 			zap.NewNop(),
 			storagemem.NewReadWriteBucket(),
-			moduleDataStoreOptions...,
 		),
 	)
 

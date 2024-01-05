@@ -57,6 +57,16 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 	moduleRefs []bufmodule.ModuleRef,
 	digestType bufmodule.DigestType,
 ) ([]bufmodule.ModuleKey, error) {
+	// Check unique.
+	if _, err := slicesext.ToUniqueValuesMapError(
+		moduleRefs,
+		func(moduleRef bufmodule.ModuleRef) (string, error) {
+			return moduleRef.String(), nil
+		},
+	); err != nil {
+		return nil, err
+	}
+
 	registryToIndexedModuleRefs := getKeyToIndexedValues(
 		moduleRefs,
 		func(moduleRef bufmodule.ModuleRef) string {

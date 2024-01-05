@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
-	"sort"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
@@ -26,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -86,34 +86,32 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 
-	registryToModuleKeys := toValuesMap(
+	registryToIndexedModuleKeys := getKeyToIndexedValues(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.ModuleFullName().Registry()
 		},
 	)
 	moduleDatas := make([]bufmodule.ModuleData, 0, len(moduleKeys))
-	for registry, iModuleKeys := range registryToModuleKeys {
-		iModuleDatas, err := a.getModuleDatasForRegistryAndModuleKeys(
+	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
+		// registryModuleDatas are in the same order as indexedModuleKeys.
+		registryModuleDatas, err := a.getModuleDatasForRegistryAndModuleKeys(
 			ctx,
 			protoModuleProvider,
 			registry,
-			iModuleKeys,
+			getValuesForIndexedValues(indexedModuleKeys),
 		)
 		if err != nil {
 			return nil, err
 		}
-		moduleDatas = append(moduleDatas, iModuleDatas...)
+		for i, registryModuleData := range registryModuleDatas {
+			moduleDatas[indexedModuleKeys[i].Index] = registryModuleData
+		}
 	}
-	sort.Slice(
-		moduleDatas,
-		func(i int, j int) bool {
-			return moduleDatas[i].ModuleKey().ModuleFullName().String() < moduleDatas[j].ModuleKey().ModuleFullName().String()
-		},
-	)
 	return moduleDatas, nil
 }
 
+// Returns ModuleDatas in the same order as the input ModuleKeys
 func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
@@ -124,16 +122,25 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	commitIDToProtoContent, err := a.getCommitIDToProtoContentForRegistryAndModuleKeys(
-		ctx,
-		protoModuleProvider,
-		registry,
+	commitIDToIndexedModuleKey, err := getKeyToUniqueIndexedValue(
 		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.CommitID()
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	var moduleDatas []bufmodule.ModuleData
+	commitIDToProtoContent, err := a.getCommitIDToProtoContentForRegistryAndModuleKeys(
+		ctx,
+		protoModuleProvider,
+		registry,
+		commitIDToIndexedModuleKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+	moduleDatas := make([]bufmodule.ModuleData, 0, len(moduleKeys))
 	if err := graph.WalkNodes(
 		func(
 			moduleKey bufmodule.ModuleKey,
@@ -142,24 +149,27 @@ func (a *moduleDataProvider) getModuleDatasForRegistryAndModuleKeys(
 		) error {
 			protoContent, ok := commitIDToProtoContent[moduleKey.CommitID()]
 			if !ok {
-				return fmt.Errorf("no content returned for commit id %s", moduleKey.CommitID())
+				// We only care to get content for a subset of the graph. If we have something
+				// in the graph without content, we just skip it.
+				return nil
 			}
-			moduleDatas = append(
-				moduleDatas,
-				bufmodule.NewModuleData(
-					ctx,
-					moduleKey,
-					func() (storage.ReadBucket, error) {
-						return protoFilesToBucket(protoContent.Files)
-					},
-					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
-					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufYamlFile)
-					},
-					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufLockFile)
-					},
-				),
+			indexedModuleKey, ok := commitIDToIndexedModuleKey[moduleKey.CommitID()]
+			if !ok {
+				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", moduleKey.CommitID())
+			}
+			moduleDatas[indexedModuleKey.Index] = bufmodule.NewModuleData(
+				ctx,
+				moduleKey,
+				func() (storage.ReadBucket, error) {
+					return protoFilesToBucket(protoContent.Files)
+				},
+				func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
+				func() (bufmodule.ObjectData, error) {
+					return protoFileToObjectData(protoContent.BufYamlFile)
+				},
+				func() (bufmodule.ObjectData, error) {
+					return protoFileToObjectData(protoContent.BufLockFile)
+				},
 			)
 			return nil
 		},
@@ -173,20 +183,10 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	registry string,
-	moduleKeys []bufmodule.ModuleKey,
+	commitIDToIndexedModuleKey map[string]*indexedValue[bufmodule.ModuleKey],
 ) (map[string]*modulev1beta1.DownloadResponse_Content, error) {
-	commitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return moduleKey.CommitID(), nil
-			return CommitIDToProto(moduleKey.CommitID())
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 	protoCommitIDs, err := slicesext.MapError(
-		slicesext.MapKeysToSortedSlice(commitIDToModuleKey),
+		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
 		func(commitID string) (string, error) {
 			return CommitIDToProto(commitID)
 		},
@@ -223,8 +223,8 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndModuleKeys(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Contents) != len(moduleKeys) {
-		return nil, fmt.Errorf("expected %d Contents, got %d", len(moduleKeys), len(response.Msg.Contents))
+	if len(response.Msg.Contents) != len(commitIDToIndexedModuleKey) {
+		return nil, fmt.Errorf("expected %d Contents, got %d", len(commitIDToIndexedModuleKey), len(response.Msg.Contents))
 	}
 	commitIDToProtoContent, err := slicesext.ToUniqueValuesMapError(
 		response.Msg.Contents,
@@ -235,7 +235,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	for commitID, moduleKey := range commitIDToModuleKey {
+	for commitID, indexedModuleKey := range commitIDToIndexedModuleKey {
 		protoContent, ok := commitIDToProtoContent[commitID]
 		if !ok {
 			return nil, fmt.Errorf("no content returned for commit ID %s", commitID)
@@ -245,7 +245,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndModuleKeys(
 			protoModuleProvider,
 			registry,
 			protoContent.Commit,
-			moduleKey,
+			indexedModuleKey.Value,
 		); err != nil {
 			return nil, err
 		}

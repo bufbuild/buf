@@ -519,12 +519,15 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		}
 	}
 	for depModule, lockEntries := range depModuleToLockEntries {
-		commitIDToKey := slicesext.ToValuesMap(
+		commitIDToKey, err := slicesext.ToUniqueValuesMapError(
 			lockEntries,
-			func(moduleKey bufmodule.ModuleKey) string {
-				return moduleKey.CommitID()
+			func(moduleKey bufmodule.ModuleKey) (string, error) {
+				return moduleKey.CommitID(), nil
 			},
 		)
+		if err != nil {
+			return nil, nil, err
+		}
 		depModuleToLockEntries[depModule] = slicesext.MapValuesToSlice(commitIDToKey)
 		if len(commitIDToKey) > 1 {
 			areDependenciesResolved = false
