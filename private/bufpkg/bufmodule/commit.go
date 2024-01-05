@@ -16,9 +16,9 @@ package bufmodule
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -69,8 +69,8 @@ func newCommit(
 ) *commit {
 	return &commit{
 		moduleKey:     moduleKey,
-		getCreateTime: sync.OnceValues(getCreateTime),
-		getDigest: sync.OnceValues(
+		getCreateTime: syncext.OnceValues(getCreateTime),
+		getDigest: syncext.OnceValues(
 			func() (Digest, error) {
 				digest, err := getDigest()
 				if err != nil {

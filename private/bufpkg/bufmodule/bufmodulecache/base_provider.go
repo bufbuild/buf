@@ -99,6 +99,9 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 			}, nil
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 	return slicesext.IndexedToSortedValues(indexedValues), nil
 }
 

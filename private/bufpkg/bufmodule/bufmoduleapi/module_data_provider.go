@@ -281,21 +281,3 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	}
 	return nil
 }
-
-func getCommitIDToBucketForProtoContents(
-	protoContents []*modulev1beta1.DownloadResponse_Content,
-) (map[string]storage.ReadBucket, error) {
-	commitIDToBucket := make(map[string]storage.ReadBucket, len(protoContents))
-	for _, protoContent := range protoContents {
-		commitID, err := ProtoToCommitID(protoContent.Commit.Id)
-		if err != nil {
-			return nil, err
-		}
-		bucket, err := protoFilesToBucket(protoContent.Files)
-		if err != nil {
-			return nil, err
-		}
-		commitIDToBucket[commitID] = bucket
-	}
-	return commitIDToBucket, nil
-}
