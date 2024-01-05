@@ -67,41 +67,39 @@ func (a *moduleKeyProvider) GetModuleKeysForModuleRefs(
 		return nil, err
 	}
 
-	registryToIndexedModuleRefs := getKeyToIndexedValues(
+	registryToIndexedModuleRefs := slicesext.ToIndexedValuesMap(
 		moduleRefs,
 		func(moduleRef bufmodule.ModuleRef) string {
 			return moduleRef.ModuleFullName().Registry()
 		},
 	)
-	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], 0, len(moduleRefs))
 	for registry, indexedModuleRefs := range registryToIndexedModuleRefs {
-		registryModuleKeys, err := a.getModuleKeysForRegistryAndModuleRefs(
+		indexedRegistryModuleKeys, err := a.getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 			ctx,
 			registry,
-			getValuesForIndexedValues(indexedModuleRefs),
+			indexedModuleRefs,
 			digestType,
 		)
 		if err != nil {
 			return nil, err
 		}
-		for i, registryModuleKey := range registryModuleKeys {
-			moduleKeys[indexedModuleRefs[i].Index] = registryModuleKey
-		}
+		indexedModuleKeys = append(indexedModuleKeys, indexedRegistryModuleKeys...)
 	}
-	return moduleKeys, nil
+	return slicesext.IndexedToSortedValues(indexedModuleKeys), nil
 }
 
-func (a *moduleKeyProvider) getModuleKeysForRegistryAndModuleRefs(
+func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	ctx context.Context,
 	registry string,
-	moduleRefs []bufmodule.ModuleRef,
+	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
 	digestType bufmodule.DigestType,
-) ([]bufmodule.ModuleKey, error) {
-	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, moduleRefs, digestType)
+) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
+	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
 	if err != nil {
 		return nil, err
 	}
-	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, protoCommit := range protoCommits {
 		commitID, err := ProtoToCommitID(protoCommit.Id)
 		if err != nil {
@@ -109,7 +107,7 @@ func (a *moduleKeyProvider) getModuleKeysForRegistryAndModuleRefs(
 		}
 		moduleKey, err := bufmodule.NewModuleKey(
 			// Note we don't have to resolve owner_name and module_name since we already have them.
-			moduleRefs[i].ModuleFullName(),
+			indexedModuleRefs[i].Value.ModuleFullName(),
 			commitID,
 			func() (bufmodule.Digest, error) {
 				// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
@@ -119,9 +117,12 @@ func (a *moduleKeyProvider) getModuleKeysForRegistryAndModuleRefs(
 		if err != nil {
 			return nil, err
 		}
-		moduleKeys[i] = moduleKey
+		indexedModuleKeys[i] = slicesext.Indexed[bufmodule.ModuleKey]{
+			Value: moduleKey,
+			Index: indexedModuleRefs[i].Index,
+		}
 	}
-	return moduleKeys, nil
+	return indexedModuleKeys, nil
 }
 
 func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(

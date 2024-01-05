@@ -31,40 +31,10 @@ type Ordered interface {
 		~string
 }
 
-// IndexedValue is a value that had an index within a slice.
-type IndexedValue[T any] struct {
+// Indexed is a value that had an index within a slice.
+type Indexed[T any] struct {
 	Value T
 	Index int
-}
-
-func KeyToIndexedValues[K comparable, V any](values []V, f func(V) K) map[K][]IndexedValue[V] {
-	keyToIndexedValues := make(map[K][]IndexedValue[V])
-	for i, value := range values {
-		key := f(value)
-		keyToIndexedValues[key] = append(
-			keyToIndexedValues[key],
-			IndexedValue[V]{
-				Value: value,
-				Index: i,
-			},
-		)
-	}
-	return keyToIndexedValues
-}
-
-func KeyToUniqueIndexedValue[K comparable, V any](values []V, f func(V) K) (map[K]IndexedValue[V], error) {
-	keyToIndexedValue := make(map[K]IndexedValue[V])
-	for i, value := range values {
-		key := f(value)
-		if _, ok := keyToIndexedValue[key]; ok {
-			return nil, fmt.Errorf("duplicate key: %v", key)
-		}
-		keyToIndexedValue[key] = IndexedValue[V]{
-			Value: value,
-			Index: i,
-		}
-	}
-	return keyToIndexedValue, nil
 }
 
 // Filter filters the slice to only the values where f returns true.
@@ -192,6 +162,8 @@ func ToStructMap[T comparable](s []T) map[T]struct{} {
 // ToStructMapOmitEmpty converts the slice to a map with struct{} values.
 //
 // Zero values of T are not added to the map.
+//
+// TODO: Make ToStructMap use this logic, remove ToStructMapOmitEmpty, to match other functions.
 func ToStructMapOmitEmpty[T comparable](s []T) map[T]struct{} {
 	var zero T
 	m := make(map[T]struct{}, len(s))
@@ -208,13 +180,13 @@ func ToStructMapOmitEmpty[T comparable](s []T) map[T]struct{} {
 // If f(V) is the zero value of K, nothing is added to the map.
 //
 // Duplicate values of type K will result in a single map entry.
-func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K]V {
+func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K][]V {
 	var zero K
-	m := make(map[K]V)
+	m := make(map[K][]V)
 	for _, v := range s {
 		k := f(v)
 		if k != zero {
-			m[k] = v
+			m[k] = append(m[k], v)
 		}
 	}
 	return m
@@ -227,19 +199,28 @@ func ToValuesMap[K comparable, V any](s []V, f func(V) K) map[K]V {
 // Duplicate values of type K will result in a single map entry.
 //
 // Returns error the first time f returns error.
-func ToValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K]V, error) {
+func ToValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (map[K][]V, error) {
 	var zero K
-	m := make(map[K]V)
+	m := make(map[K][]V)
 	for _, v := range s {
 		k, err := f(v)
 		if err != nil {
 			return nil, err
 		}
 		if k != zero {
-			m[k] = v
+			m[k] = append(m[k], v)
 		}
 	}
 	return m, nil
+}
+
+// ToUniqueValuesMap transforms the input slice into a map from f(V) -> V.
+//
+// If f(V) is the zero value of K, nothing is added to the map.
+//
+// Duplicate values of type K will result in an error.
+func ToUniqueValuesMap[K comparable, V any](s []V, f func(V) K) (map[K]V, error) {
+	return ToUniqueValuesMapError(s, func(v V) (K, error) { return f(v), nil })
 }
 
 // ToUniqueValuesMapError transforms the input slice into a map from f(V) -> V.
@@ -264,6 +245,43 @@ func ToUniqueValuesMapError[K comparable, V any](s []V, f func(V) (K, error)) (m
 		}
 	}
 	return m, nil
+}
+
+// ToIndexed indexes the slice.
+func ToIndexed[T any](s []T) []Indexed[T] {
+	si := make([]Indexed[T], len(s))
+	for i, e := range s {
+		si[i] = Indexed[T]{Value: e, Index: i}
+	}
+	return si
+}
+
+// ToIndexedValuesMap calls ToValuesMap on the indexed values.
+func ToIndexedValuesMap[K comparable, V any](values []V, f func(V) K) map[K][]Indexed[V] {
+	return ToValuesMap(ToIndexed(values), func(indexedV Indexed[V]) K { return f(indexedV.Value) })
+}
+
+// ToUniqueIndexedValuesMap calls ToUniqueValuesMap on the indexed values.
+func ToUniqueIndexedValuesMap[K comparable, V any](values []V, f func(V) K) (map[K]Indexed[V], error) {
+	return ToUniqueValuesMap(ToIndexed(values), func(indexedV Indexed[V]) K { return f(indexedV.Value) })
+}
+
+// ToUniqueIndexedValuesMapError calls ToUniqueValuesMapError on the indexed values.
+func ToUniqueIndexedValuesMapError[K comparable, V any](values []V, f func(V) (K, error)) (map[K]Indexed[V], error) {
+	return ToUniqueValuesMapError(ToIndexed(values), func(indexedV Indexed[V]) (K, error) { return f(indexedV.Value) })
+}
+
+// IndexedToSortedValues takes the indexed values and returns them as values.
+func IndexedToValues[T any](s []Indexed[T]) []T {
+	return Map(s, func(indexedT Indexed[T]) T { return indexedT.Value })
+}
+
+// IndexedToSortedValues takes the indexed values and returns them as values sorted by index.
+func IndexedToSortedValues[T any](s []Indexed[T]) []T {
+	c := make([]Indexed[T], len(s))
+	copy(c, s)
+	sort.Slice(c, func(i int, j int) bool { return c[i].Index < c[j].Index })
+	return IndexedToValues(c)
 }
 
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.

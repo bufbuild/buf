@@ -72,68 +72,81 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
 
-	registryToIndexedModuleKeys := getKeyToIndexedValues(
+	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
 			return moduleKey.ModuleFullName().Registry()
 		},
 	)
-	commits := make([]bufmodule.Commit, len(moduleKeys))
+	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(moduleKeys))
 	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
-		registryCommits, err := a.getCommitsForRegistryAndModuleKeys(
+		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedModuleKeys(
 			ctx,
 			protoModuleProvider,
 			protoOwnerProvider,
 			registry,
-			getValuesForIndexedValues(indexedModuleKeys),
+			indexedModuleKeys,
 		)
 		if err != nil {
 			return nil, err
 		}
-		for i, registryCommit := range registryCommits {
-			commits[indexedModuleKeys[i].Index] = registryCommit
-		}
+		indexedCommits = append(indexedCommits, registryIndexedCommits...)
 	}
-	return commits, nil
+	return slicesext.IndexedToSortedValues(indexedCommits), nil
 }
 
-func (a *commitProvider) getCommitsForRegistryAndModuleKeys(
+func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	protoOwnerProvider *protoOwnerProvider,
 	registry string,
-	moduleKeys []bufmodule.ModuleKey,
-) ([]bufmodule.Commit, error) {
-	protoCommitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return CommitIDToProto(moduleKey.CommitID())
+	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+) ([]slicesext.Indexed[bufmodule.Commit], error) {
+	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
+		indexedModuleKeys,
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (string, error) {
+			return indexedModuleKey.Value.CommitID(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	protoCommitIDs := slicesext.MapKeysToSortedSlice(protoCommitIDToModuleKey)
+	protoCommitIDs, err := slicesext.MapError(
+		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
+		func(commitID string) (string, error) {
+			return CommitIDToProto(commitID)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs)
 	if err != nil {
 		return nil, err
 	}
 	return slicesext.MapError(
 		protoCommits,
-		func(protoCommit *modulev1beta1.Commit) (bufmodule.Commit, error) {
-			moduleKey, ok := protoCommitIDToModuleKey[protoCommit.Id]
-			if !ok {
-				return nil, syserror.Newf("no ModuleKey for proto commit ID %q", protoCommit.Id)
+		func(protoCommit *modulev1beta1.Commit) (slicesext.Indexed[bufmodule.Commit], error) {
+			commitID, err := ProtoToCommitID(protoCommit.Id)
+			if err != nil {
+				return slicesext.Indexed[bufmodule.Commit]{}, err
 			}
-			return bufmodule.NewCommit(
-				moduleKey,
-				func() (time.Time, error) {
-					return protoCommit.CreateTime.AsTime(), nil
-				},
-				func() (bufmodule.Digest, error) {
-					return ProtoToDigest(protoCommit.Digest)
-				},
-			), nil
+			indexedModuleKey, ok := commitIDToIndexedModuleKey[commitID]
+			if !ok {
+				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
+			}
+			return slicesext.Indexed[bufmodule.Commit]{
+				Value: bufmodule.NewCommit(
+					indexedModuleKey.Value,
+					func() (time.Time, error) {
+						return protoCommit.CreateTime.AsTime(), nil
+					},
+					func() (bufmodule.Digest, error) {
+						return ProtoToDigest(protoCommit.Digest)
+					},
+				),
+				Index: indexedModuleKey.Index,
+			}, nil
 		},
 	)
 }
