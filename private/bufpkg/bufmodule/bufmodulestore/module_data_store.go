@@ -206,7 +206,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	bufYAMLFileObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufYAMLFile), bufYAMLFileData)
+	bufYAMLObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufYAMLFile), bufYAMLFileData)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	bufLockFileObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufLockFile), bufLockFileData)
+	bufLockObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufLockFile), bufLockFileData)
 	if err != nil {
 		return nil, err
 	}
@@ -233,10 +233,10 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return declaredDepModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufYAMLFileObjectData, nil
+			return bufYAMLObjectData, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufLockFileObjectData, nil
+			return bufLockObjectData, nil
 		},
 	), nil
 }
@@ -323,22 +323,22 @@ func (p *moduleDataStore) putModuleData(
 	}
 	externalModuleData.FilesDir = externalModuleDataFilesDir
 
-	bufYAMLFileObjectData, err := moduleData.BufYAMLFileObjectData()
+	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
 	if err != nil {
 		return err
 	}
-	bufYAMLFilePath := normalpath.Join(externalModuleDataBufYAMLDir, bufYAMLFileObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, bufYAMLFilePath, bufYAMLFileObjectData.Data()); err != nil {
+	bufYAMLFilePath := normalpath.Join(externalModuleDataBufYAMLDir, bufYAMLObjectData.Name())
+	if err := storage.PutPath(ctx, moduleCacheBucket, bufYAMLFilePath, bufYAMLObjectData.Data()); err != nil {
 		return err
 	}
 	externalModuleData.BufYAMLFile = bufYAMLFilePath
 
-	bufLockFileObjectData, err := moduleData.BufLockFileObjectData()
+	bufLockObjectData, err := moduleData.BufLockObjectData()
 	if err != nil {
 		return err
 	}
-	bufLockFilePath := normalpath.Join(externalModuleDataBufLockDir, bufLockFileObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, bufLockFilePath, bufLockFileObjectData.Data()); err != nil {
+	bufLockFilePath := normalpath.Join(externalModuleDataBufLockDir, bufLockObjectData.Name())
+	if err := storage.PutPath(ctx, moduleCacheBucket, bufLockFilePath, bufLockObjectData.Data()); err != nil {
 		return err
 	}
 	externalModuleData.BufLockFile = bufLockFilePath

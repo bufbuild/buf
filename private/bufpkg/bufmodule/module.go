@@ -247,8 +247,8 @@ type module struct {
 	commitID              string
 	isTarget              bool
 	isLocal               bool
-	bufYAMLFileObjectData ObjectData
-	bufLockFileObjectData ObjectData
+	bufYAMLObjectData ObjectData
+	bufLockObjectData ObjectData
 
 	moduleSet ModuleSet
 
@@ -267,8 +267,8 @@ func newModule(
 	commitID string,
 	isTarget bool,
 	isLocal bool,
-	bufYAMLFileObjectData ObjectData,
-	bufLockFileObjectData ObjectData,
+	bufYAMLObjectData ObjectData,
+	bufLockObjectData ObjectData,
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
@@ -304,8 +304,8 @@ func newModule(
 		commitID:              commitID,
 		isTarget:              isTarget,
 		isLocal:               isLocal,
-		bufYAMLFileObjectData: bufYAMLFileObjectData,
-		bufLockFileObjectData: bufLockFileObjectData,
+		bufYAMLObjectData: bufYAMLObjectData,
+		bufLockObjectData: bufLockObjectData,
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -383,8 +383,8 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 		commitID:              m.commitID,
 		isTarget:              isTarget,
 		isLocal:               m.isLocal,
-		bufYAMLFileObjectData: m.bufYAMLFileObjectData,
-		bufLockFileObjectData: m.bufLockFileObjectData,
+		bufYAMLObjectData: m.bufYAMLObjectData,
+		bufLockObjectData: m.bufLockObjectData,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {

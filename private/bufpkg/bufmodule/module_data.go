@@ -44,14 +44,14 @@ type ModuleData interface {
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
-	// BufYAMLFileObjectData gets the buf.yaml ObjectData.
+	// BufYAMLObjectData gets the buf.yaml ObjectData.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	BufYAMLFileObjectData() (ObjectData, error)
-	// BufYAMLFileObjectData gets the buf.lock ObjectData.
+	BufYAMLObjectData() (ObjectData, error)
+	// BufYAMLObjectData gets the buf.lock ObjectData.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	BufLockFileObjectData() (ObjectData, error)
+	BufLockObjectData() (ObjectData, error)
 
 	isModuleData()
 }
@@ -67,16 +67,16 @@ func NewModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
-	getBufYAMLFileObjectData func() (ObjectData, error),
-	getBufLockFileObjectData func() (ObjectData, error),
+	getBufYAMLObjectData func() (ObjectData, error),
+	getBufLockObjectData func() (ObjectData, error),
 ) ModuleData {
 	return newModuleData(
 		ctx,
 		moduleKey,
 		getBucket,
 		getDeclaredDepModuleKeys,
-		getBufYAMLFileObjectData,
-		getBufLockFileObjectData,
+		getBufYAMLObjectData,
+		getBufLockObjectData,
 	)
 }
 
@@ -88,8 +88,8 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	getBufYAMLFileObjectData func() (ObjectData, error)
-	getBufLockFileObjectData func() (ObjectData, error)
+	getBufYAMLObjectData func() (ObjectData, error)
+	getBufLockObjectData func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -99,15 +99,15 @@ func newModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
-	getBufYAMLFileObjectData func() (ObjectData, error),
-	getBufLockFileObjectData func() (ObjectData, error),
+	getBufYAMLObjectData func() (ObjectData, error),
+	getBufLockObjectData func() (ObjectData, error),
 ) *moduleData {
 	moduleData := &moduleData{
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
-		getBufYAMLFileObjectData: syncext.OnceValues(getBufYAMLFileObjectData),
-		getBufLockFileObjectData: syncext.OnceValues(getBufLockFileObjectData),
+		getBufYAMLObjectData: syncext.OnceValues(getBufYAMLObjectData),
+		getBufLockObjectData: syncext.OnceValues(getBufLockObjectData),
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
@@ -184,18 +184,18 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	return m.getDeclaredDepModuleKeys()
 }
 
-func (m *moduleData) BufYAMLFileObjectData() (ObjectData, error) {
+func (m *moduleData) BufYAMLObjectData() (ObjectData, error) {
 	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
-	return m.getBufYAMLFileObjectData()
+	return m.getBufYAMLObjectData()
 }
 
-func (m *moduleData) BufLockFileObjectData() (ObjectData, error) {
+func (m *moduleData) BufLockObjectData() (ObjectData, error) {
 	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
-	return m.getBufLockFileObjectData()
+	return m.getBufLockObjectData()
 }
 
 func (*moduleData) isModuleData() {}
