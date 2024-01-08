@@ -50,7 +50,6 @@ func Upload(
 	}
 
 	modules := moduleSet.Modules()
-	targetModules := bufmodule.ModuleSetTargetModules(moduleSet)
 
 	// We check upfront if all modules have names, before contining onwards.
 	for _, module := range modules {
@@ -78,13 +77,12 @@ func Upload(
 		labelNameToProtoScopedLabelRef,
 	)
 
-	// We only add references for target Modules.
-	// TODO: We should add references for any module without a CommitID! See below!
 	opaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(modules)
 	if err != nil {
 		return nil, err
 	}
 
+	targetModules := bufmodule.ModuleSetTargetModules(moduleSet)
 	protoContents, err := slicesext.MapError(
 		targetModules,
 		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
