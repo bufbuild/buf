@@ -18,14 +18,17 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	"connectrpc.com/connect"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// NewUploadRequest creates a new UploadRequest for the given ModuleSet.
+// Upload uploads the given ModuleSet.
 //
 // Only target Modules will be added as references.
 //
@@ -35,17 +38,15 @@ import (
 //
 // Right now, we error if the Modules do not all have the same registry. However, this may cause issues
 // with legagy federation situations TODO.
-//
-// TODO: This function should either move directly into push, or the create helpers in push should
-// move into this package.
-func NewUploadRequest(
+func Upload(
 	ctx context.Context,
+	clientProvider bufapi.UploadServiceClientProvider,
 	moduleSet bufmodule.ModuleSet,
-	options ...UploadRequestOption,
-) (*modulev1beta1.UploadRequest, error) {
-	uploadRequestOptions := newUploadRequestOptions()
+	options ...UploadOption,
+) ([]bufmodule.Commit, error) {
+	uploadOptions := newUploadOptions()
 	for _, option := range options {
-		option(uploadRequestOptions)
+		option(uploadOptions)
 	}
 
 	modules := moduleSet.Modules()
@@ -58,20 +59,22 @@ func NewUploadRequest(
 		}
 	}
 	// Validate we're all within one registry for now.
-	if registries := slicesext.ToUniqueSorted(
+	registries := slicesext.ToUniqueSorted(
 		slicesext.Map(
 			modules,
 			func(module bufmodule.Module) string { return module.ModuleFullName().Registry() },
 		),
-	); len(registries) > 1 {
+	)
+	if len(registries) > 1 {
 		// TODO: This messes up legacy federation.
 		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
 	}
+	registry := registries[0]
 
 	// While the API allows different labels per reference, we don't have a use case for this
 	// in the CLI, so all references will have the same labels. We just pre-compute them now.
 	protoScopedLabelRefs := slicesext.Map(
-		slicesext.ToUniqueSorted(uploadRequestOptions.labels),
+		slicesext.ToUniqueSorted(uploadOptions.labels),
 		labelNameToProtoScopedLabelRef,
 	)
 
@@ -143,20 +146,61 @@ func NewUploadRequest(
 	if err != nil {
 		return nil, err
 	}
-	return &modulev1beta1.UploadRequest{
-		Contents: protoContents,
-	}, nil
+	response, err := clientProvider.UploadServiceClient(registry).Upload(
+		ctx,
+		connect.NewRequest(
+			&modulev1beta1.UploadRequest{
+				Contents: protoContents,
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Msg.Commits) != len(protoContents) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(protoContents), len(response.Msg.Commits))
+	}
+	commits := make([]bufmodule.Commit, len(response.Msg.Commits))
+	for i, protoCommit := range response.Msg.Commits {
+		targetModule := targetModules[i]
+		commitID, err := ProtoToCommitID(protoCommit.Id)
+		if err != nil {
+			return nil, err
+		}
+		getDigest := func() (bufmodule.Digest, error) {
+			return ProtoToDigest(protoCommit.Digest)
+		}
+		moduleKey, err := bufmodule.NewModuleKey(
+			targetModule.ModuleFullName(),
+			commitID,
+			getDigest,
+		)
+		if err != nil {
+			return nil, err
+		}
+		commits[i] = bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return protoCommit.CreateTime.AsTime(), nil
+			},
+			// Since we use the same getDigest for ModuleKey, the "tamper-proofing" will
+			// always return true. We might just get rid of the bufmodule.Commit type, or
+			// re-work it a bit. It makes the most sense in the context of the CommitProvider.
+			getDigest,
+		)
+	}
+	return commits, nil
 }
 
-// UploadRequestOption is an option for a new UploadRequest.
-type UploadRequestOption func(*uploadRequestOptions)
+// UploadOption is an option for a new Upload.
+type UploadOption func(*uploadOptions)
 
-// UploadRequestWithLabels returns a new UploadRequestOption that adds the given labels.
+// UploadWithLabels returns a new UploadOption that adds the given labels.
 //
 // This can be called multiple times. The unique result set of labels will be used.
-func UploadRequestWithLabels(labels ...string) UploadRequestOption {
-	return func(uploadRequestOptions *uploadRequestOptions) {
-		uploadRequestOptions.labels = append(uploadRequestOptions.labels, labels...)
+func UploadWithLabels(labels ...string) UploadOption {
+	return func(uploadOptions *uploadOptions) {
+		uploadOptions.labels = append(uploadOptions.labels, labels...)
 	}
 }
 
@@ -187,10 +231,10 @@ func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
 	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
 }
 
-type uploadRequestOptions struct {
+type uploadOptions struct {
 	labels []string
 }
 
-func newUploadRequestOptions() *uploadRequestOptions {
-	return &uploadRequestOptions{}
+func newUploadOptions() *uploadOptions {
+	return &uploadOptions{}
 }
