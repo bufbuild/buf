@@ -572,8 +572,9 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
+	inputDirPathComponents := normalpath.Components(absInputDirPath)
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		string(os.PathSeparator),
+		inputDirPathComponents[0],
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -585,7 +586,7 @@ func getReadWriteBucketForOS(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		absInputDirPath[1:],
+		normalpath.Join(inputDirPathComponents[1:]...),
 		terminateFunc,
 	)
 	if err != nil {
@@ -606,15 +607,16 @@ func getReadWriteBucketForOS(
 	// Make bucket on: os.PathSeparator + returnMapPath (since absolute)
 	var bucketPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = normalpath.Join("/", mapPath)
+		bucketPath = normalpath.Join(inputDirPathComponents[0], mapPath)
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
 			return nil, err
 		}
 		pwd = normalpath.Normalize(pwd)
-		// Deleting leading os.PathSeparator so we can make mapPath relative.
-		bucketPath, err = normalpath.Rel(pwd[1:], mapPath)
+		pwdComponents := normalpath.Components(pwd)
+		// Deleting volume component so we can make mapPath relative.
+		bucketPath, err = normalpath.Rel(normalpath.Join(pwdComponents[1:]...), mapPath)
 		if err != nil {
 			return nil, err
 		}
@@ -673,8 +675,9 @@ func getReadBucketCloserForOSProtoFile(
 	if err != nil {
 		return nil, err
 	}
+	protoFileDirPathComponents := normalpath.Components(absProtoFileDirPath)
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		"/",
+		protoFileDirPathComponents[0],
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -688,7 +691,7 @@ func getReadBucketCloserForOSProtoFile(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		absProtoFileDirPath[1:],
+		normalpath.Join(protoFileDirPathComponents[1:]...),
 		protoFileTerminateFunc,
 	)
 	if err != nil {
@@ -736,15 +739,16 @@ func getReadBucketCloserForOSProtoFile(
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			protoTerminateFileDirPath = normalpath.Join("/", mapPath)
+			protoTerminateFileDirPath = normalpath.Join(protoFileDirPathComponents[0], mapPath)
 		} else {
 			pwd, err := osext.Getwd()
 			if err != nil {
 				return nil, err
 			}
 			pwd = normalpath.Normalize(pwd)
-			// Deleting leading os.PathSeparator so we can make mapPath relative.
-			protoTerminateFileDirPath, err = normalpath.Rel(pwd[1:], mapPath)
+			pwdComponents := normalpath.Components(pwd)
+			// Deleting volume component so we can make mapPath relative.
+			protoTerminateFileDirPath, err = normalpath.Rel(normalpath.Join(pwdComponents[1:]...), mapPath)
 			if err != nil {
 				return nil, err
 			}
