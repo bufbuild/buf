@@ -27,6 +27,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/filepathext"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -572,9 +573,8 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
-	inputDirPathComponents := normalpath.Components(absInputDirPath)
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		inputDirPathComponents[0],
+		filepathext.FSRoot,
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -586,7 +586,7 @@ func getReadWriteBucketForOS(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		normalpath.Join(inputDirPathComponents[1:]...),
+		absInputDirPath[1:],
 		terminateFunc,
 	)
 	if err != nil {
@@ -607,16 +607,15 @@ func getReadWriteBucketForOS(
 	// Make bucket on: os.PathSeparator + returnMapPath (since absolute)
 	var bucketPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = normalpath.Join(inputDirPathComponents[0], mapPath)
+		bucketPath = normalpath.Join("/", mapPath)
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
 			return nil, err
 		}
 		pwd = normalpath.Normalize(pwd)
-		pwdComponents := normalpath.Components(pwd)
-		// Deleting volume component so we can make mapPath relative.
-		bucketPath, err = normalpath.Rel(normalpath.Join(pwdComponents[1:]...), mapPath)
+		// Deleting leading os.PathSeparator so we can make mapPath relative.
+		bucketPath, err = normalpath.Rel(pwd[1:], mapPath)
 		if err != nil {
 			return nil, err
 		}
@@ -675,9 +674,8 @@ func getReadBucketCloserForOSProtoFile(
 	if err != nil {
 		return nil, err
 	}
-	protoFileDirPathComponents := normalpath.Components(absProtoFileDirPath)
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		protoFileDirPathComponents[0],
+		filepathext.FSRoot,
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -691,7 +689,7 @@ func getReadBucketCloserForOSProtoFile(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		normalpath.Join(protoFileDirPathComponents[1:]...),
+		absProtoFileDirPath[1:],
 		protoFileTerminateFunc,
 	)
 	if err != nil {
@@ -739,16 +737,15 @@ func getReadBucketCloserForOSProtoFile(
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			protoTerminateFileDirPath = normalpath.Join(protoFileDirPathComponents[0], mapPath)
+			protoTerminateFileDirPath = normalpath.Join(filepathext.FSRoot, mapPath)
 		} else {
 			pwd, err := osext.Getwd()
 			if err != nil {
 				return nil, err
 			}
 			pwd = normalpath.Normalize(pwd)
-			pwdComponents := normalpath.Components(pwd)
-			// Deleting volume component so we can make mapPath relative.
-			protoTerminateFileDirPath, err = normalpath.Rel(normalpath.Join(pwdComponents[1:]...), mapPath)
+			// Deleting leading os.PathSeparator so we can make mapPath relative.
+			protoTerminateFileDirPath, err = normalpath.Rel(pwd[1:], mapPath)
 			if err != nil {
 				return nil, err
 			}
@@ -865,8 +862,8 @@ func attemptToFixOSRootBucketPathErrors(err error) error {
 			return err
 		}
 		pwd = normalpath.Normalize(pwd)
-		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join("/", pathError.Path), normalpath.Absolute) {
-			relPath, err := normalpath.Rel(pwd, normalpath.Join("/", pathError.Path))
+		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join(filepathext.FSRoot, pathError.Path), normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, normalpath.Join(filepathext.FSRoot, pathError.Path))
 			// Just ignore if this errors and do nothing.
 			if err == nil {
 				// Making a copy just to be super-safe.
