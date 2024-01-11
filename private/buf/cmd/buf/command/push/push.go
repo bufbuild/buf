@@ -145,10 +145,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	singleRegistryHostname, err := getSingleRegistryHostname(moduleSet)
-	if err != nil {
-		return err
-	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -185,17 +181,11 @@ func run(
 		}
 	}
 
-	protoUploadRequest, err := bufmoduleapi.NewUploadRequest(
+	commits, err := bufmoduleapi.Upload(
 		ctx,
+		clientProvider,
 		moduleSet,
-		bufmoduleapi.UploadRequestWithLabels(combineLabelLikeFlags(flags)...),
-	)
-	if err != nil {
-		return err
-	}
-	response, err := clientProvider.UploadServiceClient(singleRegistryHostname).Upload(
-		ctx,
-		connect.NewRequest(protoUploadRequest),
+		bufmoduleapi.UploadWithLabels(combineLabelLikeFlags(flags)...),
 	)
 	if err != nil {
 		return err
@@ -204,8 +194,8 @@ func run(
 		[]byte(
 			strings.Join(
 				slicesext.Map(
-					response.Msg.Commits,
-					func(protoCommit *modulev1beta1.Commit) string { return protoCommit.Id },
+					commits,
+					func(commit bufmodule.Commit) string { return commit.ModuleKey().CommitID() },
 				),
 				"\n",
 			) + "\n",
@@ -329,33 +319,6 @@ func createTargetModulesIfNotExist(
 	return nil
 }
 
-// getSingleRegistryHostname validates that all Modules have ModuleFullNames, and that
-// all Modules have the same registry, and returns that registry
-//
-// We do the same validation in bufmoduleapi.NewUploadRequest, but we want to do it upfront
-// here so we don't do any RPC calls otherwise, including create calls. We might want to just
-// move NewUploadRequest into this file.
-func getSingleRegistryHostname(moduleSet bufmodule.ModuleSet) (string, error) {
-	// We check upfront if all modules have names, before contining onwards.
-	for _, module := range moduleSet.Modules() {
-		if module.ModuleFullName() == nil {
-			return "", newRequireModuleFullNameOnUploadError(module)
-		}
-	}
-	// Validate we're all within one registry for now.
-	registryHostnames := slicesext.ToUniqueSorted(
-		slicesext.Map(
-			moduleSet.Modules(),
-			func(module bufmodule.Module) string { return module.ModuleFullName().Registry() },
-		),
-	)
-	if len(registryHostnames) > 1 {
-		// TODO: This messes up legacy federation.
-		return "", fmt.Errorf("multiple registries detected: %s", strings.Join(registryHostnames, ", "))
-	}
-	return registryHostnames[0], nil
-}
-
 func validateCreateFlags(flags *flags) error {
 	if flags.Create {
 		if flags.CreateVisibility == "" {
@@ -395,6 +358,6 @@ func combineLabelLikeFlags(flags *flags) []string {
 
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
 	// This error will likely actually go back to users.
-	// TODO: We copied this from NewUploadRequest, we may want to make this a system error over there.
+	// TODO: We copied this from bufmoduleapi.Upload, we may want to make this a system error over there.
 	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
 }
