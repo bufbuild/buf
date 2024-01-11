@@ -585,8 +585,9 @@ func getReadWriteBucketForOS(
 		ctx,
 		logger,
 		osRootBucket,
-		// This makes the path relative to the bucket.
-		absInputDirPath[len(filepathext.FSRoot):],
+		// This makes the path relative to the bucket. We need to strip away the root of the
+		// absolute path.
+		normalpath.Join(normalpath.Components(absInputDirPath)[1:]...),
 		terminateFunc,
 	)
 	if err != nil {
@@ -688,8 +689,9 @@ func getReadBucketCloserForOSProtoFile(
 		ctx,
 		logger,
 		osRootBucket,
-		// This makes the path relative to the bucket.
-		absProtoFileDirPath[len(filepathext.FSRoot):],
+		// This makes the path relative to the bucket. We need to strip away the root of the
+		// absolute path.
+		normalpath.Join(normalpath.Components(absProtoFileDirPath)[1:]...),
 		protoFileTerminateFunc,
 	)
 	if err != nil {
