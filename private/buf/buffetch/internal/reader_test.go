@@ -140,7 +140,7 @@ func TestGetReadWriteBucketForOSTerminateFileName(t *testing.T) {
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readWriteBucket.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "testdata/bufyaml/one/two/three/buf.work.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "testdata/bufyaml/one/two/three/buf.work.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 }
 
 func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
@@ -204,7 +204,7 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readWriteBucket.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/buf.work.yaml"), fileInfo.ExternalPath())
+	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/buf.work.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
 }
 
 func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testing.T) {
@@ -241,10 +241,10 @@ func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "testdata/bufyaml/one/two/three/buf.work.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "testdata/bufyaml/one/two/three/buf.work.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	require.NoError(t, readBucketCloser.Close())
 }
 
@@ -274,10 +274,10 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "five/buf.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "../buf.work.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "../buf.work.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	require.NoError(t, readBucketCloser.Close())
 }
 
@@ -309,10 +309,10 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
-	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), fileInfo.ExternalPath())
+	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/buf.work.yaml"), fileInfo.ExternalPath())
+	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/buf.work.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
 	require.NoError(t, readBucketCloser.Close())
 }
 
@@ -331,7 +331,7 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
-	require.Equal(t, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto", fileInfo.ExternalPath())
+	require.Equal(t, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
 	require.NoError(t, readBucketCloser.Close())
 }
 
@@ -361,10 +361,10 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
-	require.Equal(t, "five/proto/foo.proto", fileInfo.ExternalPath())
+	require.Equal(t, "five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readBucketCloser.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "../buf.work.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "../buf.work.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	require.NoError(t, readBucketCloser.Close())
 }
 
