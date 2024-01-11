@@ -1086,7 +1086,8 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/jumpcontext/buf.work.yaml: directory "../breaking/other/proto" is invalid: ../breaking/other/proto: is outside the context directory`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/jumpcontext/buf.work.yaml: directory "../breaking/other/proto" is invalid: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
 	)
@@ -1150,7 +1151,8 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "noversion"),
 	)

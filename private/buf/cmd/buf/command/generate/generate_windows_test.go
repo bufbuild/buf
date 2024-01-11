@@ -76,7 +76,7 @@ func TestOutputWithExclude(t *testing.T) {
 
 func TestOutputWithPathWithinExclude(t *testing.T) {
 	tempDirPath := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStdoutStderr(
 		t,
 		nil,
 		1,
@@ -120,7 +120,7 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 
 func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 	tempDirPath := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStdoutStderr(
 		t,
 		nil,
 		1,
@@ -144,7 +144,7 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 
 func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
 	tempDirPath := t.TempDir()
-	testRunStdoutStderrNoWarn(
+	testRunStdoutStderr(
 		t,
 		nil,
 		1,
