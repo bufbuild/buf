@@ -19,11 +19,12 @@ package filepathext
 
 import (
 	"os"
+	"path/filepath"
 )
 
 var (
-	// The environment variable that shows the drive that holds the
-	// Windows folder. This is a drive name and not a folder name (`C:` not `C:\`).
+	// USERPROFILE shows the current user's profile folder. It is being used to parse the volume
+	// for the current user and this is used as the process's context.
 	// https://learn.microsoft.com/en-us/windows/deployment/usmt/usmt-recognized-environment-variables#variables-that-are-processed-for-the-operating-system-and-in-the-context-of-each-user
-	FSRoot = os.Getenv("SYSTEMDRIVE") + string(os.PathSeparator)
+	FSRoot = filepath.VolumeName(os.Getenv("USERPROFILE")) + string(os.PathSeparator)
 )
