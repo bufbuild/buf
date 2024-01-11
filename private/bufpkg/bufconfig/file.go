@@ -205,7 +205,8 @@ func newDecodeError(fileName string, err error) error {
 		fileName = "config file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "decode", Path: fileName, Err: err}
+	// We return an unnormalized path in the error for clarity with user's filesystem.
+	return &fs.PathError{Op: "decode", Path: normalpath.Unnormalize(fileName), Err: err}
 }
 
 func newEncodeError(fileName string, err error) error {
@@ -213,5 +214,6 @@ func newEncodeError(fileName string, err error) error {
 		fileName = "config file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "encode", Path: fileName, Err: err}
+	// We return an unnormalized path in the error for clarity with user's filesystem.
+	return &fs.PathError{Op: "encode", Path: normalpath.Unnormalize(fileName), Err: err}
 }
