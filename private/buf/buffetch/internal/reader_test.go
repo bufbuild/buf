@@ -168,7 +168,7 @@ func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
 	fileInfo, err := readWriteBucket.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
-	require.Equal(t, "five/buf.yaml", fileInfo.ExternalPath())
+	require.Equal(t, "five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 	fileInfo, err = readWriteBucket.Stat(ctx, "buf.work.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "../buf.work.yaml", fileInfo.ExternalPath())

@@ -586,7 +586,7 @@ func getReadWriteBucketForOS(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		absInputDirPath[1:],
+		absInputDirPath[len(filepathext.FSRoot):],
 		terminateFunc,
 	)
 	if err != nil {
@@ -607,7 +607,7 @@ func getReadWriteBucketForOS(
 	// Make bucket on: os.PathSeparator + returnMapPath (since absolute)
 	var bucketPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = normalpath.Join("/", mapPath)
+		bucketPath = normalpath.Join(filepathext.FSRoot, mapPath)
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
