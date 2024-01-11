@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -217,9 +218,9 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 				// This is new post-refactor. Before, we gave precedence to --path. While a change,
 				// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
 				if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
-					// We unnormalize the target paths to show in the error message
-					unnormalizedTargetExcludePath := normalpath.Unnormalize(targetExcludePath)
-					unnormalizedTargetPath := normalpath.Unnormalize(targetPath)
+					// We clean and unnormalize the target paths to show in the error message
+					unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
+					unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
 					return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", unnormalizedTargetExcludePath, unnormalizedTargetPath, unnormalizedTargetPath)
 				}
 			}

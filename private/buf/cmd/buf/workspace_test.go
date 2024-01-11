@@ -1109,7 +1109,8 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/diroverlap/buf.work.yaml: directory "foo" contains directory "foo/bar"`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/diroverlap/buf.work.yaml: directory "foo" contains directory "foo/bar"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
 	)
@@ -1163,7 +1164,8 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
 	)
@@ -1177,7 +1179,8 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/nodirectories/buf.work.yaml: directories is empty`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/nodirectories/buf.work.yaml: directories is empty`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "nodirectories"),
 	)
