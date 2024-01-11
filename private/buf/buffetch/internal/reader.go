@@ -689,7 +689,7 @@ func getReadBucketCloserForOSProtoFile(
 		logger,
 		osRootBucket,
 		// This makes the path relative to the bucket.
-		absProtoFileDirPath[1:],
+		absProtoFileDirPath[len(filepathext.FSRoot):],
 		protoFileTerminateFunc,
 	)
 	if err != nil {
