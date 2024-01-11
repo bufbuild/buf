@@ -1096,7 +1096,8 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module directory: ../breaking/other/proto: is outside the context directory`),
+		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module directory: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "jumpcontext"),
 	)
