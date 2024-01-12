@@ -584,6 +584,10 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	if err != nil {
 		return nil, err
 	}
+	otelconnectInterceptor, err := otelconnect.NewInterceptor()
+	if err != nil {
+		return nil, err
+	}
 	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
@@ -595,7 +599,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		connectclient.WithInterceptors([]connect.Interceptor{
 			bufconnect.NewSetCLIVersionInterceptor(Version),
 			bufconnect.NewCLIWarningInterceptor(container),
-			otelconnect.NewInterceptor(),
+			otelconnectInterceptor,
 		}),
 	}
 	options = append(options, opts...)
