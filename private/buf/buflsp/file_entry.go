@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 )
@@ -31,8 +30,7 @@ type fileEntry struct {
 	lines    []string
 	refCount int
 
-	moduleSet bufmodule.ModuleSet
-	bucket    bufmodule.ModuleReadBucket
+	resolver moduleSetResolver
 
 	externalPath string
 	isRemote     bool // If the file is part of a remote module.
@@ -53,19 +51,14 @@ type fileEntry struct {
 
 func newFileEntry(
 	document *protocol.TextDocumentItem,
-	moduleSet bufmodule.ModuleSet,
+	resolver moduleSetResolver,
 	externalPath string,
 	isRemote bool,
 ) *fileEntry {
-	var bucket bufmodule.ModuleReadBucket
-	if moduleSet != nil {
-		bucket = bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
-	}
 	result := &fileEntry{
 		document:     document,
 		refCount:     1,
-		moduleSet:    moduleSet,
-		bucket:       bucket,
+		resolver:     resolver,
 		externalPath: externalPath,
 		isRemote:     isRemote,
 	}
@@ -139,14 +132,11 @@ func (f *fileEntry) generateSymbols() {
 }
 
 func (f *fileEntry) resolveImports(ctx context.Context, lsp *server) error {
-	if f.moduleSet == nil {
-		return nil
-	}
 	for _, importStatement := range f.imports {
 		if importStatement.docURI != "" {
 			continue
 		}
-		importEntry, err := lsp.resolveImport(ctx, f.moduleSet, f.bucket, importStatement.node.Name.AsString())
+		importEntry, err := lsp.resolveImport(ctx, f.resolver, importStatement.node.Name.AsString())
 		if err != nil {
 			return err
 		} else if importEntry != nil {

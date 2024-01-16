@@ -276,7 +276,11 @@ func (s *server) resolveExtField(entry *fileEntry, messageRef *symbolRef, fieldR
 
 func (s *server) resolveWellKnownExtendee(ctx context.Context, extendee symbolRefName) *symbolRef {
 	// Check if it is a reference to a well known type Option type.
-	if descEntry, err := s.resolveImport(ctx, s.wellKnownTypesModuleSet, s.wellKnownTypesBucket, wellKnownTypesDescriptorProtoPath); err == nil {
+	if descEntry, err := s.resolveImport(
+		ctx,
+		s.wellKnownTypesResolver,
+		wellKnownTypesDescriptorProtoPath,
+	); err == nil {
 		defer func() { s.decrementReferenceCount(descEntry) }()
 		return &symbolRef{
 			entry:   descEntry,

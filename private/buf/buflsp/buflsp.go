@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -81,7 +82,7 @@ type server struct {
 	fileCache               map[string]*fileEntry
 	fileWatcher             *fsnotify.Watcher
 	wellKnownTypesModuleSet bufmodule.ModuleSet
-	wellKnownTypesBucket    bufmodule.ModuleReadBucket
+	wellKnownTypesResolver  moduleSetResolver
 
 	folders   []protocol.WorkspaceFolder
 	clientCap protocol.ClientCapabilities
@@ -101,13 +102,19 @@ func newServer(
 	if err != nil {
 		return nil, err
 	}
-	wellKnownTypesModuleSet, err := wellKnownTypesModuleSet(ctx, logger)
+	wellKnownTypesResolver := newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
+		moduleSetBuilder.AddLocalModule(
+			datawkt.ReadBucket,
+			".",
+			true,
+		)
+		return moduleSetBuilder.Build()
+	})
+	wellKnownTypesModuleSet, err := wellKnownTypesResolver.ModuleSet()
 	if err != nil {
 		return nil, err
 	}
-	wellKnownTypesBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
-		wellKnownTypesModuleSet,
-	)
 	buflsp := &server{
 		jsonrpc2Conn:            jsonrpc2Conn,
 		logger:                  logger,
@@ -118,17 +125,15 @@ func newServer(
 		fileCache:               make(map[string]*fileEntry),
 		fileWatcher:             watcher,
 		wellKnownTypesModuleSet: wellKnownTypesModuleSet,
-		wellKnownTypesBucket:    wellKnownTypesBucket,
+		wellKnownTypesResolver:  wellKnownTypesResolver,
 	}
 	go func() {
 		for event := range buflsp.fileWatcher.Events {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				buflsp.lock.Lock()
 				if entry, ok := buflsp.fileCache[event.Name]; ok {
-					if entry.moduleSet != nil {
-						if err := buflsp.refreshImage(ctx, entry.moduleSet, entry.bucket); err != nil {
-							buflsp.logger.Sugar().Errorf("failed to build new image: %s", err)
-						}
+					if err := buflsp.refreshImage(ctx, entry.resolver); err != nil {
+						buflsp.logger.Sugar().Errorf("failed to build new image: %s", err)
 					}
 				}
 				buflsp.lock.Unlock()
@@ -149,8 +154,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.InitializePara
 	// Always load the descriptor.proto file
 	if _, err := s.resolveImport(
 		ctx,
-		s.wellKnownTypesModuleSet,
-		s.wellKnownTypesBucket,
+		s.wellKnownTypesResolver,
 		wellKnownTypesDescriptorProtoPath,
 	); err != nil {
 		return nil, err
@@ -196,33 +200,30 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		}
 		return nil
 	}
-	var moduleSet bufmodule.ModuleSet
+	var resolver moduleSetResolver
 	wellKnownTypesCachePath := normalpath.Join(
 		s.container.CacheDirPath(),
 		lspWellKnownTypesCacheRelDirPath,
 	)
 	if strings.HasPrefix(normalpath.Normalize(filename), wellKnownTypesCachePath) {
-		moduleSet = s.wellKnownTypesModuleSet
+		resolver = s.wellKnownTypesResolver
 	} else {
-		var err error
-		workspace, err := s.controller.GetWorkspace(ctx, filename)
-		if err != nil {
-			s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
-			// Continue anyways if this fails.
-		} else {
-			moduleSet = workspace
-		}
+		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
+			workspace, err := s.controller.GetWorkspace(ctx, filename)
+			if err != nil {
+				s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
+			}
+			return workspace, err
+		})
 	}
 
 	// Create a new file entry for the file
-	entry, err := s.createFileEntry(ctx, params.TextDocument, moduleSet)
+	entry, err := s.createFileEntry(ctx, params.TextDocument, resolver)
 	if err != nil {
 		return err
 	}
-	if entry.moduleSet != nil {
-		if err := s.refreshImage(ctx, entry.moduleSet, entry.bucket); err != nil {
-			return err
-		}
+	if err := s.refreshImage(ctx, entry.resolver); err != nil {
+		return err
 	}
 	return nil
 }
@@ -240,10 +241,8 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 		return err
 	}
 	if matches { // Same as on disk, so safe to refresh the image data.
-		if entry.moduleSet != nil {
-			if err := s.refreshImage(ctx, entry.moduleSet, entry.bucket); err != nil {
-				return err
-			}
+		if err := s.refreshImage(ctx, entry.resolver); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -424,18 +423,48 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	}, nil
 }
 
-func (s *server) resolveImport(ctx context.Context, workspace bufmodule.ModuleSet, bucket bufmodule.ModuleReadBucket, path string) (*fileEntry, error) {
+func (s *server) findImportWithResolver(
+	ctx context.Context,
+	resolver moduleSetResolver,
+	path string,
+) (bufmodule.ModuleReadBucket, bufmodule.File, error) {
+	bucket, err := resolver.Bucket()
+	if err != nil {
+		return nil, nil, err
+	}
 	file, err := bucket.GetFile(ctx, path)
 	if err != nil {
-		workspace = s.wellKnownTypesModuleSet
-		bucket = s.wellKnownTypesBucket
-		file, err = bucket.GetFile(ctx, path)
-		if err != nil {
-			s.logger.Warn("could not resolve import", zap.String("path", path))
-			return nil, nil
-		}
+		return nil, nil, err
 	}
-	localPath, err := s.localPathForImport(ctx, workspace, bucket, file)
+	return bucket, file, nil
+}
+
+func (s *server) findImport(
+	ctx context.Context,
+	resolver moduleSetResolver,
+	path string,
+) (bufmodule.ModuleReadBucket, bufmodule.File, error) {
+	bucket, file, err := s.findImportWithResolver(ctx, resolver, path)
+	if err == nil {
+		return bucket, file, nil
+	}
+	bucket, file, err2 := s.findImportWithResolver(ctx, s.wellKnownTypesResolver, path)
+	if err2 == nil {
+		return bucket, file, nil
+	}
+	err = fmt.Errorf("could not resolve import in workspace: %w", err)
+	if err2 != fs.ErrNotExist {
+		err = fmt.Errorf("%w (additionally, an unexpected error occurred trying to resolve the import from well-known types: %v)", err, err2)
+	}
+	return nil, nil, err
+}
+
+func (s *server) resolveImport(ctx context.Context, resolver moduleSetResolver, path string) (*fileEntry, error) {
+	bucket, file, err := s.findImport(ctx, resolver, path)
+	if err != nil {
+		return nil, err
+	}
+	localPath, err := s.localPathForImport(ctx, bucket, file)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +480,9 @@ func (s *server) resolveImport(ctx context.Context, workspace bufmodule.ModuleSe
 	return s.createFileEntry(ctx, protocol.TextDocumentItem{
 		URI:  uri,
 		Text: string(fileData),
-	}, workspace)
+	}, newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
+		return file.Module().ModuleSet(), nil
+	}))
 }
 
 // Refresh the results for the given file entry.
@@ -474,8 +505,8 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 }
 
 // Create a new file entry with the given contents and metadata.
-func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, moduleSet bufmodule.ModuleSet) (*fileEntry, error) {
-	entry := newFileEntry(&item, moduleSet, item.URI.Filename(), strings.HasPrefix(item.URI.Filename(), s.container.CacheDirPath()))
+func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
+	entry := newFileEntry(&item, resolver, item.URI.Filename(), strings.HasPrefix(item.URI.Filename(), s.container.CacheDirPath()))
 	s.fileCache[item.URI.Filename()] = entry
 	if err := entry.processText(ctx, s); err != nil {
 		return nil, err
@@ -488,8 +519,16 @@ func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocument
 	return entry, nil
 }
 
-func (s *server) refreshImage(ctx context.Context, moduleSet bufmodule.ModuleSet, bucket bufmodule.ModuleReadBucket) error {
-	err := bucket.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
+func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) error {
+	moduleSet, err := resolver.ModuleSet()
+	if err != nil {
+		return err
+	}
+	bucket, err := resolver.Bucket()
+	if err != nil {
+		return err
+	}
+	err = bucket.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
 		if entry, ok := s.fileCache[fileInfo.ExternalPath()]; ok {
 			entry.bufDiags = nil
 		}
@@ -510,7 +549,6 @@ func (s *server) refreshImage(ctx context.Context, moduleSet bufmodule.ModuleSet
 				annotationToDiagnostic(annot, protocol.DiagnosticSeverityError))
 		}
 	}
-
 	if workspace, ok := moduleSet.(bufworkspace.Workspace); ok && image != nil {
 		for _, module := range moduleSet.Modules() {
 			if err := s.lintHandler.Check(ctx, workspace.GetLintConfigForOpaqueID(module.OpaqueID()), image); err != nil {
@@ -541,18 +579,17 @@ func (s *server) refreshImage(ctx context.Context, moduleSet bufmodule.ModuleSet
 // to be used in the LSP code.
 func (s *server) localPathForImport(
 	ctx context.Context,
-	workspace bufmodule.ModuleSet,
 	bucket bufmodule.ModuleReadBucket,
 	file bufmodule.File,
 ) (string, error) {
-	if workspace == s.wellKnownTypesModuleSet {
+	module := file.Module()
+	if module.ModuleSet() == s.wellKnownTypesModuleSet {
 		digest, err := file.Module().Digest(bufmodule.DigestTypeB5)
 		if err != nil {
 			return "", err
 		}
 		return normalpath.Join(s.container.CacheDirPath(), lspWellKnownTypesCacheRelDirPath, digest.String(), file.Path()), nil
 	}
-	module := file.Module()
 	if module.IsLocal() {
 		return file.ExternalPath(), nil
 	}
@@ -625,17 +662,4 @@ func annotationToDiagnostic(
 		Severity: severity,
 		Message:  fmt.Sprintf("%s (%s)", annotation.Message(), annotation.Type()),
 	}
-}
-
-func wellKnownTypesModuleSet(
-	ctx context.Context,
-	logger *zap.Logger,
-) (bufmodule.ModuleSet, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
-	moduleSetBuilder.AddLocalModule(
-		datawkt.ReadBucket,
-		".",
-		true,
-	)
-	return moduleSetBuilder.Build()
 }

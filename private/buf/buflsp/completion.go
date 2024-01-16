@@ -124,8 +124,8 @@ func (s *server) findImportCompletions(
 		return nil, err
 	}
 
-	if entry.bucket != nil {
-		if err := s.findBucketCompletions(ctx, entry.bucket, prefix, options); err != nil {
+	if bucket, err := entry.resolver.Bucket(); err == nil {
+		if err := s.findBucketCompletions(ctx, bucket, prefix, options); err != nil {
 			return nil, err
 		}
 	}
