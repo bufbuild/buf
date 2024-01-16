@@ -218,11 +218,11 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	}
 
 	// Create a new file entry for the file
-	entry, err := s.createFileEntry(ctx, params.TextDocument, resolver)
+	_, err := s.createFileEntry(ctx, params.TextDocument, resolver)
 	if err != nil {
 		return err
 	}
-	if err := s.refreshImage(ctx, entry.resolver); err != nil {
+	if err := s.refreshImage(ctx, resolver); err != nil {
 		return err
 	}
 	return nil
