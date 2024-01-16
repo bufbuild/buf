@@ -209,8 +209,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		if err != nil {
 			s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
 			// Continue anyways if this fails.
-		}
-		if workspace != nil {
+		} else {
 			moduleSet = workspace
 		}
 	}
