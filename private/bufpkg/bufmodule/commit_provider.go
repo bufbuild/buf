@@ -16,37 +16,12 @@ package bufmodule
 
 import (
 	"context"
-	"io/fs"
 )
 
 // CommitProvider provides Commits for ModuleKeys.
 type CommitProvider interface {
 	// GetCommitsForModuleKeys gets the Commits for the given ModuleKeys.
 	//
-	// If there is no error, the length of the OptionalCommits returned will match the length of the ModuleKeys.
-	// If there is an error, no OptionalCommits will be returned.
-	// If a Commit is not found, the OptionalCommit will have Found() equal to false, otherwise
-	// the OptionalCommit will have Found() equal to true with non-nil Commit.
-	GetOptionalCommitsForModuleKeys(context.Context, ...ModuleKey) ([]OptionalCommit, error)
-}
-
-// GetCommitsForModuleKeys calls GetOptionalCommitsForModuleKeys, returning an error
-// with fs.ErrNotExist if any ModuleKey is not found.
-func GetCommitsForModuleKeys(
-	ctx context.Context,
-	commitProvider CommitProvider,
-	moduleKeys ...ModuleKey,
-) ([]Commit, error) {
-	optionalCommits, err := commitProvider.GetOptionalCommitsForModuleKeys(ctx, moduleKeys...)
-	if err != nil {
-		return nil, err
-	}
-	commits := make([]Commit, len(optionalCommits))
-	for i, optionalCommit := range optionalCommits {
-		if !optionalCommit.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
-		}
-		commits[i] = optionalCommit.Commit()
-	}
-	return commits, nil
+	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
+	GetCommitsForModuleKeys(context.Context, []ModuleKey) ([]Commit, error)
 }

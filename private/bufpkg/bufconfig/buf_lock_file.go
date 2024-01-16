@@ -50,11 +50,6 @@ var (
 type BufLockFile interface {
 	File
 
-	// FileName returns the name of the file when the BufLockFile was read.
-	//
-	// If there was no file name, this returns empty. This can happen when the BufLockFile
-	// is created via ReadBufLockFile, for example.
-	FileName() string
 	// DepModuleKeys returns the ModuleKeys representing the dependencies as specified in the buf.lock file.
 	//
 	// All ModuleKeys will have unique ModuleFullNames.
@@ -69,7 +64,7 @@ type BufLockFile interface {
 // Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
 // ValidateBufLockFileDigests().
 func NewBufLockFile(fileVersion FileVersion, depModuleKeys []bufmodule.ModuleKey) (BufLockFile, error) {
-	return newBufLockFile(fileVersion, "", depModuleKeys)
+	return newBufLockFile(fileVersion, nil, depModuleKeys)
 }
 
 // GetBufLockFileForPrefix gets the buf.lock file at the given bucket prefix.
@@ -90,11 +85,11 @@ func GetBufLockFileForPrefix(
 		prefix,
 		bufLockFileNames,
 		func(
-			reader io.Reader,
-			fileName string,
+			data []byte,
+			objectData ObjectData,
 			allowJSON bool,
 		) (BufLockFile, error) {
-			return readBufLockFile(ctx, reader, fileName, allowJSON, options...)
+			return readBufLockFile(ctx, data, objectData, allowJSON, options...)
 		},
 	)
 }
@@ -125,27 +120,24 @@ func PutBufLockFileForPrefix(
 
 // ReadBufLockFile reads the BufLockFile from the io.Reader.
 //
-// Note that digests are lazily-loaded; if you need to ensure that all digests are valid, run
-// ValidateFileDigests().
-//
 // fileName may be empty.
 func ReadBufLockFile(ctx context.Context, reader io.Reader, fileName string, options ...BufLockFileOption) (BufLockFile, error) {
 	return readFile(
 		reader,
 		fileName,
 		func(
-			reader io.Reader,
-			fileName string,
+			data []byte,
+			objectData ObjectData,
 			allowJSON bool,
 		) (BufLockFile, error) {
-			return readBufLockFile(ctx, reader, fileName, allowJSON, options...)
+			return readBufLockFile(ctx, data, objectData, allowJSON, options...)
 		},
 	)
 }
 
 // WriteBufLockFile writes the BufLockFile to the io.Writer.
 func WriteBufLockFile(writer io.Writer, bufLockFile BufLockFile) error {
-	return writeFile(writer, bufLockFile.FileName(), bufLockFile, writeBufLockFile)
+	return writeFile(writer, bufLockFile, writeBufLockFile)
 }
 
 // BufLockFileOption is an option for getting a new BufLockFile via Get or Read.
@@ -172,13 +164,13 @@ func BufLockFileWithDigestResolver(
 
 type bufLockFile struct {
 	fileVersion   FileVersion
-	fileName      string
+	objectData    ObjectData
 	depModuleKeys []bufmodule.ModuleKey
 }
 
 func newBufLockFile(
 	fileVersion FileVersion,
-	fileName string,
+	objectData ObjectData,
 	depModuleKeys []bufmodule.ModuleKey,
 ) (*bufLockFile, error) {
 	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
@@ -194,7 +186,7 @@ func newBufLockFile(
 	)
 	bufLockFile := &bufLockFile{
 		fileVersion:   fileVersion,
-		fileName:      fileName,
+		objectData:    objectData,
 		depModuleKeys: depModuleKeys,
 	}
 	if err := validateV1AndV1Beta1DepsHaveCommits(bufLockFile); err != nil {
@@ -207,8 +199,8 @@ func (l *bufLockFile) FileVersion() FileVersion {
 	return l.fileVersion
 }
 
-func (l *bufLockFile) FileName() string {
-	return l.fileName
+func (l *bufLockFile) ObjectData() ObjectData {
+	return l.objectData
 }
 
 func (l *bufLockFile) DepModuleKeys() []bufmodule.ModuleKey {
@@ -220,18 +212,14 @@ func (*bufLockFile) isFile()        {}
 
 func readBufLockFile(
 	ctx context.Context,
-	reader io.Reader,
-	fileName string,
+	data []byte,
+	objectData ObjectData,
 	allowJSON bool,
 	options ...BufLockFileOption,
 ) (BufLockFile, error) {
 	bufLockFileOptions := newBufLockFileOptions()
 	for _, option := range options {
 		option(bufLockFileOptions)
-	}
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
 	}
 	// We have allowed buf.locks to not have file versions historically. Why we did this, I do not know.
 	fileVersion, err := getFileVersionForData(data, allowJSON, false, 0)
@@ -280,6 +268,7 @@ func readBufLockFile(
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {
+					// TODO: Add a message about downgrading the buf cli to a version that supports this.
 					return nil, fmt.Errorf(`%s digests are no longer supported, run "buf mod update" to update your buf.lock`, digestType)
 				}
 			}
@@ -293,7 +282,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, fileName, depModuleKeys)
+		return newBufLockFile(fileVersion, objectData, depModuleKeys)
 	case FileVersionV2:
 		var externalBufLockFile externalBufLockFileV2
 		if err := getUnmarshalStrict(allowJSON)(data, &externalBufLockFile); err != nil {
@@ -317,6 +306,7 @@ func readBufLockFile(
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {
+					// TODO: Add a message about downgrading the buf cli to a version that supports this.
 					return nil, fmt.Errorf(`%s digests are no longer supported, run "buf mod update" to update your buf.lock`, digestType)
 				}
 			}
@@ -332,7 +322,7 @@ func readBufLockFile(
 			}
 			depModuleKeys[i] = depModuleKey
 		}
-		return newBufLockFile(fileVersion, fileName, depModuleKeys)
+		return newBufLockFile(fileVersion, objectData, depModuleKeys)
 	default:
 		// This is a system error since we've already parsed.
 		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)

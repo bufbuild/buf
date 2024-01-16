@@ -43,10 +43,9 @@ func TestCommitProviderBasic(t *testing.T) {
 		),
 	)
 
-	commits, err := bufmodule.GetCommitsForModuleKeys(
+	commits, err := cacheProvider.GetCommitsForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
@@ -67,10 +66,9 @@ func TestCommitProviderBasic(t *testing.T) {
 	)
 
 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-	commits, err = bufmodule.GetCommitsForModuleKeys(
+	commits, err = cacheProvider.GetCommitsForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
@@ -91,42 +89,24 @@ func TestCommitProviderBasic(t *testing.T) {
 	)
 }
 
-func TestModuleDataProviderBasicDir(t *testing.T) {
+func TestModuleDataProviderBasic(t *testing.T) {
 	t.Parallel()
-	testModuleDataProviderBasic(t, false)
-}
-
-func TestModuleDataProviderBasicTar(t *testing.T) {
-	t.Parallel()
-	testModuleDataProviderBasic(t, true)
-}
-
-func testModuleDataProviderBasic(t *testing.T, tar bool) {
 	ctx := context.Background()
 
 	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
 
-	var moduleDataStoreOptions []bufmodulestore.ModuleDataStoreOption
-	if tar {
-		moduleDataStoreOptions = append(
-			moduleDataStoreOptions,
-			bufmodulestore.ModuleDataStoreWithTar(),
-		)
-	}
 	cacheProvider := newModuleDataProvider(
 		zap.NewNop(),
 		bsrProvider,
 		bufmodulestore.NewModuleDataStore(
 			zap.NewNop(),
 			storagemem.NewReadWriteBucket(),
-			moduleDataStoreOptions...,
 		),
 	)
 
-	moduleDatas, err := bufmodule.GetModuleDatasForModuleKeys(
+	moduleDatas, err := cacheProvider.GetModuleDatasForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
@@ -147,10 +127,9 @@ func testModuleDataProviderBasic(t *testing.T, tar bool) {
 	)
 
 	moduleKeys[0], moduleKeys[1] = moduleKeys[1], moduleKeys[0]
-	moduleDatas, err = bufmodule.GetModuleDatasForModuleKeys(
+	moduleDatas, err = cacheProvider.GetModuleDatasForModuleKeys(
 		ctx,
-		cacheProvider,
-		moduleKeys...,
+		moduleKeys,
 	)
 	require.NoError(t, err)
 	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
@@ -205,14 +184,17 @@ func testGetBSRProviderAndModuleKeys(t *testing.T, ctx context.Context) (bufmodu
 	require.NoError(t, err)
 	moduleRefMod3, err := bufmodule.NewModuleRef("buf.build", "foo", "mod3", "")
 	require.NoError(t, err)
-	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		bsrProvider,
-		moduleRefMod1,
-		// Switching order on purpose.
-		moduleRefMod3,
-		moduleRefMod2,
+		[]bufmodule.ModuleRef{
+			moduleRefMod1,
+			// Switching order on purpose.
+			moduleRefMod3,
+			moduleRefMod2,
+		},
+		bufmodule.DigestTypeB5,
 	)
 	require.NoError(t, err)
+	require.Equal(t, 3, len(moduleKeys))
 	return bsrProvider, moduleKeys
 }

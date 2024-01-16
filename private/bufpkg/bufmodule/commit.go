@@ -16,9 +16,9 @@ package bufmodule
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
+	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -28,6 +28,15 @@ type Commit interface {
 	ModuleKey() ModuleKey
 	// CreateTime returns the time the Commit was created on the BSR.
 	CreateTime() (time.Time, error)
+	// Digest returns the digest of the content of the Commit.
+	//
+	// This is the Digest as retrieved from the BSR - it relies on the BSR
+	// correctly calculating digests.
+	//
+	// When CreateTime() or other lazy methods are called, this Digest will be checked
+	// against the Digest in ModuleKey, and if there is a difference,
+	// an error will be returned.
+	Digest() (Digest, error)
 
 	isCommit()
 }
@@ -36,47 +45,13 @@ type Commit interface {
 func NewCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	options ...CommitOption,
-) (Commit, error) {
+	getDigest func() (Digest, error),
+) Commit {
 	return newCommit(
 		moduleKey,
 		getCreateTime,
-		options...,
+		getDigest,
 	)
-}
-
-// CommitOption is an option for a new Commit.
-type CommitOption func(*commitOptions)
-
-// CommitWithReceivedDigest returns a new CommitOption that specifies the Digest
-// that was received when creating the Commit.
-//
-// When CreateTime() or other lazy methods are called, if this Digest is specified, it
-// will be checked against the Digest in ModuleKey, and if there is a difference,
-// an error will be returned.
-func CommitWithReceivedDigest(receivedDigest Digest) CommitOption {
-	return func(commitOptions *commitOptions) {
-		commitOptions.receivedDigest = receivedDigest
-	}
-}
-
-// OptionalCommit is a result from a CommitProvider.
-//
-// It returns whether or not the Commit was found, and a non-nil
-// Commit if the Commit was found.
-type OptionalCommit interface {
-	Commit() Commit
-	Found() bool
-
-	isOptionalCommit()
-}
-
-// NewOptionalCommit returns a new OptionalCommit.
-//
-// As opposed to most functions in this codebase, the input Commit can be nil.
-// If it is nil, then Found() will return false.
-func NewOptionalCommit(commit Commit) OptionalCommit {
-	return newOptionalCommit(commit)
 }
 
 // *** PRIVATE ***
@@ -84,43 +59,39 @@ func NewOptionalCommit(commit Commit) OptionalCommit {
 type commit struct {
 	moduleKey     ModuleKey
 	getCreateTime func() (time.Time, error)
-
-	checkDigest func() error
+	getDigest     func() (Digest, error)
 }
 
 func newCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	options ...CommitOption,
-) (*commit, error) {
-	commitOptions := newCommitOptions()
-	for _, option := range options {
-		option(commitOptions)
-	}
-	commit := &commit{
+	getDigest func() (Digest, error),
+) *commit {
+	return &commit{
 		moduleKey:     moduleKey,
-		getCreateTime: sync.OnceValues(getCreateTime),
-	}
-	if commitOptions.receivedDigest != nil {
-		commit.checkDigest = sync.OnceValue(
-			func() error {
-				digest, err := moduleKey.Digest()
+		getCreateTime: syncext.OnceValues(getCreateTime),
+		getDigest: syncext.OnceValues(
+			func() (Digest, error) {
+				digest, err := getDigest()
 				if err != nil {
-					return err
+					return nil, err
 				}
-				if !DigestEqual(digest, commitOptions.receivedDigest) {
-					return fmt.Errorf(
-						"verification failed for commit %s: expected digest %q but downloaded commit had digest %q",
+				moduleKeyDigest, err := moduleKey.Digest()
+				if err != nil {
+					return nil, err
+				}
+				if !DigestEqual(digest, moduleKeyDigest) {
+					return nil, fmt.Errorf(
+						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
 						moduleKey.String(),
+						moduleKeyDigest.String(),
 						digest.String(),
-						commitOptions.receivedDigest.String(),
 					)
 				}
-				return nil
+				return digest, nil
 			},
-		)
+		),
 	}
-	return commit, nil
 }
 
 func (c *commit) ModuleKey() ModuleKey {
@@ -128,43 +99,17 @@ func (c *commit) ModuleKey() ModuleKey {
 }
 
 func (c *commit) CreateTime() (time.Time, error) {
-	if c.checkDigest != nil {
-		if err := c.checkDigest(); err != nil {
-			return time.Time{}, err
-		}
+	if _, err := c.getDigest(); err != nil {
+		return time.Time{}, err
 	}
 	return c.getCreateTime()
 }
 
+func (c *commit) Digest() (Digest, error) {
+	return c.getDigest()
+}
+
 func (*commit) isCommit() {}
-
-type optionalCommit struct {
-	commit Commit
-}
-
-func newOptionalCommit(commit Commit) *optionalCommit {
-	return &optionalCommit{
-		commit: commit,
-	}
-}
-
-func (o *optionalCommit) Commit() Commit {
-	return o.commit
-}
-
-func (o *optionalCommit) Found() bool {
-	return o.commit != nil
-}
-
-func (*optionalCommit) isOptionalCommit() {}
-
-type commitOptions struct {
-	receivedDigest Digest
-}
-
-func newCommitOptions() *commitOptions {
-	return &commitOptions{}
-}
 
 func validateCommitID(commitID string) error {
 	if err := uuidutil.ValidateDashless(commitID); err != nil {

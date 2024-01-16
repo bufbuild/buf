@@ -68,25 +68,6 @@ func NewModuleKey(
 	)
 }
 
-// OptionalModuleKey is a result from a ModuleKeyProvider.
-//
-// It returns whether or not the ModuleKey was found, and a non-nil
-// ModuleKey if the ModuleKey was found.
-type OptionalModuleKey interface {
-	ModuleKey() ModuleKey
-	Found() bool
-
-	isOptionalModuleKey()
-}
-
-// NewOptionalModuleKey returns a new OptionalModuleKey.
-//
-// As opposed to most functions in this codebase, the input ModuleKey can be nil.
-// If it is nil, then Found() will return false.
-func NewOptionalModuleKey(moduleKey ModuleKey) OptionalModuleKey {
-	return newOptionalModuleKey(moduleKey)
-}
-
 // *** PRIVATE ***
 
 type moduleKey struct {
@@ -134,23 +115,3 @@ func (m *moduleKey) String() string {
 }
 
 func (*moduleKey) isModuleKey() {}
-
-type optionalModuleKey struct {
-	moduleKey ModuleKey
-}
-
-func newOptionalModuleKey(moduleKey ModuleKey) *optionalModuleKey {
-	return &optionalModuleKey{
-		moduleKey: moduleKey,
-	}
-}
-
-func (o *optionalModuleKey) ModuleKey() ModuleKey {
-	return o.moduleKey
-}
-
-func (o *optionalModuleKey) Found() bool {
-	return o.moduleKey != nil
-}
-
-func (*optionalModuleKey) isOptionalModuleKey() {}

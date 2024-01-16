@@ -76,8 +76,10 @@ type ModuleSetBuilder interface {
 	//
 	// The resulting Module will not have a BucketID but will always have a ModuleFullName.
 	//
-	// The dependencies of the Module will are automatically added to the ModuleSet.
-	// Note, however, that Modules added with AddLocalModule always take precedence,
+	// The dependencies of the Module will are *not* automatically added to the ModuleSet.
+	// It is the caller's responsibility to add transitive dependencies.
+	//
+	// Modules added with AddLocalModule always take precedence,
 	// so if there are local bucket-based dependencies, these will be used.
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
@@ -163,6 +165,32 @@ func LocalModuleWithProtoFileTargetPath(
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.protoFileTargetPath = protoFileTargetPath
 		localModuleOptions.includePackageFiles = includePackageFiles
+	}
+}
+
+// LocalModuleWithBufYAMLObjectData returns a new LocalModuleOption that attaches the original
+// source buf.yaml file associated with this module.
+//
+// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
+// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+//
+// This file content is just used for dependency calculations. It is not parsed.
+func LocalModuleWithBufYAMLObjectData(bufYAMLObjectData ObjectData) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.bufYAMLObjectData = bufYAMLObjectData
+	}
+}
+
+// LocalModuleWithBufLockObjectData returns a new LocalModuleOption that attaches the original
+// source buf.yaml file associated with this module.
+//
+// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
+// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+//
+// This file content is just used for dependency calculations. It is not parsed.
+func LocalModuleWithBufLockObjectData(bufLockObjectData ObjectData) LocalModuleOption {
+	return func(localModuleOptions *localModuleOptions) {
+		localModuleOptions.bufLockObjectData = bufLockObjectData
 	}
 }
 
@@ -258,6 +286,8 @@ func (b *moduleSetBuilder) AddLocalModule(
 		localModuleOptions.commitID,
 		isTarget,
 		true,
+		localModuleOptions.bufYAMLObjectData,
+		localModuleOptions.bufLockObjectData,
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
 		localModuleOptions.protoFileTargetPath,
@@ -322,34 +352,23 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	alreadySeenOpaqueIDs := make(map[string]struct{})
-	for _, addedModule := range addedModules {
-		if addedModule.IsLocal() {
-			// Let getTransitiveModulesForRemoteModuleKey know that we've already seen
-			// all the local Modules, so no need to try to fetch them.
-			alreadySeenOpaqueIDs[addedModule.OpaqueID()] = struct{}{}
-		}
-	}
 	modules := make([]Module, 0, len(addedModules))
 	for _, addedModule := range addedModules {
 		if addedModule.IsLocal() {
 			// If the module was local, just add it - we're done.
 			modules = append(modules, addedModule.localModule)
 		} else {
-			// If the module was remote, actually build the module and its dependencies IF
-			// we have not already added those dependencies.
-			transitiveModules, err := b.getTransitiveModulesForRemoteModuleKey(
+			// If the module was remote, actually build the module.
+			remoteModule, err := b.getModuleForRemoteModuleKey(
 				addedModule.remoteModuleKey,
 				addedModule.remoteTargetPaths,
 				addedModule.remoteTargetExcludePaths,
 				addedModule.isTarget,
-				alreadySeenOpaqueIDs,
 			)
 			if err != nil {
 				return nil, err
 			}
-			// We know these modules are already not in the list, courtesy of alreadySeenOpaqueIDs.
-			modules = append(modules, transitiveModules...)
+			modules = append(modules, remoteModule)
 		}
 	}
 	// We know modules is a unique slice, but the sorting may be messed up now courtesy
@@ -363,34 +382,16 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	return newModuleSet(modules)
 }
 
-// getTransitiveRemoteModules gets the Module for the ModuleKey, plus any of its dependencies
-// if those dependencies are not in the alreadySeenOpaqueIDs list.
-//
-// This function recursively calls itself with isTarget = false and no targetPaths or targetExcludePaths
-// for dependencies of the remote Module. No recursive call is made for modules already in the alreadySeenOpaqueIDs.
-func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
+// getModuleForRemoteModuleKey gets the Module for the ModuleKey.
+func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
 	remoteModuleKey ModuleKey,
 	remoteTargetPaths []string,
 	remoteTargetExcludePaths []string,
 	isTarget bool,
-	// This includes all the local Modules off the bat.
-	alreadySeenOpaqueIDs map[string]struct{},
-) ([]Module, error) {
-	// We know that moduleKey.ModuleFullName().String() is the opaque ID for remote modules.
-	opaqueID := remoteModuleKey.ModuleFullName().String()
-	if _, ok := alreadySeenOpaqueIDs[opaqueID]; ok {
-		// No need to process this or its dependencies. If we have already added this module
-		// via a local module, we expect that we've added all its declared dependencies
-		// via AddRemoteModule, and do not need to add any more dependencies. If we have
-		// already added this module via a remote module, this function has already been called.
-		return nil, nil
-	}
-	alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-
-	moduleDatas, err := GetModuleDatasForModuleKeys(
+) (Module, error) {
+	moduleDatas, err := b.moduleDataProvider.GetModuleDatasForModuleKeys(
 		b.ctx,
-		b.moduleDataProvider,
-		remoteModuleKey,
+		[]ModuleKey{remoteModuleKey},
 	)
 	if err != nil {
 		return nil, err
@@ -409,9 +410,16 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 			moduleData.ModuleKey().ModuleFullName().String(),
 		)
 	}
-
+	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+	if err != nil {
+		return nil, err
+	}
+	bufLockObjectData, err := moduleData.BufLockObjectData()
+	if err != nil {
+		return nil, err
+	}
 	// TODO: normalize and validate all paths
-	module, err := newModule(
+	return newModule(
 		b.ctx,
 		b.logger,
 		// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
@@ -424,39 +432,13 @@ func (b *moduleSetBuilder) getTransitiveModulesForRemoteModuleKey(
 		moduleData.ModuleKey().CommitID(),
 		isTarget,
 		false,
+		bufYAMLObjectData,
+		bufLockObjectData,
 		remoteTargetPaths,
 		remoteTargetExcludePaths,
 		"",
 		false,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	// The return list of modules.
-	allModules := []Module{module}
-	declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
-	if err != nil {
-		return nil, err
-	}
-	for _, declaredDepModuleKey := range declaredDepModuleKeys {
-		// Not a target Module.
-		// If this Module is a target, this will be added by the caller.
-		//
-		// Do not filter on paths, i.e. no options - paths only apply to the module as added by the caller.
-		depModules, err := b.getTransitiveModulesForRemoteModuleKey(
-			declaredDepModuleKey,
-			nil,
-			nil,
-			false,
-			alreadySeenOpaqueIDs,
-		)
-		if err != nil {
-			return nil, err
-		}
-		allModules = append(allModules, depModules...)
-	}
-	return allModules, nil
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
@@ -544,6 +526,8 @@ type localModuleOptions struct {
 	targetExcludePaths  []string
 	protoFileTargetPath string
 	includePackageFiles bool
+	bufYAMLObjectData   ObjectData
+	bufLockObjectData   ObjectData
 }
 
 func newLocalModuleOptions() *localModuleOptions {

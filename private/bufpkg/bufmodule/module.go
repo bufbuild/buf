@@ -84,12 +84,12 @@ type Module interface {
 	// If ModuleFullName is nil, this will always be empty.
 	CommitID() string
 
-	// Digest returns the Module digest.
+	// Digest returns the Module digest for the given DigestType.
 	//
 	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
 	// type that just deal in terms of files and content. A Digest is a specific algorithm
 	// applied to a set of files and dependencies.
-	Digest() (Digest, error)
+	Digest(DigestType) (Digest, error)
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
@@ -161,11 +161,13 @@ type Module interface {
 // ModuleToModuleKey returns a new ModuleKey for the given Module.
 //
 // The given Module must have a ModuleFullName and CommitID, otherwise this will return error.
-func ModuleToModuleKey(module Module) (ModuleKey, error) {
+func ModuleToModuleKey(module Module, digestType DigestType) (ModuleKey, error) {
 	return newModuleKey(
 		module.ModuleFullName(),
 		module.CommitID(),
-		module.Digest,
+		func() (Digest, error) {
+			return module.Digest(digestType)
+		},
 	)
 }
 
@@ -236,19 +238,21 @@ func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx            context.Context
-	logger         *zap.Logger
-	getBucket      func() (storage.ReadBucket, error)
-	bucketID       string
-	moduleFullName ModuleFullName
-	commitID       string
-	isTarget       bool
-	isLocal        bool
+	ctx               context.Context
+	logger            *zap.Logger
+	getBucket         func() (storage.ReadBucket, error)
+	bucketID          string
+	moduleFullName    ModuleFullName
+	commitID          string
+	isTarget          bool
+	isLocal           bool
+	bufYAMLObjectData ObjectData
+	bufLockObjectData ObjectData
 
 	moduleSet ModuleSet
 
-	getDigest     func() (Digest, error)
-	getModuleDeps func() ([]ModuleDep, error)
+	digestTypeToGetDigest map[DigestType]func() (Digest, error)
+	getModuleDeps         func() ([]ModuleDep, error)
 }
 
 // must set ModuleReadBucket after constructor via setModuleReadBucket
@@ -262,6 +266,8 @@ func newModule(
 	commitID string,
 	isTarget bool,
 	isLocal bool,
+	bufYAMLObjectData ObjectData,
+	bufLockObjectData ObjectData,
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
@@ -289,14 +295,16 @@ func newModule(
 		}
 	}
 	module := &module{
-		ctx:            ctx,
-		logger:         logger,
-		getBucket:      syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:       bucketID,
-		moduleFullName: moduleFullName,
-		commitID:       commitID,
-		isTarget:       isTarget,
-		isLocal:        isLocal,
+		ctx:               ctx,
+		logger:            logger,
+		getBucket:         syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:          bucketID,
+		moduleFullName:    moduleFullName,
+		commitID:          commitID,
+		isTarget:          isTarget,
+		isLocal:           isLocal,
+		bufYAMLObjectData: bufYAMLObjectData,
+		bufLockObjectData: bufLockObjectData,
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -312,7 +320,7 @@ func newModule(
 		return nil, err
 	}
 	module.ModuleReadBucket = moduleReadBucket
-	module.getDigest = syncext.OnceValues(newGetDigestFuncForModule(module))
+	module.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(module)
 	module.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(module))
 	return module, nil
 }
@@ -339,8 +347,12 @@ func (m *module) CommitID() string {
 	return m.commitID
 }
 
-func (m *module) Digest() (Digest, error) {
-	return m.getDigest()
+func (m *module) Digest(digestType DigestType) (Digest, error) {
+	getDigest, ok := m.digestTypeToGetDigest[digestType]
+	if !ok {
+		return nil, syserror.Newf("DigestType %v was not in module.digestTypeToGetDigest", digestType)
+	}
+	return getDigest()
 }
 
 func (m *module) ModuleDeps() ([]ModuleDep, error) {
@@ -362,21 +374,23 @@ func (m *module) ModuleSet() ModuleSet {
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
-		ctx:            m.ctx,
-		logger:         m.logger,
-		getBucket:      m.getBucket,
-		bucketID:       m.bucketID,
-		moduleFullName: m.moduleFullName,
-		commitID:       m.commitID,
-		isTarget:       isTarget,
-		isLocal:        m.isLocal,
+		ctx:               m.ctx,
+		logger:            m.logger,
+		getBucket:         m.getBucket,
+		bucketID:          m.bucketID,
+		moduleFullName:    m.moduleFullName,
+		commitID:          m.commitID,
+		isTarget:          isTarget,
+		isLocal:           m.isLocal,
+		bufYAMLObjectData: m.bufYAMLObjectData,
+		bufLockObjectData: m.bufLockObjectData,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {
 		return nil, syserror.Newf("expected ModuleReadBucket to be a *moduleReadBucket but was a %T", m.ModuleReadBucket)
 	}
 	newModule.ModuleReadBucket = moduleReadBucket.withModule(newModule)
-	newModule.getDigest = syncext.OnceValues(newGetDigestFuncForModule(newModule))
+	newModule.digestTypeToGetDigest = newSyncOnceValueDigestTypeToGetDigestFuncForModule(newModule)
 	newModule.getModuleDeps = syncext.OnceValues(newGetModuleDepsFuncForModule(newModule))
 	return newModule, nil
 }
@@ -387,17 +401,38 @@ func (m *module) setModuleSet(moduleSet ModuleSet) {
 
 func (*module) isModule() {}
 
-func newGetDigestFuncForModule(module *module) func() (Digest, error) {
+func newSyncOnceValueDigestTypeToGetDigestFuncForModule(module *module) map[DigestType]func() (Digest, error) {
+	m := make(map[DigestType]func() (Digest, error))
+	for digestType := range digestTypeToString {
+		m[digestType] = syncext.OnceValues(newGetDigestFuncForModuleAndDigestType(module, digestType))
+	}
+	return m
+}
+
+func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestType) func() (Digest, error) {
 	return func() (Digest, error) {
 		bucket, err := module.getBucket()
 		if err != nil {
 			return nil, err
 		}
-		moduleDeps, err := module.ModuleDeps()
-		if err != nil {
-			return nil, err
+		switch digestType {
+		case DigestTypeB4:
+			if module.bufYAMLObjectData == nil {
+				return nil, syserror.New("cannot calculate b4 digests without buf.yaml ObjectData")
+			}
+			if module.bufLockObjectData == nil {
+				return nil, syserror.New("cannot calculate b4 digests without buf.lock ObjectData")
+			}
+			return getB4Digest(module.ctx, bucket, module.bufYAMLObjectData, module.bufLockObjectData)
+		case DigestTypeB5:
+			moduleDeps, err := module.ModuleDeps()
+			if err != nil {
+				return nil, err
+			}
+			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
+		default:
+			return nil, syserror.Newf("unknown DigestType: %v", digestType)
 		}
-		return getB5Digest(module.ctx, bucket, moduleDeps)
 	}
 }
 

@@ -16,7 +16,6 @@ package bufmoduleapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -34,7 +34,12 @@ import (
 // A warning is printed to the logger if a given Module is deprecated.
 func NewModuleDataProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) bufmodule.ModuleDataProvider {
 	return newModuleDataProvider(logger, clientProvider)
 }
@@ -43,131 +48,229 @@ func NewModuleDataProvider(
 
 type moduleDataProvider struct {
 	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+	}
+	graphProvider bufmodule.GraphProvider
 }
 
 func newModuleDataProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.DownloadServiceClientProvider
+		bufapi.GraphServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) *moduleDataProvider {
 	return &moduleDataProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
+		graphProvider: NewGraphProvider(
+			logger,
+			clientProvider,
+		),
 	}
 }
 
-func (a *moduleDataProvider) GetOptionalModuleDatasForModuleKeys(
+func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	// We don't want to persist these across calls - this could grow over time and this cache
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleData, error) {
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
+	}
+
+	// We don't want to persist this across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
-	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
-	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
-	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
-	// Make sure to respect 250 max.
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		moduleData, err := a.getModuleDataForModuleKey(
+
+	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().Registry()
+		},
+	)
+	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(moduleKeys))
+	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
+		// registryModuleDatas are in the same order as indexedModuleKeys.
+		indexedRegistryModuleDatas, err := a.getIndexedModuleDatasForRegistryAndIndexedModuleKeys(
 			ctx,
 			protoModuleProvider,
-			protoOwnerProvider,
-			moduleKey,
+			registry,
+			indexedModuleKeys,
 		)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
+			return nil, err
 		}
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
+		indexedModuleDatas = append(indexedModuleDatas, indexedRegistryModuleDatas...)
 	}
-	return optionalModuleDatas, nil
+	return slicesext.IndexedToSortedValues(indexedModuleDatas), nil
 }
 
-func (a *moduleDataProvider) getModuleDataForModuleKey(
+// Returns ModuleDatas in the same order as the input ModuleKeys
+func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	moduleKey bufmodule.ModuleKey,
-) (bufmodule.ModuleData, error) {
-	registryHostname := moduleKey.ModuleFullName().Registry()
-
-	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
+	registry string,
+	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+) ([]slicesext.Indexed[bufmodule.ModuleData], error) {
+	graph, err := a.graphProvider.GetGraphForModuleKeys(ctx, slicesext.IndexedToValues(indexedModuleKeys))
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.clientProvider.DownloadServiceClient(registryHostname).Download(
+	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
+		indexedModuleKeys,
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (string, error) {
+			return indexedModuleKey.Value.CommitID(), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	commitIDToProtoContent, err := a.getCommitIDToProtoContentForRegistryAndIndexedModuleKeys(
+		ctx,
+		protoModuleProvider,
+		registry,
+		commitIDToIndexedModuleKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+	indexedModuleDatas := make([]slicesext.Indexed[bufmodule.ModuleData], 0, len(indexedModuleKeys))
+	if err := graph.WalkNodes(
+		func(
+			moduleKey bufmodule.ModuleKey,
+			_ []bufmodule.ModuleKey,
+			depModuleKeys []bufmodule.ModuleKey,
+		) error {
+			protoContent, ok := commitIDToProtoContent[moduleKey.CommitID()]
+			if !ok {
+				// We only care to get content for a subset of the graph. If we have something
+				// in the graph without content, we just skip it.
+				return nil
+			}
+			indexedModuleKey, ok := commitIDToIndexedModuleKey[moduleKey.CommitID()]
+			if !ok {
+				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", moduleKey.CommitID())
+			}
+			indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
+				Value: bufmodule.NewModuleData(
+					ctx,
+					moduleKey,
+					func() (storage.ReadBucket, error) {
+						return protoFilesToBucket(protoContent.Files)
+					},
+					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
+					func() (bufmodule.ObjectData, error) {
+						return protoFileToObjectData(protoContent.BufYamlFile)
+					},
+					func() (bufmodule.ObjectData, error) {
+						return protoFileToObjectData(protoContent.BufLockFile)
+					},
+				),
+				Index: indexedModuleKey.Index,
+			}
+			indexedModuleDatas = append(indexedModuleDatas, indexedModuleData)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return indexedModuleDatas, nil
+}
+
+func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModuleKeys(
+	ctx context.Context,
+	protoModuleProvider *protoModuleProvider,
+	registry string,
+	commitIDToIndexedModuleKey map[string]slicesext.Indexed[bufmodule.ModuleKey],
+) (map[string]*modulev1beta1.DownloadResponse_Content, error) {
+	protoCommitIDs, err := slicesext.MapError(
+		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
+		func(commitID string) (string, error) {
+			return CommitIDToProto(commitID)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := a.clientProvider.DownloadServiceClient(registry).Download(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
-				Values: []*modulev1beta1.DownloadRequest_Value{
-					{
-						ResourceRef: &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
+				// TODO: chunking
+				Values: slicesext.Map(
+					protoCommitIDs,
+					func(protoCommitID string) *modulev1beta1.DownloadRequest_Value {
+						return &modulev1beta1.DownloadRequest_Value{
+							ResourceRef: &modulev1beta1.ResourceRef{
+								Value: &modulev1beta1.ResourceRef_Id{
+									Id: protoCommitID,
+								},
 							},
-						},
+							DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+						}
 					},
-				},
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+				),
 			},
 		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
 		}
 		return nil, err
 	}
-	if len(response.Msg.References) != 1 {
-		return nil, fmt.Errorf("expected 1 Reference, got %d", len(response.Msg.References))
+	if len(response.Msg.Contents) != len(commitIDToIndexedModuleKey) {
+		return nil, fmt.Errorf("expected %d Contents, got %d", len(commitIDToIndexedModuleKey), len(response.Msg.Contents))
 	}
-	protoCommitIDToCommit, err := getProtoCommitIDToCommitForProtoDownloadResponse(response.Msg)
-	if err != nil {
-		return nil, err
-	}
-	protoCommitIDToBucket, err := getProtoCommitIDToBucketForProtoDownloadResponse(response.Msg)
-	if err != nil {
-		return nil, err
-	}
-	if err := a.warnIfDeprecated(
-		ctx,
-		protoModuleProvider,
-		protoCommitIDToCommit,
-		registryHostname,
-		moduleKey,
-		response.Msg.References[0],
-	); err != nil {
-		return nil, err
-	}
-	return getModuleDataForProtoDownloadResponseReference(
-		ctx,
-		protoModuleProvider,
-		protoOwnerProvider,
-		protoCommitIDToCommit,
-		protoCommitIDToBucket,
-		registryHostname,
-		moduleKey,
-		response.Msg.References[0],
+	commitIDToProtoContent, err := slicesext.ToUniqueValuesMapError(
+		response.Msg.Contents,
+		func(protoContent *modulev1beta1.DownloadResponse_Content) (string, error) {
+			return CommitIDToProto(protoContent.Commit.Id)
+		},
 	)
+	if err != nil {
+		return nil, err
+	}
+	for commitID, indexedModuleKey := range commitIDToIndexedModuleKey {
+		protoContent, ok := commitIDToProtoContent[commitID]
+		if !ok {
+			return nil, fmt.Errorf("no content returned for commit ID %s", commitID)
+		}
+		if err := a.warnIfDeprecated(
+			ctx,
+			protoModuleProvider,
+			registry,
+			protoContent.Commit,
+			indexedModuleKey.Value,
+		); err != nil {
+			return nil, err
+		}
+	}
+	return commitIDToProtoContent, nil
 }
 
+// In the future, we might want to add State, Visibility, etc as parameters to bufmodule.Module, to
+// match what we are doing with Commit and Graph to some degree, and then bring this warning
+// out of the ModuleDataProvider. However, if we did this, this has unintended consequences - right now,
+// by this being here, we only warn when we don't have the module in the cache, which we sort of want?
+// State is a property only on the BSR, it's not a property on a per-commit basis, so this gets into
+// weird territory.
 func (a *moduleDataProvider) warnIfDeprecated(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
-	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
-	registryHostname string,
+	registry string,
+	protoCommit *modulev1beta1.Commit,
 	moduleKey bufmodule.ModuleKey,
-	protoReference *modulev1beta1.DownloadResponse_Reference,
 ) error {
-	protoCommit, ok := protoCommitIDToCommit[protoReference.CommitId]
-	if !ok {
-		return fmt.Errorf("commit_id %q was not present in Commits on DownloadModuleResponse", protoReference.CommitId)
-	}
 	protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
 		ctx,
-		registryHostname,
+		registry,
 		protoCommit.ModuleId,
 	)
 	if err != nil {
@@ -177,74 +280,4 @@ func (a *moduleDataProvider) warnIfDeprecated(
 		a.logger.Warn(fmt.Sprintf("%s is deprecated", moduleKey.ModuleFullName().String()))
 	}
 	return nil
-}
-
-func getModuleDataForProtoDownloadResponseReference(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	protoCommitIDToCommit map[string]*modulev1beta1.Commit,
-	protoCommitIDToBucket map[string]storage.ReadBucket,
-	registryHostname string,
-	moduleKey bufmodule.ModuleKey,
-	protoReference *modulev1beta1.DownloadResponse_Reference,
-) (bufmodule.ModuleData, error) {
-	bucket, ok := protoCommitIDToBucket[protoReference.CommitId]
-	if !ok {
-		return nil, fmt.Errorf("commit_id %q was not present in Contents on DownloadModuleResponse", protoReference.CommitId)
-	}
-	depProtoCommits, err := slicesext.MapError(
-		protoReference.DepCommitIds,
-		func(protoCommitID string) (*modulev1beta1.Commit, error) {
-			commit, ok := protoCommitIDToCommit[protoCommitID]
-			if !ok {
-				return nil, fmt.Errorf("dep_commit_id %q was not present in Commits on DownloadModuleResponse", protoCommitID)
-			}
-			return commit, nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return bufmodule.NewModuleData(
-		ctx,
-		moduleKey,
-		func() (storage.ReadBucket, error) {
-			return bucket, nil
-		},
-		func() ([]bufmodule.ModuleKey, error) {
-			return getModuleKeysForProtoCommits(
-				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
-				registryHostname,
-				depProtoCommits,
-			)
-		},
-	), nil
-}
-
-func getProtoCommitIDToCommitForProtoDownloadResponse(
-	protoDownloadResponse *modulev1beta1.DownloadResponse,
-) (map[string]*modulev1beta1.Commit, error) {
-	return slicesext.ToUniqueValuesMapError(
-		protoDownloadResponse.Commits,
-		func(protoCommit *modulev1beta1.Commit) (string, error) {
-			return protoCommit.Id, nil
-		},
-	)
-}
-
-func getProtoCommitIDToBucketForProtoDownloadResponse(
-	protoDownloadResponse *modulev1beta1.DownloadResponse,
-) (map[string]storage.ReadBucket, error) {
-	protoCommitIDToBucket := make(map[string]storage.ReadBucket, len(protoDownloadResponse.Contents))
-	for _, protoContent := range protoDownloadResponse.Contents {
-		bucket, err := protoFilesToBucket(protoContent.Files)
-		if err != nil {
-			return nil, err
-		}
-		protoCommitIDToBucket[protoContent.CommitId] = bucket
-	}
-	return protoCommitIDToBucket, nil
 }

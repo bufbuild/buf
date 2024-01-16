@@ -17,8 +17,6 @@ package bufmodule
 import (
 	"context"
 	"io/fs"
-
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
@@ -28,48 +26,29 @@ var (
 
 // ModuleDataProvider provides ModulesDatas.
 type ModuleDataProvider interface {
-	// GetModuleDataForModuleKey gets the ModuleDatas for the ModuleKeys.
+	// GetModuleDatasForModuleKeys gets the ModuleDatas for the ModuleKeys.
 	//
-	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeys.
+	// Returned ModuleDatas will be in the same order as the input ModuleKeys.
+	//
+	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
+	// may error if this is not the case.
+	//
+	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeyss.
 	// If there is an error, no ModuleDatas will be returned.
-	// If a ModuleData is not found, the OptionalModuleData will have Found() equal to false, otherwise
-	// the OptionalModuleData will have Found() equal to true with non-nil ModuleData.
-	GetOptionalModuleDatasForModuleKeys(context.Context, ...ModuleKey) ([]OptionalModuleData, error)
+	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
+	GetModuleDatasForModuleKeys(
+		context.Context,
+		[]ModuleKey,
+	) ([]ModuleData, error)
 }
 
-// GetModuleDatasForModuleKeys calls GetOptionalModuleDatasForModuleKeys, returning an error
-// with fs.ErrNotExist if any ModuleData is not found.
-func GetModuleDatasForModuleKeys(
-	ctx context.Context,
-	moduleDataProvider ModuleDataProvider,
-	moduleKeys ...ModuleKey,
-) ([]ModuleData, error) {
-	optionalModuleDatas, err := moduleDataProvider.GetOptionalModuleDatasForModuleKeys(ctx, moduleKeys...)
-	if err != nil {
-		return nil, err
-	}
-	moduleDatas := make([]ModuleData, len(optionalModuleDatas))
-	for i, optionalModuleData := range optionalModuleDatas {
-		if !optionalModuleData.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleKeys[i].String(), Err: fs.ErrNotExist}
-		}
-		moduleDatas[i] = optionalModuleData.ModuleData()
-	}
-	return moduleDatas, nil
-}
-
-// nopModuleDataProvider
+// *** PRIVATE ***
 
 type nopModuleDataProvider struct{}
 
-func (nopModuleDataProvider) GetOptionalModuleDatasForModuleKeys(
-	_ context.Context,
-	moduleKeys ...ModuleKey,
-) ([]OptionalModuleData, error) {
-	return slicesext.Map(
-		moduleKeys,
-		func(ModuleKey) OptionalModuleData {
-			return NewOptionalModuleData(nil)
-		},
-	), nil
+func (nopModuleDataProvider) GetModuleDatasForModuleKeys(
+	context.Context,
+	[]ModuleKey,
+) ([]ModuleData, error) {
+	return nil, fs.ErrNotExist
 }

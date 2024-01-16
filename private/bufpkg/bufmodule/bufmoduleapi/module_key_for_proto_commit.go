@@ -20,44 +20,18 @@ import (
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
-
-// TODO: We could call this for multiple Commits at once, but this is a bunch of extra work.
-// We can do this later if we want to optimize. There's other coalescing we could do inside
-// this function too (single call for one moduleID, single call for one ownerID, get
-// multiple moduleIDs at once, multiple ownerIDs at once, etc). Lots of room for optimization.
-func getModuleKeysForProtoCommits(
-	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
-	registryHostname string,
-	protoCommits []*modulev1beta1.Commit,
-) ([]bufmodule.ModuleKey, error) {
-	return slicesext.MapError(
-		protoCommits,
-		func(protoCommit *modulev1beta1.Commit) (bufmodule.ModuleKey, error) {
-			return getModuleKeyForProtoCommit(
-				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
-				registryHostname,
-				protoCommit,
-			)
-		},
-	)
-}
 
 func getModuleKeyForProtoCommit(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	protoOwnerProvider *protoOwnerProvider,
-	registryHostname string,
+	registry string,
 	protoCommit *modulev1beta1.Commit,
 ) (bufmodule.ModuleKey, error) {
 	protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
 		ctx,
-		registryHostname,
+		registry,
 		protoCommit.ModuleId,
 	)
 	if err != nil {
@@ -65,7 +39,7 @@ func getModuleKeyForProtoCommit(
 	}
 	protoOwner, err := protoOwnerProvider.getProtoOwnerForOwnerID(
 		ctx,
-		registryHostname,
+		registry,
 		protoCommit.OwnerId,
 	)
 	if err != nil {
@@ -81,7 +55,7 @@ func getModuleKeyForProtoCommit(
 		return nil, fmt.Errorf("proto Owner did not have a User or Organization: %v", protoOwner)
 	}
 	moduleFullName, err := bufmodule.NewModuleFullName(
-		registryHostname,
+		registry,
 		ownerName,
 		protoModule.Name,
 	)

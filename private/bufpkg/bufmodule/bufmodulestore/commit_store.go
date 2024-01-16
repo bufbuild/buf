@@ -29,12 +29,22 @@ import (
 	"go.uber.org/zap"
 )
 
+var externalCommitVersion = "v1"
+
 // ModuleStore reads and writes ModulesDatas.
 type CommitStore interface {
-	bufmodule.CommitProvider
+	// GetCommitsForModuleKey gets the Commits from the store for the ModuleKeys.
+	//
+	// Returns the found Commits, and the input ModuleKeys that were not found, each
+	// ordered by the order of the input ModuleKeys.
+	GetCommitsForModuleKeys(context.Context, []bufmodule.ModuleKey) (
+		foundCommits []bufmodule.Commit,
+		notFoundModuleKeys []bufmodule.ModuleKey,
+		err error,
+	)
 
 	// Put puts the Commits to the store.
-	PutCommits(ctx context.Context, commits ...bufmodule.Commit) error
+	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
 }
 
 // NewCommitStore returns a new CommitStore for the given bucket.
@@ -66,26 +76,29 @@ func newCommitStore(
 	}
 }
 
-func (p *commitStore) GetOptionalCommitsForModuleKeys(
+func (p *commitStore) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, []bufmodule.ModuleKey, error) {
+	var foundCommits []bufmodule.Commit
+	var notFoundModuleKeys []bufmodule.ModuleKey
+	for _, moduleKey := range moduleKeys {
 		commit, err := p.getCommitForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
+				return nil, nil, err
 			}
+			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
+		} else {
+			foundCommits = append(foundCommits, commit)
 		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(commit)
 	}
-	return optionalCommits, nil
+	return foundCommits, notFoundModuleKeys, nil
 }
 
 func (p *commitStore) PutCommits(
 	ctx context.Context,
-	commits ...bufmodule.Commit,
+	commits []bufmodule.Commit,
 ) error {
 	for _, commit := range commits {
 		if err := p.putCommit(ctx, commit); err != nil {
@@ -98,7 +111,7 @@ func (p *commitStore) PutCommits(
 func (p *commitStore) getCommitForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
-) (bufmodule.Commit, error) {
+) (_ bufmodule.Commit, retErr error) {
 	bucket := p.getReadWriteBucketForDir(moduleKey)
 	path := getCommitStoreFilePath(moduleKey)
 	data, err := storage.ReadPath(ctx, bucket, path)
@@ -111,24 +124,35 @@ func (p *commitStore) getCommitForModuleKey(
 	if err != nil {
 		return nil, err
 	}
+	var invalidReason string
+	defer func() {
+		if retErr != nil {
+			retErr = p.deleteInvalidCommitFile(ctx, moduleKey, bucket, path, invalidReason, retErr)
+		}
+	}()
 	var externalCommit externalCommit
 	if err := json.Unmarshal(data, &externalCommit); err != nil {
-		return nil, p.deleteInvalidCommitFile(ctx, moduleKey, bucket, path, "corrupted", err)
+		invalidReason = "corrupted"
+		return nil, err
 	}
-	if !externalCommit.isComplete() {
-		return nil, p.deleteInvalidCommitFile(ctx, moduleKey, bucket, path, "incomplete", err)
+	if !externalCommit.isValid() {
+		invalidReason = "invalid"
+		return nil, err
 	}
 	digest, err := bufmodule.ParseDigest(externalCommit.Digest)
 	if err != nil {
-		return nil, p.deleteInvalidCommitFile(ctx, moduleKey, bucket, path, "invalid digest", err)
+		invalidReason = "invalid digest"
+		return nil, err
 	}
 	return bufmodule.NewCommit(
 		moduleKey,
 		func() (time.Time, error) {
 			return externalCommit.CreateTime, nil
 		},
-		bufmodule.CommitWithReceivedDigest(digest),
-	)
+		func() (bufmodule.Digest, error) {
+			return digest, nil
+		},
+	), nil
 }
 
 func (p *commitStore) putCommit(
@@ -147,11 +171,12 @@ func (p *commitStore) putCommit(
 	bucket := p.getReadWriteBucketForDir(moduleKey)
 	path := getCommitStoreFilePath(moduleKey)
 	externalCommit := externalCommit{
+		Version:    externalCommitVersion,
 		CreateTime: createTime,
 		Digest:     digest.String(),
 	}
-	if !externalCommit.isComplete() {
-		return syserror.Newf("external commit is incomplete: %+v", externalCommit)
+	if !externalCommit.isValid() {
+		return syserror.Newf("external commit is invalid: %+v", externalCommit)
 	}
 	data, err := json.Marshal(externalCommit)
 	if err != nil {
@@ -228,15 +253,18 @@ func getCommitStoreFilePath(moduleKey bufmodule.ModuleKey) string {
 // and persistence layers, and a bufmodule.Commit does not have all the information that
 // a modulev1beta1.Commit has.
 type externalCommit struct {
+	Version    string    `json:"version,omitempty" yaml:"version,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
 
-// isComplete returns true if all the information we currently expect to be on
-// an externalCommit is present.
+// isValid returns true if all the information we currently expect to be on
+// an externalCommit is present, and the version matches.
 //
-// If we add to externalCommit over time, old values will be incomplete, and we
-// will auto-evict them from the store.
-func (e externalCommit) isComplete() bool {
-	return !e.CreateTime.IsZero() && e.Digest != ""
+// If we add to externalCommit over time or change the version, old values will be
+// incomplete, and we will auto-evict them from the store.
+func (e externalCommit) isValid() bool {
+	return e.Version == externalCommitVersion &&
+		!e.CreateTime.IsZero() &&
+		e.Digest != ""
 }

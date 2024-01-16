@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -43,6 +44,11 @@ const (
 )
 
 var (
+	// AllDigestTypes are all known DigestTypes.
+	AllDigestTypes = []DigestType{
+		DigestTypeB4,
+		DigestTypeB5,
+	}
 	digestTypeToString = map[DigestType]string{
 		DigestTypeB4: "shake256",
 		DigestTypeB5: "b5",
@@ -216,8 +222,93 @@ func (d *digest) String() string {
 
 func (*digest) isDigest() {}
 
-type hasDigest interface {
-	Digest() (Digest, error)
+// TODO: We need to test that this actually does the same calculation as before!
+// TODO: Does it matter that we could technically be using buf.yaml and buf.lock data with b5's? Probably not.
+func getB4Digest(
+	ctx context.Context,
+	bucketWithStorageMatcherApplied storage.ReadBucket,
+	bufYAMLObjectData ObjectData,
+	bufLockObjectData ObjectData,
+) (Digest, error) {
+	var fileNodes []bufcas.FileNode
+	if err := storage.WalkReadObjects(
+		ctx,
+		// This is extreme defensive programming. We've gone out of our way to make sure
+		// that the bucket is already filtered, but it's just too important to mess up here.
+		storage.MapReadBucket(bucketWithStorageMatcherApplied, getStorageMatcher(ctx, bucketWithStorageMatcherApplied)),
+		"",
+		func(readObject storage.ReadObject) error {
+			digest, err := bufcas.NewDigestForContent(readObject)
+			if err != nil {
+				return err
+			}
+			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
+			if err != nil {
+				return err
+			}
+			fileNodes = append(fileNodes, fileNode)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	for _, objectData := range []ObjectData{
+		bufYAMLObjectData,
+		bufLockObjectData,
+	} {
+		digest, err := bufcas.NewDigestForContent(bytes.NewReader(objectData.Data()))
+		if err != nil {
+			return nil, err
+		}
+		fileNode, err := bufcas.NewFileNode(objectData.Name(), digest)
+		if err != nil {
+			return nil, err
+		}
+		fileNodes = append(fileNodes, fileNode)
+	}
+	manifest, err := bufcas.NewManifest(fileNodes)
+	if err != nil {
+		return nil, err
+	}
+	bufcasDigest, err := bufcas.ManifestToDigest(manifest)
+	if err != nil {
+		return nil, err
+	}
+	return NewDigest(DigestTypeB4, bufcasDigest)
+}
+
+func getB5DigestForBucketAndModuleDeps(
+	ctx context.Context,
+	bucketWithStorageMatcherApplied storage.ReadBucket,
+	moduleDeps []ModuleDep,
+) (Digest, error) {
+	depDigests, err := slicesext.MapError(
+		moduleDeps,
+		func(moduleDep ModuleDep) (Digest, error) {
+			return moduleDep.Digest(DigestTypeB5)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return getB5DigestForBucketAndDepDigests(ctx, bucketWithStorageMatcherApplied, depDigests)
+}
+
+func getB5DigestForBucketAndDepModuleKeys(
+	ctx context.Context,
+	bucketWithStorageMatcherApplied storage.ReadBucket,
+	depModuleKeys []ModuleKey,
+) (Digest, error) {
+	depDigests, err := slicesext.MapError(
+		depModuleKeys,
+		func(moduleKey ModuleKey) (Digest, error) {
+			return moduleKey.Digest()
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return getB5DigestForBucketAndDepDigests(ctx, bucketWithStorageMatcherApplied, depDigests)
 }
 
 // getB5Digest computes a b5 Digest for the given set of module files and dependencies.
@@ -229,10 +320,10 @@ type hasDigest interface {
 // and then digested themselves as content.
 //
 // Note that the name of the Module and any of its dependencies has no effect on the Digest.
-func getB5Digest[H hasDigest, S ~[]H](
+func getB5DigestForBucketAndDepDigests(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
-	deps S,
+	depDigests []Digest,
 ) (Digest, error) {
 	// First, compute the shake256 bufcas.Digest of the files. This will include a
 	// sorted list of file names and their digests.
@@ -244,18 +335,19 @@ func getB5Digest[H hasDigest, S ~[]H](
 		return nil, syserror.Newf("trying to compute b5 Digest with files digest of type %v", filesDigest.Type())
 	}
 	// Next, we get the b5 digests of all the dependencies and sort their string representations.
-	depDigestStrings := make([]string, len(deps))
-	for i, dep := range deps {
-		depDigest, err := dep.Digest()
-		if err != nil {
-			return nil, err
-		}
-		if depDigest.Type() != DigestTypeB5 {
-			// Even if the buf.lock file had a b4 digest, we should still end up retrieving the b5
-			// digest from the BSR, we should never have a b5 digest here.
-			return nil, syserror.Newf("trying to compute b5 Digest with dependency digest of type %v", depDigest.Type())
-		}
-		depDigestStrings[i] = depDigest.String()
+	depDigestStrings, err := slicesext.MapError(
+		depDigests,
+		func(digest Digest) (string, error) {
+			if digest.Type() != DigestTypeB5 {
+				// Even if the buf.lock file had a b4 digest, we should still end up retrieving the b5
+				// digest from the BSR, we should never have a b5 digest here.
+				return "", syserror.Newf("trying to compute b5 Digest with dependency digest of type %v", digest.Type())
+			}
+			return digest.String(), nil
+		},
+	)
+	if err != nil {
+		return nil, err
 	}
 	sort.Strings(depDigestStrings)
 	// Now, place the file digest first, then the sorted dependency digests afterwards.
@@ -269,7 +361,7 @@ func getB5Digest[H hasDigest, S ~[]H](
 	return NewDigest(DigestTypeB5, digestOfDigests)
 }
 
-// The bucket should have already been filtered to just module fikes.
+// The bucket should have already been filtered to just module files.
 func getFilesDigestForB5Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,

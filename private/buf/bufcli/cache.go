@@ -45,7 +45,7 @@ var (
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
 		v2CacheModuleRelDirPath,
-		v3CacheFilesRelDirPath,
+		v3CacheModuleRelDirPath,
 		v3CacheCommitsRelDirPath,
 	}
 
@@ -81,10 +81,10 @@ var (
 	// This directory replaces the use of v1CacheModuleDataRelDirPath, v1CacheModuleLockRelDirPath, and
 	// v1CacheModuleSumRelDirPath with a cache implementation using content addressable storage.
 	v2CacheModuleRelDirPath = normalpath.Join("v2", "module")
-	// v3CacheFilesRelDirPath is the relative path to the files cache directory in its newest iteration.
+	// v3CacheModuleRelDirPath is the relative path to the files cache directory in its newest iteration.
 	//
 	// Normalized.
-	v3CacheFilesRelDirPath = normalpath.Join("v3", "files")
+	v3CacheModuleRelDirPath = normalpath.Join("v3", "modules")
 	// v3CacheCommitsRelDirPath is the relative path to the commits cache directory in its newest iteration.
 	//
 	// Normalized.
@@ -125,11 +125,14 @@ func newModuleDataProvider(
 	container appext.Container,
 	clientProvider bufapi.ClientProvider,
 ) (bufmodule.ModuleDataProvider, error) {
-	if err := createCacheDir(container.CacheDirPath(), v3CacheFilesRelDirPath); err != nil {
+	if err := createCacheDir(container.CacheDirPath(), v3CacheModuleRelDirPath); err != nil {
 		return nil, err
 	}
-	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheFilesRelDirPath)
-	delegateReader := bufmoduleapi.NewModuleDataProvider(container.Logger(), clientProvider)
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheModuleRelDirPath)
+	delegateModuleDataProvider := bufmoduleapi.NewModuleDataProvider(
+		container.Logger(),
+		clientProvider,
+	)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()
 	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
@@ -138,7 +141,7 @@ func newModuleDataProvider(
 	}
 	return bufmodulecache.NewModuleDataProvider(
 		container.Logger(),
-		delegateReader,
+		delegateModuleDataProvider,
 		bufmodulestore.NewModuleDataStore(
 			container.Logger(),
 			cacheBucket,

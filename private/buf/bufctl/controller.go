@@ -140,6 +140,7 @@ func NewController(
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -153,6 +154,7 @@ func NewController(
 		tracer,
 		container,
 		clientProvider,
+		graphProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
 		commitProvider,
@@ -176,6 +178,7 @@ type controller struct {
 	container          app.EnvStdioContainer
 	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
+	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
 
 	disableSymlinks           bool
@@ -194,6 +197,7 @@ func newController(
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
 	clientProvider bufapi.ClientProvider,
+	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -207,6 +211,7 @@ func newController(
 		tracer:             tracer,
 		container:          container,
 		clientProvider:     clientProvider,
+		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
 	}
@@ -854,6 +859,7 @@ func (c *controller) getWorkspaceForModuleRef(
 		c.logger,
 		c.tracer,
 		moduleKey,
+		c.graphProvider,
 		c.moduleDataProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
@@ -1028,12 +1034,12 @@ func (c *controller) buildTargetImageWithConfigs(
 }
 
 // warnDeps warns on either unused deps in your buf.yaml, or transitive deps that were
-// not in your buf.lock.
+// not in your buf.yaml.
 //
 // Only call this if you are building an image. This results in ModuleDeps calls that
 // you don't want to invoke unless you are building - they'll result in import reading,
 // which can cause issues. If this happens for all workspaces, you'll see integration
-// test errors, and correctly so In the pre-refactor world, we only did this with
+// test errors, and correctly so. In the pre-refactor world, we only did this with
 // image building, so we keep it that way for now.
 func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
@@ -1042,24 +1048,11 @@ func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
 	}
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUndeclared:
+		case bufworkspace.MalformedDepTypeUnused:
 			c.logger.Sugar().Warnf(
-				"Module %s is a transitive remote dependency not declared in your buf.yaml deps. Add %s to your deps.",
-				malformedDep.ModuleFullName(),
+				`Module %s is declared in your buf.yaml deps but is unused.`,
 				malformedDep.ModuleFullName(),
 			)
-		case bufworkspace.MalformedDepTypeUnused:
-			if workspace.GetModuleForModuleFullName(malformedDep.ModuleFullName()) != nil {
-				c.logger.Sugar().Warnf(
-					`Module %s is declared in your buf.yaml deps but is a module in your workspace. Declaring a dep within your workspace has no effect.`,
-					malformedDep.ModuleFullName(),
-				)
-			} else {
-				c.logger.Sugar().Warnf(
-					`Module %s is declared in your buf.yaml deps but is unused.`,
-					malformedDep.ModuleFullName(),
-				)
-			}
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}

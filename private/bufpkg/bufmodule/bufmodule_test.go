@@ -101,14 +101,16 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	moduleRefModule2, err := bufmodule.NewModuleRef("buf.build", "bar", "module2", "")
 	require.NoError(t, err)
-	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+	moduleKeys, err := bsrProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		bsrProvider,
-		moduleRefExtdep1,
-		moduleRefExtdep2,
-		moduleRefExtdep3,
-		moduleRefExtdep4,
-		moduleRefModule2,
+		[]bufmodule.ModuleRef{
+			moduleRefExtdep1,
+			moduleRefExtdep2,
+			moduleRefExtdep3,
+			moduleRefExtdep4,
+			moduleRefModule2,
+		},
+		bufmodule.DigestTypeB5,
 	)
 	require.NoError(t, err)
 	for _, moduleKey := range moduleKeys {
@@ -275,20 +277,7 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		graph,
-	)
-	topoSort, err := graph.TopoSort("buf.build/bar/module2")
-	require.NoError(t, err)
-	require.Equal(
-		t,
-		[]string{
-			"buf.build/foo/extdep1",
-			"buf.build/foo/extdep4",
-			"buf.build/foo/extdep3",
-			"buf.build/foo/extdep2",
-			"path/to/module1",
-			"buf.build/bar/module2",
-		},
-		topoSort,
+		bufmodule.Module.OpaqueID,
 	)
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(moduleSet)
 	require.NoError(t, err)

@@ -137,9 +137,9 @@ func TestWorkspaceDir(t *testing.T) {
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
-			100,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`),
+			bufctl.ExitCodeFileAnnotation,
 			"",
+			filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -148,9 +148,9 @@ func TestWorkspaceDir(t *testing.T) {
 		testRunStdoutStderrNoWarn(
 			t,
 			nil,
-			100,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`),
+			bufctl.ExitCodeFileAnnotation,
 			"",
+			filepath.FromSlash(`Failure: testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -366,7 +366,7 @@ func TestWorkspaceDetached(t *testing.T) {
 			nil,
 			bufctl.ExitCodeFileAnnotation,
 			``,
-			`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`,
+			filepath.FromSlash(`Failure: testdata/workspace/success/`+dirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"build",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)
@@ -383,11 +383,12 @@ func TestWorkspaceDetached(t *testing.T) {
 		// we'd consider this a bug: you specified the proto directory, and no controlling workspace
 		// was discovered, therefore you build as if proto was the input directory, which results in
 		// request.proto not existing as an import.
-		testRunStdout(
+		testRunStdoutStderrNoWarn(
 			t,
 			nil,
 			bufctl.ExitCodeFileAnnotation,
-			`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:stat request.proto: file does not exist`,
+			``,
+			filepath.FromSlash(`Failure: testdata/workspace/success/`+dirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)
@@ -1301,9 +1302,9 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 		``,
 		`Failure: `+bufmodule.ErrNoTargetProtoFiles.Error(),
 		"lint",
-		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
+		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
 		"--path",
-		filepath.Join("testdata", "workspace", "success", "detached", "proto", "notexist"),
+		filepath.Join("testdata", "workspace", "success", "dir", "proto", "notexist"),
 	)
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1312,9 +1313,9 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 		``,
 		`Failure: `+bufmodule.ErrNoTargetProtoFiles.Error(),
 		"lint",
-		filepath.Join("testdata", "workspace", "success", "v2", "detached", "proto"),
+		filepath.Join("testdata", "workspace", "success", "v2", "dir", "proto"),
 		"--path",
-		filepath.Join("testdata", "workspace", "success", "v2", "detached", "proto", "notexist"),
+		filepath.Join("testdata", "workspace", "success", "v2", "dir", "proto", "notexist"),
 	)
 }
 

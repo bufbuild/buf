@@ -156,9 +156,8 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 // GetInputLong gets the long command description for an input-based command.
 func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(
-		`The first argument is %s.
-The first argument must be one of format %s.
-Defaults to "." if no argument is specified.`,
+		`The first argument is %s, which must be one of format %s.
+This defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.AllFormatsString,
 	)
@@ -167,9 +166,8 @@ Defaults to "." if no argument is specified.`,
 // GetSourceLong gets the long command description for an input-based command.
 func GetSourceLong(inputArgDescription string) string {
 	return fmt.Sprintf(
-		`The first argument is %s.
-The first argument must be one of format %s.
-Defaults to "." if no argument is specified.`,
+		`The first argument is %s, which must be one of format %s.
+This defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceFormatsString,
 	)
@@ -178,20 +176,17 @@ Defaults to "." if no argument is specified.`,
 // GetSourceDirLong gets the long command description for a directory-based command.
 func GetSourceDirLong(inputArgDescription string) string {
 	return fmt.Sprintf(
-		`The first argument is %s.
-The first argument must be one of format %s.
-Defaults to "." if no argument is specified.`,
+		`The first argument is %s, which must be a directory.
+This defaults to "." if no argument is specified.`,
 		inputArgDescription,
-		buffetch.SourceDirFormatsString,
 	)
 }
 
 // GetSourceOrModuleLong gets the long command description for an input-based command.
 func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(
-		`The first argument is %s.
-The first argument must be one of format %s.
-Defaults to "." if no argument is specified.`,
+		`The first argument is %s, which must be one of format %s.
+This defaults to "." if no argument is specified.`,
 		inputArgDescription,
 		buffetch.SourceOrModuleFormatsString,
 	)

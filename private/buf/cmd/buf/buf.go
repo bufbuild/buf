@@ -23,6 +23,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
@@ -32,7 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
+	betagraph "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -64,6 +65,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsp"
@@ -79,6 +81,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -116,6 +120,7 @@ func NewRootCommand(name string) *appcmd.Command {
 			// TODO: beta?
 			lsp.NewCommand("lsp", builder),
 			// TODO: x?
+			graph.NewCommand("graph", builder),
 			migrate.NewCommand("migrate", builder),
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
@@ -145,7 +150,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					graph.NewCommand("graph", builder),
+					betagraph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					studioagent.NewCommand("studio-agent", builder),
@@ -281,13 +286,13 @@ func wrapError(err error) error {
 	if err == nil {
 		return nil
 	}
+
 	var connectErr *connect.Error
 	isConnectError := errors.As(err, &connectErr)
 	// If error is empty and not a system error or Connect error, we return it as-is.
 	if !isConnectError && err.Error() == "" {
 		return err
 	}
-
 	if isConnectError {
 		connectCode := connectErr.Code()
 		switch {
@@ -325,6 +330,12 @@ func wrapError(err error) error {
 				"and provide the command you ran, as well as the following message: %w",
 			sysError.Unwrap(),
 		)
+	}
+
+	var importNotExistError *bufmodule.ImportNotExistError
+	if errors.As(err, &importNotExistError) {
+		// There must be a better place to do this, perhaps in the Controller, but this works for now.
+		err = app.WrapError(bufctl.ExitCodeFileAnnotation, importNotExistError)
 	}
 
 	return fmt.Errorf("Failure: %w", err)

@@ -16,24 +16,24 @@ package bufmoduleapi
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"io/fs"
 	"time"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
 // NewCommitProvider returns a new CommitProvider for the given API client.
-//
-// A warning is printed to the logger if a given Module is deprecated.
 func NewCommitProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.CommitServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) bufmodule.CommitProvider {
 	return newCommitProvider(logger, clientProvider)
 }
@@ -42,12 +42,20 @@ func NewCommitProvider(
 
 type commitProvider struct {
 	logger         *zap.Logger
-	clientProvider bufapi.ClientProvider
+	clientProvider interface {
+		bufapi.CommitServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	}
 }
 
 func newCommitProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider interface {
+		bufapi.CommitServiceClientProvider
+		bufapi.ModuleServiceClientProvider
+		bufapi.OwnerServiceClientProvider
+	},
 ) *commitProvider {
 	return &commitProvider{
 		logger:         logger,
@@ -55,81 +63,90 @@ func newCommitProvider(
 	}
 }
 
-func (a *commitProvider) GetOptionalCommitsForModuleKeys(
+func (a *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
-	// TODO: Do the work to coalesce ModuleKeys by registry hostname, make calls out to the CommitService
-	// per registry, then get back the resulting data, and order it in the same order as the input ModuleKeys.
-	// Make sure to respect 250 max.
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		moduleData, err := a.getCommitForModuleKey(
+
+	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string {
+			return moduleKey.ModuleFullName().Registry()
+		},
+	)
+	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(moduleKeys))
+	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
+		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedModuleKeys(
 			ctx,
 			protoModuleProvider,
 			protoOwnerProvider,
-			moduleKey,
+			registry,
+			indexedModuleKeys,
 		)
 		if err != nil {
-			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
+			return nil, err
 		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(moduleData)
+		indexedCommits = append(indexedCommits, registryIndexedCommits...)
 	}
-	return optionalCommits, nil
+	return slicesext.IndexedToSortedValues(indexedCommits), nil
 }
 
-func (a *commitProvider) getCommitForModuleKey(
+func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	protoOwnerProvider *protoOwnerProvider,
-	moduleKey bufmodule.ModuleKey,
-) (bufmodule.Commit, error) {
-	registryHostname := moduleKey.ModuleFullName().Registry()
-
-	protoCommitID, err := CommitIDToProto(moduleKey.CommitID())
-	if err != nil {
-		return nil, err
-	}
-	response, err := a.clientProvider.CommitServiceClient(registryHostname).GetCommits(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetCommitsRequest{
-				ResourceRefs: []*modulev1beta1.ResourceRef{
-					{
-						Value: &modulev1beta1.ResourceRef_Id{
-							Id: protoCommitID,
-						},
-					},
-				},
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
-			},
-		),
+	registry string,
+	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+) ([]slicesext.Indexed[bufmodule.Commit], error) {
+	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
+		indexedModuleKeys,
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (string, error) {
+			return indexedModuleKey.Value.CommitID(), nil
+		},
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
-		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != 1 {
-		return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
-	}
-	protoCommit := response.Msg.Commits[0]
-	receivedDigest, err := ProtoToDigest(protoCommit.Digest)
+	protoCommitIDs, err := slicesext.MapError(
+		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
+		func(commitID string) (string, error) {
+			return CommitIDToProto(commitID)
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewCommit(
-		moduleKey,
-		func() (time.Time, error) {
-			return protoCommit.CreateTime.AsTime(), nil
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.MapError(
+		protoCommits,
+		func(protoCommit *modulev1beta1.Commit) (slicesext.Indexed[bufmodule.Commit], error) {
+			commitID, err := ProtoToCommitID(protoCommit.Id)
+			if err != nil {
+				return slicesext.Indexed[bufmodule.Commit]{}, err
+			}
+			indexedModuleKey, ok := commitIDToIndexedModuleKey[commitID]
+			if !ok {
+				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
+			}
+			return slicesext.Indexed[bufmodule.Commit]{
+				Value: bufmodule.NewCommit(
+					indexedModuleKey.Value,
+					func() (time.Time, error) {
+						return protoCommit.CreateTime.AsTime(), nil
+					},
+					func() (bufmodule.Digest, error) {
+						return ProtoToDigest(protoCommit.Digest)
+					},
+				),
+				Index: indexedModuleKey.Index,
+			}, nil
 		},
-		bufmodule.CommitWithReceivedDigest(receivedDigest),
 	)
 }

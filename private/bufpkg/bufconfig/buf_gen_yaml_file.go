@@ -48,12 +48,13 @@ type BufGenYAMLFile interface {
 // NewBufGenYAMLFile returns a new BufGenYAMLFile. It is validated given each
 // parameter is validated.
 func NewBufGenYAMLFile(
-	version FileVersion,
+	fileVersion FileVersion,
 	generateConfig GenerateConfig,
 	inputConfigs []InputConfig,
 ) BufGenYAMLFile {
 	return newBufGenYAMLFile(
-		version,
+		fileVersion,
+		nil,
 		generateConfig,
 		inputConfigs,
 	)
@@ -96,12 +97,12 @@ func PutBufGenYAMLFileForPrefix(
 
 // ReadBufGenYAMLFile reads the BufGenYAMLFile from the io.Reader.
 func ReadBufGenYAMLFile(reader io.Reader) (BufGenYAMLFile, error) {
-	return readFile(reader, "generation file", readBufGenYAMLFile)
+	return readFile(reader, "", readBufGenYAMLFile)
 }
 
 // WriteBufGenYAMLFile writes the BufGenYAMLFile to the io.Writer.
 func WriteBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error {
-	return writeFile(writer, "generation file", bufGenYAMLFile, writeBufGenYAMLFile)
+	return writeFile(writer, bufGenYAMLFile, writeBufGenYAMLFile)
 }
 
 // *** PRIVATE ***
@@ -111,15 +112,18 @@ type bufGenYAMLFile struct {
 	inputConfigs   []InputConfig
 
 	fileVersion FileVersion
+	objectData  ObjectData
 }
 
 func newBufGenYAMLFile(
 	fileVersion FileVersion,
+	objectData ObjectData,
 	generateConfig GenerateConfig,
 	inputConfigs []InputConfig,
 ) *bufGenYAMLFile {
 	return &bufGenYAMLFile{
 		fileVersion:    fileVersion,
+		objectData:     objectData,
 		generateConfig: generateConfig,
 		inputConfigs:   inputConfigs,
 	}
@@ -137,14 +141,18 @@ func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
 	return g.inputConfigs
 }
 
+func (g *bufGenYAMLFile) ObjectData() ObjectData {
+	return g.objectData
+}
+
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
 func (*bufGenYAMLFile) isFile()           {}
 
-func readBufGenYAMLFile(reader io.Reader, _ string, allowJSON bool) (BufGenYAMLFile, error) {
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
+func readBufGenYAMLFile(
+	data []byte,
+	objectData ObjectData,
+	allowJSON bool,
+) (BufGenYAMLFile, error) {
 	// We have always enforced that buf.gen.yamls have file versions.
 	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
 	if err != nil {
@@ -162,6 +170,7 @@ func readBufGenYAMLFile(reader io.Reader, _ string, allowJSON bool) (BufGenYAMLF
 		}
 		return newBufGenYAMLFile(
 			fileVersion,
+			objectData,
 			generateConfig,
 			nil,
 		), nil
@@ -176,6 +185,7 @@ func readBufGenYAMLFile(reader io.Reader, _ string, allowJSON bool) (BufGenYAMLF
 		}
 		return newBufGenYAMLFile(
 			fileVersion,
+			objectData,
 			generateConfig,
 			nil,
 		), nil
@@ -197,6 +207,7 @@ func readBufGenYAMLFile(reader io.Reader, _ string, allowJSON bool) (BufGenYAMLF
 		}
 		return newBufGenYAMLFile(
 			fileVersion,
+			objectData,
 			generateConfig,
 			inputConfigs,
 		), nil

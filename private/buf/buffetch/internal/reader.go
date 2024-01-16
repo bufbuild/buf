@@ -347,10 +347,10 @@ func (r *reader) getModuleKey(
 	if r.moduleKeyProvider == nil {
 		return nil, errors.New("module key provider is nil")
 	}
-	moduleKeys, err := bufmodule.GetModuleKeysForModuleRefs(
+	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		r.moduleKeyProvider,
-		moduleRef.ModuleRef(),
+		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
+		bufmodule.DigestTypeB5,
 	)
 	if err != nil {
 		return nil, err

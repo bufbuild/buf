@@ -17,11 +17,13 @@ package bufmodulestore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -29,12 +31,42 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	externalModuleDataVersion    = "v1"
+	externalModuleDataFileName   = "module.yaml"
+	externalModuleDataFilesDir   = "files"
+	externalModuleDataBufYAMLDir = "buf_yaml"
+	externalModuleDataBufLockDir = "buf_lock"
+)
+
+// ModuleDatasResult is a result for a get of ModuleDatas.
+type ModuleDatasResult interface {
+	// FoundModuleDatas is the ModuleDatas that were found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	FoundModuleDatas() []bufmodule.ModuleData
+	// NotFoundModuleKeys is the input ModuleKeys that were not found.
+	//
+	// Ordered by the order of input ModuleKeys.
+	NotFoundModuleKeys() []bufmodule.ModuleKey
+
+	isModuleDatasResult()
+}
+
 // ModuleStore reads and writes ModulesDatas.
 type ModuleDataStore interface {
-	bufmodule.ModuleDataProvider
+	// GetModuleDatasForModuleKey gets the ModuleDatas from the store for the ModuleKeys.
+	//
+	// Returns the found ModuleDatas, and the input ModuleKeys that were not found, each
+	// ordered by the order of the input ModuleKeys.
+	GetModuleDatasForModuleKeys(context.Context, []bufmodule.ModuleKey) (
+		foundModuleDatas []bufmodule.ModuleData,
+		notFoundModuleKeys []bufmodule.ModuleKey,
+		err error,
+	)
 
 	// Put puts the ModuleDatas to the store.
-	PutModuleDatas(ctx context.Context, moduleDatas ...bufmodule.ModuleData) error
+	PutModuleDatas(ctx context.Context, moduleDatas []bufmodule.ModuleData) error
 }
 
 // NewModuleDataStore returns a new ModuleDataStore for the given bucket.
@@ -42,9 +74,6 @@ type ModuleDataStore interface {
 // It is assumed that the ModuleDataStore has complete control of the bucket.
 //
 // This is typically used to interact with a cache directory.
-//
-// TODO: make self-correcting. Just delete and return not found if there is an error on read,
-// or at least make this optional.
 func NewModuleDataStore(
 	logger *zap.Logger,
 	bucket storage.ReadWriteBucket,
@@ -90,26 +119,29 @@ func newModuleDataStore(
 	return moduleDataStore
 }
 
-func (p *moduleDataStore) GetOptionalModuleDatasForModuleKeys(
+func (p *moduleDataStore) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleData, []bufmodule.ModuleKey, error) {
+	var foundModuleDatas []bufmodule.ModuleData
+	var notFoundModuleKeys []bufmodule.ModuleKey
+	for _, moduleKey := range moduleKeys {
 		moduleData, err := p.getModuleDataForModuleKey(ctx, moduleKey)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
+				return nil, nil, err
 			}
+			notFoundModuleKeys = append(notFoundModuleKeys, moduleKey)
+		} else {
+			foundModuleDatas = append(foundModuleDatas, moduleData)
 		}
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
 	}
-	return optionalModuleDatas, nil
+	return foundModuleDatas, notFoundModuleKeys, nil
 }
 
 func (p *moduleDataStore) PutModuleDatas(
 	ctx context.Context,
-	moduleDatas ...bufmodule.ModuleData,
+	moduleDatas []bufmodule.ModuleData,
 ) error {
 	for _, moduleData := range moduleDatas {
 		if err := p.putModuleData(ctx, moduleData); err != nil {
@@ -122,46 +154,119 @@ func (p *moduleDataStore) PutModuleDatas(
 func (p *moduleDataStore) getModuleDataForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
-) (bufmodule.ModuleData, error) {
-	var bucket storage.ReadBucket
+) (retValue bufmodule.ModuleData, retErr error) {
+	var moduleCacheBucket storage.ReadBucket
 	var err error
 	if p.tar {
-		bucket, err = p.getReadBucketForTar(ctx, moduleKey)
+		moduleCacheBucket, err = p.getReadBucketForTar(ctx, moduleKey)
 		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, p.deleteInvalidModuleData(ctx, moduleKey, err)
+			}
 			return nil, err
 		}
 	} else {
-		bucket = p.getReadWriteBucketForDir(moduleKey)
+		moduleCacheBucket = p.getReadWriteBucketForDir(moduleKey)
 	}
-	// We rely on the buf.lock file being the last file to be written in the store.
-	// If the buf.lock does not exist, we act as if there is no value in the store, which will
-	// result in bad data being overwritten.
-	//
-	// We also do not pass the BufLockFileWithDigestResolver opition when reading the lock file,
-	// because we have complete control over this bucket and can expect all lock files in the
-	// module data store to have digests.
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, bucket, ".")
+	defer func() {
+		if retErr != nil {
+			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
+		}
+	}()
+	data, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleDataFileName)
 	p.logDebugModuleKey(
 		moduleKey,
-		"module data store get buf.lock",
+		fmt.Sprintf("module data store get %s", externalModuleDataFileName),
 		zap.Bool("found", err == nil),
 		zap.Error(err),
 	)
 	if err != nil {
 		return nil, err
 	}
+	var externalModuleData externalModuleData
+	if err := encoding.UnmarshalYAMLNonStrict(data, &externalModuleData); err != nil {
+		return nil, err
+	}
+	if !externalModuleData.isValid() {
+		return nil, fmt.Errorf("invalid %s from cache for %s: %+v", externalModuleDataFileName, moduleKey.String(), externalModuleData)
+	}
+	// We don't want to do this lazily (or anything else in this function) as we want to
+	// make sure everything we have is valid before returning so we can auto-correct
+	// the cache if necessary.
+	declaredDepModuleKeys, err := slicesext.MapError(
+		externalModuleData.Deps,
+		getDeclaredDepModuleKeyForExternalModuleDataDep,
+	)
+	if err != nil {
+		return nil, err
+	}
+	// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
+	// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
+	bufYAMLFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.BufYAMLFile)
+	if err != nil {
+		return nil, err
+	}
+	bufYAMLObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufYAMLFile), bufYAMLFileData)
+	if err != nil {
+		return nil, err
+	}
+	// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
+	// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
+	bufLockFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.BufLockFile)
+	if err != nil {
+		return nil, err
+	}
+	bufLockObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufLockFile), bufLockFileData)
+	if err != nil {
+		return nil, err
+	}
+	// We rely on the module.yaml file being the last file to be written in the store.
+	// If module.yaml does not exist, we act as if there is no value in the store, which will
+	// result in bad data being overwritten.
 	return bufmodule.NewModuleData(
 		ctx,
 		moduleKey,
 		func() (storage.ReadBucket, error) {
-			// It is OK that this ReadBucket contains the buf.lock; the buf.lock will be ignored. See
-			// comments on ModuleData.Bucket().
-			return bucket, nil
+			return storage.MapReadBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleData.FilesDir)), nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
-			return bufLockFile.DepModuleKeys(), nil
+			return declaredDepModuleKeys, nil
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufYAMLObjectData, nil
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufLockObjectData, nil
 		},
 	), nil
+}
+
+func (p *moduleDataStore) deleteInvalidModuleData(
+	ctx context.Context,
+	moduleKey bufmodule.ModuleKey,
+	invalidErr error,
+) error {
+	p.logDebugModuleKey(
+		moduleKey,
+		"module data store invalid module data",
+		zap.Error(invalidErr),
+	)
+	var deleteErr error
+	if p.tar {
+		deleteErr = p.bucket.Delete(ctx, getModuleDataStoreTarPath(moduleKey))
+	} else {
+		deleteErr = p.bucket.DeleteAll(ctx, getModuleDataStoreDirPath(moduleKey))
+	}
+	if deleteErr != nil {
+		// Otherwise ignore error.
+		p.logDebugModuleKey(
+			moduleKey,
+			"module data store could not delete module data",
+			zap.Error(deleteErr),
+		)
+	}
+	// This will act as if the file is not found.
+	return &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 }
 
 func (p *moduleDataStore) putModuleData(
@@ -169,10 +274,10 @@ func (p *moduleDataStore) putModuleData(
 	moduleData bufmodule.ModuleData,
 ) (retErr error) {
 	moduleKey := moduleData.ModuleKey()
-	var bucket storage.WriteBucket
+	var moduleCacheBucket storage.WriteBucket
 	if p.tar {
 		var callback func(ctx context.Context) error
-		bucket, callback = p.getWriteBucketAndCallbackForTar(moduleKey)
+		moduleCacheBucket, callback = p.getWriteBucketAndCallbackForTar(moduleKey)
 		defer func() {
 			if retErr == nil {
 				// Only call the callback if we have had no error.
@@ -180,32 +285,72 @@ func (p *moduleDataStore) putModuleData(
 			}
 		}()
 	} else {
-		bucket = p.getReadWriteBucketForDir(moduleKey)
+		moduleCacheBucket = p.getReadWriteBucketForDir(moduleKey)
 	}
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
 		return err
 	}
-	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys)
-	if err != nil {
-		return err
+	externalModuleData := externalModuleData{
+		Version: externalModuleDataVersion,
+		Deps:    make([]externalModuleDataDep, len(depModuleKeys)),
 	}
-	moduleDataBucket, err := moduleData.Bucket()
+
+	for i, depModuleKey := range depModuleKeys {
+		digest, err := depModuleKey.Digest()
+		if err != nil {
+			return err
+		}
+		externalModuleData.Deps[i] = externalModuleDataDep{
+			Name:   depModuleKey.ModuleFullName().String(),
+			Commit: depModuleKey.CommitID(),
+			Digest: digest.String(),
+		}
+	}
+
+	// TODO: We probably do *not* want to use buf.lock files for the cache. This is hard-tying
+	filesBucket, err := moduleData.Bucket()
 	if err != nil {
 		return err
 	}
 	if _, err := storage.Copy(
 		ctx,
-		moduleDataBucket,
-		bucket,
+		filesBucket,
+		storage.MapWriteBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleDataFilesDir)),
 		storage.CopyWithAtomic(),
 	); err != nil {
 		return err
 	}
-	// Put the buf.lock last, so that we only have a buf.lock if the cache is finished writing.
-	// We can use the existence of the buf.lock file to say whether or not the cache contains a
+	externalModuleData.FilesDir = externalModuleDataFilesDir
+
+	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+	if err != nil {
+		return err
+	}
+	bufYAMLFilePath := normalpath.Join(externalModuleDataBufYAMLDir, bufYAMLObjectData.Name())
+	if err := storage.PutPath(ctx, moduleCacheBucket, bufYAMLFilePath, bufYAMLObjectData.Data()); err != nil {
+		return err
+	}
+	externalModuleData.BufYAMLFile = bufYAMLFilePath
+
+	bufLockObjectData, err := moduleData.BufLockObjectData()
+	if err != nil {
+		return err
+	}
+	bufLockFilePath := normalpath.Join(externalModuleDataBufLockDir, bufLockObjectData.Name())
+	if err := storage.PutPath(ctx, moduleCacheBucket, bufLockFilePath, bufLockObjectData.Data()); err != nil {
+		return err
+	}
+	externalModuleData.BufLockFile = bufLockFilePath
+
+	data, err := encoding.MarshalYAML(externalModuleData)
+	if err != nil {
+		return err
+	}
+	// Put the module.yaml last, so that we only have a module.yaml if the cache is finished writing.
+	// We can use the existence of the module.yaml file to say whether or not the cache contains a
 	// given ModuleKey, otherwise we overwrite any contents in the cache.
-	return bufconfig.PutBufLockFileForPrefix(ctx, bucket, ".", bufLockFile)
+	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
 }
 
 func (p *moduleDataStore) getReadWriteBucketForDir(
@@ -319,4 +464,78 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) string {
 		moduleKey.ModuleFullName().Name(),
 		moduleKey.CommitID()+".tar",
 	)
+}
+
+func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) (bufmodule.ModuleKey, error) {
+	if dep.Name == "" {
+		return nil, errors.New("no module name specified")
+	}
+	moduleFullName, err := bufmodule.ParseModuleFullName(dep.Name)
+	if err != nil {
+		return nil, fmt.Errorf("invalid module name: %w", err)
+	}
+	if dep.Commit == "" {
+		return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
+	}
+	if dep.Digest == "" {
+		return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
+	}
+	digest, err := bufmodule.ParseDigest(dep.Digest)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleKey(
+		moduleFullName,
+		dep.Commit,
+		func() (bufmodule.Digest, error) {
+			return digest, nil
+		},
+	)
+}
+
+// externalModuleData is the store representation of a ModuleData.
+//
+// We could use a protobuf Message for this.
+//
+// Note that we do not want to use bufconfig.BufLockFile. This would hard-link the API
+// and persistence layers, and a bufconfig.BufLockFile does not have all the information that
+// a bufmodule.ModuleData has.
+type externalModuleData struct {
+	Version     string                  `json:"version,omitempty" yaml:"version,omitempty"`
+	FilesDir    string                  `json:"files_dir,omitempty" yaml:"files_dir,omitempty"`
+	Deps        []externalModuleDataDep `json:"deps,omitempty" yaml:"deps,omitempty"`
+	BufYAMLFile string                  `json:"buf_yaml_file,omitempty" yaml:"buf_yaml_file,omitempty"`
+	BufLockFile string                  `json:"buf_lock_file,omitempty" yaml:"buf_lock_file,omitempty"`
+}
+
+// isValid returns true if all the information we currently expect to be on
+// an externalModuleData is present, and the version matches.
+//
+// If we add to externalModuleData over time or change the version, old values will be
+// incomplete, and we will auto-evict them from the store.
+func (e externalModuleData) isValid() bool {
+	for _, dep := range e.Deps {
+		if !dep.isValid() {
+			return false
+		}
+	}
+	return e.Version == externalModuleDataVersion &&
+		// While Download allows empty files, this is due to path filtering.
+		// TODO: Do we need an allow empty Files?
+		len(e.FilesDir) > 0 &&
+		len(e.BufYAMLFile) > 0 &&
+		len(e.BufLockFile) > 0
+}
+
+// externalModuleDataDep represents a dependency.
+type externalModuleDataDep struct {
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
+	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
+}
+
+func (e externalModuleDataDep) isValid() bool {
+	return len(e.Name) > 0 &&
+		len(e.Commit) > 0 &&
+		len(e.Digest) > 0
 }

@@ -16,7 +16,6 @@ package bufworkspace
 
 import (
 	"sort"
-	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -24,31 +23,19 @@ import (
 )
 
 const (
-	// MalformedDepTypeUndeclared says that the dep was a transitive remote dependency of the
-	// workspace, but was not declared in the buf.yaml.
-	MalformedDepTypeUndeclared MalformedDepType = iota + 1
 	// MalformedDepTypeUnused says that the dep was declared in the buf.yaml but was not used.
-	MalformedDepTypeUnused
-)
-
-var (
-	malformedDepTypeToString = map[MalformedDepType]string{
-		MalformedDepTypeUndeclared: "undeclared",
-		MalformedDepTypeUnused:     "unused",
-	}
+	//
+	// A dep is not used if no .proto file references it, and the dep is not a local Module within the Workspace.
+	//
+	// We ignore local Modules within the Workspace as v1 buf.yamls needed to declare deps within the Workspace,
+	// and there's no easy way for us to determine if a dep is needed or not within our current
+	// Workspace/Module model. We could get more complicated and warn if you are using a v2 buf.lock
+	// and have deps on local Modules, but there's little benefit.
+	MalformedDepTypeUnused MalformedDepType = iota + 1
 )
 
 // MalformedDepType is the type of malformed dep.
 type MalformedDepType int
-
-// String implements fmt.Stringer.
-func (t MalformedDepType) String() string {
-	s, ok := malformedDepTypeToString[t]
-	if !ok {
-		return strconv.Itoa(int(t))
-	}
-	return s
-}
 
 // MalformedDep is a dep that was malformed in some way in the buf.yaml.
 type MalformedDep interface {
@@ -57,6 +44,8 @@ type MalformedDep interface {
 	// Always present.
 	ModuleFullName() bufmodule.ModuleFullName
 	// Type is why this dep was malformed.
+	//
+	// Always present.
 	Type() MalformedDepType
 
 	isMalformedDep()
@@ -64,6 +53,17 @@ type MalformedDep interface {
 
 // MalformedDepsForWorkspace gets the MalformedDeps for the workspace.
 func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
+	localModuleFullNameStringMap := slicesext.ToStructMapOmitEmpty(
+		slicesext.Map(
+			bufmodule.ModuleSetLocalModules(workspace),
+			func(module bufmodule.Module) string {
+				if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+					return moduleFullName.String()
+				}
+				return ""
+			},
+		),
+	)
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(workspace)
 	if err != nil {
 		return nil, err
@@ -81,9 +81,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	if err != nil {
 		return nil, err
 	}
-	// We actually want to allow for values to be duplicated, it is part of
-	// the documentation for ConfiguredDepModuleRefs().
-	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToValuesMapError(
+	moduleFullNameStringToConfiguredDepModuleRef, err := slicesext.ToUniqueValuesMapError(
 		workspace.ConfiguredDepModuleRefs(),
 		func(moduleRef bufmodule.ModuleRef) (string, error) {
 			moduleFullName := moduleRef.ModuleFullName()
@@ -98,17 +96,19 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 	}
 	var malformedDeps []MalformedDep
 	for moduleFullNameString, configuredDepModuleRef := range moduleFullNameStringToConfiguredDepModuleRef {
-		if _, ok := moduleFullNameStringToRemoteDep[moduleFullNameString]; !ok {
+		_, isLocalModule := localModuleFullNameStringMap[moduleFullNameString]
+		_, isRemoteDep := moduleFullNameStringToRemoteDep[moduleFullNameString]
+		if !isRemoteDep && !isLocalModule {
 			// The module was in buf.yaml deps, but was not in the remote dep list after
-			// adding all ModuleKeys and transitive dependency ModuleKeys. Therefore it is unused.
-			malformedDeps = append(malformedDeps, newMalformedDep(configuredDepModuleRef.ModuleFullName(), MalformedDepTypeUnused))
-		}
-	}
-	for moduleFullNameString, remoteDep := range moduleFullNameStringToRemoteDep {
-		if _, ok := moduleFullNameStringToConfiguredDepModuleRef[moduleFullNameString]; !ok {
-			// The module was in the remote dep list after adding all ModuleKeys and transitive dependency
-			// ModuleKeys, but was not in buf.yaml deps. Therefore it is undeclared.
-			malformedDeps = append(malformedDeps, newMalformedDep(remoteDep.ModuleFullName(), MalformedDepTypeUndeclared))
+			// adding all ModuleKeys and transitive dependency ModuleKeys. It is also not
+			// a local module. Therefore it is unused.
+			malformedDeps = append(
+				malformedDeps,
+				newMalformedDep(
+					configuredDepModuleRef.ModuleFullName(),
+					MalformedDepTypeUnused,
+				),
+			)
 		}
 	}
 	sort.Slice(

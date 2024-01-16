@@ -16,39 +16,19 @@ package bufmodule
 
 import (
 	"context"
-	"io/fs"
 )
 
 // ModuleKeyProvider provides ModuleKeys for ModuleRefs.
 type ModuleKeyProvider interface {
 	// GetModuleKeysForModuleRefs gets the ModuleKeys for the given ModuleRefs.
 	//
-	// Resolution of the ModuleRefs is done per the ModuleRef documentation.
-	//
-	// If there is no error, the length of the OptionalModuleKeys returned will match the length of the ModuleRefs.
-	// If there is an error, no OptionalModuleKeys will be returned.
-	// If a ModuleKey is not found, the OptionalModuleKey will have Found() equal to false, otherwise
-	// the OptionalModuleKey will have Found() equal to true with non-nil ModuleKey.
-	GetOptionalModuleKeysForModuleRefs(context.Context, ...ModuleRef) ([]OptionalModuleKey, error)
-}
+	// Returned ModuleKeys will be in the same order as the input ModuleRefs.
 
-// GetModuleKeysForModuleRefs calls GetOptionalModuleKeysForModuleRefs, returning an error
-// with fs.ErrNotExist if any ModuleRef is not found.
-func GetModuleKeysForModuleRefs(
-	ctx context.Context,
-	moduleKeyProvider ModuleKeyProvider,
-	moduleRefs ...ModuleRef,
-) ([]ModuleKey, error) {
-	optionalModuleKeys, err := moduleKeyProvider.GetOptionalModuleKeysForModuleRefs(ctx, moduleRefs...)
-	if err != nil {
-		return nil, err
-	}
-	moduleKeys := make([]ModuleKey, len(optionalModuleKeys))
-	for i, optionalModuleKey := range optionalModuleKeys {
-		if !optionalModuleKey.Found() {
-			return nil, &fs.PathError{Op: "read", Path: moduleRefs[i].String(), Err: fs.ErrNotExist}
-		}
-		moduleKeys[i] = optionalModuleKey.ModuleKey()
-	}
-	return moduleKeys, nil
+	// The input ModuleRefs are expected to be unique by ModuleFullName. The implementation
+	// may error if this is not the case.
+	//
+	// If there is no error, the length of the ModuleKeys returned will match the length of the ModuleRefs.
+	// If there is an error, no ModuleKeys will be returned.
+	// If any ModuleRef is not found, an error with fs.ErrNotExist will be returned.
+	GetModuleKeysForModuleRefs(context.Context, []ModuleRef, DigestType) ([]ModuleKey, error)
 }

@@ -173,12 +173,12 @@ func ModuleSetRemoteOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(ModuleSetRemoteModules(moduleSet))
 }
 
-// ModuleSetToDAG gets a DAG of the OpaqueIDs of the given ModuleSet.
+// ModuleSetToDAG gets a DAG of the given ModuleSet.
 //
 // This only starts at target Modules. If a Module is not part of a graph
 // with a target Module as a source, it will not be added.
-func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string], error) {
-	graph := dag.NewGraph[string]()
+func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string, Module], error) {
+	graph := dag.NewGraph[string, Module](Module.OpaqueID)
 	for _, module := range ModuleSetTargetModules(moduleSet) {
 		if err := moduleSetToDAGRec(module, graph); err != nil {
 			return nil, err
@@ -311,15 +311,21 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
 	for _, module := range m.Modules() {
-		if _, err := module.StatFileInfo(ctx, filePath); err == nil {
+		_, err := module.StatFileInfo(ctx, filePath)
+		if err == nil {
 			matchingOpaqueIDs[module.OpaqueID()] = struct{}{}
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			// This is important! If we have any error other than fs.ErrNotExist, make sure we return that error.
+			// Not doing so results in important errors not being propagated. In the case where this was found,
+			// we ended up returning a fs.ErrNotExist when the underlying error was a digest verification error
+			// that we expected. We want to return the verification error up the stack.
+			return nil, err
 		}
 	}
 	switch len(matchingOpaqueIDs) {
 	case 0:
-		// TODO: This is likely a problem now as well, but we do not include WKTs in our
-		// digest calculations. We should discuss whether this is important or not - we could
-		// make an argument that it is not since WKTs are not downloaded in this usage.
+		// We do not include WKTs in our digest calculations. We've determined this is OK since
+		// WKTs are not downloaded and not subject to supply-side attacks.
 		if datawkt.Exists(filePath) {
 			return nil, errIsWKT
 		}
@@ -344,15 +350,15 @@ func (*moduleSet) isModuleSet() {}
 
 func moduleSetToDAGRec(
 	module Module,
-	graph *dag.Graph[string],
+	graph *dag.Graph[string, Module],
 ) error {
-	graph.AddNode(module.OpaqueID())
+	graph.AddNode(module)
 	directModuleDeps, err := ModuleDirectModuleDeps(module)
 	if err != nil {
 		return err
 	}
 	for _, directModuleDep := range directModuleDeps {
-		graph.AddEdge(module.OpaqueID(), directModuleDep.OpaqueID())
+		graph.AddEdge(module, directModuleDep)
 		if err := moduleSetToDAGRec(directModuleDep, graph); err != nil {
 			return err
 		}

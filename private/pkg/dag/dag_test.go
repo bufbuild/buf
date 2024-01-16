@@ -44,7 +44,7 @@ func TestTopoSort(t *testing.T) {
 	t.Parallel()
 	testTopoSortSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 		},
@@ -57,7 +57,7 @@ func TestTopoSort2(t *testing.T) {
 	t.Parallel()
 	testTopoSortSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "c")
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
@@ -71,7 +71,7 @@ func TestTopoSort3(t *testing.T) {
 	t.Parallel()
 	testTopoSortSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			// e -> b not part of traversal to a on purpose
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
@@ -88,7 +88,7 @@ func TestTopoSortCycleError(t *testing.T) {
 	t.Parallel()
 	testTopoSortCycleError(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "a")
 		},
@@ -101,7 +101,7 @@ func TestTopoSortCycleError2(t *testing.T) {
 	t.Parallel()
 	testTopoSortCycleError(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 			graph.AddEdge("c", "a")
@@ -115,7 +115,7 @@ func TestTopoSortCycleError3(t *testing.T) {
 	t.Parallel()
 	testTopoSortCycleError(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
 			graph.AddEdge("c", "b")
@@ -129,7 +129,7 @@ func TestWalkEdges(t *testing.T) {
 	t.Parallel()
 	testWalkEdgesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("b", "c")
 			graph.AddEdge("a", "c")
 			graph.AddEdge("a", "b")
@@ -155,7 +155,7 @@ func TestWalkEdges2(t *testing.T) {
 	t.Parallel()
 	testWalkEdgesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -186,7 +186,7 @@ func TestWalkEdges3(t *testing.T) {
 	t.Parallel()
 	testWalkEdgesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -222,7 +222,7 @@ func TestWalkEdgesCycleError(t *testing.T) {
 	t.Parallel()
 	testWalkEdgesCycleError(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -238,7 +238,7 @@ func TestWalkEdgesCycleError2(t *testing.T) {
 	t.Parallel()
 	testWalkEdgesCycleError(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			// there are no sources
 			graph.AddEdge("a", "b")
 			graph.AddEdge("b", "c")
@@ -255,7 +255,7 @@ func TestWalkNodes(t *testing.T) {
 	t.Parallel()
 	testWalkNodesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -301,7 +301,7 @@ func TestWalkNodes(t *testing.T) {
 func TestGraphEqual(t *testing.T) {
 	t.Parallel()
 
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	graph.AddEdge("a", "b")
 	graph.AddEdge("a", "d")
 	graph.AddEdge("b", "c")
@@ -309,7 +309,7 @@ func TestGraphEqual(t *testing.T) {
 	graph.AddEdge("e", "b")
 	graph.AddNode("f")
 
-	dagtest.RequireGraphEqual(
+	dagtest.RequireComparableGraphEqual(
 		t,
 		// Purposefully messing up ordering of keys and outbounds to make sure this is still equal.
 		[]dagtest.ExpectedNode[string]{
@@ -345,7 +345,7 @@ func TestNumNodes(t *testing.T) {
 	t.Parallel()
 	testNumNodesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -361,7 +361,7 @@ func TestNumEdges(t *testing.T) {
 	t.Parallel()
 	testNumEdgesSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -373,11 +373,43 @@ func TestNumEdges(t *testing.T) {
 	)
 }
 
+func TestInboundNodes(t *testing.T) {
+	t.Parallel()
+	setupGraph := func(graph *dag.ComparableGraph[string]) {
+		graph.AddEdge("a", "b")
+		graph.AddEdge("a", "d")
+		graph.AddEdge("b", "c")
+		graph.AddEdge("c", "d")
+		graph.AddEdge("e", "b")
+		graph.AddNode("f")
+	}
+	testInboundNodesSuccess(t, setupGraph, "d", []string{"a", "c"})
+	testInboundNodesSuccess(t, setupGraph, "b", []string{"a", "e"})
+	testInboundNodesSuccess(t, setupGraph, "a", []string{})
+	testInboundNodesSuccess(t, setupGraph, "f", []string{})
+}
+
+func TestOutboundodes(t *testing.T) {
+	t.Parallel()
+	setupGraph := func(graph *dag.ComparableGraph[string]) {
+		graph.AddEdge("a", "b")
+		graph.AddEdge("a", "d")
+		graph.AddEdge("b", "c")
+		graph.AddEdge("c", "d")
+		graph.AddEdge("e", "b")
+		graph.AddNode("f")
+	}
+	testOutboundNodesSuccess(t, setupGraph, "a", []string{"b", "d"})
+	testOutboundNodesSuccess(t, setupGraph, "b", []string{"c"})
+	testOutboundNodesSuccess(t, setupGraph, "d", []string{})
+	testOutboundNodesSuccess(t, setupGraph, "f", []string{})
+}
+
 func TestDOTString(t *testing.T) {
 	t.Parallel()
 	testDOTStringSuccess(
 		t,
-		func(graph *dag.Graph[string]) {
+		func(graph *dag.ComparableGraph[string]) {
 			graph.AddEdge("a", "b")
 			graph.AddEdge("a", "d")
 			graph.AddEdge("b", "c")
@@ -387,19 +419,12 @@ func TestDOTString(t *testing.T) {
 		},
 		`digraph {
 
-  1 [label="a"]
-  2 [label="b"]
-  3 [label="c"]
-  4 [label="d"]
-  5 [label="e"]
-  6 [label="f"]
-
-  1 -> 2
-  2 -> 3
-  3 -> 4
-  1 -> 4
-  5 -> 2
-  6
+  "a" -> "b"
+  "b" -> "c"
+  "c" -> "d"
+  "a" -> "d"
+  "e" -> "b"
+  "f"
 
 }`,
 	)
@@ -407,11 +432,11 @@ func TestDOTString(t *testing.T) {
 
 func testTopoSortSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	start string,
 	expected []string,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	results, err := graph.TopoSort(start)
 	require.NoError(t, err)
@@ -420,11 +445,11 @@ func testTopoSortSuccess(
 
 func testTopoSortCycleError(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	start string,
 	expectedCycle []string,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	_, err := graph.TopoSort(start)
 	require.Equal(
@@ -438,10 +463,10 @@ func testTopoSortCycleError(
 
 func testWalkEdgesSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expected []stringEdge,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	var results []stringEdge
 	err := graph.WalkEdges(
@@ -462,10 +487,10 @@ func testWalkEdgesSuccess(
 
 func testWalkEdgesCycleError(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expectedCycle []string,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	err := graph.WalkEdges(func(string, string) error { return nil })
 	require.Equal(
@@ -479,10 +504,10 @@ func testWalkEdgesCycleError(
 
 func testWalkNodesSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expected []stringNode,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	var results []stringNode
 	err := graph.WalkNodes(
@@ -504,30 +529,56 @@ func testWalkNodesSuccess(
 
 func testNumNodesSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expected int,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	require.Equal(t, expected, graph.NumNodes())
 }
 
 func testNumEdgesSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expected int,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	require.Equal(t, expected, graph.NumEdges())
 }
 
+func testInboundNodesSuccess(
+	t *testing.T,
+	setupGraph func(*dag.ComparableGraph[string]),
+	key string,
+	expected []string,
+) {
+	graph := dag.NewComparableGraph[string]()
+	setupGraph(graph)
+	actual, err := graph.InboundNodes(key)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
+func testOutboundNodesSuccess(
+	t *testing.T,
+	setupGraph func(*dag.ComparableGraph[string]),
+	key string,
+	expected []string,
+) {
+	graph := dag.NewComparableGraph[string]()
+	setupGraph(graph)
+	actual, err := graph.OutboundNodes(key)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
 func testDOTStringSuccess(
 	t *testing.T,
-	setupGraph func(*dag.Graph[string]),
+	setupGraph func(*dag.ComparableGraph[string]),
 	expected string,
 ) {
-	graph := &dag.Graph[string]{}
+	graph := dag.NewComparableGraph[string]()
 	setupGraph(graph)
 	s, err := graph.DOTString(func(key string) string { return key })
 	require.NoError(t, err)

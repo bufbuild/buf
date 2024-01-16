@@ -22,17 +22,18 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 var (
-	digestTypeToProto = map[bufmodule.DigestType]modulev1beta1.DigestType{
+	digestTypeToProtoDigestType = map[bufmodule.DigestType]modulev1beta1.DigestType{
 		bufmodule.DigestTypeB4: modulev1beta1.DigestType_DIGEST_TYPE_B4,
 		bufmodule.DigestTypeB5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
 	}
-	protoToDigestType = map[modulev1beta1.DigestType]bufmodule.DigestType{
+	protoDigestTypeToDigestType = map[modulev1beta1.DigestType]bufmodule.DigestType{
 		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.DigestTypeB4,
 		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.DigestTypeB5,
 	}
@@ -74,16 +75,14 @@ func ProtoToCommitID(protoCommitID string) (string, error) {
 
 // DigestToProto converts the given Digest to a proto Digest.
 func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
-	protoDigestType, ok := digestTypeToProto[digest.Type()]
-	// Technically we have already done this validation but just to be safe.
-	if !ok {
-		return nil, fmt.Errorf("unknown DigestType: %v", digest.Type())
+	protoDigestType, err := digestTypeToProto(digest.Type())
+	if err != nil {
+		return nil, err
 	}
-	protoDigest := &modulev1beta1.Digest{
+	return &modulev1beta1.Digest{
 		Type:  protoDigestType,
 		Value: digest.Value(),
-	}
-	return protoDigest, nil
+	}, nil
 }
 
 // ProtoToDigest converts the given proto Digest to a Digest.
@@ -91,9 +90,9 @@ func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
 func ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
-	digestType, ok := protoToDigestType[protoDigest.Type]
-	if !ok {
-		return nil, fmt.Errorf("unknown proto Digest.Type: %v", protoDigest.Type)
+	digestType, err := protoToDigestType(protoDigest.Type)
+	if err != nil {
+		return nil, err
 	}
 	bufcasDigest, err := bufcas.NewDigest(protoDigest.Value)
 	if err != nil {
@@ -103,6 +102,23 @@ func ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) 
 }
 
 // *** PRIVATE ***
+
+func digestTypeToProto(digestType bufmodule.DigestType) (modulev1beta1.DigestType, error) {
+	protoDigestType, ok := digestTypeToProtoDigestType[digestType]
+	// Technically we have already done this validation but just to be safe.
+	if !ok {
+		return 0, fmt.Errorf("unknown DigestType: %v", digestType)
+	}
+	return protoDigestType, nil
+}
+
+func protoToDigestType(protoDigestType modulev1beta1.DigestType) (bufmodule.DigestType, error) {
+	digestType, ok := protoDigestTypeToDigestType[protoDigestType]
+	if !ok {
+		return 0, fmt.Errorf("unknown modulev1beta.DigestType: %v", protoDigestType)
+	}
+	return digestType, nil
+}
 
 // It is assumed that the bucket is already filtered to just module files.
 func bucketToProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modulev1beta1.File, error) {
@@ -137,6 +153,10 @@ func protoFilesToBucket(protoFiles []*modulev1beta1.File) (storage.ReadBucket, e
 		pathToData[protoFile.Path] = protoFile.Content
 	}
 	return storagemem.NewReadBucket(pathToData)
+}
+
+func protoFileToObjectData(protoFile *modulev1beta1.File) (bufmodule.ObjectData, error) {
+	return bufmodule.NewObjectData(normalpath.Base(protoFile.Path), protoFile.Content)
 }
 
 func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabelRef {

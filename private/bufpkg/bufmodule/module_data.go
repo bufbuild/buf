@@ -27,6 +27,8 @@ import (
 // It is not a fully-formed Module; only ModuleSetBuilders (and ModuleSets) can provide Modules.
 //
 // A ModuleData generally represents the data on a Module read from the BSR API or a cache.
+//
+// Tamper-proofing is done as part of every function.
 type ModuleData interface {
 	// ModuleKey contains the ModuleKey that was used to download this ModuleData.
 	//
@@ -42,6 +44,15 @@ type ModuleData interface {
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
+	// BufYAMLObjectData gets the buf.yaml ObjectData.
+	//
+	// This is used for digest calcuations. It is not used otherwise.
+	BufYAMLObjectData() (ObjectData, error)
+	// BufYAMLObjectData gets the buf.lock ObjectData.
+	//
+	// This is used for digest calcuations. It is not used otherwise.
+	BufLockObjectData() (ObjectData, error)
+
 	isModuleData()
 }
 
@@ -56,32 +67,17 @@ func NewModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getBufYAMLObjectData func() (ObjectData, error),
+	getBufLockObjectData func() (ObjectData, error),
 ) ModuleData {
 	return newModuleData(
 		ctx,
 		moduleKey,
 		getBucket,
 		getDeclaredDepModuleKeys,
+		getBufYAMLObjectData,
+		getBufLockObjectData,
 	)
-}
-
-// OptionalModuleData is a result from a ModuleDataProvider.
-//
-// It returns whether or not the ModuleData was found, and a non-nil
-// ModuleData if the ModuleData was found.
-type OptionalModuleData interface {
-	ModuleData() ModuleData
-	Found() bool
-
-	isOptionalModuleData()
-}
-
-// NewOptionalModuleData returns a new OptionalModuleData.
-//
-// As opposed to most functions in this codebase, the input ModuleData can be nil.
-// If it is nil, then Found() will return false.
-func NewOptionalModuleData(moduleData ModuleData) OptionalModuleData {
-	return newOptionalModuleData(moduleData)
 }
 
 // *** PRIVATE ***
@@ -92,6 +88,8 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
+	getBufYAMLObjectData     func() (ObjectData, error)
+	getBufLockObjectData     func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -101,19 +99,20 @@ func newModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
+	getBufYAMLObjectData func() (ObjectData, error),
+	getBufLockObjectData func() (ObjectData, error),
 ) *moduleData {
 	moduleData := &moduleData{
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
+		getBufYAMLObjectData:     syncext.OnceValues(getBufYAMLObjectData),
+		getBufLockObjectData:     syncext.OnceValues(getBufLockObjectData),
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
+			// We have to use the get.* functions so that we don't invoke checkDigest.
 			bucket, err := moduleData.getBucket()
-			if err != nil {
-				return err
-			}
-			declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
 			if err != nil {
 				return err
 			}
@@ -121,30 +120,47 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			// This isn't the Digest as computed by the Module exactly, as the Module uses
-			// file imports to determine what the dependencies are. However, this is checking whether
-			// or not the digest of the returned information matches the digest we expected, which is
-			// what we need for this use case (tamper-proofing). What we are looking for is "does the
-			// digest from the ModuleKey match the files and dependencies returned from the remote
-			// provider of the ModuleData?" The mismatch case is that a file import changed/was removed,
-			// which may result in a different computed set of dependencies, but in this case, the
-			// actual files would have changed, which will result in a mismatched digest anyways, and
-			// tamper-proofing failing.
-			//
-			// This mismatch is a bit weird, however, and also results in us effectively computing
-			// the digest twice for any remote module: once here, and once within Module.Digest,
-			// which does have a slight performance hit.
-			actualDigest, err := getB5Digest(
-				ctx,
-				bucket,
-				declaredDepModuleKeys,
-			)
-			if err != nil {
-				return err
+			var actualDigest Digest
+			switch expectedDigest.Type() {
+			case DigestTypeB4:
+				bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+				if err != nil {
+					return err
+				}
+				bufLockObjectData, err := moduleData.BufLockObjectData()
+				if err != nil {
+					return err
+				}
+				actualDigest, err = getB4Digest(ctx, bucket, bufYAMLObjectData, bufLockObjectData)
+				if err != nil {
+					return err
+				}
+			case DigestTypeB5:
+				declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
+				if err != nil {
+					return err
+				}
+				// This isn't the Digest as computed by the Module exactly, as the Module uses
+				// file imports to determine what the dependencies are. However, this is checking whether
+				// or not the digest of the returned information matches the digest we expected, which is
+				// what we need for this use case (tamper-proofing). What we are looking for is "does the
+				// digest from the ModuleKey match the files and dependencies returned from the remote
+				// provider of the ModuleData?" The mismatch case is that a file import changed/was removed,
+				// which may result in a different computed set of dependencies, but in this case, the
+				// actual files would have changed, which will result in a mismatched digest anyways, and
+				// tamper-proofing failing.
+				//
+				// This mismatch is a bit weird, however, and also results in us effectively computing
+				// the digest twice for any remote module: once here, and once within Module.Digest,
+				// which does have a slight performance hit.
+				actualDigest, err = getB5DigestForBucketAndDepModuleKeys(ctx, bucket, declaredDepModuleKeys)
+				if err != nil {
+					return err
+				}
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
 				return fmt.Errorf(
-					"verification failed for module %s: expected digest %q but downloaded data had digest %q",
+					"***Digest verification failed for module %s***\n\tExpected digest: %q\n\tDownloaded data digest: %q",
 					moduleKey.String(),
 					expectedDigest.String(),
 					actualDigest.String(),
@@ -181,24 +197,18 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	return m.getDeclaredDepModuleKeys()
 }
 
-func (*moduleData) isModuleData() {}
-
-type optionalModuleData struct {
-	moduleData ModuleData
-}
-
-func newOptionalModuleData(moduleData ModuleData) *optionalModuleData {
-	return &optionalModuleData{
-		moduleData: moduleData,
+func (m *moduleData) BufYAMLObjectData() (ObjectData, error) {
+	if err := m.checkDigest(); err != nil {
+		return nil, err
 	}
+	return m.getBufYAMLObjectData()
 }
 
-func (o *optionalModuleData) ModuleData() ModuleData {
-	return o.moduleData
+func (m *moduleData) BufLockObjectData() (ObjectData, error) {
+	if err := m.checkDigest(); err != nil {
+		return nil, err
+	}
+	return m.getBufLockObjectData()
 }
 
-func (o *optionalModuleData) Found() bool {
-	return o.moduleData != nil
-}
-
-func (*optionalModuleData) isOptionalModuleData() {}
+func (*moduleData) isModuleData() {}

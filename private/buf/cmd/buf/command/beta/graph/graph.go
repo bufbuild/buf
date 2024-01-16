@@ -16,12 +16,11 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -40,16 +39,15 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Print the dependency graph in DOT format",
-		Long:  bufcli.GetSourceOrModuleLong(`the source or module to print for`),
-		Args:  appcmd.MaximumNArgs(1),
+		Use:  name + " <input>",
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
 		BindFlags: flags.Bind,
+		Hidden:    true,
 	}
 }
 
@@ -83,33 +81,5 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
-	if err != nil {
-		return err
-	}
-	controller, err := bufcli.NewController(
-		container,
-		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
-		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
-	)
-	if err != nil {
-		return err
-	}
-	workspace, err := controller.GetWorkspace(
-		ctx,
-		input,
-	)
-	if err != nil {
-		return err
-	}
-	graph, err := bufmodule.ModuleSetToDAG(workspace)
-	if err != nil {
-		return err
-	}
-	dotString, err := graph.DOTString(func(s string) string { return s })
-	if err != nil {
-		return err
-	}
-	_, err = fmt.Fprintln(container.Stdout(), dotString)
-	return err
+	return errors.New("buf beta graph is now stable and has been moved to buf graph!")
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -25,13 +26,18 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
-// 2023-01-01 at 12:00 UTC
-var mockTime = time.Unix(1672574400, 0)
+var (
+	// 2023-01-01 at 12:00 UTC
+	mockTime = time.Unix(1672574400, 0)
+	// We specifically do not rely on the buf.yaml being parseable, this helps test that.
+	mockBufYAMLData = []byte("mock_buf_yaml_data")
+	// We specifically do not rely on the buf.lock being parseable, this helps test that.
+	mockBufLockData = []byte("mock_buf_lock_data")
+)
 
 // ModuleData is the data needed to construct a Module in test.
 //
@@ -163,102 +169,103 @@ func newOmniProvider(
 	}, nil
 }
 
-func (o *omniProvider) GetOptionalModuleKeysForModuleRefs(
+func (o *omniProvider) GetModuleKeysForModuleRefs(
 	ctx context.Context,
-	moduleRefs ...bufmodule.ModuleRef,
-) ([]bufmodule.OptionalModuleKey, error) {
-	optionalModuleKeys := make([]bufmodule.OptionalModuleKey, len(moduleRefs))
+	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
 	for i, moduleRef := range moduleRefs {
 		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
 		if module == nil {
-			optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(nil)
-			continue
+			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
 		}
-		moduleKey, err := bufmodule.ModuleToModuleKey(module)
+		moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
 		if err != nil {
 			return nil, err
 		}
-		optionalModuleKeys[i] = bufmodule.NewOptionalModuleKey(moduleKey)
+		moduleKeys[i] = moduleKey
 	}
-	return optionalModuleKeys, nil
+	return moduleKeys, nil
 }
 
-func (o *omniProvider) GetOptionalModuleDatasForModuleKeys(
+func (o *omniProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalModuleData, error) {
-	optionalModuleDatas := make([]bufmodule.OptionalModuleData, len(moduleKeys))
-	for i, moduleKey := range moduleKeys {
-		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
-		if module == nil {
-			optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(nil)
-			continue
-		}
-		// Need to use moduleKey from module, as we need CommitID if present.
-		moduleFullName := module.ModuleFullName()
-		if moduleFullName == nil {
-			return nil, errors.New("must set TestModuleData.Name if using OmniProvider as a ModuleDataProvider")
-		}
-		commitID := module.CommitID()
-		if commitID == "" {
-			// This is a system error, we should have done this during omniProvider construction.
-			return nil, syserror.Newf("no commitID for TestModuleData with name %q", moduleFullName.String())
-		}
-		moduleKey, err := bufmodule.NewModuleKey(
-			moduleFullName,
-			commitID,
-			module.Digest,
-		)
-		if err != nil {
-			return nil, err
-		}
-		moduleData := bufmodule.NewModuleData(
-			ctx,
-			moduleKey,
-			func() (storage.ReadBucket, error) {
-				return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
-			},
-			func() ([]bufmodule.ModuleKey, error) {
-				moduleDeps, err := module.ModuleDeps()
-				if err != nil {
-					return nil, err
-				}
-				return slicesext.MapError(
-					moduleDeps,
-					func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
-						return bufmodule.ModuleToModuleKey(moduleDep)
-					},
-				)
-			},
-		)
-		optionalModuleDatas[i] = bufmodule.NewOptionalModuleData(moduleData)
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleData, error) {
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
 	}
-	return optionalModuleDatas, nil
+	return slicesext.MapError(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) (bufmodule.ModuleData, error) {
+			return o.getModuleDataForModuleKey(ctx, moduleKey)
+		},
+	)
 }
 
-func (o *omniProvider) GetOptionalCommitsForModuleKeys(
+func (o *omniProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
-	moduleKeys ...bufmodule.ModuleKey,
-) ([]bufmodule.OptionalCommit, error) {
-	optionalCommits := make([]bufmodule.OptionalCommit, len(moduleKeys))
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
+	commits := make([]bufmodule.Commit, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
 		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
 		if !ok {
-			optionalCommits[i] = bufmodule.NewOptionalCommit(nil)
-			continue
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
 		}
-		commit, err := bufmodule.NewCommit(
+		commits[i] = bufmodule.NewCommit(
 			moduleKey,
 			func() (time.Time, error) {
 				return createTime, nil
 			},
+			moduleKey.Digest,
 		)
-		if err != nil {
-			return nil, err
-		}
-		optionalCommits[i] = bufmodule.NewOptionalCommit(commit)
 	}
-	return optionalCommits, nil
+	return commits, nil
+}
+
+func (o *omniProvider) getModuleDataForModuleKey(
+	ctx context.Context,
+	moduleKey bufmodule.ModuleKey,
+) (bufmodule.ModuleData, error) {
+	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	if module == nil {
+		return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+	}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
+	declaredDepModuleKeys, err := slicesext.MapError(
+		moduleDeps,
+		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(moduleDep, digest.Type())
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleData(
+		ctx,
+		moduleKey,
+		func() (storage.ReadBucket, error) {
+			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
+		},
+		func() ([]bufmodule.ModuleKey, error) {
+			return declaredDepModuleKeys, nil
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufmodule.NewObjectData("buf.yaml", mockBufYAMLData)
+		},
+		func() (bufmodule.ObjectData, error) {
+			return bufmodule.NewObjectData("buf.lock", mockBufLockData)
+		},
+	), nil
 }
 
 func newModuleSet(

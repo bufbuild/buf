@@ -31,13 +31,13 @@ import (
 // isn't an LRU cache, and the information also may change over time.
 type protoModuleProvider struct {
 	logger           *zap.Logger
-	clientProvider   bufapi.ClientProvider
+	clientProvider   bufapi.ModuleServiceClientProvider
 	protoModuleCache cache.Cache[string, *modulev1beta1.Module]
 }
 
 func newProtoModuleProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.ClientProvider,
+	clientProvider bufapi.ModuleServiceClientProvider,
 ) *protoModuleProvider {
 	return &protoModuleProvider{
 		logger:         logger,
@@ -47,13 +47,13 @@ func newProtoModuleProvider(
 
 func (a *protoModuleProvider) getProtoModuleForModuleID(
 	ctx context.Context,
-	registryHostname string,
+	registry string,
 	moduleID string,
 ) (*modulev1beta1.Module, error) {
 	return a.protoModuleCache.GetOrAdd(
-		registryHostname+"/"+moduleID,
+		registry+"/"+moduleID,
 		func() (*modulev1beta1.Module, error) {
-			response, err := a.clientProvider.ModuleServiceClient(registryHostname).GetModules(
+			response, err := a.clientProvider.ModuleServiceClient(registry).GetModules(
 				ctx,
 				connect.NewRequest(
 					&modulev1beta1.GetModulesRequest{
