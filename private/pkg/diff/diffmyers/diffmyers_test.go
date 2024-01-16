@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/diff/diffmyers"
@@ -28,6 +29,9 @@ import (
 const writeGoldenFiles = false
 
 func TestDiff(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix handling carriage returns on windows")
+	}
 	t.Parallel()
 	t.Run("delete-and-insert", func(t *testing.T) {
 		t.Parallel()

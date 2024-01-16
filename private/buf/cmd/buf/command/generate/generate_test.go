@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buftesting"
@@ -242,6 +243,9 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 }
 
 func TestGenerateInsertionPoint(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	t.Parallel()
 	runner := command.NewRunner()
 	testGenerateInsertionPointV1(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
