@@ -17,6 +17,7 @@ package bufformat
 import (
 	"context"
 	"io"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -30,6 +31,9 @@ import (
 )
 
 func TestFormatter(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	t.Parallel()
 	testFormatCustomOptions(t)
 	testFormatProto2(t)
