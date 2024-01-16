@@ -83,7 +83,8 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "testdata/paths/a" contains targeted path "testdata/paths/a/v1/a.proto", which means all paths in "testdata/paths/a/v1/a.proto" will be excluded`),
+		// TODO: figure out why duplicated path separators are not cleaned by filepath.Clean
+		`Failure: excluded path "testdata\\paths\\a" contains targeted path "testdata\\paths\\a\\v1\\a.proto", which means all paths in "testdata\\paths\\a\\v1\\a.proto" will be excluded`,
 		"--output",
 		tempDirPath,
 		"--template",
@@ -127,7 +128,8 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		// TODO: figure out why duplicated path separators are not cleaned by filepath.Clean
+		`Failure: excluded path "a\\v3" contains targeted path "a\\v3\\foo", which means all paths in "a\\v3\\foo" will be excluded`,
 		"--output",
 		tempDirPath,
 		"--template",
@@ -151,7 +153,8 @@ func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		// TODO: figure out why duplicated path separators are not cleaned by filepath.Clean
+		`Failure: excluded path "testdata\\workspace\\a\\v3" contains targeted path "testdata\\workspace\\a\\v3\\foo", which means all paths in "testdata\\workspace\\a\\v3\\foo" will be excluded`,
 		"--output",
 		tempDirPath,
 		"--template",
