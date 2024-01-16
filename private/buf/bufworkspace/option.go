@@ -219,8 +219,8 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 				// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
 				if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
 					// We clean and unnormalize the target paths to show in the error message
-					unnormalizedTargetExcludePath := normalpath.Unnormalize(filepath.Clean(targetExcludePath))
-					unnormalizedTargetPath := normalpath.Unnormalize(filepath.Clean(targetPath))
+					unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
+					unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
 					return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", unnormalizedTargetExcludePath, unnormalizedTargetPath, unnormalizedTargetPath)
 				}
 			}
