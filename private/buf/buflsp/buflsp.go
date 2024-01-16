@@ -51,7 +51,10 @@ var (
 	lspWellKnownTypesCacheRelDirPath = normalpath.Join("lsp", "wkt")
 	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
 	// NOTE: This needs to be kept in sync with module_data_provider.
-	v3CacheModuleRelDirPath = normalpath.Join("v3", "module")
+	v3CacheModuleRelDirPath = normalpath.Join("v3", "modules")
+	// v3CacheExternalModuleDataFilesDir is the subdirectory within a module commit's cache
+	// directory where its external data (e.g. proto files) is stored.
+	v3CacheExternalModuleDataFilesDir = "files"
 )
 
 // NewServer returns a new LSP server for the jsonrpc connection.
@@ -544,7 +547,7 @@ func (s *server) localPathForImport(
 	file bufmodule.File,
 ) (string, error) {
 	if workspace == s.wellKnownTypesModuleSet {
-		digest, err := file.Module().Digest()
+		digest, err := file.Module().Digest(bufmodule.DigestTypeB5)
 		if err != nil {
 			return "", err
 		}
@@ -558,10 +561,6 @@ func (s *server) localPathForImport(
 	if moduleFullName == nil {
 		return "", syserror.Newf("remote module %q had nil ModuleFullName", module.OpaqueID())
 	}
-	digest, err := module.Digest()
-	if err != nil {
-		return "", err
-	}
 	return normalpath.Unnormalize(
 		normalpath.Join(
 			s.container.CacheDirPath(),
@@ -569,7 +568,8 @@ func (s *server) localPathForImport(
 			moduleFullName.Registry(),
 			moduleFullName.Owner(),
 			moduleFullName.Name(),
-			digest.String(),
+			module.CommitID(),
+			v3CacheExternalModuleDataFilesDir,
 			file.Path(),
 		),
 	), nil
