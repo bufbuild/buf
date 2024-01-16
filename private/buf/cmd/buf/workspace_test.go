@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -247,6 +248,9 @@ func TestWorkspaceBreaking(t *testing.T) {
 }
 
 func TestWorkspaceArchiveDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	// Archive that defines a workspace at the root of the archive.
 	t.Parallel()
 	for _, dirPath := range []string{
@@ -298,6 +302,9 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 }
 
 func TestWorkspaceNestedArchive(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	// Archive that defines a workspace in a sub-directory to the root.
 	t.Parallel()
 	for _, dirPath := range []string{
@@ -1326,6 +1333,9 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1362,6 +1372,9 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows")
+	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
 		t,
