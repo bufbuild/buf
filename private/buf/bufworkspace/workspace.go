@@ -568,8 +568,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	} else {
 		switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			// TODO: re-enable once we fix tests
-			//return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
+			return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
 		case bufconfig.FileVersionV2:
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
