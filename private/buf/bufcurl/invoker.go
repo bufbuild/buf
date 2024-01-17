@@ -451,7 +451,10 @@ func countUnrecognized(msg protoreflect.Message) int {
 	var count int
 	msg.Range(func(field protoreflect.FieldDescriptor, val protoreflect.Value) bool {
 		switch {
-		case field.IsMap() && isMessageKind(field.MapValue().Kind()):
+		case field.IsMap():
+			if !isMessageKind(field.MapValue().Kind()) {
+				break
+			}
 			// Note: Technically, each message entry could have had unrecognized field
 			// bytes, but they are discarded by the runtime. So we can only look at
 			// unrecognized fields in message values inside the map.
@@ -460,7 +463,10 @@ func countUnrecognized(msg protoreflect.Message) int {
 				count += countUnrecognized(v.Message())
 				return true
 			})
-		case field.IsList() && isMessageKind(field.Kind()):
+		case field.IsList():
+			if !isMessageKind(field.Kind()) {
+				break
+			}
 			listVal := val.List()
 			for i, length := 0, listVal.Len(); i < length; i++ {
 				count += countUnrecognized(listVal.Get(i).Message())
