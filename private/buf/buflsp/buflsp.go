@@ -41,6 +41,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )
 
@@ -468,7 +469,7 @@ func (s *server) resolveImport(ctx context.Context, resolver moduleSetResolver, 
 	if err != nil {
 		return nil, err
 	}
-	uri := makeFileURI(localPath)
+	uri := uri.File(localPath)
 	if entry, ok := s.fileCache[uri.Filename()]; ok {
 		entry.refCount++
 		return entry, nil
@@ -628,10 +629,6 @@ func (s *server) decrementReferenceCount(entry *fileEntry) {
 		}
 		delete(s.fileCache, entry.document.URI.Filename())
 	}
-}
-
-func makeFileURI(path string) protocol.DocumentURI {
-	return protocol.DocumentURI("file://" + path)
 }
 
 func completionsToCompletionList(

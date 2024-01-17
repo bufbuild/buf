@@ -37,6 +37,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"go.lsp.dev/protocol"
+	"go.lsp.dev/uri"
 )
 
 func TestBufLsp(t *testing.T) {
@@ -190,7 +191,7 @@ func openFile(ctx context.Context, lspServer *server, fileName string) (protocol
 	if err != nil {
 		return "", err
 	}
-	fileURI := protocol.DocumentURI("file://" + absPath)
+	fileURI := uri.File(absPath)
 	if err := lspServer.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
 		TextDocument: protocol.TextDocumentItem{
 			URI:  fileURI,
