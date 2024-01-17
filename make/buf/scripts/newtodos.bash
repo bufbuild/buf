@@ -18,13 +18,12 @@ TODOS="$(git diff "${BASE_BRANCH}" | awk '
 
 FILENAME=""
 while read -r line; do
-  if [[ "${line}" =~ [a-z,0-9]+.go ]]; then
+  if [[ "${line}" =~ [a-z,A-Z,0-9]+\.[a-z]{2,3}$ ]]; then
     FILENAME="${line}"
-  elif [[ "${line}" =~ PACKAGES.md ]]; then
-    # ignore the contents of PACKAGES.md
+  elif [[ "${line}" == *"make/buf/scripts/newtodos.bash"* ]]; then
     FILENAME="no print"
   else
-    if [[ "${FILENAME}" != "no print" ]]; then
+    if [[ "${FILENAME}" != "no print" ]]; then 
       LINENUMBER="${line%%:*}"
       TODO="${line#*:}"
       echo "${FILENAME}":"${LINENUMBER}":"${TODO#"${TODO%%[![:space:]]*}"}"
