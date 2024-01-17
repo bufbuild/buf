@@ -5,4 +5,4 @@ deps:
     owner: bufbuild
     repository: protovalidate
     commit: e097f827e65240ac9fd4b1158849a8fc
-    digest: shake256:f19252436fd9ded945631e2ffaaed28247a92c9015ccf55ae99db9fb3d9600c4fdb00fd2d3bd7701026ec2fd4715c5129e6ae517c25a59ba690020cfe80bf8ad
+    digest: shake256:e453d00b76e7e93b9a98f6790c5fff58a20649c9a2d559b6281c35e42443e4bb4e5d0fc40b6da99f3f692666c08dc066f0820d5bc54a41e4993a7fcf300085c3
