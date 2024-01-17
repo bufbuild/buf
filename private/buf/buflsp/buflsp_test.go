@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -41,9 +40,6 @@ import (
 )
 
 func TestBufLsp(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: Windows support")
-	}
 	t.Parallel()
 	lspServer, doc, err := newTestBufLspWith(t, "testdata/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
 	if err != nil {
