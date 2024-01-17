@@ -195,7 +195,7 @@ type workspace struct {
 	// buf.locks for.
 	//
 	// If isV2 is true, this will be []string{"."} - buf.locks live at the root of
-	// the workspacve.
+	// the workspace.
 	//
 	// If isV2 is false, this will be the target moduleDirPaths, ie. the modules to
 	// update buf.locks for. Note, however, that buf mod update and buf mod prune do
@@ -568,8 +568,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	} else {
 		switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			// TODO: re-enable once we fix tests
-			//return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
+			return nil, fmt.Errorf("got a %s buf.lock file for a v2 buf.yaml", bufLockFile.FileVersion().String())
 		case bufconfig.FileVersionV2:
 		default:
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
