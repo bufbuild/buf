@@ -30,10 +30,6 @@ import (
 	"go.lsp.dev/protocol"
 )
 
-const (
-	disableSymlinksFlagName = "disable-symlinks"
-)
-
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
@@ -54,8 +50,7 @@ func NewCommand(
 }
 
 type flags struct {
-	DisableSymlinks bool
-	Port            uint32
+	Port uint32
 }
 
 func newFlags() *flags {
@@ -63,7 +58,6 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.Uint32Var(&f.Port, "port", 0, "port to listen on")
 }
 
