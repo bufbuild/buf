@@ -50,7 +50,7 @@ var (
 	wellKnownTypesDescriptorProtoPath = normalpath.Join("google", "protobuf", "descriptor.proto")
 	// lspWellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
 	// well-known types .proto files.
-	lspWellKnownTypesCacheRelDirPath = normalpath.Join("lsp", "wkt")
+	lspWellKnownTypesCacheRelDirPath = normalpath.Join("v3", "lsp", "wkt")
 	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
 	// NOTE: This needs to be kept in sync with module_data_provider.
 	v3CacheModuleRelDirPath = normalpath.Join("v3", "modules")
