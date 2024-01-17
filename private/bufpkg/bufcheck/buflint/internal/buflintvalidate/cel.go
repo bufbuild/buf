@@ -83,19 +83,12 @@ func checkCELForField(
 	if err != nil {
 		return err
 	}
-	if fieldDescriptor.Kind() == protoreflect.MessageKind {
-		celEnv, err = celEnv.Extend(
-			cel.Types(
-				dynamicpb.NewMessage(fieldDescriptor.ContainingMessage()),
-				dynamicpb.NewMessage(fieldDescriptor.Message()),
-			),
-			cel.Variable("this", cel.ObjectType(string(fieldDescriptor.Message().FullName()))),
-		)
-	} else {
-		celEnv, err = celEnv.Extend(
-			cel.Variable("this", protoKindToCELType(fieldDescriptor.Kind())),
-		)
-	}
+	celEnv, err = celEnv.Extend(
+		append(
+			celext.RequiredCELEnvOptions(fieldDescriptor),
+			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, false)),
+		)...,
+	)
 	if err != nil {
 		return err
 	}
@@ -274,41 +267,4 @@ func parseCelIssuesText(issuesText string) []string {
 		parsedIssues = append(parsedIssues, strings.TrimSpace(parts[len(parts)-1]))
 	}
 	return parsedIssues
-}
-
-// copied directly from protovalidate-go
-func protoKindToCELType(kind protoreflect.Kind) *cel.Type {
-	switch kind {
-	case
-		protoreflect.FloatKind,
-		protoreflect.DoubleKind:
-		return cel.DoubleType
-	case
-		protoreflect.Int32Kind,
-		protoreflect.Int64Kind,
-		protoreflect.Sint32Kind,
-		protoreflect.Sint64Kind,
-		protoreflect.Sfixed32Kind,
-		protoreflect.Sfixed64Kind,
-		protoreflect.EnumKind:
-		return cel.IntType
-	case
-		protoreflect.Uint32Kind,
-		protoreflect.Uint64Kind,
-		protoreflect.Fixed32Kind,
-		protoreflect.Fixed64Kind:
-		return cel.UintType
-	case protoreflect.BoolKind:
-		return cel.BoolType
-	case protoreflect.StringKind:
-		return cel.StringType
-	case protoreflect.BytesKind:
-		return cel.BytesType
-	case
-		protoreflect.MessageKind,
-		protoreflect.GroupKind:
-		return cel.DynType
-	default:
-		return cel.DynType
-	}
 }
