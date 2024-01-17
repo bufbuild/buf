@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -248,9 +247,6 @@ func TestWorkspaceBreaking(t *testing.T) {
 }
 
 func TestWorkspaceArchiveDir(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows")
-	}
 	// Archive that defines a workspace at the root of the archive.
 	t.Parallel()
 	for _, dirPath := range []string{
@@ -302,9 +298,6 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 }
 
 func TestWorkspaceNestedArchive(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows")
-	}
 	// Archive that defines a workspace in a sub-directory to the root.
 	t.Parallel()
 	for _, dirPath := range []string{
@@ -1333,9 +1326,6 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows")
-	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1353,7 +1343,11 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 		"--path",
 		filepath.Join("proto", "notexist"),
 	)
-	zipDir = createZipFromDir(
+}
+
+func TestWorkspaceWithInvalidArchivePathFailV2(t *testing.T) {
+	// The --path flag did not reference a file found in the archive.
+	zipDir := createZipFromDir(
 		t,
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"archive.zip",
@@ -1372,9 +1366,6 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows")
-	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1397,11 +1388,17 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		"--path",
 		filepath.Join(wd, "proto", "rpc.proto"),
 	)
-	zipDir = createZipFromDir(
+}
+
+func TestWorkspaceWithInvalidArchiveAbsolutePathFailV2(t *testing.T) {
+	// The --path flag did not reference an absolute file patfound in the archive.
+	zipDir := createZipFromDir(
 		t,
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"archive.zip",
 	)
+	wd, err := osext.Getwd()
+	require.NoError(t, err)
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1419,12 +1416,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 }
 
 func createZipFromDir(t *testing.T, rootPath string, archiveName string) string {
-	zipDir := filepath.Join(os.TempDir(), rootPath)
-	t.Cleanup(
-		func() {
-			require.NoError(t, os.RemoveAll(zipDir))
-		},
-	)
+	zipDir := filepath.Join(t.TempDir(), rootPath)
 	require.NoError(t, os.MkdirAll(zipDir, 0755))
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
