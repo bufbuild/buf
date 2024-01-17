@@ -115,7 +115,7 @@ func newServer(
 	if err != nil {
 		return nil, err
 	}
-	buflsp := &server{
+	server := &server{
 		jsonrpc2Conn:            jsonrpc2Conn,
 		logger:                  logger,
 		container:               container,
@@ -128,19 +128,19 @@ func newServer(
 		wellKnownTypesResolver:  wellKnownTypesResolver,
 	}
 	go func() {
-		for event := range buflsp.fileWatcher.Events {
+		for event := range server.fileWatcher.Events {
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				buflsp.lock.Lock()
-				if entry, ok := buflsp.fileCache[event.Name]; ok {
-					if err := buflsp.refreshImage(ctx, entry.resolver); err != nil {
-						buflsp.logger.Sugar().Errorf("failed to build new image: %s", err)
+				server.lock.Lock()
+				if entry, ok := server.fileCache[event.Name]; ok {
+					if err := server.refreshImage(ctx, entry.resolver); err != nil {
+						server.logger.Sugar().Errorf("failed to build new image: %s", err)
 					}
 				}
-				buflsp.lock.Unlock()
+				server.lock.Unlock()
 			}
 		}
 	}()
-	return buflsp, nil
+	return server, nil
 }
 
 func (s *server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
