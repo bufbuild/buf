@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eo pipefail
 
 DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
 
-BUFMOD_TODOS="$(git diff main bufmod | awk '
+if [ -z "${BASE_BRANCH}" ]; then
+  BASE_BRANCH="main"
+fi
+
+TODOS="$(git diff "${BASE_BRANCH}" | awk '
   /^diff / {f="?"; next}
   f=="?" {if (/^\+\+\+ /) f=substr($0, 7)"\n"; next}
   /^@@/ {n=$3; sub(/,.*/,"",n); n=0+$3; next}
@@ -26,4 +30,4 @@ while read -r line; do
       echo "${FILENAME}": "${LINENUMBER}" "${TODO#"${TODO%%[![:space:]]*}"}"
     fi
   fi
-done <<< "${BUFMOD_TODOS}"
+done <<< "${TODOS}"
