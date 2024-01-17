@@ -454,7 +454,7 @@ func (s *server) findImport(
 		return bucket, file, nil
 	}
 	err = fmt.Errorf("could not resolve import in workspace: %w", err)
-	if errors.Is(err2, fs.ErrNotExist) {
+	if !errors.Is(err2, fs.ErrNotExist) {
 		err = fmt.Errorf("%w (additionally, an unexpected error occurred trying to resolve the import from well-known types: %v)", err, err2)
 	}
 	return nil, nil, err
