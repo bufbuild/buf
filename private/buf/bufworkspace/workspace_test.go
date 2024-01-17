@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -33,17 +32,11 @@ import (
 )
 
 func TestBasicV1(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix b5 digest issues on windows")
-	}
 	t.Parallel()
 	testBasic(t, "workspacev1")
 }
 
 func TestBasicV2(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix b5 digest issues on windows")
-	}
 	t.Parallel()
 	testBasic(t, "workspacev2")
 }
@@ -219,9 +212,6 @@ func TestProtoc(t *testing.T) {
 }
 
 func TestUnusedDep(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix b5 digest issues on windows")
-	}
 	t.Parallel()
 	ctx := context.Background()
 

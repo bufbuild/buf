@@ -2007,9 +2007,6 @@ func TestFormatSingleFile(t *testing.T) {
 }
 
 func TestFormatDiff(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows handling carriage returns")
-	}
 	t.Parallel()
 	tempDir := t.TempDir()
 	stdout := bytes.NewBuffer(nil)
