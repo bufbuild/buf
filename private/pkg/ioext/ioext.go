@@ -60,6 +60,11 @@ func CompositeWriteCloser(writer io.Writer, closer io.Closer) io.WriteCloser {
 	return compositeWriteCloser{Writer: writer, Closer: closer}
 }
 
+// CompositeReadWriteCloser returns a io.ReadWriteCloser that is a composite of the Reader, Writer, and Closer.
+func CompositeReadWriteCloser(reader io.Reader, writer io.Writer, closer io.Closer) io.ReadWriteCloser {
+	return compositeReadWriteCloser{Reader: reader, Writer: writer, Closer: closer}
+}
+
 // ChainCloser chains the closers by calling them in order.
 func ChainCloser(closers ...io.Closer) io.Closer {
 	return chainCloser{closers: closers}
@@ -115,6 +120,12 @@ type compositeReadCloser struct {
 }
 
 type compositeWriteCloser struct {
+	io.Writer
+	io.Closer
+}
+
+type compositeReadWriteCloser struct {
+	io.Reader
 	io.Writer
 	io.Closer
 }

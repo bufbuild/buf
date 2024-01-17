@@ -16,15 +16,14 @@ package lsp
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"net"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/spf13/pflag"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
@@ -39,7 +38,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Start the language server.",
-		Args:  appcmd.MaximumNArgs(1),
+		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -66,65 +65,32 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	var jstream jsonrpc2.Stream
+	var jsonrpc2Stream jsonrpc2.Stream
 	if flags.Port > 0 {
 		conn, err := net.Dial("tcp", fmt.Sprintf(":%d", flags.Port))
 		if err != nil {
 			return err
 		}
-		jstream = jsonrpc2.NewStream(conn)
+		jsonrpc2Stream = jsonrpc2.NewStream(conn)
 	} else {
-		jstream = jsonrpc2.NewStream(&readWriteCloser{
-			reader: container.Stdin(),
-			writer: container.Stdout(),
-		})
+		jsonrpc2Stream = jsonrpc2.NewStream(
+			ioext.CompositeReadWriteCloser(
+				container.Stdin(),
+				container.Stdout(),
+				ioext.NopCloser,
+			),
+		)
 	}
-	jsonrpc2Conn := jsonrpc2.NewConn(jstream)
+	jsonrpc2Conn := jsonrpc2.NewConn(jsonrpc2Stream)
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
 	}
-	server, err := buflsp.NewServer(
-		ctx,
-		jsonrpc2Conn,
-		container,
-		controller,
-	)
+	server, err := buflsp.NewServer(ctx, jsonrpc2Conn, container, controller)
 	if err != nil {
 		return err
 	}
-	jsonrpc2Conn.Go(ctx, protocol.ServerHandler(
-		server,
-		nil,
-	))
+	jsonrpc2Conn.Go(ctx, protocol.ServerHandler(server, nil))
 	<-ctx.Done()
-	return nil
-}
-
-type readWriteCloser struct {
-	reader io.Reader
-	writer io.Writer
-}
-
-func (r *readWriteCloser) Read(b []byte) (int, error) {
-	return r.reader.Read(b)
-}
-
-func (r *readWriteCloser) Write(b []byte) (int, error) {
-	return r.writer.Write(b)
-}
-
-func (r *readWriteCloser) Close() error {
-	var errs []error
-	if closer, ok := r.writer.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	if closer, ok := r.reader.(io.Closer); ok {
-		if err := closer.Close(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
+	return jsonrpc2Conn.Err()
 }
