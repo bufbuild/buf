@@ -195,7 +195,7 @@ type workspace struct {
 	// buf.locks for.
 	//
 	// If isV2 is true, this will be []string{"."} - buf.locks live at the root of
-	// the workspacve.
+	// the workspace.
 	//
 	// If isV2 is false, this will be the target moduleDirPaths, ie. the modules to
 	// update buf.locks for. Note, however, that buf mod update and buf mod prune do
