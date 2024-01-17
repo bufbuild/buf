@@ -451,7 +451,9 @@ func (*moduleSetBuilder) isModuleSetBuilder() {}
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.
 //
 // Modules that are targets are preferred, followed by Modules that are local.
-// Otherwise, Modules earlier in the slice are preferred.
+// Otherwise, Modules earlier in the slice are preferred. Note that this means that if two
+// remote non-target Modules are added for different Commit IDs, the one that was added
+// first will be preferred (ie we are not doing any dependency resolution here).
 //
 // Duplication determined based opaqueID, that is if a Module has an equal
 // opaqueID, it is considered a duplicate.

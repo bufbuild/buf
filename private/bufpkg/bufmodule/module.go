@@ -93,7 +93,7 @@ type Module interface {
 
 	// ModuleDeps returns the dependencies for this specific Module.
 	//
-	// Includes transitive dependencies. Use ModuleDep.IsDirect() to determine in a dependency is direct
+	// Includes transitive dependencies. Use ModuleDep.IsDirect() to determine if a dependency is direct
 	// or transitive.
 	//
 	// This list is pruned - only Modules that this Module actually depends on (either directly or transitively)
