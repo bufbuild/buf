@@ -27,7 +27,7 @@ while read -r line; do
     if [[ "${FILENAME}" != "no print" ]]; then
       LINENUMBER="${line%%:*}"
       TODO="${line#*:}"
-      echo "${FILENAME}": "${LINENUMBER}" "${TODO#"${TODO%%[![:space:]]*}"}"
+      echo "${FILENAME}":"${LINENUMBER}":"${TODO#"${TODO%%[![:space:]]*}"}"
     fi
   fi
 done <<< "${TODOS}"
