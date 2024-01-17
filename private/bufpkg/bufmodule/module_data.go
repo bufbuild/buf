@@ -123,11 +123,13 @@ func newModuleData(
 			var actualDigest Digest
 			switch expectedDigest.Type() {
 			case DigestTypeB4:
-				bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
+				bufYAMLObjectData, err := moduleData.getBufYAMLObjectData()
 				if err != nil {
 					return err
 				}
-				bufLockObjectData, err := moduleData.BufLockObjectData()
+				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
+				bufLockObjectData, err := moduleData.getBufLockObjectData()
 				if err != nil {
 					return err
 				}
@@ -136,6 +138,7 @@ func newModuleData(
 					return err
 				}
 			case DigestTypeB5:
+				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
 				declaredDepModuleKeys, err := moduleData.getDeclaredDepModuleKeys()
 				if err != nil {
 					return err
