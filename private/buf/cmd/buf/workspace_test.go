@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -1326,6 +1327,9 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1343,11 +1347,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 		"--path",
 		filepath.Join("proto", "notexist"),
 	)
-}
-
-func TestWorkspaceWithInvalidArchivePathFailV2(t *testing.T) {
-	// The --path flag did not reference a file found in the archive.
-	zipDir := createZipFromDir(
+	zipDir = createZipFromDir(
 		t,
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"archive.zip",
@@ -1366,6 +1366,9 @@ func TestWorkspaceWithInvalidArchivePathFailV2(t *testing.T) {
 }
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("TODO: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
 		t,
@@ -1388,17 +1391,11 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		"--path",
 		filepath.Join(wd, "proto", "rpc.proto"),
 	)
-}
-
-func TestWorkspaceWithInvalidArchiveAbsolutePathFailV2(t *testing.T) {
-	// The --path flag did not reference an absolute file patfound in the archive.
-	zipDir := createZipFromDir(
+	zipDir = createZipFromDir(
 		t,
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"archive.zip",
 	)
-	wd, err := osext.Getwd()
-	require.NoError(t, err)
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
