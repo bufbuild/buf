@@ -22,6 +22,9 @@ import (
 type CommitProvider interface {
 	// GetCommitsForModuleKeys gets the Commits for the given ModuleKeys.
 	//
+	// The input ModuleKeys are expected to have the same DigestType. The implementation
+	// may error if this is not the case.
+	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
 	GetCommitsForModuleKeys(context.Context, []ModuleKey) ([]Commit, error)
 }

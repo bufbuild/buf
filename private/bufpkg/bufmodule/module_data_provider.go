@@ -33,6 +33,9 @@ type ModuleDataProvider interface {
 	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
 	// may error if this is not the case.
 	//
+	// The input ModuleKeys are expected to have the same DigestType. The implementation
+	// may error if this is not the case.
+	//
 	// If there is no error, the length of the ModuleDatas returned will match the length of the ModuleKeyss.
 	// If there is an error, no ModuleDatas will be returned.
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.

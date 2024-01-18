@@ -337,7 +337,7 @@ func (m *migrator) addModuleDirectory(
 	}
 	m.filesToDelete[bufYAMLPath] = struct{}{}
 	// Now we read buf.lock and add its lock entries to the list of candidate lock entries
-	// for the migrated buf.lock. These lock entries are candiates because different buf.locks
+	// for the migrated buf.lock. These lock entries are candidates because different buf.locks
 	// can have lock entries for the same module but for different commits.
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
@@ -345,7 +345,7 @@ func (m *migrator) addModuleDirectory(
 		moduleDir,
 		bufconfig.BufLockFileWithDigestResolver(
 			func(ctx context.Context, remote, commitID string) (bufmodule.Digest, error) {
-				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID)
+				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID, bufmodule.DigestTypeB4)
 			},
 		),
 	)
@@ -620,6 +620,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	if err != nil {
 		return nil, nil, err
 	}
+	// TODO: We need to upgrade digests from b4 to b5, right?
 	var bufLock bufconfig.BufLockFile
 	if m.hasSeenBufLock {
 		bufLock, err = bufconfig.NewBufLockFile(

@@ -71,6 +71,15 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) (*dag.Graph[string, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[string, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+	if len(moduleKeys) == 0 {
+		return graph, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
@@ -87,7 +96,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
 	}
 	registry := registries[0]
-	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys)
+	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +109,6 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	graph := dag.NewGraph[string, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
 	for _, protoCommit := range protoGraph.Commits {
 		commitID, err := ProtoToCommitID(protoCommit.Id)
 		if err != nil {
@@ -154,6 +162,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 	ctx context.Context,
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
+	digestType bufmodule.DigestType,
 ) (*modulev1beta1.Graph, error) {
 	protoCommitIDs, err := slicesext.MapError(
 		moduleKeys,
@@ -161,6 +170,10 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 			return CommitIDToProto(moduleKey.CommitID())
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +192,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 						}
 					},
 				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+				DigestType: protoDigestType,
 			},
 		),
 	)

@@ -22,6 +22,7 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -30,8 +31,9 @@ func getProtoCommitForRegistryAndCommitID(
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitID string,
+	digestType bufmodule.DigestType,
 ) (*modulev1beta1.Commit, error) {
-	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []string{commitID})
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []string{commitID}, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +46,7 @@ func getProtoCommitsForRegistryAndCommitIDs(
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitIDs []string,
+	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.Commit, error) {
 	protoCommitIDs, err := slicesext.MapError(
 		commitIDs,
@@ -51,6 +54,10 @@ func getProtoCommitsForRegistryAndCommitIDs(
 			return CommitIDToProto(commitID)
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +76,7 @@ func getProtoCommitsForRegistryAndCommitIDs(
 						}
 					},
 				),
-				DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+				DigestType: protoDigestType,
 			},
 		),
 	)
