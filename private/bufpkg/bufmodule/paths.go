@@ -47,6 +47,17 @@ func init() {
 	docFilePathMap = slicesext.ToStructMap(orderedDocFilePaths)
 }
 
+// IsValidModuleFilePath returns true if the given file path is a valid Module file path.
+//
+// This will be true if the file path represents a .proto file, license file, or documentation file.
+//
+// Note that license and documentation files must be at the root, and cannot be in subdirectories. That is,
+// subdir/LICENSE is not a valid module file (including on push), but LICENSE is.
+func IsValidModuleFilePath(filePath string) bool {
+	_, err := classifyPathFileType(filePath)
+	return err == nil
+}
+
 func getDocFilePathForStorageReadBucket(ctx context.Context, bucket storage.ReadBucket) string {
 	for _, docFilePath := range orderedDocFilePaths {
 		if _, err := bucket.Stat(ctx, docFilePath); err == nil {
