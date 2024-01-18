@@ -29,6 +29,9 @@ type GraphProvider interface {
 	// The input ModuleKeys are expected to be unique by ModuleFullName. The implementation
 	// may error if this is not the case.
 	//
+	// The input ModuleKeys are expected to have the same DigestType. The implementation
+	// may error if this is not the case.
+	//
 	// The input ModuleKeys must all have the same registry. An error will be returned otherwise.
 	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.

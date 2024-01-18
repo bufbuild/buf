@@ -17,8 +17,11 @@ package bufmodule
 import (
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syncext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -66,6 +69,32 @@ func NewModuleKey(
 		commitID,
 		getDigest,
 	)
+}
+
+// UniqueDigestTypeForModuleKeys returns the single DigestType for the Digests on the ModuleKeys.
+//
+// If the ModuleKeys have different DigestTypes, an error is returned.
+// If the ModuleKeys slice is empty, an error is returned.
+func UniqueDigestTypeForModuleKeys(moduleKeys []ModuleKey) (DigestType, error) {
+	if len(moduleKeys) == 0 {
+		return 0, syserror.New("empty moduleKeys passed to UniqueDigestTypeForModuleKeys")
+	}
+	digests, err := slicesext.MapError(moduleKeys, ModuleKey.Digest)
+	if err != nil {
+		return 0, err
+	}
+	digestType := digests[0].Type()
+	for _, digest := range digests[1:] {
+		if digestType != digest.Type() {
+			return 0, fmt.Errorf(
+				"different digest types detected where the same digest type must be used: %v, %v\n%s",
+				digestType,
+				digest.Type(),
+				strings.Join(slicesext.Map(moduleKeys, ModuleKey.String), "\n"),
+			)
+		}
+	}
+	return digestType, nil
 }
 
 // *** PRIVATE ***

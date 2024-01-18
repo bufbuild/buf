@@ -78,6 +78,13 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleData, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
@@ -100,6 +107,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 			protoModuleProvider,
 			registry,
 			indexedModuleKeys,
+			digestType,
 		)
 		if err != nil {
 			return nil, err
@@ -115,6 +123,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	protoModuleProvider *protoModuleProvider,
 	registry string,
 	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleData], error) {
 	graph, err := a.graphProvider.GetGraphForModuleKeys(ctx, slicesext.IndexedToValues(indexedModuleKeys))
 	if err != nil {
@@ -134,6 +143,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 		protoModuleProvider,
 		registry,
 		commitIDToIndexedModuleKey,
+		digestType,
 	)
 	if err != nil {
 		return nil, err
@@ -186,6 +196,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 	protoModuleProvider *protoModuleProvider,
 	registry string,
 	commitIDToIndexedModuleKey map[string]slicesext.Indexed[bufmodule.ModuleKey],
+	digestType bufmodule.DigestType,
 ) (map[string]*modulev1beta1.DownloadResponse_Content, error) {
 	protoCommitIDs, err := slicesext.MapError(
 		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
@@ -196,7 +207,10 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 	if err != nil {
 		return nil, err
 	}
-
+	protoDigestType, err := digestTypeToProto(digestType)
+	if err != nil {
+		return nil, err
+	}
 	response, err := a.clientProvider.DownloadServiceClient(registry).Download(
 		ctx,
 		connect.NewRequest(
@@ -211,7 +225,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 									Id: protoCommitID,
 								},
 							},
-							DigestType: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+							DigestType: protoDigestType,
 						}
 					},
 				),

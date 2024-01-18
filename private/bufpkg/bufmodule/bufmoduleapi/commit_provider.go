@@ -67,6 +67,14 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.Commit, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
@@ -86,6 +94,7 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 			protoOwnerProvider,
 			registry,
 			indexedModuleKeys,
+			digestType,
 		)
 		if err != nil {
 			return nil, err
@@ -101,6 +110,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	protoOwnerProvider *protoOwnerProvider,
 	registry string,
 	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
+	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.Commit], error) {
 	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
 		indexedModuleKeys,
@@ -120,7 +130,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs)
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}

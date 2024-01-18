@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -64,6 +65,7 @@ type ModuleData struct {
 type OmniProvider interface {
 	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleDataProvider
+	bufmodule.GraphProvider
 	bufmodule.CommitProvider
 	bufmodule.ModuleSet
 }
@@ -193,6 +195,12 @@ func (o *omniProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleData, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys); err != nil {
+		return nil, err
+	}
 	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
 		return nil, err
 	}
@@ -208,6 +216,12 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.Commit, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys); err != nil {
+		return nil, err
+	}
 	commits := make([]bufmodule.Commit, len(moduleKeys))
 	for i, moduleKey := range moduleKeys {
 		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
@@ -223,6 +237,34 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 		)
 	}
 	return commits, nil
+}
+
+func (o *omniProvider) GetGraphForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) (*dag.Graph[string, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[string, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+	if len(moduleKeys) == 0 {
+		return graph, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+	modules := make([]bufmodule.Module, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+		if module == nil {
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+		}
+		modules[i] = module
+	}
+	for _, module := range modules {
+		if err := addModuleToGraphRec(module, graph, digestType); err != nil {
+			return nil, err
+		}
+	}
+	return graph, nil
 }
 
 func (o *omniProvider) getModuleDataForModuleKey(
@@ -363,6 +405,33 @@ func addModuleDataToModuleSetBuilder(
 		!moduleData.NotTargeted,
 		localModuleOptions...,
 	)
+	return nil
+}
+
+func addModuleToGraphRec(
+	module bufmodule.Module,
+	graph *dag.Graph[string, bufmodule.ModuleKey],
+	digestType bufmodule.DigestType,
+) error {
+	moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
+	if err != nil {
+		return err
+	}
+	graph.AddNode(moduleKey)
+	directModuleDeps, err := bufmodule.ModuleDirectModuleDeps(module)
+	if err != nil {
+		return err
+	}
+	for _, directModuleDep := range directModuleDeps {
+		directDepModuleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
+		if err != nil {
+			return err
+		}
+		graph.AddEdge(moduleKey, directDepModuleKey)
+		if err := addModuleToGraphRec(directModuleDep, graph, digestType); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

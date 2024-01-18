@@ -28,8 +28,9 @@ func DigestForCommitID(
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitID string,
+	digestType bufmodule.DigestType,
 ) (bufmodule.Digest, error) {
-	protoCommit, err := getProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID)
+	protoCommit, err := getProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
 	if err != nil {
 		return nil, err
 	}
