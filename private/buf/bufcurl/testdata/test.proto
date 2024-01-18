@@ -1,0 +1,84 @@
+syntax = "proto2";
+
+package foo.bar;
+
+message Message {
+  // Every kind of singular field
+  optional int32 i32 = 1;
+  optional int64 i64 = 2;
+  optional uint32 ui32 = 3;
+  optional uint64 ui64 = 4;
+  optional sint32 si32 = 5;
+  optional sint64 si64 = 6;
+  optional fixed32 f32 = 7;
+  optional fixed64 f64 = 8;
+  optional sfixed32 sf32 = 9;
+  optional sfixed64 sf64 = 10;
+  optional float fl = 11;
+  optional double dbl = 12;
+  optional bool b = 13;
+  optional string s = 14;
+  optional bytes bs = 15;
+  optional Enum en = 16;
+  optional Message msg = 17;
+  optional group Grp = 18 {
+    optional string name = 1;
+  };
+  // Every kind of repeated field
+  repeated int32 ri32 = 19;
+  repeated int64 ri64 = 20;
+  repeated uint32 rui32 = 21;
+  repeated uint64 rui64 = 22;
+  repeated sint32 rsi32 = 23;
+  repeated sint64 rsi64 = 24;
+  repeated fixed32 rf32 = 25;
+  repeated fixed64 rf64 = 26;
+  repeated sfixed32 rsf32 = 27;
+  repeated sfixed64 rsf64 = 28;
+  repeated float rfl = 29;
+  repeated double rdbl = 30;
+  repeated bool rb = 31;
+  repeated string rs = 32;
+  repeated bytes rbs = 33;
+  repeated Enum ren = 34;
+  repeated Message rmsg = 35;
+  repeated group Rgrp = 36 {
+    optional string name = 1;
+  };
+  // Every kind of map key
+  map<string, string> mks = 37;
+  map<int32, string> mki32 = 38;
+  map<int64, string> mki64 = 39;
+  map<uint32, string> mkui32 = 40;
+  map<uint64, string> mkui64 = 41;
+  map<sint32, string> mksi32 = 42;
+  map<sint64, string> mksi64 = 43;
+  map<fixed32, string> mkf32 = 44;
+  map<fixed64, string> mkf64 = 45;
+  map<sfixed32, string> mksf32 = 46;
+  map<sfixed64, string> mksf64 = 47;
+  map<bool, string> mkb = 48;
+  // Every kind of map value
+  map<string, int32> mvi32 = 51;
+  map<string, int64> mvi64 = 52;
+  map<string, uint32> mvui32 = 53;
+  map<string, uint64> mvui64 = 54;
+  map<string, sint32> mvsi32 = 55;
+  map<string, sint64> mvsi64 = 56;
+  map<string, fixed32> mvf32 = 57;
+  map<string, fixed64> mvf64 = 58;
+  map<string, sfixed32> mvsf32 = 59;
+  map<string, sfixed64> mvsf64 = 60;
+  map<string, float> mvfl = 61;
+  map<string, double> mvdbl = 62;
+  map<string, bool> mvb = 63;
+  map<string, string> mvs = 64;
+  map<string, bytes> mvbs = 65;
+  map<string, Enum> mven = 66;
+  map<string, Message> mvmsg = 67;
+}
+
+enum Enum {
+  A = 0;
+  B = 1;
+}
