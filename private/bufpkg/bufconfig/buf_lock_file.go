@@ -54,6 +54,9 @@ type BufLockFile interface {
 	//
 	// All ModuleKeys will have unique ModuleFullNames.
 	// ModuleKeys are sorted by ModuleFullName.
+	//
+	// Files with FileVersionV1Beta1 or FileVersionV1 will only have ModuleKeys with Digests of DigestTypeB4,
+	// while Files with FileVersionV2 will only have ModuleKeys with Digests of DigestTypeB5.
 	DepModuleKeys() []bufmodule.ModuleKey
 
 	isBufLockFile()
@@ -175,6 +178,18 @@ func newBufLockFile(
 ) (*bufLockFile, error) {
 	if err := validateNoDuplicateModuleKeysByModuleFullName(depModuleKeys); err != nil {
 		return nil, err
+	}
+	switch fileVersion {
+	case FileVersionV1Beta1, FileVersionV1:
+		if err := validateExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB4); err != nil {
+			return nil, err
+		}
+	case FileVersionV2:
+		if err := validateExpectedDigestType(depModuleKeys, fileVersion, bufmodule.DigestTypeB5); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
 	// To make sure we aren't editing input.
 	depModuleKeys = slicesext.Copy(depModuleKeys)
@@ -426,6 +441,29 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 		// This is a system error since we've already parsed.
 		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
+}
+
+func validateExpectedDigestType(
+	moduleKeys []bufmodule.ModuleKey,
+	fileVersion FileVersion,
+	expectedDigestType bufmodule.DigestType,
+) error {
+	for _, moduleKey := range moduleKeys {
+		digest, err := moduleKey.Digest()
+		if err != nil {
+			return err
+		}
+		if digest.Type() != expectedDigestType {
+			return fmt.Errorf(
+				"%s lock files must use digest type %v, but dep %s had a digest type of %v",
+				fileVersion,
+				expectedDigestType,
+				moduleKey.String(),
+				digest.Type(),
+			)
+		}
+	}
+	return nil
 }
 
 // externalBufLockFileV1Beta1V1 represents the v1 or v1beta1 buf.lock file,
