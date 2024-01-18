@@ -434,7 +434,7 @@ func (b *moduleReadBucket) getFileInfo(ctx context.Context, objectInfo storage.O
 }
 
 func (b *moduleReadBucket) getFileInfoUncached(ctx context.Context, objectInfo storage.ObjectInfo) (FileInfo, error) {
-	fileType, err := classifyPathFileType(objectInfo.Path())
+	fileType, err := FileTypeForPath(objectInfo.Path())
 	if err != nil {
 		// Given our matching in the constructor, all file paths should be classified.
 		// A lack of classification is a system error.
@@ -483,7 +483,7 @@ func (b *moduleReadBucket) getIsTargetFileForPathUncached(ctx context.Context, p
 	}
 	// We already validate that we don't set this alongside targetPaths and targetExcludePaths
 	if b.protoFileTargetPath != "" {
-		fileType, err := classifyPathFileType(path)
+		fileType, err := FileTypeForPath(path)
 		if err != nil {
 			return false, err
 		}
@@ -550,7 +550,7 @@ func (b *moduleReadBucket) getFastscanResultForPathUncached(
 	ctx context.Context,
 	path string,
 ) (fastscanResult fastscan.Result, retErr error) {
-	fileType, err := classifyPathFileType(path)
+	fileType, err := FileTypeForPath(path)
 	if err != nil {
 		return fastscan.Result{}, err
 	}
