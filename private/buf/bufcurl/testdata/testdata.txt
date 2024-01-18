@@ -1,0 +1,260 @@
+i32: -123
+i64: -456
+ui32: 123
+ui64: 456
+si32: -123
+si64: -456
+f32: 123
+f64: 456
+sf32: -123
+sf64: -456
+fl: 1.23
+dbl: 4.56
+b: true
+s: "abcdef"
+bs: "\x01\x02\x03\x04"
+en: A
+msg: {
+	i32: 1
+	s: "foo"
+}
+grp: {
+	name: "abc"
+}
+ri32: [-123,-123]
+ri64: [-456,-456]
+rui32: [123,123]
+rui64: [456,456]
+rsi32: [-123,-123]
+rsi64: [-456,-456]
+rf32: [123,123]
+rf64: [456,456]
+rsf32: [-123,-123]
+rsf64: [-456,-456]
+rfl: [1.23,1.23]
+rdbl: [4.56,4.56]
+rb: [true,true]
+rs: ["abcdef","ghijkl"]
+rbs: ["\x01\x02\x03\x04", "\x05\x06\x07\x08"]
+ren: [A, B]
+rmsg: [{
+	i32: 1
+	s: "foo"
+},{
+	i32: 2
+	s: "bar"
+}]
+rgrp: [{
+	name: "abc"
+},{
+	name: "def"
+}]
+mks: [{
+	key: "a"
+	value: "abc"
+},{
+	key: "b"
+	value: "def"
+}]
+mki32: [{
+	key: 123
+	value: "abc"
+},{
+	key: -123
+	value: "def"
+}]
+mki64: [{
+	key: 456
+	value: "abc"
+},{
+	key: -456
+	value: "def"
+}]
+mkui32: [{
+	key: 123
+	value: "abc"
+},{
+	key: 234
+	value: "def"
+}]
+mkui64: [{
+	key: 456
+	value: "abc"
+},{
+	key: 567
+	value: "def"
+}]
+mksi32: [{
+	key: 123
+	value: "abc"
+},{
+	key: -123
+	value: "def"
+}]
+mksi64: [{
+	key: 456
+	value: "abc"
+},{
+	key: -456
+	value: "def"
+}]
+mkf32: [{
+	key: 123
+	value: "abc"
+},{
+	key: 234
+	value: "def"
+}]
+mkf64: [{
+	key: 456
+	value: "abc"
+},{
+	key: 567
+	value: "def"
+}]
+mksf32: [{
+	key: 123
+	value: "abc"
+},{
+	key: -123
+	value: "def"
+}]
+mksf64: [{
+	key: 456
+	value: "abc"
+},{
+	key: -456
+	value: "def"
+}]
+mkb: [{
+	key: true
+	value: "abc"
+},{
+	key: false
+	value: "def"
+}]
+mvi32: [{
+	key: "a"
+	value: -123
+},{
+	key: "b"
+	value: -123
+}]
+mvi64: [{
+	key: "a"
+	value: -456
+},{
+	key: "b"
+	value: -456
+}]
+mvui32: [{
+	key: "a"
+	value: 123
+},{
+	key: "b"
+	value: 123
+}]
+mvui64: [{
+	key: "a"
+	value: 456
+},{
+	key: "b"
+	value: 456
+}]
+mvsi32: [{
+	key: "a"
+	value: -123
+},{
+	key: "b"
+	value: -123
+}]
+mvsi64: [{
+	key: "a"
+	value: -456
+},{
+	key: "b"
+	value: -456
+}]
+mvf32: [{
+	key: "a"
+	value: 123
+},{
+	key: "b"
+	value: 123
+}]
+mvf64: [{
+	key: "a"
+	value: 456
+},{
+	key: "b"
+	value: 456
+}]
+mvsf32: [{
+	key: "a"
+	value: -123
+},{
+	key: "b"
+	value: -123
+}]
+mvsf64: [{
+	key: "a"
+	value: -456
+},{
+	key: "b"
+	value: -456
+}]
+mvfl: [{
+	key: "a"
+	value: 1.23
+},{
+	key: "b"
+	value: 1.23
+}]
+mvdbl: [{
+	key: "a"
+	value: 4.56
+},{
+	key: "b"
+	value: 4.56
+}]
+mvb: [{
+	key: "a"
+	value: true
+},{
+	key: "b"
+	value: false
+}]
+mvs: [{
+	key: "a"
+	value: "abc"
+},{
+	key: "b"
+	value: "def"
+}]
+mvbs: [{
+	key: "a"
+	value: "\x01\x02\x03\x04"
+},{
+	key: "b"
+	value: "\x05\x06\x07\x08"
+}]
+mven: [{
+	key: "a"
+	value: A
+},{
+	key: "b"
+	value: B
+}]
+mvmsg: [{
+	key: "a"
+	value: {
+		i32: 1
+		s: "foo"
+	}
+},{
+	key: "b"
+	value: {
+		i32: 2
+		s: "bar"
+	}
+}]
