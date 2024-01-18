@@ -26,7 +26,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -238,10 +237,7 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 		tracing.NewTracer(container.Tracer()),
 		container,
 		bufapi.NopClientProvider,
-		bufmoduleapi.NewGraphProvider(
-			container.Logger(),
-			bufapi.NopClientProvider,
-		),
+		omniProvider,
 		omniProvider,
 		omniProvider,
 		omniProvider,
