@@ -61,7 +61,7 @@ type ModuleData struct {
 	NotTargeted bool
 }
 
-// OmniProvider is a ModuleKeyProvider, ModuleDataProvider, and ModuleSet for testing.
+// OmniProvider is a ModuleKeyProvider, ModuleDataProvider, GraphProvider, CommitProvider, and ModuleSet for testing.
 type OmniProvider interface {
 	bufmodule.ModuleKeyProvider
 	bufmodule.ModuleDataProvider
