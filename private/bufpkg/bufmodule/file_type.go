@@ -67,9 +67,14 @@ func ParseFileType(s string) (FileType, error) {
 	return c, nil
 }
 
-// *** PRIVATE ***
-
-func classifyPathFileType(path string) (FileType, error) {
+// FileType returns the FileType for the given path.
+//
+// Returns error if the path cannot be classified as a FileType, that is if it is not a
+// .proto file, license file, or documentation file.
+//
+// Note that license and documentation files must be at the root, and cannot be in subdirectories. That is,
+// subdir/LICENSE will not be classified as a FileTypeLicnese, but LICENSE will be.
+func FileTypeForPath(path string) (FileType, error) {
 	if normalpath.Ext(path) == ".proto" {
 		return FileTypeProto, nil
 	}
@@ -80,4 +85,15 @@ func classifyPathFileType(path string) (FileType, error) {
 		return FileTypeDoc, nil
 	}
 	return 0, fmt.Errorf("could not classify FileType for path %q", path)
+}
+
+// IsValidModuleFilePath returns true if the given file path is a valid Module file path.
+//
+// This will be true if the file path represents a .proto file, license file, or documentation file.
+//
+// Note that license and documentation files must be at the root, and cannot be in subdirectories. That is,
+// subdir/LICENSE is not a valid module file (including on push), but LICENSE is.
+func IsValidModuleFilePath(filePath string) bool {
+	_, err := FileTypeForPath(filePath)
+	return err == nil
 }
