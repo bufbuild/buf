@@ -28,7 +28,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2023
+LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.5.1
 # Comment out to use released buf
