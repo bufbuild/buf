@@ -572,8 +572,11 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
+	// Split the absolute path into components to get the FS root
+	absInputDirPathComponents := normalpath.Components(absInputDirPath)
+	fsRoot := absInputDirPathComponents[0]
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		string(os.PathSeparator),
+		fsRoot,
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -584,12 +587,11 @@ func getReadWriteBucketForOS(
 		ctx,
 		logger,
 		osRootBucket,
-		// This makes the path relative to the bucket.
-		absInputDirPath[1:],
+		normalpath.Join(absInputDirPathComponents[1:]...), // relative path to the FS root
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, attemptToFixOSRootBucketPathErrors(err)
+		return nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
 	// Examples:
 	//
@@ -603,10 +605,10 @@ func getReadWriteBucketForOS(
 	// terminateFileLocation: /users/alice/path/to
 	// returnMapPath: /users/alice/path/to
 	// returnSubDirPath: foo
-	// Make bucket on: os.PathSeparator + returnMapPath (since absolute)
+	// Make bucket on: FS root + returnMapPath (since absolute)
 	var bucketPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = normalpath.Join("/", mapPath)
+		bucketPath = normalpath.Join(fsRoot, mapPath)
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
@@ -673,8 +675,11 @@ func getReadBucketCloserForOSProtoFile(
 	if err != nil {
 		return nil, err
 	}
+	// Split the absolute path into components to get the FS root
+	absProtoFileDirPathComponents := normalpath.Components(absProtoFileDirPath)
+	fsRoot := absProtoFileDirPathComponents[0]
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		"/",
+		fsRoot,
 		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
@@ -687,12 +692,11 @@ func getReadBucketCloserForOSProtoFile(
 		ctx,
 		logger,
 		osRootBucket,
-		// This makes the path relative to the bucket.
-		absProtoFileDirPath[1:],
+		normalpath.Join(absProtoFileDirPathComponents[1:]...), // relative path to the FS root
 		protoFileTerminateFunc,
 	)
 	if err != nil {
-		return nil, attemptToFixOSRootBucketPathErrors(err)
+		return nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
 
 	var protoTerminateFileDirPath string
@@ -736,7 +740,7 @@ func getReadBucketCloserForOSProtoFile(
 		// We found a buf.yaml or buf.work.yaml, use that directory.
 		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
 		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			protoTerminateFileDirPath = normalpath.Join("/", mapPath)
+			protoTerminateFileDirPath = normalpath.Join(fsRoot, mapPath)
 		} else {
 			pwd, err := osext.Getwd()
 			if err != nil {
@@ -853,7 +857,7 @@ func getMapPathAndSubDirPath(
 // our attempt to fix that.
 //
 // This is going to take away other intermediate errors unfortunately.
-func attemptToFixOSRootBucketPathErrors(err error) error {
+func attemptToFixOSRootBucketPathErrors(fsRoot string, err error) error {
 	var pathError *fs.PathError
 	if errors.As(err, &pathError) {
 		pwd, err := osext.Getwd()
@@ -861,8 +865,8 @@ func attemptToFixOSRootBucketPathErrors(err error) error {
 			return err
 		}
 		pwd = normalpath.Normalize(pwd)
-		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join("/", pathError.Path), normalpath.Absolute) {
-			relPath, err := normalpath.Rel(pwd, normalpath.Join("/", pathError.Path))
+		if normalpath.EqualsOrContainsPath(pwd, normalpath.Join(fsRoot, pathError.Path), normalpath.Absolute) {
+			relPath, err := normalpath.Rel(pwd, normalpath.Join(fsRoot, pathError.Path))
 			// Just ignore if this errors and do nothing.
 			if err == nil {
 				// Making a copy just to be super-safe.
