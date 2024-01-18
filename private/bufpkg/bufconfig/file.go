@@ -19,6 +19,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -205,7 +206,8 @@ func newDecodeError(fileName string, err error) error {
 		fileName = "config file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "decode", Path: fileName, Err: err}
+	// We return a cleaned, unnormalized path in the error for clarity with user's filesystem.
+	return &fs.PathError{Op: "decode", Path: filepath.Clean(normalpath.Unnormalize(fileName)), Err: err}
 }
 
 func newEncodeError(fileName string, err error) error {
@@ -213,5 +215,6 @@ func newEncodeError(fileName string, err error) error {
 		fileName = "config file"
 	}
 	// We intercept PathErrors in buffetch to deal with fixing of paths.
-	return &fs.PathError{Op: "encode", Path: fileName, Err: err}
+	// We return a cleaned, unnormalized path in the error for clarity with user's filesystem.
+	return &fs.PathError{Op: "encode", Path: filepath.Clean(normalpath.Unnormalize(fileName)), Err: err}
 }

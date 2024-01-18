@@ -4,7 +4,7 @@
 * text=auto
 
 # Never attempt EOL conversion on files within testdata
-**/testdata/** -crlf
+**/testdata/** -text -diff
 
 **/corpus/** linguist-generated=true
 **/usage.gen.go linguist-generated=true
