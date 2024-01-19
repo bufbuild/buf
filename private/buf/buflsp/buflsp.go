@@ -16,6 +16,7 @@ package buflsp
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -597,7 +598,7 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 
 // Creates a cache path for a module key and module file path. This cache is local to the LSP.
 // The format of the cache path is:
-// <remote>/<owner>/<repository>/<commit id>/<digest>/<module file path>
+// <remote>/<owner>/<repository>/<commit id>/<digest type>/<digest>/<module file path>
 func (s *server) moduleKeyToCachePath(
 	key bufmodule.ModuleKey,
 	moduleFilePath string,
@@ -606,13 +607,15 @@ func (s *server) moduleKeyToCachePath(
 	if err != nil {
 		return "", err
 	}
+	digestHex := hex.EncodeToString(digest.Value())
 	return normalpath.Join(
 		s.moduleCachePath,
 		key.ModuleFullName().Registry(),
 		key.ModuleFullName().Owner(),
 		key.ModuleFullName().Name(),
 		key.CommitID(),
-		digest.String(),
+		digest.Type().String(),
+		digestHex,
 		moduleFilePath,
 	), nil
 }
@@ -623,11 +626,12 @@ func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string,
 	path = strings.TrimPrefix(path, s.moduleCachePath)
 	normalpath.Components(path)
 	parts := strings.Split(path, "/")
-	if len(parts) < 5 {
+	if len(parts) < 6 {
 		return nil, "", fmt.Errorf("invalid temporary file path: %s", path)
 	}
-	registry, owner, name, commitID, digest := parts[0], parts[1], parts[2], parts[3], parts[4]
-	moduleFilePath := normalpath.Join(parts[5:]...)
+	registry, owner, name, commitID := parts[0], parts[1], parts[2], parts[3]
+	digest := parts[4] + ":" + parts[5]
+	moduleFilePath := normalpath.Join(parts[6:]...)
 	moduleFullName, err := bufmodule.NewModuleFullName(registry, owner, name)
 	if err != nil {
 		return nil, "", err
@@ -659,7 +663,8 @@ func (s *server) localPathForImport(
 	if isWellKnownTypesModule {
 		return normalpath.Join(
 			s.wellKnownTypesCachePath,
-			digest.String(),
+			digest.Type().String(),
+			hex.EncodeToString(digest.Value()),
 			file.Path(),
 		), nil
 	}
