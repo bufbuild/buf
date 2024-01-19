@@ -126,9 +126,10 @@ func NewWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceBucketOption,
 ) (Workspace, error) {
-	return newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
+	return newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
 }
 
 // NewWorkspaceForModuleKey wraps the ModuleKey into a workspace, returning defaults
@@ -143,9 +144,10 @@ func NewWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (Workspace, error) {
-	return newWorkspaceForModuleKey(ctx, logger, tracer, moduleKey, graphProvider, moduleDataProvider, options...)
+	return newWorkspaceForModuleKey(ctx, logger, tracer, moduleKey, graphProvider, moduleDataProvider, commitProvider, options...)
 }
 
 // NewWorkspaceForProtoc is a specialized function that creates a new Workspace
@@ -227,6 +229,7 @@ func newWorkspaceForModuleKey(
 	moduleKey bufmodule.ModuleKey,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceModuleKeyOption,
 ) (*workspace, error) {
 	config, err := newWorkspaceModuleKeyConfig(options)
@@ -280,7 +283,7 @@ func newWorkspaceForModuleKey(
 			}
 		}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 	// Add the input ModuleKey with path filters.
 	moduleSetBuilder.AddRemoteModule(
 		moduleKey,
@@ -366,7 +369,7 @@ func newWorkspaceForProtoc(
 		return nil, err
 	}
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		storage.MultiReadBucket(rootBuckets...),
 		".",
@@ -400,6 +403,7 @@ func newWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceBucketOption,
 ) (_ *workspace, retErr error) {
 	ctx, span := tracer.Start(ctx, tracing.WithErr(&retErr))
@@ -427,6 +431,7 @@ func newWorkspaceForBucket(
 				bucket,
 				clientProvider,
 				moduleDataProvider,
+				commitProvider,
 				config,
 				[]string{config.targetSubDirPath},
 				overrideBufYAMLFile,
@@ -438,6 +443,7 @@ func newWorkspaceForBucket(
 				logger,
 				storage.MapReadBucket(bucket, storage.MapOnPrefix(config.targetSubDirPath)),
 				moduleDataProvider,
+				commitProvider,
 				config,
 				overrideBufYAMLFile,
 			)
@@ -468,6 +474,7 @@ func newWorkspaceForBucket(
 				bucket,
 				clientProvider,
 				moduleDataProvider,
+				commitProvider,
 				config,
 				bufWorkYAMLDirPaths,
 				nil,
@@ -483,6 +490,7 @@ func newWorkspaceForBucket(
 			logger,
 			bucket,
 			moduleDataProvider,
+			commitProvider,
 			config,
 			nil,
 		)
@@ -500,6 +508,7 @@ func newWorkspaceForBucket(
 		bucket,
 		clientProvider,
 		moduleDataProvider,
+		commitProvider,
 		config,
 		[]string{config.targetSubDirPath},
 		nil,
@@ -511,6 +520,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	config *workspaceBucketConfig,
 	// This can be nil, this is only set if config.configOverride was set, which we
 	// deal with outside of this function.
@@ -547,7 +557,7 @@ func newWorkspaceForBucketBufYAMLV2(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 
 	// TODO: We need to handle when this is nil and still continue to calculate b4s.
 	// We need some way to say "no, we really did try to set the object data, but it wasn't there,
@@ -670,6 +680,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	bucket storage.ReadBucket,
 	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	config *workspaceBucketConfig,
 	moduleDirPaths []string,
 	// This can be nil, this is only set if config.configOverride was set, which we
@@ -686,7 +697,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We use this to detect different refs across different files.
 	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)

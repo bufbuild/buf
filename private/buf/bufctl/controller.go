@@ -753,6 +753,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		readBucketCloser,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -794,6 +795,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		readBucketCloser,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -832,6 +834,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		readWriteBucket,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
 		),
@@ -861,6 +864,7 @@ func (c *controller) getWorkspaceForModuleRef(
 		moduleKey,
 		c.graphProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,

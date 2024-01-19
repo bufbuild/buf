@@ -111,8 +111,9 @@ func NewModuleSetBuilder(
 	ctx context.Context,
 	logger *zap.Logger,
 	moduleDataProvider ModuleDataProvider,
+	commitProvider CommitProvider,
 ) ModuleSetBuilder {
-	return newModuleSetBuilder(ctx, logger, moduleDataProvider)
+	return newModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 }
 
 // LocalModuleOption is an option for AddLocalModule.
@@ -220,6 +221,7 @@ type moduleSetBuilder struct {
 	ctx                context.Context
 	logger             *zap.Logger
 	moduleDataProvider ModuleDataProvider
+	commitProvider     CommitProvider
 
 	addedModules []*addedModule
 	errs         []error
@@ -230,11 +232,13 @@ func newModuleSetBuilder(
 	ctx context.Context,
 	logger *zap.Logger,
 	moduleDataProvider ModuleDataProvider,
+	commitProvider CommitProvider,
 ) *moduleSetBuilder {
 	return &moduleSetBuilder{
 		ctx:                ctx,
 		logger:             logger,
 		moduleDataProvider: moduleDataProvider,
+		commitProvider:     commitProvider,
 	}
 }
 

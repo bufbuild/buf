@@ -68,6 +68,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		bucket,
 		bufapi.NopClientProvider,
 		bsrProvider,
+		bsrProvider,
 		WithTargetSubDirPath(
 			"finance/portfolio/proto",
 		),
@@ -145,6 +146,7 @@ func testBasic(t *testing.T, subDirPath string) {
 		tracing.NopTracer,
 		bucket,
 		bufapi.NopClientProvider,
+		bsrProvider,
 		bsrProvider,
 		WithTargetSubDirPath(
 			"common/money/proto",
@@ -238,6 +240,7 @@ func TestUnusedDep(t *testing.T) {
 		tracing.NopTracer,
 		bucket,
 		bufapi.NopClientProvider,
+		bsrProvider,
 		bsrProvider,
 	)
 	require.NoError(t, err)

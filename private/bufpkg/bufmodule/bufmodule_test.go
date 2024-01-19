@@ -85,7 +85,7 @@ func TestBasic(t *testing.T) {
 	// This is the ModuleSetBuilder that will build the modules that we are going to test.
 	// This is replicating how a workspace would be built from remote dependencies and
 	// local sources.
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bsrProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bsrProvider, bsrProvider)
 
 	// First, we add the remote dependences (adding order doesn't matter).
 	//
@@ -327,7 +327,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 		},
 	)
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
@@ -353,7 +353,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",
@@ -383,7 +383,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto with package files
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",

@@ -51,9 +51,10 @@ func NewUpdateableWorkspaceForBucket(
 	bucket storage.ReadWriteBucket,
 	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceBucketOption,
 ) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
+	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
 }
 
 // *** PRIVATE ***
@@ -71,9 +72,10 @@ func newUpdateableWorkspaceForBucket(
 	bucket storage.ReadWriteBucket,
 	clientProvider bufapi.ClientProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
+	commitProvider bufmodule.CommitProvider,
 	options ...WorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
-	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, options...)
+	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
 	if err != nil {
 		return nil, err
 	}

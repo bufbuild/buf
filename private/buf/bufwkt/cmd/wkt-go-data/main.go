@@ -153,6 +153,7 @@ func getProtosourceFiles(
 		ctx,
 		container.Logger(),
 		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
 	).AddLocalModule(
 		bucket,
 		".",
