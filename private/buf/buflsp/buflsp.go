@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -390,7 +390,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 				}
 
 				// Create the file.
-				if err := os.MkdirAll(path.Dir(localPath), 0755); err != nil {
+				if err := os.MkdirAll(filepath.Dir(localPath), 0755); err != nil {
 					return nil, err
 				}
 				tmpFile, err := os.OpenFile(localPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0444)
