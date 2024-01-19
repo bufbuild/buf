@@ -51,12 +51,8 @@ var (
 	// lspWellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
 	// well-known types .proto files.
 	lspWellKnownTypesCacheRelDirPath = normalpath.Join("v3", "lsp", "wkt")
-	// v3CacheModuleRelDirPath is the relative path to the cache directory in its newest iteration.
-	// NOTE: This needs to be kept in sync with module_data_provider.
-	v3CacheModuleRelDirPath = normalpath.Join("v3", "modules")
-	// v3CacheExternalModuleDataFilesDir is the subdirectory within a module commit's cache
-	// directory where its external data (e.g. proto files) is stored.
-	v3CacheExternalModuleDataFilesDir = "files"
+	// lspModuleCacheRelDirPath is the relative path to the cache directory in its newest iteration.
+	lspModuleCacheRelDirPath = normalpath.Join("v3", "lsp", "modules")
 )
 
 // NewServer returns a new LSP server for the jsonrpc connection.
@@ -84,6 +80,9 @@ type server struct {
 	fileWatcher             *fsnotify.Watcher
 	wellKnownTypesModuleSet bufmodule.ModuleSet
 	wellKnownTypesResolver  moduleSetResolver
+
+	wellKnownTypesCachePath string
+	moduleCachePath         string
 
 	folders   []protocol.WorkspaceFolder
 	clientCap protocol.ClientCapabilities
@@ -116,6 +115,14 @@ func newServer(
 	if err != nil {
 		return nil, err
 	}
+	wellKnownTypesCachePath := normalpath.Join(
+		container.CacheDirPath(),
+		lspWellKnownTypesCacheRelDirPath,
+	)
+	moduleCachePath := normalpath.Join(
+		container.CacheDirPath(),
+		lspModuleCacheRelDirPath,
+	)
 	server := &server{
 		jsonrpc2Conn:            jsonrpc2Conn,
 		logger:                  logger,
@@ -127,6 +134,8 @@ func newServer(
 		fileWatcher:             watcher,
 		wellKnownTypesModuleSet: wellKnownTypesModuleSet,
 		wellKnownTypesResolver:  wellKnownTypesResolver,
+		wellKnownTypesCachePath: wellKnownTypesCachePath,
+		moduleCachePath:         moduleCachePath,
 	}
 	go func() {
 		for event := range server.fileWatcher.Events {
@@ -191,7 +200,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	filename := params.TextDocument.URI.Filename()
+	filename := normalpath.Normalize(params.TextDocument.URI.Filename())
 
 	// Check if it is already open.
 	if entry, ok := s.fileCache[filename]; ok {
@@ -202,12 +211,19 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		return nil
 	}
 	var resolver moduleSetResolver
-	wellKnownTypesCachePath := normalpath.Join(
-		s.container.CacheDirPath(),
-		lspWellKnownTypesCacheRelDirPath,
-	)
-	if strings.HasPrefix(normalpath.Normalize(filename), wellKnownTypesCachePath) {
+	if strings.HasPrefix(filename, s.wellKnownTypesCachePath) {
 		resolver = s.wellKnownTypesResolver
+	} else if strings.HasPrefix(filename, s.moduleCachePath) {
+		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
+			// Normally, this case won't occur, because the file will already be in the cache.
+			// This case occurs mainly when the LSP is started and a cache file is already open.
+			// We need to recover the module key from the filename in this case.
+			key, _, err := s.cachePathToModuleKey(filename)
+			if err != nil {
+				return nil, err
+			}
+			return s.controller.GetWorkspace(ctx, key.String())
+		})
 	} else {
 		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
 			workspace, err := s.controller.GetWorkspace(ctx, filename)
@@ -507,13 +523,14 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 
 // Create a new file entry with the given contents and metadata.
 func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
-	entry := newFileEntry(&item, resolver, item.URI.Filename(), strings.HasPrefix(item.URI.Filename(), s.container.CacheDirPath()))
-	s.fileCache[item.URI.Filename()] = entry
+	filename := item.URI.Filename()
+	entry := newFileEntry(&item, resolver, filename, strings.HasPrefix(filename, s.container.CacheDirPath()))
+	s.fileCache[filename] = entry
 	if err := entry.processText(ctx, s); err != nil {
 		return nil, err
 	}
 	if !entry.isRemote {
-		if err := s.fileWatcher.Add(item.URI.Filename()); err != nil {
+		if err := s.fileWatcher.Add(filename); err != nil {
 			return nil, err
 		}
 	}
@@ -538,6 +555,9 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 	if err != nil {
 		return err
 	}
+	// TODO: diagsByFile is flawed; it maps on ExternalPath, which may or may not be meaningful.
+	// The LSP should probably instead map OS paths to modules on its own and use this to tie files
+	// to diagnostics and etc.
 	diagsByFile := make(map[string][]protocol.Diagnostic)
 	image, err := bufimage.BuildImage(ctx, tracing.NewTracer(s.container.Tracer()), bucket)
 	if err != nil {
@@ -575,41 +595,85 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 	return nil
 }
 
+// Creates a cache path for a module key and module file path. This cache is local to the LSP.
+// The format of the cache path is:
+// <remote>/<owner>/<repository>/<commit id>/<digest>/<module file path>
+func (s *server) moduleKeyToCachePath(
+	key bufmodule.ModuleKey,
+	moduleFilePath string,
+) (string, error) {
+	digest, err := key.Digest()
+	if err != nil {
+		return "", err
+	}
+	return normalpath.Join(
+		s.moduleCachePath,
+		key.ModuleFullName().Registry(),
+		key.ModuleFullName().Owner(),
+		key.ModuleFullName().Name(),
+		key.CommitID(),
+		digest.String(),
+		moduleFilePath,
+	), nil
+}
+
+// Parses a module key out of the cache path. This is the inverse of moduleKeyToCachePath.
+// Returns both the module key and the module file path that the cache path represents.
+func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string, error) {
+	path = strings.TrimPrefix(path, s.moduleCachePath)
+	normalpath.Components(path)
+	parts := strings.Split(path, "/")
+	if len(parts) < 5 {
+		return nil, "", fmt.Errorf("invalid temporary file path: %s", path)
+	}
+	registry, owner, name, commitID, digest := parts[0], parts[1], parts[2], parts[3], parts[4]
+	moduleFilePath := normalpath.Join(parts[5:]...)
+	moduleFullName, err := bufmodule.NewModuleFullName(registry, owner, name)
+	if err != nil {
+		return nil, "", err
+	}
+	key, err := bufmodule.NewModuleKey(moduleFullName, commitID, func() (bufmodule.Digest, error) {
+		return bufmodule.ParseDigest(digest)
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	return key, moduleFilePath, nil
+}
+
 // localPathForImport determines the local path on-disk that corresponds to the import path.
-// Note that this is merely a hueristic and not applicable in all scenarios. It is only intended
-// to be used in the LSP code.
 func (s *server) localPathForImport(
 	ctx context.Context,
 	bucket bufmodule.ModuleReadBucket,
 	file bufmodule.File,
 ) (string, error) {
 	module := file.Module()
-	if module.ModuleSet() == s.wellKnownTypesModuleSet {
-		digest, err := file.Module().Digest(bufmodule.DigestTypeB5)
-		if err != nil {
-			return "", err
-		}
-		return normalpath.Join(s.container.CacheDirPath(), lspWellKnownTypesCacheRelDirPath, digest.String(), file.Path()), nil
-	}
-	if module.IsLocal() {
+	isWellKnownTypesModule := module.ModuleSet() == s.wellKnownTypesModuleSet
+	if !isWellKnownTypesModule && module.IsLocal() {
 		return file.ExternalPath(), nil
+	}
+	digest, err := module.Digest(bufmodule.DigestTypeB5)
+	if err != nil {
+		return "", err
+	}
+	if isWellKnownTypesModule {
+		return normalpath.Join(
+			s.wellKnownTypesCachePath,
+			digest.String(),
+			file.Path(),
+		), nil
 	}
 	moduleFullName := module.ModuleFullName()
 	if moduleFullName == nil {
 		return "", syserror.Newf("remote module %q had nil ModuleFullName", module.OpaqueID())
 	}
-	return normalpath.Unnormalize(
-		normalpath.Join(
-			s.container.CacheDirPath(),
-			v3CacheModuleRelDirPath,
-			moduleFullName.Registry(),
-			moduleFullName.Owner(),
-			moduleFullName.Name(),
-			module.CommitID(),
-			v3CacheExternalModuleDataFilesDir,
-			file.Path(),
-		),
-	), nil
+	key, err := bufmodule.NewModuleKey(module.ModuleFullName(), module.CommitID(), func() (bufmodule.Digest, error) {
+		return digest, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return s.moduleKeyToCachePath(key, file.Path())
 }
 
 func (s *server) decrementReferenceCount(entry *fileEntry) {
