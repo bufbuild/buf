@@ -231,8 +231,9 @@ func (r *reader) getArchiveBucket(
 			ctx,
 			readCloser,
 			readWriteBucket,
-			nil,
-			archiveRef.StripComponents(),
+			storagearchive.UntarWithStripComponentCount(
+				archiveRef.StripComponents(),
+			),
 		); err != nil {
 			return nil, err
 		}
@@ -256,8 +257,9 @@ func (r *reader) getArchiveBucket(
 			readerAt,
 			size,
 			readWriteBucket,
-			nil,
-			archiveRef.StripComponents(),
+			storagearchive.UnzipWithStripComponentCount(
+				archiveRef.StripComponents(),
+			),
 		); err != nil {
 			return nil, err
 		}

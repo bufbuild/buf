@@ -126,7 +126,6 @@ func (a *archiveReader) GetArchive(
 		ctx,
 		gzipReader,
 		readWriteBucket,
-		nil,
-		1,
+		storagearchive.UntarWithStripComponentCount(1),
 	)
 }

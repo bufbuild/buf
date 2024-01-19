@@ -391,8 +391,6 @@ func (p *moduleDataStore) getReadBucketForTar(
 		ctx,
 		readObjectCloser,
 		readWriteBucket,
-		nil,
-		0,
 	); err != nil {
 		return nil, err
 	}

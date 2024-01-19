@@ -429,8 +429,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
 		actualReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	bufData, err := os.ReadFile(bufProtocFile)
@@ -441,8 +439,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
 		bufReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
