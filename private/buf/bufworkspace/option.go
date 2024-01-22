@@ -221,7 +221,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 					// We clean and unnormalize the target paths to show in the error message
 					unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
 					unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
-					return nil, fmt.Errorf("excluded path %q contains targeted path %q, which means all paths in %q will be excluded", unnormalizedTargetExcludePath, unnormalizedTargetPath, unnormalizedTargetPath)
+					return nil, fmt.Errorf(`excluded path "%s" contains targeted path "%s", which means all paths in "%s" will be excluded`, unnormalizedTargetExcludePath, unnormalizedTargetPath, unnormalizedTargetPath)
 				}
 			}
 		}
