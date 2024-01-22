@@ -10,8 +10,8 @@ github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migc
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/antlr4-go/antlr/v4 v4.13.0 h1:lxCg3LAv+EUK6t1i0y1V6/SLeUi0eKEKdhQAlS8TVTI=
 github.com/antlr4-go/antlr/v4 v4.13.0/go.mod h1:pfChB/xh/Unjila75QW7+VU4TSnWnnk9UTnmpPaOR2g=
-github.com/bufbuild/protocompile v0.7.1 h1:Kd8fb6EshOHXNNRtYAmLAwy/PotlyFoN0iMbuwGNh0M=
-github.com/bufbuild/protocompile v0.7.1/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
+github.com/bufbuild/protocompile v0.8.0 h1:9Kp1q6OkS9L4nM3FYbr8vlJnEwtbpDPQlQOVXfR+78s=
+github.com/bufbuild/protocompile v0.8.0/go.mod h1:+Etjg4guZoAqzVk2czwEQP12yaxLJ8DxuqCJ9qHdH94=
 github.com/bufbuild/protovalidate-go v0.5.0 h1:xFery2RlLh07FQTvB7hlasKqPrDK2ug+uw6DUiuadjo=
 github.com/bufbuild/protovalidate-go v0.5.0/go.mod h1:3XAwFeJ2x9sXyPLgkxufH9sts1tQRk8fdt1AW93NiUU=
 github.com/bufbuild/protoyaml-go v0.1.7 h1:3uKIoNb/l5zrZ93u+Xzsg6cdAO06lveZE/K7UUbUQLw=
