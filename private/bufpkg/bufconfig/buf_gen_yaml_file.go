@@ -537,6 +537,7 @@ type externalInputConfigV2 struct {
 	BinaryImage *string `json:"binary_image,omitempty" yaml:"binary_image,omitempty"`
 	JSONImage   *string `json:"json_image,omitempty" yaml:"json_image,omitempty"`
 	TextImage   *string `json:"text_image,omitempty" yaml:"text_image,omitempty"`
+	YAMLImage   *string `json:"yaml_image,omitempty" yaml:"yaml_image,omitempty"`
 	GitRepo     *string `json:"git_repo,omitempty" yaml:"git_repo,omitempty"`
 	// Types, TargetPaths and ExcludePaths are available for all formats.
 	Types        []string `json:"types,omitempty" yaml:"types,omitempty"`

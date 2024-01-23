@@ -52,13 +52,6 @@ include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
 
-CMD ?= test
-.PHONY: testbufnew
-testbufnew: installbuf
-	# TODO: remove when done with refactor
-	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
-	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/command\/format)
-
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
 .PHONY: bufstyle
