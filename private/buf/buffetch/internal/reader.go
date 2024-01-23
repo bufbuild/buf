@@ -750,7 +750,6 @@ func getReadBucketCloserForOSProtoFile(
 			if err != nil {
 				return nil, err
 			}
-			pwd = normalpath.Normalize(pwd)
 			protoTerminateFileDirPath, err = normalpath.Rel(
 				// Deleting leading os.PathSeparator so we can make mapPath relative.
 				normalpath.Normalize(normalpath.Join(normalpath.Components(pwd)[1:]...)),
