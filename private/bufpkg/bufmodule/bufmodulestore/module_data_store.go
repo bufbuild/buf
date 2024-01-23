@@ -308,7 +308,6 @@ func (p *moduleDataStore) putModuleData(
 		}
 	}
 
-	// TODO: We probably do *not* want to use buf.lock files for the cache. This is hard-tying
 	filesBucket, err := moduleData.Bucket()
 	if err != nil {
 		return err

@@ -21,8 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-// TODO: All the module_bucket_builder_test.go stuff needs to be copied over
-
 type moduleTargeting struct {
 	// Whether this module is really a target module.
 	//

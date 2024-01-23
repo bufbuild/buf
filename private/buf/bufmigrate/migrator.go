@@ -777,7 +777,7 @@ func getCommitIDToCommit(
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Id{
-								// TODO: is this in the correct dashless/dashful form?
+								// TODO: is this in the correct dashless/dashful form? Answer: no
 								Id: moduleKey.CommitID(),
 							},
 						},
