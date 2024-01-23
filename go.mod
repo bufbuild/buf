@@ -13,7 +13,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0
-	github.com/google/cel-go v0.18.2
+	github.com/google/cel-go v0.19.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.18.0
 	github.com/jdx/go-netrc v1.0.0
