@@ -2,7 +2,6 @@
 - update buf generate help documentation
 - make buf migrate do auto-search
 - Dependency resolution
-- Validate that v2 buf.locks only deal in b5 digests, v1 buf.locks only deal in b4 digests
 
 - lots of QA, especially around workspace file searching, target paths
 - document behavior of file searching, config override

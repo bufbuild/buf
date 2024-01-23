@@ -35,7 +35,7 @@ type WorkspaceBucketOption interface {
 // modules being selected, so will "foo", but "foo/bar" will result in only
 // the foo/bar module.
 //
-// A TargetubDirPath of "." is equivalent of not setting this option.
+// A TargetSubDirPath of "." is equivalent of not setting this option.
 func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketOption {
 	return &workspaceTargetSubDirPathOption{
 		targetSubDirPath: targetSubDirPath,
