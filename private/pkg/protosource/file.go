@@ -638,9 +638,6 @@ func (f *file) populateMessage(
 			getMessageExtensionPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
-		if err != nil {
-			return nil, err
-		}
 		message.addExtension(field)
 		if oneof != nil {
 			oneof.addField(field)
