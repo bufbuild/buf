@@ -585,11 +585,17 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
+	var inputSubDirPath string
+	if len(absInputDirPathComponents) > 1 {
+		// The first component is the FS root, so we check this is safe and join
+		// the rest of the components for the relative input subdir path.
+		inputSubDirPath = normalpath.Join(absInputDirPathComponents[1:]...)
+	}
 	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(
 		ctx,
 		logger,
 		osRootBucket,
-		normalpath.Join(absInputDirPathComponents[1:]...), // relative path to the FS root
+		inputSubDirPath,
 		terminateFunc,
 	)
 	if err != nil {
@@ -616,9 +622,17 @@ func getReadWriteBucketForOS(
 		if err != nil {
 			return nil, err
 		}
-		pwd = normalpath.Normalize(pwd)
-		// Deleting leading os.PathSeparator so we can make mapPath relative.
-		bucketPath, err = normalpath.Rel(pwd[1:], mapPath)
+		// Removing the root so we can make mapPath relative.
+		// We are using normalpath.Components to split the path and remove the root (first component).
+		// The length of the root may vary depending on the OS and file path type (e.g. Windows paths),
+		// but normalpath.Components takes care of that.
+		pwdComponents := normalpath.Components(pwd)
+		if len(pwdComponents) > 1 {
+			pwd = normalpath.Normalize(normalpath.Join(pwdComponents[1:]...))
+		} else {
+			pwd = ""
+		}
+		bucketPath, err = normalpath.Rel(pwd, mapPath)
 		if err != nil {
 			return nil, err
 		}
@@ -688,13 +702,19 @@ func getReadBucketCloserForOSProtoFile(
 	if err != nil {
 		return nil, err
 	}
+	var inputSubDirPath string
+	if len(absProtoFileDirPathComponents) > 1 {
+		// The first component is the FS root, so we check this is safe and join
+		// the rest of the components for the relative input subdir path.
+		inputSubDirPath = normalpath.Join(absProtoFileDirPathComponents[1:]...)
+	}
 	// mapPath is the path to the bucket that contains a buf.yaml.
 	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
 	mapPath, _, terminate, err := getMapPathAndSubDirPath(
 		ctx,
 		logger,
 		osRootBucket,
-		normalpath.Join(absProtoFileDirPathComponents[1:]...), // relative path to the FS root
+		inputSubDirPath,
 		protoFileTerminateFunc,
 	)
 	if err != nil {
@@ -748,9 +768,17 @@ func getReadBucketCloserForOSProtoFile(
 			if err != nil {
 				return nil, err
 			}
-			pwd = normalpath.Normalize(pwd)
-			// Deleting leading os.PathSeparator so we can make mapPath relative.
-			protoTerminateFileDirPath, err = normalpath.Rel(pwd[1:], mapPath)
+			// Removing the root so we can make mapPath relative.
+			// We are using normalpath.Components to split the path and remove the root (first component).
+			// The length of the root may vary depending on the OS and file path type (e.g. Windows paths),
+			// but normalpath.Components takes care of that.
+			pwdComponents := normalpath.Components(pwd)
+			if len(pwdComponents) > 1 {
+				pwd = normalpath.Normalize(normalpath.Join(pwdComponents[1:]...))
+			} else {
+				pwd = ""
+			}
+			protoTerminateFileDirPath, err = normalpath.Rel(pwd, mapPath)
 			if err != nil {
 				return nil, err
 			}
