@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 )
 
 // Upload uploads the given ModuleSet.
@@ -106,25 +107,21 @@ func Upload(
 				if !ok {
 					return nil, syserror.Newf("no Module found for OpaqueID %q", moduleDep.OpaqueID())
 				}
-				var depProtoCommitID string
+				var depCommitID uuid.UUID
 				// TODO: This should probably just become !moduleDep.IsLocal()!!!!
 				if !moduleDep.IsTarget() {
-					depCommitID := moduleDep.CommitID()
-					if depCommitID == "" {
+					depCommitID = moduleDep.CommitID()
+					if depCommitID.IsNil() {
 						// TODO: THIS IS A MAJOR TODO. We might NOT have commit IDs for other modules
 						// in the workspace. In this case, we need to add their data to the upload.
 						return nil, fmt.Errorf("did not have a commit ID for a non-target module dependency %q", moduleDep.OpaqueID())
-					}
-					depProtoCommitID, err = CommitIDToProto(depCommitID)
-					if err != nil {
-						return nil, err
 					}
 				}
 				protoDepRefs = append(
 					protoDepRefs,
 					&modulev1beta1.UploadRequest_DepRef{
 						ModuleRef: depProtoModuleRef,
-						CommitId:  depProtoCommitID,
+						CommitId:  depCommitID.String(),
 					},
 				)
 			}
@@ -166,7 +163,7 @@ func Upload(
 	commits := make([]bufmodule.Commit, len(response.Msg.Commits))
 	for i, protoCommit := range response.Msg.Commits {
 		targetModule := targetModules[i]
-		commitID, err := ProtoToCommitID(protoCommit.Id)
+		commitID, err := uuid.FromString(protoCommit.Id)
 		if err != nil {
 			return nil, err
 		}

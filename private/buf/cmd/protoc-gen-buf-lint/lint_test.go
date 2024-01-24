@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -331,7 +332,7 @@ func testBuildCodeGeneratorRequest(
 		imageFile, err := bufimage.NewImageFile(
 			fileDescriptorProto,
 			nil,
-			"",
+			uuid.Nil,
 			"",
 			!isNotImport,
 			false,

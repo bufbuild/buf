@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/gofrs/uuid/v5"
 )
 
 // DigestForCommitID resolves the commit ID by calling the CommitService to get
@@ -27,7 +28,7 @@ func DigestForCommitID(
 	ctx context.Context,
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
-	commitID string,
+	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (bufmodule.Digest, error) {
 	protoCommit, err := getProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)

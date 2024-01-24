@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 var (
@@ -49,28 +48,6 @@ func ParseModuleVisibility(s string) (modulev1beta1.ModuleVisibility, error) {
 	default:
 		return 0, fmt.Errorf("unknown visibility: %q", s)
 	}
-}
-
-// CommitIDToProto converts the CommitID to a BSR Commit ID.
-//
-// This just takes a dashless UUID and converts it to a dashful UUID.
-func CommitIDToProto(commitID string) (string, error) {
-	protoCommitID, err := uuidutil.FromDashless(commitID)
-	if err != nil {
-		return "", fmt.Errorf("invalid commit ID %s: %w", commitID, err)
-	}
-	return protoCommitID.String(), nil
-}
-
-// ProtoToCommitID converts the BSR Commit ID to a CommitID.
-//
-// This just takes a dashless UUID and converts it to a dashful UUID.
-func ProtoToCommitID(protoCommitID string) (string, error) {
-	id, err := uuidutil.FromString(protoCommitID)
-	if err != nil {
-		return "", fmt.Errorf("invalid BSR commit ID %s: %w", protoCommitID, err)
-	}
-	return uuidutil.ToDashless(id)
 }
 
 // DigestToProto converts the given Digest to a proto Digest.

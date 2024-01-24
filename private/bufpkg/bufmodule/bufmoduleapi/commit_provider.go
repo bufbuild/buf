@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -114,30 +115,22 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 ) ([]slicesext.Indexed[bufmodule.Commit], error) {
 	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
 		indexedModuleKeys,
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (string, error) {
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
 			return indexedModuleKey.Value.CommitID(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	protoCommitIDs, err := slicesext.MapError(
-		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
-		func(commitID string) (string, error) {
-			return CommitIDToProto(commitID)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, protoCommitIDs, digestType)
+	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
 	}
 	return slicesext.MapError(
 		protoCommits,
 		func(protoCommit *modulev1beta1.Commit) (slicesext.Indexed[bufmodule.Commit], error) {
-			commitID, err := ProtoToCommitID(protoCommit.Id)
+			commitID, err := uuid.FromString(protoCommit.Id)
 			if err != nil {
 				return slicesext.Indexed[bufmodule.Commit]{}, err
 			}

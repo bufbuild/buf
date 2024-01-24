@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 )
 
 // ModuleKey provides identifying information for a Module.
@@ -39,11 +40,10 @@ type ModuleKey interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the ID of the Commit.
 	//
-	// A CommitID is always a dashless UUID.
-	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
+	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
 	//
-	// Always present.
-	CommitID() string
+	// Always present, that is CommitID().IsNil() will always be false.
+	CommitID() uuid.UUID
 	// Digest returns the Module digest.
 	//
 	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
@@ -61,7 +61,7 @@ type ModuleKey interface {
 // the returned error.
 func NewModuleKey(
 	moduleFullName ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (ModuleKey, error) {
 	return newModuleKey(
@@ -101,24 +101,21 @@ func UniqueDigestTypeForModuleKeys(moduleKeys []ModuleKey) (DigestType, error) {
 
 type moduleKey struct {
 	moduleFullName ModuleFullName
-	commitID       string
+	commitID       uuid.UUID
 
 	getDigest func() (Digest, error)
 }
 
 func newModuleKey(
 	moduleFullName ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	getDigest func() (Digest, error),
 ) (*moduleKey, error) {
 	if moduleFullName == nil {
 		return nil, errors.New("nil ModuleFullName when constructing ModuleKey")
 	}
-	if commitID == "" {
+	if commitID.IsNil() {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
-	}
-	if err := validateCommitID(commitID); err != nil {
-		return nil, err
 	}
 	return &moduleKey{
 		moduleFullName: moduleFullName,
@@ -131,7 +128,7 @@ func (m *moduleKey) ModuleFullName() ModuleFullName {
 	return m.moduleFullName
 }
 
-func (m *moduleKey) CommitID() string {
+func (m *moduleKey) CommitID() uuid.UUID {
 	return m.commitID
 }
 
@@ -140,7 +137,7 @@ func (m *moduleKey) Digest() (Digest, error) {
 }
 
 func (m *moduleKey) String() string {
-	return m.moduleFullName.String() + ":" + m.commitID
+	return m.moduleFullName.String() + ":" + m.commitID.String()
 }
 
 func (*moduleKey) isModuleKey() {}

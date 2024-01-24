@@ -5,6 +5,8 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	private/buf/bufwkt/cmd/wkt-go-data \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
 	private/bufpkg/bufstyle/cmd/bufstyle \

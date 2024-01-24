@@ -12,23 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulestore
+// Generated. DO NOT EDIT.
 
-import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"go.uber.org/zap"
-)
+package main
 
-func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
-		checkedEntry.Write(
-			append(
-				[]zap.Field{
-					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("commitID", moduleKey.CommitID().String()),
-				},
-				fields...,
-			)...,
-		)
-	}
-}
+import _ "github.com/bufbuild/buf/private/usage"

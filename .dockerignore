@@ -14,6 +14,8 @@ private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-rec
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 private/buf/cmd/buf/command/alpha/protoc/test.txt
 private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
+private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless/buf-commit-id-from-dashless
+private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless/buf-commit-id-to-dashless
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id/buf-new-commit-id
 private/bufpkg/bufstyle/cmd/bufstyle/bufstyle

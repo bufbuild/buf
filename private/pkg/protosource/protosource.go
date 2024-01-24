@@ -32,6 +32,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -205,7 +206,7 @@ type FileInfo interface {
 	// This will only be set if ModuleFullName is set, but may not be set
 	// even if ModuleFullName is set, that is commit is optional information
 	// even if we know what module this file came from.
-	CommitID() string
+	CommitID() uuid.UUID
 	// IsImport returns true if this file is an import.
 	IsImport() bool
 }

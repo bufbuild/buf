@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -787,7 +788,7 @@ func testGetImageFile(
 			Syntax: proto.String("proto3"),
 		},
 		parsedModuleFullName,
-		"",
+		uuid.Nil,
 		path,
 		false,
 		false,

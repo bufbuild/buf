@@ -24,6 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 )
 
@@ -33,7 +34,7 @@ type parserAccessorHandler struct {
 	pathToExternalPath   map[string]string
 	nonImportPaths       map[string]struct{}
 	pathToModuleFullName map[string]bufmodule.ModuleFullName
-	pathToCommitID       map[string]string
+	pathToCommitID       map[string]uuid.UUID
 	lock                 sync.RWMutex
 }
 
@@ -47,7 +48,7 @@ func newParserAccessorHandler(
 		pathToExternalPath:   make(map[string]string),
 		nonImportPaths:       make(map[string]struct{}),
 		pathToModuleFullName: make(map[string]bufmodule.ModuleFullName),
-		pathToCommitID:       make(map[string]string),
+		pathToCommitID:       make(map[string]uuid.UUID),
 	}
 }
 
@@ -65,7 +66,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 				// this should never happen, but just in case
 				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())
 			}
-			if err := p.addPath(path, path, nil, ""); err != nil {
+			if err := p.addPath(path, path, nil, uuid.Nil); err != nil {
 				return nil, err
 			}
 			return wktModuleFile, nil
@@ -112,7 +113,7 @@ func (p *parserAccessorHandler) ModuleFullName(path string) bufmodule.ModuleFull
 }
 
 // CommitID returns empty if not available.
-func (p *parserAccessorHandler) CommitID(path string) string {
+func (p *parserAccessorHandler) CommitID(path string) uuid.UUID {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	return p.pathToCommitID[path] // empty is a valid value.
@@ -122,7 +123,7 @@ func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	moduleFullName bufmodule.ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 ) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -137,7 +138,7 @@ func (p *parserAccessorHandler) addPath(
 	if moduleFullName != nil {
 		p.pathToModuleFullName[path] = moduleFullName
 	}
-	if commitID != "" {
+	if !commitID.IsNil() {
 		p.pathToCommitID[path] = commitID
 	}
 	return nil

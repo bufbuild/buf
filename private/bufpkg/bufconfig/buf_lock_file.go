@@ -28,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/gofrs/uuid/v5"
 )
 
 // DefaultBufLockFileName is default buf.lock file name.
@@ -156,7 +158,7 @@ type BufLockFileOption func(*bufLockFileOptions)
 // TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
 // be an option.
 func BufLockFileWithDigestResolver(
-	digestResolver func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error),
+	digestResolver func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error),
 ) BufLockFileOption {
 	return func(bufLockFileOptions *bufLockFileOptions) {
 		bufLockFileOptions.digestResolver = digestResolver
@@ -270,6 +272,11 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
+			// v1beta1 and v1 buf.locks used dashless commit IDs
+			commitID, err := uuidutil.FromDashless(dep.Commit)
+			if err != nil {
+				return nil, err
+			}
 			getDigest := func() (bufmodule.Digest, error) {
 				return bufmodule.ParseDigest(dep.Digest)
 			}
@@ -278,7 +285,7 @@ func readBufLockFile(
 					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 				}
 				getDigest = func() (bufmodule.Digest, error) {
-					return bufLockFileOptions.digestResolver(ctx, dep.Remote, dep.Commit)
+					return bufLockFileOptions.digestResolver(ctx, dep.Remote, commitID)
 				}
 			}
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
@@ -289,7 +296,7 @@ func readBufLockFile(
 			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
-				dep.Commit,
+				commitID,
 				getDigest,
 			)
 			if err != nil {
@@ -325,9 +332,13 @@ func readBufLockFile(
 					return nil, fmt.Errorf(`%s digests are no longer supported, run "buf mod update" to update your buf.lock`, digestType)
 				}
 			}
+			commitID, err := uuid.FromString(dep.Commit)
+			if err != nil {
+				return nil, err
+			}
 			depModuleKey, err := bufmodule.NewModuleKey(
 				moduleFullName,
-				dep.Commit,
+				commitID,
 				func() (bufmodule.Digest, error) {
 					return bufmodule.ParseDigest(dep.Digest)
 				},
@@ -363,11 +374,15 @@ func writeBufLockFile(
 			if err != nil {
 				return err
 			}
+			externalCommitID, err := uuidutil.ToDashless(depModuleKey.CommitID())
+			if err != nil {
+				return err
+			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV1Beta1V1{
 				Remote:     depModuleKey.ModuleFullName().Registry(),
 				Owner:      depModuleKey.ModuleFullName().Owner(),
 				Repository: depModuleKey.ModuleFullName().Name(),
-				Commit:     depModuleKey.CommitID(),
+				Commit:     externalCommitID,
 				Digest:     digest.String(),
 			}
 		}
@@ -391,7 +406,7 @@ func writeBufLockFile(
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
 				Name:   depModuleKey.ModuleFullName().String(),
-				Commit: depModuleKey.CommitID(),
+				Commit: depModuleKey.CommitID().String(),
 				Digest: digest.String(),
 			}
 		}
@@ -424,7 +439,7 @@ func validateV1AndV1Beta1DepsHaveCommits(bufLockFile BufLockFile) error {
 	switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:
 		for _, depModuleKey := range bufLockFile.DepModuleKeys() {
-			if depModuleKey.CommitID() == "" {
+			if depModuleKey.CommitID().IsNil() {
 				// This is a system error.
 				return syserror.Newf(
 					"%s lock files require commits, however we did not have a commit for module %q",
@@ -502,7 +517,7 @@ type bufLockFileOptions struct {
 	digestResolver func(
 		ctx context.Context,
 		remote string,
-		commitID string,
+		commitID uuid.UUID,
 	) (bufmodule.Digest, error)
 }
 

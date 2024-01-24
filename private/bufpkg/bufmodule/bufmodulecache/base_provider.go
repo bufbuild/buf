@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -58,7 +59,7 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 ) ([]T, error) {
 	commitIDToIndexedModuleKey, err := slicesext.ToUniqueIndexedValuesMap(
 		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) string {
+		func(moduleKey bufmodule.ModuleKey) uuid.UUID {
 			return moduleKey.CommitID()
 		},
 	)

@@ -16,6 +16,7 @@ package bufctl
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/gofrs/uuid/v5"
 )
 
 type moduleProtoFileInfo struct {
@@ -32,7 +33,7 @@ func (p *moduleProtoFileInfo) ModuleFullName() bufmodule.ModuleFullName {
 	return p.FileInfo.Module().ModuleFullName()
 }
 
-func (p *moduleProtoFileInfo) CommitID() string {
+func (p *moduleProtoFileInfo) CommitID() uuid.UUID {
 	return p.FileInfo.Module().CommitID()
 }
 

@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
@@ -468,7 +469,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 					clone, ok := proto.Clone(imageFile.FileDescriptorProto()).(*descriptorpb.FileDescriptorProto)
 					require.True(b, ok)
 					var err error
-					imageFiles[j], err = bufimage.NewImageFile(clone, nil, "", "", false, false, nil)
+					imageFiles[j], err = bufimage.NewImageFile(clone, nil, uuid.Nil, "", false, false, nil)
 					require.NoError(b, err)
 				}
 				image, err := bufimage.NewImage(imageFiles)
