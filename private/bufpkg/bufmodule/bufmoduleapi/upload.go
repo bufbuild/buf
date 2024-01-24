@@ -137,8 +137,12 @@ func Upload(
 				Files:           protoFiles,
 				DepRefs:         protoDepRefs,
 				ScopedLabelRefs: protoScopedLabelRefs,
+				// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
+				// if we do, we should consider whether we should be sending them over, as the
+				// backend may come to rely on this.
+				V1BufYamlFile: objectDataToProtoFile(module.V1Beta1OrV1BufYAMLObjectData()),
+				V1BufLockFile: objectDataToProtoFile(module.V1Beta1OrV1BufLockObjectData()),
 				// TODO: vcs_commit
-				// TODO: buf.yaml, buf.lock
 			}, nil
 		},
 	)

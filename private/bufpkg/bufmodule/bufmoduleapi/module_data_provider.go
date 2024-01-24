@@ -174,10 +174,10 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 					},
 					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
 					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufYamlFile)
+						return protoFileToObjectData(protoContent.V1BufYamlFile)
 					},
 					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufLockFile)
+						return protoFileToObjectData(protoContent.V1BufLockFile)
 					},
 				),
 				Index: indexedModuleKey.Index,

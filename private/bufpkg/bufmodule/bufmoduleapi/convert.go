@@ -156,7 +156,20 @@ func protoFilesToBucket(protoFiles []*modulev1beta1.File) (storage.ReadBucket, e
 }
 
 func protoFileToObjectData(protoFile *modulev1beta1.File) (bufmodule.ObjectData, error) {
+	if protoFile == nil {
+		return nil, nil
+	}
 	return bufmodule.NewObjectData(normalpath.Base(protoFile.Path), protoFile.Content)
+}
+
+func objectDataToProtoFile(objectData bufmodule.ObjectData) *modulev1beta1.File {
+	if objectData == nil {
+		return nil
+	}
+	return &modulev1beta1.File{
+		Path:    objectData.Name(),
+		Content: objectData.Data(),
+	}
 }
 
 func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabelRef {
