@@ -130,9 +130,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return err
-	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for _, imageWithConfig := range imageWithConfigs {
 		if err := buflint.NewHandler(

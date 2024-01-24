@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -1149,12 +1150,22 @@ func filterImage(
 	}
 	if !imageCameFromAWorkspace {
 		if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
+			// bufimage expects normalized paths, so we need to normalize the paths
+			// from functionOptions before passing them through.
+			normalizedTargetPaths := make([]string, 0, len(functionOptions.targetPaths))
+			normalizedExcludePaths := make([]string, 0, len(functionOptions.targetExcludePaths))
+			for _, targetPath := range functionOptions.targetPaths {
+				normalizedTargetPaths = append(normalizedTargetPaths, normalpath.Normalize(targetPath))
+			}
+			for _, excludePath := range functionOptions.targetExcludePaths {
+				normalizedExcludePaths = append(normalizedExcludePaths, normalpath.Normalize(excludePath))
+			}
 			// TODO: allowNotExist?
 			// TODO: Also, does this affect lint or breaking?
 			newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
 				newImage,
-				functionOptions.targetPaths,
-				functionOptions.targetExcludePaths,
+				normalizedTargetPaths,
+				normalizedExcludePaths,
 			)
 			if err != nil {
 				return nil, err
