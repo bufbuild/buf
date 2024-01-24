@@ -129,9 +129,6 @@ func run(
 		bufcli.NewFetchReader(container.Logger(), storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	)
-	if err != nil {
-		return err
-	}
 	graphBuilder := bufgraph.NewBuilder(
 		container.Logger(),
 		moduleResolver,

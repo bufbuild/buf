@@ -641,9 +641,6 @@ func (s *syncer) protectSyncedModuleBranch(
 	if err != nil {
 		return fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
 	}
-	if err != nil {
-		return err
-	}
 	if syncPoint == nil {
 		// Branch has never been synced, there is nothing to protected against.
 		return nil

@@ -87,7 +87,7 @@ func javaMultipleFilesForFile(
 			// The option is already set to the same value, don't do anything.
 			return nil
 		}
-	case options == nil && descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
+	case descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.
 		return nil
