@@ -170,6 +170,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	}
 	defer func() {
 		if retErr != nil {
+			p.logDebugModuleKey(
+				moduleKey,
+				"module data store deleting invalid data",
+				zap.Error(retErr),
+			)
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -200,31 +205,39 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
-	// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
-	v1BufYAMLFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufYAMLFile)
-	if err != nil {
-		return nil, err
+	var v1BufYAMLObjectData bufmodule.ObjectData
+	// TODO: make this required
+	if externalModuleData.V1BufYAMLFile != "" {
+		// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
+		// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
+		v1BufYAMLFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufYAMLFile)
+		if err != nil {
+			return nil, err
+		}
+		v1BufYAMLObjectData, err = bufmodule.NewObjectData(
+			normalpath.Base(externalModuleData.V1BufYAMLFile),
+			v1BufYAMLFileData,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
-	v1BufYAMLObjectData, err := bufmodule.NewObjectData(
-		normalpath.Base(externalModuleData.V1BufYAMLFile),
-		v1BufYAMLFileData,
-	)
-	if err != nil {
-		return nil, err
-	}
-	// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
-	// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
-	v1BufLockFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufLockFile)
-	if err != nil {
-		return nil, err
-	}
-	v1BufLockObjectData, err := bufmodule.NewObjectData(
-		normalpath.Base(externalModuleData.V1BufLockFile),
-		v1BufLockFileData,
-	)
-	if err != nil {
-		return nil, err
+	var v1BufLockObjectData bufmodule.ObjectData
+	// TODO: make this required
+	if externalModuleData.V1BufLockFile != "" {
+		// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
+		// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
+		v1BufLockFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufLockFile)
+		if err != nil {
+			return nil, err
+		}
+		v1BufLockObjectData, err = bufmodule.NewObjectData(
+			normalpath.Base(externalModuleData.V1BufLockFile),
+			v1BufLockFileData,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// We rely on the module.yaml file being the last file to be written in the store.
 	// If module.yaml does not exist, we act as if there is no value in the store, which will
@@ -531,9 +544,10 @@ func (e externalModuleData) isValid() bool {
 		}
 	}
 	return e.Version == externalModuleDataVersion &&
-		len(e.FilesDir) > 0 &&
-		len(e.V1BufYAMLFile) > 0 &&
-		len(e.V1BufLockFile) > 0
+		len(e.FilesDir) > 0
+	// TODO: re-enable
+	//len(e.V1BufYAMLFile) > 0 &&
+	//len(e.V1BufLockFile) > 0
 }
 
 // externalModuleDataDep represents a dependency.
