@@ -116,7 +116,7 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 			return nil, nil
 		}
 		var externalFileVersion externalFileVersion
-		if err := encoding.UnmarshalYAMLStrict(data, &externalFileVersion); err != nil {
+		if err := encoding.UnmarshalYAMLNonStrict(data, &externalFileVersion); err != nil {
 			// This could be a source of bugs in the future - we likely just took a buf.yaml/buf.lock
 			// as-is for digest calculations pre-refactor, and didn't require a version.
 			return nil, newDecodeError(path, err)

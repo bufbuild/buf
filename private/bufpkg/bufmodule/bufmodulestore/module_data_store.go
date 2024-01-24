@@ -239,9 +239,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return declaredDepModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
+			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
 			return v1BufYAMLObjectData, nil
 		},
 		func() (bufmodule.ObjectData, error) {
+			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
 			return v1BufLockObjectData, nil
 		},
 	), nil
@@ -332,21 +334,27 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
-	v1BufYAMLFilePath := normalpath.Join(externalModuleDataV1BufYAMLDir, v1BufYAMLObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, v1BufYAMLFilePath, v1BufYAMLObjectData.Data()); err != nil {
-		return err
+	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
+	if v1BufYAMLObjectData != nil {
+		v1BufYAMLFilePath := normalpath.Join(externalModuleDataV1BufYAMLDir, v1BufYAMLObjectData.Name())
+		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufYAMLFilePath, v1BufYAMLObjectData.Data()); err != nil {
+			return err
+		}
+		externalModuleData.V1BufYAMLFile = v1BufYAMLFilePath
 	}
-	externalModuleData.V1BufYAMLFile = v1BufYAMLFilePath
 
 	v1BufLockObjectData, err := moduleData.V1Beta1OrV1BufLockObjectData()
 	if err != nil {
 		return err
 	}
-	v1BufLockFilePath := normalpath.Join(externalModuleDataV1BufLockDir, v1BufLockObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, v1BufLockFilePath, v1BufLockObjectData.Data()); err != nil {
-		return err
+	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
+	if v1BufLockObjectData != nil {
+		v1BufLockFilePath := normalpath.Join(externalModuleDataV1BufLockDir, v1BufLockObjectData.Name())
+		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufLockFilePath, v1BufLockObjectData.Data()); err != nil {
+			return err
+		}
+		externalModuleData.V1BufLockFile = v1BufLockFilePath
 	}
-	externalModuleData.V1BufLockFile = v1BufLockFilePath
 
 	data, err := encoding.MarshalYAML(externalModuleData)
 	if err != nil {
