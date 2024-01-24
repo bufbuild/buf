@@ -17,6 +17,7 @@ package bufimage
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -25,7 +26,7 @@ var _ ImageFile = &imageFile{}
 type imageFile struct {
 	fileDescriptorProto     *descriptorpb.FileDescriptorProto
 	moduleFullName          bufmodule.ModuleFullName
-	commitID                string
+	commitID                uuid.UUID
 	externalPath            string
 	isImport                bool
 	isSyntaxUnspecified     bool
@@ -35,7 +36,7 @@ type imageFile struct {
 func newImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
 	moduleFullName bufmodule.ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
@@ -58,7 +59,7 @@ func newImageFile(
 func newImageFileNoValidate(
 	fileDescriptor protodescriptor.FileDescriptor,
 	moduleFullName bufmodule.ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
@@ -96,7 +97,7 @@ func (f *imageFile) ModuleFullName() bufmodule.ModuleFullName {
 	return f.moduleFullName
 }
 
-func (f *imageFile) CommitID() string {
+func (f *imageFile) CommitID() uuid.UUID {
 	return f.commitID
 }
 

@@ -26,6 +26,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -44,9 +46,9 @@ type ImageFile interface {
 	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
 	// if the CommitID was known..
 	//
-	// May be empty. Callers should not rely on this value being present. If
-	// ModuleFullName is nil, this will always be empty.
-	CommitID() string
+	// May be empty, that is CommitID().IsNil() may be true. Callers should not rely on this
+	// value being present. If ModuleFullName is nil, this will always be empty.
+	CommitID() uuid.UUID
 
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
@@ -75,7 +77,7 @@ type ImageFile interface {
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
 	moduleFullName bufmodule.ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	externalPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
@@ -263,7 +265,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
 		var moduleFullName bufmodule.ModuleFullName
-		var commitID string
+		var commitID uuid.UUID
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
 			isImport = protoImageFileExtension.GetIsImport()
@@ -280,7 +282,13 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 						return nil, err
 					}
 					// we only want to set this if there is a module name
-					commitID = protoModuleInfo.GetCommit()
+					if protoCommitID := protoModuleInfo.GetCommit(); protoCommitID != "" {
+						// Need to use dashless for historical reasons.
+						commitID, err = uuidutil.FromDashless(protoCommitID)
+						if err != nil {
+							return nil, err
+						}
+					}
 				}
 			}
 		}
@@ -438,15 +446,19 @@ func ImageByDir(image Image) ([]Image, error) {
 }
 
 // ImageToProtoImage returns a new ProtoImage for the Image.
-func ImageToProtoImage(image Image) *imagev1.Image {
+func ImageToProtoImage(image Image) (*imagev1.Image, error) {
 	imageFiles := image.Files()
 	protoImage := &imagev1.Image{
 		File: make([]*imagev1.ImageFile, len(imageFiles)),
 	}
 	for i, imageFile := range imageFiles {
-		protoImage.File[i] = imageFileToProtoImageFile(imageFile)
+		protoImageFile, err := imageFileToProtoImageFile(imageFile)
+		if err != nil {
+			return nil, err
+		}
+		protoImage.File[i] = protoImageFile
 	}
-	return protoImage
+	return protoImage, nil
 }
 
 // ImageToFileDescriptorSet returns a new FileDescriptorSet for the Image.

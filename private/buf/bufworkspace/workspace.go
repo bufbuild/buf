@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -584,7 +585,7 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			// buf.lock files live at the module root
 			moduleDirPath,
 			bufconfig.BufLockFileWithDigestResolver(
-				func(ctx context.Context, remote string, commitID string) (bufmodule.Digest, error) {
+				func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error) {
 					return bufmoduleapi.DigestForCommitID(ctx, clientProvider, remote, commitID, bufmodule.DigestTypeB4)
 				},
 			),

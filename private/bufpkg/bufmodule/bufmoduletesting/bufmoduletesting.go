@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -54,7 +55,7 @@ var (
 // used. It is an error to both set ReadObjectDataFromBucket and set Buf.*ObjectData.
 type ModuleData struct {
 	Name                     string
-	CommitID                 string
+	CommitID                 uuid.UUID
 	CreateTime               time.Time
 	DirPath                  string
 	PathToData               map[string][]byte
@@ -143,28 +144,17 @@ func NewModuleSetForBucket(
 	)
 }
 
-// NewCommitID returns a new CommitID.
-//
-// This is a dashless UUID.
-func NewCommitID() (string, error) {
-	id, err := uuidutil.New()
-	if err != nil {
-		return "", err
-	}
-	return uuidutil.ToDashless(id)
-}
-
 // *** PRIVATE ***
 
 type omniProvider struct {
 	bufmodule.ModuleSet
-	commitIDToCreateTime map[string]time.Time
+	commitIDToCreateTime map[uuid.UUID]time.Time
 }
 
 func newOmniProvider(
 	moduleDatas []ModuleData,
 ) (*omniProvider, error) {
-	commitIDToCreateTime := make(map[string]time.Time)
+	commitIDToCreateTime := make(map[uuid.UUID]time.Time)
 	moduleSet, err := newModuleSet(moduleDatas, true, commitIDToCreateTime)
 	if err != nil {
 		return nil, err
@@ -246,8 +236,8 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 func (o *omniProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (*dag.Graph[string, bufmodule.ModuleKey], error) {
-	graph := dag.NewGraph[string, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+) (*dag.Graph[uuid.UUID, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[uuid.UUID, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
 	if len(moduleKeys) == 0 {
 		return graph, nil
 	}
@@ -322,7 +312,7 @@ func newModuleSet(
 	moduleDatas []ModuleData,
 	requireName bool,
 	// may be nil
-	commitIDToCreateTime map[string]time.Time,
+	commitIDToCreateTime map[uuid.UUID]time.Time,
 ) (bufmodule.ModuleSet, error) {
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	for i, moduleData := range moduleDatas {
@@ -344,7 +334,7 @@ func addModuleDataToModuleSetBuilder(
 	moduleData ModuleData,
 	requireName bool,
 	// may be nil
-	commitIDToCreateTime map[string]time.Time,
+	commitIDToCreateTime map[uuid.UUID]time.Time,
 	index int,
 ) error {
 	if boolCount(
@@ -398,8 +388,8 @@ func addModuleDataToModuleSetBuilder(
 			return err
 		}
 		commitID := moduleData.CommitID
-		if commitID == "" {
-			commitID, err = NewCommitID()
+		if commitID.IsNil() {
+			commitID, err = uuidutil.New()
 			if err != nil {
 				return err
 			}
@@ -457,7 +447,7 @@ func addModuleDataToModuleSetBuilder(
 
 func addModuleToGraphRec(
 	module bufmodule.Module,
-	graph *dag.Graph[string, bufmodule.ModuleKey],
+	graph *dag.Graph[uuid.UUID, bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
 ) error {
 	moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
