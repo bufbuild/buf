@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/gofrs/uuid/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -40,7 +41,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 					fmt.Sprintf("a%d.proto/a%d.proto", i, i),
 				),
 				nil,
-				"",
+				uuid.Nil,
 				fmt.Sprintf("foo/two/a%d.proto/a%d.proto", i, i),
 				false,
 				false,
@@ -72,7 +73,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 					fmt.Sprintf("a%d.proto/a%d.proto", i, i),
 				),
 				nil,
-				"",
+				uuid.Nil,
 				fmt.Sprintf("foo/two/a%d.proto/a%d.proto", i, i),
 				false,
 				false,
@@ -134,7 +135,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileImport,
 		nil,
-		"",
+		uuid.Nil,
 		"some/import/import.proto",
 		true,
 		false,
@@ -144,7 +145,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileWellKnownTypeImport,
 		nil,
-		"",
+		uuid.Nil,
 		"google/protobuf/timestamp.proto",
 		true,
 		false,
@@ -154,7 +155,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileAA,
 		nil,
-		"",
+		uuid.Nil,
 		"foo/one/a/a.proto",
 		false,
 		false,
@@ -164,7 +165,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileAB,
 		nil,
-		"",
+		uuid.Nil,
 		"foo/one/a/b.proto",
 		false,
 		false,
@@ -174,7 +175,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileBA,
 		nil,
-		"",
+		uuid.Nil,
 		"foo/two/b/a.proto",
 		false,
 		false,
@@ -184,7 +185,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileBB,
 		nil,
-		"",
+		uuid.Nil,
 		"foo/two/b/b.proto",
 		false,
 		false,
@@ -194,7 +195,7 @@ func TestBasic(t *testing.T) {
 		t,
 		protoImageFileOutlandishDirectoryName,
 		nil,
-		"",
+		uuid.Nil,
 		"foo/three/d/d.proto/d.proto",
 		false,
 		false,
@@ -216,13 +217,13 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		image.Files(),
 	)
@@ -231,11 +232,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		bufimage.ImageWithoutImports(image).Files(),
 	)
@@ -252,11 +253,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -285,11 +286,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -304,10 +305,10 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -322,12 +323,12 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", true, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "foo/two/b/b.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -343,11 +344,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -374,11 +375,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -395,12 +396,12 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -417,12 +418,12 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -443,17 +444,19 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
-	diff := cmp.Diff(protoImage, bufimage.ImageToProtoImage(newImage), protocmp.Transform())
+	newProtoImage, err := bufimage.ImageToProtoImage(newImage)
+	require.NoError(t, err)
+	diff := cmp.Diff(protoImage, newProtoImage, protocmp.Transform())
 	require.Equal(t, "", diff)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: []*descriptorpb.FileDescriptorProto{
@@ -534,13 +537,13 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -578,30 +581,30 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", false, false, nil),
 		},
 		imagesByDir[0].Files(),
 	)
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
-			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
-			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
-			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAA, nil, uuid.Nil, "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, uuid.Nil, "google/protobuf/timestamp.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, uuid.Nil, "foo/one/a/b.proto", true, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, uuid.Nil, "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, uuid.Nil, "foo/two/b/b.proto", false, false, nil),
 		},
 		imagesByDir[1].Files(),
 	)
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
-			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, uuid.Nil, "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, uuid.Nil, "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		imagesByDir[2].Files(),
 	)
