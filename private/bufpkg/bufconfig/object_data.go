@@ -40,7 +40,7 @@ type ObjectData interface {
 	isObjectData()
 }
 
-// GetBufYAMLV1Beta1OrV1ObjectDataForPrefix is a helper funtion that gets the ObjectData for the buf.yaml file at
+// GetBufYAMLV1Beta1OrV1ObjectDataForPrefix is a helper function that gets the ObjectData for the buf.yaml file at
 // the given bucket prefix, if the buf.yaml file was v1beta1 or v1.
 //
 // The file is only parsed for its file version. No additional validation is performed.
@@ -55,7 +55,7 @@ func GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(
 	return getV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, prefix, bufYAMLFileNames)
 }
 
-// GetBufLockV1Beta1OrV1ObjectDataForPrefix is a helper funtion that gets the ObjectData for the buf.lock file at
+// GetBufLockV1Beta1OrV1ObjectDataForPrefix is a helper function that gets the ObjectData for the buf.lock file at
 // the given bucket prefix, if the buf.lock file was v1beta1 or v1.
 //
 // The file is only parsed for its file version. No additional validation is performed.

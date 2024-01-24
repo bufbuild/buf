@@ -631,6 +631,14 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			hadIsTargetModule = true
 			bufLockDirPaths = append(bufLockDirPaths, moduleDirPath)
 		}
+		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
+		if err != nil {
+			return nil, err
+		}
+		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
+		if err != nil {
+			return nil, err
+		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
 			moduleDirPath,
@@ -644,6 +652,8 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
 			),
+			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData),
+			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData),
 		)
 	}
 	if !hadIsTentativelyTargetModule {
@@ -679,7 +689,6 @@ func newWorkspaceForBucketBufYAMLV2(
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
 	var bufYAMLFile bufconfig.BufYAMLFile
-	var bufYAMLObjectData bufmodule.ObjectData
 	var err error
 	if overrideBufYAMLFile != nil {
 		bufYAMLFile = overrideBufYAMLFile
@@ -696,7 +705,6 @@ func newWorkspaceForBucketBufYAMLV2(
 		if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
 			return nil, syserror.Newf("expected v2 buf.yaml but got %v", bufYAMLFile.FileVersion())
 		}
-		bufYAMLObjectData = bufYAMLFile.ObjectData()
 	}
 
 	// config.targetSubDirPath is the input targetSubDirPath. We only want to target modules that are inside
@@ -711,10 +719,6 @@ func newWorkspaceForBucketBufYAMLV2(
 	}
 	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
 
-	// TODO: We need to handle when this is nil and still continue to calculate b4s.
-	// We need some way to say "no, we really did try to set the object data, but it wasn't there,
-	// and that was expected".
-	var bufLockObjectData bufmodule.ObjectData
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,
 		bucket,
@@ -743,7 +747,6 @@ func newWorkspaceForBucketBufYAMLV2(
 				false,
 			)
 		}
-		bufLockObjectData = bufLockFile.ObjectData()
 	}
 
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
@@ -793,14 +796,6 @@ func newWorkspaceForBucketBufYAMLV2(
 			bufmodule.LocalModuleWithProtoFileTargetPath(
 				moduleTargeting.moduleProtoFileTargetPath,
 				moduleTargeting.includePackageFiles,
-			),
-			bufmodule.LocalModuleWithBufYAMLObjectData(
-				// CANNOT be bufYAMLFile.ObjectData(), we want to not use overrideConfig.
-				bufYAMLObjectData,
-			),
-			bufmodule.LocalModuleWithBufLockObjectData(
-				// CANNOT be bufLockFile.ObjectData(), bufLockFile may be nil
-				bufLockObjectData,
 			),
 		)
 	}
