@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/pkg/dag"
+	"github.com/gofrs/uuid/v5"
 )
 
 // GraphProvider provides directed acyclic graphs for ModuleKeys.
@@ -35,5 +36,5 @@ type GraphProvider interface {
 	// The input ModuleKeys must all have the same registry. An error will be returned otherwise.
 	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
-	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[string, ModuleKey], error)
+	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[uuid.UUID, ModuleKey], error)
 }

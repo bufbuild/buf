@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -70,8 +71,8 @@ func newGraphProvider(
 func (a *graphProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (*dag.Graph[string, bufmodule.ModuleKey], error) {
-	graph := dag.NewGraph[string, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+) (*dag.Graph[uuid.UUID, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[uuid.UUID, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
 	if len(moduleKeys) == 0 {
 		return graph, nil
 	}
@@ -102,7 +103,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	}
 	commitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
 		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
+		func(moduleKey bufmodule.ModuleKey) (uuid.UUID, error) {
 			return moduleKey.CommitID(), nil
 		},
 	)
@@ -110,7 +111,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 		return nil, err
 	}
 	for _, protoCommit := range protoGraph.Commits {
-		commitID, err := ProtoToCommitID(protoCommit.Id)
+		commitID, err := uuid.FromString(protoCommit.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +134,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 		graph.AddNode(moduleKey)
 	}
 	for _, protoEdge := range protoGraph.Edges {
-		fromCommitID, err := ProtoToCommitID(protoEdge.FromCommitId)
+		fromCommitID, err := uuid.FromString(protoEdge.FromCommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +144,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 			// This could be an API error, but regardless we consider it a system error here.
 			return nil, syserror.Newf("did not have commit id %q in commitIDToModuleKey", fromCommitID)
 		}
-		toCommitID, err := ProtoToCommitID(protoEdge.ToCommitId)
+		toCommitID, err := uuid.FromString(protoEdge.ToCommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -164,15 +165,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 	moduleKeys []bufmodule.ModuleKey,
 	digestType bufmodule.DigestType,
 ) (*modulev1beta1.Graph, error) {
-	protoCommitIDs, err := slicesext.MapError(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return CommitIDToProto(moduleKey.CommitID())
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+	commitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
 	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
 		return nil, err
@@ -183,11 +176,11 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 			&modulev1beta1.GetGraphRequest{
 				// TODO: chunking
 				ResourceRefs: slicesext.Map(
-					protoCommitIDs,
-					func(protoCommitID string) *modulev1beta1.ResourceRef {
+					commitIDs,
+					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {
 						return &modulev1beta1.ResourceRef{
 							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
+								Id: commitID.String(),
 							},
 						}
 					},

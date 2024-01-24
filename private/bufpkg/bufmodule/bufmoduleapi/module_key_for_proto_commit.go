@@ -20,6 +20,7 @@ import (
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/gofrs/uuid/v5"
 )
 
 func getModuleKeyForProtoCommit(
@@ -62,7 +63,7 @@ func getModuleKeyForProtoCommit(
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := ProtoToCommitID(protoCommit.Id)
+	commitID, err := uuid.FromString(protoCommit.Id)
 	if err != nil {
 		return nil, err
 	}
