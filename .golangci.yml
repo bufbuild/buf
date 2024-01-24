@@ -19,6 +19,9 @@ linters-settings:
       - '^log\.'
       - '^print$'
       - '^println$'
+  govet:
+    enable:
+      - nilness
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
