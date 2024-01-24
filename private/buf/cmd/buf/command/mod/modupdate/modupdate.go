@@ -273,7 +273,7 @@ func getDependencies(
 		}),
 	)
 	if err != nil {
-		if remote != bufconnect.DefaultRemote {
+		if !connect.IsWireError(err) && remote != bufconnect.DefaultRemote {
 			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleIdentity)
 		}
 		return nil, err

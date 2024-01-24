@@ -130,7 +130,7 @@ func run(
 			}),
 		)
 		if err != nil {
-			if remote != bufconnect.DefaultRemote {
+			if !connect.IsWireError(err) && remote != bufconnect.DefaultRemote {
 				return bufcli.NewInvalidRemoteError(err, remote, moduleIdentity)
 			}
 			return err
