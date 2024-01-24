@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
@@ -190,13 +191,20 @@ func run(
 	if err != nil {
 		return err
 	}
+	commitIDs, err := slicesext.MapError(
+		commits,
+		// TODO: Printing dashless for historical reasons, can we only print dashless in certain situations?
+		func(commit bufmodule.Commit) (string, error) {
+			return uuidutil.ToDashless(commit.ModuleKey().CommitID())
+		},
+	)
+	if err != nil {
+		return err
+	}
 	if _, err := container.Stdout().Write(
 		[]byte(
 			strings.Join(
-				slicesext.Map(
-					commits,
-					func(commit bufmodule.Commit) string { return commit.ModuleKey().CommitID() },
-				),
+				commitIDs,
 				"\n",
 			) + "\n",
 		),

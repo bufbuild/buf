@@ -45,6 +45,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -67,7 +68,7 @@ type ProtoFileInfo interface {
 	storage.ObjectInfo
 
 	ModuleFullName() bufmodule.ModuleFullName
-	CommitID() string
+	CommitID() uuid.UUID
 
 	isProtoFileInfo()
 }
@@ -508,7 +509,10 @@ func (c *controller) PutImage(
 	if functionOptions.imageAsFileDescriptorSet {
 		putMessage = bufimage.ImageToFileDescriptorSet(putImage)
 	} else {
-		putMessage = bufimage.ImageToProtoImage(putImage)
+		putMessage, err = bufimage.ImageToProtoImage(putImage)
+		if err != nil {
+			return err
+		}
 	}
 	data, err := marshaler.Marshal(putMessage)
 	if err != nil {

@@ -137,8 +137,8 @@ func run(
 
 func moduleToString(module bufmodule.Module) string {
 	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
-		if commitID := module.CommitID(); commitID != "" {
-			return moduleFullName.String() + ":" + commitID
+		if commitID := module.CommitID(); !commitID.IsNil() {
+			return moduleFullName.String() + ":" + commitID.String()
 		}
 		return moduleFullName.String()
 	}
