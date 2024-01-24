@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -77,12 +78,13 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
-	// A CommitID is always a dashless UUID.
-	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
-	// May be empty. Callers should not rely on this value being present.
+	// A CommitID is always a dashful UUID, i.e. this is a proper UUID.
+	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
+	// May be empty, that is CommitID().IsNil() may be true.
+	// Callers should not rely on this value being present.
 	//
 	// If ModuleFullName is nil, this will always be empty.
-	CommitID() string
+	CommitID() uuid.UUID
 
 	// Digest returns the Module digest for the given DigestType.
 	//
@@ -260,7 +262,7 @@ type module struct {
 	getBucket           func() (storage.ReadBucket, error)
 	bucketID            string
 	moduleFullName      ModuleFullName
-	commitID            string
+	commitID            uuid.UUID
 	isTarget            bool
 	isLocal             bool
 	v1BufYAMLObjectData ObjectData
@@ -280,7 +282,7 @@ func newModule(
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	isTarget bool,
 	isLocal bool,
 	v1BufYAMLObjectData ObjectData,
@@ -303,13 +305,8 @@ func newModule(
 	if !isLocal && moduleFullName == nil {
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
-	if moduleFullName == nil && commitID != "" {
+	if moduleFullName == nil && !commitID.IsNil() {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
-	}
-	if commitID != "" {
-		if err := validateCommitID(commitID); err != nil {
-			return nil, err
-		}
 	}
 	module := &module{
 		ctx:                 ctx,
@@ -360,7 +357,7 @@ func (m *module) ModuleFullName() ModuleFullName {
 	return m.moduleFullName
 }
 
-func (m *module) CommitID() string {
+func (m *module) CommitID() uuid.UUID {
 	return m.commitID
 }
 

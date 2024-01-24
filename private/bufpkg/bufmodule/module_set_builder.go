@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -133,7 +134,7 @@ func LocalModuleWithModuleFullName(moduleFullName ModuleFullName) LocalModuleOpt
 
 // LocalModuleWithModuleFullName returns a new LocalModuleOption that adds the given ModuleFullName and CommitID
 // to the result Module.
-func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID string) LocalModuleOption {
+func LocalModuleWithModuleFullNameAndCommitID(moduleFullName ModuleFullName, commitID uuid.UUID) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
 		localModuleOptions.moduleFullName = moduleFullName
 		localModuleOptions.commitID = commitID
@@ -265,7 +266,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 	for _, option := range options {
 		option(localModuleOptions)
 	}
-	if localModuleOptions.moduleFullName == nil && localModuleOptions.commitID != "" {
+	if localModuleOptions.moduleFullName == nil && !localModuleOptions.commitID.IsNil() {
 		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
@@ -534,7 +535,7 @@ func getUniqueSortedAddedModulesByOpaqueID(ctx context.Context, addedModules []*
 
 type localModuleOptions struct {
 	moduleFullName      ModuleFullName
-	commitID            string
+	commitID            uuid.UUID
 	targetPaths         []string
 	targetExcludePaths  []string
 	protoFileTargetPath string
