@@ -362,11 +362,15 @@ func (g *generator) execRemotePluginsV2(
 		requests[i] = request
 	}
 	codeGenerationService := connectclient.Make(g.clientConfig, remote, registryv1alpha1connect.NewCodeGenerationServiceClient)
+	protoImage, err := bufimage.ImageToProtoImage(image)
+	if err != nil {
+		return nil, err
+	}
 	response, err := codeGenerationService.GenerateCode(
 		ctx,
 		connect.NewRequest(
 			&registryv1alpha1.GenerateCodeRequest{
-				Image:    bufimage.ImageToProtoImage(image),
+				Image:    protoImage,
 				Requests: requests,
 			},
 		),

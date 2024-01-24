@@ -242,7 +242,7 @@ func getCommitStoreDirPath(moduleKey bufmodule.ModuleKey) string {
 //
 // This is "commitID.json", e.g. the commit "12345" will return "12345.json".
 func getCommitStoreFilePath(moduleKey bufmodule.ModuleKey) string {
-	return moduleKey.CommitID() + ".json"
+	return moduleKey.CommitID().String() + ".json"
 }
 
 // externalCommit is the store representation of a Commit.

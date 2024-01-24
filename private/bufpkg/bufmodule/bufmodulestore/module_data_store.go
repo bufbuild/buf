@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -324,7 +325,7 @@ func (p *moduleDataStore) putModuleData(
 		}
 		externalModuleData.Deps[i] = externalModuleDataDep{
 			Name:   depModuleKey.ModuleFullName().String(),
-			Commit: depModuleKey.CommitID(),
+			Commit: depModuleKey.CommitID().String(),
 			Digest: digest.String(),
 		}
 	}
@@ -472,7 +473,7 @@ func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) string {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID(),
+		moduleKey.CommitID().String(),
 	)
 }
 
@@ -486,7 +487,7 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) string {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID()+".tar",
+		moduleKey.CommitID().String()+".tar",
 	)
 }
 
@@ -508,9 +509,13 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 	if err != nil {
 		return nil, err
 	}
+	commitID, err := uuid.FromString(dep.Commit)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodule.NewModuleKey(
 		moduleFullName,
-		dep.Commit,
+		commitID,
 		func() (bufmodule.Digest, error) {
 			return digest, nil
 		},

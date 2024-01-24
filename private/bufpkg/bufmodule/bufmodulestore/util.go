@@ -25,7 +25,7 @@ func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, messag
 			append(
 				[]zap.Field{
 					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("commitID", moduleKey.CommitID()),
+					zap.String("commitID", moduleKey.CommitID().String()),
 				},
 				fields...,
 			)...,
