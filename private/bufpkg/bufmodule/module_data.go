@@ -44,14 +44,20 @@ type ModuleData interface {
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
-	// BufYAMLObjectData gets the buf.yaml ObjectData.
+	// BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
+	//
+	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
+	// synthesize a value.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	BufYAMLObjectData() (ObjectData, error)
-	// BufYAMLObjectData gets the buf.lock ObjectData.
+	V1Beta1OrV1BufYAMLObjectData() (ObjectData, error)
+	// BufYAMLObjectData gets the v1beta1 or v1 buf.lock ObjectData.
+	//
+	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
+	// synthesize a value.
 	//
 	// This is used for digest calcuations. It is not used otherwise.
-	BufLockObjectData() (ObjectData, error)
+	V1Beta1OrV1BufLockObjectData() (ObjectData, error)
 
 	isModuleData()
 }
@@ -67,16 +73,16 @@ func NewModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
-	getBufYAMLObjectData func() (ObjectData, error),
-	getBufLockObjectData func() (ObjectData, error),
+	getV1BufYAMLObjectData func() (ObjectData, error),
+	getV1BufLockObjectData func() (ObjectData, error),
 ) ModuleData {
 	return newModuleData(
 		ctx,
 		moduleKey,
 		getBucket,
 		getDeclaredDepModuleKeys,
-		getBufYAMLObjectData,
-		getBufLockObjectData,
+		getV1BufYAMLObjectData,
+		getV1BufLockObjectData,
 	)
 }
 
@@ -88,8 +94,8 @@ type moduleData struct {
 	moduleKey                ModuleKey
 	getBucket                func() (storage.ReadBucket, error)
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error)
-	getBufYAMLObjectData     func() (ObjectData, error)
-	getBufLockObjectData     func() (ObjectData, error)
+	getV1BufYAMLObjectData   func() (ObjectData, error)
+	getV1BufLockObjectData   func() (ObjectData, error)
 
 	checkDigest func() error
 }
@@ -99,15 +105,15 @@ func newModuleData(
 	moduleKey ModuleKey,
 	getBucket func() (storage.ReadBucket, error),
 	getDeclaredDepModuleKeys func() ([]ModuleKey, error),
-	getBufYAMLObjectData func() (ObjectData, error),
-	getBufLockObjectData func() (ObjectData, error),
+	getV1BufYAMLObjectData func() (ObjectData, error),
+	getV1BufLockObjectData func() (ObjectData, error),
 ) *moduleData {
 	moduleData := &moduleData{
 		moduleKey:                moduleKey,
 		getBucket:                getSyncOnceValuesGetBucketWithStorageMatcherApplied(ctx, getBucket),
 		getDeclaredDepModuleKeys: syncext.OnceValues(getDeclaredDepModuleKeys),
-		getBufYAMLObjectData:     syncext.OnceValues(getBufYAMLObjectData),
-		getBufLockObjectData:     syncext.OnceValues(getBufLockObjectData),
+		getV1BufYAMLObjectData:   syncext.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData:   syncext.OnceValues(getV1BufLockObjectData),
 	}
 	moduleData.checkDigest = syncext.OnceValue(
 		func() error {
@@ -124,16 +130,16 @@ func newModuleData(
 			switch expectedDigest.Type() {
 			case DigestTypeB4:
 				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
-				bufYAMLObjectData, err := moduleData.getBufYAMLObjectData()
+				v1BufYAMLObjectData, err := moduleData.getV1BufYAMLObjectData()
 				if err != nil {
 					return err
 				}
 				// Call unexported func instead of exported method to avoid deadlocking on checking the digest again.
-				bufLockObjectData, err := moduleData.getBufLockObjectData()
+				v1BufLockObjectData, err := moduleData.getV1BufLockObjectData()
 				if err != nil {
 					return err
 				}
-				actualDigest, err = getB4Digest(ctx, bucket, bufYAMLObjectData, bufLockObjectData)
+				actualDigest, err = getB4Digest(ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 				if err != nil {
 					return err
 				}
@@ -200,18 +206,18 @@ func (m *moduleData) DeclaredDepModuleKeys() ([]ModuleKey, error) {
 	return m.getDeclaredDepModuleKeys()
 }
 
-func (m *moduleData) BufYAMLObjectData() (ObjectData, error) {
+func (m *moduleData) V1Beta1OrV1BufYAMLObjectData() (ObjectData, error) {
 	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
-	return m.getBufYAMLObjectData()
+	return m.getV1BufYAMLObjectData()
 }
 
-func (m *moduleData) BufLockObjectData() (ObjectData, error) {
+func (m *moduleData) V1Beta1OrV1BufLockObjectData() (ObjectData, error) {
 	if err := m.checkDigest(); err != nil {
 		return nil, err
 	}
-	return m.getBufLockObjectData()
+	return m.getV1BufLockObjectData()
 }
 
 func (*moduleData) isModuleData() {}

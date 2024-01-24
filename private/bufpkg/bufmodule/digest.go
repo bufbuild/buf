@@ -223,12 +223,11 @@ func (d *digest) String() string {
 func (*digest) isDigest() {}
 
 // TODO: We need to test that this actually does the same calculation as before!
-// TODO: Does it matter that we could technically be using buf.yaml and buf.lock data with b5's? Probably not.
 func getB4Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,
-	bufYAMLObjectData ObjectData,
-	bufLockObjectData ObjectData,
+	v1BufYAMLObjectData ObjectData,
+	v1BufLockObjectData ObjectData,
 ) (Digest, error) {
 	var fileNodes []bufcas.FileNode
 	if err := storage.WalkReadObjects(
@@ -253,9 +252,13 @@ func getB4Digest(
 		return nil, err
 	}
 	for _, objectData := range []ObjectData{
-		bufYAMLObjectData,
-		bufLockObjectData,
+		v1BufYAMLObjectData,
+		v1BufLockObjectData,
 	} {
+		if objectData == nil {
+			// We may not have object data for one of these files, this is valid.
+			continue
+		}
 		digest, err := bufcas.NewDigestForContent(bytes.NewReader(objectData.Data()))
 		if err != nil {
 			return nil, err

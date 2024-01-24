@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -50,7 +51,10 @@ func newCommand() *appcmd.Command {
 		Short: "Produce a digest for a set of self-contained modules.",
 		Long: `This is a low-level command used to generate digests for modules on disk.
 The modules given must be self-contained, i.e. all dependencies must be represented.
-This is not intended to be used outside of development of the buf codebase.`,
+This is not intended to be used outside of development of the buf codebase.
+
+If a given module contains a v1 buf.yaml and/or buf.lock, they will be included
+in the B4 digest calculations.`,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -101,7 +105,21 @@ func run(
 		if err != nil {
 			return err
 		}
-		moduleSetBuilder.AddLocalModule(bucket, dirPath, true)
+		v1BufYAMLObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, dirPath)
+		if err != nil {
+			return err
+		}
+		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, dirPath)
+		if err != nil {
+			return err
+		}
+		moduleSetBuilder.AddLocalModule(
+			bucket,
+			dirPath,
+			true,
+			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData),
+			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData),
+		)
 	}
 	moduleSet, err := moduleSetBuilder.Build()
 	if err != nil {

@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -34,10 +35,6 @@ import (
 var (
 	// 2023-01-01 at 12:00 UTC
 	mockTime = time.Unix(1672574400, 0)
-	// We specifically do not rely on the buf.yaml being parseable, this helps test that.
-	mockBufYAMLData = []byte("mock_buf_yaml_data")
-	// We specifically do not rely on the buf.lock being parseable, this helps test that.
-	mockBufLockData = []byte("mock_buf_lock_data")
 )
 
 // ModuleData is the data needed to construct a Module in test.
@@ -51,14 +48,21 @@ var (
 //
 // CreateTime is optional. If CreateTime is not set, a mock create Time is created. This create
 // time is the same for all data without a Time.
+//
+// If ReadObjectDataFromBucket is true, buf.yamls and buf.locks will attempt to be read from
+// PathToData, Bucket, or DirPath. Otherwise, BufYAMLObjectData and BufLockObjectData will be
+// used. It is an error to both set ReadObjectDataFromBucket and set Buf.*ObjectData.
 type ModuleData struct {
-	Name        string
-	CommitID    string
-	CreateTime  time.Time
-	DirPath     string
-	PathToData  map[string][]byte
-	Bucket      storage.ReadBucket
-	NotTargeted bool
+	Name                     string
+	CommitID                 string
+	CreateTime               time.Time
+	DirPath                  string
+	PathToData               map[string][]byte
+	Bucket                   storage.ReadBucket
+	NotTargeted              bool
+	BufYAMLObjectData        bufmodule.ObjectData
+	BufLockObjectData        bufmodule.ObjectData
+	ReadObjectDataFromBucket bool
 }
 
 // OmniProvider is a ModuleKeyProvider, ModuleDataProvider, GraphProvider, CommitProvider, and ModuleSet for testing.
@@ -302,10 +306,14 @@ func (o *omniProvider) getModuleDataForModuleKey(
 			return declaredDepModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufmodule.NewObjectData("buf.yaml", mockBufYAMLData)
+			// TODO: This may be nil! This doesn't actually fufill the contract! We need
+			// to do synthesizing here, or we need to relax the contract.
+			return module.V1Beta1OrV1BufYAMLObjectData(), nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufmodule.NewObjectData("buf.lock", mockBufLockData)
+			// TODO: This may be nil! This doesn't actually fufill the contract! We need
+			// to do synthesizing here, or we need to relax the contract.
+			return module.V1Beta1OrV1BufLockObjectData(), nil
 		},
 	), nil
 }
@@ -346,6 +354,16 @@ func addModuleDataToModuleSetBuilder(
 	) != 1 {
 		return errors.New("exactly one of Bucket, PathToData, DirPath must be set on ModuleData")
 	}
+	if boolCount(
+		moduleData.ReadObjectDataFromBucket,
+		moduleData.BufYAMLObjectData != nil,
+	) > 1 || boolCount(
+		moduleData.ReadObjectDataFromBucket,
+		moduleData.BufLockObjectData != nil,
+	) > 1 {
+		return errors.New("cannot set ReadObjectDataFromBucket alongside BufYAMLObjectData or BufLockObjectData")
+	}
+
 	var bucket storage.ReadBucket
 	var bucketID string
 	var err error
@@ -398,6 +416,35 @@ func addModuleDataToModuleSetBuilder(
 		}
 	} else if requireName {
 		return errors.New("ModuleData.Name was required in this context")
+	}
+	if moduleData.ReadObjectDataFromBucket {
+		ctx := context.Background()
+		bufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
+		if err != nil {
+			return err
+		}
+		bufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
+		if err != nil {
+			return err
+		}
+		localModuleOptions = append(
+			localModuleOptions,
+			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(bufYAMLObjectData),
+			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(bufLockObjectData),
+		)
+	} else {
+		if moduleData.BufYAMLObjectData != nil {
+			localModuleOptions = append(
+				localModuleOptions,
+				bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(moduleData.BufYAMLObjectData),
+			)
+		}
+		if moduleData.BufLockObjectData != nil {
+			localModuleOptions = append(
+				localModuleOptions,
+				bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(moduleData.BufLockObjectData),
+			)
+		}
 	}
 	moduleSetBuilder.AddLocalModule(
 		bucket,

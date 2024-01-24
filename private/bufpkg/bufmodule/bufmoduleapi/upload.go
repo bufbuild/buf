@@ -138,6 +138,7 @@ func Upload(
 				DepRefs:         protoDepRefs,
 				ScopedLabelRefs: protoScopedLabelRefs,
 				// TODO: vcs_commit
+				// TODO: buf.yaml, buf.lock
 			}, nil
 		},
 	)

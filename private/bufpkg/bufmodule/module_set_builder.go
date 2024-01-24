@@ -62,6 +62,9 @@ type ModuleSetBuilder interface {
 	// The dependencies of the Module are unknown, since bufmodule does not parse configuration,
 	// and therefore the dependencies of the Module are *not* automatically added to the ModuleSet.
 	//
+	// If you are using a v1 buf.yaml-backed Module, be sure to use LocalModuleWithBufYAMLObjectData and
+	// LocalModuleWithBufLockObjectData!
+	//
 	// Returns the same ModuleSetBuilder.
 	AddLocalModule(
 		bucket storage.ReadBucket,
@@ -169,29 +172,33 @@ func LocalModuleWithProtoFileTargetPath(
 	}
 }
 
-// LocalModuleWithBufYAMLObjectData returns a new LocalModuleOption that attaches the original
-// source buf.yaml file associated with this module.
+// LocalModuleWithV1Beta1OrV1BufYAMLObjectData returns a new LocalModuleOption that attaches the original
+// source buf.yaml file associated with this module for v1 or v1beta1 buf.yaml-backed Modules.
 //
-// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
-// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+// This is required for Modules backed with a v1beta1 or v1 buf.yaml.
+// For Modules backed with v2 buf.yamls, this should not be set.
 //
 // This file content is just used for dependency calculations. It is not parsed.
-func LocalModuleWithBufYAMLObjectData(bufYAMLObjectData ObjectData) LocalModuleOption {
+func LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData ObjectData) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
-		localModuleOptions.bufYAMLObjectData = bufYAMLObjectData
+		localModuleOptions.v1BufYAMLObjectData = v1BufYAMLObjectData
 	}
 }
 
-// LocalModuleWithBufLockObjectData returns a new LocalModuleOption that attaches the original
-// source buf.yaml file associated with this module.
+// LocalModuleWithV1Beta1OrV1BufLockObjectData returns a new LocalModuleOption that attaches the original
+// source buf.local file associated with this Module for v1 or v1beta1 buf.lock-backed Modules.
 //
-// For v1 buf.yamls, this will be the buf.yaml file that defined this Module.
-// For b2 buf.yamls, this will be the buf.yaml file that defined the Workspace that encloses this Module.
+// This is required for Modules backed with a v1beta1 or v1 buf.lock.
+// For Modules backed with v2 buf.locks, this should not be set.
+//
+// Note that a buf.lock may not exist for a v1 Module, if there are no dependencies, and in this
+// case, this is not set. However, if there is a buf.lock file that was generated, even if it
+// had no dependencies, this is set.
 //
 // This file content is just used for dependency calculations. It is not parsed.
-func LocalModuleWithBufLockObjectData(bufLockObjectData ObjectData) LocalModuleOption {
+func LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData ObjectData) LocalModuleOption {
 	return func(localModuleOptions *localModuleOptions) {
-		localModuleOptions.bufLockObjectData = bufLockObjectData
+		localModuleOptions.v1BufLockObjectData = v1BufLockObjectData
 	}
 }
 
@@ -290,8 +297,8 @@ func (b *moduleSetBuilder) AddLocalModule(
 		localModuleOptions.commitID,
 		isTarget,
 		true,
-		localModuleOptions.bufYAMLObjectData,
-		localModuleOptions.bufLockObjectData,
+		localModuleOptions.v1BufYAMLObjectData,
+		localModuleOptions.v1BufLockObjectData,
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
 		localModuleOptions.protoFileTargetPath,
@@ -414,11 +421,11 @@ func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
 			moduleData.ModuleKey().ModuleFullName().String(),
 		)
 	}
-	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+	v1BufYAMLObjectData, err := moduleData.V1Beta1OrV1BufYAMLObjectData()
 	if err != nil {
 		return nil, err
 	}
-	bufLockObjectData, err := moduleData.BufLockObjectData()
+	v1BufLockObjectData, err := moduleData.V1Beta1OrV1BufLockObjectData()
 	if err != nil {
 		return nil, err
 	}
@@ -436,8 +443,8 @@ func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
 		moduleData.ModuleKey().CommitID(),
 		isTarget,
 		false,
-		bufYAMLObjectData,
-		bufLockObjectData,
+		v1BufYAMLObjectData,
+		v1BufLockObjectData,
 		remoteTargetPaths,
 		remoteTargetExcludePaths,
 		"",
@@ -532,8 +539,8 @@ type localModuleOptions struct {
 	targetExcludePaths  []string
 	protoFileTargetPath string
 	includePackageFiles bool
-	bufYAMLObjectData   ObjectData
-	bufLockObjectData   ObjectData
+	v1BufYAMLObjectData ObjectData
+	v1BufLockObjectData ObjectData
 }
 
 func newLocalModuleOptions() *localModuleOptions {

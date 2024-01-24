@@ -4,6 +4,8 @@
 - Dependency resolution
 
 - lots of QA, especially around workspace file searching, target paths
+  - Test both dashful and dashless commit IDs
+  - Lots of testing around b4 and b5 digests
 - document behavior of file searching, config override
 - go through all todos
 - `buf mod init` should create a v2 buf.yaml.

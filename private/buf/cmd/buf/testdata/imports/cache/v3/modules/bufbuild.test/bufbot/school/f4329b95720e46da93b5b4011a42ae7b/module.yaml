@@ -7,5 +7,5 @@ deps:
     commit: 6c776ed5bee54462b06d31fb7f7c16b8
     digest: b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70
 files_dir: files
-buf_yaml_file: buf_yaml/buf.yaml
-buf_lock_file: buf_lock/buf.lock
+v1_buf_yaml_file: v1_buf_yaml/buf.yaml
+v1_buf_lock_file: v1_buf_lock/buf.lock
