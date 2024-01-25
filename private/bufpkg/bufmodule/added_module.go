@@ -162,7 +162,7 @@ func (a *addedModule) ToModule(
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.
 //
 // Modules that are targets are preferred, followed by Modules that are local.
-// Otherwise, remote Modules with earlier create times are preferred.
+// Otherwise, remote Modules with later create times are preferred.
 //
 // Duplication determined based opaqueID, that is if a Module has an equal
 // opaqueID, it is considered a duplicate.
