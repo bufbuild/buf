@@ -465,6 +465,31 @@ func newWorkspaceForBucket(
 	if findControllingWorkspaceResult.Found() {
 		// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
 		if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
+			if config.ignoreAndDisallowV1BufWorkYAMLs {
+				// config.targetSubDirPath is normalized, so if it was empty, it will be ".".
+				if config.targetSubDirPath == "." {
+					// If config.targetSubDirPath is ".", this means we targeted a buf.work.yaml, not an individual module within the buf.work.yaml
+					// This is disallowed.
+					return nil, errors.New("workspaces defined with buf.work.yaml cannot be updated, only the individual modules within a workspace can be updated. Workspaces defined with a v2 buf.yaml can be updated, see the migration documentation for more details.")
+				}
+				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
+				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
+				logger.Debug(
+					"creating new workspace, ignoring v1 buf.work.yaml, just building on module at target",
+					zap.String("targetSubDirPath", config.targetSubDirPath),
+				)
+				return newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
+					ctx,
+					logger,
+					bucket,
+					clientProvider,
+					moduleDataProvider,
+					commitProvider,
+					config,
+					[]string{config.targetSubDirPath},
+					nil,
+				)
+			}
 			logger.Debug(
 				"creating new workspace based on v1 buf.work.yaml",
 				zap.String("targetSubDirPath", config.targetSubDirPath),

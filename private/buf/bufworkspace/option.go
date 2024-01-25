@@ -59,6 +59,28 @@ func WithProtoFileTargetPath(
 	}
 }
 
+// WithIgnoreAndDisallowV1BufWorkYAMLs returns a new WorkspaceBucketOption that says
+// to ignore dependencies from buf.work.yamls at the root of the bucket, and to also
+// disallow directories with buf.work.yamls to be directly targeted.
+//
+// This is used for v1 updates with buf mod prune and buf mod update.
+//
+// A the root of the bucket targets a buf.work.yaml, but the targetSubDirPath targets
+// a module, this is allowed.
+//
+// Example: ./buf.work.yaml, targetSubDirPath = foo/bar, foo/bar/buf.yaml and foo/bar/buf.lock v1
+// This will result in the dependencies from buf.work.yaml being ignored, and a Workspace
+// with just the Module at foo/bar plus the dependencies from foo/bar/buf.lock being added.
+//
+// Example: ./buf.work.yaml, targetSubDirPath = .
+// This will result in an error.
+//
+// Example: ./buf.yaml v1.
+// This is fine.
+func WithIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
+	return &workspaceIgnoreAndDisallowV1BufWorkYAMLsOption{}
+}
+
 // WorkspaceModuleKeyOption is an option for a new Workspace created by a ModuleKey.
 type WorkspaceModuleKeyOption interface {
 	applyToWorkspaceModuleKeyConfig(*workspaceModuleKeyConfig)
@@ -152,13 +174,20 @@ func (c *workspaceConfigOverrideOption) applyToWorkspaceModuleKeyConfig(config *
 	config.configOverride = c.configOverride
 }
 
+type workspaceIgnoreAndDisallowV1BufWorkYAMLsOption struct{}
+
+func (c *workspaceIgnoreAndDisallowV1BufWorkYAMLsOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
+	config.ignoreAndDisallowV1BufWorkYAMLs = true
+}
+
 type workspaceBucketConfig struct {
-	targetSubDirPath    string
-	targetPaths         []string
-	targetExcludePaths  []string
-	protoFileTargetPath string
-	includePackageFiles bool
-	configOverride      string
+	targetSubDirPath                string
+	targetPaths                     []string
+	targetExcludePaths              []string
+	protoFileTargetPath             string
+	includePackageFiles             bool
+	configOverride                  string
+	ignoreAndDisallowV1BufWorkYAMLs bool
 }
 
 func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucketConfig, error) {
