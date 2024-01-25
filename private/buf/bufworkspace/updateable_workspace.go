@@ -16,6 +16,8 @@ package bufworkspace
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -39,6 +41,14 @@ type UpdateableWorkspace interface {
 
 	// BufLockFileDigestType returns the DigestType that the buf.lock file expects.
 	BufLockFileDigestType() bufmodule.DigestType
+	// ExisingBufLockFileDepModuleKeys returns the ModuleKeys from the updateable buf.lock file.
+	//
+	// We use this in a convoluted way - once we do the update, we attempt to rebuild the Workspace. If the build
+	// fails, we try to revert the buf.lock file.
+	//
+	// This could be refactored to be much better - in a perfect world, we'd update the buf.lock file virtually,
+	// do a rebuild, and only actually write to disk if we succeeded. See buf mod prune for more details.
+	ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error)
 	// UpdateBufLockFile updates the lock file that backs this Workspace to contain exactly
 	// the given ModuleKeys.
 	//
@@ -69,7 +79,7 @@ func NewUpdateableWorkspaceForBucket(
 type updateableWorkspace struct {
 	*workspace
 
-	bucket storage.WriteBucket
+	bucket storage.ReadWriteBucket
 }
 
 func newUpdateableWorkspaceForBucket(
@@ -110,6 +120,17 @@ func (w *updateableWorkspace) BufLockFileDigestType() bufmodule.DigestType {
 		return bufmodule.DigestTypeB5
 	}
 	return bufmodule.DigestTypeB4
+}
+
+func (w *updateableWorkspace) ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error) {
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.updateableBufLockDirPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return bufLockFile.DepModuleKeys(), nil
 }
 
 func (w *updateableWorkspace) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error {

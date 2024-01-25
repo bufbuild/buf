@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -197,9 +198,30 @@ func run(
 		}
 	}
 	depModuleKeys := slicesext.MapValuesToSlice(remoteDepNameToModuleKey)
-	// TODO: Make sure the workspace builds again. This will also have the side effect of doing tamper-proofing
-	// Revert the update if the workspace does not build.
-	return updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys)
+
+	// We could probably derive this from RemoteDepsForModuleSet, but we're going right to the source, to be safe.
+	existingDepModuleKeys, err := updateableWorkspace.ExistingBufLockFileDepModuleKeys(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Once we update the buf.lock file, we verify the workspace builds again. If not, we attempt to revert.
+	// This also has the side effect of doing tamper-proofing.
+	if err := updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys); err != nil {
+		return err
+	}
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		updateableWorkspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return multierr.Append(
+			err,
+			updateableWorkspace.UpdateBufLockFile(ctx, existingDepModuleKeys),
+		)
+	}
+	return nil
+
 }
 
 // Returns a function that returns true if the named module is a transitive remote
