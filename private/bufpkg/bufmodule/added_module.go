@@ -16,11 +16,13 @@ package bufmodule
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -104,7 +106,7 @@ func (a *addedModule) ToModule(
 	if a.localModule != nil {
 		return a.localModule, nil
 	}
-	// Else, get ther remote Module.
+	// Else, get the remote Module.
 	moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
 		ctx,
 		[]ModuleKey{a.remoteModuleKey},
@@ -225,8 +227,6 @@ func selectAddedModuleForOpaqueID(
 		// within selectAddedModuleForOpaqueIDIgnoreTargeting.
 		return selectAddedModuleForOpaqueIDIgnoreTargeting(ctx, commitProvider, targetAddedModules)
 	}
-
-	return nil, nil
 }
 
 // selectAddedModuleForOpaqueIDIgnoreTargeting is a child function of selectAddedModuleForOpaqueID
@@ -261,6 +261,9 @@ func selectAddedModuleForOpaqueIDIgnoreTargeting(
 // All addedModules are assumed to have the same OpaqueID, and therefore the same
 // ModuleFullName, since they are remote Modules. We validate this.
 //
+// Note that there may be straight duplicates, ie two modules with the same ModuleFullName and CommitID! This
+// function deduplicates these.
+//
 // The ModuleKey with the latest create time is used.
 func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 	ctx context.Context,
@@ -270,40 +273,58 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 	if len(addedModules) == 0 {
 		return nil, syserror.New("expected at least one remote addedModule in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting")
 	}
+	for _, addedModule := range addedModules {
+		// Just a sanity check.
+		if addedModule.remoteModuleKey == nil {
+			return nil, syserror.Newf("got nil remoteModuleKey in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting for addedModule %q", addedModule.OpaqueID())
+		}
+	}
 	if len(addedModules) == 1 {
 		return addedModules[0], nil
 	}
-	moduleKeys, err := slicesext.MapError(
-		addedModules,
-		func(addedModule *addedModule) (ModuleKey, error) {
-			if addedModule.remoteModuleKey == nil {
-				return nil, syserror.Newf("got nil remoteModuleKey in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting for addedModule %q", addedModule.OpaqueID())
-			}
-			return addedModule.remoteModuleKey, nil
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 	if moduleFullNameStrings := slicesext.ToUniqueSorted(
 		slicesext.Map(
-			moduleKeys,
-			func(moduleKey ModuleKey) string { return moduleKey.ModuleFullName().String() },
+			addedModules,
+			func(addedModule *addedModule) string { return addedModule.remoteModuleKey.ModuleFullName().String() },
 		),
 	); len(moduleFullNameStrings) > 1 {
 		return nil, syserror.Newf("multiple ModuleFullNames detected in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting: %s", strings.Join(moduleFullNameStrings, ", "))
 	}
 
+	// We now know that we have >1 addedModules, and all of them have a remoteModuleKey, and all the remoteModuleKeys have the same ModuleFullName.
+
+	// Now, we deduplicate by commit ID. If we end up with a single Module, we return that, otherwise we select exactly one Module
+	// based on the create time of the corresponding commit ID.
+	commitIDToAddedModules := slicesext.ToValuesMap(
+		addedModules,
+		func(addedModule *addedModule) uuid.UUID { return addedModule.remoteModuleKey.CommitID() },
+	)
+	uniqueAddedModules := make([]*addedModule, 0, len(commitIDToAddedModules))
+	for _, addedModules := range commitIDToAddedModules {
+		uniqueAddedModules = append(uniqueAddedModules, addedModules[0])
+	}
+	if len(uniqueAddedModules) == 1 {
+		return uniqueAddedModules[0], nil
+	}
+
+	// We now know that we have non-unique remote added Modules, and have selected exactly one addedModule per commit ID.
+
+	uniqueModuleKeys := slicesext.Map(
+		uniqueAddedModules,
+		func(addedModule *addedModule) ModuleKey {
+			return addedModule.remoteModuleKey
+		},
+	)
 	// Returned commits are in same order as input ModuleKeys
-	commits, err := commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
+	commits, err := commitProvider.GetCommitsForModuleKeys(ctx, uniqueModuleKeys)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not resolve modules from buf.lock: %w", err)
 	}
 	createTime, err := commits[0].CreateTime()
 	if err != nil {
 		return nil, err
 	}
-	addedModule := addedModules[0]
+	uniqueAddedModule := uniqueAddedModules[0]
 	// i+1 is index inside moduleKeys and addedModules.
 	//
 	// Find the commit with the latest CreateTime, this is the addedModule you want to return.
@@ -313,9 +334,9 @@ func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
 			return nil, err
 		}
 		if iCreateTime.After(createTime) {
-			addedModule = addedModules[i+1]
+			uniqueAddedModule = uniqueAddedModules[i+1]
 			createTime = iCreateTime
 		}
 	}
-	return addedModule, nil
+	return uniqueAddedModule, nil
 }
