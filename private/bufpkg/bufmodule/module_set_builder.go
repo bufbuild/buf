@@ -361,7 +361,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	}
 
 	// Get the unique modules, preferring targets over non-targets, and local over remote.
-	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(b.ctx, b.addedModules)
+	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(b.ctx, b.commitProvider, b.addedModules)
 	if err != nil {
 		return nil, err
 	}

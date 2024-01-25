@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -161,9 +160,7 @@ func (a *addedModule) ToModule(
 // getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.
 //
 // Modules that are targets are preferred, followed by Modules that are local.
-// Otherwise, Modules earlier in the slice are preferred. Note that this means that if two
-// remote non-target Modules are added for different Commit IDs, the one that was added
-// first will be preferred (ie we are not doing any dependency resolution here).
+// Otherwise, remote Modules with earlier create times are preferred.
 //
 // Duplication determined based opaqueID, that is if a Module has an equal
 // opaqueID, it is considered a duplicate.
@@ -176,84 +173,127 @@ func (a *addedModule) ToModule(
 // Note: Modules with the same ModuleFullName will automatically have the same commit and Digest after this,
 // as there will be exactly one Module with a given ModuleFullName, given that an OpaqueID will be equal
 // for Modules with equal ModuleFullNames.
-func getUniqueSortedAddedModulesByOpaqueID(ctx context.Context, addedModules []*addedModule) ([]*addedModule, error) {
-	// sort.SliceStable keeps equal elements in their original order, so this does
-	// not affect the "earlier preferred" property.
-	//
-	// However, after this, we can really apply "earlier" preferred to denote "prefer targets over
-	// non-targets, then prefer local over remote."
-	sort.SliceStable(
-		addedModules,
-		func(i int, j int) bool {
-			m1 := addedModules[i]
-			m2 := addedModules[j]
-			// If this ever comes up in the future: by preferring remote targets over local non-targets,
-			// we are in a situation where we might have a local module, but we use the remote module
-			// anyways, which leads to a BSR call we didn't want to make. See addedModule documentation.
-			// We're making the bet that if we did add a remote target module, we had a good reason
-			// to do so (i.e. we want that version of the module for some reason) so we're going
-			// to prefer it.
-			if m1.IsTarget() && !m2.IsTarget() {
-				return true
-			}
-			if !m1.IsTarget() && m2.IsTarget() {
-				return false
-			}
-			if m1.IsLocal() && !m2.IsLocal() {
-				return true
-			}
-			// includes if !m1.IsLocal() && m2.IsLocal()
-			return false
-		},
-	)
-	// Digest *cannot* be used here - it's a chicken or egg problem. Computing the digest requires the cache,
-	// the cache requires the unique Modules, the unique Modules require this function. This is OK though -
-	// we want to add all Modules that we *think* are unique to the cache. If there is a duplicate, it
-	// will be detected via cache usage.
-	alreadySeenOpaqueIDs := make(map[string]struct{})
-	uniqueAddedModules := make([]*addedModule, 0, len(addedModules))
-	for _, addedModule := range addedModules {
-		opaqueID := addedModule.OpaqueID()
-		if opaqueID == "" {
-			return nil, syserror.New("OpaqueID was empty which should never happen")
-		}
-		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
-			alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-			uniqueAddedModules = append(uniqueAddedModules, addedModule)
-		}
-	}
-	sort.Slice(
-		uniqueAddedModules,
-		func(i int, j int) bool {
-			return uniqueAddedModules[i].OpaqueID() < uniqueAddedModules[j].OpaqueID()
-		},
-	)
-	return uniqueAddedModules, nil
-}
-
-// resolveModuleKeys gets the ModuleKey with the latest create time.
-//
-// All ModuleKeys expected to have the same ModuleFullName.
-func resolveModuleKeys(
+func getUniqueSortedAddedModulesByOpaqueID(
 	ctx context.Context,
 	commitProvider CommitProvider,
-	moduleKeys []ModuleKey,
-) (ModuleKey, error) {
-	if len(moduleKeys) == 0 {
-		return nil, syserror.New("expected at least one ModuleKey")
+	addedModules []*addedModule,
+) ([]*addedModule, error) {
+	opaqueIDToAddedModules := slicesext.ToValuesMap(addedModules, (*addedModule).OpaqueID)
+	resultAddedModules := make([]*addedModule, 0, len(opaqueIDToAddedModules))
+	for _, addedModulesForOpaqueID := range opaqueIDToAddedModules {
+		resultAddedModule, err := selectAddedModuleForOpaqueID(ctx, commitProvider, addedModulesForOpaqueID)
+		if err != nil {
+			return nil, err
+		}
+		resultAddedModules = append(resultAddedModules, resultAddedModule)
 	}
-	if len(moduleKeys) == 1 {
-		return moduleKeys[0], nil
+	sort.Slice(
+		resultAddedModules,
+		func(i int, j int) bool {
+			return resultAddedModules[i].OpaqueID() < resultAddedModules[j].OpaqueID()
+		},
+	)
+	return resultAddedModules, nil
+}
+
+// selectAddedModuleForOpaqueID selects the single addedModule that should be used for a list
+// of addedModules that all have ths same OpaqueID.
+//
+// Note from earlier, not deleting:
+//
+// Digest *cannot* be used here - it's a chicken or egg problem. Computing the digest requires the cache,
+// the cache requires the unique Modules, the unique Modules require this function. This is OK though -
+// we want to add all Modules that we *think* are unique to the cache. If there is a duplicate, it
+// will be detected via cache usage.
+func selectAddedModuleForOpaqueID(
+	ctx context.Context,
+	commitProvider CommitProvider,
+	addedModules []*addedModule,
+) (*addedModule, error) {
+	// First, we see if there are any target Modules. If so, we prefer those.
+	targetAddedModules := slicesext.Filter(addedModules, (*addedModule).IsTarget)
+	switch len(targetAddedModules) {
+	case 0:
+		// We have no target Modules. We will select a non-target Module via
+		// selectAddedModuleForOpaqueIDIgnoreTargeting
+		return selectAddedModuleForOpaqueIDIgnoreTargeting(ctx, commitProvider, addedModules)
+	case 1:
+		// We have one target Module. Use this Module.
+		return targetAddedModules[0], nil
+	default:
+		// We have multiple target Modules. We will select one of them, but go to the next step
+		// within selectAddedModuleForOpaqueIDIgnoreTargeting.
+		return selectAddedModuleForOpaqueIDIgnoreTargeting(ctx, commitProvider, targetAddedModules)
 	}
-	// Validate we're all within one registry for now.
+
+	return nil, nil
+}
+
+// selectAddedModuleForOpaqueIDIgnoreTargeting is a child function of selectAddedModuleForOpaqueID
+// that assumes targeting has already been taken into account.
+//
+// This function will just take into account local vs remote, and then resolution between
+// remote Modules.
+func selectAddedModuleForOpaqueIDIgnoreTargeting(
+	ctx context.Context,
+	commitProvider CommitProvider,
+	addedModules []*addedModule,
+) (*addedModule, error) {
+	// Now, we see if there are any local Modules. If so, we prefer those
+	localAddedModules := slicesext.Filter(addedModules, (*addedModule).IsLocal)
+	switch len(localAddedModules) {
+	case 0:
+		// We have no local Modules. We will select a remote Module.
+		return selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(ctx, commitProvider, addedModules)
+		// We have one or more added Modules. We just return the first one - we have
+		// no way to differentiate between local Modules. Note that this will result
+		// in the first Module added with AddLocalModule to be used, given that we
+		// have not messed with ordering.
+	default:
+		return localAddedModules[0], nil
+	}
+}
+
+// selectRemoteAddedModuleForOpaqueIDIgnoreTargeting is a child function of
+// selectAddedModuleForOpaqueIDIgnoreTargeting that assumes targeting and local vs remote
+// has already been taken into account.
+//
+// All addedModules are assumed to have the same OpaqueID, and therefore the same
+// ModuleFullName, since they are remote Modules. We validate this.
+//
+// The ModuleKey with the latest create time is used.
+func selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(
+	ctx context.Context,
+	commitProvider CommitProvider,
+	addedModules []*addedModule,
+) (*addedModule, error) {
+	if len(addedModules) == 0 {
+		return nil, syserror.New("expected at least one remote addedModule in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting")
+	}
+	if len(addedModules) == 1 {
+		return addedModules[0], nil
+	}
+	moduleKeys, err := slicesext.MapError(
+		addedModules,
+		func(addedModule *addedModule) (ModuleKey, error) {
+			if addedModule.remoteModuleKey == nil {
+				return nil, syserror.Newf("got nil remoteModuleKey in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting for addedModule %q", addedModule.OpaqueID())
+			}
+			return addedModule.remoteModuleKey, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 	if moduleFullNameStrings := slicesext.ToUniqueSorted(
 		slicesext.Map(
 			moduleKeys,
 			func(moduleKey ModuleKey) string { return moduleKey.ModuleFullName().String() },
 		),
 	); len(moduleFullNameStrings) > 1 {
-		return nil, fmt.Errorf("multiple ModuleFullNames detected: %s", strings.Join(moduleFullNameStrings, ", "))
+		return nil, syserror.Newf("multiple ModuleFullNames detected in selectRemoteAddedModuleForOpaqueIDIgnoreTargeting: %s", strings.Join(moduleFullNameStrings, ", "))
 	}
+
 	// Returned commits are in same order as input ModuleKeys
 	commits, err := commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
 	if err != nil {
@@ -263,19 +303,19 @@ func resolveModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	moduleKey := moduleKeys[0]
-	// i+1 is index inside moduleKeys.
+	addedModule := addedModules[0]
+	// i+1 is index inside moduleKeys and addedModules.
 	//
-	// Find the commit with the latest CreateTime, this is the ModuleKey you want to return.
+	// Find the commit with the latest CreateTime, this is the addedModule you want to return.
 	for i, commit := range commits[1:] {
 		iCreateTime, err := commit.CreateTime()
 		if err != nil {
 			return nil, err
 		}
 		if iCreateTime.After(createTime) {
-			moduleKey = moduleKeys[i+1]
+			addedModule = addedModules[i+1]
 			createTime = iCreateTime
 		}
 	}
-	return moduleKey, nil
+	return addedModule, nil
 }
