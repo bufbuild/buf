@@ -159,11 +159,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleVisiblity, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility)
-	if err != nil {
-		return err
-	}
 	if flags.Create {
+		moduleVisiblity, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return err
+		}
 		if err := createTargetModulesIfNotExist(
 			ctx,
 			clientProvider,
