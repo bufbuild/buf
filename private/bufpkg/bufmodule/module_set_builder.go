@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"sort"
 	"sync/atomic"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -283,6 +282,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 		normalpath.Ext(localModuleOptions.protoFileTargetPath) != ".proto" {
 		return b.addError(syserror.Newf("proto file target %q is not a .proto file", localModuleOptions.protoFileTargetPath))
 	}
+
 	// TODO: normalize and validate all paths
 	module, err := newModule(
 		b.ctx,
@@ -333,6 +333,7 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	if !isTarget && (len(remoteModuleOptions.targetPaths) > 0 || len(remoteModuleOptions.targetExcludePaths) > 0) {
 		return b.addError(syserror.New("cannot set TargetPaths for a non-target Module when calling AddRemoteModule"))
 	}
+
 	b.addedModules = append(
 		b.addedModules,
 		newRemoteAddedModule(
@@ -364,93 +365,16 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	modules := make([]Module, 0, len(addedModules))
-	for _, addedModule := range addedModules {
-		if addedModule.IsLocal() {
-			// If the module was local, just add it - we're done.
-			modules = append(modules, addedModule.localModule)
-		} else {
-			// If the module was remote, actually build the module.
-			remoteModule, err := b.getModuleForRemoteModuleKey(
-				addedModule.remoteModuleKey,
-				addedModule.remoteTargetPaths,
-				addedModule.remoteTargetExcludePaths,
-				addedModule.isTarget,
-			)
-			if err != nil {
-				return nil, err
-			}
-			modules = append(modules, remoteModule)
-		}
-	}
-	// We know modules is a unique slice, but the sorting may be messed up now courtesy
-	// of our transitive module retrieval.
-	sort.Slice(
-		modules,
-		func(i int, j int) bool {
-			return modules[i].OpaqueID() < modules[j].OpaqueID()
+	modules, err := slicesext.MapError(
+		addedModules,
+		func(addedModule *addedModule) (Module, error) {
+			return addedModule.ToModule(b.ctx, b.logger, b.moduleDataProvider)
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 	return newModuleSet(modules)
-}
-
-// getModuleForRemoteModuleKey gets the Module for the ModuleKey.
-func (b *moduleSetBuilder) getModuleForRemoteModuleKey(
-	remoteModuleKey ModuleKey,
-	remoteTargetPaths []string,
-	remoteTargetExcludePaths []string,
-	isTarget bool,
-) (Module, error) {
-	moduleDatas, err := b.moduleDataProvider.GetModuleDatasForModuleKeys(
-		b.ctx,
-		[]ModuleKey{remoteModuleKey},
-	)
-	if err != nil {
-		return nil, err
-	}
-	if len(moduleDatas) != 1 {
-		return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
-	}
-	moduleData := moduleDatas[0]
-	if moduleData.ModuleKey().ModuleFullName() == nil {
-		return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
-	}
-	if remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
-		return nil, syserror.Newf(
-			"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
-			remoteModuleKey.ModuleFullName().String(),
-			moduleData.ModuleKey().ModuleFullName().String(),
-		)
-	}
-	v1BufYAMLObjectData, err := moduleData.V1Beta1OrV1BufYAMLObjectData()
-	if err != nil {
-		return nil, err
-	}
-	v1BufLockObjectData, err := moduleData.V1Beta1OrV1BufLockObjectData()
-	if err != nil {
-		return nil, err
-	}
-	// TODO: normalize and validate all paths
-	return newModule(
-		b.ctx,
-		b.logger,
-		// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
-		// only be constructed via NewModuleData.
-		//
-		// TODO: This is a bit shady.
-		moduleData.Bucket,
-		"",
-		moduleData.ModuleKey().ModuleFullName(),
-		moduleData.ModuleKey().CommitID(),
-		isTarget,
-		false,
-		v1BufYAMLObjectData,
-		v1BufLockObjectData,
-		remoteTargetPaths,
-		remoteTargetExcludePaths,
-		"",
-		false,
-	)
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
@@ -459,79 +383,6 @@ func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
 }
 
 func (*moduleSetBuilder) isModuleSetBuilder() {}
-
-// getUniqueSortedModulesByOpaqueID deduplicates and sorts the addedModule list.
-//
-// Modules that are targets are preferred, followed by Modules that are local.
-// Otherwise, Modules earlier in the slice are preferred. Note that this means that if two
-// remote non-target Modules are added for different Commit IDs, the one that was added
-// first will be preferred (ie we are not doing any dependency resolution here).
-//
-// Duplication determined based opaqueID, that is if a Module has an equal
-// opaqueID, it is considered a duplicate.
-//
-// We want to account for Modules with the same name but different digests, that is a dep in a workspace
-// that has the same name as something in a buf.lock file, we prefer the local dep in the workspace.
-//
-// When returned, all modules have unique opaqueIDs and Digests.
-//
-// Note: Modules with the same ModuleFullName will automatically have the same commit and Digest after this,
-// as there will be exactly one Module with a given ModuleFullName, given that an OpaqueID will be equal
-// for Modules with equal ModuleFullNames.
-func getUniqueSortedAddedModulesByOpaqueID(ctx context.Context, addedModules []*addedModule) ([]*addedModule, error) {
-	// sort.SliceStable keeps equal elements in their original order, so this does
-	// not affect the "earlier preferred" property.
-	//
-	// However, after this, we can really apply "earlier" preferred to denote "prefer targets over
-	// non-targets, then prefer local over remote."
-	sort.SliceStable(
-		addedModules,
-		func(i int, j int) bool {
-			m1 := addedModules[i]
-			m2 := addedModules[j]
-			// If this ever comes up in the future: by preferring remote targets over local non-targets,
-			// we are in a situation where we might have a local module, but we use the remote module
-			// anyways, which leads to a BSR call we didn't want to make. See addedModule documentation.
-			// We're making the bet that if we did add a remote target module, we had a good reason
-			// to do so (i.e. we want that version of the module for some reason) so we're going
-			// to prefer it.
-			if m1.IsTarget() && !m2.IsTarget() {
-				return true
-			}
-			if !m1.IsTarget() && m2.IsTarget() {
-				return false
-			}
-			if m1.IsLocal() && !m2.IsLocal() {
-				return true
-			}
-			// includes if !m1.IsLocal() && m2.IsLocal()
-			return false
-		},
-	)
-	// Digest *cannot* be used here - it's a chicken or egg problem. Computing the digest requires the cache,
-	// the cache requires the unique Modules, the unique Modules require this function. This is OK though -
-	// we want to add all Modules that we *think* are unique to the cache. If there is a duplicate, it
-	// will be detected via cache usage.
-	alreadySeenOpaqueIDs := make(map[string]struct{})
-	uniqueAddedModules := make([]*addedModule, 0, len(addedModules))
-	for _, addedModule := range addedModules {
-		opaqueID := addedModule.OpaqueID()
-		if opaqueID == "" {
-			return nil, syserror.New("OpaqueID was empty which should never happen")
-		}
-		if _, ok := alreadySeenOpaqueIDs[opaqueID]; !ok {
-			alreadySeenOpaqueIDs[opaqueID] = struct{}{}
-			uniqueAddedModules = append(uniqueAddedModules, addedModule)
-		}
-	}
-	sort.Slice(
-		uniqueAddedModules,
-		func(i int, j int) bool {
-			return uniqueAddedModules[i].OpaqueID() < uniqueAddedModules[j].OpaqueID()
-		},
-	)
-	return uniqueAddedModules, nil
-}
 
 type localModuleOptions struct {
 	moduleFullName      ModuleFullName
@@ -555,64 +406,4 @@ type remoteModuleOptions struct {
 
 func newRemoteModuleOptions() *remoteModuleOptions {
 	return &remoteModuleOptions{}
-}
-
-// addedModule represents a Module that was added.
-// This is needed because when we add a remote Module, we make
-// a call out to the API to get the ModuleData by ModuleKey. However, if we are in
-// a situation where we have a v1 workspace with named modules, but those modules
-// do not actually exist in the BSR, and only in the workspace, AND we have a buf.lock
-// that represents those modules, we don't want to actually do the work to retrieve
-// the Module from the BSR, as in the end, the local Module in the workspace will win
-// out in getUniqueModulesByOpaqueID. Even if this weren't the case, we don't want to
-// make unnecessary BSR calls. So, instead of making the call, we store the information
-// that we will need in getUniqueModulesByOpaqueID, and once we've filtered out the
-// modules we don't need, we actually create the remote Module. At this point, any modules
-// that were both local (in the workspace) and remote (via a buf.lock) will have the
-// buf.lock-added Modules filtered out, and no BSR call will be made.
-type addedModule struct {
-	localModule              Module
-	remoteModuleKey          ModuleKey
-	remoteTargetPaths        []string
-	remoteTargetExcludePaths []string
-	isTarget                 bool
-}
-
-func newLocalAddedModule(
-	localModule Module,
-	isTarget bool,
-) *addedModule {
-	return &addedModule{
-		localModule: localModule,
-		isTarget:    isTarget,
-	}
-}
-
-func newRemoteAddedModule(
-	remoteModuleKey ModuleKey,
-	remoteTargetPaths []string,
-	remoteTargetExcludePaths []string,
-	isTarget bool,
-) *addedModule {
-	return &addedModule{
-		remoteModuleKey:          remoteModuleKey,
-		remoteTargetPaths:        remoteTargetPaths,
-		remoteTargetExcludePaths: remoteTargetExcludePaths,
-		isTarget:                 isTarget,
-	}
-}
-
-func (a *addedModule) IsLocal() bool {
-	return a.localModule != nil
-}
-
-func (a *addedModule) IsTarget() bool {
-	return a.isTarget
-}
-
-func (a *addedModule) OpaqueID() string {
-	if a.remoteModuleKey != nil {
-		return a.remoteModuleKey.ModuleFullName().String()
-	}
-	return a.localModule.OpaqueID()
 }
