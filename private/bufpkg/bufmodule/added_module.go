@@ -245,11 +245,11 @@ func selectAddedModuleForOpaqueIDIgnoreTargeting(
 	case 0:
 		// We have no local Modules. We will select a remote Module.
 		return selectRemoteAddedModuleForOpaqueIDIgnoreTargeting(ctx, commitProvider, addedModules)
+	default:
 		// We have one or more added Modules. We just return the first one - we have
 		// no way to differentiate between local Modules. Note that this will result
 		// in the first Module added with AddLocalModule to be used, given that we
 		// have not messed with ordering.
-	default:
 		return localAddedModules[0], nil
 	}
 }
