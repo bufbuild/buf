@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 )
 
 // errIsWKT is the error returned by getFastscanResultForPath or getModuleForFilePath if the
@@ -63,7 +64,7 @@ type ModuleSet interface {
 	// GetModuleForCommitID gets the Module for the CommitID, if it exists.
 	//
 	// Returns nil if there is no Module with the given CommitID.
-	GetModuleForCommitID(commitID string) Module
+	GetModuleForCommitID(commitID uuid.UUID) Module
 
 	// WithTargetOpaqueIDs returns a new ModuleSet that changes the targeted Modules to
 	// the Modules with the specified OpaqueIDs.
@@ -196,7 +197,7 @@ type moduleSet struct {
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
 	bucketIDToModule             map[string]Module
-	commitIDToModule             map[string]Module
+	commitIDToModule             map[uuid.UUID]Module
 
 	// filePathToModule is a cache of filePath -> module.
 	//
@@ -211,7 +212,7 @@ func newModuleSet(
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
 	opaqueIDToModule := make(map[string]Module, len(modules))
 	bucketIDToModule := make(map[string]Module, len(modules))
-	commitIDToModule := make(map[string]Module, len(modules))
+	commitIDToModule := make(map[uuid.UUID]Module, len(modules))
 	for _, module := range modules {
 		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 			moduleFullNameString := moduleFullName.String()
@@ -236,10 +237,10 @@ func newModuleSet(
 			bucketIDToModule[bucketID] = module
 		}
 		commitID := module.CommitID()
-		if commitID != "" {
+		if !commitID.IsNil() {
 			if _, ok := commitIDToModule[commitID]; ok {
 				// This should never happen.
-				return nil, syserror.Newf("duplicate CommitID %q when constructing ModuleSet", commitID)
+				return nil, syserror.Newf("duplicate CommitID %v when constructing ModuleSet", commitID)
 			}
 			commitIDToModule[commitID] = module
 		}
@@ -275,7 +276,7 @@ func (m *moduleSet) GetModuleForBucketID(bucketID string) Module {
 	return m.bucketIDToModule[bucketID]
 }
 
-func (m *moduleSet) GetModuleForCommitID(commitID string) Module {
+func (m *moduleSet) GetModuleForCommitID(commitID uuid.UUID) Module {
 	return m.commitIDToModule[commitID]
 }
 

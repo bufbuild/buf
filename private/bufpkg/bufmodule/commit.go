@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/syncext"
-	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 // Commit represents a Commit on the BSR.
@@ -110,10 +109,3 @@ func (c *commit) Digest() (Digest, error) {
 }
 
 func (*commit) isCommit() {}
-
-func validateCommitID(commitID string) error {
-	if err := uuidutil.ValidateDashless(commitID); err != nil {
-		return fmt.Errorf("invalid commit ID %s: %w", commitID, err)
-	}
-	return nil
-}

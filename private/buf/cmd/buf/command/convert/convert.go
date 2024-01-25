@@ -248,7 +248,7 @@ func wellKnownTypeImage(
 	tracer tracing.Tracer,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		datawkt.ReadBucket,
 		".",

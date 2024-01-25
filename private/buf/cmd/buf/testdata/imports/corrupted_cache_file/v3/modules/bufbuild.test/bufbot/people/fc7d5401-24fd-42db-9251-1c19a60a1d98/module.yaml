@@ -1,0 +1,4 @@
+version: v1
+files_dir: files
+v1_buf_yaml_file: v1_buf_yaml/buf.yaml
+v1_buf_lock_file: v1_buf_lock/buf.lock

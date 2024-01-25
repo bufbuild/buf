@@ -459,7 +459,7 @@ func unzipPluginToSourceBucket(ctx context.Context, pluginZip string, size int64
 			retErr = multierr.Append(retErr, fmt.Errorf("plugin zip close error: %w", err))
 		}
 	}()
-	return storagearchive.Unzip(ctx, f, size, bucket, nil, 0)
+	return storagearchive.Unzip(ctx, f, size, bucket)
 }
 
 func loadDockerImage(ctx context.Context, bucket storage.ReadBucket) (storage.ReadObjectCloser, error) {

@@ -253,8 +253,6 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 }
 
 // ValidateRequiredFlag validates that the required flag is set.
-//
-// TODO: Is this needed over appcmd.MarkFlagRequired?
 func ValidateRequiredFlag[T comparable](flagName string, value T) error {
 	var zero T
 	if value == zero {

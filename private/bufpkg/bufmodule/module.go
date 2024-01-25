@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -77,12 +78,13 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
-	// A CommitID is always a dashless UUID.
-	// The CommitID converted to using dashes is the ID of the Commit on the BSR.
-	// May be empty. Callers should not rely on this value being present.
+	// A CommitID is always a dashful UUID, i.e. this is a proper UUID.
+	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
+	// May be empty, that is CommitID().IsNil() may be true.
+	// Callers should not rely on this value being present.
 	//
 	// If ModuleFullName is nil, this will always be empty.
-	CommitID() string
+	CommitID() uuid.UUID
 
 	// Digest returns the Module digest for the given DigestType.
 	//
@@ -139,6 +141,23 @@ type Module interface {
 	//
 	// Remote Modules will always have ModuleFullNames.
 	IsLocal() bool
+
+	// V1Beta1OrV1BufYAMLObjectData returns the original source buf.yaml associated with this Module, if the
+	// Module was backed with a v1beta1 or v1 buf.yaml.
+	//
+	// This may not be set, in the cases where a v1 Module was built with no buf.yaml (ie the defaults),
+	// or with a v2 Module.
+	//
+	// This file content is just used for dependency calculations. It is not parsed.
+	V1Beta1OrV1BufYAMLObjectData() ObjectData
+	// V1Beta1OrV1BufLockObjectData returns the original source buf.lock associated with this Module, if the
+	// Module was backed with a v1beta1 or v1 buf.lock.
+	//
+	// This may not be set, in the cases where a buf.lock was not present due to no dependencies, or
+	// with a v2 Module.
+	//
+	// This file content is just used for dependency calculations. It is not parsed.
+	V1Beta1OrV1BufLockObjectData() ObjectData
 
 	// ModuleSet returns the ModuleSet that this Module is contained within.
 	//
@@ -238,16 +257,16 @@ func ModuleRemoteModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx               context.Context
-	logger            *zap.Logger
-	getBucket         func() (storage.ReadBucket, error)
-	bucketID          string
-	moduleFullName    ModuleFullName
-	commitID          string
-	isTarget          bool
-	isLocal           bool
-	bufYAMLObjectData ObjectData
-	bufLockObjectData ObjectData
+	ctx                 context.Context
+	logger              *zap.Logger
+	getBucket           func() (storage.ReadBucket, error)
+	bucketID            string
+	moduleFullName      ModuleFullName
+	commitID            uuid.UUID
+	isTarget            bool
+	isLocal             bool
+	v1BufYAMLObjectData ObjectData
+	v1BufLockObjectData ObjectData
 
 	moduleSet ModuleSet
 
@@ -263,11 +282,11 @@ func newModule(
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
 	moduleFullName ModuleFullName,
-	commitID string,
+	commitID uuid.UUID,
 	isTarget bool,
 	isLocal bool,
-	bufYAMLObjectData ObjectData,
-	bufLockObjectData ObjectData,
+	v1BufYAMLObjectData ObjectData,
+	v1BufLockObjectData ObjectData,
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
@@ -286,25 +305,20 @@ func newModule(
 	if !isLocal && moduleFullName == nil {
 		return nil, syserror.New("moduleFullName not present when constructing a remote Module")
 	}
-	if moduleFullName == nil && commitID != "" {
+	if moduleFullName == nil && !commitID.IsNil() {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
-	if commitID != "" {
-		if err := validateCommitID(commitID); err != nil {
-			return nil, err
-		}
-	}
 	module := &module{
-		ctx:               ctx,
-		logger:            logger,
-		getBucket:         syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:          bucketID,
-		moduleFullName:    moduleFullName,
-		commitID:          commitID,
-		isTarget:          isTarget,
-		isLocal:           isLocal,
-		bufYAMLObjectData: bufYAMLObjectData,
-		bufLockObjectData: bufLockObjectData,
+		ctx:                 ctx,
+		logger:              logger,
+		getBucket:           syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:            bucketID,
+		moduleFullName:      moduleFullName,
+		commitID:            commitID,
+		isTarget:            isTarget,
+		isLocal:             isLocal,
+		v1BufYAMLObjectData: v1BufYAMLObjectData,
+		v1BufLockObjectData: v1BufLockObjectData,
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -343,7 +357,7 @@ func (m *module) ModuleFullName() ModuleFullName {
 	return m.moduleFullName
 }
 
-func (m *module) CommitID() string {
+func (m *module) CommitID() uuid.UUID {
 	return m.commitID
 }
 
@@ -367,6 +381,14 @@ func (m *module) IsLocal() bool {
 	return m.isLocal
 }
 
+func (m *module) V1Beta1OrV1BufYAMLObjectData() ObjectData {
+	return m.v1BufYAMLObjectData
+}
+
+func (m *module) V1Beta1OrV1BufLockObjectData() ObjectData {
+	return m.v1BufLockObjectData
+}
+
 func (m *module) ModuleSet() ModuleSet {
 	return m.moduleSet
 }
@@ -374,16 +396,16 @@ func (m *module) ModuleSet() ModuleSet {
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
-		ctx:               m.ctx,
-		logger:            m.logger,
-		getBucket:         m.getBucket,
-		bucketID:          m.bucketID,
-		moduleFullName:    m.moduleFullName,
-		commitID:          m.commitID,
-		isTarget:          isTarget,
-		isLocal:           m.isLocal,
-		bufYAMLObjectData: m.bufYAMLObjectData,
-		bufLockObjectData: m.bufLockObjectData,
+		ctx:                 m.ctx,
+		logger:              m.logger,
+		getBucket:           m.getBucket,
+		bucketID:            m.bucketID,
+		moduleFullName:      m.moduleFullName,
+		commitID:            m.commitID,
+		isTarget:            isTarget,
+		isLocal:             m.isLocal,
+		v1BufYAMLObjectData: m.v1BufYAMLObjectData,
+		v1BufLockObjectData: m.v1BufLockObjectData,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {
@@ -417,13 +439,7 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 		}
 		switch digestType {
 		case DigestTypeB4:
-			if module.bufYAMLObjectData == nil {
-				return nil, syserror.New("cannot calculate b4 digests without buf.yaml ObjectData")
-			}
-			if module.bufLockObjectData == nil {
-				return nil, syserror.New("cannot calculate b4 digests without buf.lock ObjectData")
-			}
-			return getB4Digest(module.ctx, bucket, module.bufYAMLObjectData, module.bufLockObjectData)
+			return getB4Digest(module.ctx, bucket, module.v1BufYAMLObjectData, module.v1BufLockObjectData)
 		case DigestTypeB5:
 			moduleDeps, err := module.ModuleDeps()
 			if err != nil {

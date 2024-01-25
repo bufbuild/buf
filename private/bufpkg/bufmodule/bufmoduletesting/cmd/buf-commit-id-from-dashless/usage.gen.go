@@ -12,16 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storagearchive
+// Generated. DO NOT EDIT.
 
-type untarOptions struct {
-	maxFileSize int64
-}
+package main
 
-type withMaxFileSizeUntarOption struct {
-	maxFileSize int64
-}
-
-func (o *withMaxFileSizeUntarOption) applyUntar(options *untarOptions) {
-	options.maxFileSize = o.maxFileSize
-}
+import _ "github.com/bufbuild/buf/private/usage"

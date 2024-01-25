@@ -24,16 +24,17 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/gofrs/uuid/v5"
 )
 
 func getProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
-	commitID string,
+	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (*modulev1beta1.Commit, error) {
-	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []string{commitID}, digestType)
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID}, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +46,9 @@ func getProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
-	commitIDs []string,
+	commitIDs []uuid.UUID,
 	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.Commit, error) {
-	protoCommitIDs, err := slicesext.MapError(
-		commitIDs,
-		func(commitID string) (string, error) {
-			return CommitIDToProto(commitID)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
 		return nil, err
@@ -67,11 +59,11 @@ func getProtoCommitsForRegistryAndCommitIDs(
 			&modulev1beta1.GetCommitsRequest{
 				// TODO: chunking
 				ResourceRefs: slicesext.Map(
-					protoCommitIDs,
-					func(protoCommitID string) *modulev1beta1.ResourceRef {
+					commitIDs,
+					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {
 						return &modulev1beta1.ResourceRef{
 							Value: &modulev1beta1.ResourceRef_Id{
-								Id: protoCommitID,
+								Id: commitID.String(),
 							},
 						}
 					},

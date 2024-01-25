@@ -67,7 +67,7 @@ func getFileForPrefix[F File](
 			var f F
 			return f, err
 		}
-		f, err := readFileFunc(data, newObjectData(normalpath.Base(path), data), false)
+		f, err := readFileFunc(data, newObjectData(fileName.Name(), data), false)
 		if err != nil {
 			return f, newDecodeError(path, err)
 		}

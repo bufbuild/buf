@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -1479,9 +1478,6 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 }
 
 func TestBuildWithPaths(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows, handling duplicated path separator")
-	}
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
 	testRunStdoutStderrNoWarn(
@@ -1502,9 +1498,6 @@ func TestBuildWithPaths(t *testing.T) {
 }
 
 func TestLintWithPaths(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows, handling duplicated path separator")
-	}
 	t.Parallel()
 	testRunStdoutStderrNoWarn(
 		t,
@@ -1537,9 +1530,6 @@ func TestLintWithPaths(t *testing.T) {
 }
 
 func TestBreakingWithPaths(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows, handling duplicated path separator")
-	}
 	t.Parallel()
 	tempDir := t.TempDir()
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.binpb"))

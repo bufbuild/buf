@@ -777,6 +777,7 @@ func testBreaking(
 		previousReadWriteBucket,
 		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
 	)
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceForBucket(
@@ -786,6 +787,7 @@ func testBreaking(
 		readWriteBucket,
 		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
 	)
 	require.NoError(t, err)
 

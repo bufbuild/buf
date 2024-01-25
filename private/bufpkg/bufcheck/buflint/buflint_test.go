@@ -1175,6 +1175,7 @@ func testLintWithOptions(
 		readWriteBucket,
 		bufapi.NopClientProvider,
 		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
 	)
 	require.NoError(t, err)
 

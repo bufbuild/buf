@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -131,7 +132,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	}
 	commitIDToIndexedModuleKey, err := slicesext.ToUniqueValuesMapError(
 		indexedModuleKeys,
-		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (string, error) {
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (uuid.UUID, error) {
 			return indexedModuleKey.Value.CommitID(), nil
 		},
 	)
@@ -174,10 +175,10 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 					},
 					func() ([]bufmodule.ModuleKey, error) { return depModuleKeys, nil },
 					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufYamlFile)
+						return protoFileToObjectData(protoContent.V1BufYamlFile)
 					},
 					func() (bufmodule.ObjectData, error) {
-						return protoFileToObjectData(protoContent.BufLockFile)
+						return protoFileToObjectData(protoContent.V1BufLockFile)
 					},
 				),
 				Index: indexedModuleKey.Index,
@@ -195,18 +196,10 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 	ctx context.Context,
 	protoModuleProvider *protoModuleProvider,
 	registry string,
-	commitIDToIndexedModuleKey map[string]slicesext.Indexed[bufmodule.ModuleKey],
+	commitIDToIndexedModuleKey map[uuid.UUID]slicesext.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
-) (map[string]*modulev1beta1.DownloadResponse_Content, error) {
-	protoCommitIDs, err := slicesext.MapError(
-		slicesext.MapKeysToSortedSlice(commitIDToIndexedModuleKey),
-		func(commitID string) (string, error) {
-			return CommitIDToProto(commitID)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+) (map[uuid.UUID]*modulev1beta1.DownloadResponse_Content, error) {
+	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
 	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
 		return nil, err
@@ -217,12 +210,12 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 			&modulev1beta1.DownloadRequest{
 				// TODO: chunking
 				Values: slicesext.Map(
-					protoCommitIDs,
-					func(protoCommitID string) *modulev1beta1.DownloadRequest_Value {
+					commitIDs,
+					func(commitID uuid.UUID) *modulev1beta1.DownloadRequest_Value {
 						return &modulev1beta1.DownloadRequest_Value{
 							ResourceRef: &modulev1beta1.ResourceRef{
 								Value: &modulev1beta1.ResourceRef_Id{
-									Id: protoCommitID,
+									Id: commitID.String(),
 								},
 							},
 							DigestType: protoDigestType,
@@ -244,8 +237,8 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 	}
 	commitIDToProtoContent, err := slicesext.ToUniqueValuesMapError(
 		response.Msg.Contents,
-		func(protoContent *modulev1beta1.DownloadResponse_Content) (string, error) {
-			return CommitIDToProto(protoContent.Commit.Id)
+		func(protoContent *modulev1beta1.DownloadResponse_Content) (uuid.UUID, error) {
+			return uuid.FromString(protoContent.Commit.Id)
 		},
 	)
 	if err != nil {

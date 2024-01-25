@@ -38,12 +38,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
 	"github.com/bufbuild/buf/private/pkg/ioext"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -66,7 +68,7 @@ type ProtoFileInfo interface {
 	storage.ObjectInfo
 
 	ModuleFullName() bufmodule.ModuleFullName
-	CommitID() string
+	CommitID() uuid.UUID
 
 	isProtoFileInfo()
 }
@@ -507,7 +509,10 @@ func (c *controller) PutImage(
 	if functionOptions.imageAsFileDescriptorSet {
 		putMessage = bufimage.ImageToFileDescriptorSet(putImage)
 	} else {
-		putMessage = bufimage.ImageToProtoImage(putImage)
+		putMessage, err = bufimage.ImageToProtoImage(putImage)
+		if err != nil {
+			return err
+		}
 	}
 	data, err := marshaler.Marshal(putMessage)
 	if err != nil {
@@ -753,6 +758,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		readBucketCloser,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -794,6 +800,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		readBucketCloser,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -832,6 +839,7 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		readWriteBucket,
 		c.clientProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
 		),
@@ -861,6 +869,7 @@ func (c *controller) getWorkspaceForModuleRef(
 		moduleKey,
 		c.graphProvider,
 		c.moduleDataProvider,
+		c.commitProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,
@@ -1145,12 +1154,22 @@ func filterImage(
 	}
 	if !imageCameFromAWorkspace {
 		if len(functionOptions.targetPaths) > 0 || len(functionOptions.targetExcludePaths) > 0 {
+			// bufimage expects normalized paths, so we need to normalize the paths
+			// from functionOptions before passing them through.
+			normalizedTargetPaths := make([]string, 0, len(functionOptions.targetPaths))
+			normalizedExcludePaths := make([]string, 0, len(functionOptions.targetExcludePaths))
+			for _, targetPath := range functionOptions.targetPaths {
+				normalizedTargetPaths = append(normalizedTargetPaths, normalpath.Normalize(targetPath))
+			}
+			for _, excludePath := range functionOptions.targetExcludePaths {
+				normalizedExcludePaths = append(normalizedExcludePaths, normalpath.Normalize(excludePath))
+			}
 			// TODO: allowNotExist?
 			// TODO: Also, does this affect lint or breaking?
 			newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
 				newImage,
-				functionOptions.targetPaths,
-				functionOptions.targetExcludePaths,
+				normalizedTargetPaths,
+				normalizedExcludePaths,
 			)
 			if err != nil {
 				return nil, err

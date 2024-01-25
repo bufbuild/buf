@@ -16,15 +16,36 @@ package bufmodule
 
 import (
 	"context"
+	"io/fs"
+)
+
+var (
+	// NopCommitProvider is a no-op CommitProvider.
+	NopCommitProvider CommitProvider = nopCommitProvider{}
 )
 
 // CommitProvider provides Commits for ModuleKeys.
 type CommitProvider interface {
 	// GetCommitsForModuleKeys gets the Commits for the given ModuleKeys.
 	//
+	// Returned Commits will be in the same order as the input ModuleKeys.
+	//
 	// The input ModuleKeys are expected to have the same DigestType. The implementation
 	// may error if this is not the case.
 	//
+	// If there is no error, the length of the Commits returned will match the length of the ModuleKeys.
+	// If there is an error, no Commits will be returned.
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
 	GetCommitsForModuleKeys(context.Context, []ModuleKey) ([]Commit, error)
+}
+
+// *** PRIVATE ***
+
+type nopCommitProvider struct{}
+
+func (nopCommitProvider) GetCommitsForModuleKeys(
+	context.Context,
+	[]ModuleKey,
+) ([]Commit, error) {
+	return nil, fs.ErrNotExist
 }

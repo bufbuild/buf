@@ -5,6 +5,8 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	private/buf/bufwkt/cmd/wkt-go-data \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless \
+	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
 	private/bufpkg/bufstyle/cmd/bufstyle \
@@ -51,13 +53,6 @@ include make/go/dep_protoc_gen_connect_go.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
-
-CMD ?= test
-.PHONY: testbufnew
-testbufnew: installbuf
-	# TODO: remove when done with refactor
-	# Still need to do push, migrate on top of this (push was commented out, migrate-v1beta1 was removed)
-	go $(CMD) $(shell go list -e ./cmd/... ./private/... | grep -v buf\/command\/format)
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 

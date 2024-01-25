@@ -38,6 +38,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 )
 
@@ -344,7 +345,7 @@ func (m *migrator) addModuleDirectory(
 		m.rootBucket,
 		moduleDir,
 		bufconfig.BufLockFileWithDigestResolver(
-			func(ctx context.Context, remote, commitID string) (bufmodule.Digest, error) {
+			func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error) {
 				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID, bufmodule.DigestTypeB4)
 			},
 		),
@@ -521,7 +522,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	for depModule, lockEntries := range depModuleToLockEntries {
 		commitIDToKey, err := slicesext.ToUniqueValuesMapError(
 			lockEntries,
-			func(moduleKey bufmodule.ModuleKey) (string, error) {
+			func(moduleKey bufmodule.ModuleKey) (uuid.UUID, error) {
 				return moduleKey.CommitID(), nil
 			},
 		)
@@ -660,7 +661,7 @@ func (m *migrator) warnf(format string, args ...any) {
 
 func resolvedDeclaredAndLockedDependencies(
 	moduleToRefToCommit map[string]map[string]*modulev1beta1.Commit,
-	commitIDToCommit map[string]*modulev1beta1.Commit,
+	commitIDToCommit map[uuid.UUID]*modulev1beta1.Commit,
 	moduleFullNameToDeclaredRefs map[string][]bufmodule.ModuleRef,
 	moduleFullNameToLockKeys map[string][]bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
@@ -682,9 +683,13 @@ func resolvedDeclaredAndLockedDependencies(
 			// If we have already picked a pinned dependency ref for this dependency,
 			// we use that as the lock entry as well.
 			resolvedCommit := moduleToRefToCommit[moduleFullName][resolvedRef.Ref()]
+			commitID, err := uuid.FromString(resolvedCommit.GetId())
+			if err != nil {
+				return nil, nil, err
+			}
 			key, err := bufmodule.NewModuleKey(
 				resolvedRef.ModuleFullName(),
-				resolvedCommit.GetId(),
+				commitID,
 				func() (bufmodule.Digest, error) {
 					return bufmoduleapi.ProtoToDigest(resolvedCommit.GetDigest())
 				},
@@ -766,8 +771,8 @@ func getCommitIDToCommit(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
 	moduleKeys []bufmodule.ModuleKey,
-) (map[string]*modulev1beta1.Commit, error) {
-	commitIDToCommit := make(map[string]*modulev1beta1.Commit)
+) (map[uuid.UUID]*modulev1beta1.Commit, error) {
+	commitIDToCommit := make(map[uuid.UUID]*modulev1beta1.Commit)
 	for _, moduleKey := range moduleKeys {
 		moduleFullName := moduleKey.ModuleFullName()
 		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
@@ -777,8 +782,7 @@ func getCommitIDToCommit(
 					ResourceRefs: []*modulev1beta1.ResourceRef{
 						{
 							Value: &modulev1beta1.ResourceRef_Id{
-								// TODO: is this in the correct dashless/dashful form?
-								Id: moduleKey.CommitID(),
+								Id: moduleKey.CommitID().String(),
 							},
 						},
 					},
@@ -787,7 +791,7 @@ func getCommitIDToCommit(
 		)
 		if err != nil {
 			if connect.CodeOf(err) == connect.CodeNotFound {
-				return nil, &fs.PathError{Op: "read", Path: moduleKey.CommitID(), Err: fs.ErrNotExist}
+				return nil, &fs.PathError{Op: "read", Path: moduleKey.CommitID().String(), Err: fs.ErrNotExist}
 			}
 			return nil, err
 		}

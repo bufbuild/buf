@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -143,10 +144,12 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 
 	moduleFullName, err := bufmodule.ParseModuleFullName("buf.build/foo/bar")
 	require.NoError(t, err)
+	commitID, err := uuidutil.New()
+	require.NoError(t, err)
 	imageFile, err := NewImageFile(
 		fileDescriptor,
 		moduleFullName,
-		"1234123451235",
+		commitID,
 		"foo/bar/baz.proto",
 		false,
 		false,
@@ -154,7 +157,8 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	protoImageFile := imageFileToProtoImageFile(imageFile)
+	protoImageFile, err := imageFileToProtoImageFile(imageFile)
+	require.NoError(t, err)
 	// make sure unrecognized bytes survived
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 
@@ -173,10 +177,12 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	moduleFullName, err = bufmodule.ParseModuleFullName("buf.build/abc/def")
 	require.NoError(t, err)
 	// NB: intentionally different metadata
+	commitID2, err := uuidutil.New()
+	require.NoError(t, err)
 	imageFile, err = NewImageFile(
 		fileDescriptor,
 		moduleFullName,
-		"987654321",
+		commitID2,
 		"abc/def/xyz.proto",
 		false,
 		true,
@@ -184,7 +190,8 @@ func TestImageToProtoPreservesUnrecognizedFields(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	protoImageFile = imageFileToProtoImageFile(imageFile)
+	protoImageFile, err = imageFileToProtoImageFile(imageFile)
+	require.NoError(t, err)
 	// make sure unrecognized bytes survived and extraneous buf extension is not present
 	require.Equal(t, otherData, []byte(protoImageFile.ProtoReflect().GetUnknown()))
 

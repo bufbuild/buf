@@ -23,6 +23,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -298,15 +299,20 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 	return fileDescriptorProtos
 }
 
-func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
+func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
+	// Need to use dashless for historical reasons.
+	protoCommitID, err := uuidutil.ToDashless(imageFile.CommitID())
+	if err != nil {
+		return nil, err
+	}
 	return fileDescriptorProtoToProtoImageFile(
 		imageFile.FileDescriptorProto(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
 		imageFile.ModuleFullName(),
-		imageFile.CommitID(),
-	)
+		protoCommitID,
+	), nil
 }
 
 func fileDescriptorProtoToProtoImageFile(

@@ -713,7 +713,6 @@ func parseRemoteHostName(fullName string) (string, error) {
 	return "", err
 }
 
-// TODO: where to put this?
 func toPointer[T any](value T) *T {
 	return &value
 }

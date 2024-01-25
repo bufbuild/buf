@@ -17,6 +17,8 @@ package bufimage
 import (
 	"errors"
 	"fmt"
+
+	"github.com/gofrs/uuid/v5"
 )
 
 var _ Image = &image{}
@@ -32,7 +34,7 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
 	type commitIDAndFilePath struct {
-		commitID string
+		commitID uuid.UUID
 		filePath string
 	}
 	moduleFullNameStringToCommitIDAndFilePath := make(map[string]commitIDAndFilePath)

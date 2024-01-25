@@ -910,8 +910,9 @@ func RunTestSuite(
 					context.Background(),
 					buffer,
 					writeBucket,
-					nil,
-					testCase.stripComponentCount,
+					storagearchive.UntarWithStripComponentCount(
+						testCase.stripComponentCount,
+					),
 				))
 				readBucket = writeBucketToReadBucket(t, writeBucket)
 				AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
@@ -934,8 +935,9 @@ func RunTestSuite(
 					bytes.NewReader(data),
 					int64(len(data)),
 					writeBucket,
-					nil,
-					testCase.stripComponentCount,
+					storagearchive.UnzipWithStripComponentCount(
+						testCase.stripComponentCount,
+					),
 				))
 				readBucket = writeBucketToReadBucket(t, writeBucket)
 				AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
@@ -955,10 +957,12 @@ func RunTestSuite(
 				context.Background(),
 				buffer,
 				writeBucket,
-				storage.MapChain(testCase.mappers...),
-				testCase.stripComponentCount,
+				storagearchive.UntarWithStripComponentCount(
+					testCase.stripComponentCount,
+				),
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
+			readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
 		})
 		t.Run(fmt.Sprintf("zip-mapper-write%s", testCase.name), func(t *testing.T) {
@@ -978,10 +982,12 @@ func RunTestSuite(
 				bytes.NewReader(data),
 				int64(len(data)),
 				writeBucket,
-				storage.MapChain(testCase.mappers...),
-				testCase.stripComponentCount,
+				storagearchive.UnzipWithStripComponentCount(
+					testCase.stripComponentCount,
+				),
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
+			readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
 		})
 	}
@@ -1479,23 +1485,26 @@ func RunTestSuite(
 		require.NoError(t, err)
 		writeBucket = newWriteBucket(t, defaultProvider)
 		tarball := bytes.NewReader(buffer.Bytes())
-		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit))
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, storagearchive.UntarWithMaxFileSize(limit))
 		assert.ErrorIs(t, err, storagearchive.ErrFileSizeLimit)
 		_, err = tarball.Seek(0, io.SeekStart)
 		require.NoError(t, err)
-		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0)
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket)
 		assert.NoError(t, err)
 		_, err = tarball.Seek(0, io.SeekStart)
 		require.NoError(t, err)
-		err = storagearchive.Untar(context.Background(), tarball, writeBucket, nil, 0, storagearchive.WithMaxFileSizeUntarOption(limit+1))
+		err = storagearchive.Untar(context.Background(), tarball, writeBucket, storagearchive.UntarWithMaxFileSize(limit+1))
 		assert.NoError(t, err)
 		err = storagearchive.Untar(
 			context.Background(),
 			tarball,
 			writeBucket,
-			storage.MatchPathEqual("match-file"),
-			0,
-			storagearchive.WithMaxFileSizeUntarOption(limit),
+			storagearchive.UntarWithFilePathMatcher(
+				func(filePath string) bool {
+					return filePath == "match-file"
+				},
+			),
+			storagearchive.UntarWithMaxFileSize(limit),
 		)
 		assert.NoError(t, err)
 	})

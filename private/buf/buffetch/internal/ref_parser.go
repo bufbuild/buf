@@ -227,9 +227,11 @@ func (a *refParser) getRawRefForInputConfig(
 	case bufconfig.InputConfigTypeBinaryImage:
 		rawRef.Format = "binpb"
 	case bufconfig.InputConfigTypeJSONImage:
-		rawRef.Format = "jsonpb"
+		rawRef.Format = "json"
 	case bufconfig.InputConfigTypeTextImage:
 		rawRef.Format = "txtpb"
+	case bufconfig.InputConfigTypeYAMLImage:
+		rawRef.Format = "yaml"
 	}
 	// This cannot be set ahead of time, it can only happen after all options are read.
 	if rawRef.GitDepth == 0 {

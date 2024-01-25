@@ -46,6 +46,8 @@ const (
 	InputConfigTypeJSONImage
 	// InputConfigTypeTextImage is the text image input type.
 	InputConfigTypeTextImage
+	// InputConfigTypeYAMLImage is the yaml image input type.
+	InputConfigTypeYAMLImage
 )
 
 // String implements fmt.Stringer.
@@ -102,6 +104,9 @@ var (
 		InputConfigTypeTextImage: {
 			compressionKey: {},
 		},
+		InputConfigTypeYAMLImage: {
+			compressionKey: {},
+		},
 	}
 	inputConfigTypeToString = map[InputConfigType]string{
 		InputConfigTypeGitRepo:     "git_repo",
@@ -113,6 +118,7 @@ var (
 		InputConfigTypeBinaryImage: "binary_image",
 		InputConfigTypeJSONImage:   "json_image",
 		InputConfigTypeTextImage:   "text_image",
+		InputConfigTypeYAMLImage:   "yaml_image",
 	}
 	allInputConfigTypeString = stringutil.SliceToHumanString(
 		slicesext.MapValuesToSortedSlice(inputConfigTypeToString),
@@ -296,10 +302,25 @@ func NewTextImageInputConfig(
 	compression string,
 ) (InputConfig, error) {
 	if location == "" {
-		return nil, errors.New("empty location for binary image")
+		return nil, errors.New("empty location for text image")
 	}
 	return &inputConfig{
 		inputType:   InputConfigTypeTextImage,
+		location:    location,
+		compression: compression,
+	}, nil
+}
+
+// NewYAMLImageInputConfig returns an input config for a yaml image.
+func NewYAMLImageInputConfig(
+	location string,
+	compression string,
+) (InputConfig, error) {
+	if location == "" {
+		return nil, errors.New("empty location for yaml image")
+	}
+	return &inputConfig{
+		inputType:   InputConfigTypeYAMLImage,
 		location:    location,
 		compression: compression,
 	}, nil
@@ -359,6 +380,10 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 	if externalConfig.TextImage != nil {
 		inputTypes = append(inputTypes, InputConfigTypeTextImage)
 		inputConfig.location = *externalConfig.TextImage
+	}
+	if externalConfig.YAMLImage != nil {
+		inputTypes = append(inputTypes, InputConfigTypeYAMLImage)
+		inputConfig.location = *externalConfig.YAMLImage
 	}
 	if externalConfig.GitRepo != nil {
 		inputTypes = append(inputTypes, InputConfigTypeGitRepo)
@@ -500,6 +525,8 @@ func newExternalInputConfigV2FromInputConfig(
 		externalInputConfigV2.JSONImage = toPointer(inputConfig.Location())
 	case InputConfigTypeTextImage:
 		externalInputConfigV2.TextImage = toPointer(inputConfig.Location())
+	case InputConfigTypeYAMLImage:
+		externalInputConfigV2.YAMLImage = toPointer(inputConfig.Location())
 	default:
 		return externalInputConfigV2, syserror.Newf("unknown input config type: %v", inputConfig.Type())
 	}

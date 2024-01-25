@@ -27,16 +27,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 var (
-	externalModuleDataVersion    = "v1"
-	externalModuleDataFileName   = "module.yaml"
-	externalModuleDataFilesDir   = "files"
-	externalModuleDataBufYAMLDir = "buf_yaml"
-	externalModuleDataBufLockDir = "buf_lock"
+	externalModuleDataVersion      = "v1"
+	externalModuleDataFileName     = "module.yaml"
+	externalModuleDataFilesDir     = "files"
+	externalModuleDataV1BufYAMLDir = "v1_buf_yaml"
+	externalModuleDataV1BufLockDir = "v1_buf_lock"
 )
 
 // ModuleDatasResult is a result for a get of ModuleDatas.
@@ -170,6 +171,11 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	}
 	defer func() {
 		if retErr != nil {
+			p.logDebugModuleKey(
+				moduleKey,
+				"module data store deleting invalid data",
+				zap.Error(retErr),
+			)
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -200,25 +206,39 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 	if err != nil {
 		return nil, err
 	}
-	// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
-	// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
-	bufYAMLFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.BufYAMLFile)
-	if err != nil {
-		return nil, err
+	var v1BufYAMLObjectData bufmodule.ObjectData
+	// TODO: make this required
+	if externalModuleData.V1BufYAMLFile != "" {
+		// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
+		// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
+		v1BufYAMLFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufYAMLFile)
+		if err != nil {
+			return nil, err
+		}
+		v1BufYAMLObjectData, err = bufmodule.NewObjectData(
+			normalpath.Base(externalModuleData.V1BufYAMLFile),
+			v1BufYAMLFileData,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
-	bufYAMLObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufYAMLFile), bufYAMLFileData)
-	if err != nil {
-		return nil, err
-	}
-	// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
-	// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
-	bufLockFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.BufLockFile)
-	if err != nil {
-		return nil, err
-	}
-	bufLockObjectData, err := bufmodule.NewObjectData(normalpath.Base(externalModuleData.BufLockFile), bufLockFileData)
-	if err != nil {
-		return nil, err
+	var v1BufLockObjectData bufmodule.ObjectData
+	// TODO: make this required
+	if externalModuleData.V1BufLockFile != "" {
+		// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
+		// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
+		v1BufLockFileData, err := storage.ReadPath(ctx, moduleCacheBucket, externalModuleData.V1BufLockFile)
+		if err != nil {
+			return nil, err
+		}
+		v1BufLockObjectData, err = bufmodule.NewObjectData(
+			normalpath.Base(externalModuleData.V1BufLockFile),
+			v1BufLockFileData,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// We rely on the module.yaml file being the last file to be written in the store.
 	// If module.yaml does not exist, we act as if there is no value in the store, which will
@@ -233,10 +253,12 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return declaredDepModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufYAMLObjectData, nil
+			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
+			return v1BufYAMLObjectData, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			return bufLockObjectData, nil
+			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
+			return v1BufLockObjectData, nil
 		},
 	), nil
 }
@@ -303,12 +325,11 @@ func (p *moduleDataStore) putModuleData(
 		}
 		externalModuleData.Deps[i] = externalModuleDataDep{
 			Name:   depModuleKey.ModuleFullName().String(),
-			Commit: depModuleKey.CommitID(),
+			Commit: depModuleKey.CommitID().String(),
 			Digest: digest.String(),
 		}
 	}
 
-	// TODO: We probably do *not* want to use buf.lock files for the cache. This is hard-tying
 	filesBucket, err := moduleData.Bucket()
 	if err != nil {
 		return err
@@ -323,25 +344,31 @@ func (p *moduleDataStore) putModuleData(
 	}
 	externalModuleData.FilesDir = externalModuleDataFilesDir
 
-	bufYAMLObjectData, err := moduleData.BufYAMLObjectData()
+	v1BufYAMLObjectData, err := moduleData.V1Beta1OrV1BufYAMLObjectData()
 	if err != nil {
 		return err
 	}
-	bufYAMLFilePath := normalpath.Join(externalModuleDataBufYAMLDir, bufYAMLObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, bufYAMLFilePath, bufYAMLObjectData.Data()); err != nil {
-		return err
+	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
+	if v1BufYAMLObjectData != nil {
+		v1BufYAMLFilePath := normalpath.Join(externalModuleDataV1BufYAMLDir, v1BufYAMLObjectData.Name())
+		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufYAMLFilePath, v1BufYAMLObjectData.Data()); err != nil {
+			return err
+		}
+		externalModuleData.V1BufYAMLFile = v1BufYAMLFilePath
 	}
-	externalModuleData.BufYAMLFile = bufYAMLFilePath
 
-	bufLockObjectData, err := moduleData.BufLockObjectData()
+	v1BufLockObjectData, err := moduleData.V1Beta1OrV1BufLockObjectData()
 	if err != nil {
 		return err
 	}
-	bufLockFilePath := normalpath.Join(externalModuleDataBufLockDir, bufLockObjectData.Name())
-	if err := storage.PutPath(ctx, moduleCacheBucket, bufLockFilePath, bufLockObjectData.Data()); err != nil {
-		return err
+	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
+	if v1BufLockObjectData != nil {
+		v1BufLockFilePath := normalpath.Join(externalModuleDataV1BufLockDir, v1BufLockObjectData.Name())
+		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufLockFilePath, v1BufLockObjectData.Data()); err != nil {
+			return err
+		}
+		externalModuleData.V1BufLockFile = v1BufLockFilePath
 	}
-	externalModuleData.BufLockFile = bufLockFilePath
 
 	data, err := encoding.MarshalYAML(externalModuleData)
 	if err != nil {
@@ -391,8 +418,6 @@ func (p *moduleDataStore) getReadBucketForTar(
 		ctx,
 		readObjectCloser,
 		readWriteBucket,
-		nil,
-		0,
 	); err != nil {
 		return nil, err
 	}
@@ -448,7 +473,7 @@ func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) string {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID(),
+		moduleKey.CommitID().String(),
 	)
 }
 
@@ -462,7 +487,7 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) string {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID()+".tar",
+		moduleKey.CommitID().String()+".tar",
 	)
 }
 
@@ -484,9 +509,13 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 	if err != nil {
 		return nil, err
 	}
+	commitID, err := uuid.FromString(dep.Commit)
+	if err != nil {
+		return nil, err
+	}
 	return bufmodule.NewModuleKey(
 		moduleFullName,
-		dep.Commit,
+		commitID,
 		func() (bufmodule.Digest, error) {
 			return digest, nil
 		},
@@ -501,11 +530,11 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 // and persistence layers, and a bufconfig.BufLockFile does not have all the information that
 // a bufmodule.ModuleData has.
 type externalModuleData struct {
-	Version     string                  `json:"version,omitempty" yaml:"version,omitempty"`
-	FilesDir    string                  `json:"files_dir,omitempty" yaml:"files_dir,omitempty"`
-	Deps        []externalModuleDataDep `json:"deps,omitempty" yaml:"deps,omitempty"`
-	BufYAMLFile string                  `json:"buf_yaml_file,omitempty" yaml:"buf_yaml_file,omitempty"`
-	BufLockFile string                  `json:"buf_lock_file,omitempty" yaml:"buf_lock_file,omitempty"`
+	Version       string                  `json:"version,omitempty" yaml:"version,omitempty"`
+	FilesDir      string                  `json:"files_dir,omitempty" yaml:"files_dir,omitempty"`
+	Deps          []externalModuleDataDep `json:"deps,omitempty" yaml:"deps,omitempty"`
+	V1BufYAMLFile string                  `json:"v1_buf_yaml_file,omitempty" yaml:"v1_buf_yaml_file,omitempty"`
+	V1BufLockFile string                  `json:"v1_buf_lock_file,omitempty" yaml:"v1_buf_lock_file,omitempty"`
 }
 
 // isValid returns true if all the information we currently expect to be on
@@ -520,11 +549,10 @@ func (e externalModuleData) isValid() bool {
 		}
 	}
 	return e.Version == externalModuleDataVersion &&
-		// While Download allows empty files, this is due to path filtering.
-		// TODO: Do we need an allow empty Files?
-		len(e.FilesDir) > 0 &&
-		len(e.BufYAMLFile) > 0 &&
-		len(e.BufLockFile) > 0
+		len(e.FilesDir) > 0
+	// TODO: re-enable
+	//len(e.V1BufYAMLFile) > 0 &&
+	//len(e.V1BufLockFile) > 0
 }
 
 // externalModuleDataDep represents a dependency.

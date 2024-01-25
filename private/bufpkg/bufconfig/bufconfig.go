@@ -13,8 +13,3 @@
 // limitations under the License.
 
 package bufconfig
-
-// TODO: need to handle bufmigrate, that likely moves into this package.
-// TODO: need to handle buf mod init --doc
-// TODO: All migration code between v1beta1, v1, v2 should live within this package, so that
-// we can expose less public types.

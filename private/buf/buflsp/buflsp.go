@@ -40,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/fsnotify/fsnotify"
+	"github.com/gofrs/uuid/v5"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
@@ -104,7 +105,12 @@ func newServer(
 		return nil, err
 	}
 	wellKnownTypesResolver := newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
-		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(
+			ctx,
+			logger,
+			bufmodule.NopModuleDataProvider,
+			bufmodule.NopCommitProvider,
+		)
 		moduleSetBuilder.AddLocalModule(
 			datawkt.ReadBucket,
 			".",
@@ -613,7 +619,7 @@ func (s *server) moduleKeyToCachePath(
 		key.ModuleFullName().Registry(),
 		key.ModuleFullName().Owner(),
 		key.ModuleFullName().Name(),
-		key.CommitID(),
+		key.CommitID().String(),
 		digest.Type().String(),
 		digestHex,
 		moduleFilePath,
@@ -629,10 +635,14 @@ func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string,
 	if len(parts) < 6 {
 		return nil, "", fmt.Errorf("invalid temporary file path: %s", path)
 	}
-	registry, owner, name, commitID := parts[0], parts[1], parts[2], parts[3]
+	registry, owner, name, commitIDString := parts[0], parts[1], parts[2], parts[3]
 	digest := parts[4] + ":" + parts[5]
 	moduleFilePath := normalpath.Join(parts[6:]...)
 	moduleFullName, err := bufmodule.NewModuleFullName(registry, owner, name)
+	if err != nil {
+		return nil, "", err
+	}
+	commitID, err := uuid.FromString(commitIDString)
 	if err != nil {
 		return nil, "", err
 	}
