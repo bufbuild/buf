@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
+	"github.com/stretchr/testify/require"
 	"go.lsp.dev/protocol"
 	"go.lsp.dev/uri"
 )
@@ -41,13 +42,9 @@ import (
 func TestBufLsp(t *testing.T) {
 	t.Parallel()
 	lspServer, doc, err := newTestBufLspWith(t, "testdata/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	entry, ok := lspServer.fileCache[doc.Filename()]
-	if !ok {
-		t.Fatal("file not in cache")
-	}
+	require.True(t, ok, "%s not in cache", doc.Filename())
 
 	for _, testCase := range []struct {
 		prefix   string
