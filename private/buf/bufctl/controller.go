@@ -832,6 +832,8 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	if err != nil {
 		return nil, err
 	}
+	// WE DO NOT USE PATHS/EXCLUDE PATHS.
+	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
 	return bufworkspace.NewUpdateableWorkspaceForBucket(
 		ctx,
 		c.logger,
@@ -842,13 +844,6 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
-		),
-		bufworkspace.WithTargetPaths(
-			functionOptions.targetPaths,
-			functionOptions.targetExcludePaths,
-		),
-		bufworkspace.WithConfigOverride(
-			functionOptions.configOverride,
 		),
 	)
 }

@@ -182,31 +182,26 @@ type workspace struct {
 
 	// createdFromBucket is a sanity check for updateableWorkspace to make sure that the
 	// underlying workspace was really created from a bucket.
-	//
-	// If this is false, isV2Workspace and opaqueIDToBufLockDirPath have no meaning.
 	createdFromBucket bool
-	// If true, the workspace was created from b2 buf.yamls, there was one associated
-	// buf.lock, and that buf.lock was also v2.
+	// If true, the workspace was created from v2 buf.yamls
 	//
-	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls,
-	// there may be multiple buf.locks (one per module), and those buf.locks
-	// can be assumed to be v1 (and written as v1).
+	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
 	//
-	// This is used by updateableWorkspaces.
+	// updateableWorkspace uses this to determine what DigestType to use, and what version
+	// of buf.lock to write.
 	isV2 bool
-	// bufLockDirPaths are the relative paths within the bucket of the modules to update
-	// buf.locks for.
+	// updateableBufLockDirPath is the relative path within the bucket where a buf.lock can be written.
 	//
-	// If isV2 is true, this will be []string{"."} - buf.locks live at the root of
-	// the workspace.
+	// If isV2 is true, this will be "." if no config overrides were used - buf.locks live at the root of the workspace.
+	// If isV2 is false, this will be the path to the single, local, targeted Module within the workspace if no config
+	// overrides were used. This is the only situation where we can do an update for a v1 buf.lock.
+	// If isV2 is false and there is not a single, local, targeted Module, or a config override was used, this will be empty.
 	//
-	// If isV2 is false, this will be the target moduleDirPaths, ie. the modules to
-	// update buf.locks for. Note, however, that buf mod update and buf mod prune do
-	// not have targeting, so this will effectively be all moduleDirPaths.
+	// The option withIgnoreAndDisallowV1BufWorkYAMLs is used by updateabeWorkspace to try
+	// to satisfy the v1 condition.
 	//
-	// bufLocksPaths are also bucketIDs, making it easy to query the backing ModuleSet
-	// for the Modules for each bufLockDirPath.
-	bufLockDirPaths []string
+	// updateableWorkspace uses this to determine where to write to.
+	updateableBufLockDirPath string
 }
 
 func (w *workspace) GetLintConfigForOpaqueID(opaqueID string) bufconfig.LintConfig {
@@ -328,6 +323,9 @@ func newWorkspaceForModuleKey(
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  nil,
+		createdFromBucket:        false,
+		isV2:                     false,
+		updateableBufLockDirPath: "",
 	}, nil
 }
 
@@ -393,7 +391,10 @@ func newWorkspaceForProtoc(
 		opaqueIDToBreakingConfig: map[string]bufconfig.BreakingConfig{
 			".": bufconfig.DefaultBreakingConfig,
 		},
-		configuredDepModuleRefs: nil,
+		configuredDepModuleRefs:  nil,
+		createdFromBucket:        false,
+		isV2:                     false,
+		updateableBufLockDirPath: "",
 	}, nil
 }
 
@@ -579,7 +580,6 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
 	var hadIsTargetModule bool
-	var bufLockDirPaths []string
 	for _, moduleDirPath := range moduleDirPaths {
 		moduleConfig, configuredDepModuleRefs, err := getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 			ctx,
@@ -655,7 +655,6 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		if moduleTargeting.isTargetModule {
 			hadIsTargetModule = true
-			bufLockDirPaths = append(bufLockDirPaths, moduleDirPath)
 		}
 		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
@@ -693,13 +692,22 @@ func newWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	if err != nil {
 		return nil, err
 	}
+	var updateableBufLockDirPath string
+	if len(moduleDirPaths) == 1 && overrideBufYAMLFile == nil {
+		// If we have a single moduleDirPath, we know at this point that this moduleDirPath is targeted as well, as otherwise
+		// hadIsTargetModule would be false. hadIsTargetModule only flips to true if one or more moduleDirPaths has a target Module.
+		// So, a single moduleDirPath after we have verified that hadIsTargetModule is true means that we have a single, local, target Module.
+		//
+		// Our other condition is that we didn't use config overrides, so we check that too.
+		updateableBufLockDirPath = moduleDirPaths[0]
+	}
 	return newWorkspaceForBucketModuleSet(
 		moduleSet,
 		logger,
 		bucketIDToModuleConfig,
 		allConfiguredDepModuleRefs,
 		false,
-		bufLockDirPaths,
+		updateableBufLockDirPath,
 	)
 }
 
@@ -836,6 +844,11 @@ func newWorkspaceForBucketBufYAMLV2(
 	if err != nil {
 		return nil, err
 	}
+	var updateableBufLockDirPath string
+	if overrideBufYAMLFile == nil {
+		// We have a v2 buf.yaml, and we have no config override. Therefore, we have a updateableBufLockDirPath.
+		updateableBufLockDirPath = "."
+	}
 	// bufYAMLFile.ConfiguredDepModuleRefs() is unique by ModuleFullName.
 	return newWorkspaceForBucketModuleSet(
 		moduleSet,
@@ -843,7 +856,7 @@ func newWorkspaceForBucketBufYAMLV2(
 		bucketIDToModuleConfig,
 		bufYAMLFile.ConfiguredDepModuleRefs(),
 		true,
-		[]string{"."},
+		updateableBufLockDirPath,
 	)
 }
 
@@ -855,7 +868,7 @@ func newWorkspaceForBucketModuleSet(
 	// Expected to already be unique by ModuleFullName.
 	configuredDepModuleRefs []bufmodule.ModuleRef,
 	isV2 bool,
-	bufLockDirPaths []string,
+	updateableBufLockDirPath string,
 ) (*workspace, error) {
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
@@ -881,7 +894,7 @@ func newWorkspaceForBucketModuleSet(
 		configuredDepModuleRefs:  configuredDepModuleRefs,
 		createdFromBucket:        true,
 		isV2:                     isV2,
-		bufLockDirPaths:          bufLockDirPaths,
+		updateableBufLockDirPath: updateableBufLockDirPath,
 	}, nil
 }
 
