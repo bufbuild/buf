@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -118,8 +117,7 @@ func run(
 	// This includes transitive dependencies.
 	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(
 		remoteDeps,
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
@@ -130,8 +128,7 @@ func run(
 	bufYAMLUpdatedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		updateableWorkspace.ConfiguredDepModuleRefs(),
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
@@ -166,8 +163,7 @@ func run(
 
 	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(
 		remoteDeps,
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
@@ -200,14 +196,10 @@ func run(
 			}
 		}
 	}
-	// NewBufLockFile will sort the deps.
-	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, slicesext.MapValuesToSlice(remoteDepNameToModuleKey))
-	if err != nil {
-		return err
-	}
+	depModuleKeys := slicesext.MapValuesToSlice(remoteDepNameToModuleKey)
 	// TODO: Make sure the workspace builds again. This will also have the side effect of doing tamper-proofing
 	// Revert the update if the workspace does not build.
-	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
+	return updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys)
 }
 
 // Returns a function that returns true if the named module is a transitive remote
