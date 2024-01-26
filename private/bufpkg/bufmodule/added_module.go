@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
@@ -107,51 +109,71 @@ func (a *addedModule) ToModule(
 		return a.localModule, nil
 	}
 	// Else, get the remote Module.
-	moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
-		ctx,
-		[]ModuleKey{a.remoteModuleKey},
+	getModuleData := sync.OnceValues(
+		func() (ModuleData, error) {
+			moduleDatas, err := moduleDataProvider.GetModuleDatasForModuleKeys(
+				ctx,
+				[]ModuleKey{a.remoteModuleKey},
+			)
+			if err != nil {
+				return nil, err
+			}
+			if len(moduleDatas) != 1 {
+				return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
+			}
+			moduleData := moduleDatas[0]
+			if moduleData.ModuleKey().ModuleFullName() == nil {
+				return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
+			}
+			if a.remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
+				return nil, syserror.Newf(
+					"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
+					a.remoteModuleKey.ModuleFullName().String(),
+					moduleData.ModuleKey().ModuleFullName().String(),
+				)
+			}
+			return moduleData, nil
+		},
 	)
-	if err != nil {
-		return nil, err
+	getBucket := sync.OnceValues(
+		func() (storage.ReadBucket, error) {
+			moduleData, err := getModuleData()
+			if err != nil {
+				return nil, err
+			}
+			// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
+			// only be constructed via NewModuleData.
+			//
+			// TODO: This is a bit shady.
+			return moduleData.Bucket()
+		},
+	)
+	getV1BufYAMLObjectData := func() (ObjectData, error) {
+		moduleData, err := getModuleData()
+		if err != nil {
+			return nil, err
+		}
+		return moduleData.V1Beta1OrV1BufYAMLObjectData()
 	}
-	if len(moduleDatas) != 1 {
-		return nil, syserror.Newf("expected 1 ModuleData, got %d", len(moduleDatas))
-	}
-	moduleData := moduleDatas[0]
-	if moduleData.ModuleKey().ModuleFullName() == nil {
-		return nil, syserror.New("got nil ModuleFullName for a ModuleKey returned from a ModuleDataProvider")
-	}
-	if a.remoteModuleKey.ModuleFullName().String() != moduleData.ModuleKey().ModuleFullName().String() {
-		return nil, syserror.Newf(
-			"mismatched ModuleFullName from ModuleDataProvider: input %q, output %q",
-			a.remoteModuleKey.ModuleFullName().String(),
-			moduleData.ModuleKey().ModuleFullName().String(),
-		)
-	}
-	v1BufYAMLObjectData, err := moduleData.V1Beta1OrV1BufYAMLObjectData()
-	if err != nil {
-		return nil, err
-	}
-	v1BufLockObjectData, err := moduleData.V1Beta1OrV1BufLockObjectData()
-	if err != nil {
-		return nil, err
+	getV1BufLockObjectData := func() (ObjectData, error) {
+		moduleData, err := getModuleData()
+		if err != nil {
+			return nil, err
+		}
+		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
 	// TODO: normalize and validate all paths
 	return newModule(
 		ctx,
 		logger,
-		// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
-		// only be constructed via NewModuleData.
-		//
-		// TODO: This is a bit shady.
-		moduleData.Bucket,
+		getBucket,
 		"",
-		moduleData.ModuleKey().ModuleFullName(),
-		moduleData.ModuleKey().CommitID(),
+		a.remoteModuleKey.ModuleFullName(),
+		a.remoteModuleKey.CommitID(),
 		a.isTarget,
 		false,
-		v1BufYAMLObjectData,
-		v1BufLockObjectData,
+		getV1BufYAMLObjectData,
+		getV1BufLockObjectData,
 		a.remoteTargetPaths,
 		a.remoteTargetExcludePaths,
 		"",

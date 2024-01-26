@@ -276,6 +276,15 @@ func addUploadContentForLocalModule(
 		return err
 	}
 
+	v1BufYAMLObjectData, err := module.V1Beta1OrV1BufYAMLObjectData()
+	if err != nil {
+		return err
+	}
+	v1BufLockObjectData, err := module.V1Beta1OrV1BufLockObjectData()
+	if err != nil {
+		return err
+	}
+
 	opaqueIDToUploadContent[module.OpaqueID()] = &uploadContent{
 		moduleFullName: module.ModuleFullName(),
 		protoUploadRequestContent: &modulev1beta1.UploadRequest_Content{
@@ -286,8 +295,8 @@ func addUploadContentForLocalModule(
 			// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
 			// if we do, we should consider whether we should be sending them over, as the
 			// backend may come to rely on this.
-			V1BufYamlFile: objectDataToProtoFile(module.V1Beta1OrV1BufYAMLObjectData()),
-			V1BufLockFile: objectDataToProtoFile(module.V1Beta1OrV1BufLockObjectData()),
+			V1BufYamlFile: objectDataToProtoFile(v1BufYAMLObjectData),
+			V1BufLockFile: objectDataToProtoFile(v1BufLockObjectData),
 			// TODO: vcs_commit
 		},
 	}
