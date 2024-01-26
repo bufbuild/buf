@@ -71,10 +71,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	commitIDString, err := uuidutil.ToDashless(commitID)
-	if err != nil {
-		return err
-	}
+	commitIDString := uuidutil.ToDashless(commitID)
 	_, err = container.Stdout().Write([]byte(commitIDString + "\n"))
 	return err
 }

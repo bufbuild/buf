@@ -85,10 +85,7 @@ func run(
 	var commitIDString string
 	switch flags.Type {
 	case "v1":
-		commitIDString, err = uuidutil.ToDashless(commitID)
-		if err != nil {
-			return err
-		}
+		commitIDString = uuidutil.ToDashless(commitID)
 	case "v2":
 		commitIDString = commitID.String()
 	default:
