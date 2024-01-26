@@ -101,6 +101,14 @@ type Workspace interface {
 	// We use this to warn on unused dependencies in bufctl.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 
+	// IsV2 signifies if this module was created from a v2 buf.yaml.
+	//
+	// THIS SHOULD ONLY BE USED IN EXTREMELY LIMITED SITUATIONS. The codebase should generally
+	// handle v1 vs v2 transparently. Right now, this is only approved to be used in push
+	// when we want to know whether we need to print out dashless CommitIDs. Any other usages
+	// need to be evaluated.
+	IsV2() bool
+
 	isWorkspace()
 }
 
@@ -214,6 +222,10 @@ func (w *workspace) GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.Brea
 
 func (w *workspace) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 	return slicesext.Copy(w.configuredDepModuleRefs)
+}
+
+func (w *workspace) IsV2() bool {
+	return w.isV2
 }
 
 func (*workspace) isWorkspace() {}

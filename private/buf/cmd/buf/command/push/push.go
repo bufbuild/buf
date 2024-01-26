@@ -24,6 +24,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -32,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
@@ -142,7 +144,7 @@ func run(
 		return err
 	}
 
-	moduleSet, err := getBuildableModuleSet(ctx, container, flags)
+	workspace, err := getBuildableWorkspace(ctx, container, flags)
 	if err != nil {
 		return err
 	}
@@ -155,7 +157,11 @@ func run(
 
 	// We just do this for the future world in where we might want to allow
 	// more than one registry, even though we don't allow this with the below upload request.
-	registryToTargetModules, err := getRegistryToTargetModuleWithModuleFullName(moduleSet)
+	//
+	// TODO: This actually needs to be targeted local or transitive local dependency. We should
+	// just refactor Upload to take this as a parameter, and add this filter as a function
+	// to bufmodule.
+	registryToTargetModules, err := getRegistryToTargetModuleWithModuleFullName(workspace)
 	if err != nil {
 		return err
 	}
@@ -185,40 +191,48 @@ func run(
 	commits, err := bufmoduleapi.Upload(
 		ctx,
 		clientProvider,
-		moduleSet,
+		workspace,
 		bufmoduleapi.UploadWithLabels(combineLabelLikeFlags(flags)...),
 	)
 	if err != nil {
 		return err
 	}
-	commitIDs, err := slicesext.MapError(
-		commits,
-		// TODO: Printing dashless for historical reasons, can we only print dashless in certain situations?
-		func(commit bufmodule.Commit) (string, error) {
-			return uuidutil.ToDashless(commit.ModuleKey().CommitID())
-		},
-	)
-	if err != nil {
+
+	var lines []string
+	var linesErr error
+	if workspace.IsV2() {
+		lines = slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().String()
+			},
+		)
+	} else {
+		lines, err = slicesext.MapError(
+			commits,
+			// Printing dashless for historical reasons.
+			func(commit bufmodule.Commit) (string, error) {
+				return uuidutil.ToDashless(commit.ModuleKey().CommitID())
+			},
+		)
+		if err != nil {
+			return err
+		}
+		if len(commits) > 1 {
+			linesErr = syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
+		}
+	}
+	if _, err := container.Stdout().Write([]byte(strings.Join(lines, "\n") + "\n")); err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write(
-		[]byte(
-			strings.Join(
-				commitIDs,
-				"\n",
-			) + "\n",
-		),
-	); err != nil {
-		return err
-	}
-	return nil
+	return linesErr
 }
 
-func getBuildableModuleSet(
+func getBuildableWorkspace(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) (bufmodule.ModuleSet, error) {
+) (bufworkspace.Workspace, error) {
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return nil, err
