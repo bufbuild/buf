@@ -98,6 +98,23 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 	)
 }
 
+// ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules converts the ModuleSet to a
+// ModuleReadBucket that contains all the .proto files of the target
+// Modules of the ModuleSet.
+//
+// Targeting information will remain the same.
+func ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet ModuleSet) ModuleReadBucket {
+	return newMultiModuleReadBucket(
+		slicesext.Map(
+			ModuleSetTargetModules(moduleSet),
+			func(module Module) ModuleReadBucket {
+				return ModuleReadBucketWithOnlyProtoFiles(module)
+			},
+		),
+		true,
+	)
+}
+
 // ModuleSetTargetModules is a convenience function that returns the target Modules
 // from a ModuleSet.
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
