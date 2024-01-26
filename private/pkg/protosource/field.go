@@ -14,7 +14,10 @@
 
 package protosource
 
-import "google.golang.org/protobuf/types/descriptorpb"
+import (
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+)
 
 type field struct {
 	namedDescriptor
@@ -47,6 +50,7 @@ type field struct {
 	cTypePath      []int32
 	packedPath     []int32
 	extendeePath   []int32
+	// customOptions  map[protoreflect.ExtensionDescriptor]protoreflect.Value
 }
 
 func newField(
@@ -76,6 +80,7 @@ func newField(
 	cTypePath []int32,
 	packedPath []int32,
 	extendeePath []int32,
+	// customOptions map[protoreflect.ExtensionDescriptor]protoreflect.Value,
 ) *field {
 	return &field{
 		namedDescriptor:           namedDescriptor,
@@ -104,6 +109,7 @@ func newField(
 		cTypePath:                 cTypePath,
 		packedPath:                packedPath,
 		extendeePath:              extendeePath,
+		// customOptions:             customOptions,
 	}
 }
 
@@ -206,4 +212,8 @@ func (f *field) PackedLocation() Location {
 
 func (f *field) ExtendeeLocation() Location {
 	return f.getLocation(f.extendeePath)
+}
+
+func (f *field) PresentExtensions() map[protoreflect.FieldDescriptor]protoreflect.Value {
+	return f.optionExtensionDescriptor.PresentExtensions()
 }

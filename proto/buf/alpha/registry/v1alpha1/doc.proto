@@ -375,6 +375,42 @@ message FieldOptions {
   int32 ctype = 3;
   // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
   int32 jstype = 4;
+
+  repeated CustomOption custom_options = 5;
+}
+
+message CustomOption {
+  string name = 1;
+  oneof value {
+    string string_value = 2;
+    int64 int_value = 3;
+    uint64 uint_value = 4;
+    double double_value = 5;
+    bool bool_value = 6;
+    string enum_value = 7;
+    MessageLiteral message_value = 8;
+  }
+}
+
+message MessageLiteral {
+  map<string, LiteralValue> fields = 1;
+}
+
+message LiteralValue {
+  oneof value {
+    string string_value = 2;
+    int64 int_value = 3;
+    uint64 uint_value = 4;
+    double double_value = 5;
+    bool bool_value = 6;
+    string enum_value = 7;
+    ArrayLiteral array_value = 8;
+    MessageLiteral message_value = 9;
+  }
+}
+
+message ArrayLiteral {
+  repeated LiteralValue elements = 1;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
