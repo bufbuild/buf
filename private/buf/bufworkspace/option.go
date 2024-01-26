@@ -69,7 +69,7 @@ func WithProtoFileTargetPath(
 	}
 }
 
-// withIgnoreAndDisallowV1BufWorkYAMLs returns a new WorkspaceBucketOption that says
+// WithIgnoreAndDisallowV1BufWorkYAMLs returns a new WorkspaceBucketOption that says
 // to ignore dependencies from buf.work.yamls at the root of the bucket, and to also
 // disallow directories with buf.work.yamls to be directly targeted.
 //
@@ -88,8 +88,8 @@ func WithProtoFileTargetPath(
 // Example: ./buf.yaml v1.
 // This is fine.
 //
-// This is private because this is just used by newUpdateableWorkspaceForBucket for now.
-func withIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
+// This option is implicitly set when building new UpdateableWorkspaces.
+func WithIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
 	return &workspaceIgnoreAndDisallowV1BufWorkYAMLsOption{}
 }
 

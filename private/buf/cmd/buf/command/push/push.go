@@ -231,7 +231,15 @@ func getBuildableModuleSet(
 	if err != nil {
 		return nil, err
 	}
-	workspace, err := controller.GetWorkspace(ctx, source)
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		source,
+		// We actually could make it so that buf push would work with buf.work.yamls and push
+		// v1 workspaces as well, but this may have unintended (and potentially breaking) consequences
+		// that we don't want to deal with. If we have a v1 workspace, just outlaw pushing the whole
+		// workspace, and force people into the pre-refactor behavior.
+		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -471,7 +471,9 @@ func newWorkspaceForBucket(
 				if config.targetSubDirPath == "." {
 					// If config.targetSubDirPath is ".", this means we targeted a buf.work.yaml, not an individual module within the buf.work.yaml
 					// This is disallowed.
-					return nil, errors.New("workspaces defined with buf.work.yaml cannot be updated, only the individual modules within a workspace can be updated. Workspaces defined with a v2 buf.yaml can be updated, see the migration documentation for more details.")
+					return nil, errors.New(`Workspaces defined with buf.work.yaml cannot be updated or pushed, only
+the individual modules within a workspace can be updated or pushed. Workspaces
+defined with a v2 buf.yaml can be updated, see the migration documentation for more details.`)
 				}
 				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
 				// the workspace entirely, and just act as if the buf.work.yaml did not exist.

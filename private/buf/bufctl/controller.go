@@ -751,14 +751,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForBucket(
-		ctx,
-		c.logger,
-		c.tracer,
-		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
+	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -769,6 +762,22 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
+	}
+	if functionOptions.ignoreAndDisallowV1BufWorkYAMLs {
+		options = append(
+			options,
+			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		)
+	}
+	return bufworkspace.NewWorkspaceForBucket(
+		ctx,
+		c.logger,
+		c.tracer,
+		readBucketCloser,
+		c.clientProvider,
+		c.moduleDataProvider,
+		c.commitProvider,
+		options...,
 	)
 }
 
@@ -793,14 +802,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForBucket(
-		ctx,
-		c.logger,
-		c.tracer,
-		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
+	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -811,6 +813,22 @@ func (c *controller) getWorkspaceForSourceRef(
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
+	}
+	if functionOptions.ignoreAndDisallowV1BufWorkYAMLs {
+		options = append(
+			options,
+			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		)
+	}
+	return bufworkspace.NewWorkspaceForBucket(
+		ctx,
+		c.logger,
+		c.tracer,
+		readBucketCloser,
+		c.clientProvider,
+		c.moduleDataProvider,
+		c.commitProvider,
+		options...,
 	)
 }
 

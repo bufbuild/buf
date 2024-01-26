@@ -96,7 +96,7 @@ func newUpdateableWorkspaceForBucket(
 	for _, option := range options {
 		workspaceBucketOptions = append(workspaceBucketOptions, option)
 	}
-	workspaceBucketOptions = append(workspaceBucketOptions, withIgnoreAndDisallowV1BufWorkYAMLs())
+	workspaceBucketOptions = append(workspaceBucketOptions, WithIgnoreAndDisallowV1BufWorkYAMLs())
 	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, workspaceBucketOptions...)
 	if err != nil {
 		return nil, err
