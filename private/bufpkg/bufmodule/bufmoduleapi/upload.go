@@ -31,7 +31,9 @@ import (
 
 // Upload uploads the given ModuleSet.
 //
-// Only target Modules will be added as references.
+// Targeted local Modules, and their local transitive dependencies, will have content uploaded.
+// These Modules will have Commits returned. The returned Commit order is deterministic, but should
+// not be relied upon to be any specific ordering.
 //
 // Note that registry hostname is effectively stripped! This means that if you have multiple registry
 // hostnames represented by Modules in the ModuleSet, *all* of the Modules (targets and dependencies) are
@@ -50,21 +52,14 @@ func Upload(
 		option(uploadOptions)
 	}
 
-	modules := moduleSet.Modules()
-
-	// We check upfront if all modules have names, before contining onwards.
-	for _, module := range modules {
-		if module.ModuleFullName() == nil {
-			return nil, newRequireModuleFullNameOnUploadError(module)
+	// Validate we're all within one registry for now.
+	registryMap := make(map[string]struct{})
+	for _, module := range moduleSet.Modules() {
+		if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
+			registryMap[moduleFullName.Registry()] = struct{}{}
 		}
 	}
-	// Validate we're all within one registry for now.
-	registries := slicesext.ToUniqueSorted(
-		slicesext.Map(
-			modules,
-			func(module bufmodule.Module) string { return module.ModuleFullName().Registry() },
-		),
-	)
+	registries := slicesext.MapKeysToSortedSlice(registryMap)
 	if len(registries) > 1 {
 		// TODO: This messes up legacy federation.
 		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
@@ -78,91 +73,57 @@ func Upload(
 		labelNameToProtoScopedLabelRef,
 	)
 
-	opaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(modules)
+	// Pre-compute these.
+	opaqueIDToProtoModuleRef, err := getOpaqueIDToProtoModuleRef(moduleSet.Modules())
 	if err != nil {
 		return nil, err
 	}
 
-	targetModules := bufmodule.ModuleSetTargetModules(moduleSet)
-	protoContents, err := slicesext.MapError(
-		targetModules,
-		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-			protoModuleRef, ok := opaqueIDToProtoModuleRef[module.OpaqueID()]
-			if !ok {
-				return nil, syserror.Newf("no Module found for OpaqueID %q", module.OpaqueID())
-			}
-			// Includes transitive dependencies.
-			// Sorted by OpaqueID.
-			moduleDeps, err := module.ModuleDeps()
-			if err != nil {
-				return nil, err
-			}
-			protoDepRefs := make([]*modulev1beta1.UploadRequest_DepRef, 0, len(moduleDeps))
-			for _, moduleDep := range moduleDeps {
-				depModuleFullName := moduleDep.ModuleFullName()
-				if depModuleFullName == nil {
-					return nil, newRequireModuleFullNameOnUploadError(moduleDep)
-				}
-				depProtoModuleRef, ok := opaqueIDToProtoModuleRef[module.OpaqueID()]
-				if !ok {
-					return nil, syserror.Newf("no Module found for OpaqueID %q", moduleDep.OpaqueID())
-				}
-				var depCommitID uuid.UUID
-				// TODO: This should probably just become !moduleDep.IsLocal()!!!!
-				if !moduleDep.IsTarget() {
-					depCommitID = moduleDep.CommitID()
-					if depCommitID.IsNil() {
-						// TODO: THIS IS A MAJOR TODO. We might NOT have commit IDs for other modules
-						// in the workspace. In this case, we need to add their data to the upload.
-						return nil, fmt.Errorf("did not have a commit ID for a non-target module dependency %q", moduleDep.OpaqueID())
-					}
-				}
-				protoDepRefs = append(
-					protoDepRefs,
-					&modulev1beta1.UploadRequest_DepRef{
-						ModuleRef: depProtoModuleRef,
-						CommitId:  depCommitID.String(),
-					},
-				)
-			}
-			protoFiles, err := bucketToProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
-			if err != nil {
-				return nil, err
-			}
-			return &modulev1beta1.UploadRequest_Content{
-				ModuleRef:       protoModuleRef,
-				Files:           protoFiles,
-				DepRefs:         protoDepRefs,
-				ScopedLabelRefs: protoScopedLabelRefs,
-				// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
-				// if we do, we should consider whether we should be sending them over, as the
-				// backend may come to rely on this.
-				V1BufYamlFile: objectDataToProtoFile(module.V1Beta1OrV1BufYAMLObjectData()),
-				V1BufLockFile: objectDataToProtoFile(module.V1Beta1OrV1BufLockObjectData()),
-				// TODO: vcs_commit
-			}, nil
+	// We do this as a map so we can check if we've already visited a given
+	// Module before adding a new uploaContent in addUploadContentForLocalModule.
+	opaqueIDToUploadContent := make(map[string]*uploadContent)
+	targetedLocalModules := slicesext.Filter(
+		moduleSet.Modules(),
+		func(module bufmodule.Module) bool {
+			return module.IsTarget() && module.IsLocal()
 		},
 	)
-	if err != nil {
-		return nil, err
+	for _, targetedLocalModule := range targetedLocalModules {
+		if err := addUploadContentForLocalModule(
+			ctx,
+			targetedLocalModule,
+			opaqueIDToUploadContent,
+			opaqueIDToProtoModuleRef,
+			protoScopedLabelRefs,
+		); err != nil {
+			return nil, err
+		}
 	}
+	uploadContents := slicesext.MapValuesToSlice(opaqueIDToUploadContent)
+
 	response, err := clientProvider.UploadServiceClient(registry).Upload(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.UploadRequest{
-				Contents: protoContents,
+				Contents: slicesext.Map(
+					uploadContents,
+					func(uploadContent *uploadContent) *modulev1beta1.UploadRequest_Content {
+						return uploadContent.protoUploadRequestContent
+					},
+				),
 			},
 		),
 	)
 	if err != nil {
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(protoContents) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(protoContents), len(response.Msg.Commits))
+	if len(response.Msg.Commits) != len(uploadContents) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(uploadContents), len(response.Msg.Commits))
 	}
 	commits := make([]bufmodule.Commit, len(response.Msg.Commits))
 	for i, protoCommit := range response.Msg.Commits {
-		targetModule := targetModules[i]
+		// This is how we get the ModuleFullName without calling the ModuleService or OwnerService.
+		moduleFullName := uploadContents[i].moduleFullName
 		commitID, err := uuid.FromString(protoCommit.Id)
 		if err != nil {
 			return nil, err
@@ -171,7 +132,7 @@ func Upload(
 			return ProtoToDigest(protoCommit.Digest)
 		}
 		moduleKey, err := bufmodule.NewModuleKey(
-			targetModule.ModuleFullName(),
+			moduleFullName,
 			commitID,
 			getDigest,
 		)
@@ -206,12 +167,13 @@ func UploadWithLabels(labels ...string) UploadOption {
 
 // *** PRIVATE ***
 
+// Ignores any modules without ModuleFullNames.
 func getOpaqueIDToProtoModuleRef(modules []bufmodule.Module) (map[string]*modulev1beta1.ModuleRef, error) {
 	opaqueIDToProtoModuleRef := make(map[string]*modulev1beta1.ModuleRef, len(modules))
 	for _, module := range modules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
-			return nil, newRequireModuleFullNameOnUploadError(module)
+			continue
 		}
 		opaqueIDToProtoModuleRef[module.OpaqueID()] = &modulev1beta1.ModuleRef{
 			Value: &modulev1beta1.ModuleRef_Name_{
@@ -226,9 +188,129 @@ func getOpaqueIDToProtoModuleRef(modules []bufmodule.Module) (map[string]*module
 	return opaqueIDToProtoModuleRef, nil
 }
 
+// addUploadContentForLocalModule adds the Module as uploadContent to the opaqueIDToUploadContent map.
+//
+// The Module (which is assumed to  be local) and all of its transitive local dependencies are added
+// to the map IF they have not already been added.
+//
+// This function is recursive.
+func addUploadContentForLocalModule(
+	ctx context.Context,
+	module bufmodule.Module,
+	// This is the map to fill up.
+	opaqueIDToUploadContent map[string]*uploadContent,
+	// This map is already populated.
+	opaqueIDToProtoModuleRef map[string]*modulev1beta1.ModuleRef,
+	// This slice is already populated.
+	protoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
+) error {
+	if _, ok := opaqueIDToUploadContent[module.OpaqueID()]; ok {
+		// We've already added this module.
+		return nil
+	}
+
+	if !module.IsLocal() {
+		return syserror.New("expected local Module in addUploadContentForLocalModule")
+	}
+	if module.ModuleFullName() == nil {
+		// All local modules that will be pushed need a ModuleFullName.
+		return newRequireModuleFullNameOnUploadError(module)
+	}
+
+	protoModuleRef, ok := opaqueIDToProtoModuleRef[module.OpaqueID()]
+	if !ok {
+		return syserror.Newf("no Module found for OpaqueID %q in opaqueIDToProtoModuleRef", module.OpaqueID())
+	}
+
+	// Includes transitive dependencies.
+	// Sorted by OpaqueID.
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return err
+	}
+	protoDepRefs := make([]*modulev1beta1.UploadRequest_DepRef, 0, len(moduleDeps))
+	for _, moduleDep := range moduleDeps {
+		if moduleDep.ModuleFullName() == nil {
+			// All local modules that will be pushed need a ModuleFullName.
+			return newRequireModuleFullNameOnUploadError(moduleDep)
+		}
+		depProtoModuleRef, ok := opaqueIDToProtoModuleRef[moduleDep.OpaqueID()]
+		if !ok {
+			return syserror.Newf("no Module found for OpaqueID %q in opaqueIDToProtoModuleRef", moduleDep.OpaqueID())
+		}
+		if moduleDep.IsLocal() {
+			// If the dependency is local, add it to the map if it hasn't already been added,
+			// and add it as a DepRef with no Commit ID.
+			if err := addUploadContentForLocalModule(
+				ctx,
+				moduleDep,
+				opaqueIDToUploadContent,
+				opaqueIDToProtoModuleRef,
+				protoScopedLabelRefs,
+			); err != nil {
+				return err
+			}
+			protoDepRefs = append(
+				protoDepRefs,
+				&modulev1beta1.UploadRequest_DepRef{
+					ModuleRef: depProtoModuleRef,
+				},
+			)
+		} else {
+			// If the dependency is remote, add it as a dep ref.
+			depCommitID := moduleDep.CommitID()
+			if depCommitID.IsNil() {
+				return syserror.Newf("did not have a commit ID for a remote module dependency %q", moduleDep.OpaqueID())
+			}
+			protoDepRefs = append(
+				protoDepRefs,
+				&modulev1beta1.UploadRequest_DepRef{
+					ModuleRef: depProtoModuleRef,
+					CommitId:  depCommitID.String(),
+				},
+			)
+		}
+	}
+	protoFiles, err := bucketToProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
+	if err != nil {
+		return err
+	}
+
+	opaqueIDToUploadContent[module.OpaqueID()] = &uploadContent{
+		moduleFullName: module.ModuleFullName(),
+		protoUploadRequestContent: &modulev1beta1.UploadRequest_Content{
+			ModuleRef:       protoModuleRef,
+			Files:           protoFiles,
+			DepRefs:         protoDepRefs,
+			ScopedLabelRefs: protoScopedLabelRefs,
+			// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
+			// if we do, we should consider whether we should be sending them over, as the
+			// backend may come to rely on this.
+			V1BufYamlFile: objectDataToProtoFile(module.V1Beta1OrV1BufYAMLObjectData()),
+			V1BufLockFile: objectDataToProtoFile(module.V1Beta1OrV1BufLockObjectData()),
+			// TODO: vcs_commit
+		},
+	}
+	return nil
+}
+
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
 	// This error will likely actually go back to users.
 	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
+}
+
+// uploadContent is just the pair of ModuleFullName and UploadRequest_Content.
+//
+// We know the ModuleFullName at construction, but we need to keep track of it alongside
+// the content we upload so that we can re-associate it when we get back a response from Upload.
+//
+// We add Modules to the uploaded content in a recursive manner (for deps), and its difficult
+// to keep track of indices. This is as good a way as any. If we didn't do this, we would have
+// to reconstruct a ModuleFullName from a proto Commit, which would mean calls out to the
+// ModuleService and OwnerService that we don't have to make.
+type uploadContent struct {
+	moduleFullName            bufmodule.ModuleFullName
+	protoUploadRequestContent *modulev1beta1.UploadRequest_Content
 }
 
 type uploadOptions struct {

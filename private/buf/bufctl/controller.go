@@ -846,10 +846,6 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	if err != nil {
 		return nil, err
 	}
-	functionOptions, err = functionOptions.withPathsForBucketExtender(readWriteBucket)
-	if err != nil {
-		return nil, err
-	}
 	// WE DO NOT USE PATHS/EXCLUDE PATHS.
 	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
 	return bufworkspace.NewUpdateableWorkspaceForBucket(
