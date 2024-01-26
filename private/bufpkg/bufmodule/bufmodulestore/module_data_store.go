@@ -247,7 +247,12 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		ctx,
 		moduleKey,
 		func() (storage.ReadBucket, error) {
-			return storage.MapReadBucket(moduleCacheBucket, storage.MapOnPrefix(externalModuleData.FilesDir)), nil
+			return storage.StripReadBucketExternalPaths(
+				storage.MapReadBucket(
+					moduleCacheBucket,
+					storage.MapOnPrefix(externalModuleData.FilesDir),
+				),
+			), nil
 		},
 		func() ([]bufmodule.ModuleKey, error) {
 			return declaredDepModuleKeys, nil
