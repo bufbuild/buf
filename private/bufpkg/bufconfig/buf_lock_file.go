@@ -374,10 +374,7 @@ func writeBufLockFile(
 			if err != nil {
 				return err
 			}
-			externalCommitID, err := uuidutil.ToDashless(depModuleKey.CommitID())
-			if err != nil {
-				return err
-			}
+			externalCommitID := uuidutil.ToDashless(depModuleKey.CommitID())
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV1Beta1V1{
 				Remote:     depModuleKey.ModuleFullName().Registry(),
 				Owner:      depModuleKey.ModuleFullName().Owner(),
