@@ -301,10 +301,7 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 
 func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
 	// Need to use dashless for historical reasons.
-	protoCommitID, err := uuidutil.ToDashless(imageFile.CommitID())
-	if err != nil {
-		return nil, err
-	}
+	protoCommitID := uuidutil.ToDashless(imageFile.CommitID())
 	return fileDescriptorProtoToProtoImageFile(
 		imageFile.FileDescriptorProto(),
 		imageFile.IsImport(),

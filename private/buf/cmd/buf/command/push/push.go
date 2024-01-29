@@ -208,19 +208,16 @@ func run(
 			},
 		)
 	} else {
-		lines, err = slicesext.MapError(
-			commits,
-			// Printing dashless for historical reasons.
-			func(commit bufmodule.Commit) (string, error) {
-				return uuidutil.ToDashless(commit.ModuleKey().CommitID())
-			},
-		)
-		if err != nil {
-			return err
-		}
 		if len(commits) > 1 {
 			linesErr = syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
 		}
+		lines = slicesext.Map(
+			commits,
+			// Printing dashless for historical reasons.
+			func(commit bufmodule.Commit) string {
+				return uuidutil.ToDashless(commit.ModuleKey().CommitID())
+			},
+		)
 	}
 	if _, err := container.Stdout().Write([]byte(strings.Join(lines, "\n") + "\n")); err != nil {
 		return err
