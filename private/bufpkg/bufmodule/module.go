@@ -425,7 +425,7 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 		}
 		switch digestType {
 		case DigestTypeB4:
-			v1BufYAMLObjectData, err := module.getV1BufLockObjectData()
+			v1BufYAMLObjectData, err := module.getV1BufYAMLObjectData()
 			if err != nil {
 				return nil, err
 			}

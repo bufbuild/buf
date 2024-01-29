@@ -147,7 +147,7 @@ func run(
 		if _, ok := remoteDepNameToModuleKey[bufYAMLName]; !ok {
 			// In updated list from buf.yaml, but not in dependency list.
 			//
-			// This is an unused module.
+			// This is an unused module. TODO not true
 			//
 			// Delete from our update map, we won't write this to buf.lock
 			delete(bufYAMLNameToUpdatedModuleKey, bufYAMLName)
