@@ -354,8 +354,10 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 		return nil, multierr.Combine(b.errs...)
 	}
 	if len(b.addedModules) == 0 {
-		return nil, syserror.New("no Modules added to ModuleSetBuilder")
+		// Allow an empty ModuleSet.
+		return newModuleSet(nil)
 	}
+	// If not empty, we need at least one target Module.
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
 		return nil, syserror.New("no Modules were targeted in ModuleSetBuilder")
 	}

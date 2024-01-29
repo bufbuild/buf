@@ -19,13 +19,10 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
 )
 
 // UpdateableWorkspace is a workspace that can be updated.
@@ -53,25 +50,12 @@ type UpdateableWorkspace interface {
 	// the given ModuleKeys.
 	//
 	// If a buf.lock does not exist, one will be created.
+	//
+	// TODO: The underlying Workspace is not actually updated after this call. Either update the documentation
+	// or update the workspace implicitly by rebuilding it.
 	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error
 
 	isUpdateableWorkspace()
-}
-
-// NewUpdateableWorkspaceForBucket returns a new Workspace for the given Bucket.
-//
-// If the workspace is not updateable, an error is returned.
-func NewUpdateableWorkspaceForBucket(
-	ctx context.Context,
-	logger *zap.Logger,
-	tracer tracing.Tracer,
-	bucket storage.ReadWriteBucket,
-	clientProvider bufapi.ClientProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	commitProvider bufmodule.CommitProvider,
-	options ...UpdateableWorkspaceBucketOption,
-) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
 }
 
 // *** PRIVATE ***
@@ -82,25 +66,10 @@ type updateableWorkspace struct {
 	bucket storage.ReadWriteBucket
 }
 
-func newUpdateableWorkspaceForBucket(
-	ctx context.Context,
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+func newUpdateableWorkspace(
+	workspace *workspace,
 	bucket storage.ReadWriteBucket,
-	clientProvider bufapi.ClientProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	commitProvider bufmodule.CommitProvider,
-	options ...UpdateableWorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
-	workspaceBucketOptions := make([]WorkspaceBucketOption, 0, len(options)+1)
-	for _, option := range options {
-		workspaceBucketOptions = append(workspaceBucketOptions, option)
-	}
-	workspaceBucketOptions = append(workspaceBucketOptions, WithIgnoreAndDisallowV1BufWorkYAMLs())
-	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, workspaceBucketOptions...)
-	if err != nil {
-		return nil, err
-	}
 	if !workspace.createdFromBucket {
 		// Something really bad would have to happen for this to happen.
 		return nil, syserror.New("workspace.createdFromBucket not set for a workspace created from newUpdateableWorkspaceForBucket")

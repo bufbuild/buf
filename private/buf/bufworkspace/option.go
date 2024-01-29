@@ -141,6 +141,8 @@ func WithConfigOverride(configOverride string) WorkspaceOption {
 	}
 }
 
+// *** PRIVATE ***
+
 type workspaceTargetSubDirPathOption struct {
 	targetSubDirPath string
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -112,11 +113,16 @@ func run(
 	}
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	workspace, err := bufworkspace.NewWorkspaceForProtoc(
-		ctx,
+	workspace, err := bufworkspace.NewWorkspaceProvider(
 		logger,
 		tracer,
 		storageosProvider,
+		bufapi.NopClientProvider,
+		bufmodule.NopGraphProvider,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	).GetWorkspaceForProtoc(
+		ctx,
 		env.IncludeDirPaths,
 		env.FilePaths,
 	)

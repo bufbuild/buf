@@ -192,6 +192,7 @@ type controller struct {
 	buffetchRefParser buffetch.RefParser
 	buffetchReader    buffetch.Reader
 	buffetchWriter    buffetch.Writer
+	workspaceProvider bufworkspace.WorkspaceProvider
 }
 
 func newController(
@@ -241,6 +242,15 @@ func newController(
 		moduleKeyProvider,
 	)
 	controller.buffetchWriter = buffetch.NewWriter(logger)
+	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
+		logger,
+		tracer,
+		controller.storageosProvider,
+		clientProvider,
+		graphProvider,
+		moduleDataProvider,
+		commitProvider,
+	)
 	return controller, nil
 }
 
@@ -769,14 +779,9 @@ func (c *controller) getWorkspaceForProtoFileRef(
 			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
 		)
 	}
-	return bufworkspace.NewWorkspaceForBucket(
+	return c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		c.logger,
-		c.tracer,
 		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		options...,
 	)
 }
@@ -820,14 +825,9 @@ func (c *controller) getWorkspaceForSourceRef(
 			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
 		)
 	}
-	return bufworkspace.NewWorkspaceForBucket(
+	return c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		c.logger,
-		c.tracer,
 		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		options...,
 	)
 }
@@ -848,14 +848,9 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	}
 	// WE DO NOT USE PATHS/EXCLUDE PATHS.
 	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
-	return bufworkspace.NewUpdateableWorkspaceForBucket(
+	return c.workspaceProvider.GetUpdateableWorkspaceForBucket(
 		ctx,
-		c.logger,
-		c.tracer,
 		readWriteBucket,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
 		),
@@ -871,14 +866,9 @@ func (c *controller) getWorkspaceForModuleRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForModuleKey(
+	return c.workspaceProvider.GetWorkspaceForModuleKey(
 		ctx,
-		c.logger,
-		c.tracer,
 		moduleKey,
-		c.graphProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,

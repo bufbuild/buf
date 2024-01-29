@@ -37,6 +37,8 @@ var errIsWKT = errors.New("wkt")
 //
 // A ModuleSet is expected to be self-contained, that is Modules only import
 // from other Modules in this ModuleSet.
+//
+// A ModuleSet may be empty and have no Modules. This is primarily done in testing.
 type ModuleSet interface {
 	// Modules returns the Modules in the ModuleSet.
 	//
