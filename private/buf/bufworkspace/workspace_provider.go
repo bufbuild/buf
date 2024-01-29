@@ -250,16 +250,16 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
 		}
 	}
-	return &workspace{
-		ModuleSet:                moduleSet,
-		logger:                   w.logger,
-		opaqueIDToLintConfig:     opaqueIDToLintConfig,
-		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
-		configuredDepModuleRefs:  nil,
-		createdFromBucket:        false,
-		isV2:                     false,
-		updateableBufLockDirPath: "",
-	}, nil
+	return newWorkspace(
+		moduleSet,
+		w.logger,
+		opaqueIDToLintConfig,
+		opaqueIDToBreakingConfig,
+		nil,
+		false,
+		false,
+		"",
+	), nil
 }
 
 func (w *workspaceProvider) GetWorkspaceForProtoc(
@@ -312,20 +312,20 @@ func (w *workspaceProvider) GetWorkspaceForProtoc(
 	if err != nil {
 		return nil, err
 	}
-	return &workspace{
-		ModuleSet: moduleSet,
-		logger:    w.logger,
-		opaqueIDToLintConfig: map[string]bufconfig.LintConfig{
+	return newWorkspace(
+		moduleSet,
+		w.logger,
+		map[string]bufconfig.LintConfig{
 			".": bufconfig.DefaultLintConfig,
 		},
-		opaqueIDToBreakingConfig: map[string]bufconfig.BreakingConfig{
+		map[string]bufconfig.BreakingConfig{
 			".": bufconfig.DefaultBreakingConfig,
 		},
-		configuredDepModuleRefs:  nil,
-		createdFromBucket:        false,
-		isV2:                     false,
-		updateableBufLockDirPath: "",
-	}, nil
+		nil,
+		false,
+		false,
+		"",
+	), nil
 }
 
 func (w *workspaceProvider) GetWorkspaceForBucket(
@@ -807,16 +807,16 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
 		}
 	}
-	return &workspace{
-		ModuleSet:                moduleSet,
-		logger:                   w.logger,
-		opaqueIDToLintConfig:     opaqueIDToLintConfig,
-		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
-		configuredDepModuleRefs:  configuredDepModuleRefs,
-		createdFromBucket:        true,
-		isV2:                     isV2,
-		updateableBufLockDirPath: updateableBufLockDirPath,
-	}, nil
+	return newWorkspace(
+		moduleSet,
+		w.logger,
+		opaqueIDToLintConfig,
+		opaqueIDToBreakingConfig,
+		configuredDepModuleRefs,
+		true,
+		isV2,
+		updateableBufLockDirPath,
+	), nil
 }
 
 func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
