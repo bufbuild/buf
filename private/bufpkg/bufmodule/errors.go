@@ -31,7 +31,7 @@ var (
 	// paths are specified). The pre-refactor logic was the "allowNotExist" logic. Removing the allowNotExist
 	// logic was not a breaking change - we do not error in any place that we previously did not.
 	//
-	// This is used by bufctl.Controller.GetTargetImageWithConfigs, bufworkspace.NewWorkspaceForBucet, and bufimage.BuildImage.
+	// This is used by bufctl.Controller.GetTargetImageWithConfigs, bufworkspace.WorkspaceProvider.GetWorkspaceForBucket, and bufimage.BuildImage.
 	//
 	// We do assume flag names here, but we're just going with reality.
 	ErrNoTargetProtoFiles = errors.New("no .proto files were targeted. This can occur if no .proto files are found in your input, --path points to files that do not exist, or --exclude-path excludes all files.")

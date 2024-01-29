@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"sort"
 
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
@@ -36,6 +37,8 @@ var errIsWKT = errors.New("wkt")
 //
 // A ModuleSet is expected to be self-contained, that is Modules only import
 // from other Modules in this ModuleSet.
+//
+// A ModuleSet may be empty and have no Modules. This is primarily done in testing.
 type ModuleSet interface {
 	// Modules returns the Modules in the ModuleSet.
 	//
@@ -98,6 +101,23 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 	)
 }
 
+// ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules converts the ModuleSet to a
+// ModuleReadBucket that contains all the .proto files of the target
+// Modules of the ModuleSet.
+//
+// Targeting information will remain the same.
+func ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet ModuleSet) ModuleReadBucket {
+	return newMultiModuleReadBucket(
+		slicesext.Map(
+			ModuleSetTargetModules(moduleSet),
+			func(module Module) ModuleReadBucket {
+				return ModuleReadBucketWithOnlyProtoFiles(module)
+			},
+		),
+		true,
+	)
+}
+
 // ModuleSetTargetModules is a convenience function that returns the target Modules
 // from a ModuleSet.
 func ModuleSetTargetModules(moduleSet ModuleSet) []Module {
@@ -134,7 +154,44 @@ func ModuleSetRemoteModules(moduleSet ModuleSet) []Module {
 	)
 }
 
-// ModuleSetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// ModuleSetTargetLocalModulesAndTransitiveLocalDeps is a convenience function that returns
+// the targeted local Modules of the ModuleSet, and their transitive local dependencies.
+//
+// This is used by push to determine what Modules should be uploaded.
+//
+// Sorted by OpaqueID.
+func ModuleSetTargetLocalModulesAndTransitiveLocalDeps(moduleSet ModuleSet) ([]Module, error) {
+	targetLocalModules := slicesext.Filter(
+		moduleSet.Modules(),
+		func(module Module) bool { return module.IsTarget() && module.IsLocal() },
+	)
+	// It is technically possible for us to have a targeted local Module depend on a
+	// Remote dep, which depends on a local dep. In this case, we want to also
+	// include this transitive local dep. The resultOpaqueIDToLocalModule map only
+	// includes our result Modules, but we want the visited map to include everything
+	// we have visited so we can stop recursion.
+	visitedOpaqueIDs := make(map[string]struct{})
+	resultOpaqueIDToLocalModule := make(map[string]Module)
+	for _, module := range targetLocalModules {
+		if err := moduleSetTargetLocalModulesAndTransitiveLocalDepsRec(
+			visitedOpaqueIDs,
+			resultOpaqueIDToLocalModule,
+			module,
+		); err != nil {
+			return nil, err
+		}
+	}
+	resultLocalModules := slicesext.MapValuesToSlice(resultOpaqueIDToLocalModule)
+	sort.Slice(
+		resultLocalModules,
+		func(i int, j int) bool {
+			return resultLocalModules[i].OpaqueID() < resultLocalModules[j].OpaqueID()
+		},
+	)
+	return resultLocalModules, nil
+}
+
+// ModuleSetOpaqueIDs is a convenience function that returns a slice of the OpaqueIDs of the
 // Modules in the ModuleSet.
 //
 // Sorted.
@@ -142,7 +199,7 @@ func ModuleSetOpaqueIDs(moduleSet ModuleSet) []string {
 	return modulesOpaqueIDs(moduleSet.Modules())
 }
 
-// ModuleSetTargetOpaqueIDs is a conenience function that returns a slice of the OpaqueIDs of the
+// ModuleSetTargetOpaqueIDs is a convenience function that returns a slice of the OpaqueIDs of the
 // target Modules in the ModuleSet.
 //
 // Sorted.
@@ -348,6 +405,40 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 func (*moduleSet) isModuleSet() {}
 
 // utils
+
+func moduleSetTargetLocalModulesAndTransitiveLocalDepsRec(
+	visitedOpaqueIDs map[string]struct{},
+	resultOpaqueIDToLocalModule map[string]Module,
+	module Module,
+) error {
+	opaqueID := module.OpaqueID()
+	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
+		return nil
+	}
+	visitedOpaqueIDs[opaqueID] = struct{}{}
+	if module.IsLocal() {
+		resultOpaqueIDToLocalModule[opaqueID] = module
+	}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return err
+	}
+	for _, moduleDep := range moduleDeps {
+		// We want to recurse on both local and remote deps.
+		//
+		// It is technically possible for us to have a targeted local Module depend on a
+		// Remote dep, which depends on a local dep. In this case, we want to also
+		// include this transitive local dep.
+		if err := moduleSetTargetLocalModulesAndTransitiveLocalDepsRec(
+			visitedOpaqueIDs,
+			resultOpaqueIDToLocalModule,
+			moduleDep,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func moduleSetToDAGRec(
 	module Module,

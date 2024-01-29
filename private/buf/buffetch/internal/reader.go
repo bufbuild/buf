@@ -352,7 +352,9 @@ func (r *reader) getModuleKey(
 	moduleKeys, err := r.moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		[]bufmodule.ModuleRef{moduleRef.ModuleRef()},
-		bufmodule.DigestTypeB5,
+		bufmodule.DigestTypeB4,
+		// TODO: Switch back when b5 is ready.
+		//bufmodule.DigestTypeB5,
 	)
 	if err != nil {
 		return nil, err

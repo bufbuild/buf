@@ -307,7 +307,13 @@ func run(
 		return err
 	}
 	moduleReadBucket := bufmodule.ModuleReadBucketWithOnlyTargetFiles(
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+		// We only want to start with the target Modules. Otherwise, we're going to fetch potential
+		// ModuleDeps that are not targeted, which may result in buf format making remote calls
+		// when all we care to do is format local files.
+		//
+		// We need to make remote Modules even lazier to make sure that buf format is really
+		// not making these remote calls, but this is one component of it.
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(workspace),
 	)
 	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
 	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket)

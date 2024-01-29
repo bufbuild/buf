@@ -17,44 +17,45 @@ package bufworkspace
 import (
 	"context"
 	"errors"
+	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/tracing"
-	"go.uber.org/zap"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // UpdateableWorkspace is a workspace that can be updated.
+//
+// A workspace can be updated if it was backed by a v2 buf.yaml, or a single, targeted, local
+// Module from defaults or a v1beta1/v1 buf.yaml exists in the Workspace. Config overrides
+// can also not be used, but this is enforced via the WorkspaceBucketOption/UpdateableWorkspaceBucketOption
+// difference.
+//
+// buf.work.yamls are ignored when constructing an UpdateableWorkspace.
 type UpdateableWorkspace interface {
 	Workspace
 
-	// PutBufLockFile updates the lock file that backs this Workspace.
+	// BufLockFileDigestType returns the DigestType that the buf.lock file expects.
+	BufLockFileDigestType() bufmodule.DigestType
+	// ExisingBufLockFileDepModuleKeys returns the ModuleKeys from the updateable buf.lock file.
+	//
+	// We use this in a convoluted way - once we do the update, we attempt to rebuild the Workspace. If the build
+	// fails, we try to revert the buf.lock file.
+	//
+	// This could be refactored to be much better - in a perfect world, we'd update the buf.lock file virtually,
+	// do a rebuild, and only actually write to disk if we succeeded. See buf mod prune for more details.
+	ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error)
+	// UpdateBufLockFile updates the lock file that backs this Workspace to contain exactly
+	// the given ModuleKeys.
 	//
 	// If a buf.lock does not exist, one will be created.
 	//
-	// This will fail for UpdateableWorkspaces not created from v2 buf.yamls.
-	PutBufLockFile(ctx context.Context, bufLockFile bufconfig.BufLockFile) error
+	// TODO: The underlying Workspace is not actually updated after this call. Either update the documentation
+	// or update the workspace implicitly by rebuilding it.
+	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error
 
 	isUpdateableWorkspace()
-}
-
-// NewUpdateableWorkspaceForBucket returns a new Workspace for the given Bucket.
-//
-// All parsing of configuration files is done behind the scenes here.
-// This function can only read v2 buf.yamls.
-func NewUpdateableWorkspaceForBucket(
-	ctx context.Context,
-	logger *zap.Logger,
-	tracer tracing.Tracer,
-	bucket storage.ReadWriteBucket,
-	clientProvider bufapi.ClientProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	commitProvider bufmodule.CommitProvider,
-	options ...WorkspaceBucketOption,
-) (UpdateableWorkspace, error) {
-	return newUpdateableWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
 }
 
 // *** PRIVATE ***
@@ -62,22 +63,20 @@ func NewUpdateableWorkspaceForBucket(
 type updateableWorkspace struct {
 	*workspace
 
-	bucket storage.WriteBucket
+	bucket storage.ReadWriteBucket
 }
 
-func newUpdateableWorkspaceForBucket(
-	ctx context.Context,
-	logger *zap.Logger,
-	tracer tracing.Tracer,
+func newUpdateableWorkspace(
+	workspace *workspace,
 	bucket storage.ReadWriteBucket,
-	clientProvider bufapi.ClientProvider,
-	moduleDataProvider bufmodule.ModuleDataProvider,
-	commitProvider bufmodule.CommitProvider,
-	options ...WorkspaceBucketOption,
 ) (*updateableWorkspace, error) {
-	workspace, err := newWorkspaceForBucket(ctx, logger, tracer, bucket, clientProvider, moduleDataProvider, commitProvider, options...)
-	if err != nil {
-		return nil, err
+	if !workspace.createdFromBucket {
+		// Something really bad would have to happen for this to happen.
+		return nil, syserror.New("workspace.createdFromBucket not set for a workspace created from newUpdateableWorkspaceForBucket")
+	}
+	if workspace.updateableBufLockDirPath == "" {
+		// This means we messed up in our building of the Workspace.
+		return nil, syserror.New("workspace.updateableBufLockDirPath not set for a workspace created from newUpdateableWorkspaceForBucket")
 	}
 	return &updateableWorkspace{
 		workspace: workspace,
@@ -85,17 +84,41 @@ func newUpdateableWorkspaceForBucket(
 	}, nil
 }
 
-func (w *updateableWorkspace) PutBufLockFile(ctx context.Context, bufLockFile bufconfig.BufLockFile) error {
-	if !w.isV2 {
-		// TODO: enable for v1beta1/v1
-		return errors.New(`migrate to v2 buf.yaml via "buf migrate" to update your buf.lock file`)
+func (w *updateableWorkspace) BufLockFileDigestType() bufmodule.DigestType {
+	if w.isV2 {
+		return bufmodule.DigestTypeB5
 	}
-	if bufLockFile.FileVersion() != bufconfig.FileVersionV2 {
-		// TODO: enable for v1beta1/v1
-		return errors.New(`can only update to v2 buf.locks`)
+	return bufmodule.DigestTypeB4
+}
+
+func (w *updateableWorkspace) ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error) {
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.updateableBufLockDirPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	// TODO: make it so that v2 files only do b5 digests
-	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, ".", bufLockFile)
+	return bufLockFile.DepModuleKeys(), nil
+}
+
+func (w *updateableWorkspace) UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error {
+	var bufLockFile bufconfig.BufLockFile
+	var err error
+	if w.isV2 {
+		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys)
+		if err != nil {
+			return err
+		}
+	} else {
+		// This means that v1beta1 buf.yamls may be paired with v1 buf.locks, but that's probably OK?
+		// TODO: Verify
+		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV1, depModuleKeys)
+		if err != nil {
+			return err
+		}
+	}
+	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.updateableBufLockDirPath, bufLockFile)
 }
 
 func (*updateableWorkspace) isUpdateableWorkspace() {}

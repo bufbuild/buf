@@ -1168,14 +1168,17 @@ func testLintWithOptions(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	workspace, err := bufworkspace.NewWorkspaceForBucket(
-		ctx,
+	workspace, err := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
-		readWriteBucket,
+		storageosProvider,
 		bufapi.NopClientProvider,
+		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
+	).GetWorkspaceForBucket(
+		ctx,
+		readWriteBucket,
 	)
 	require.NoError(t, err)
 

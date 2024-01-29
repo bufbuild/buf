@@ -1,7 +1,5 @@
-- Make v1 buf.lock buf mod update work
 - update buf generate help documentation
 - make buf migrate do auto-search
-- Dependency resolution
 
 - lots of QA, especially around workspace file searching, target paths
   - Test both dashful and dashless commit IDs

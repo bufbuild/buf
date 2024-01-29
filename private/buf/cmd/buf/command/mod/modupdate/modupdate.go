@@ -20,13 +20,13 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -74,6 +74,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The name of the dependency to update. When set, only this dependency and its transitive dependencies are updated. May be passed multiple times",
 	)
+	// TODO: implement
+	_ = flagSet.MarkHidden(onlyFlagName)
 }
 
 // run update the buf.lock file for a specific module.
@@ -86,6 +88,11 @@ func run(
 	if container.NumArgs() > 0 {
 		dirPath = container.Arg(0)
 	}
+	if len(flags.Only) > 0 {
+		// TODO: implement
+		return syserror.Newf("--%s is not yet implemented", onlyFlagName)
+	}
+
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
@@ -106,10 +113,6 @@ func run(
 	); err != nil {
 		return err
 	}
-	onlyNameMap, err := getOnlyNameMapForModuleSet(updateableWorkspace, flags.Only)
-	if err != nil {
-		return err
-	}
 	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
 	if err != nil {
 		return err
@@ -118,8 +121,7 @@ func run(
 	// This includes transitive dependencies.
 	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(
 		remoteDeps,
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
@@ -130,8 +132,7 @@ func run(
 	bufYAMLUpdatedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
 		updateableWorkspace.ConfiguredDepModuleRefs(),
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
@@ -149,7 +150,7 @@ func run(
 		if _, ok := remoteDepNameToModuleKey[bufYAMLName]; !ok {
 			// In updated list from buf.yaml, but not in dependency list.
 			//
-			// This is an unused module.
+			// This is an unused module. TODO not true
 			//
 			// Delete from our update map, we won't write this to buf.lock
 			delete(bufYAMLNameToUpdatedModuleKey, bufYAMLName)
@@ -166,28 +167,19 @@ func run(
 
 	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(
 		remoteDeps,
-		// TODO: b4 digest type
-		bufmodule.DigestTypeB5,
+		updateableWorkspace.BufLockFileDigestType(),
 	)
 	if err != nil {
 		return err
 	}
 	// Our result buf.lock needs to have everything in deps. We will only use the new values from bufYAMLNameToModuleKey
-	// if either (1) onlyNameMap is empty (2) they are within onlyNameMap, AND they are a remote dependency.
+	// if they are a remote dependency.
 	//
 	// Note we deleted unused dependencies from bufYAMLNameToModuleKey above.
 	for remoteDepName := range remoteDepNameToModuleKey {
 		updatedModuleKey, ok := bufYAMLNameToUpdatedModuleKey[remoteDepName]
 		if ok {
-			if len(onlyNameMap) > 0 {
-				if _, ok := onlyNameMap[remoteDepName]; ok {
-					// This was a dependency (or transitive dependency) in --only. Update.
-					remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
-				}
-			} else {
-				// We didn't specify --only. Update indiscriminately.
-				remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
-			}
+			remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
 		} else {
 			// This was in our deps list but was not specified in buf.yaml. Check if it was only transitive dependency.
 			// If so, we're fine. If not, we should error, as this means it was unspecified in buf.yaml as of now (but
@@ -200,14 +192,30 @@ func run(
 			}
 		}
 	}
-	// NewBufLockFile will sort the deps.
-	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, slicesext.MapValuesToSlice(remoteDepNameToModuleKey))
+	depModuleKeys := slicesext.MapValuesToSlice(remoteDepNameToModuleKey)
+
+	// We could probably derive this from RemoteDepsForModuleSet, but we're going right to the source, to be safe.
+	existingDepModuleKeys, err := updateableWorkspace.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
 		return err
 	}
-	// TODO: Make sure the workspace builds again. This will also have the side effect of doing tamper-proofing
-	// Revert the update if the workspace does not build.
-	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
+
+	// Once we update the buf.lock file, we verify the workspace builds again. If not, we attempt to revert.
+	// This also has the side effect of doing tamper-proofing.
+	if err := updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys); err != nil {
+		return err
+	}
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		updateableWorkspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return multierr.Append(
+			err,
+			updateableWorkspace.UpdateBufLockFile(ctx, existingDepModuleKeys),
+		)
+	}
+	return nil
 }
 
 // Returns a function that returns true if the named module is a transitive remote
@@ -263,46 +271,4 @@ func getModuleFullNameToModuleKey[T bufmodule.Module, S ~[]T](
 			return moduleKey.ModuleFullName().String(), nil
 		},
 	)
-}
-
-// Returns the dependencies and transitive dependencies to be updated.
-//
-// Returns nil if onlyModuleFullNames was empty.
-func getOnlyNameMapForModuleSet(
-	moduleSet bufmodule.ModuleSet,
-	onlyNames []string,
-) (map[string]struct{}, error) {
-	if len(onlyNames) == 0 {
-		return nil, nil
-	}
-	onlyModuleFullNames := make([]bufmodule.ModuleFullName, len(onlyNames))
-	for i, onlyName := range onlyNames {
-		onlyModuleFullName, err := bufmodule.ParseModuleFullName(onlyName)
-		if err != nil {
-			return nil, appcmd.NewInvalidArgumentErrorf("--%s value %q is not a valid module name", onlyFlagName, onlyName)
-		}
-		onlyModuleFullNames[i] = onlyModuleFullName
-	}
-	onlyNameMap := make(map[string]struct{}, len(onlyModuleFullNames))
-	for _, onlyModuleFullName := range onlyModuleFullNames {
-		module := moduleSet.GetModuleForModuleFullName(onlyModuleFullName)
-		if module == nil {
-			return nil, appcmd.NewInvalidArgumentErrorf("--%s value %q does not represent a dependency of this workspace", onlyFlagName, onlyModuleFullName.String())
-		}
-		onlyNameMap[onlyModuleFullName.String()] = struct{}{}
-		moduleDeps, err := module.ModuleDeps()
-		if err != nil {
-			return nil, err
-		}
-		// ModuleDeps are transitive.
-		for _, moduleDep := range moduleDeps {
-			if depModuleFullName := moduleDep.ModuleFullName(); depModuleFullName != nil {
-				onlyNameMap[depModuleFullName.String()] = struct{}{}
-			} else if !moduleDep.IsLocal() {
-				// This is a system error, this should not happen. This is just a sanity check.
-				return nil, syserror.Newf("module %s was remote but did not have a name", moduleDep.OpaqueID())
-			}
-		}
-	}
-	return onlyNameMap, nil
 }

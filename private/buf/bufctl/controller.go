@@ -192,6 +192,7 @@ type controller struct {
 	buffetchRefParser buffetch.RefParser
 	buffetchReader    buffetch.Reader
 	buffetchWriter    buffetch.Writer
+	workspaceProvider bufworkspace.WorkspaceProvider
 }
 
 func newController(
@@ -241,6 +242,15 @@ func newController(
 		moduleKeyProvider,
 	)
 	controller.buffetchWriter = buffetch.NewWriter(logger)
+	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
+		logger,
+		tracer,
+		controller.storageosProvider,
+		clientProvider,
+		graphProvider,
+		moduleDataProvider,
+		commitProvider,
+	)
 	return controller, nil
 }
 
@@ -751,14 +761,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForBucket(
-		ctx,
-		c.logger,
-		c.tracer,
-		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
+	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -769,6 +772,17 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
+	}
+	if functionOptions.ignoreAndDisallowV1BufWorkYAMLs {
+		options = append(
+			options,
+			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		)
+	}
+	return c.workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		readBucketCloser,
+		options...,
 	)
 }
 
@@ -793,14 +807,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForBucket(
-		ctx,
-		c.logger,
-		c.tracer,
-		readBucketCloser,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
+	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithTargetSubDirPath(
 			readBucketCloser.SubDirPath(),
 		),
@@ -811,6 +818,17 @@ func (c *controller) getWorkspaceForSourceRef(
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
+	}
+	if functionOptions.ignoreAndDisallowV1BufWorkYAMLs {
+		options = append(
+			options,
+			bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+		)
+	}
+	return c.workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		readBucketCloser,
+		options...,
 	)
 }
 
@@ -828,27 +846,13 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 	if err != nil {
 		return nil, err
 	}
-	functionOptions, err = functionOptions.withPathsForBucketExtender(readWriteBucket)
-	if err != nil {
-		return nil, err
-	}
-	return bufworkspace.NewUpdateableWorkspaceForBucket(
+	// WE DO NOT USE PATHS/EXCLUDE PATHS.
+	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
+	return c.workspaceProvider.GetUpdateableWorkspaceForBucket(
 		ctx,
-		c.logger,
-		c.tracer,
 		readWriteBucket,
-		c.clientProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		bufworkspace.WithTargetSubDirPath(
 			readWriteBucket.SubDirPath(),
-		),
-		bufworkspace.WithTargetPaths(
-			functionOptions.targetPaths,
-			functionOptions.targetExcludePaths,
-		),
-		bufworkspace.WithConfigOverride(
-			functionOptions.configOverride,
 		),
 	)
 }
@@ -862,14 +866,9 @@ func (c *controller) getWorkspaceForModuleRef(
 	if err != nil {
 		return nil, err
 	}
-	return bufworkspace.NewWorkspaceForModuleKey(
+	return c.workspaceProvider.GetWorkspaceForModuleKey(
 		ctx,
-		c.logger,
-		c.tracer,
 		moduleKey,
-		c.graphProvider,
-		c.moduleDataProvider,
-		c.commitProvider,
 		bufworkspace.WithTargetPaths(
 			functionOptions.targetPaths,
 			functionOptions.targetExcludePaths,

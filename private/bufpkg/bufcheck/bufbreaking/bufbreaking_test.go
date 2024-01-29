@@ -770,24 +770,23 @@ func testBreaking(
 	)
 	require.NoError(t, err)
 
-	previousWorkspace, err := bufworkspace.NewWorkspaceForBucket(
-		ctx,
+	workspaceProvider := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
-		previousReadWriteBucket,
+		storageosProvider,
 		bufapi.NopClientProvider,
+		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	)
-	require.NoError(t, err)
-	workspace, err := bufworkspace.NewWorkspaceForBucket(
+	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		zap.NewNop(),
-		tracing.NopTracer,
+		previousReadWriteBucket,
+	)
+	require.NoError(t, err)
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
 		readWriteBucket,
-		bufapi.NopClientProvider,
-		bufmodule.NopModuleDataProvider,
-		bufmodule.NopCommitProvider,
 	)
 	require.NoError(t, err)
 

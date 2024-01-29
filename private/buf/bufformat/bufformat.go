@@ -34,7 +34,7 @@ func FormatModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) (_ stor
 		ctx,
 		bufmodule.ModuleReadBucketToStorageReadBucket(
 			bufmodule.ModuleReadBucketWithOnlyTargetFiles(
-				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
+				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet),
 			),
 		),
 	)

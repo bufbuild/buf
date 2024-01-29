@@ -16,9 +16,15 @@ package bufmodule
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/gofrs/uuid/v5"
+)
+
+var (
+	// NopGraphProvider is a no-op GraphProvider.
+	NopGraphProvider GraphProvider = nopGraphProvider{}
 )
 
 // GraphProvider provides directed acyclic graphs for ModuleKeys.
@@ -37,4 +43,15 @@ type GraphProvider interface {
 	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
 	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[uuid.UUID, ModuleKey], error)
+}
+
+// *** PRIVATE ***
+
+type nopGraphProvider struct{}
+
+func (nopGraphProvider) GetGraphForModuleKeys(
+	context.Context,
+	[]ModuleKey,
+) (*dag.Graph[uuid.UUID, ModuleKey], error) {
+	return nil, fs.ErrNotExist
 }

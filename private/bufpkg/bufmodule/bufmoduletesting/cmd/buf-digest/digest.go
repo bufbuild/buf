@@ -105,11 +105,11 @@ func run(
 		if err != nil {
 			return err
 		}
-		v1BufYAMLObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, dirPath)
+		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
 		if err != nil {
 			return err
 		}
-		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, dirPath)
+		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
 		if err != nil {
 			return err
 		}

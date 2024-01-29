@@ -184,7 +184,7 @@ func (a *reader) GetDirReadWriteBucket(
 		internalGetBucketOptions = append(
 			internalGetBucketOptions,
 			internal.WithGetBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
-		// DirRefs are never ProtoFileRefs, so no need to providr WithGetBucketProtoFileTerminateFunc.
+		// DirRefs are never ProtoFileRefs, so no need to provide WithGetBucketProtoFileTerminateFunc.
 		)
 	}
 	return a.internalReader.GetReadWriteBucket(

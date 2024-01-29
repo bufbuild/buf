@@ -29,6 +29,16 @@ type WorkspaceBucketOption interface {
 	applyToWorkspaceBucketConfig(*workspaceBucketConfig)
 }
 
+// UpdateableWorkspaceBucketOption is a WorkspaceBucketOption that can also be used
+// for UpdateableWorkspaces.
+//
+// Only a subset of WorkspaceBucketOptions can be used when creating UpdateableWorkspaces.
+type UpdateableWorkspaceBucketOption interface {
+	WorkspaceBucketOption
+
+	isUpdateableWorkspaceBucketOption()
+}
+
 // This selects the specific directory within the Workspace bucket to target.
 //
 // Example: We have modules at foo/bar, foo/baz. "." will result in both
@@ -36,7 +46,7 @@ type WorkspaceBucketOption interface {
 // the foo/bar module.
 //
 // A TargetSubDirPath of "." is equivalent of not setting this option.
-func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketOption {
+func WithTargetSubDirPath(targetSubDirPath string) UpdateableWorkspaceBucketOption {
 	return &workspaceTargetSubDirPathOption{
 		targetSubDirPath: targetSubDirPath,
 	}
@@ -57,6 +67,30 @@ func WithProtoFileTargetPath(
 		protoFileTargetPath: protoFileTargetPath,
 		includePackageFiles: includePackageFiles,
 	}
+}
+
+// WithIgnoreAndDisallowV1BufWorkYAMLs returns a new WorkspaceBucketOption that says
+// to ignore dependencies from buf.work.yamls at the root of the bucket, and to also
+// disallow directories with buf.work.yamls to be directly targeted.
+//
+// This is used for v1 updates with buf mod prune and buf mod update.
+//
+// A the root of the bucket targets a buf.work.yaml, but the targetSubDirPath targets
+// a module, this is allowed.
+//
+// Example: ./buf.work.yaml, targetSubDirPath = foo/bar, foo/bar/buf.yaml and foo/bar/buf.lock v1
+// This will result in the dependencies from buf.work.yaml being ignored, and a Workspace
+// with just the Module at foo/bar plus the dependencies from foo/bar/buf.lock being added.
+//
+// Example: ./buf.work.yaml, targetSubDirPath = .
+// This will result in an error.
+//
+// Example: ./buf.yaml v1.
+// This is fine.
+//
+// This option is implicitly set when building new UpdateableWorkspaces.
+func WithIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
+	return &workspaceIgnoreAndDisallowV1BufWorkYAMLsOption{}
 }
 
 // WorkspaceModuleKeyOption is an option for a new Workspace created by a ModuleKey.
@@ -107,6 +141,8 @@ func WithConfigOverride(configOverride string) WorkspaceOption {
 	}
 }
 
+// *** PRIVATE ***
+
 type workspaceTargetSubDirPathOption struct {
 	targetSubDirPath string
 }
@@ -114,6 +150,8 @@ type workspaceTargetSubDirPathOption struct {
 func (s *workspaceTargetSubDirPathOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
 	config.targetSubDirPath = s.targetSubDirPath
 }
+
+func (s *workspaceTargetSubDirPathOption) isUpdateableWorkspaceBucketOption() {}
 
 type workspaceTargetPathsOption struct {
 	targetPaths        []string
@@ -152,13 +190,20 @@ func (c *workspaceConfigOverrideOption) applyToWorkspaceModuleKeyConfig(config *
 	config.configOverride = c.configOverride
 }
 
+type workspaceIgnoreAndDisallowV1BufWorkYAMLsOption struct{}
+
+func (c *workspaceIgnoreAndDisallowV1BufWorkYAMLsOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
+	config.ignoreAndDisallowV1BufWorkYAMLs = true
+}
+
 type workspaceBucketConfig struct {
-	targetSubDirPath    string
-	targetPaths         []string
-	targetExcludePaths  []string
-	protoFileTargetPath string
-	includePackageFiles bool
-	configOverride      string
+	targetSubDirPath                string
+	targetPaths                     []string
+	targetExcludePaths              []string
+	protoFileTargetPath             string
+	includePackageFiles             bool
+	configOverride                  string
+	ignoreAndDisallowV1BufWorkYAMLs bool
 }
 
 func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucketConfig, error) {

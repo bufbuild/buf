@@ -45,7 +45,8 @@ func testBasic(t *testing.T, subDirPath string) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+	workspaceProvider := testNewWorkspaceProvider(
+		t,
 		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/date",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
@@ -55,20 +56,14 @@ func testBasic(t *testing.T, subDirPath string) {
 			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
 	)
-	require.NoError(t, err)
 
 	storageosProvider := storageos.NewProvider()
 	bucket, err := storageosProvider.NewReadWriteBucket(normalpath.Join("testdata/basic", subDirPath))
 	require.NoError(t, err)
 
-	workspace, err := NewWorkspaceForBucket(
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		zap.NewNop(),
-		tracing.NopTracer,
 		bucket,
-		bufapi.NopClientProvider,
-		bsrProvider,
-		bsrProvider,
 		WithTargetSubDirPath(
 			"finance/portfolio/proto",
 		),
@@ -140,14 +135,9 @@ func testBasic(t *testing.T, subDirPath string) {
 	//require.Equal(t, "buf.testing/acme/extension", malformedDep.ModuleFullName().String())
 	//require.Equal(t, MalformedDepTypeUndeclared, malformedDep.Type())
 
-	workspace, err = NewWorkspaceForBucket(
+	workspace, err = workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		zap.NewNop(),
-		tracing.NopTracer,
 		bucket,
-		bufapi.NopClientProvider,
-		bsrProvider,
-		bsrProvider,
 		WithTargetSubDirPath(
 			"common/money/proto",
 		),
@@ -173,11 +163,10 @@ func TestProtoc(t *testing.T) {
 
 	ctx := context.Background()
 
-	workspace, err := NewWorkspaceForProtoc(
+	workspaceProvider := testNewWorkspaceProvider(t)
+
+	workspace, err := workspaceProvider.GetWorkspaceForProtoc(
 		ctx,
-		zap.NewNop(),
-		tracing.NopTracer,
-		storageos.NewProvider(),
 		[]string{
 			"testdata/basic/bsr/buf.testing/acme/date",
 			"testdata/basic/bsr/buf.testing/acme/extension",
@@ -218,7 +207,8 @@ func TestUnusedDep(t *testing.T) {
 	ctx := context.Background()
 
 	// This represents some external dependencies from the BSR.
-	bsrProvider, err := bufmoduletesting.NewOmniProvider(
+	workspaceProvider := testNewWorkspaceProvider(
+		t,
 		bufmoduletesting.ModuleData{
 			Name:    "buf.testing/acme/date",
 			DirPath: "testdata/basic/bsr/buf.testing/acme/date",
@@ -228,20 +218,14 @@ func TestUnusedDep(t *testing.T) {
 			DirPath: "testdata/basic/bsr/buf.testing/acme/extension",
 		},
 	)
-	require.NoError(t, err)
 
 	storageosProvider := storageos.NewProvider()
 	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspace_unused_dep")
 	require.NoError(t, err)
 
-	workspace, err := NewWorkspaceForBucket(
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
-		zap.NewNop(),
-		tracing.NopTracer,
 		bucket,
-		bufapi.NopClientProvider,
-		bsrProvider,
-		bsrProvider,
 	)
 	require.NoError(t, err)
 
@@ -252,4 +236,18 @@ func TestUnusedDep(t *testing.T) {
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[0].Type())
 	require.Equal(t, "buf.testing/acme/extension", malformedDeps[1].ModuleFullName().String())
 	require.Equal(t, MalformedDepTypeUnused, malformedDeps[1].Type())
+}
+
+func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.ModuleData) WorkspaceProvider {
+	bsrProvider, err := bufmoduletesting.NewOmniProvider(testModuleDatas...)
+	require.NoError(t, err)
+	return NewWorkspaceProvider(
+		zap.NewNop(),
+		tracing.NopTracer,
+		storageos.NewProvider(),
+		bufapi.NopClientProvider,
+		bsrProvider,
+		bsrProvider,
+		bsrProvider,
+	)
 }

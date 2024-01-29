@@ -24,6 +24,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -32,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
@@ -142,7 +144,11 @@ func run(
 		return err
 	}
 
-	moduleSet, err := getBuildableModuleSet(ctx, container, flags)
+	workspace, err := getBuildableWorkspace(ctx, container, flags)
+	if err != nil {
+		return err
+	}
+	uploadModules, err := bufmodule.ModuleSetTargetLocalModulesAndTransitiveLocalDeps(workspace)
 	if err != nil {
 		return err
 	}
@@ -155,28 +161,28 @@ func run(
 
 	// We just do this for the future world in where we might want to allow
 	// more than one registry, even though we don't allow this with the below upload request.
-	registryToTargetModules, err := getRegistryToTargetModuleWithModuleFullName(moduleSet)
-	if err != nil {
-		return err
-	}
-	moduleVisiblity, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility)
+	registryToUploadModules, err := getRegistryToUploadModuleWithModuleFullName(uploadModules)
 	if err != nil {
 		return err
 	}
 	if flags.Create {
-		if err := createTargetModulesIfNotExist(
+		moduleVisiblity, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility)
+		if err != nil {
+			return err
+		}
+		if err := createUploadModulesIfNotExist(
 			ctx,
 			clientProvider,
-			registryToTargetModules,
+			registryToUploadModules,
 			moduleVisiblity,
 		); err != nil {
 			return err
 		}
 	} else {
-		if err := validateTargetModulesExist(
+		if err := validateUploadModulesExist(
 			ctx,
 			clientProvider,
-			registryToTargetModules,
+			registryToUploadModules,
 		); err != nil {
 			return err
 		}
@@ -185,40 +191,45 @@ func run(
 	commits, err := bufmoduleapi.Upload(
 		ctx,
 		clientProvider,
-		moduleSet,
+		uploadModules,
 		bufmoduleapi.UploadWithLabels(combineLabelLikeFlags(flags)...),
 	)
 	if err != nil {
 		return err
 	}
-	commitIDs, err := slicesext.MapError(
-		commits,
-		// TODO: Printing dashless for historical reasons, can we only print dashless in certain situations?
-		func(commit bufmodule.Commit) (string, error) {
-			return uuidutil.ToDashless(commit.ModuleKey().CommitID())
-		},
-	)
-	if err != nil {
+
+	var lines []string
+	var linesErr error
+	if workspace.IsV2() {
+		lines = slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().String()
+			},
+		)
+	} else {
+		if len(commits) > 1 {
+			linesErr = syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
+		}
+		lines = slicesext.Map(
+			commits,
+			// Printing dashless for historical reasons.
+			func(commit bufmodule.Commit) string {
+				return uuidutil.ToDashless(commit.ModuleKey().CommitID())
+			},
+		)
+	}
+	if _, err := container.Stdout().Write([]byte(strings.Join(lines, "\n") + "\n")); err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write(
-		[]byte(
-			strings.Join(
-				commitIDs,
-				"\n",
-			) + "\n",
-		),
-	); err != nil {
-		return err
-	}
-	return nil
+	return linesErr
 }
 
-func getBuildableModuleSet(
+func getBuildableWorkspace(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) (bufmodule.ModuleSet, error) {
+) (bufworkspace.Workspace, error) {
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return nil, err
@@ -231,7 +242,15 @@ func getBuildableModuleSet(
 	if err != nil {
 		return nil, err
 	}
-	workspace, err := controller.GetWorkspace(ctx, source)
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		source,
+		// We actually could make it so that buf push would work with buf.work.yamls and push
+		// v1 workspaces as well, but this may have unintended (and potentially breaking) consequences
+		// that we don't want to deal with. If we have a v1 workspace, just outlaw pushing the whole
+		// workspace, and force people into the pre-refactor behavior.
+		bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -246,27 +265,27 @@ func getBuildableModuleSet(
 	return workspace, nil
 }
 
-func getRegistryToTargetModuleWithModuleFullName(moduleSet bufmodule.ModuleSet) (map[string][]bufmodule.Module, error) {
-	registryToTargetModules := make(map[string][]bufmodule.Module)
-	for _, module := range bufmodule.ModuleSetTargetModules(moduleSet) {
+func getRegistryToUploadModuleWithModuleFullName(uploadModules []bufmodule.Module) (map[string][]bufmodule.Module, error) {
+	registryToUploadModules := make(map[string][]bufmodule.Module, len(uploadModules))
+	for _, module := range uploadModules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
 			return nil, newRequireModuleFullNameOnUploadError(module)
 		}
-		registryToTargetModules[moduleFullName.Registry()] = append(
-			registryToTargetModules[moduleFullName.Registry()],
+		registryToUploadModules[moduleFullName.Registry()] = append(
+			registryToUploadModules[moduleFullName.Registry()],
 			module,
 		)
 	}
-	return registryToTargetModules, nil
+	return registryToUploadModules, nil
 }
 
-func validateTargetModulesExist(
+func validateUploadModulesExist(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
-	registryToTargetModules map[string][]bufmodule.Module,
+	registryToUploadModules map[string][]bufmodule.Module,
 ) error {
-	for registry, targetModules := range registryToTargetModules {
+	for registry, targetModules := range registryToUploadModules {
 		if _, err := clientProvider.ModuleServiceClient(registry).GetModules(
 			ctx,
 			connect.NewRequest(
@@ -293,13 +312,13 @@ func validateTargetModulesExist(
 	return nil
 }
 
-func createTargetModulesIfNotExist(
+func createUploadModulesIfNotExist(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
-	registryToTargetModules map[string][]bufmodule.Module,
+	registryToUploadModules map[string][]bufmodule.Module,
 	moduleVisibility modulev1beta1.ModuleVisibility,
 ) error {
-	for registry, targetModules := range registryToTargetModules {
+	for registry, targetModules := range registryToUploadModules {
 		if _, err := clientProvider.ModuleServiceClient(registry).CreateModules(
 			ctx,
 			connect.NewRequest(

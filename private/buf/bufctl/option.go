@@ -100,17 +100,29 @@ func WithConfigOverride(configOverride string) FunctionOption {
 	}
 }
 
+// WithIgnoreAndDisallowV1BufWorkYAMLs returns a new FunctionOption that says
+// to ignore dependencies from buf.work.yamls at the root of the bucket, and to also
+// disallow directories with buf.work.yamls to be directly targeted.
+//
+// See bufworkspace.WithIgnoreAndDisallowV1BufWorkYAMLs for more details.
+func WithIgnoreAndDisallowV1BufWorkYAMLs() FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.ignoreAndDisallowV1BufWorkYAMLs = true
+	}
+}
+
 // *** PRIVATE ***
 
 type functionOptions struct {
-	targetPaths                  []string
-	targetExcludePaths           []string
-	imageExcludeSourceInfo       bool
-	imageExcludeImports          bool
-	imageTypes                   []string
-	imageAsFileDescriptorSet     bool
-	protoFileInfosIncludeImports bool
-	configOverride               string
+	targetPaths                     []string
+	targetExcludePaths              []string
+	imageExcludeSourceInfo          bool
+	imageExcludeImports             bool
+	imageTypes                      []string
+	imageAsFileDescriptorSet        bool
+	protoFileInfosIncludeImports    bool
+	configOverride                  string
+	ignoreAndDisallowV1BufWorkYAMLs bool
 }
 
 func newFunctionOptions() *functionOptions {

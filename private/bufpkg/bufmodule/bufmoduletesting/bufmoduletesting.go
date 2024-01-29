@@ -298,12 +298,12 @@ func (o *omniProvider) getModuleDataForModuleKey(
 		func() (bufmodule.ObjectData, error) {
 			// TODO: This may be nil! This doesn't actually fulfill the contract! We need
 			// to do synthesizing here, or we need to relax the contract.
-			return module.V1Beta1OrV1BufYAMLObjectData(), nil
+			return module.V1Beta1OrV1BufYAMLObjectData()
 		},
 		func() (bufmodule.ObjectData, error) {
 			// TODO: This may be nil! This doesn't actually fulfill the contract! We need
 			// to do synthesizing here, or we need to relax the contract.
-			return module.V1Beta1OrV1BufLockObjectData(), nil
+			return module.V1Beta1OrV1BufLockObjectData()
 		},
 	), nil
 }

@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -34,9 +33,7 @@ func NewCommand(
 		Use:   name + " <directory>",
 		Short: "Prune unused dependencies from buf.lock",
 		Long: `The first argument is the directory of your buf.yaml configuration file.
-Defaults to "." if no argument is specified.
-
-Note that pruning is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
+Defaults to "." if no argument is specified.`,
 		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -69,16 +66,11 @@ func run(
 	depModuleKeys, err := slicesext.MapError(
 		depModules,
 		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			// TODO: b4 digest types
-			return bufmodule.ModuleToModuleKey(remoteDep, bufmodule.DigestTypeB5)
+			return bufmodule.ModuleToModuleKey(remoteDep, updateableWorkspace.BufLockFileDigestType())
 		},
 	)
 	if err != nil {
 		return err
 	}
-	bufLockFile, err := bufconfig.NewBufLockFile(bufconfig.FileVersionV2, depModuleKeys)
-	if err != nil {
-		return err
-	}
-	return updateableWorkspace.PutBufLockFile(ctx, bufLockFile)
+	return updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys)
 }
