@@ -148,6 +148,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	uploadModules, err := bufmodule.ModuleSetTargetLocalModulesAndTransitiveLocalDeps(workspace)
+	if err != nil {
+		return err
+	}
 
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
@@ -157,11 +161,7 @@ func run(
 
 	// We just do this for the future world in where we might want to allow
 	// more than one registry, even though we don't allow this with the below upload request.
-	//
-	// TODO: This actually needs to be targeted local or transitive local dependency. We should
-	// just refactor Upload to take this as a parameter, and add this filter as a function
-	// to bufmodule.
-	registryToTargetModules, err := getRegistryToTargetModuleWithModuleFullName(workspace)
+	registryToUploadModules, err := getRegistryToUploadModuleWithModuleFullName(uploadModules)
 	if err != nil {
 		return err
 	}
@@ -170,19 +170,19 @@ func run(
 		if err != nil {
 			return err
 		}
-		if err := createTargetModulesIfNotExist(
+		if err := createUploadModulesIfNotExist(
 			ctx,
 			clientProvider,
-			registryToTargetModules,
+			registryToUploadModules,
 			moduleVisiblity,
 		); err != nil {
 			return err
 		}
 	} else {
-		if err := validateTargetModulesExist(
+		if err := validateUploadModulesExist(
 			ctx,
 			clientProvider,
-			registryToTargetModules,
+			registryToUploadModules,
 		); err != nil {
 			return err
 		}
@@ -191,7 +191,7 @@ func run(
 	commits, err := bufmoduleapi.Upload(
 		ctx,
 		clientProvider,
-		workspace,
+		uploadModules,
 		bufmoduleapi.UploadWithLabels(combineLabelLikeFlags(flags)...),
 	)
 	if err != nil {
@@ -268,27 +268,27 @@ func getBuildableWorkspace(
 	return workspace, nil
 }
 
-func getRegistryToTargetModuleWithModuleFullName(moduleSet bufmodule.ModuleSet) (map[string][]bufmodule.Module, error) {
-	registryToTargetModules := make(map[string][]bufmodule.Module)
-	for _, module := range bufmodule.ModuleSetTargetModules(moduleSet) {
+func getRegistryToUploadModuleWithModuleFullName(uploadModules []bufmodule.Module) (map[string][]bufmodule.Module, error) {
+	registryToUploadModules := make(map[string][]bufmodule.Module, len(uploadModules))
+	for _, module := range uploadModules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
 			return nil, newRequireModuleFullNameOnUploadError(module)
 		}
-		registryToTargetModules[moduleFullName.Registry()] = append(
-			registryToTargetModules[moduleFullName.Registry()],
+		registryToUploadModules[moduleFullName.Registry()] = append(
+			registryToUploadModules[moduleFullName.Registry()],
 			module,
 		)
 	}
-	return registryToTargetModules, nil
+	return registryToUploadModules, nil
 }
 
-func validateTargetModulesExist(
+func validateUploadModulesExist(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
-	registryToTargetModules map[string][]bufmodule.Module,
+	registryToUploadModules map[string][]bufmodule.Module,
 ) error {
-	for registry, targetModules := range registryToTargetModules {
+	for registry, targetModules := range registryToUploadModules {
 		if _, err := clientProvider.ModuleServiceClient(registry).GetModules(
 			ctx,
 			connect.NewRequest(
@@ -315,13 +315,13 @@ func validateTargetModulesExist(
 	return nil
 }
 
-func createTargetModulesIfNotExist(
+func createUploadModulesIfNotExist(
 	ctx context.Context,
 	clientProvider bufapi.ClientProvider,
-	registryToTargetModules map[string][]bufmodule.Module,
+	registryToUploadModules map[string][]bufmodule.Module,
 	moduleVisibility modulev1beta1.ModuleVisibility,
 ) error {
-	for registry, targetModules := range registryToTargetModules {
+	for registry, targetModules := range registryToUploadModules {
 		if _, err := clientProvider.ModuleServiceClient(registry).CreateModules(
 			ctx,
 			connect.NewRequest(
