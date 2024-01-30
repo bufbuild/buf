@@ -23,7 +23,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // ModuleDep is the dependency of a Module.
@@ -78,13 +77,11 @@ func (*moduleDep) isModuleDep() {}
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(
 	ctx context.Context,
-	logger *zap.Logger,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
 	if err := getModuleDepsRec(
 		ctx,
-		logger,
 		module,
 		module,
 		make(map[string]struct{}),
@@ -109,7 +106,6 @@ func getModuleDeps(
 
 func getModuleDepsRec(
 	ctx context.Context,
-	logger *zap.Logger,
 	module Module,
 	parentModule Module,
 	visitedOpaqueIDs map[string]struct{},
@@ -197,7 +193,6 @@ func getModuleDepsRec(
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
-			logger,
 			newModuleDep,
 			parentModule,
 			visitedOpaqueIDs,

@@ -12,15 +12,80 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufworkspace
+// Package bufprotoc builds ModuleSets for protoc include paths and file paths.
+package bufprotoc
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
+
+// NewModuleSetForProtoc returns a new ModuleSet for protoc -I dirPaths and filePaths.
+//
+// The returned ModuleSet will have a single targeted Module, with target files
+// matching the filePaths.
+//
+// Technically this will work with len(filePaths) == 0 but we should probably make sure
+// that is banned in protoc.
+func NewModuleSetForProtoc(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	includeDirPaths []string,
+	filePaths []string,
+) (bufmodule.ModuleSet, error) {
+	absIncludeDirPaths, err := normalizeAndAbsolutePaths(includeDirPaths, "include directory")
+	if err != nil {
+		return nil, err
+	}
+	absFilePaths, err := normalizeAndAbsolutePaths(filePaths, "input file")
+	if err != nil {
+		return nil, err
+	}
+	var rootBuckets []storage.ReadBucket
+	for _, includeDirPath := range includeDirPaths {
+		rootBucket, err := storageosProvider.NewReadWriteBucket(
+			includeDirPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		// need to do match extension here
+		// https://github.com/bufbuild/buf/issues/113
+		rootBuckets = append(rootBuckets, storage.MapReadBucket(rootBucket, storage.MatchPathExt(".proto")))
+	}
+	targetPaths, err := slicesext.MapError(
+		absFilePaths,
+		func(absFilePath string) (string, error) {
+			return applyRootsToTargetPath(absIncludeDirPaths, absFilePath, normalpath.Absolute)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder.AddLocalModule(
+		storage.MultiReadBucket(rootBuckets...),
+		".",
+		true,
+		bufmodule.LocalModuleWithTargetPaths(
+			targetPaths,
+			nil,
+		),
+	)
+	return moduleSetBuilder.Build()
+}
+
+// *** PRIVATE ***
 
 func applyRootsToTargetPath(roots []string, path string, pathType normalpath.PathType) (string, error) {
 	var matchingRoots []string

@@ -245,7 +245,6 @@ func newController(
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
 		tracer,
-		controller.storageosProvider,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,

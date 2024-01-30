@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
@@ -69,20 +68,6 @@ type WorkspaceProvider interface {
 		options ...WorkspaceModuleKeyOption,
 	) (Workspace, error)
 
-	// GetWorkspaceForProtoc is a specialized function that creates a new Workspace
-	// for given includes and file paths in the style of protoc.
-	//
-	// The returned Workspace will have a single targeted Module, with target files
-	// matching the filePaths.
-	//
-	// Technically this will work with len(filePaths) == 0 but we should probably make sure
-	// that is banned in protoc.
-	GetWorkspaceForProtoc(
-		ctx context.Context,
-		includeDirPaths []string,
-		filePaths []string,
-	) (Workspace, error)
-
 	// GetUpdateableWorkspaceForBucket returns a new UpdateableWorkspace for the given Bucket.
 	//
 	// If the workspace is not updateable, an error is returned.
@@ -107,7 +92,6 @@ type WorkspaceProvider interface {
 func NewWorkspaceProvider(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	storageosProvider storageos.Provider,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -116,7 +100,6 @@ func NewWorkspaceProvider(
 	return newWorkspaceProvider(
 		logger,
 		tracer,
-		storageosProvider,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,
@@ -129,7 +112,6 @@ func NewWorkspaceProvider(
 type workspaceProvider struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
-	storageosProvider  storageos.Provider
 	clientProvider     bufapi.ClientProvider
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
@@ -139,7 +121,6 @@ type workspaceProvider struct {
 func newWorkspaceProvider(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	storageosProvider storageos.Provider,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -148,7 +129,6 @@ func newWorkspaceProvider(
 	return &workspaceProvider{
 		logger:             logger,
 		tracer:             tracer,
-		storageosProvider:  storageosProvider,
 		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
@@ -212,40 +192,31 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			}
 		}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
-	// Add the input ModuleKey with path filters.
-	moduleSetBuilder.AddRemoteModule(
+
+	moduleSet, err := bufmodule.NewModuleSetForRemoteModule(
+		ctx,
+		w.graphProvider,
+		w.moduleDataProvider,
+		w.commitProvider,
 		moduleKey,
-		true,
 		bufmodule.RemoteModuleWithTargetPaths(
 			config.targetPaths,
 			config.targetExcludePaths,
 		),
 	)
-	graph, err := w.graphProvider.GetGraphForModuleKeys(ctx, []bufmodule.ModuleKey{moduleKey})
 	if err != nil {
 		return nil, err
 	}
-	if err := graph.WalkNodes(func(node bufmodule.ModuleKey, _ []bufmodule.ModuleKey, _ []bufmodule.ModuleKey) error {
-		if node.CommitID() != moduleKey.CommitID() {
-			// Add the dependency ModuleKey with no path filters.
-			moduleSetBuilder.AddRemoteModule(node, false)
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	moduleSet, err := moduleSetBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
+
 	opaqueIDToLintConfig := make(map[string]bufconfig.LintConfig)
 	opaqueIDToBreakingConfig := make(map[string]bufconfig.BreakingConfig)
 	for _, module := range moduleSet.Modules() {
 		if bufmodule.ModuleFullNameEqual(module.ModuleFullName(), moduleKey.ModuleFullName()) {
+			// Set the lint and breaking config for the single targeted Module.
 			opaqueIDToLintConfig[module.OpaqueID()] = targetModuleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
 		} else {
+			// For all non-targets, set the default lint and breaking config.
 			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
 			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
 		}
@@ -255,72 +226,6 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 		w.logger,
 		opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig,
-		nil,
-		false,
-		false,
-		"",
-	), nil
-}
-
-func (w *workspaceProvider) GetWorkspaceForProtoc(
-	ctx context.Context,
-	includeDirPaths []string,
-	filePaths []string,
-) (Workspace, error) {
-	absIncludeDirPaths, err := normalizeAndAbsolutePaths(includeDirPaths, "include directory")
-	if err != nil {
-		return nil, err
-	}
-	absFilePaths, err := normalizeAndAbsolutePaths(filePaths, "input file")
-	if err != nil {
-		return nil, err
-	}
-	var rootBuckets []storage.ReadBucket
-	for _, includeDirPath := range includeDirPaths {
-		rootBucket, err := w.storageosProvider.NewReadWriteBucket(
-			includeDirPath,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return nil, err
-		}
-		// need to do match extension here
-		// https://github.com/bufbuild/buf/issues/113
-		rootBuckets = append(rootBuckets, storage.MapReadBucket(rootBucket, storage.MatchPathExt(".proto")))
-	}
-	targetPaths, err := slicesext.MapError(
-		absFilePaths,
-		func(absFilePath string) (string, error) {
-			return applyRootsToTargetPath(absIncludeDirPaths, absFilePath, normalpath.Absolute)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
-	moduleSetBuilder.AddLocalModule(
-		storage.MultiReadBucket(rootBuckets...),
-		".",
-		true,
-		bufmodule.LocalModuleWithTargetPaths(
-			targetPaths,
-			nil,
-		),
-	)
-	moduleSet, err := moduleSetBuilder.Build()
-	if err != nil {
-		return nil, err
-	}
-	return newWorkspace(
-		moduleSet,
-		w.logger,
-		map[string]bufconfig.LintConfig{
-			".": bufconfig.DefaultLintConfig,
-		},
-		map[string]bufconfig.BreakingConfig{
-			".": bufconfig.DefaultBreakingConfig,
-		},
 		nil,
 		false,
 		false,
@@ -492,7 +397,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.moduleDataProvider, w.commitProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We use this to detect different refs across different files.
 	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)
@@ -674,7 +579,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.logger, w.moduleDataProvider, w.commitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.moduleDataProvider, w.commitProvider)
 
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,

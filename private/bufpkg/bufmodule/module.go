@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
 )
 
 // Module presents a BSR module.
@@ -244,7 +243,6 @@ type module struct {
 	ModuleReadBucket
 
 	ctx                    context.Context
-	logger                 *zap.Logger
 	getBucket              func() (storage.ReadBucket, error)
 	bucketID               string
 	moduleFullName         ModuleFullName
@@ -263,7 +261,6 @@ type module struct {
 // must set ModuleReadBucket after constructor via setModuleReadBucket
 func newModule(
 	ctx context.Context,
-	logger *zap.Logger,
 	// This function must already be filtered to include only module files and must be syncext.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	bucketID string,
@@ -296,7 +293,6 @@ func newModule(
 	}
 	module := &module{
 		ctx:                    ctx,
-		logger:                 logger,
 		getBucket:              syncOnceValuesGetBucketWithStorageMatcherApplied,
 		bucketID:               bucketID,
 		moduleFullName:         moduleFullName,
@@ -308,7 +304,6 @@ func newModule(
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
-		logger,
 		syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module,
 		targetPaths,
@@ -383,7 +378,6 @@ func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
 		ctx:                    m.ctx,
-		logger:                 m.logger,
 		getBucket:              m.getBucket,
 		bucketID:               m.bucketID,
 		moduleFullName:         m.moduleFullName,
@@ -448,6 +442,6 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 
 func newGetModuleDepsFuncForModule(module *module) func() ([]ModuleDep, error) {
 	return func() ([]ModuleDep, error) {
-		return getModuleDeps(module.ctx, module.logger, module)
+		return getModuleDeps(module.ctx, module)
 	}
 }

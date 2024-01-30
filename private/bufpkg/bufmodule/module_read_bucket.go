@@ -30,7 +30,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/protocompile/parser/fastscan"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 // ModuleReadBucket is an object analogous to storage.ReadBucket that supplements ObjectInfos
@@ -252,7 +251,6 @@ func GetLicenseStorageReadBucket(bucket storage.ReadBucket) storage.ReadBucket {
 // moduleReadBucket
 
 type moduleReadBucket struct {
-	logger    *zap.Logger
 	getBucket func() (storage.ReadBucket, error)
 	module    Module
 	// We have to store a deterministic ordering of targetPaths so that Walk
@@ -272,7 +270,6 @@ type moduleReadBucket struct {
 // Do not call any functions on module.
 func newModuleReadBucketForModule(
 	ctx context.Context,
-	logger *zap.Logger,
 	// This function must already be filtered to include only module files and must be sync.OnceValues wrapped!
 	syncOnceValuesGetBucketWithStorageMatcherApplied func() (storage.ReadBucket, error),
 	module Module,
@@ -289,7 +286,6 @@ func newModuleReadBucketForModule(
 		return nil, syserror.Newf("protoFileTargetPath %q is not a .proto file", protoFileTargetPath)
 	}
 	return &moduleReadBucket{
-		logger:               logger,
 		getBucket:            syncOnceValuesGetBucketWithStorageMatcherApplied,
 		module:               module,
 		targetPaths:          targetPaths,
@@ -408,7 +404,6 @@ func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
 	// This technically doesn't matter anymore since we don't sync.OnceValue getBucket inside newModuleReadBucket
 	// anymore, but we keep this around in case we change that back.
 	return &moduleReadBucket{
-		logger:               b.logger,
 		getBucket:            b.getBucket,
 		module:               module,
 		targetPaths:          b.targetPaths,
