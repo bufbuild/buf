@@ -94,25 +94,23 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: set-tags
-        # See the following links for setting job outputs
-        # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idoutputs
-        # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
-        id: tags
-        run: |
-          {
-            echo "tags<<EOF"
-            echo "bufbuild/buf:unstable"
-            if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-              echo "bufbuild/buf:latest"
-              echo "bufbuild/buf:${GITHUB_REF#refs/tags/v}"
-            fi
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+      - name: docker-meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            bufbuild/buf
+          tags: |
+            type=edge,branch=main
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+          flavor: |
+            latest=auto
       - name: docker-build-push
         uses: docker/build-push-action@v5
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
