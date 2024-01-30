@@ -22,9 +22,11 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
@@ -91,6 +93,7 @@ func run(
 		return syserror.Newf("--%s is not yet implemented", onlyFlagName)
 	}
 
+	logger := container.Logger()
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
@@ -119,6 +122,13 @@ func run(
 		configuredDepModuleRefs,
 		workspaceDepManager.BufLockFileDigestType(),
 	)
+	if err != nil {
+		return err
+	}
+	logger.Debug(
+		"deps from buf.yaml",
+		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
+	)
 	// Walk the graph to get all configured deps and their transitive dependencies.
 	graph, err := graphProvider.GetGraphForModuleKeys(ctx, configuredDepModuleKeys)
 	if err != nil {
@@ -133,6 +143,10 @@ func run(
 	); err != nil {
 		return err
 	}
+	logger.Debug(
+		"all deps",
+		zap.Strings("deps", slicesext.Map(newDepModuleKeys, bufmodule.ModuleKey.String)),
+	)
 
 	// Store the existing buf.lock data.
 	existingDepModuleKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
