@@ -105,6 +105,7 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=semver,pattern={{version}}
           flavor: |
             latest=auto
       - name: docker-build-push
