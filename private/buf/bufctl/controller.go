@@ -1041,8 +1041,7 @@ func (c *controller) buildTargetImageWithConfigs(
 	return imageWithConfigs, nil
 }
 
-// warnDeps warns on either unused deps in your buf.yaml, or transitive deps that were
-// not in your buf.yaml.
+// warnDeps warns on unused deps in your buf.yaml.
 //
 // Only call this if you are building an image. This results in ModuleDeps calls that
 // you don't want to invoke unless you are building - they'll result in import reading,
