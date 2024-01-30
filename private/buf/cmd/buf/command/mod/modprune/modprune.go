@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -55,22 +56,34 @@ func run(
 	if err != nil {
 		return err
 	}
-	updateableWorkspace, err := controller.GetUpdateableWorkspace(ctx, dirPath)
+	workspaceDepManager, err := controller.GetWorkspaceDepManager(ctx, dirPath)
 	if err != nil {
 		return err
 	}
-	depModules, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
+	workspace, err := controller.GetWorkspace(ctx, dirPath)
+	if err != nil {
+		return err
+	}
+	// Make sure the workspace builds.
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return err
+	}
+	depModules, err := bufmodule.RemoteDepsForModuleSet(workspace)
 	if err != nil {
 		return err
 	}
 	depModuleKeys, err := slicesext.MapError(
 		depModules,
 		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(remoteDep, updateableWorkspace.BufLockFileDigestType())
+			return bufmodule.ModuleToModuleKey(remoteDep, workspaceDepManager.BufLockFileDigestType())
 		},
 	)
 	if err != nil {
 		return err
 	}
-	return updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys)
+	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
 }

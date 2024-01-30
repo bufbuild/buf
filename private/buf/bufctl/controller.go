@@ -79,11 +79,11 @@ type Controller interface {
 		sourceOrModuleInput string,
 		options ...FunctionOption,
 	) (bufworkspace.Workspace, error)
-	GetUpdateableWorkspace(
+	GetWorkspaceDepManager(
 		ctx context.Context,
 		dirPath string,
 		options ...FunctionOption,
-	) (bufworkspace.UpdateableWorkspace, error)
+	) (bufworkspace.WorkspaceDepManager, error)
 	GetImage(
 		ctx context.Context,
 		input string,
@@ -187,12 +187,13 @@ type controller struct {
 	fileAnnotationErrorFormat string
 	fileAnnotationsToStdout   bool
 
-	commandRunner     command.Runner
-	storageosProvider storageos.Provider
-	buffetchRefParser buffetch.RefParser
-	buffetchReader    buffetch.Reader
-	buffetchWriter    buffetch.Writer
-	workspaceProvider bufworkspace.WorkspaceProvider
+	commandRunner               command.Runner
+	storageosProvider           storageos.Provider
+	buffetchRefParser           buffetch.RefParser
+	buffetchReader              buffetch.Reader
+	buffetchWriter              buffetch.Writer
+	workspaceProvider           bufworkspace.WorkspaceProvider
+	workspaceDepManagerProvider bufworkspace.WorkspaceDepManagerProvider
 }
 
 func newController(
@@ -250,6 +251,10 @@ func newController(
 		moduleDataProvider,
 		commitProvider,
 	)
+	controller.workspaceDepManagerProvider = bufworkspace.NewWorkspaceDepManagerProvider(
+		logger,
+		tracer,
+	)
 	return controller, nil
 }
 
@@ -280,11 +285,11 @@ func (c *controller) GetWorkspace(
 	}
 }
 
-func (c *controller) GetUpdateableWorkspace(
+func (c *controller) GetWorkspaceDepManager(
 	ctx context.Context,
 	dirPath string,
 	options ...FunctionOption,
-) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+) (_ bufworkspace.WorkspaceDepManager, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions()
 	for _, option := range options {
@@ -294,7 +299,7 @@ func (c *controller) GetUpdateableWorkspace(
 	if err != nil {
 		return nil, err
 	}
-	return c.getUpdateableWorkspaceForDirRef(ctx, dirRef, functionOptions)
+	return c.getWorkspaceDepManagerForDirRef(ctx, dirRef, functionOptions)
 }
 
 func (c *controller) GetImage(
@@ -831,11 +836,11 @@ func (c *controller) getWorkspaceForSourceRef(
 	)
 }
 
-func (c *controller) getUpdateableWorkspaceForDirRef(
+func (c *controller) getWorkspaceDepManagerForDirRef(
 	ctx context.Context,
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
-) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+) (_ bufworkspace.WorkspaceDepManager, retErr error) {
 	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(
 		ctx,
 		c.container,
@@ -846,8 +851,8 @@ func (c *controller) getUpdateableWorkspaceForDirRef(
 		return nil, err
 	}
 	// WE DO NOT USE PATHS/EXCLUDE PATHS.
-	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
-	return c.workspaceProvider.GetUpdateableWorkspaceForBucket(
+	// When we refactor functionOptions, we need to make sure we only include what we can pass to WorkspaceDepManager.
+	return c.workspaceDepManagerProvider.GetWorkspaceDepManager(
 		ctx,
 		readWriteBucket,
 		bufworkspace.WithTargetSubDirPath(
