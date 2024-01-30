@@ -17,12 +17,9 @@ package bufworkspace
 import (
 	"context"
 	"errors"
-	"io/fs"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -37,7 +34,10 @@ type WorkspaceDepManagerProvider interface {
 	// using TargetSubDirPath for targeting.
 	//
 	// Otherwise, this builds a Workspace with a single module at the TargetSubDirPath (which may be "."), igoring buf.work.yamls.
-	// Directories with buf.work.yamls cannot be directly targeted - the same logic as WithIgnoreAndDisallowV1BufWorkYAMLs is applied.
+	// Directories with buf.work.yamls cannot be directly targeted.
+
+	// Note this is the same logic as if WithIgnoreAndDisallowV1BufWorkYAMLs is applied with WorkspaceProvider!! If you want an equivalent
+	// Workspace, you need to use this option!
 	//
 	// All parsing of configuration files is done behind the scenes here.
 	GetWorkspaceDepManager(
@@ -109,23 +109,14 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 				"creating new workspace dep manager, ignoring v1 buf.work.yaml, just building on module at target",
 				zap.String("targetSubDirPath", config.targetSubDirPath),
 			)
-			return w.getWorkspaceDepManagerForModuleDirPathV1Beta1OrV1(
-				ctx,
-				bucket,
-				config,
-				config.targetSubDirPath,
-			)
+			return newWorkspaceDepManager(bucket, config.targetSubDirPath, false), nil
 		}
 		w.logger.Debug(
 			"creating new workspace dep manager based on v2 buf.yaml",
 			zap.String("targetSubDirPath", config.targetSubDirPath),
 		)
 		// We have a v2 buf.yaml.
-		return w.getWorkspaceDepManagerBufYAMLV2(
-			ctx,
-			bucket,
-			config,
-		)
+		return newWorkspaceDepManager(bucket, ".", true), nil
 	}
 
 	w.logger.Debug(
@@ -134,58 +125,5 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 	)
 	// We did not find any buf.work.yaml or buf.yaml, operate as if a
 	// default v1 buf.yaml was at config.targetSubDirPath.
-	return w.getWorkspaceDepManagerForModuleDirPathV1Beta1OrV1(
-		ctx,
-		bucket,
-		config,
-		config.targetSubDirPath,
-	)
-}
-
-func (w *workspaceDepManagerProvider) getWorkspaceDepManagerForModuleDirPathV1Beta1OrV1(
-	ctx context.Context,
-	bucket storage.ReadWriteBucket,
-	config *workspaceDepManagerConfig,
-	moduleDirPath string,
-) (*workspaceDepManager, error) {
-	var configuredDepModuleRefs []bufmodule.ModuleRef
-	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, moduleDirPath)
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-	} else {
-		// Just a sanity check. This should have already been validated, but let's make sure.
-		if bufYAMLFile.FileVersion() != bufconfig.FileVersionV1Beta1 && bufYAMLFile.FileVersion() != bufconfig.FileVersionV1 {
-			return nil, syserror.Newf("buf.yaml at %s did not have version v1beta1 or v1", moduleDirPath)
-		}
-		configuredDepModuleRefs = bufYAMLFile.ConfiguredDepModuleRefs()
-	}
-	return newWorkspaceDepManager(
-		bucket,
-		configuredDepModuleRefs,
-		false,
-		moduleDirPath,
-	), nil
-}
-
-func (w *workspaceDepManagerProvider) getWorkspaceDepManagerBufYAMLV2(
-	ctx context.Context,
-	bucket storage.ReadWriteBucket,
-	config *workspaceDepManagerConfig,
-) (*workspaceDepManager, error) {
-	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, ".")
-	if err != nil {
-		// This should be apparent from above functions.
-		return nil, syserror.Newf("error getting v2 buf.yaml: %w", err)
-	}
-	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-		return nil, syserror.Newf("expected v2 buf.yaml but got %v", bufYAMLFile.FileVersion())
-	}
-	return newWorkspaceDepManager(
-		bucket,
-		bufYAMLFile.ConfiguredDepModuleRefs(),
-		true,
-		".",
-	), nil
+	return newWorkspaceDepManager(bucket, config.targetSubDirPath, false), nil
 }

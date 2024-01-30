@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 // WorkspaceDepManager is a workspace that can be updated.
@@ -33,8 +34,6 @@ import (
 //
 // buf.work.yamls are ignored when constructing an WorkspaceDepManager.
 type WorkspaceDepManager interface {
-	HasConfiguredDepModuleRefs
-
 	// BufLockFileDigestType returns the DigestType that the buf.lock file expects.
 	BufLockFileDigestType() bufmodule.DigestType
 	// ExisingBufLockFileDepModuleKeys returns the ModuleKeys from the buf.lock file.
@@ -44,6 +43,18 @@ type WorkspaceDepManager interface {
 	//
 	// If a buf.lock does not exist, one will be created.
 	UpdateBufLockFile(ctx context.Context, depModuleKeys []bufmodule.ModuleKey) error
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
+	//
+	// These come from buf.yaml files.
+	//
+	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
+	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
+	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
+	// will be returned - we have no way to resolve what the user intended.
+	//
+	// Sorted.
+	ConfiguredDepModuleRefs(ctx context.Context) ([]bufmodule.ModuleRef, error)
 
 	isWorkspaceDepManager()
 }
@@ -51,8 +62,15 @@ type WorkspaceDepManager interface {
 // *** PRIVATE ***
 
 type workspaceDepManager struct {
-	bucket                  storage.ReadWriteBucket
-	configuredDepModuleRefs []bufmodule.ModuleRef
+	bucket storage.ReadWriteBucket
+	// targetSubDirPath is the relative path within the bucket where a buf.yaml file should be and where a
+	// buf.lock can be written.
+	//
+	// If isV2 is true, this will be "." - buf.yamls and buf.locks live at the root of the workspace.
+	//
+	// If isV2 is false, this will be the path to the single, local, targeted Module within the workspace
+	// This is the only situation where we can do an update for a v1 buf.lock.
+	targetSubDirPath string
 	// If true, the workspace was created from v2 buf.yamls
 	//
 	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
@@ -60,34 +78,43 @@ type workspaceDepManager struct {
 	// This is used to determine what DigestType to use, and what version
 	// of buf.lock to write.
 	isV2 bool
-	// updateableBufLockDirPath is the relative path within the bucket where a buf.lock can be written.
-	//
-	// If isV2 is true, this will be "." if no config overrides were used - buf.locks live at the root of the workspace.
-	// If isV2 is false, this will be the path to the single, local, targeted Module within the workspace if no config
-	// overrides were used. This is the only situation where we can do an update for a v1 buf.lock.
-	// If isV2 is false and there is not a single, local, targeted Module, or a config override was used, this will be empty.
-	//
-	// The option WithIgnoreAndDisallowV1BufWorkYAMLs is used by updateabeWorkspace to try
-	// to satisfy the v1 condition.
-	updateableBufLockDirPath string
 }
 
 func newWorkspaceDepManager(
 	bucket storage.ReadWriteBucket,
-	configuredDepModuleRefs []bufmodule.ModuleRef,
+	targetSubDirPath string,
 	isV2 bool,
-	updateableBufLockDirPath string,
 ) *workspaceDepManager {
 	return &workspaceDepManager{
-		bucket:                   bucket,
-		configuredDepModuleRefs:  configuredDepModuleRefs,
-		isV2:                     isV2,
-		updateableBufLockDirPath: updateableBufLockDirPath,
+		bucket:           bucket,
+		targetSubDirPath: targetSubDirPath,
+		isV2:             isV2,
 	}
 }
 
-func (w *workspaceDepManager) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
-	return w.configuredDepModuleRefs
+func (w *workspaceDepManager) ConfiguredDepModuleRefs(ctx context.Context) ([]bufmodule.ModuleRef, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	if bufYAMLFile == nil {
+		return nil, nil
+	}
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		if w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v1beta1, v1", w.targetSubDirPath, fileVersion)
+		}
+	case bufconfig.FileVersionV2:
+		if !w.isV2 {
+			return nil, syserror.Newf("buf.yaml at %q did had version %v but expected v12", w.targetSubDirPath, fileVersion)
+		}
+	default:
+		return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+	}
+	return bufYAMLFile.ConfiguredDepModuleRefs(), nil
 }
 
 func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
@@ -98,7 +125,7 @@ func (w *workspaceDepManager) BufLockFileDigestType() bufmodule.DigestType {
 }
 
 func (w *workspaceDepManager) ExistingBufLockFileDepModuleKeys(ctx context.Context) ([]bufmodule.ModuleKey, error) {
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.updateableBufLockDirPath)
+	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, nil
@@ -117,16 +144,21 @@ func (w *workspaceDepManager) UpdateBufLockFile(ctx context.Context, depModuleKe
 			return err
 		}
 	} else {
-		// This means that v1beta1 buf.yamls may be paired with v1 buf.locks, but that's probably OK?
-		// TODO: Verify
-		bufLockFile, err = bufconfig.NewBufLockFile(bufconfig.FileVersionV1, depModuleKeys)
+		fileVersion := bufconfig.FileVersionV1
+		existingBufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, w.bucket, w.targetSubDirPath)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		} else {
+			fileVersion = existingBufYAMLFile.FileVersion()
+		}
+		bufLockFile, err = bufconfig.NewBufLockFile(fileVersion, depModuleKeys)
 		if err != nil {
 			return err
 		}
 	}
-	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.updateableBufLockDirPath, bufLockFile)
+	return bufconfig.PutBufLockFileForPrefix(ctx, w.bucket, w.targetSubDirPath, bufLockFile)
 }
 
 func (*workspaceDepManager) isWorkspaceDepManager() {}
-
-func (*workspaceDepManager) isHasConfiguredDepModuleRefs() {}

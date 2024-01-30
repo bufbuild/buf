@@ -35,7 +35,6 @@ import (
 //	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace)
 //	fileInfo, err := moduleReadBucket.GetFileInfo(ctx, path)
 type Workspace interface {
-	HasConfiguredDepModuleRefs
 	bufmodule.ModuleSet
 
 	// GetLintConfigForOpaqueID gets the LintConfig for the OpaqueID, if the OpaqueID
@@ -72,6 +71,18 @@ type Workspace interface {
 	// in the workspace. This should result in items such as the linter or breaking change
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
+	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
+	//
+	// These come from buf.yaml files.
+	//
+	// The ModuleRefs in this list will be unique by ModuleFullName. If there are two ModuleRefs
+	// in the buf.yaml with the same ModuleFullName but different Refs, an error will be given
+	// at workspace constructions. For example, with v1 buf.yaml, this is a union of the deps in
+	// the buf.yaml files in the workspace. If different buf.yamls had different refs, an error
+	// will be returned - we have no way to resolve what the user intended.
+	//
+	// Sorted.
+	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 
 	// IsV2 signifies if this module was created from a v2 buf.yaml.
 	//
@@ -131,5 +142,3 @@ func (w *workspace) IsV2() bool {
 }
 
 func (*workspace) isWorkspace() {}
-
-func (*workspace) isHasConfiguredDepModuleRefs() {}
