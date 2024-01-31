@@ -103,7 +103,7 @@ func (*moduleOwner) isModuleOwner() {}
 
 func parseModuleOwnerComponents(path string) (registry string, owner string, err error) {
 	slashSplit := strings.Split(path, "/")
-	if len(slashSplit) != 3 {
+	if len(slashSplit) != 2 {
 		return "", "", newInvalidModuleOwnerStringError(path)
 	}
 	registry = strings.TrimSpace(slashSplit[0])
