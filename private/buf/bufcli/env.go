@@ -31,6 +31,8 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	noCopyToInMemoryEnvKey = "BUF_BETA_NO_INMEM"
 )
 
 var (

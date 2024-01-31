@@ -186,6 +186,7 @@ type controller struct {
 	disableSymlinks           bool
 	fileAnnotationErrorFormat string
 	fileAnnotationsToStdout   bool
+	copyToInMemory            bool
 
 	commandRunner               command.Runner
 	storageosProvider           storageos.Provider
@@ -264,7 +265,7 @@ func (c *controller) GetWorkspace(
 	options ...FunctionOption,
 ) (_ bufworkspace.Workspace, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -291,7 +292,7 @@ func (c *controller) GetWorkspaceDepManager(
 	options ...FunctionOption,
 ) (_ bufworkspace.WorkspaceDepManager, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -308,7 +309,7 @@ func (c *controller) GetImage(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -321,7 +322,7 @@ func (c *controller) GetImageForInputConfig(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -334,7 +335,7 @@ func (c *controller) GetImageForWorkspace(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -347,7 +348,7 @@ func (c *controller) GetTargetImageWithConfigs(
 	options ...FunctionOption,
 ) (_ []ImageWithConfig, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -436,7 +437,7 @@ func (c *controller) GetProtoFileInfos(
 	options ...FunctionOption,
 ) (_ []ProtoFileInfo, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -499,7 +500,7 @@ func (c *controller) PutImage(
 	options ...FunctionOption,
 ) (retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -552,7 +553,7 @@ func (c *controller) GetMessage(
 	options ...FunctionOption,
 ) (_ proto.Message, _ buffetch.MessageEncoding, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -623,7 +624,7 @@ func (c *controller) PutMessage(
 	options ...FunctionOption,
 ) (retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -750,7 +751,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		ctx,
 		c.container,
 		protoFileRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadBucketCloserOptions()...,
 	)
 	if err != nil {
 		return nil, err
@@ -799,7 +800,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		ctx,
 		c.container,
 		sourceRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadBucketCloserOptions()...,
 	)
 	if err != nil {
 		return nil, err
@@ -845,7 +846,7 @@ func (c *controller) getWorkspaceDepManagerForDirRef(
 		ctx,
 		c.container,
 		dirRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadWriteBucketOptions()...,
 	)
 	if err != nil {
 		return nil, err

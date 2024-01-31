@@ -27,6 +27,12 @@ func NewController(
 	container appext.Container,
 	options ...bufctl.ControllerOption,
 ) (bufctl.Controller, error) {
+	if container.Env(noCopyToInMemoryEnvKey) == "" {
+		options = append(
+			options,
+			bufctl.WithCopyToInMemory(),
+		)
+	}
 	clientConfig, err := NewConnectClientConfig(container)
 	if err != nil {
 		return nil, err

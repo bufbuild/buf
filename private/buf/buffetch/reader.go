@@ -147,25 +147,31 @@ func (a *reader) GetSourceReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
-	options ...GetBucketOption,
+	options ...GetReadBucketCloserOption,
 ) (ReadBucketCloser, error) {
-	getBucketOptions := newGetBucketOptions()
+	getReadBucketCloserOptions := newGetReadBucketCloserOptions()
 	for _, option := range options {
-		option(getBucketOptions)
+		option(getReadBucketCloserOptions)
 	}
-	var internalGetBucketOptions []internal.GetBucketOption
-	if !getBucketOptions.noSearch {
-		internalGetBucketOptions = append(
-			internalGetBucketOptions,
-			internal.WithGetBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
-			internal.WithGetBucketProtoFileTerminateFunc(bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef),
+	var internalGetReadBucketCloserOptions []internal.GetReadBucketCloserOption
+	if !getReadBucketCloserOptions.noSearch {
+		internalGetReadBucketCloserOptions = append(
+			internalGetReadBucketCloserOptions,
+			internal.WithGetReadBucketCloserTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
+			internal.WithGetReadBucketCloserProtoFileTerminateFunc(bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef),
+		)
+	}
+	if getReadBucketCloserOptions.copyToInMemory {
+		internalGetReadBucketCloserOptions = append(
+			internalGetReadBucketCloserOptions,
+			internal.WithGetReadBucketCloserCopyToInMemory(),
 		)
 	}
 	return a.internalReader.GetReadBucketCloser(
 		ctx,
 		container,
 		sourceRef.internalBucketRef(),
-		internalGetBucketOptions...,
+		internalGetReadBucketCloserOptions...,
 	)
 }
 
@@ -173,25 +179,24 @@ func (a *reader) GetDirReadWriteBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	options ...GetBucketOption,
+	options ...GetReadWriteBucketOption,
 ) (ReadWriteBucket, error) {
-	getBucketOptions := newGetBucketOptions()
+	getReadWriteBucketOptions := newGetReadWriteBucketOptions()
 	for _, option := range options {
-		option(getBucketOptions)
+		option(getReadWriteBucketOptions)
 	}
-	var internalGetBucketOptions []internal.GetBucketOption
-	if !getBucketOptions.noSearch {
-		internalGetBucketOptions = append(
-			internalGetBucketOptions,
-			internal.WithGetBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
-		// DirRefs are never ProtoFileRefs, so no need to provide WithGetBucketProtoFileTerminateFunc.
+	var internalGetReadWriteBucketOptions []internal.GetReadWriteBucketOption
+	if !getReadWriteBucketOptions.noSearch {
+		internalGetReadWriteBucketOptions = append(
+			internalGetReadWriteBucketOptions,
+			internal.WithGetReadWriteBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
 		)
 	}
 	return a.internalReader.GetReadWriteBucket(
 		ctx,
 		container,
 		dirRef.internalDirRef(),
-		internalGetBucketOptions...,
+		internalGetReadWriteBucketOptions...,
 	)
 }
 

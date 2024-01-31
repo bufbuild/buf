@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -198,6 +199,7 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	require.NoError(t, err)
 	return NewWorkspaceProvider(
 		zap.NewNop(),
+		tracing.NopTracer,
 		bufapi.NopClientProvider,
 		bsrProvider,
 		bsrProvider,

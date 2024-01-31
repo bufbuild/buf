@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
 	"go.uber.org/multierr"
@@ -109,26 +110,45 @@ func (r *reader) GetReadBucketCloser(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
-	options ...GetBucketOption,
-) (ReadBucketCloser, error) {
-	getBucketOptions := newGetBucketOptions()
+	options ...GetReadBucketCloserOption,
+) (retReadBucketCloser ReadBucketCloser, retErr error) {
+	getReadBucketCloserOptions := newGetReadBucketCloserOptions()
 	for _, option := range options {
-		option(getBucketOptions)
+		option(getReadBucketCloserOptions)
 	}
+
+	if getReadBucketCloserOptions.copyToInMemory {
+		defer func() {
+			if retReadBucketCloser != nil {
+				castReadBucketCloser, ok := retReadBucketCloser.(*readBucketCloser)
+				if !ok {
+					retErr = multierr.Append(
+						retErr,
+						syserror.Newf("expected *readBucketCloser but got %T", retReadBucketCloser),
+					)
+					return
+				}
+				var err error
+				retReadBucketCloser, err = castReadBucketCloser.copyToInMemory(ctx)
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
+	}
+
 	switch t := bucketRef.(type) {
 	case ArchiveRef:
 		return r.getArchiveBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFunc,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	case DirRef:
 		readWriteBucket, err := r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFunc,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 		if err != nil {
 			return nil, err
@@ -139,15 +159,15 @@ func (r *reader) GetReadBucketCloser(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFunc,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	case ProtoFileRef:
 		return r.getProtoFileBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFunc,
-			getBucketOptions.protoFileTerminateFunc,
+			getReadBucketCloserOptions.terminateFunc,
+			getReadBucketCloserOptions.protoFileTerminateFunc,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -158,17 +178,17 @@ func (r *reader) GetReadWriteBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	options ...GetBucketOption,
+	options ...GetReadWriteBucketOption,
 ) (ReadWriteBucket, error) {
-	getBucketOptions := newGetBucketOptions()
+	getReadWriteBucketOptions := newGetReadWriteBucketOptions()
 	for _, option := range options {
-		option(getBucketOptions)
+		option(getReadWriteBucketOptions)
 	}
 	return r.getDirBucket(
 		ctx,
 		container,
 		dirRef,
-		getBucketOptions.terminateFunc,
+		getReadWriteBucketOptions.terminateFunc,
 	)
 }
 
@@ -921,13 +941,22 @@ func newGetFileOptions() *getFileOptions {
 	return &getFileOptions{}
 }
 
-type getBucketOptions struct {
+type getReadBucketCloserOptions struct {
 	terminateFunc          TerminateFunc
 	protoFileTerminateFunc TerminateFunc
+	copyToInMemory         bool
 }
 
-func newGetBucketOptions() *getBucketOptions {
-	return &getBucketOptions{}
+func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
+	return &getReadBucketCloserOptions{}
+}
+
+type getReadWriteBucketOptions struct {
+	terminateFunc TerminateFunc
+}
+
+func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {
+	return &getReadWriteBucketOptions{}
 }
 
 type getModuleOptions struct{}
