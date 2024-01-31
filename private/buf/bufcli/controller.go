@@ -27,7 +27,7 @@ func NewController(
 	container appext.Container,
 	options ...bufctl.ControllerOption,
 ) (bufctl.Controller, error) {
-	if container.Env(noCopyToInMemoryEnvKey) == "" {
+	if container.Env(copyToInMemoryEnvKey) != "" {
 		options = append(
 			options,
 			bufctl.WithCopyToInMemory(),
