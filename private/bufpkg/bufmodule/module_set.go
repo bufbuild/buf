@@ -370,9 +370,6 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 }
 
 func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (_ Module, retErr error) {
-	ctx, span := m.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
-
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
 	for _, module := range m.Modules() {
