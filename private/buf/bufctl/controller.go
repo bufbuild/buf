@@ -1054,22 +1054,26 @@ func (c *controller) buildTargetImageWithConfigs(
 // test errors, and correctly so. In the pre-refactor world, we only did this with
 // image building, so we keep it that way for now.
 func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
-	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
-	if err != nil {
-		return err
-	}
-	for _, malformedDep := range malformedDeps {
-		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUnused:
-			c.logger.Sugar().Warnf(
-				`Module %s is declared in your buf.yaml deps but is unused.`,
-				malformedDep.ModuleFullName(),
-			)
-		default:
-			return fmt.Errorf("unknown MalformedDepType: %v", t)
-		}
-	}
+	// TODO: Disabled for now because this function causes a MASSIVE performance hit. Investigate.
+	// It's somewhat obvious why it does if you are doing i.e. --path, but for complete builds,
+	// this causes a 2x perf hit, which doesn't make sense.
 	return nil
+	//malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
+	//if err != nil {
+	//return err
+	//}
+	//for _, malformedDep := range malformedDeps {
+	//switch t := malformedDep.Type(); t {
+	//case bufworkspace.MalformedDepTypeUnused:
+	//c.logger.Sugar().Warnf(
+	//`Module %s is declared in your buf.yaml deps but is unused.`,
+	//malformedDep.ModuleFullName(),
+	//)
+	//default:
+	//return fmt.Errorf("unknown MalformedDepType: %v", t)
+	//}
+	//}
+	//return nil
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
