@@ -275,11 +275,18 @@ func getB4Digest(
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("MANIFEST STRING", manifest.String())
 	bufcasDigest, err := bufcas.ManifestToDigest(manifest)
 	if err != nil {
 		return nil, err
 	}
-	return NewDigest(DigestTypeB4, bufcasDigest)
+	fmt.Println("DIGEST", bufcasDigest.String())
+	digest, err := NewDigest(DigestTypeB4, bufcasDigest)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("SUPER SERIOUS DIGEST", digest.String())
+	return digest, nil
 }
 
 func getB5DigestForBucketAndModuleDeps(
