@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
@@ -72,7 +71,6 @@ type WorkspaceProvider interface {
 // NewWorkspaceProvider returns a new WorkspaceProvider.
 func NewWorkspaceProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -80,7 +78,6 @@ func NewWorkspaceProvider(
 ) WorkspaceProvider {
 	return newWorkspaceProvider(
 		logger,
-		tracer,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,
@@ -92,7 +89,6 @@ func NewWorkspaceProvider(
 
 type workspaceProvider struct {
 	logger             *zap.Logger
-	tracer             tracing.Tracer
 	clientProvider     bufapi.ClientProvider
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
@@ -101,7 +97,6 @@ type workspaceProvider struct {
 
 func newWorkspaceProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -109,7 +104,6 @@ func newWorkspaceProvider(
 ) *workspaceProvider {
 	return &workspaceProvider{
 		logger:             logger,
-		tracer:             tracer,
 		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
@@ -216,113 +210,43 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	options ...WorkspaceBucketOption,
 ) (_ Workspace, retErr error) {
-	ctx, span := w.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
-
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err
 	}
+	var overrideBufYAMLFile bufconfig.BufYAMLFile
 	if config.configOverride != "" {
-		overrideBufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
+		overrideBufYAMLFile, err = bufconfig.GetBufYAMLFileForOverride(config.configOverride)
 		if err != nil {
 			return nil, err
 		}
-		w.logger.Debug(
-			"creating new workspace with config override",
-			zap.String("targetSubDirPath", config.targetSubDirPath),
-		)
-		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
-		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-			// Operate as if there was no buf.work.yaml, only a v1 buf.yaml at the specified
-			// targetSubDirPath, specifying a single module.
-			return w.getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
-				ctx,
-				bucket,
-				config,
-				[]string{config.targetSubDirPath},
-				overrideBufYAMLFile,
-			)
-		case bufconfig.FileVersionV2:
-			// Operate as if there was a v2 buf.yaml at the root of the bucket.
-			return w.getWorkspaceForBucketBufYAMLV2(
-				ctx,
-				storage.MapReadBucket(bucket, storage.MapOnPrefix(config.targetSubDirPath)),
-				config,
-				overrideBufYAMLFile,
-			)
-		default:
-			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
-		}
 	}
-
-	findControllingWorkspaceResult, err := bufconfig.FindControllingWorkspace(ctx, bucket, ".", config.targetSubDirPath)
+	workspaceTargeting, err := newWorkspaceTargeting(
+		ctx,
+		w.logger,
+		bucket,
+		config.targetSubDirPath,
+		overrideBufYAMLFile,
+		config.ignoreAndDisallowV1BufWorkYAMLs,
+	)
 	if err != nil {
 		return nil, err
 	}
-	if findControllingWorkspaceResult.Found() {
-		// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
-		if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
-			if config.ignoreAndDisallowV1BufWorkYAMLs {
-				// config.targetSubDirPath is normalized, so if it was empty, it will be ".".
-				if config.targetSubDirPath == "." {
-					// If config.targetSubDirPath is ".", this means we targeted a buf.work.yaml, not an individual module within the buf.work.yaml
-					// This is disallowed.
-					return nil, errors.New(`Workspaces defined with buf.work.yaml cannot be updated or pushed, only
-the individual modules within a workspace can be updated or pushed. Workspaces
-defined with a v2 buf.yaml can be updated, see the migration documentation for more details.`)
-				}
-				// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
-				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
-				w.logger.Debug(
-					"creating new workspace, ignoring v1 buf.work.yaml, just building on module at target",
-					zap.String("targetSubDirPath", config.targetSubDirPath),
-				)
-				return w.getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
-					ctx,
-					bucket,
-					config,
-					[]string{config.targetSubDirPath},
-					nil,
-				)
-			}
-			w.logger.Debug(
-				"creating new workspace based on v1 buf.work.yaml",
-				zap.String("targetSubDirPath", config.targetSubDirPath),
-			)
-			return w.getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
-				ctx,
-				bucket,
-				config,
-				bufWorkYAMLDirPaths,
-				nil,
-			)
-		}
-		w.logger.Debug(
-			"creating new workspace based on v2 buf.yaml",
-			zap.String("targetSubDirPath", config.targetSubDirPath),
-		)
-		// We have a v2 buf.yaml.
+	if workspaceTargeting.isV2() {
 		return w.getWorkspaceForBucketBufYAMLV2(
 			ctx,
 			bucket,
 			config,
-			nil,
+			workspaceTargeting.v2DirPath,
+			overrideBufYAMLFile,
 		)
 	}
-
-	w.logger.Debug(
-		"creating new workspace with no found buf.work.yaml or buf.yaml",
-		zap.String("targetSubDirPath", config.targetSubDirPath),
-	)
-	// We did not find any buf.work.yaml or buf.yaml, operate as if a
-	// default v1 buf.yaml was at config.targetSubDirPath.
 	return w.getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		ctx,
 		bucket,
 		config,
-		[]string{config.targetSubDirPath},
-		nil,
+		workspaceTargeting.v1DirPaths,
+		overrideBufYAMLFile,
 	)
 }
 
@@ -484,10 +408,13 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	config *workspaceBucketConfig,
+	dirPath string,
 	// This can be nil, this is only set if config.configOverride was set, which we
 	// deal with outside of this function.
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspace, error) {
+	bucket = storage.MapReadBucket(bucket, storage.MapOnPrefix(dirPath))
+
 	var bufYAMLFile bufconfig.BufYAMLFile
 	var err error
 	if overrideBufYAMLFile != nil {

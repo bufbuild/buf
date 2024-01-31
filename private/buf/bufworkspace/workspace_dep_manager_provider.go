@@ -16,11 +16,9 @@ package bufworkspace
 
 import (
 	"context"
-	"errors"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -50,11 +48,9 @@ type WorkspaceDepManagerProvider interface {
 // NewWorkspaceDepManagerProvider returns a new WorkspaceDepManagerProvider.
 func NewWorkspaceDepManagerProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 ) WorkspaceDepManagerProvider {
 	return newWorkspaceDepManagerProvider(
 		logger,
-		tracer,
 	)
 }
 
@@ -62,16 +58,13 @@ func NewWorkspaceDepManagerProvider(
 
 type workspaceDepManagerProvider struct {
 	logger *zap.Logger
-	tracer tracing.Tracer
 }
 
 func newWorkspaceDepManagerProvider(
 	logger *zap.Logger,
-	tracer tracing.Tracer,
 ) *workspaceDepManagerProvider {
 	return &workspaceDepManagerProvider{
 		logger: logger,
-		tracer: tracer,
 	}
 }
 
@@ -80,50 +73,27 @@ func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	bucket storage.ReadWriteBucket,
 	options ...WorkspaceDepManagerOption,
 ) (_ WorkspaceDepManager, retErr error) {
-	ctx, span := w.tracer.Start(ctx, tracing.WithErr(&retErr))
-	defer span.End()
-
 	config, err := newWorkspaceDepManagerConfig(options)
 	if err != nil {
 		return nil, err
 	}
-
-	findControllingWorkspaceResult, err := bufconfig.FindControllingWorkspace(ctx, bucket, ".", config.targetSubDirPath)
+	workspaceTargeting, err := newWorkspaceTargeting(
+		ctx,
+		w.logger,
+		bucket,
+		config.targetSubDirPath,
+		nil,
+		true, // Disallow buf.work.yamls when doing management of deps for v1
+	)
 	if err != nil {
 		return nil, err
 	}
-	if findControllingWorkspaceResult.Found() {
-		// We have a v1 buf.work.yaml, per the documentation on bufconfig.FindControllingWorkspace.
-		if bufWorkYAMLDirPaths := findControllingWorkspaceResult.BufWorkYAMLDirPaths(); len(bufWorkYAMLDirPaths) > 0 {
-			// config.targetSubDirPath is normalized, so if it was empty, it will be ".".
-			if config.targetSubDirPath == "." {
-				// If config.targetSubDirPath is ".", this means we targeted a buf.work.yaml, not an individual module within the buf.work.yaml
-				// This is disallowed.
-				return nil, errors.New(`Workspaces defined with buf.work.yaml cannot be updated or pushed, only
-the individual modules within a workspace can be updated or pushed. Workspaces
-defined with a v2 buf.yaml can be updated, see the migration documentation for more details.`)
-			}
-			// We targeted a specific module within the workspace. Based on the option we provided, we're going to ignore
-			// the workspace entirely, and just act as if the buf.work.yaml did not exist.
-			w.logger.Debug(
-				"creating new workspace dep manager, ignoring v1 buf.work.yaml, just building on module at target",
-				zap.String("targetSubDirPath", config.targetSubDirPath),
-			)
-			return newWorkspaceDepManager(bucket, config.targetSubDirPath, false), nil
-		}
-		w.logger.Debug(
-			"creating new workspace dep manager based on v2 buf.yaml",
-			zap.String("targetSubDirPath", config.targetSubDirPath),
-		)
-		// We have a v2 buf.yaml.
-		return newWorkspaceDepManager(bucket, ".", true), nil
+	if workspaceTargeting.isV2() {
+		return newWorkspaceDepManager(bucket, workspaceTargeting.v2DirPath, true), nil
 	}
-
-	w.logger.Debug(
-		"creating new workspace dep manager with no found buf.work.yaml or buf.yaml",
-		zap.String("targetSubDirPath", config.targetSubDirPath),
-	)
-	// We did not find any buf.work.yaml or buf.yaml, operate as if a
-	// default v1 buf.yaml was at config.targetSubDirPath.
-	return newWorkspaceDepManager(bucket, config.targetSubDirPath, false), nil
+	if len(workspaceTargeting.v1DirPaths) != 1 {
+		// This is because of disallowing buf.work.yamls
+		return nil, syserror.Newf("expected a single v1 dir path from workspace targeting but got %v", workspaceTargeting.v1DirPaths)
+	}
+	return newWorkspaceDepManager(bucket, workspaceTargeting.v1DirPaths[0], false), nil
 }

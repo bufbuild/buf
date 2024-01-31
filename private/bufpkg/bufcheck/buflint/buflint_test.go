@@ -1170,7 +1170,6 @@ func testLintWithOptions(
 	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
-		tracing.NopTracer,
 		bufapi.NopClientProvider,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,
