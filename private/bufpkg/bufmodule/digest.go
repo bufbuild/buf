@@ -241,7 +241,6 @@ func getB4Digest(
 			if err != nil {
 				return err
 			}
-			fmt.Println("NewFileNode", readObject.Path(), digest.String())
 			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
 			if err != nil {
 				return err
@@ -264,7 +263,6 @@ func getB4Digest(
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("NewFileNode", objectData.Name(), string(objectData.Data()))
 		fileNode, err := bufcas.NewFileNode(objectData.Name(), digest)
 		if err != nil {
 			return nil, err
@@ -275,18 +273,11 @@ func getB4Digest(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("MANIFEST STRING", manifest.String())
 	bufcasDigest, err := bufcas.ManifestToDigest(manifest)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("DIGEST", bufcasDigest.String())
-	digest, err := NewDigest(DigestTypeB4, bufcasDigest)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("SUPER SERIOUS DIGEST", digest.String())
-	return digest, nil
+	return NewDigest(DigestTypeB4, bufcasDigest)
 }
 
 func getB5DigestForBucketAndModuleDeps(

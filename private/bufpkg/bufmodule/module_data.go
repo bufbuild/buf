@@ -126,7 +126,6 @@ func newModuleData(
 			if err != nil {
 				return err
 			}
-			fmt.Println("expected", moduleKey.String(), expectedDigest.String())
 			var actualDigest Digest
 			switch expectedDigest.Type() {
 			case DigestTypeB4:

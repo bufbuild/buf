@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"sort"
 
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
@@ -154,8 +155,26 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 		func(
 			moduleKey bufmodule.ModuleKey,
 			_ []bufmodule.ModuleKey,
-			depModuleKeys []bufmodule.ModuleKey,
+			_ []bufmodule.ModuleKey,
 		) error {
+			// TopoSort will get us both the direct and transitive dependencies for the key.
+			//
+			// The outgoing edge list is just the direct dependencies.
+			//
+			// There is definitely a better way to do this in one pass for all commits with
+			// memoization - this is algorithmically bad.
+			depModuleKeys, err := graph.TopoSort(moduleKey.CommitID())
+			if err != nil {
+				return err
+			}
+			depModuleKeys = depModuleKeys[:len(depModuleKeys)-1]
+			sort.Slice(
+				depModuleKeys,
+				func(i int, j int) bool {
+					return depModuleKeys[i].ModuleFullName().String() < depModuleKeys[j].ModuleFullName().String()
+				},
+			)
+
 			protoContent, ok := commitIDToProtoContent[moduleKey.CommitID()]
 			if !ok {
 				// We only care to get content for a subset of the graph. If we have something
