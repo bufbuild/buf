@@ -392,7 +392,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	}
 	if len(b.addedModules) == 0 {
 		// Allow an empty ModuleSet.
-		return newModuleSet(nil)
+		return newModuleSet(b.tracer, nil)
 	}
 	// If not empty, we need at least one target Module.
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
@@ -414,7 +414,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	if err != nil {
 		return nil, err
 	}
-	return newModuleSet(modules)
+	return newModuleSet(b.tracer, modules)
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {
