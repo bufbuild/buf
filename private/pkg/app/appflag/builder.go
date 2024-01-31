@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/observabilityzap"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
@@ -43,6 +44,8 @@ type builder struct {
 	profileLoops      int
 	profileType       string
 	profileAllowError bool
+
+	parallelism int
 
 	timeout time.Duration
 
@@ -83,6 +86,8 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	// We do not officially support this flag, this is for testing, where we need warnings turned off.
 	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging")
 	_ = flagSet.MarkHidden("no-warn")
+	flagSet.IntVar(&b.parallelism, "parallelism", 0, "Manually control the parallelism")
+	_ = flagSet.MarkHidden("parallelism")
 }
 
 func (b *builder) NewRunFunc(
@@ -118,6 +123,10 @@ func (b *builder) run(
 	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
 	if err != nil {
 		return err
+	}
+
+	if b.parallelism > 0 {
+		thread.SetParallelism(b.parallelism)
 	}
 
 	var cancel context.CancelFunc
