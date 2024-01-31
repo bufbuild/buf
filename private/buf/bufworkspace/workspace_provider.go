@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
@@ -71,6 +72,7 @@ type WorkspaceProvider interface {
 // NewWorkspaceProvider returns a new WorkspaceProvider.
 func NewWorkspaceProvider(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -78,6 +80,7 @@ func NewWorkspaceProvider(
 ) WorkspaceProvider {
 	return newWorkspaceProvider(
 		logger,
+		tracer,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,
@@ -89,6 +92,7 @@ func NewWorkspaceProvider(
 
 type workspaceProvider struct {
 	logger             *zap.Logger
+	tracer             tracing.Tracer
 	clientProvider     bufapi.ClientProvider
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
@@ -97,6 +101,7 @@ type workspaceProvider struct {
 
 func newWorkspaceProvider(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -104,6 +109,7 @@ func newWorkspaceProvider(
 ) *workspaceProvider {
 	return &workspaceProvider{
 		logger:             logger,
+		tracer:             tracer,
 		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
@@ -115,7 +121,10 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 	options ...WorkspaceModuleKeyOption,
-) (Workspace, error) {
+) (_ Workspace, retErr error) {
+	ctx, span := w.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	config, err := newWorkspaceModuleKeyConfig(options)
 	if err != nil {
 		return nil, err
@@ -170,6 +179,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 
 	moduleSet, err := bufmodule.NewModuleSetForRemoteModule(
 		ctx,
+		w.tracer,
 		w.graphProvider,
 		w.moduleDataProvider,
 		w.commitProvider,
@@ -210,6 +220,9 @@ func (w *workspaceProvider) GetWorkspaceForBucket(
 	bucket storage.ReadBucket,
 	options ...WorkspaceBucketOption,
 ) (_ Workspace, retErr error) {
+	ctx, span := w.tracer.Start(ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	config, err := newWorkspaceBucketConfig(options)
 	if err != nil {
 		return nil, err
@@ -269,7 +282,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.moduleDataProvider, w.commitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.tracer, w.moduleDataProvider, w.commitProvider)
 	bucketIDToModuleConfig := make(map[string]bufconfig.ModuleConfig)
 	// We use this to detect different refs across different files.
 	moduleFullNameStringToConfiguredDepModuleRefString := make(map[string]string)
@@ -444,7 +457,7 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	isTargetFunc := func(moduleDirPath string) bool {
 		return normalpath.EqualsOrContainsPath(config.targetSubDirPath, moduleDirPath, normalpath.Relative)
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.moduleDataProvider, w.commitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, w.tracer, w.moduleDataProvider, w.commitProvider)
 
 	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
 		ctx,

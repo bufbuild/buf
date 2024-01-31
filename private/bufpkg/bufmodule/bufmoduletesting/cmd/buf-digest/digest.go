@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
 
@@ -98,7 +99,8 @@ func run(
 	if len(dirPaths) == 0 {
 		dirPaths = []string{"."}
 	}
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	tracer := tracing.NewTracer(container.Tracer())
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	storageosProvider := storageos.NewProvider()
 	for _, dirPath := range dirPaths {
 		bucket, err := storageosProvider.NewReadWriteBucket(dirPath)

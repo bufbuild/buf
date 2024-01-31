@@ -245,6 +245,7 @@ func newController(
 	controller.buffetchWriter = buffetch.NewWriter(logger)
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
+		tracer,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,
@@ -252,6 +253,7 @@ func newController(
 	)
 	controller.workspaceDepManagerProvider = bufworkspace.NewWorkspaceDepManagerProvider(
 		logger,
+		tracer,
 	)
 	return controller, nil
 }

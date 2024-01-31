@@ -114,6 +114,7 @@ func run(
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
+		tracer,
 		storageosProvider,
 		env.IncludeDirPaths,
 		env.FilePaths,
