@@ -241,6 +241,7 @@ func getB4Digest(
 			if err != nil {
 				return err
 			}
+			fmt.Println("NewFileNode", readObject.Path(), digest.String())
 			fileNode, err := bufcas.NewFileNode(readObject.Path(), digest)
 			if err != nil {
 				return err
@@ -263,6 +264,7 @@ func getB4Digest(
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("NewFileNode", objectData.Name(), string(objectData.Data()))
 		fileNode, err := bufcas.NewFileNode(objectData.Name(), digest)
 		if err != nil {
 			return nil, err
