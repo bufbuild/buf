@@ -83,7 +83,6 @@ func getModuleDeps(
 	if err := getModuleDepsRec(
 		ctx,
 		module,
-		module,
 		make(map[string]struct{}),
 		depOpaqueIDToModuleDep,
 		true,
@@ -107,7 +106,6 @@ func getModuleDeps(
 func getModuleDepsRec(
 	ctx context.Context,
 	module Module,
-	parentModule Module,
 	visitedOpaqueIDs map[string]struct{},
 	// already discovered deps
 	depOpaqueIDToModuleDep map[string]ModuleDep,
@@ -177,7 +175,7 @@ func getModuleDepsRec(
 					if _, ok := depOpaqueIDToModuleDep[potentialDepOpaqueID]; !ok {
 						moduleDep := newModuleDep(
 							potentialModuleDep,
-							parentModule,
+							module,
 							isDirect,
 						)
 						depOpaqueIDToModuleDep[potentialDepOpaqueID] = moduleDep
@@ -194,7 +192,6 @@ func getModuleDepsRec(
 		if err := getModuleDepsRec(
 			ctx,
 			newModuleDep,
-			parentModule,
 			visitedOpaqueIDs,
 			depOpaqueIDToModuleDep,
 			// Always not direct on recursive calls.

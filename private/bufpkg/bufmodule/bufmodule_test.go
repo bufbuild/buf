@@ -224,6 +224,9 @@ func TestBasic(t *testing.T) {
 	//require.NoError(t, err)
 	//require.Equal(t, "module2", pkg)
 
+	extdep1 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep1")
+	require.NotNil(t, extdep1)
+
 	extdep2 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep2")
 	require.NotNil(t, extdep2)
 	require.Equal(
@@ -233,6 +236,29 @@ func TestBasic(t *testing.T) {
 		},
 		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
+	extdep2Deps, err := extdep2.ModuleDeps()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(extdep2Deps))
+	require.Equal(t, "buf.build/foo/extdep1", extdep2Deps[0].OpaqueID())
+	require.Equal(t, extdep2.OpaqueID(), extdep2Deps[0].Parent().OpaqueID())
+
+	module1 := moduleSet.GetModuleForOpaqueID("path/to/module1")
+	require.NotNil(t, extdep2)
+	require.Equal(
+		t,
+		map[string]bool{
+			"buf.build/foo/extdep2": true,
+			"buf.build/foo/extdep1": false,
+		},
+		testGetDepOpaqueIDToDirect(t, module1),
+	)
+	module1Deps, err := module1.ModuleDeps()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(module1Deps))
+	require.Equal(t, "buf.build/foo/extdep1", module1Deps[0].OpaqueID())
+	require.Equal(t, extdep2.OpaqueID(), module1Deps[0].Parent().OpaqueID())
+	require.Equal(t, "buf.build/foo/extdep2", module1Deps[1].OpaqueID())
+	require.Equal(t, module1.OpaqueID(), module1Deps[1].Parent().OpaqueID())
 
 	// This is a graph of OpaqueIDs. This tests that we have the full dependency tree
 	// that we expect.
