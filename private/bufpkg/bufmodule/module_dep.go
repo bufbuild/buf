@@ -84,6 +84,8 @@ func getModuleDeps(
 		ctx,
 		module,
 		make(map[string]struct{}),
+		make(map[string]struct{}),
+		nil,
 		depOpaqueIDToModuleDep,
 		true,
 	); err != nil {
@@ -107,13 +109,19 @@ func getModuleDepsRec(
 	ctx context.Context,
 	module Module,
 	visitedOpaqueIDs map[string]struct{},
+	// Changes as we go down the stack.
+	parentOpaqueIDs map[string]struct{},
+	// Ordered version of parentOpaqueIDs so we can print a cycle error.
+	orderedParentOpaqueIDs []string,
 	// already discovered deps
 	depOpaqueIDToModuleDep map[string]ModuleDep,
 	isDirect bool,
 ) error {
 	opaqueID := module.OpaqueID()
+	if _, ok := parentOpaqueIDs[opaqueID]; ok {
+		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+	}
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
-		// TODO: detect cycles, this is just making sure we don't recurse
 		return nil
 	}
 	visitedOpaqueIDs[opaqueID] = struct{}{}
@@ -188,11 +196,15 @@ func getModuleDepsRec(
 	); err != nil {
 		return err
 	}
+	parentOpaqueIDs[opaqueID] = struct{}{}
+	orderedParentOpaqueIDs = append(orderedParentOpaqueIDs, opaqueID)
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
 			newModuleDep,
 			visitedOpaqueIDs,
+			parentOpaqueIDs,
+			orderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,
 			// Always not direct on recursive calls.
 			// We've already added all the direct deps.
@@ -201,5 +213,7 @@ func getModuleDepsRec(
 			return err
 		}
 	}
+	delete(parentOpaqueIDs, opaqueID)
+	orderedParentOpaqueIDs = orderedParentOpaqueIDs[:len(orderedParentOpaqueIDs)-1]
 	return nil
 }

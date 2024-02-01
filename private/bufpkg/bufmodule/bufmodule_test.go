@@ -16,6 +16,7 @@ package bufmodule_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -325,6 +326,92 @@ func TestBasic(t *testing.T) {
 			"buf.build/foo/extdep4",
 		},
 		slicesext.Map(transitiveRemoteDeps, func(remoteDep bufmodule.RemoteDep) string { return remoteDep.OpaqueID() }),
+	)
+}
+
+func TestCycleError(t *testing.T) {
+	t.Parallel()
+
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a; import "b.proto";`,
+				),
+				"a1.proto": []byte(
+					`syntax = proto3; package a;`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(
+					`syntax = proto3; package b; import "c.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/c",
+			PathToData: map[string][]byte{
+				"c.proto": []byte(
+					`syntax = proto3; package b; import "a1.proto";`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	moduleA := moduleSet.GetModuleForOpaqueID("buf.build/foo/a")
+	require.NotNil(t, moduleA)
+	_, err = moduleA.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError := &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+		},
+		moduleCycleError.OpaqueIDs,
+	)
+
+	moduleB := moduleSet.GetModuleForOpaqueID("buf.build/foo/b")
+	require.NotNil(t, moduleB)
+	_, err = moduleB.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError = &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+		},
+		moduleCycleError.OpaqueIDs,
+	)
+
+	moduleC := moduleSet.GetModuleForOpaqueID("buf.build/foo/c")
+	require.NotNil(t, moduleC)
+	_, err = moduleC.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError = &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+		},
+		moduleCycleError.OpaqueIDs,
 	)
 }
 
