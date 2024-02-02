@@ -65,6 +65,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	var jsonrpc2Stream jsonrpc2.Stream
 	if flags.Port > 0 {
 		conn, err := net.Dial("tcp", fmt.Sprintf(":%d", flags.Port))

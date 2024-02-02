@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	betagraph "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -68,7 +69,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsp"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
@@ -117,9 +117,6 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
-			// TODO: beta?
-			lsp.NewCommand("lsp", builder),
-			// TODO: x?
 			graph.NewCommand("graph", builder),
 			migrate.NewCommand("migrate", builder),
 			push.NewCommand("push", builder),
@@ -150,6 +147,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
+					lsp.NewCommand("lsp", builder),
 					betagraph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
