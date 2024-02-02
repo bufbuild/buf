@@ -24,9 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufpluginexec"
-	"github.com/bufbuild/buf/private/buf/bufworkspace"
+	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -113,16 +112,10 @@ func run(
 	}
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	workspace, err := bufworkspace.NewWorkspaceProvider(
-		logger,
+	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
+		ctx,
 		tracer,
 		storageosProvider,
-		bufapi.NopClientProvider,
-		bufmodule.NopGraphProvider,
-		bufmodule.NopModuleDataProvider,
-		bufmodule.NopCommitProvider,
-	).GetWorkspaceForProtoc(
-		ctx,
 		env.IncludeDirPaths,
 		env.FilePaths,
 	)
@@ -137,7 +130,7 @@ func run(
 	image, err := bufimage.BuildImage(
 		ctx,
 		tracer,
-		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 		buildOptions...,
 	)
 	if err != nil {
@@ -160,7 +153,7 @@ func run(
 		fileInfos, err := bufmodule.GetTargetFileInfos(
 			ctx,
 			bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
-				workspace,
+				moduleSet,
 			),
 		)
 		if err != nil {

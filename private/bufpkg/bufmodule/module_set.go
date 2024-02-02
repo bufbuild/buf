@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -250,6 +251,7 @@ func ModuleSetToDAG(moduleSet ModuleSet) (*dag.Graph[string, Module], error) {
 // moduleSet
 
 type moduleSet struct {
+	tracer                       tracing.Tracer
 	modules                      []Module
 	moduleFullNameStringToModule map[string]Module
 	opaqueIDToModule             map[string]Module
@@ -264,6 +266,7 @@ type moduleSet struct {
 }
 
 func newModuleSet(
+	tracer tracing.Tracer,
 	modules []Module,
 ) (*moduleSet, error) {
 	moduleFullNameStringToModule := make(map[string]Module, len(modules))
@@ -303,6 +306,7 @@ func newModuleSet(
 		}
 	}
 	moduleSet := &moduleSet{
+		tracer:                       tracer,
 		modules:                      modules,
 		moduleFullNameStringToModule: moduleFullNameStringToModule,
 		opaqueIDToModule:             opaqueIDToModule,
@@ -352,7 +356,7 @@ func (m *moduleSet) WithTargetOpaqueIDs(opaqueIDs ...string) (ModuleSet, error) 
 		}
 		modules[i] = module
 	}
-	return newModuleSet(modules)
+	return newModuleSet(m.tracer, modules)
 }
 
 // This should only be used by Modules and FileInfos.
@@ -365,7 +369,7 @@ func (m *moduleSet) getModuleForFilePath(ctx context.Context, filePath string) (
 	)
 }
 
-func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (Module, error) {
+func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath string) (_ Module, retErr error) {
 	matchingOpaqueIDs := make(map[string]struct{})
 	// Note that we're effectively doing an O(num_modules * num_files) operation here, which could be prohibitive.
 	for _, module := range m.Modules() {

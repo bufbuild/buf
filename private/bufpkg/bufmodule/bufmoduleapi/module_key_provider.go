@@ -102,6 +102,7 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	}
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, protoCommit := range protoCommits {
+		protoCommit := protoCommit
 		commitID, err := uuid.FromString(protoCommit.Id)
 		if err != nil {
 			return nil, err

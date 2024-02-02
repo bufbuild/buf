@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 type moduleTargeting struct {
@@ -126,4 +127,33 @@ func newModuleTargeting(
 		moduleProtoFileTargetPath: moduleProtoFileTargetPath,
 		includePackageFiles:       includePackageFiles,
 	}, nil
+}
+
+func applyRootsToTargetPath(roots []string, path string, pathType normalpath.PathType) (string, error) {
+	var matchingRoots []string
+	for _, root := range roots {
+		if normalpath.ContainsPath(root, path, pathType) {
+			matchingRoots = append(matchingRoots, root)
+		}
+	}
+	switch len(matchingRoots) {
+	case 0:
+		// this is a user error and will likely happen often
+		return "", fmt.Errorf(
+			"path %q is not contained within any of roots %s - note that specified paths "+
+				"cannot be roots, but must be contained within roots",
+			path,
+			stringutil.SliceToHumanStringQuoted(roots),
+		)
+	case 1:
+		targetPath, err := normalpath.Rel(matchingRoots[0], path)
+		if err != nil {
+			return "", err
+		}
+		// just in case
+		return normalpath.NormalizeAndValidate(targetPath)
+	default:
+		// this should never happen
+		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
+	}
 }

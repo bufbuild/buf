@@ -4,24 +4,23 @@ go 1.19
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20231115204500-e097f827e652.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20240125155239-c79f6312ad89.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240125155239-c79f6312ad89.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20240130214641-d459745aa483.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240130214641-d459745aa483.1
 	connectrpc.com/connect v1.14.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.8.0
 	github.com/bufbuild/protovalidate-go v0.5.0
 	github.com/bufbuild/protoyaml-go v0.1.7
-	github.com/docker/docker v25.0.1+incompatible
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/docker/docker v25.0.2+incompatible
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/cel-go v0.19.0
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.18.0
+	github.com/google/go-containerregistry v0.19.0
 	github.com/jdx/go-netrc v1.0.0
-	github.com/jhump/protoreflect v1.15.5
-	github.com/klauspost/compress v1.17.4
+	github.com/jhump/protoreflect v1.15.6
+	github.com/klauspost/compress v1.17.5
 	github.com/klauspost/pgzip v1.2.6
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/profile v1.7.0
@@ -46,7 +45,7 @@ require (
 	golang.org/x/sync v0.6.0
 	golang.org/x/term v0.16.0
 	golang.org/x/tools v0.17.0
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.32.1-0.20240201194910-82c6b3ad29a1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -59,7 +58,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/cli v25.0.1+incompatible // indirect
+	github.com/docker/cli v25.0.2+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.1 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -70,7 +69,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/pprof v0.0.0-20240125082051-42cd04596328 // indirect
+	github.com/google/pprof v0.0.0-20240130152714-0ed6a68c8d9e // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
@@ -91,6 +90,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.22.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 )

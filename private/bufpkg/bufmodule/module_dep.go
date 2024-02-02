@@ -23,7 +23,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"go.uber.org/zap"
 )
 
 // ModuleDep is the dependency of a Module.
@@ -78,16 +77,15 @@ func (*moduleDep) isModuleDep() {}
 // getModuleDeps gets the actual dependencies for the Module.
 func getModuleDeps(
 	ctx context.Context,
-	logger *zap.Logger,
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
 	if err := getModuleDepsRec(
 		ctx,
-		logger,
-		module,
 		module,
 		make(map[string]struct{}),
+		make(map[string]struct{}),
+		nil,
 		depOpaqueIDToModuleDep,
 		true,
 	); err != nil {
@@ -109,17 +107,21 @@ func getModuleDeps(
 
 func getModuleDepsRec(
 	ctx context.Context,
-	logger *zap.Logger,
 	module Module,
-	parentModule Module,
 	visitedOpaqueIDs map[string]struct{},
+	// Changes as we go down the stack.
+	parentOpaqueIDs map[string]struct{},
+	// Ordered version of parentOpaqueIDs so we can print a cycle error.
+	orderedParentOpaqueIDs []string,
 	// already discovered deps
 	depOpaqueIDToModuleDep map[string]ModuleDep,
 	isDirect bool,
 ) error {
 	opaqueID := module.OpaqueID()
+	if _, ok := parentOpaqueIDs[opaqueID]; ok {
+		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+	}
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
-		// TODO: detect cycles, this is just making sure we don't recurse
 		return nil
 	}
 	visitedOpaqueIDs[opaqueID] = struct{}{}
@@ -181,7 +183,7 @@ func getModuleDepsRec(
 					if _, ok := depOpaqueIDToModuleDep[potentialDepOpaqueID]; !ok {
 						moduleDep := newModuleDep(
 							potentialModuleDep,
-							parentModule,
+							module,
 							isDirect,
 						)
 						depOpaqueIDToModuleDep[potentialDepOpaqueID] = moduleDep
@@ -194,13 +196,15 @@ func getModuleDepsRec(
 	); err != nil {
 		return err
 	}
+	parentOpaqueIDs[opaqueID] = struct{}{}
+	newOrderedParentOpaqueIDs := append(orderedParentOpaqueIDs, opaqueID)
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
-			logger,
 			newModuleDep,
-			parentModule,
 			visitedOpaqueIDs,
+			parentOpaqueIDs,
+			newOrderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,
 			// Always not direct on recursive calls.
 			// We've already added all the direct deps.
@@ -209,5 +213,6 @@ func getModuleDepsRec(
 			return err
 		}
 	}
+	delete(parentOpaqueIDs, opaqueID)
 	return nil
 }

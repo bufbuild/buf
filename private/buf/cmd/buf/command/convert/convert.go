@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 )
 
 const (
@@ -185,7 +184,6 @@ func run(
 			var wktErr error
 			schemaImage, wktErr = wellKnownTypeImage(
 				ctx,
-				container.Logger(),
 				tracing.NewTracer(container.Tracer()),
 				flags.Type,
 			)
@@ -244,11 +242,10 @@ func inverseEncoding(encoding buffetch.MessageEncoding) (buffetch.MessageEncodin
 // wellKnownTypeImage returns an Image with just the given WKT type name (google.protobuf.Duration for example).
 func wellKnownTypeImage(
 	ctx context.Context,
-	logger *zap.Logger,
 	tracer tracing.Tracer,
 	wellKnownTypeName string,
 ) (bufimage.Image, error) {
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, logger, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		datawkt.ReadBucket,
 		".",

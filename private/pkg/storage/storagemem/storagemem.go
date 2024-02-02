@@ -16,6 +16,7 @@
 package storagemem
 
 import (
+	"context"
 	"errors"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -45,4 +46,17 @@ func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
 		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
 	}
 	return newBucket(pathToImmutableObject), nil
+}
+
+// CopyReadBucket will copy the input ReadBucket into an in-memory ReadBucket, if the input
+// ReadBucket is not already an in-memory ReadBucket.
+func CopyReadBucket(ctx context.Context, inputBucket storage.ReadBucket) (storage.ReadBucket, error) {
+	if _, ok := inputBucket.(*bucket); ok {
+		return inputBucket, nil
+	}
+	inMemoryBucket := newBucket(nil)
+	if _, err := storage.Copy(ctx, inputBucket, inMemoryBucket, storage.CopyWithExternalPaths()); err != nil {
+		return nil, err
+	}
+	return inMemoryBucket, nil
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"go.uber.org/zap"
 )
 
 // Workspace is a buf workspace.
@@ -72,7 +71,6 @@ type Workspace interface {
 	// in the workspace. This should result in items such as the linter or breaking change
 	// detector ignoring these configs anyways.
 	GetBreakingConfigForOpaqueID(opaqueID string) bufconfig.BreakingConfig
-
 	// ConfiguredDepModuleRefs returns the configured dependencies of the Workspace as ModuleRefs.
 	//
 	// These come from buf.yaml files.
@@ -84,8 +82,6 @@ type Workspace interface {
 	// will be returned - we have no way to resolve what the user intended.
 	//
 	// Sorted.
-	//
-	// We use this to warn on unused dependencies in bufctl.
 	ConfiguredDepModuleRefs() []bufmodule.ModuleRef
 
 	// IsV2 signifies if this module was created from a v2 buf.yaml.
@@ -104,54 +100,28 @@ type Workspace interface {
 type workspace struct {
 	bufmodule.ModuleSet
 
-	logger                   *zap.Logger
 	opaqueIDToLintConfig     map[string]bufconfig.LintConfig
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig
 	configuredDepModuleRefs  []bufmodule.ModuleRef
 
-	// createdFromBucket is a sanity check for updateableWorkspace to make sure that the
-	// underlying workspace was really created from a bucket.
-	createdFromBucket bool
-	// If true, the workspace was created from v2 buf.yamls
-	//
+	// If true, the workspace was created from v2 buf.yamls.
 	// If false, the workspace was created from defaults, or v1beta1/v1 buf.yamls.
-	//
-	// updateableWorkspace uses this to determine what DigestType to use, and what version
-	// of buf.lock to write.
 	isV2 bool
-	// updateableBufLockDirPath is the relative path within the bucket where a buf.lock can be written.
-	//
-	// If isV2 is true, this will be "." if no config overrides were used - buf.locks live at the root of the workspace.
-	// If isV2 is false, this will be the path to the single, local, targeted Module within the workspace if no config
-	// overrides were used. This is the only situation where we can do an update for a v1 buf.lock.
-	// If isV2 is false and there is not a single, local, targeted Module, or a config override was used, this will be empty.
-	//
-	// The option withIgnoreAndDisallowV1BufWorkYAMLs is used by updateabeWorkspace to try
-	// to satisfy the v1 condition.
-	//
-	// updateableWorkspace uses this to determine where to write to.
-	updateableBufLockDirPath string
 }
 
 func newWorkspace(
 	moduleSet bufmodule.ModuleSet,
-	logger *zap.Logger,
 	opaqueIDToLintConfig map[string]bufconfig.LintConfig,
 	opaqueIDToBreakingConfig map[string]bufconfig.BreakingConfig,
 	configuredDepModuleRefs []bufmodule.ModuleRef,
-	createdFromBucket bool,
 	isV2 bool,
-	updateableBufLockDirPath string,
 ) *workspace {
 	return &workspace{
 		ModuleSet:                moduleSet,
-		logger:                   logger,
 		opaqueIDToLintConfig:     opaqueIDToLintConfig,
 		opaqueIDToBreakingConfig: opaqueIDToBreakingConfig,
 		configuredDepModuleRefs:  configuredDepModuleRefs,
-		createdFromBucket:        createdFromBucket,
 		isV2:                     isV2,
-		updateableBufLockDirPath: updateableBufLockDirPath,
 	}
 }
 

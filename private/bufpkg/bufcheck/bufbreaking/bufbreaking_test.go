@@ -773,7 +773,6 @@ func testBreaking(
 	workspaceProvider := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
-		storageosProvider,
 		bufapi.NopClientProvider,
 		bufmodule.NopGraphProvider,
 		bufmodule.NopModuleDataProvider,

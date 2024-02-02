@@ -108,6 +108,7 @@ func Upload(
 	}
 	commits := make([]bufmodule.Commit, len(response.Msg.Commits))
 	for i, protoCommit := range response.Msg.Commits {
+		protoCommit := protoCommit
 		// This is how we get the ModuleFullName without calling the ModuleService or OwnerService.
 		moduleFullName := targetLocalModulesAndTransitiveLocalDeps[i].ModuleFullName()
 		commitID, err := uuid.FromString(protoCommit.Id)

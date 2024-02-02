@@ -15,8 +15,11 @@
 package internal
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
 var _ ReadBucketCloser = &readBucketCloser{}
@@ -60,4 +63,31 @@ func (r *readBucketCloser) SubDirPath() string {
 
 func (r *readBucketCloser) PathForExternalPath(externalPath string) (string, error) {
 	return r.pathForExternalPath(externalPath)
+}
+
+func (r *readBucketCloser) copyToInMemory(ctx context.Context) (*readBucketCloser, error) {
+	storageReadBucket, err := storagemem.CopyReadBucket(ctx, r.ReadBucketCloser)
+	if err != nil {
+		return nil, err
+	}
+	return &readBucketCloser{
+		ReadBucketCloser: compositeStorageReadBucketCloser{
+			ReadBucket: storageReadBucket,
+			closeFunc:  r.ReadBucketCloser.Close,
+		},
+		subDirPath:          r.subDirPath,
+		pathForExternalPath: r.pathForExternalPath,
+	}, nil
+}
+
+type compositeStorageReadBucketCloser struct {
+	storage.ReadBucket
+	closeFunc func() error
+}
+
+func (c compositeStorageReadBucketCloser) Close() error {
+	if c.closeFunc != nil {
+		return c.closeFunc()
+	}
+	return nil
 }

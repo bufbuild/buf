@@ -151,7 +151,7 @@ func getProtosourceFiles(
 ) ([]protosource.File, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
-		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
 		bufmodule.NopModuleDataProvider,
 		bufmodule.NopCommitProvider,
 	).AddLocalModule(

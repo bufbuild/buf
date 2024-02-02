@@ -158,50 +158,6 @@ func testBasic(t *testing.T, subDirPath string) {
 	require.False(t, fileInfo.IsTargetFile())
 }
 
-func TestProtoc(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	workspaceProvider := testNewWorkspaceProvider(t)
-
-	workspace, err := workspaceProvider.GetWorkspaceForProtoc(
-		ctx,
-		[]string{
-			"testdata/basic/bsr/buf.testing/acme/date",
-			"testdata/basic/bsr/buf.testing/acme/extension",
-			"testdata/basic/workspacev1/common/geo/proto",
-			"testdata/basic/workspacev1/common/money/proto",
-			"testdata/basic/workspacev1/finance/bond/proto/root1",
-			"testdata/basic/workspacev1/finance/bond/proto/root2",
-			"testdata/basic/workspacev1/finance/portfolio/proto",
-		},
-		[]string{
-			"testdata/basic/workspacev1/finance/portfolio/proto/acme/portfolio/v1/portfolio.proto",
-		},
-	)
-	require.NoError(t, err)
-
-	modules := workspace.Modules()
-	require.Equal(t, 1, len(modules))
-	module := modules[0]
-	require.Equal(t, ".", module.OpaqueID())
-	require.True(t, module.IsTarget())
-
-	fileInfo, err := module.StatFileInfo(ctx, "acme/money/v1/currency_code.proto")
-	require.NoError(t, err)
-	require.False(t, fileInfo.IsTargetFile())
-	fileInfo, err = module.StatFileInfo(ctx, "acme/money/v1/money.proto")
-	require.NoError(t, err)
-	require.False(t, fileInfo.IsTargetFile())
-	fileInfo, err = module.StatFileInfo(ctx, "acme/bond/real/v1/bond.proto")
-	require.NoError(t, err)
-	require.False(t, fileInfo.IsTargetFile())
-	fileInfo, err = module.StatFileInfo(ctx, "acme/portfolio/v1/portfolio.proto")
-	require.NoError(t, err)
-	require.True(t, fileInfo.IsTargetFile())
-}
-
 func TestUnusedDep(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -244,7 +200,6 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	return NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
-		storageos.NewProvider(),
 		bufapi.NopClientProvider,
 		bsrProvider,
 		bsrProvider,

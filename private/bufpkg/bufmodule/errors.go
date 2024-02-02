@@ -133,6 +133,28 @@ func (p *ParseError) Input() string {
 	return p.input
 }
 
+// ModuleCycleError is the error returned if a cycle is detected in module dependencies.
+type ModuleCycleError struct {
+	// OpaqueIDs are the OpaqueIDs that represent the cycle.
+	OpaqueIDs []string
+}
+
+// Error implements the error interface.
+func (m *ModuleCycleError) Error() string {
+	if m == nil {
+		return ""
+	}
+	var builder strings.Builder
+	_, _ = builder.WriteString(`cycle detected in module dependencies: `)
+	for i, opaqueID := range m.OpaqueIDs {
+		_, _ = builder.WriteString(opaqueID)
+		if i != len(m.OpaqueIDs)-1 {
+			_, _ = builder.WriteString(` -> `)
+		}
+	}
+	return builder.String()
+}
+
 // *** PRIVATE ***
 
 func newErrNoProtoFiles(moduleID string) error {

@@ -1,5 +1,8 @@
 - update buf generate help documentation
 - make buf migrate do auto-search
+- https://linear.app/bufbuild/issue/BSR-1733/warn-imports-if-they-dont-come-from-explicit-dependencies
+- Remove malformed deps checking
+- Circular deps not detected on buf mod update
 
 - lots of QA, especially around workspace file searching, target paths
   - Test both dashful and dashless commit IDs
@@ -74,3 +77,15 @@ For buf mod update with v1, perhaps we just tell the ModuleSetBuilder to prefer 
 we're good?
 
 If v1, do not use workspace local modules - can do this with buf mod update
+
+$ bothbuf build google/ads/admob/v1/admob_api.proto
+OLD
+OLD STDOUT:
+OLD EXIT CODE: 100
+OLD STDERR:
+google/ads/admob/v1/admob_api.proto:19:8:stat google/ads/admob/v1/admob_resources.proto: file does not exist
+NEW
+NEW STDOUT:
+NEW EXIT CODE: 100
+NEW STDERR:
+/Users/pedge/git/googleapis/google/ads/admob/v1/admob_api.proto:19:8:stat google/ads/admob/v1/admob_resources.proto: file does not exist

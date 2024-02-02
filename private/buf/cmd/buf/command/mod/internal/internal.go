@@ -15,14 +15,55 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
+
+// Prune prunes the buf.lock.
+//
+// Used by both mod prune and mod update.
+func Prune(
+	ctx context.Context,
+	controller bufctl.Controller,
+	workspaceDepManager bufworkspace.WorkspaceDepManager,
+	dirPath string,
+) error {
+	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
+	if err != nil {
+		return err
+	}
+	// Make sure the workspace builds.
+	if _, err := controller.GetImageForWorkspace(
+		ctx,
+		workspace,
+		bufctl.WithImageExcludeSourceInfo(true),
+	); err != nil {
+		return err
+	}
+	depModules, err := bufmodule.RemoteDepsForModuleSet(workspace)
+	if err != nil {
+		return err
+	}
+	depModuleKeys, err := slicesext.MapError(
+		depModules,
+		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(remoteDep, workspaceDepManager.BufLockFileDigestType())
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return workspaceDepManager.UpdateBufLockFile(ctx, depModuleKeys)
+}
 
 // BindLSRulesAll binds the all flag for an ls rules command.
 func BindLSRulesAll(flagSet *pflag.FlagSet, addr *bool, flagName string) {

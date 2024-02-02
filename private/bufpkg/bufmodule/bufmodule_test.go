@@ -16,6 +16,7 @@ package bufmodule_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -24,8 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestBasic(t *testing.T) {
@@ -85,7 +86,7 @@ func TestBasic(t *testing.T) {
 	// This is the ModuleSetBuilder that will build the modules that we are going to test.
 	// This is replicating how a workspace would be built from remote dependencies and
 	// local sources.
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bsrProvider, bsrProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bsrProvider, bsrProvider)
 
 	// First, we add the remote dependences (adding order doesn't matter).
 	//
@@ -224,6 +225,9 @@ func TestBasic(t *testing.T) {
 	//require.NoError(t, err)
 	//require.Equal(t, "module2", pkg)
 
+	extdep1 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep1")
+	require.NotNil(t, extdep1)
+
 	extdep2 := moduleSet.GetModuleForOpaqueID("buf.build/foo/extdep2")
 	require.NotNil(t, extdep2)
 	require.Equal(
@@ -233,6 +237,29 @@ func TestBasic(t *testing.T) {
 		},
 		testGetDepOpaqueIDToDirect(t, extdep2),
 	)
+	extdep2Deps, err := extdep2.ModuleDeps()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(extdep2Deps))
+	require.Equal(t, "buf.build/foo/extdep1", extdep2Deps[0].OpaqueID())
+	require.Equal(t, extdep2.OpaqueID(), extdep2Deps[0].Parent().OpaqueID())
+
+	module1 := moduleSet.GetModuleForOpaqueID("path/to/module1")
+	require.NotNil(t, extdep2)
+	require.Equal(
+		t,
+		map[string]bool{
+			"buf.build/foo/extdep2": true,
+			"buf.build/foo/extdep1": false,
+		},
+		testGetDepOpaqueIDToDirect(t, module1),
+	)
+	module1Deps, err := module1.ModuleDeps()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(module1Deps))
+	require.Equal(t, "buf.build/foo/extdep1", module1Deps[0].OpaqueID())
+	require.Equal(t, extdep2.OpaqueID(), module1Deps[0].Parent().OpaqueID())
+	require.Equal(t, "buf.build/foo/extdep2", module1Deps[1].OpaqueID())
+	require.Equal(t, module1.OpaqueID(), module1Deps[1].Parent().OpaqueID())
 
 	// This is a graph of OpaqueIDs. This tests that we have the full dependency tree
 	// that we expect.
@@ -302,6 +329,92 @@ func TestBasic(t *testing.T) {
 	)
 }
 
+func TestCycleError(t *testing.T) {
+	t.Parallel()
+
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a; import "b.proto";`,
+				),
+				"a1.proto": []byte(
+					`syntax = proto3; package a;`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"b.proto": []byte(
+					`syntax = proto3; package b; import "c.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/c",
+			PathToData: map[string][]byte{
+				"c.proto": []byte(
+					`syntax = proto3; package b; import "a1.proto";`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	moduleA := moduleSet.GetModuleForOpaqueID("buf.build/foo/a")
+	require.NotNil(t, moduleA)
+	_, err = moduleA.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError := &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+		},
+		moduleCycleError.OpaqueIDs,
+	)
+
+	moduleB := moduleSet.GetModuleForOpaqueID("buf.build/foo/b")
+	require.NotNil(t, moduleB)
+	_, err = moduleB.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError = &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+		},
+		moduleCycleError.OpaqueIDs,
+	)
+
+	moduleC := moduleSet.GetModuleForOpaqueID("buf.build/foo/c")
+	require.NotNil(t, moduleC)
+	_, err = moduleC.ModuleDeps()
+	require.Error(t, err)
+	moduleCycleError = &bufmodule.ModuleCycleError{}
+	require.True(t, errors.As(err, &moduleCycleError), err.Error())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/c",
+			"buf.build/foo/a",
+			"buf.build/foo/b",
+			"buf.build/foo/c",
+		},
+		moduleCycleError.OpaqueIDs,
+	)
+}
+
 func TestProtoFileTargetPath(t *testing.T) {
 	t.Parallel()
 
@@ -327,7 +440,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 		},
 	)
 
-	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(bucket, "module1", true)
 	moduleSet, err := moduleSetBuilder.Build()
 	require.NoError(t, err)
@@ -353,7 +466,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",
@@ -383,7 +496,7 @@ func TestProtoFileTargetPath(t *testing.T) {
 	)
 
 	// The single file a/1.proto with package files
-	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, zap.NewNop(), bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	moduleSetBuilder = bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
 	moduleSetBuilder.AddLocalModule(
 		bucket,
 		"module1",

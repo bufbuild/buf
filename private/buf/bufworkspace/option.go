@@ -29,14 +29,27 @@ type WorkspaceBucketOption interface {
 	applyToWorkspaceBucketConfig(*workspaceBucketConfig)
 }
 
-// UpdateableWorkspaceBucketOption is a WorkspaceBucketOption that can also be used
-// for UpdateableWorkspaces.
-//
-// Only a subset of WorkspaceBucketOptions can be used when creating UpdateableWorkspaces.
-type UpdateableWorkspaceBucketOption interface {
-	WorkspaceBucketOption
+// WorkspaceDepManagerOption is an option for a new WorkspaceDepManager.
+type WorkspaceDepManagerOption interface {
+	applyToWorkspaceDepManagerConfig(*workspaceDepManagerConfig)
+}
 
-	isUpdateableWorkspaceBucketOption()
+// WorkspaceModuleKeyOption is an option for a new Workspace created by a ModuleKey.
+type WorkspaceModuleKeyOption interface {
+	applyToWorkspaceModuleKeyConfig(*workspaceModuleKeyConfig)
+}
+
+// WorkspaceBucketOrDepManagerOption is an option that applies to either creating
+// a Workspace by Bucket, or creating a WorkspaceDepManager.
+type WorkspaceBucketAndDepManagerOption interface {
+	WorkspaceBucketOption
+	WorkspaceDepManagerOption
+}
+
+// WorkspaceOption is an option for a new Workspace created by either a Bucket or ModuleKey.
+type WorkspaceBucketAndModuleKeyOption interface {
+	WorkspaceBucketOption
+	WorkspaceModuleKeyOption
 }
 
 // This selects the specific directory within the Workspace bucket to target.
@@ -46,7 +59,7 @@ type UpdateableWorkspaceBucketOption interface {
 // the foo/bar module.
 //
 // A TargetSubDirPath of "." is equivalent of not setting this option.
-func WithTargetSubDirPath(targetSubDirPath string) UpdateableWorkspaceBucketOption {
+func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketAndDepManagerOption {
 	return &workspaceTargetSubDirPathOption{
 		targetSubDirPath: targetSubDirPath,
 	}
@@ -59,10 +72,7 @@ func WithTargetSubDirPath(targetSubDirPath string) UpdateableWorkspaceBucketOpti
 // Exclusive with WithTargetPaths - only one of these can have a non-empty value.
 //
 // This is used for ProtoFileRefs only. Do not use this otherwise.
-func WithProtoFileTargetPath(
-	protoFileTargetPath string,
-	includePackageFiles bool,
-) WorkspaceBucketOption {
+func WithProtoFileTargetPath(protoFileTargetPath string, includePackageFiles bool) WorkspaceBucketOption {
 	return &workspaceProtoFileTargetPathOption{
 		protoFileTargetPath: protoFileTargetPath,
 		includePackageFiles: includePackageFiles,
@@ -87,21 +97,8 @@ func WithProtoFileTargetPath(
 //
 // Example: ./buf.yaml v1.
 // This is fine.
-//
-// This option is implicitly set when building new UpdateableWorkspaces.
 func WithIgnoreAndDisallowV1BufWorkYAMLs() WorkspaceBucketOption {
 	return &workspaceIgnoreAndDisallowV1BufWorkYAMLsOption{}
-}
-
-// WorkspaceModuleKeyOption is an option for a new Workspace created by a ModuleKey.
-type WorkspaceModuleKeyOption interface {
-	applyToWorkspaceModuleKeyConfig(*workspaceModuleKeyConfig)
-}
-
-// WorkspaceOption is an option for a new Workspace created by either a Bucket or ModuleKey.
-type WorkspaceOption interface {
-	WorkspaceBucketOption
-	WorkspaceModuleKeyOption
 }
 
 // Note these paths need to have the path/to/module stripped, and then each new path
@@ -110,7 +107,7 @@ type WorkspaceOption interface {
 // need to be built as non-targeted.
 //
 // These paths have to  be within the subDirPath, if it exists.
-func WithTargetPaths(targetPaths []string, targetExcludePaths []string) WorkspaceOption {
+func WithTargetPaths(targetPaths []string, targetExcludePaths []string) WorkspaceBucketAndModuleKeyOption {
 	return &workspaceTargetPathsOption{
 		targetPaths:        targetPaths,
 		targetExcludePaths: targetExcludePaths,
@@ -135,7 +132,7 @@ func WithTargetPaths(targetPaths []string, targetExcludePaths []string) Workspac
 //
 // Current comments that use this: build, breaking, lint, generate, format,
 // export, ls-breaking-rules, ls-lint-rules.
-func WithConfigOverride(configOverride string) WorkspaceOption {
+func WithConfigOverride(configOverride string) WorkspaceBucketAndModuleKeyOption {
 	return &workspaceConfigOverrideOption{
 		configOverride: configOverride,
 	}
@@ -151,7 +148,9 @@ func (s *workspaceTargetSubDirPathOption) applyToWorkspaceBucketConfig(config *w
 	config.targetSubDirPath = s.targetSubDirPath
 }
 
-func (s *workspaceTargetSubDirPathOption) isUpdateableWorkspaceBucketOption() {}
+func (s *workspaceTargetSubDirPathOption) applyToWorkspaceDepManagerConfig(config *workspaceDepManagerConfig) {
+	config.targetSubDirPath = s.targetSubDirPath
+}
 
 type workspaceTargetPathsOption struct {
 	targetPaths        []string
@@ -275,6 +274,23 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 				return nil, errors.New("given input is equal to a value of --exclude-path - this would exclude everything")
 			}
 		}
+	}
+	return config, nil
+}
+
+type workspaceDepManagerConfig struct {
+	targetSubDirPath string
+}
+
+func newWorkspaceDepManagerConfig(options []WorkspaceDepManagerOption) (*workspaceDepManagerConfig, error) {
+	config := &workspaceDepManagerConfig{}
+	for _, option := range options {
+		option.applyToWorkspaceDepManagerConfig(config)
+	}
+	var err error
+	config.targetSubDirPath, err = normalpath.NormalizeAndValidate(config.targetSubDirPath)
+	if err != nil {
+		return nil, err
 	}
 	return config, nil
 }

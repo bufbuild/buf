@@ -79,11 +79,11 @@ type Controller interface {
 		sourceOrModuleInput string,
 		options ...FunctionOption,
 	) (bufworkspace.Workspace, error)
-	GetUpdateableWorkspace(
+	GetWorkspaceDepManager(
 		ctx context.Context,
 		dirPath string,
 		options ...FunctionOption,
-	) (bufworkspace.UpdateableWorkspace, error)
+	) (bufworkspace.WorkspaceDepManager, error)
 	GetImage(
 		ctx context.Context,
 		input string,
@@ -186,13 +186,15 @@ type controller struct {
 	disableSymlinks           bool
 	fileAnnotationErrorFormat string
 	fileAnnotationsToStdout   bool
+	copyToInMemory            bool
 
-	commandRunner     command.Runner
-	storageosProvider storageos.Provider
-	buffetchRefParser buffetch.RefParser
-	buffetchReader    buffetch.Reader
-	buffetchWriter    buffetch.Writer
-	workspaceProvider bufworkspace.WorkspaceProvider
+	commandRunner               command.Runner
+	storageosProvider           storageos.Provider
+	buffetchRefParser           buffetch.RefParser
+	buffetchReader              buffetch.Reader
+	buffetchWriter              buffetch.Writer
+	workspaceProvider           bufworkspace.WorkspaceProvider
+	workspaceDepManagerProvider bufworkspace.WorkspaceDepManagerProvider
 }
 
 func newController(
@@ -245,11 +247,14 @@ func newController(
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
 		tracer,
-		controller.storageosProvider,
 		clientProvider,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
+	)
+	controller.workspaceDepManagerProvider = bufworkspace.NewWorkspaceDepManagerProvider(
+		logger,
+		tracer,
 	)
 	return controller, nil
 }
@@ -260,7 +265,7 @@ func (c *controller) GetWorkspace(
 	options ...FunctionOption,
 ) (_ bufworkspace.Workspace, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -281,13 +286,13 @@ func (c *controller) GetWorkspace(
 	}
 }
 
-func (c *controller) GetUpdateableWorkspace(
+func (c *controller) GetWorkspaceDepManager(
 	ctx context.Context,
 	dirPath string,
 	options ...FunctionOption,
-) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+) (_ bufworkspace.WorkspaceDepManager, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -295,7 +300,7 @@ func (c *controller) GetUpdateableWorkspace(
 	if err != nil {
 		return nil, err
 	}
-	return c.getUpdateableWorkspaceForDirRef(ctx, dirRef, functionOptions)
+	return c.getWorkspaceDepManagerForDirRef(ctx, dirRef, functionOptions)
 }
 
 func (c *controller) GetImage(
@@ -304,7 +309,7 @@ func (c *controller) GetImage(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -317,7 +322,7 @@ func (c *controller) GetImageForInputConfig(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -330,7 +335,7 @@ func (c *controller) GetImageForWorkspace(
 	options ...FunctionOption,
 ) (_ bufimage.Image, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -343,7 +348,7 @@ func (c *controller) GetTargetImageWithConfigs(
 	options ...FunctionOption,
 ) (_ []ImageWithConfig, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -432,7 +437,7 @@ func (c *controller) GetProtoFileInfos(
 	options ...FunctionOption,
 ) (_ []ProtoFileInfo, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -495,7 +500,7 @@ func (c *controller) PutImage(
 	options ...FunctionOption,
 ) (retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -548,7 +553,7 @@ func (c *controller) GetMessage(
 	options ...FunctionOption,
 ) (_ proto.Message, _ buffetch.MessageEncoding, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -619,7 +624,7 @@ func (c *controller) PutMessage(
 	options ...FunctionOption,
 ) (retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
-	functionOptions := newFunctionOptions()
+	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
 		option(functionOptions)
 	}
@@ -746,7 +751,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		ctx,
 		c.container,
 		protoFileRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadBucketCloserOptions()...,
 	)
 	if err != nil {
 		return nil, err
@@ -795,7 +800,7 @@ func (c *controller) getWorkspaceForSourceRef(
 		ctx,
 		c.container,
 		sourceRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadBucketCloserOptions()...,
 	)
 	if err != nil {
 		return nil, err
@@ -832,23 +837,23 @@ func (c *controller) getWorkspaceForSourceRef(
 	)
 }
 
-func (c *controller) getUpdateableWorkspaceForDirRef(
+func (c *controller) getWorkspaceDepManagerForDirRef(
 	ctx context.Context,
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
-) (_ bufworkspace.UpdateableWorkspace, retErr error) {
+) (_ bufworkspace.WorkspaceDepManager, retErr error) {
 	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(
 		ctx,
 		c.container,
 		dirRef,
-		functionOptions.getGetBucketOptions()...,
+		functionOptions.getGetReadWriteBucketOptions()...,
 	)
 	if err != nil {
 		return nil, err
 	}
 	// WE DO NOT USE PATHS/EXCLUDE PATHS.
-	// When we refactor functionOptions, we need to make sure we only include what we can pass to UpdateableWorkspace.
-	return c.workspaceProvider.GetUpdateableWorkspaceForBucket(
+	// When we refactor functionOptions, we need to make sure we only include what we can pass to WorkspaceDepManager.
+	return c.workspaceDepManagerProvider.GetWorkspaceDepManager(
 		ctx,
 		readWriteBucket,
 		bufworkspace.WithTargetSubDirPath(
@@ -1041,8 +1046,7 @@ func (c *controller) buildTargetImageWithConfigs(
 	return imageWithConfigs, nil
 }
 
-// warnDeps warns on either unused deps in your buf.yaml, or transitive deps that were
-// not in your buf.yaml.
+// warnDeps warns on unused deps in your buf.yaml.
 //
 // Only call this if you are building an image. This results in ModuleDeps calls that
 // you don't want to invoke unless you are building - they'll result in import reading,
@@ -1050,6 +1054,9 @@ func (c *controller) buildTargetImageWithConfigs(
 // test errors, and correctly so. In the pre-refactor world, we only did this with
 // image building, so we keep it that way for now.
 func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
+	// TODO: Disable this. This function causes a MASSIVE performance hit. Investigate.
+	// It's somewhat obvious why it does if you are doing i.e. --path, but for complete builds,
+	// this causes a 2x perf hit, which doesn't make sense.
 	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
 	if err != nil {
 		return err

@@ -16,10 +16,9 @@ package modupdate
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -27,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
@@ -83,7 +83,7 @@ func run(
 	ctx context.Context,
 	container appext.Container,
 	flags *flags,
-) error {
+) (retErr error) {
 	dirPath := "."
 	if container.NumArgs() > 0 {
 		dirPath = container.Arg(0)
@@ -93,6 +93,7 @@ func run(
 		return syserror.Newf("--%s is not yet implemented", onlyFlagName)
 	}
 
+	logger := container.Logger()
 	controller, err := bufcli.NewController(container)
 	if err != nil {
 		return err
@@ -101,174 +102,69 @@ func run(
 	if err != nil {
 		return err
 	}
-	updateableWorkspace, err := controller.GetUpdateableWorkspace(ctx, dirPath)
+	graphProvider, err := bufcli.NewGraphProvider(container)
 	if err != nil {
 		return err
 	}
-	// Make sure the workspace builds.
-	if _, err := controller.GetImageForWorkspace(
+
+	workspaceDepManager, err := controller.GetWorkspaceDepManager(ctx, dirPath)
+	if err != nil {
+		return err
+	}
+
+	configuredDepModuleRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
+	if err != nil {
+		return err
+	}
+	// Get all the configured deps.
+	configuredDepModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
 		ctx,
-		updateableWorkspace,
-		bufctl.WithImageExcludeSourceInfo(true),
+		configuredDepModuleRefs,
+		workspaceDepManager.BufLockFileDigestType(),
+	)
+	if err != nil {
+		return err
+	}
+	logger.Debug(
+		"deps from buf.yaml",
+		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
+	)
+	// Walk the graph to get all configured deps and their transitive dependencies.
+	graph, err := graphProvider.GetGraphForModuleKeys(ctx, configuredDepModuleKeys)
+	if err != nil {
+		return err
+	}
+	var newDepModuleKeys []bufmodule.ModuleKey
+	if err := graph.WalkNodes(
+		func(depModuleKey bufmodule.ModuleKey, _ []bufmodule.ModuleKey, _ []bufmodule.ModuleKey) error {
+			newDepModuleKeys = append(newDepModuleKeys, depModuleKey)
+			return nil
+		},
 	); err != nil {
 		return err
 	}
-	remoteDeps, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
-	if err != nil {
-		return err
-	}
-	// All the ModuleKeys we get from the current dependency list in the workspace.
-	// This includes transitive dependencies.
-	remoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(
-		remoteDeps,
-		updateableWorkspace.BufLockFileDigestType(),
+	logger.Debug(
+		"all deps",
+		zap.Strings("deps", slicesext.Map(newDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
+
+	// Store the existing buf.lock data.
+	existingDepModuleKeys, err := workspaceDepManager.ExistingBufLockFileDepModuleKeys(ctx)
 	if err != nil {
 		return err
 	}
-	// All the ModuleKeys we get back from buf.yaml.
-	//
-	// ModuleKeyProvider provides updated references for all the ModuleKeys.
-	bufYAMLUpdatedModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
-		ctx,
-		updateableWorkspace.ConfiguredDepModuleRefs(),
-		updateableWorkspace.BufLockFileDigestType(),
-	)
-	if err != nil {
-		return err
-	}
-	bufYAMLNameToUpdatedModuleKey, err := slicesext.ToUniqueValuesMapError(
-		bufYAMLUpdatedModuleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return moduleKey.ModuleFullName().String(), nil
-		},
-	)
-	if err != nil {
-		return err
-	}
-	for bufYAMLName, updatedModuleKey := range bufYAMLNameToUpdatedModuleKey {
-		if _, ok := remoteDepNameToModuleKey[bufYAMLName]; !ok {
-			// In updated list from buf.yaml, but not in dependency list.
-			//
-			// This is an unused module. TODO not true
-			//
-			// Delete from our update map, we won't write this to buf.lock
-			delete(bufYAMLNameToUpdatedModuleKey, bufYAMLName)
-			// We determine if its unused because its local, or if because it is not
-			// a dependency at all.
-			module := updateableWorkspace.GetModuleForModuleFullName(updatedModuleKey.ModuleFullName())
-			if module == nil || !module.IsLocal() {
-				container.Logger().Sugar().Warnf("%s is specified in buf.yaml but is not used", bufYAMLName)
-			} else { // module.IsLocal()
-				container.Logger().Sugar().Warnf("%s is specified in buf.yaml but is within the workspace, so does not need to be specified in your deps", bufYAMLName)
-			}
+	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
+	// attempt to revert the buf.lock file.
+	defer func() {
+		if retErr != nil {
+			retErr = multierr.Append(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys))
 		}
-	}
-
-	isTransitveRemoteDep, err := getIsTransitiveRemoteDepFunc(
-		remoteDeps,
-		updateableWorkspace.BufLockFileDigestType(),
-	)
-	if err != nil {
+	}()
+	// Edit the buf.lock file with the unpruned dependencies.
+	if err := workspaceDepManager.UpdateBufLockFile(ctx, newDepModuleKeys); err != nil {
 		return err
 	}
-	// Our result buf.lock needs to have everything in deps. We will only use the new values from bufYAMLNameToModuleKey
-	// if they are a remote dependency.
-	//
-	// Note we deleted unused dependencies from bufYAMLNameToModuleKey above.
-	for remoteDepName := range remoteDepNameToModuleKey {
-		updatedModuleKey, ok := bufYAMLNameToUpdatedModuleKey[remoteDepName]
-		if ok {
-			remoteDepNameToModuleKey[remoteDepName] = updatedModuleKey
-		} else {
-			// This was in our deps list but was not specified in buf.yaml. Check if it was only transitive dependency.
-			// If so, we're fine. If not, we should error, as this means it was unspecified in buf.yaml as of now (but
-			// was at some point in the past), but we require it.
-			//
-			// Note if something wasn't PREVIOUSLY specified in our buf.lock, we would have failed on the building
-			// of the workspace, as we just wouldn't have a dep.
-			if isTransitveRemoteDep(remoteDepName) {
-				return fmt.Errorf("previously present dependency %q is not longer specified in buf.yaml but is still depended on", remoteDepName)
-			}
-		}
-	}
-	depModuleKeys := slicesext.MapValuesToSlice(remoteDepNameToModuleKey)
-
-	// We could probably derive this from RemoteDepsForModuleSet, but we're going right to the source, to be safe.
-	existingDepModuleKeys, err := updateableWorkspace.ExistingBufLockFileDepModuleKeys(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Once we update the buf.lock file, we verify the workspace builds again. If not, we attempt to revert.
-	// This also has the side effect of doing tamper-proofing.
-	if err := updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys); err != nil {
-		return err
-	}
-	if _, err := controller.GetImageForWorkspace(
-		ctx,
-		updateableWorkspace,
-		bufctl.WithImageExcludeSourceInfo(true),
-	); err != nil {
-		return multierr.Append(
-			err,
-			updateableWorkspace.UpdateBufLockFile(ctx, existingDepModuleKeys),
-		)
-	}
-	return nil
-}
-
-// Returns a function that returns true if the named module is a transitive remote
-// dependency of the Workspace.
-func getIsTransitiveRemoteDepFunc(
-	remoteDeps []bufmodule.RemoteDep,
-	digestType bufmodule.DigestType,
-) (func(name string) bool, error) {
-	transitiveRemoteDeps := slicesext.Filter(
-		remoteDeps,
-		func(remoteDep bufmodule.RemoteDep) bool {
-			return !remoteDep.IsDirect()
-		},
-	)
-	transitiveRemoteDepNameToModuleKey, err := getModuleFullNameToModuleKey(transitiveRemoteDeps, digestType)
-	if err != nil {
-		return nil, err
-	}
-	return func(name string) bool {
-		_, ok := transitiveRemoteDepNameToModuleKey[name]
-		return ok
-	}, nil
-}
-
-// Returns a map from name to ModuleKey.
-//
-// Can be used for Modules, ModuleDeps, RemoteDeps.
-//
-// Expects al Modules to have a ModuleFullName and CommitID. This cannot be used
-// for local Modules.
-//
-// All the ModuleKeys we get from the current dependency list in the workspace.
-// This includes transitive dependencies.
-func getModuleFullNameToModuleKey[T bufmodule.Module, S ~[]T](
-	values S,
-	digestType bufmodule.DigestType,
-) (map[string]bufmodule.ModuleKey, error) {
-	moduleKeys, err := slicesext.MapError(
-		values,
-		func(module T) (bufmodule.ModuleKey, error) {
-			if module.IsLocal() {
-				return nil, syserror.New("cannot pass local Modules to getModuleFullNameToModuleKey")
-			}
-			return bufmodule.ModuleToModuleKey(module, digestType)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return slicesext.ToUniqueValuesMapError(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (string, error) {
-			return moduleKey.ModuleFullName().String(), nil
-		},
-	)
+	// Prune the buf.lock. This also verifies the workspace builds again.
+	// Building also has the side effect of doing tamper-proofing.
+	return internal.Prune(ctx, controller, workspaceDepManager, dirPath)
 }

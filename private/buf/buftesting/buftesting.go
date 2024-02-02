@@ -22,8 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufworkspace"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
@@ -135,16 +134,10 @@ func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
 func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]string, error) {
 	// TODO: This is a really convoluted way to get protoc files. It also may have an
 	// impact on our dependency tree.
-	workspace, err := bufworkspace.NewWorkspaceProvider(
-		zap.NewNop(),
+	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
+		ctx,
 		tracing.NopTracer,
 		testStorageosProvider,
-		bufapi.NopClientProvider,
-		bufmodule.NopGraphProvider,
-		bufmodule.NopModuleDataProvider,
-		bufmodule.NopCommitProvider,
-	).GetWorkspaceForProtoc(
-		ctx,
 		[]string{dirPath},
 		nil,
 	)
@@ -154,7 +147,7 @@ func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]st
 	targetFileInfos, err := bufmodule.GetTargetFileInfos(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
-			workspace,
+			moduleSet,
 		),
 	)
 	if err != nil {

@@ -18,10 +18,9 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 // NewCommand returns a new prune Command.
@@ -55,22 +54,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	updateableWorkspace, err := controller.GetUpdateableWorkspace(ctx, dirPath)
+	workspaceDepManager, err := controller.GetWorkspaceDepManager(ctx, dirPath)
 	if err != nil {
 		return err
 	}
-	depModules, err := bufmodule.RemoteDepsForModuleSet(updateableWorkspace)
-	if err != nil {
-		return err
-	}
-	depModuleKeys, err := slicesext.MapError(
-		depModules,
-		func(remoteDep bufmodule.RemoteDep) (bufmodule.ModuleKey, error) {
-			return bufmodule.ModuleToModuleKey(remoteDep, updateableWorkspace.BufLockFileDigestType())
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return updateableWorkspace.UpdateBufLockFile(ctx, depModuleKeys)
+	return internal.Prune(ctx, controller, workspaceDepManager, dirPath)
 }

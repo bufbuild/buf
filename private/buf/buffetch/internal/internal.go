@@ -451,14 +451,14 @@ type Reader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
-		options ...GetBucketOption,
+		options ...GetReadBucketCloserOption,
 	) (ReadBucketCloser, error)
 	// GetReadWriteBucket gets the bucket.
 	GetReadWriteBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
-		options ...GetBucketOption,
+		options ...GetReadWriteBucketOption,
 	) (ReadWriteBucket, error)
 	// GetModuleKey gets the ModuleKey.
 	GetModuleKey(
@@ -811,31 +811,55 @@ func WithGetFileKeepFileCompression() GetFileOption {
 	}
 }
 
-// GetBucketOption is a GetBucket option.
-type GetBucketOption func(*getBucketOptions)
+// GetReadBucketCloserOption is a GetReadBucketCloser option.
+type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// WithGetBucketTerminateFunc says to check the bucket at the given prefix, and
+// WithGetBucketCopyToInMemory says to copy the returned ReadBucketCloser to an
+// in-memory ReadBucket. This can be a performance optimization at the expense of memory.
+func WithGetReadBucketCloserCopyToInMemory() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.copyToInMemory = true
+	}
+}
+
+// WithGetReadBucketCloserTerminateFunc says to check the bucket at the given prefix, and
 // potentially terminate the search for the workspace file. This will result in the
 // given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
 // See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
 // This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
 // to find the controlling workspace of an enclosing module or workspace.
-func WithGetBucketTerminateFunc(terminateFunc TerminateFunc) GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.terminateFunc = terminateFunc
+func WithGetReadBucketCloserTerminateFunc(terminateFunc TerminateFunc) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.terminateFunc = terminateFunc
 	}
 }
 
-// WithGetBucketProtoFileTerminateFunc is like WithGetBucketTerminateFunc, but determines
+// WithGetReadBucketCloserProtoFileTerminateFunc is like WithGetReadBucketCloserTerminateFunc, but determines
 // where to stop searching for the enclosing module or workspace when given a ProtoFileRef.
 //
 // See bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef, which is the only thing that uses this.
 // This finds the enclosing module or workspace.
 // This is only used for ProtoFileRefs.
-func WithGetBucketProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.protoFileTerminateFunc = protoFileTerminateFunc
+func WithGetReadBucketCloserProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.protoFileTerminateFunc = protoFileTerminateFunc
+	}
+}
+
+// GetReadWriteBucketOption is a GetReadWriteBucket option.
+type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
+
+// WithGetReadWriteBucketTerminateFunc says to check the bucket at the given prefix, and
+// potentially terminate the search for the workspace file. This will result in the
+// given prefix being the workspace directory, and a SubDirPath being computed appropriately.
+//
+// See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
+// This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
+// to find the controlling workspace of an enclosing module or workspace.
+func WithGetReadWriteBucketTerminateFunc(terminateFunc TerminateFunc) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.terminateFunc = terminateFunc
 	}
 }
 

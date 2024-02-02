@@ -36,6 +36,12 @@ func WithFileAnnotationsToStdout() ControllerOption {
 	}
 }
 
+func WithCopyToInMemory() ControllerOption {
+	return func(controller *controller) {
+		controller.copyToInMemory = true
+	}
+}
+
 // TODO: split up to per-function.
 type FunctionOption func(*functionOptions)
 
@@ -114,6 +120,8 @@ func WithIgnoreAndDisallowV1BufWorkYAMLs() FunctionOption {
 // *** PRIVATE ***
 
 type functionOptions struct {
+	copyToInMemory bool
+
 	targetPaths                     []string
 	targetExcludePaths              []string
 	imageExcludeSourceInfo          bool
@@ -125,8 +133,10 @@ type functionOptions struct {
 	ignoreAndDisallowV1BufWorkYAMLs bool
 }
 
-func newFunctionOptions() *functionOptions {
-	return &functionOptions{}
+func newFunctionOptions(controller *controller) *functionOptions {
+	return &functionOptions{
+		copyToInMemory: controller.copyToInMemory,
+	}
 }
 
 func (f *functionOptions) withPathsForBucketExtender(
@@ -151,7 +161,14 @@ func (f *functionOptions) withPathsForBucketExtender(
 	return c, nil
 }
 
-func (f *functionOptions) getGetBucketOptions() []buffetch.GetBucketOption {
+func (f *functionOptions) getGetReadBucketCloserOptions() []buffetch.GetReadBucketCloserOption {
+	var getReadBucketCloserOptions []buffetch.GetReadBucketCloserOption
+	if f.copyToInMemory {
+		getReadBucketCloserOptions = append(
+			getReadBucketCloserOptions,
+			buffetch.GetReadBucketCloserWithCopyToInMemory(),
+		)
+	}
 	if f.configOverride != "" {
 		// If we have a config override, we do not search for buf.yamls or buf.work.yamls,
 		// instead acting as if the config override was the only configuration file available.
@@ -161,8 +178,26 @@ func (f *functionOptions) getGetBucketOptions() []buffetch.GetBucketOption {
 		// and did the same search behavior for buf.yamls, which didn't really make sense. In the new
 		// world where buf.yamls also represent the behavior of buf.work.yamls, you should be able
 		// to specify whatever want here.
-		return []buffetch.GetBucketOption{
-			buffetch.GetBucketWithNoSearch(),
+		getReadBucketCloserOptions = append(
+			getReadBucketCloserOptions,
+			buffetch.GetReadBucketCloserWithNoSearch(),
+		)
+	}
+	return getReadBucketCloserOptions
+}
+
+func (f *functionOptions) getGetReadWriteBucketOptions() []buffetch.GetReadWriteBucketOption {
+	if f.configOverride != "" {
+		// If we have a config override, we do not search for buf.yamls or buf.work.yamls,
+		// instead acting as if the config override was the only configuration file available.
+		//
+		// Note that this is slightly different behavior than the pre-refactor CLI had, but this
+		// was always the intended behavior. The pre-refactor CLI would error if you had a buf.work.yaml,
+		// and did the same search behavior for buf.yamls, which didn't really make sense. In the new
+		// world where buf.yamls also represent the behavior of buf.work.yamls, you should be able
+		// to specify whatever want here.
+		return []buffetch.GetReadWriteBucketOption{
+			buffetch.GetReadWriteBucketWithNoSearch(),
 		}
 	}
 	return nil

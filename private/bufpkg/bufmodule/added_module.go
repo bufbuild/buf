@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
-	"go.uber.org/zap"
 )
 
 // addedModule represents a Module that was added in moduleSetBuilder.
@@ -101,7 +100,6 @@ func (a *addedModule) OpaqueID() string {
 // If the addedModule is a remote Module, the ModuleDataProvider is queried to get the Module.
 func (a *addedModule) ToModule(
 	ctx context.Context,
-	logger *zap.Logger,
 	moduleDataProvider ModuleDataProvider,
 ) (Module, error) {
 	// If the addedModule is a local Module, just return it.
@@ -165,7 +163,6 @@ func (a *addedModule) ToModule(
 	// TODO: normalize and validate all paths
 	return newModule(
 		ctx,
-		logger,
 		getBucket,
 		"",
 		a.remoteModuleKey.ModuleFullName(),

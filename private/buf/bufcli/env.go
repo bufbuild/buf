@@ -31,6 +31,12 @@ const (
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
+
+	// This is actually much slower with how it is currently implemented if you use --path.
+	// Example: Build a repo with 1000 .proto files, but filter to a single path. As this is
+	// implemented now, all 1000 .proto file are copied. You could get smarter with caching
+	// at a per-file level.
+	copyToInMemoryEnvKey = "BUF_BETA_COPY_FILES_TO_MEMORY"
 )
 
 var (

@@ -22,9 +22,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 var (
@@ -87,6 +87,7 @@ type ModuleSetBuilder interface {
 	//
 	// Remote modules are rarely targets. However, if we are reading a ModuleSet from a
 	// ModuleProvider for example with a buf build buf.build/foo/bar call, then this
+
 	// specific Module will be targeted, while its dependencies will not be.
 	//
 	// Returns the same ModuleSetBuilder.
@@ -112,11 +113,45 @@ type ModuleSetBuilder interface {
 // NewModuleSetBuilder returns a new ModuleSetBuilder.
 func NewModuleSetBuilder(
 	ctx context.Context,
-	logger *zap.Logger,
+	tracer tracing.Tracer,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) ModuleSetBuilder {
-	return newModuleSetBuilder(ctx, logger, moduleDataProvider, commitProvider)
+	return newModuleSetBuilder(ctx, tracer, moduleDataProvider, commitProvider)
+}
+
+// NewModuleSetForRemoteModule is a convenience function that build a ModuleSet for for a single
+// remote Module based on ModuleKey.
+//
+// The remote Module is targeted.
+// All of the remote Module's transitive dependencies are automatically added as non-targets.
+func NewModuleSetForRemoteModule(
+	ctx context.Context,
+	tracer tracing.Tracer,
+	graphProvider GraphProvider,
+	moduleDataProvider ModuleDataProvider,
+	commitProvider CommitProvider,
+	moduleKey ModuleKey,
+	options ...RemoteModuleOption,
+) (ModuleSet, error) {
+	moduleSetBuilder := NewModuleSetBuilder(ctx, tracer, moduleDataProvider, commitProvider)
+	moduleSetBuilder.AddRemoteModule(moduleKey, true, options...)
+	graph, err := graphProvider.GetGraphForModuleKeys(ctx, []ModuleKey{moduleKey})
+	if err != nil {
+		return nil, err
+	}
+	if err := graph.WalkNodes(
+		func(node ModuleKey, _ []ModuleKey, _ []ModuleKey) error {
+			if node.CommitID() != moduleKey.CommitID() {
+				// Add the dependency ModuleKey with no path filters.
+				moduleSetBuilder.AddRemoteModule(node, false)
+			}
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return moduleSetBuilder.Build()
 }
 
 // LocalModuleOption is an option for AddLocalModule.
@@ -226,7 +261,7 @@ func RemoteModuleWithTargetPaths(
 
 type moduleSetBuilder struct {
 	ctx                context.Context
-	logger             *zap.Logger
+	tracer             tracing.Tracer
 	moduleDataProvider ModuleDataProvider
 	commitProvider     CommitProvider
 
@@ -237,13 +272,13 @@ type moduleSetBuilder struct {
 
 func newModuleSetBuilder(
 	ctx context.Context,
-	logger *zap.Logger,
+	tracer tracing.Tracer,
 	moduleDataProvider ModuleDataProvider,
 	commitProvider CommitProvider,
 ) *moduleSetBuilder {
 	return &moduleSetBuilder{
 		ctx:                ctx,
-		logger:             logger,
+		tracer:             tracer,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
 	}
@@ -286,7 +321,6 @@ func (b *moduleSetBuilder) AddLocalModule(
 	// TODO: normalize and validate all paths
 	module, err := newModule(
 		b.ctx,
-		b.logger,
 		getSyncOnceValuesGetBucketWithStorageMatcherApplied(
 			b.ctx,
 			func() (storage.ReadBucket, error) {
@@ -346,7 +380,10 @@ func (b *moduleSetBuilder) AddRemoteModule(
 	return b
 }
 
-func (b *moduleSetBuilder) Build() (ModuleSet, error) {
+func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
+	ctx, span := b.tracer.Start(b.ctx, tracing.WithErr(&retErr))
+	defer span.End()
+
 	if !b.buildCalled.CompareAndSwap(false, true) {
 		return nil, errBuildAlreadyCalled
 	}
@@ -355,7 +392,7 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	}
 	if len(b.addedModules) == 0 {
 		// Allow an empty ModuleSet.
-		return newModuleSet(nil)
+		return newModuleSet(b.tracer, nil)
 	}
 	// If not empty, we need at least one target Module.
 	if slicesext.Count(b.addedModules, func(m *addedModule) bool { return m.IsTarget() }) < 1 {
@@ -363,20 +400,21 @@ func (b *moduleSetBuilder) Build() (ModuleSet, error) {
 	}
 
 	// Get the unique modules, preferring targets over non-targets, and local over remote.
-	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(b.ctx, b.commitProvider, b.addedModules)
+	addedModules, err := getUniqueSortedAddedModulesByOpaqueID(ctx, b.commitProvider, b.addedModules)
 	if err != nil {
 		return nil, err
 	}
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
-			return addedModule.ToModule(b.ctx, b.logger, b.moduleDataProvider)
+			// This context ends up getting stored on the Module, is this a problem re: tracing?
+			return addedModule.ToModule(ctx, b.moduleDataProvider)
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleSet(modules)
+	return newModuleSet(b.tracer, modules)
 }
 
 func (b *moduleSetBuilder) addError(err error) *moduleSetBuilder {

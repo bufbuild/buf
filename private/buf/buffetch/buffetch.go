@@ -320,8 +320,29 @@ type SourceReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
-		options ...GetBucketOption,
+		options ...GetReadBucketCloserOption,
 	) (ReadBucketCloser, error)
+}
+
+// GetReadBucketCloserOption is an option for a GetSourceReadBucketCloser call.
+type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
+
+// GetReadBucketCloserCopyToInMemory says to copy the returned ReadBucketCloser to an
+// in-memory ReadBucketCloser. This can be a performance optimization at the expense of memory.
+func GetReadBucketCloserWithCopyToInMemory() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.copyToInMemory = true
+	}
+}
+
+// GetReadBucketCloserWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
+// direct SourceRef or DirRef given.
+//
+// This is used for when the --config flag is specified.
+func GetReadBucketCloserWithNoSearch() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.noSearch = true
+	}
 }
 
 // DirReader is a dir reader.
@@ -331,21 +352,20 @@ type DirReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
-		options ...GetBucketOption,
+		options ...GetReadWriteBucketOption,
 	) (ReadWriteBucket, error)
 }
 
-// GetBucketOption is an option for a GetSourceReadBucketCloser
-// or GetDirReadWriteBucket call.
-type GetBucketOption func(*getBucketOptions)
+// GetReadWriteBucketOption is an option for a GetDirReadWriteBucket call.
+type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
 
-// GetBucketWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
+// GetReadWriteBucketWithNoSearch says to not search for buf.work.yamls or buf.yamls, instead just returning a bucket for the
 // direct SourceRef or DirRef given.
 //
 // This is used for when the --config flag is specified.
-func GetBucketWithNoSearch() GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.noSearch = true
+func GetReadWriteBucketWithNoSearch() GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.noSearch = true
 	}
 }
 
@@ -523,10 +543,19 @@ func GetInputConfigForString(
 	return internal.GetInputConfigForRef(ref.internalRef(), value)
 }
 
-type getBucketOptions struct {
+type getReadBucketCloserOptions struct {
+	noSearch       bool
+	copyToInMemory bool
+}
+
+func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
+	return &getReadBucketCloserOptions{}
+}
+
+type getReadWriteBucketOptions struct {
 	noSearch bool
 }
 
-func newGetBucketOptions() *getBucketOptions {
-	return &getBucketOptions{}
+func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {
+	return &getReadWriteBucketOptions{}
 }
