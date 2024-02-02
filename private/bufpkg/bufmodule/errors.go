@@ -155,6 +155,23 @@ func (m *ModuleCycleError) Error() string {
 	return builder.String()
 }
 
+// DuplicatePathError is the error returned if a path is duplicated in a module.
+//
+// This is returned by Build on a [ModuleSetBuilder].
+type DuplicatePathError struct {
+	Path    string
+	Module1 ModuleFullName
+	Module2 ModuleFullName
+}
+
+// Error implements the error interface.
+func (d *DuplicatePathError) Error() string {
+	if d == nil {
+		return ""
+	}
+	return fmt.Sprintf("duplicate path %q in module %q and module %q", d.Path, d.Module1, d.Module2)
+}
+
 // *** PRIVATE ***
 
 func newErrNoProtoFiles(moduleID string) error {

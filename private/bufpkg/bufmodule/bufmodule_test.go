@@ -329,6 +329,56 @@ func TestBasic(t *testing.T) {
 	)
 }
 
+func TestDuplicateFiles(t *testing.T) {
+	t.Parallel()
+	// Ensure that we get a DuplicatePathError when we have duplicate files.
+	_, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package b`,
+				),
+			},
+		},
+	)
+	var duplicatePathError *bufmodule.DuplicatePathError
+	require.True(t, errors.As(err, &duplicatePathError))
+	require.Equal(t, "a.proto", duplicatePathError.Path)
+	require.Equal(t, "buf.build/foo/a", duplicatePathError.Module1.String())
+	require.Equal(t, "buf.build/foo/b", duplicatePathError.Module2.String())
+	// Only check for proto files, ignore other files.
+	_, err = bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"LICENSE": []byte("MIT"),
+				"a.proto": []byte(
+					`syntax = proto3; package a`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"LICENSE": []byte("MIT"),
+				"b.proto": []byte(
+					`syntax = proto3; package b`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+}
+
 func TestCycleError(t *testing.T) {
 	t.Parallel()
 
