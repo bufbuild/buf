@@ -20,7 +20,6 @@ import (
 	"net"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buflsp"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
@@ -66,32 +65,33 @@ func run(
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	var jsonrpc2Stream jsonrpc2.Stream
-	if flags.Port > 0 {
-		conn, err := net.Dial("tcp", fmt.Sprintf(":%d", flags.Port))
-		if err != nil {
-			return err
-		}
-		jsonrpc2Stream = jsonrpc2.NewStream(conn)
-	} else {
-		jsonrpc2Stream = jsonrpc2.NewStream(
-			ioext.CompositeReadWriteCloser(
-				container.Stdin(),
-				container.Stdout(),
-				ioext.NopCloser,
-			),
-		)
-	}
-	jsonrpc2Conn := jsonrpc2.NewConn(jsonrpc2Stream)
-	controller, err := bufcli.NewController(container)
+	jsonrpc2Stream, err := newJSONRPC2Stream(container, flags)
 	if err != nil {
 		return err
 	}
-	server, err := buflsp.NewServer(ctx, jsonrpc2Conn, container, controller)
+	jsonrpc2Conn := jsonrpc2.NewConn(jsonrpc2Stream)
+	server, err := bufcli.NewLSPServer(ctx, container, jsonrpc2Conn)
 	if err != nil {
 		return err
 	}
 	jsonrpc2Conn.Go(ctx, protocol.ServerHandler(server, nil))
 	<-ctx.Done()
 	return jsonrpc2Conn.Err()
+}
+
+func newJSONRPC2Stream(container appext.Container, flags *flags) (jsonrpc2.Stream, error) {
+	if flags.Port > 0 {
+		conn, err := net.Dial("tcp", fmt.Sprintf(":%d", flags.Port))
+		if err != nil {
+			return nil, err
+		}
+		return jsonrpc2.NewStream(conn), nil
+	}
+	return jsonrpc2.NewStream(
+		ioext.CompositeReadWriteCloser(
+			container.Stdin(),
+			container.Stdout(),
+			ioext.NopCloser,
+		),
+	), nil
 }

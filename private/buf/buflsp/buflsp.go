@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -50,21 +49,23 @@ import (
 var (
 	// wellKnownTypesDescriptorProtoPath is the path of the descriptor.proto well-known types file.
 	wellKnownTypesDescriptorProtoPath = normalpath.Join("google", "protobuf", "descriptor.proto")
-	// lspWellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
+	// wellKnownTypesCacheRelDirPath is the relative path to the cache directory for materialized
 	// well-known types .proto files.
-	lspWellKnownTypesCacheRelDirPath = normalpath.Join("v3", "lsp", "wkt")
-	// lspModuleCacheRelDirPath is the relative path to the cache directory in its newest iteration.
-	lspModuleCacheRelDirPath = normalpath.Join("v3", "lsp", "modules")
+	wellKnownTypesCacheRelDirPath = "wkt"
+	// moduleCacheRelDirPath is the relative path to the cache directory in its newest iteration.
+	moduleCacheRelDirPath = "modules"
 )
 
 // NewServer returns a new LSP server for the jsonrpc connection.
 func NewServer(
 	ctx context.Context,
+	logger *zap.Logger,
+	tracer tracing.Tracer,
 	jsonrpc2Conn jsonrpc2.Conn,
-	container appext.Container,
 	controller bufctl.Controller,
+	cacheDirPath string,
 ) (protocol.Server, error) {
-	return newServer(ctx, jsonrpc2Conn, container, controller)
+	return newServer(ctx, logger, tracer, jsonrpc2Conn, controller, cacheDirPath)
 }
 
 // *** PRIVATE ***
@@ -74,7 +75,7 @@ type server struct {
 
 	jsonrpc2Conn            jsonrpc2.Conn
 	logger                  *zap.Logger
-	container               appext.Container
+	tracer                  tracing.Tracer
 	controller              bufctl.Controller
 	lintHandler             buflint.Handler
 	breakingHandler         bufbreaking.Handler
@@ -83,8 +84,9 @@ type server struct {
 	wellKnownTypesModuleSet bufmodule.ModuleSet
 	wellKnownTypesResolver  moduleSetResolver
 
-	wellKnownTypesCachePath string
-	moduleCachePath         string
+	cacheDirPath               string
+	wellKnownTypesCacheDirPath string
+	moduleCacheDirPath         string
 
 	folders   []protocol.WorkspaceFolder
 	clientCap protocol.ClientCapabilities
@@ -94,12 +96,12 @@ type server struct {
 
 func newServer(
 	ctx context.Context,
+	logger *zap.Logger,
+	tracer tracing.Tracer,
 	jsonrpc2Conn jsonrpc2.Conn,
-	container appext.Container,
 	controller bufctl.Controller,
+	cacheDirPath string,
 ) (*server, error) {
-	logger := container.Logger()
-	tracer := tracing.NewTracer(container.Tracer())
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -122,27 +124,28 @@ func newServer(
 	if err != nil {
 		return nil, err
 	}
-	wellKnownTypesCachePath := normalpath.Join(
-		container.CacheDirPath(),
-		lspWellKnownTypesCacheRelDirPath,
+	wellKnownTypesCacheDirPath := normalpath.Join(
+		cacheDirPath,
+		wellKnownTypesCacheRelDirPath,
 	)
-	moduleCachePath := normalpath.Join(
-		container.CacheDirPath(),
-		lspModuleCacheRelDirPath,
+	moduleCacheDirPath := normalpath.Join(
+		cacheDirPath,
+		moduleCacheRelDirPath,
 	)
 	server := &server{
-		jsonrpc2Conn:            jsonrpc2Conn,
-		logger:                  logger,
-		container:               container,
-		controller:              controller,
-		lintHandler:             buflint.NewHandler(logger, tracer),
-		breakingHandler:         bufbreaking.NewHandler(logger, tracer),
-		fileCache:               make(map[string]*fileEntry),
-		fileWatcher:             watcher,
-		wellKnownTypesModuleSet: wellKnownTypesModuleSet,
-		wellKnownTypesResolver:  wellKnownTypesResolver,
-		wellKnownTypesCachePath: wellKnownTypesCachePath,
-		moduleCachePath:         moduleCachePath,
+		jsonrpc2Conn:               jsonrpc2Conn,
+		logger:                     logger,
+		tracer:                     tracer,
+		controller:                 controller,
+		lintHandler:                buflint.NewHandler(logger, tracer),
+		breakingHandler:            bufbreaking.NewHandler(logger, tracer),
+		fileCache:                  make(map[string]*fileEntry),
+		fileWatcher:                watcher,
+		wellKnownTypesModuleSet:    wellKnownTypesModuleSet,
+		wellKnownTypesResolver:     wellKnownTypesResolver,
+		cacheDirPath:               cacheDirPath,
+		wellKnownTypesCacheDirPath: wellKnownTypesCacheDirPath,
+		moduleCacheDirPath:         moduleCacheDirPath,
 	}
 	go func() {
 		for event := range server.fileWatcher.Events {
@@ -218,9 +221,9 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		return nil
 	}
 	var resolver moduleSetResolver
-	if strings.HasPrefix(filename, s.wellKnownTypesCachePath) {
+	if strings.HasPrefix(filename, s.wellKnownTypesCacheDirPath) {
 		resolver = s.wellKnownTypesResolver
-	} else if strings.HasPrefix(filename, s.moduleCachePath) {
+	} else if strings.HasPrefix(filename, s.moduleCacheDirPath) {
 		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
 			// Normally, this case won't occur, because the file will already be in the cache.
 			// This case occurs mainly when the LSP is started and a cache file is already open.
@@ -386,7 +389,7 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 
 	// Make sure all the files exist.
 	for _, loc := range result {
-		if strings.HasPrefix(loc.URI.Filename(), s.container.CacheDirPath()) {
+		if strings.HasPrefix(loc.URI.Filename(), s.cacheDirPath) {
 			// This is a temporary file, make sure it exists.
 			localPath := loc.URI.Filename()
 			if _, err := os.Stat(localPath); err != nil {
@@ -531,7 +534,7 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 // Create a new file entry with the given contents and metadata.
 func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
 	filename := item.URI.Filename()
-	entry := newFileEntry(&item, resolver, filename, strings.HasPrefix(filename, s.container.CacheDirPath()))
+	entry := newFileEntry(&item, resolver, filename, strings.HasPrefix(filename, s.cacheDirPath))
 	s.fileCache[filename] = entry
 	if err := entry.processText(ctx, s); err != nil {
 		return nil, err
@@ -566,7 +569,7 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 	// The LSP should probably instead map OS paths to modules on its own and use this to tie files
 	// to diagnostics and etc.
 	diagsByFile := make(map[string][]protocol.Diagnostic)
-	image, err := bufimage.BuildImage(ctx, tracing.NewTracer(s.container.Tracer()), bucket)
+	image, err := bufimage.BuildImage(ctx, s.tracer, bucket)
 	if err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if !errors.As(err, &fileAnnotationSet) {
@@ -610,7 +613,7 @@ func (s *server) moduleKeyToCachePath(
 	moduleFilePath string,
 ) (string, error) {
 	return normalpath.Join(
-		s.moduleCachePath,
+		s.moduleCacheDirPath,
 		key.ModuleFullName().Registry(),
 		key.ModuleFullName().Owner(),
 		key.ModuleFullName().Name(),
@@ -622,7 +625,7 @@ func (s *server) moduleKeyToCachePath(
 // Parses a module key out of the cache path. This is the inverse of moduleKeyToCachePath.
 // Returns both the module key and the module file path that the cache path represents.
 func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string, error) {
-	path = strings.TrimPrefix(path, s.moduleCachePath)
+	path = strings.TrimPrefix(path, s.moduleCacheDirPath)
 	normalpath.Components(path)
 	parts := strings.Split(path, "/")
 	if len(parts) < 4 {
@@ -664,7 +667,7 @@ func (s *server) localPathForImport(
 	}
 	if isWellKnownTypesModule {
 		return normalpath.Join(
-			s.wellKnownTypesCachePath,
+			s.wellKnownTypesCacheDirPath,
 			digest.Type().String(),
 			hex.EncodeToString(digest.Value()),
 			file.Path(),

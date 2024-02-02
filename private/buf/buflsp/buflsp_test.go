@@ -200,7 +200,8 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 	use := "test"
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	env := newEnvFunc(tb, "")(use)
+	cacheDirPath := tb.TempDir()
+	env := newEnvFunc(tb, cacheDirPath)(use)
 
 	appContainer := app.NewContainer(
 		env,
@@ -248,9 +249,11 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 
 	lspServer, err := newServer(
 		context.Background(),
+		container.Logger(),
+		tracing.NewTracer(container.Tracer()),
 		nil,
-		container,
 		controller,
+		cacheDirPath,
 	)
 	if err != nil {
 		return nil, err
@@ -261,14 +264,12 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 	return lspServer, nil
 }
 
-func newEnvFunc(tb testing.TB, cacheDir string) func(string) map[string]string {
+func newEnvFunc(tb testing.TB, cacheDirPath string) func(string) map[string]string {
 	tb.Helper()
-	if cacheDir == "" {
-		cacheDir = tb.TempDir()
-	}
+	require.NotEmpty(tb, cacheDirPath)
 	return func(use string) map[string]string {
 		return map[string]string{
-			useEnvVar(use, "CACHE_DIR"): cacheDir,
+			useEnvVar(use, "CACHE_DIR"): cacheDirPath,
 			useEnvVar(use, "HOME"):      tb.TempDir(),
 			"PATH":                      os.Getenv("PATH"),
 		}

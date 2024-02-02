@@ -47,6 +47,7 @@ var (
 		v2CacheModuleRelDirPath,
 		v3CacheModuleRelDirPath,
 		v3CacheCommitsRelDirPath,
+		v3CacheLSPRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
@@ -89,6 +90,10 @@ var (
 	//
 	// Normalized.
 	v3CacheCommitsRelDirPath = normalpath.Join("v3", "commits")
+	// v3CacheLSPRelDirPath is the relative path to the lsp cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CacheLSPRelDirPath = normalpath.Join("v3", "lsp")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
