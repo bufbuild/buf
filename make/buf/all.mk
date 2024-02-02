@@ -132,6 +132,10 @@ bufgeneratesteps:: \
 bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.21-bullseye bash make/buf/scripts/release.bash
 
+.PHONY: bufbinarysize
+bufbinarysize:
+	@bash make/buf/scripts/binarysize.bash ./cmd/buf
+
 .PHONY: updateversion
 updateversion:
 ifndef VERSION
