@@ -26,6 +26,7 @@ import (
 )
 
 type fileEntry struct {
+	server   *server
 	document *protocol.TextDocumentItem
 	lines    []string
 	refCount int
@@ -50,12 +51,14 @@ type fileEntry struct {
 }
 
 func newFileEntry(
+	server *server,
 	document *protocol.TextDocumentItem,
 	resolver moduleSetResolver,
 	externalPath string,
 	isRemote bool,
 ) *fileEntry {
 	result := &fileEntry{
+		server:       server,
 		document:     document,
 		refCount:     1,
 		resolver:     resolver,
@@ -76,15 +79,15 @@ func (f *fileEntry) getSourcePos(pos protocol.Position) ast.SourcePos {
 	}
 }
 
-func (f *fileEntry) processText(ctx context.Context, lsp *server) error {
+func (f *fileEntry) processText(ctx context.Context) error {
 	f.tryParse()
-	if err := f.resolveImports(ctx, lsp); err != nil {
+	if err := f.resolveImports(ctx); err != nil {
 		return err
 	}
-	return lsp.updateDiagnostics(ctx, f)
+	return f.server.updateDiagnostics(ctx, f)
 }
 
-func (f *fileEntry) updateText(ctx context.Context, lsp *server, text string) (bool, error) {
+func (f *fileEntry) updateText(ctx context.Context, text string) (bool, error) {
 	f.document.Text = text
 	f.lines = strings.Split(f.document.Text, "\n")
 	matchDisk := false
@@ -98,7 +101,7 @@ func (f *fileEntry) updateText(ctx context.Context, lsp *server, text string) (b
 	if !matchDisk {
 		f.bufDiags = nil
 	}
-	return matchDisk, f.processText(ctx, lsp)
+	return matchDisk, f.processText(ctx)
 }
 
 func (f *fileEntry) tryParse() {
@@ -131,12 +134,12 @@ func (f *fileEntry) generateSymbols() {
 	})
 }
 
-func (f *fileEntry) resolveImports(ctx context.Context, lsp *server) error {
+func (f *fileEntry) resolveImports(ctx context.Context) error {
 	for _, importStatement := range f.imports {
 		if importStatement.docURI != "" {
 			continue
 		}
-		importEntry, err := lsp.resolveImport(ctx, f.resolver, importStatement.node.Name.AsString())
+		importEntry, err := f.server.resolveImport(ctx, f.resolver, importStatement.node.Name.AsString())
 		if err != nil {
 			return err
 		} else if importEntry != nil {

@@ -215,7 +215,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// Check if it is already open.
 	if entry, ok := s.fileCache[filename]; ok {
 		entry.refCount++
-		if _, err := entry.updateText(ctx, s, params.TextDocument.Text); err != nil {
+		if _, err := entry.updateText(ctx, params.TextDocument.Text); err != nil {
 			return err
 		}
 		return nil
@@ -263,7 +263,7 @@ func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	if !ok {
 		return fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	matches, err := entry.updateText(ctx, s, params.ContentChanges[0].Text)
+	matches, err := entry.updateText(ctx, params.ContentChanges[0].Text)
 	if err != nil {
 		return err
 	}
@@ -534,9 +534,9 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 // Create a new file entry with the given contents and metadata.
 func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
 	filename := item.URI.Filename()
-	entry := newFileEntry(&item, resolver, filename, strings.HasPrefix(filename, s.cacheDirPath))
+	entry := newFileEntry(s, &item, resolver, filename, strings.HasPrefix(filename, s.cacheDirPath))
 	s.fileCache[filename] = entry
-	if err := entry.processText(ctx, s); err != nil {
+	if err := entry.processText(ctx); err != nil {
 		return nil, err
 	}
 	if !entry.isRemote {
