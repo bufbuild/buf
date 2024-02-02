@@ -12,6 +12,7 @@ require (
 	github.com/bufbuild/protovalidate-go v0.5.0
 	github.com/bufbuild/protoyaml-go v0.1.7
 	github.com/docker/docker v25.0.2+incompatible
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0

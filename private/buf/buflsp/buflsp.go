@@ -107,7 +107,7 @@ func newServer(
 	wellKnownTypesResolver := newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
 		moduleSetBuilder := bufmodule.NewModuleSetBuilder(
 			ctx,
-			logger,
+			tracer,
 			bufmodule.NopModuleDataProvider,
 			bufmodule.NopCommitProvider,
 		)
