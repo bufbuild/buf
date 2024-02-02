@@ -608,6 +608,7 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 				annotationToDiagnostic(annot, protocol.DiagnosticSeverityError))
 		}
 	}
+	// TODO: This should never need to happen, why are we upcasting?
 	if workspace, ok := moduleSet.(bufworkspace.Workspace); ok && image != nil {
 		for _, module := range moduleSet.Modules() {
 			if err := s.lintHandler.Check(ctx, workspace.GetLintConfigForOpaqueID(module.OpaqueID()), image); err != nil {
