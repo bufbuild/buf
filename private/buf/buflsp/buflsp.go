@@ -83,15 +83,8 @@ type server struct {
 	fileWatcher             *fsnotify.Watcher
 	wellKnownTypesModuleSet bufmodule.ModuleSet
 	wellKnownTypesResolver  moduleSetResolver
-
-	cacheDirPath               string
-	wellKnownTypesCacheDirPath string
-	moduleCacheDirPath         string
-
-	folders   []protocol.WorkspaceFolder
-	clientCap protocol.ClientCapabilities
-
-	lock sync.Mutex
+	cacheDirPath            string
+	lock                    sync.Mutex
 }
 
 func newServer(
@@ -102,7 +95,7 @@ func newServer(
 	controller bufctl.Controller,
 	cacheDirPath string,
 ) (*server, error) {
-	watcher, err := fsnotify.NewWatcher()
+	fileWatcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
 	}
@@ -124,28 +117,18 @@ func newServer(
 	if err != nil {
 		return nil, err
 	}
-	wellKnownTypesCacheDirPath := normalpath.Join(
-		cacheDirPath,
-		wellKnownTypesCacheRelDirPath,
-	)
-	moduleCacheDirPath := normalpath.Join(
-		cacheDirPath,
-		moduleCacheRelDirPath,
-	)
 	server := &server{
-		jsonrpc2Conn:               jsonrpc2Conn,
-		logger:                     logger,
-		tracer:                     tracer,
-		controller:                 controller,
-		lintHandler:                buflint.NewHandler(logger, tracer),
-		breakingHandler:            bufbreaking.NewHandler(logger, tracer),
-		fileCache:                  make(map[string]*fileEntry),
-		fileWatcher:                watcher,
-		wellKnownTypesModuleSet:    wellKnownTypesModuleSet,
-		wellKnownTypesResolver:     wellKnownTypesResolver,
-		cacheDirPath:               cacheDirPath,
-		wellKnownTypesCacheDirPath: wellKnownTypesCacheDirPath,
-		moduleCacheDirPath:         moduleCacheDirPath,
+		jsonrpc2Conn:            jsonrpc2Conn,
+		logger:                  logger,
+		tracer:                  tracer,
+		controller:              controller,
+		lintHandler:             buflint.NewHandler(logger, tracer),
+		breakingHandler:         bufbreaking.NewHandler(logger, tracer),
+		fileCache:               make(map[string]*fileEntry),
+		fileWatcher:             fileWatcher,
+		wellKnownTypesModuleSet: wellKnownTypesModuleSet,
+		wellKnownTypesResolver:  wellKnownTypesResolver,
+		cacheDirPath:            cacheDirPath,
 	}
 	go func() {
 		for event := range server.fileWatcher.Events {
@@ -166,10 +149,6 @@ func newServer(
 func (s *server) Initialize(ctx context.Context, params *protocol.InitializeParams) (*protocol.InitializeResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
-	// Store client info
-	s.folders = params.WorkspaceFolders
-	s.clientCap = params.Capabilities
 
 	// Always load the descriptor.proto file
 	if _, err := s.resolveImport(
@@ -234,9 +213,9 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	//
 	// tl;dr: We need a way to get the enclosing workspace for a file.
 	var resolver moduleSetResolver
-	if strings.HasPrefix(filename, s.wellKnownTypesCacheDirPath) {
+	if strings.HasPrefix(filename, s.wellKnownTypesCacheDirPath()) {
 		resolver = s.wellKnownTypesResolver
-	} else if strings.HasPrefix(filename, s.moduleCacheDirPath) {
+	} else if strings.HasPrefix(filename, s.moduleCacheDirPath()) {
 		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
 			// Normally, this case won't occur, because the file will already be in the cache.
 			// This case occurs mainly when the LSP is started and a cache file is already open.
@@ -642,7 +621,7 @@ func (s *server) moduleKeyToCachePath(
 	moduleFilePath string,
 ) (string, error) {
 	return normalpath.Join(
-		s.moduleCacheDirPath,
+		s.moduleCacheDirPath(),
 		key.ModuleFullName().Registry(),
 		key.ModuleFullName().Owner(),
 		key.ModuleFullName().Name(),
@@ -654,7 +633,7 @@ func (s *server) moduleKeyToCachePath(
 // Parses a module key out of the cache path. This is the inverse of moduleKeyToCachePath.
 // Returns both the module key and the module file path that the cache path represents.
 func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string, error) {
-	path = strings.TrimPrefix(path, s.moduleCacheDirPath)
+	path = strings.TrimPrefix(path, s.moduleCacheDirPath())
 	normalpath.Components(path)
 	parts := strings.Split(path, "/")
 	if len(parts) < 4 {
@@ -697,7 +676,7 @@ func (s *server) localPathForImport(
 	}
 	if isWellKnownTypesModule {
 		return normalpath.Join(
-			s.wellKnownTypesCacheDirPath,
+			s.wellKnownTypesCacheDirPath(),
 			digest.Type().String(),
 			// TODO: We should not be using digests as part of these paths.
 			hex.EncodeToString(digest.Value()),
@@ -718,6 +697,7 @@ func (s *server) localPathForImport(
 	return s.moduleKeyToCachePath(key, file.Path())
 }
 
+// Assumed to be called inside lock.
 func (s *server) decrementReferenceCount(entry *fileEntry) {
 	entry.refCount--
 	if entry.refCount == 0 {
@@ -735,6 +715,14 @@ func (s *server) decrementReferenceCount(entry *fileEntry) {
 		}
 		delete(s.fileCache, entry.document.URI.Filename())
 	}
+}
+
+func (s *server) wellKnownTypesCacheDirPath() string {
+	return normalpath.Join(s.cacheDirPath, wellKnownTypesCacheRelDirPath)
+}
+
+func (s *server) moduleCacheDirPath() string {
+	return normalpath.Join(s.cacheDirPath, moduleCacheRelDirPath)
 }
 
 func annotationToDiagnostic(
