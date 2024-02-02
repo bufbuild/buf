@@ -197,14 +197,14 @@ func getModuleDepsRec(
 		return err
 	}
 	parentOpaqueIDs[opaqueID] = struct{}{}
-	orderedParentOpaqueIDs = append(orderedParentOpaqueIDs, opaqueID)
+	newOrderedParentOpaqueIDs := append(orderedParentOpaqueIDs, opaqueID)
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
 			newModuleDep,
 			visitedOpaqueIDs,
 			parentOpaqueIDs,
-			orderedParentOpaqueIDs,
+			newOrderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,
 			// Always not direct on recursive calls.
 			// We've already added all the direct deps.
@@ -214,6 +214,5 @@ func getModuleDepsRec(
 		}
 	}
 	delete(parentOpaqueIDs, opaqueID)
-	orderedParentOpaqueIDs = orderedParentOpaqueIDs[:len(orderedParentOpaqueIDs)-1]
 	return nil
 }
