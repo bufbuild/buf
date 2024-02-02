@@ -753,6 +753,6 @@ func annotationToDiagnostic(
 			},
 		},
 		Severity: severity,
-		Message:  fmt.Sprintf("%s (%s)", annotation.Message(), annotation.Type()),
+		Message:  annotation.Message(),
 	}
 }
