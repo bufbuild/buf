@@ -115,17 +115,16 @@ func (s *server) findImportCompletions(
 
 	// Look for well known imports
 	options := make(completionOptions)
-	err := datawkt.ReadBucket.Walk(ctx, prefix, func(objectInfo storage.ObjectInfo) error {
+	if err := datawkt.ReadBucket.Walk(ctx, prefix, func(objectInfo storage.ObjectInfo) error {
 		item := makeIncludeCompletion(strings.TrimPrefix(objectInfo.Path(), prefix))
 		options[item.Label] = item
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	if bucket, err := entry.resolver.Bucket(); err == nil {
-		if err := s.findBucketCompletions(ctx, bucket, prefix, options); err != nil {
+	if moduleReadBucket, err := entry.resolver.ModuleReadBucket(); err == nil {
+		if err := s.findBucketCompletions(ctx, moduleReadBucket, prefix, options); err != nil {
 			return nil, err
 		}
 	}

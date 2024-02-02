@@ -22,13 +22,13 @@ import (
 // moduleSetResolver lazily resolves a module set, when possible.
 type moduleSetResolver interface {
 	ModuleSet() (bufmodule.ModuleSet, error)
-	Bucket() (bufmodule.ModuleReadBucket, error)
+	ModuleReadBucket() (bufmodule.ModuleReadBucket, error)
 }
 
 // newModuleSetResolver returns a new module set resolver.
 func newModuleSetResolver(getModuleSet func() (bufmodule.ModuleSet, error)) moduleSetResolver {
 	getModuleSet = syncext.OnceValues(getModuleSet)
-	getBucket := syncext.OnceValues(func() (bufmodule.ModuleReadBucket, error) {
+	getModuleReadBucket := syncext.OnceValues(func() (bufmodule.ModuleReadBucket, error) {
 		moduleSet, err := getModuleSet()
 		if err != nil {
 			return nil, err
@@ -36,22 +36,22 @@ func newModuleSetResolver(getModuleSet func() (bufmodule.ModuleSet, error)) modu
 		return bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet), nil
 	})
 	return &onceModuleSetResolver{
-		getModuleSet: getModuleSet,
-		getBucket:    getBucket,
+		getModuleSet:        getModuleSet,
+		getModuleReadBucket: getModuleReadBucket,
 	}
 }
 
 // onceModuleSetResolver is a moduleSetResolver that wraps the getters in sync.OnceValue to memoize
 // the results.
 type onceModuleSetResolver struct {
-	getModuleSet func() (bufmodule.ModuleSet, error)
-	getBucket    func() (bufmodule.ModuleReadBucket, error)
+	getModuleSet        func() (bufmodule.ModuleSet, error)
+	getModuleReadBucket func() (bufmodule.ModuleReadBucket, error)
 }
 
 func (r *onceModuleSetResolver) ModuleSet() (bufmodule.ModuleSet, error) {
 	return r.getModuleSet()
 }
 
-func (r *onceModuleSetResolver) Bucket() (bufmodule.ModuleReadBucket, error) {
-	return r.getBucket()
+func (r *onceModuleSetResolver) ModuleReadBucket() (bufmodule.ModuleReadBucket, error) {
+	return r.getModuleReadBucket()
 }

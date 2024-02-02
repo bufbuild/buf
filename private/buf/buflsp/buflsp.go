@@ -455,15 +455,15 @@ func (s *server) findImportWithResolver(
 	resolver moduleSetResolver,
 	path string,
 ) (bufmodule.ModuleReadBucket, bufmodule.File, error) {
-	bucket, err := resolver.Bucket()
+	moduleReadBucket, err := resolver.ModuleReadBucket()
 	if err != nil {
 		return nil, nil, err
 	}
-	file, err := bucket.GetFile(ctx, path)
+	file, err := moduleReadBucket.GetFile(ctx, path)
 	if err != nil {
 		return nil, nil, err
 	}
-	return bucket, file, nil
+	return moduleReadBucket, file, nil
 }
 
 func (s *server) findImport(
@@ -552,24 +552,26 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 	if err != nil {
 		return err
 	}
-	bucket, err := resolver.Bucket()
+	moduleReadBucket, err := resolver.ModuleReadBucket()
 	if err != nil {
 		return err
 	}
-	err = bucket.WalkFileInfos(ctx, func(fileInfo bufmodule.FileInfo) error {
-		if entry, ok := s.fileCache[fileInfo.ExternalPath()]; ok {
-			entry.bufDiags = nil
-		}
-		return nil
-	})
-	if err != nil {
+	if err := moduleReadBucket.WalkFileInfos(
+		ctx,
+		func(fileInfo bufmodule.FileInfo) error {
+			if entry, ok := s.fileCache[fileInfo.ExternalPath()]; ok {
+				entry.bufDiags = nil
+			}
+			return nil
+		},
+	); err != nil {
 		return err
 	}
 	// TODO: diagsByFile is flawed; it maps on ExternalPath, which may or may not be meaningful.
 	// The LSP should probably instead map OS paths to modules on its own and use this to tie files
 	// to diagnostics and etc.
 	diagsByFile := make(map[string][]protocol.Diagnostic)
-	image, err := bufimage.BuildImage(ctx, s.tracer, bucket)
+	image, err := bufimage.BuildImage(ctx, s.tracer, moduleReadBucket)
 	if err != nil {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
 		if !errors.As(err, &fileAnnotationSet) {
