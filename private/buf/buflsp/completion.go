@@ -265,3 +265,13 @@ func makeIncludeCompletion(relPath string) protocol.CompletionItem {
 		Kind:  protocol.CompletionItemKindFolder,
 	}
 }
+
+func completionsToCompletionList(
+	options map[string]protocol.CompletionItem,
+) *protocol.CompletionList {
+	result := &protocol.CompletionList{}
+	for _, item := range options {
+		result.Items = append(result.Items, item)
+	}
+	return result
+}

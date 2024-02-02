@@ -220,6 +220,19 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		}
 		return nil
 	}
+	// What is going on (from a GitHub comment):
+	//
+	// - `DidOpen` is called when we get a [`textDocument/didOpen`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen) event from the LSP host.
+	// - This signals that a new document window was opened in the editor.
+	// - The LSP server will create a new file entry (`createFileEntry`) and build an image (`refreshImage`).
+	// - Some (but not all) LSP operations require a module set to function properly.
+	// - In order to avoid storing and carefully checking for `nil` throughout the codebase, which proved to be error-prone, module set resolution is deferred until it is needed and the result is memoized using `syncext.OnceValues`. That's the ceremony re: "resolving" the module set.
+	// - The 3 conditional branches here decide how the deferred module set should be resolved:
+	//   - Materialized well-known types files will be provided by the built-in well-known types module set resolver.
+	//   - Materialized remote dependency files will be provided by parsing the module key out of the path.
+	//   - For all other files, we need to find the appropriate workspace.
+	//
+	// tl;dr: We need a way to get the enclosing workspace for a file.
 	var resolver moduleSetResolver
 	if strings.HasPrefix(filename, s.wellKnownTypesCacheDirPath) {
 		resolver = s.wellKnownTypesResolver
@@ -236,6 +249,12 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 		})
 	} else {
 		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
+			// TODO: This is returning a ProtoFileRef-based workspace, which is materially different
+			// that one created for a ModuleKey-based workspace. In a ProtoFileRef-based workspace,
+			// we get a ModuleSet with one target Module, with one target File. Everything else
+			// is ignored for i.e. lint. We need to at least have "include_package_files=true", otherwise
+			// the lint results will be different than they would be for a remote Module constructed
+			// with the ModuleKey-based call above.
 			workspace, err := s.controller.GetWorkspace(ctx, filename)
 			if err != nil {
 				s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
@@ -245,8 +264,7 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	}
 
 	// Create a new file entry for the file
-	_, err := s.createFileEntry(ctx, params.TextDocument, resolver)
-	if err != nil {
+	if _, err := s.createFileEntry(ctx, params.TextDocument, resolver); err != nil {
 		return err
 	}
 	if err := s.refreshImage(ctx, resolver); err != nil {
@@ -487,11 +505,11 @@ func (s *server) findImport(
 }
 
 func (s *server) resolveImport(ctx context.Context, resolver moduleSetResolver, path string) (*fileEntry, error) {
-	bucket, file, err := s.findImport(ctx, resolver, path)
+	_, file, err := s.findImport(ctx, resolver, path)
 	if err != nil {
 		return nil, err
 	}
-	localPath, err := s.localPathForImport(ctx, bucket, file)
+	localPath, err := s.localPathForImport(ctx, file)
 	if err != nil {
 		return nil, err
 	}
@@ -504,12 +522,18 @@ func (s *server) resolveImport(ctx context.Context, resolver moduleSetResolver, 
 	if err != nil {
 		return nil, err
 	}
-	return s.createFileEntry(ctx, protocol.TextDocumentItem{
-		URI:  uri,
-		Text: string(fileData),
-	}, newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
-		return file.Module().ModuleSet(), nil
-	}))
+	return s.createFileEntry(
+		ctx,
+		protocol.TextDocumentItem{
+			URI:  uri,
+			Text: string(fileData),
+		},
+		newModuleSetResolver(
+			func() (bufmodule.ModuleSet, error) {
+				return file.Module().ModuleSet(), nil
+			},
+		),
+	)
 }
 
 // Refresh the results for the given file entry.
@@ -534,6 +558,8 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 // Create a new file entry with the given contents and metadata.
 func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
 	filename := item.URI.Filename()
+	// TODO: The strings.HasPrefix call signifying remote seems super prone to error. At the minimum,
+	// we need to factor that out into a function, and explain why this denotes that this is remote.
 	entry := newFileEntry(s, &item, resolver, filename, strings.HasPrefix(filename, s.cacheDirPath))
 	s.fileCache[filename] = entry
 	if err := entry.processText(ctx); err != nil {
@@ -655,10 +681,11 @@ func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string,
 // localPathForImport determines the local path on-disk that corresponds to the import path.
 func (s *server) localPathForImport(
 	ctx context.Context,
-	bucket bufmodule.ModuleReadBucket,
 	file bufmodule.File,
 ) (string, error) {
 	module := file.Module()
+	// TODO: This is doing a pointer comparison, this is extremely unsafe.
+	// We should instead be able to tell what is going on here based on the file path.
 	isWellKnownTypesModule := module.ModuleSet() == s.wellKnownTypesModuleSet
 	if !isWellKnownTypesModule && module.IsLocal() {
 		return file.ExternalPath(), nil
@@ -671,12 +698,14 @@ func (s *server) localPathForImport(
 		return normalpath.Join(
 			s.wellKnownTypesCacheDirPath,
 			digest.Type().String(),
+			// TODO: We should not be using digests as part of these paths.
 			hex.EncodeToString(digest.Value()),
 			file.Path(),
 		), nil
 	}
 	moduleFullName := module.ModuleFullName()
 	if moduleFullName == nil {
+		// TODO: How do you have a guarantee in this function that the module is remote?
 		return "", syserror.Newf("remote module %q had nil ModuleFullName", module.OpaqueID())
 	}
 	key, err := bufmodule.NewModuleKey(module.ModuleFullName(), module.CommitID(), func() (bufmodule.Digest, error) {
@@ -705,16 +734,6 @@ func (s *server) decrementReferenceCount(entry *fileEntry) {
 		}
 		delete(s.fileCache, entry.document.URI.Filename())
 	}
-}
-
-func completionsToCompletionList(
-	options map[string]protocol.CompletionItem,
-) *protocol.CompletionList {
-	result := &protocol.CompletionList{}
-	for _, item := range options {
-		result.Items = append(result.Items, item)
-	}
-	return result
 }
 
 func annotationToDiagnostic(
