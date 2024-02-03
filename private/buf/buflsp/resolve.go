@@ -58,9 +58,9 @@ func (s *server) findSymbolsForCandidate(ref *symbolRef, candidate symbolName) [
 func (s *server) findImportedSymbolsForCandidate(ref *symbolRef, importEntry *importEntry, candidate symbolName) []*symbolEntry {
 	var result []*symbolEntry
 	if importEntry.docURI != "" {
-		if importFile, ok := s.fileCache[importEntry.docURI.Filename()]; ok {
-			result = append(result, importFile.findSymbols(candidate, ref.isField)...)
-			for _, subImportEntry := range importFile.imports {
+		if importFileEntry, ok := s.getCachedFileEntryForURI(importEntry.docURI); ok {
+			result = append(result, importFileEntry.findSymbols(candidate, ref.isField)...)
+			for _, subImportEntry := range importFileEntry.imports {
 				if subImportEntry.isPublic {
 					// Include symbols from indirect public imports
 					result = append(result, s.findImportedSymbolsForCandidate(ref, subImportEntry, candidate)...)
@@ -85,10 +85,10 @@ func (s *server) findReferencedSymbols(ctx context.Context, entry *fileEntry, po
 }
 
 func (s *server) findSymbolLocation(symbol *symbolEntry) protocol.Location {
-	if symbolFile, ok := s.fileCache[symbol.file.Filename()]; ok {
+	if symbolFileEntry, ok := s.getCachedFileEntryForURI(symbol.file); ok {
 		return protocol.Location{
 			URI:   symbol.file,
-			Range: symbolFile.nodeLocation(symbol.node),
+			Range: symbolFileEntry.nodeLocation(symbol.node),
 		}
 	}
 	// Should never happen.
@@ -297,10 +297,10 @@ func (s *server) resolveFieldType(ref *symbolRef) *symbolRef {
 	}
 
 	symbol := symbols[0]
-	if symbolFile, ok := s.fileCache[symbol.file.Filename()]; ok {
+	if symbolFileEntry, ok := s.getCachedFileEntryForURI(symbol.file); ok {
 		if node, ok := symbol.node.(*ast.FieldNode); ok {
 			fieldRef := &symbolRef{
-				entry:   symbolFile,
+				entry:   symbolFileEntry,
 				refName: getRefName(node.FldType),
 				scope:   symbol.name()[:len(symbol.name())-1],
 				isField: true,
@@ -311,7 +311,7 @@ func (s *server) resolveFieldType(ref *symbolRef) *symbolRef {
 			}
 			symbol = symbols[0]
 			return &symbolRef{
-				entry:   symbolFile,
+				entry:   symbolFileEntry,
 				refName: symbol.ref(),
 			}
 		}

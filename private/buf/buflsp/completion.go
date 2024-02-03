@@ -67,9 +67,9 @@ func (s *server) findCompletionsFromImport(
 	isField bool,
 ) {
 	if importEntry.docURI != "" {
-		if importFile, ok := s.fileCache[importEntry.docURI.Filename()]; ok {
-			importFile.findCompletions(candidate, options, isField)
-			for _, subImportEntry := range importFile.imports {
+		if importFileEntry, ok := s.getCachedFileEntryForURI(importEntry.docURI); ok {
+			importFileEntry.findCompletions(candidate, options, isField)
+			for _, subImportEntry := range importFileEntry.imports {
 				if subImportEntry.isPublic {
 					s.findCompletionsFromImport(subImportEntry, candidate, options, isField)
 				}

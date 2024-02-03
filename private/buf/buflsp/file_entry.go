@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/protocompile/ast"
 	"go.lsp.dev/protocol"
 )
@@ -87,11 +88,12 @@ func (f *fileEntry) processText(ctx context.Context) error {
 	return f.server.updateDiagnostics(ctx, f)
 }
 
+// Returns false if there was a diff.
 func (f *fileEntry) updateText(ctx context.Context, text string) (bool, error) {
 	f.document.Text = text
 	f.lines = strings.Split(f.document.Text, "\n")
 	matchDisk := false
-	if fileReader, err := os.Open(f.externalPath); err == nil {
+	if fileReader, err := os.Open(normalpath.Unnormalize(f.externalPath)); err == nil {
 		fileData, err := io.ReadAll(fileReader)
 		if err != nil {
 			return false, err

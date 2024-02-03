@@ -79,12 +79,14 @@ type server struct {
 	controller              bufctl.Controller
 	lintHandler             buflint.Handler
 	breakingHandler         bufbreaking.Handler
-	fileCache               map[string]*fileEntry
 	fileWatcher             *fsnotify.Watcher
 	wellKnownTypesModuleSet bufmodule.ModuleSet
 	wellKnownTypesResolver  moduleSetResolver
-	cacheDirPath            string
-	lock                    sync.Mutex
+	// paths are normalized.
+	pathToFileEntryCache map[string]*fileEntry
+	// normalized.
+	cacheDirPath string
+	lock         sync.Mutex
 }
 
 func newServer(
@@ -124,18 +126,19 @@ func newServer(
 		controller:              controller,
 		lintHandler:             buflint.NewHandler(logger, tracer),
 		breakingHandler:         bufbreaking.NewHandler(logger, tracer),
-		fileCache:               make(map[string]*fileEntry),
+		pathToFileEntryCache:    make(map[string]*fileEntry),
 		fileWatcher:             fileWatcher,
 		wellKnownTypesModuleSet: wellKnownTypesModuleSet,
 		wellKnownTypesResolver:  wellKnownTypesResolver,
-		cacheDirPath:            cacheDirPath,
+		cacheDirPath:            normalpath.Normalize(cacheDirPath),
 	}
 	go func() {
 		for event := range server.fileWatcher.Events {
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				server.lock.Lock()
-				if entry, ok := server.fileCache[event.Name]; ok {
-					if err := server.refreshImage(ctx, entry.resolver); err != nil {
+				// TODO: How do we know that event.Name is normalized? Is it?
+				if fileEntry, ok := server.getCachedFileEntryForPath(event.Name); ok {
+					if err := server.refreshImage(ctx, fileEntry.resolver); err != nil {
 						server.logger.Sugar().Errorf("failed to build new image: %s", err)
 					}
 				}
@@ -160,7 +163,7 @@ func (s *server) Initialize(ctx context.Context, params *protocol.InitializePara
 	}
 
 	// Reply with capabilities
-	initializeResult := &protocol.InitializeResult{
+	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				OpenClose: true,
@@ -175,13 +178,13 @@ func (s *server) Initialize(ctx context.Context, params *protocol.InitializePara
 			HoverProvider:              true,
 			SemanticTokensProvider:     &protocol.SemanticTokensOptions{},
 		},
-	}
-	return initializeResult, nil
+	}, nil
 }
 
 func (s *server) Shutdown(ctx context.Context) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	return s.fileWatcher.Close()
 }
 
@@ -189,83 +192,38 @@ func (s *server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	filename := normalpath.Normalize(params.TextDocument.URI.Filename())
+	filePath := uriToPath(params.TextDocument.URI)
 
 	// Check if it is already open.
-	if entry, ok := s.fileCache[filename]; ok {
-		entry.refCount++
-		if _, err := entry.updateText(ctx, params.TextDocument.Text); err != nil {
+	if fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI); ok {
+		fileEntry.refCount++
+		if _, err := fileEntry.updateText(ctx, params.TextDocument.Text); err != nil {
 			return err
 		}
 		return nil
 	}
-	// What is going on (from a GitHub comment):
-	//
-	// - `DidOpen` is called when we get a [`textDocument/didOpen`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen) event from the LSP host.
-	// - This signals that a new document window was opened in the editor.
-	// - The LSP server will create a new file entry (`createFileEntry`) and build an image (`refreshImage`).
-	// - Some (but not all) LSP operations require a module set to function properly.
-	// - In order to avoid storing and carefully checking for `nil` throughout the codebase, which proved to be error-prone, module set resolution is deferred until it is needed and the result is memoized using `syncext.OnceValues`. That's the ceremony re: "resolving" the module set.
-	// - The 3 conditional branches here decide how the deferred module set should be resolved:
-	//   - Materialized well-known types files will be provided by the built-in well-known types module set resolver.
-	//   - Materialized remote dependency files will be provided by parsing the module key out of the path.
-	//   - For all other files, we need to find the appropriate workspace.
-	//
-	// tl;dr: We need a way to get the enclosing workspace for a file.
-	var resolver moduleSetResolver
-	if strings.HasPrefix(filename, s.wellKnownTypesCacheDirPath()) {
-		resolver = s.wellKnownTypesResolver
-	} else if strings.HasPrefix(filename, s.moduleCacheDirPath()) {
-		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
-			// Normally, this case won't occur, because the file will already be in the cache.
-			// This case occurs mainly when the LSP is started and a cache file is already open.
-			// We need to recover the module key from the filename in this case.
-			key, _, err := s.cachePathToModuleKey(filename)
-			if err != nil {
-				return nil, err
-			}
-			return s.controller.GetWorkspace(ctx, key.String())
-		})
-	} else {
-		resolver = newModuleSetResolver(func() (bufmodule.ModuleSet, error) {
-			// TODO: This is returning a ProtoFileRef-based workspace, which is materially different
-			// that one created for a ModuleKey-based workspace. In a ProtoFileRef-based workspace,
-			// we get a ModuleSet with one target Module, with one target File. Everything else
-			// is ignored for i.e. lint. We need to at least have "include_package_files=true", otherwise
-			// the lint results will be different than they would be for a remote Module constructed
-			// with the ModuleKey-based call above.
-			workspace, err := s.controller.GetWorkspace(ctx, filename)
-			if err != nil {
-				s.logger.Sugar().Warnf("No buf workspace found for %s: %s -- continuing with limited features.", filename, err)
-			}
-			return workspace, err
-		})
-	}
 
-	// Create a new file entry for the file
-	if _, err := s.createFileEntry(ctx, params.TextDocument, resolver); err != nil {
+	moduleSetResolver := s.getModuleSetResolverForFilePath(ctx, filePath)
+	if _, err := s.createFileEntry(ctx, params.TextDocument, moduleSetResolver); err != nil {
 		return err
 	}
-	if err := s.refreshImage(ctx, resolver); err != nil {
-		return err
-	}
-	return nil
+	return s.refreshImage(ctx, moduleSetResolver)
 }
 
 func (s *server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	matches, err := entry.updateText(ctx, params.ContentChanges[0].Text)
+	matches, err := fileEntry.updateText(ctx, params.ContentChanges[0].Text)
 	if err != nil {
 		return err
 	}
 	if matches { // Same as on disk, so safe to refresh the image data.
-		if err := s.refreshImage(ctx, entry.resolver); err != nil {
+		if err := s.refreshImage(ctx, fileEntry.resolver); err != nil {
 			return err
 		}
 	}
@@ -276,8 +234,8 @@ func (s *server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocu
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if entry, ok := s.fileCache[params.TextDocument.URI.Filename()]; ok {
-		s.decrementReferenceCount(entry)
+	if fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI); ok {
+		s.decrementReferenceCount(fileEntry)
 	}
 	return nil
 }
@@ -286,15 +244,15 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	if entry.hasParseError {
+	if fileEntry.hasParseError {
 		return nil, nil
 	}
-	fileData := strings.Builder{}
-	if err := bufformat.FormatFileNode(&fileData, entry.fileNode); err != nil {
+	var fileData strings.Builder
+	if err := bufformat.FormatFileNode(&fileData, fileEntry.fileNode); err != nil {
 		return nil, err
 	}
 	return []protocol.TextEdit{
@@ -305,7 +263,7 @@ func (s *server) Formatting(ctx context.Context, params *protocol.DocumentFormat
 					Character: 0,
 				},
 				End: protocol.Position{
-					Line:      uint32(len(entry.lines)),
+					Line:      uint32(len(fileEntry.lines)),
 					Character: 0,
 				},
 			},
@@ -318,12 +276,12 @@ func (s *server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSy
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	result := make([]interface{}, len(entry.docSymbols))
-	for i, symbol := range entry.docSymbols {
+	result := make([]interface{}, len(fileEntry.docSymbols))
+	for i, symbol := range fileEntry.docSymbols {
 		result[i] = symbol
 	}
 	return result, nil
@@ -333,26 +291,24 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	pos := entry.getSourcePos(params.Position)
+	pos := fileEntry.getSourcePos(params.Position)
 
 	// Look for import completions.
-	{
-		result, found, err := s.findImportCompletionsAt(ctx, entry, pos)
-		if err != nil {
-			return nil, err
-		} else if found {
-			return completionsToCompletionList(result), nil
-		}
+	result, found, err := s.findImportCompletionsAt(ctx, fileEntry, pos)
+	if err != nil {
+		return nil, err
+	} else if found {
+		return completionsToCompletionList(result), nil
 	}
 
 	// Look for ast-based symbol completions.
-	sybmolScope := entry.findSymbolScope(pos)
-	if sybmolScope != nil {
-		if ref := s.findReferenceAt(ctx, entry, sybmolScope, pos); ref != nil {
+	symbolScope := fileEntry.findSymbolScope(pos)
+	if symbolScope != nil {
+		if ref := s.findReferenceAt(ctx, fileEntry, symbolScope, pos); ref != nil {
 			options := make(completionOptions)
 			s.findRefCompletions(ref, options)
 			return completionsToCompletionList(options), nil
@@ -360,7 +316,7 @@ func (s *server) Completion(ctx context.Context, params *protocol.CompletionPara
 	}
 
 	// Fallback on prefix-based completions.
-	options := s.findPrefixCompletions(ctx, entry, entry.findScope(pos), entry.codeAt(pos))
+	options := s.findPrefixCompletions(ctx, fileEntry, fileEntry.findScope(pos), fileEntry.codeAt(pos))
 	return completionsToCompletionList(options), nil
 }
 
@@ -368,29 +324,30 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	pos := entry.getSourcePos(params.Position)
+	pos := fileEntry.getSourcePos(params.Position)
 
 	var result []protocol.Location
-	if importEntry := entry.findImportEntry(pos); importEntry != nil {
+	if importEntry := fileEntry.findImportEntry(pos); importEntry != nil {
 		if importEntry.docURI == "" {
 			return nil, nil
 		}
 		result = []protocol.Location{{URI: importEntry.docURI}}
 	} else {
-		result = s.findReferencedDefLoc(ctx, entry, pos)
+		result = s.findReferencedDefLoc(ctx, fileEntry, pos)
 	}
 
 	// Make sure all the files exist.
 	for _, loc := range result {
-		if strings.HasPrefix(loc.URI.Filename(), s.cacheDirPath) {
+		// TODO: This is not a great way to determine if the file is cached.
+		if s.isFilePathCachedWellKnownType(loc.URI.Filename()) || s.isFilePathInCachedRemoteModule(loc.URI.Filename()) {
 			// This is a temporary file, make sure it exists.
-			localPath := loc.URI.Filename()
+			localPath := normalpath.Unnormalize(loc.URI.Filename())
 			if _, err := os.Stat(localPath); err != nil {
-				tmpEntry, ok := s.fileCache[loc.URI.Filename()]
+				tmpFileEntry, ok := s.getCachedFileEntryForURI(loc.URI)
 				if !ok {
 					return nil, fmt.Errorf("unknown file: %s", loc.URI)
 				}
@@ -403,8 +360,9 @@ func (s *server) Definition(ctx context.Context, params *protocol.DefinitionPara
 				if err != nil {
 					return nil, err
 				}
+				// TODO: check error
 				defer tmpFile.Close()
-				if _, err := tmpFile.WriteString(tmpEntry.document.Text); err != nil {
+				if _, err := tmpFile.WriteString(tmpFileEntry.document.Text); err != nil {
 					return nil, err
 				}
 			}
@@ -418,23 +376,23 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	entry, ok := s.fileCache[params.TextDocument.URI.Filename()]
+	fileEntry, ok := s.getCachedFileEntryForURI(params.TextDocument.URI)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", params.TextDocument.URI)
 	}
-	pos := entry.getSourcePos(params.Position)
+	pos := fileEntry.getSourcePos(params.Position)
 
-	symbols := s.findReferencedSymbols(ctx, entry, pos)
+	symbols := s.findReferencedSymbols(ctx, fileEntry, pos)
 	if len(symbols) == 0 {
 		return nil, nil
 	}
 	symbol := symbols[0]
-	refEntry, ok := s.fileCache[symbol.file.Filename()]
+	refFileEntry, ok := s.getCachedFileEntryForURI(symbol.file)
 	if !ok {
 		return nil, fmt.Errorf("unknown file: %s", symbol.file)
 	}
 
-	codeData, err := refEntry.genNodeSignature(symbol.node)
+	codeData, err := refFileEntry.genNodeSignature(symbol.node)
 	if err != nil {
 		return nil, err
 	}
@@ -445,6 +403,59 @@ func (s *server) Hover(ctx context.Context, params *protocol.HoverParams) (*prot
 			Value: fmt.Sprintf("### %s\n```proto\n%s\n```", strings.Join(symbol.name(), "."), codeData),
 		},
 	}, nil
+}
+
+func (s *server) getModuleSetResolverForFilePath(ctx context.Context, filePath string) moduleSetResolver {
+	// What is going on (from a GitHub comment):
+	//
+	// - `DidOpen` is called when we get a [`textDocument/didOpen`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen) event from the LSP host.
+	// - This signals that a new document window was opened in the editor.
+	// - The LSP server will create a new file entry (`createFileEntry`) and build an image (`refreshImage`).
+	// - Some (but not all) LSP operations require a module set to function properly.
+	// - In order to avoid storing and carefully checking for `nil` throughout the codebase, which proved to be error-prone, module set resolution is deferred until it is needed and the result is memoized using `syncext.OnceValues`. That's the ceremony re: "resolving" the module set.
+	// - The 3 conditional branches here decide how the deferred module set should be resolved:
+	//   - Materialized well-known types files will be provided by the built-in well-known types module set resolver.
+	//   - Materialized remote dependency files will be provided by parsing the module key out of the path.
+	//   - For all other files, we need to find the appropriate workspace.
+	//
+	// tl;dr: We need a way to get the enclosing workspace for a file.
+	if s.isFilePathCachedWellKnownType(filePath) {
+		return s.wellKnownTypesResolver
+	}
+	if s.isFilePathInCachedRemoteModule(filePath) {
+		return newModuleSetResolver(
+			func() (bufmodule.ModuleSet, error) {
+				// Normally, this case won't occur, because the file will already be in the cache.
+				// This case occurs mainly when the LSP is started and a cache file is already open.
+				// We need to recover the module key from the filename in this case.
+				key, _, err := s.cachePathToModuleKey(filePath)
+				if err != nil {
+					return nil, err
+				}
+				return s.controller.GetWorkspace(ctx, key.String())
+			},
+		)
+	}
+	return newModuleSetResolver(
+		func() (bufmodule.ModuleSet, error) {
+			// TODO: This is returning a ProtoFileRef-based workspace, which is materially different
+			// that one created for a ModuleKey-based workspace. In a ProtoFileRef-based workspace,
+			// we get a ModuleSet with one target Module, with one target File. Everything else
+			// is ignored for i.e. lint. We need to at least have "include_package_files=true", otherwise
+			// the lint results will be different than they would be for a remote Module constructed
+			// with the ModuleKey-based call above.
+			workspace, err := s.controller.GetWorkspace(ctx, filePath)
+			if err != nil {
+				// TODO: Why are we logging here but not in the above if statement?
+				s.logger.Sugar().Warnf(
+					"No buf workspace found for %s: %s -- continuing with limited features.",
+					filePath,
+					err,
+				)
+			}
+			return workspace, err
+		},
+	)
 }
 
 func (s *server) findImportWithResolver(
@@ -493,7 +504,7 @@ func (s *server) resolveImport(ctx context.Context, resolver moduleSetResolver, 
 		return nil, err
 	}
 	uri := uri.File(localPath)
-	if entry, ok := s.fileCache[uri.Filename()]; ok {
+	if entry, ok := s.getCachedFileEntryForURI(uri); ok {
 		entry.refCount++
 		return entry, nil
 	}
@@ -534,24 +545,6 @@ func (s *server) updateDiagnostics(ctx context.Context, entry *fileEntry) error 
 	return s.jsonrpc2Conn.Notify(ctx, "textDocument/publishDiagnostics", diagParams)
 }
 
-// Create a new file entry with the given contents and metadata.
-func (s *server) createFileEntry(ctx context.Context, item protocol.TextDocumentItem, resolver moduleSetResolver) (*fileEntry, error) {
-	filename := item.URI.Filename()
-	// TODO: The strings.HasPrefix call signifying remote seems super prone to error. At the minimum,
-	// we need to factor that out into a function, and explain why this denotes that this is remote.
-	entry := newFileEntry(s, &item, resolver, filename, strings.HasPrefix(filename, s.cacheDirPath))
-	s.fileCache[filename] = entry
-	if err := entry.processText(ctx); err != nil {
-		return nil, err
-	}
-	if !entry.isRemote {
-		if err := s.fileWatcher.Add(filename); err != nil {
-			return nil, err
-		}
-	}
-	return entry, nil
-}
-
 func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) error {
 	moduleSet, err := resolver.ModuleSet()
 	if err != nil {
@@ -564,7 +557,7 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 	if err := moduleReadBucket.WalkFileInfos(
 		ctx,
 		func(fileInfo bufmodule.FileInfo) error {
-			if entry, ok := s.fileCache[fileInfo.ExternalPath()]; ok {
+			if entry, ok := s.pathToFileEntryCache[fileInfo.ExternalPath()]; ok {
 				entry.bufDiags = nil
 			}
 			return nil
@@ -603,7 +596,7 @@ func (s *server) refreshImage(ctx context.Context, resolver moduleSetResolver) e
 		}
 	}
 	for externalPath, diags := range diagsByFile {
-		if entry, ok := s.fileCache[externalPath]; ok {
+		if entry, ok := s.pathToFileEntryCache[externalPath]; ok {
 			entry.bufDiags = diags
 			if err := s.updateDiagnostics(ctx, entry); err != nil {
 				return err
@@ -700,10 +693,12 @@ func (s *server) localPathForImport(
 // Assumed to be called inside lock.
 func (s *server) decrementReferenceCount(entry *fileEntry) {
 	entry.refCount--
-	if entry.refCount == 0 {
+	// Doing <= instead of == for safety.
+	if entry.refCount <= 0 {
 		for _, importEntry := range entry.imports {
+			// TODO: in what situations will this be empty? Is this an error?
 			if importEntry.docURI != "" {
-				if importFile, ok := s.fileCache[importEntry.docURI.Filename()]; ok {
+				if importFile, ok := s.getCachedFileEntryForURI(importEntry.docURI); ok {
 					s.decrementReferenceCount(importFile)
 				}
 			}
@@ -713,34 +708,67 @@ func (s *server) decrementReferenceCount(entry *fileEntry) {
 				s.logger.Sugar().Errorf("error removing file from watcher: %s", err)
 			}
 		}
-		delete(s.fileCache, entry.document.URI.Filename())
+		s.invalidateCachedFileEntryForURI(entry.document.URI)
 	}
 }
 
+// Create a new file entry with the given contents and metadata.
+func (s *server) createFileEntry(
+	ctx context.Context,
+	item protocol.TextDocumentItem,
+	resolver moduleSetResolver,
+) (*fileEntry, error) {
+	filePath := item.URI.Filename()
+	entry := newFileEntry(s, &item, resolver, filePath, s.isFilePathCachedWellKnownType(filePath) || s.isFilePathInCachedRemoteModule(filePath))
+	s.pathToFileEntryCache[filePath] = entry
+	if err := entry.processText(ctx); err != nil {
+		return nil, err
+	}
+	if !entry.isRemote {
+		if err := s.fileWatcher.Add(filePath); err != nil {
+			return nil, err
+		}
+	}
+	return entry, nil
+}
+
+func (s *server) isFilePathCachedWellKnownType(filePath string) bool {
+	// TODO: We should not be using strings.HasPrefix for this, but it is difficult as
+	// we do not know whether the path is relative or absolute (do we?).
+	return strings.HasPrefix(filePath, s.wellKnownTypesCacheDirPath())
+}
+
+func (s *server) isFilePathInCachedRemoteModule(filePath string) bool {
+	// TODO: We should not be using strings.HasPrefix for this, but it is difficult as
+	// we do not know whether the path is relative or absolute (do we?).
+	return strings.HasPrefix(filePath, s.moduleCacheDirPath())
+}
+
+func (s *server) getCachedFileEntryForURI(uri uri.URI) (*fileEntry, bool) {
+	return s.getCachedFileEntryForPath(uriToPath(uri))
+}
+
+func (s *server) getCachedFileEntryForPath(filePath string) (*fileEntry, bool) {
+	fileEntry, ok := s.pathToFileEntryCache[filePath]
+	return fileEntry, ok
+}
+
+func (s *server) invalidateCachedFileEntryForURI(uri uri.URI) {
+	s.invalidateCachedFileEntryForPath(uriToPath(uri))
+}
+
+func (s *server) invalidateCachedFileEntryForPath(filePath string) {
+	delete(s.pathToFileEntryCache, filePath)
+}
+
+// wellKnownTypesCacheDirPath returns the full path the the well-known types cache directory.
 func (s *server) wellKnownTypesCacheDirPath() string {
 	return normalpath.Join(s.cacheDirPath, wellKnownTypesCacheRelDirPath)
 }
 
+// moduleCacheDirPath returns the full path to the module cache directory.
+//
+// This stores remote modules that were downloaded for the LSP.
 func (s *server) moduleCacheDirPath() string {
 	return normalpath.Join(s.cacheDirPath, moduleCacheRelDirPath)
-}
-
-func annotationToDiagnostic(
-	annotation bufanalysis.FileAnnotation,
-	severity protocol.DiagnosticSeverity,
-) protocol.Diagnostic {
-	return protocol.Diagnostic{
-		Range: protocol.Range{
-			Start: protocol.Position{
-				Line:      uint32(annotation.StartLine() - 1),
-				Character: uint32(annotation.StartColumn() - 1),
-			},
-			End: protocol.Position{
-				Line:      uint32(annotation.EndLine() - 1),
-				Character: uint32(annotation.EndColumn() - 1),
-			},
-		},
-		Severity: severity,
-		Message:  annotation.Message(),
-	}
 }

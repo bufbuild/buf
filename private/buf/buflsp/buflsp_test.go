@@ -41,9 +41,9 @@ import (
 
 func TestBufLsp(t *testing.T) {
 	t.Parallel()
-	lspServer, doc, err := newTestBufLspWith(t, "testdata/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
+	server, doc, err := newTestServerWithFilePath(t, "testdata/buftest/buf/lsp/test/v1alpha1/test_cases.proto")
 	require.NoError(t, err)
-	entry, ok := lspServer.fileCache[doc.Filename()]
+	entry, ok := server.getCachedFileEntryForURI(doc)
 	require.True(t, ok, "%s not in cache", doc.Filename())
 
 	for _, testCase := range []struct {
@@ -126,16 +126,18 @@ func TestBufLsp(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.prefix, func(t *testing.T) {
 			t.Parallel()
-			lspServer.lock.Lock()
-			defer lspServer.lock.Unlock()
-			expectCompletions(t, lspServer, entry, testCase.prefix, testCase.expected)
+			// TODO: We should never be calling the lock in a test. If we need to expose test functionality, it should
+			// be done with a function contained in the server.
+			server.lock.Lock()
+			defer server.lock.Unlock()
+			expectCompletions(t, server, entry, testCase.prefix, testCase.expected)
 		})
 	}
 }
 
-func expectCompletions(t *testing.T, lspServer *server, entry *fileEntry, prefix string, expectedParts []string) {
+func expectCompletions(t *testing.T, server *server, entry *fileEntry, prefix string, expectedParts []string) {
 	t.Helper()
-	completions := lspServer.findPrefixCompletions(context.Background(), entry, symbolName{"buf", "lsp", "test", "v1"}, prefix)
+	completions := server.findPrefixCompletions(context.Background(), entry, symbolName{"buf", "lsp", "test", "v1"}, prefix)
 	for _, expectedPart := range expectedParts {
 		if _, ok := completions[expectedPart]; !ok {
 			got := make([]string, 0, len(completions))
@@ -155,21 +157,21 @@ func expectCompletions(t *testing.T, lspServer *server, entry *fileEntry, prefix
 	}
 }
 
-func newTestBufLspWith(t *testing.T, fileName string) (*server, protocol.DocumentURI, error) {
+func newTestServerWithFilePath(t *testing.T, filePath string) (*server, protocol.DocumentURI, error) {
 	t.Helper()
-	lspServer, err := newTestBufLsp(t)
+	server, err := newTestServer(t)
 	if err != nil {
 		return nil, "", err
 	}
-	entry, err := openFile(context.Background(), lspServer, fileName)
+	entry, err := openFile(context.Background(), server, filePath)
 	if err != nil {
 		return nil, "", err
 	}
-	return lspServer, entry, nil
+	return server, entry, nil
 }
 
-func openFile(ctx context.Context, lspServer *server, fileName string) (protocol.DocumentURI, error) {
-	fileReader, err := os.Open(fileName)
+func openFile(ctx context.Context, server *server, filePath string) (protocol.DocumentURI, error) {
+	fileReader, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -179,23 +181,26 @@ func openFile(ctx context.Context, lspServer *server, fileName string) (protocol
 		return "", err
 	}
 
-	absPath, err := filepath.Abs(fileName)
+	absPath, err := filepath.Abs(filePath)
 	if err != nil {
 		return "", err
 	}
 	fileURI := uri.File(absPath)
-	if err := lspServer.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
-		TextDocument: protocol.TextDocumentItem{
-			URI:  fileURI,
-			Text: string(fileData),
+	if err := server.DidOpen(
+		ctx,
+		&protocol.DidOpenTextDocumentParams{
+			TextDocument: protocol.TextDocumentItem{
+				URI:  fileURI,
+				Text: string(fileData),
+			},
 		},
-	}); err != nil {
+	); err != nil {
 		return "", err
 	}
 	return fileURI, nil
 }
 
-func newTestBufLsp(tb testing.TB) (*server, error) {
+func newTestServer(tb testing.TB) (*server, error) {
 	tb.Helper()
 	use := "test"
 	stdout := bytes.NewBuffer(nil)
@@ -247,7 +252,7 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 		return nil, err
 	}
 
-	lspServer, err := newServer(
+	server, err := newServer(
 		context.Background(),
 		container.Logger(),
 		tracing.NewTracer(container.Tracer()),
@@ -258,10 +263,10 @@ func newTestBufLsp(tb testing.TB) (*server, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := lspServer.Initialize(context.Background(), &protocol.InitializeParams{}); err != nil {
+	if _, err := server.Initialize(context.Background(), &protocol.InitializeParams{}); err != nil {
 		return nil, err
 	}
-	return lspServer, nil
+	return server, nil
 }
 
 func newEnvFunc(tb testing.TB, cacheDirPath string) func(string) map[string]string {
