@@ -626,8 +626,11 @@ func (s *server) moduleKeyToCachePath(
 // Parses a module key out of the cache path. This is the inverse of moduleKeyToCachePath.
 // Returns both the module key and the module file path that the cache path represents.
 func (s *server) cachePathToModuleKey(path string) (bufmodule.ModuleKey, string, error) {
+	if !s.isFilePathInCachedRemoteModule(path) {
+		return nil, "", fmt.Errorf("invalid temporary file path: %s", path)
+	}
+	// TODO: Replace with normalpath.Rel
 	path = strings.TrimPrefix(path, s.moduleCacheDirPath())
-	normalpath.Components(path)
 	parts := strings.Split(path, "/")
 	if len(parts) < 4 {
 		return nil, "", fmt.Errorf("invalid temporary file path: %s", path)
