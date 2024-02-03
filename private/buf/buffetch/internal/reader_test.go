@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -404,8 +405,8 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 	require.NoError(t, readBucketCloser.Close())
 }
 
-func testNewTerminateAtFileNamesFunc(terminateFileNames ...string) TerminateFunc {
-	return TerminateFunc(
+func testNewTerminateAtFileNamesFunc(terminateFileNames ...string) buftarget.TerminateFunc {
+	return buftarget.TerminateFunc(
 		func(
 			ctx context.Context,
 			bucket storage.ReadBucket,

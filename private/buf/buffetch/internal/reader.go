@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -234,7 +235,7 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (_ ReadBucketCloser, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
@@ -293,7 +294,7 @@ func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (ReadWriteBucket, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
@@ -305,8 +306,8 @@ func (r *reader) getProtoFileBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
-	terminateFunc TerminateFunc,
-	protoFileTerminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
+	protoFileTerminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
@@ -325,7 +326,7 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (_ ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
@@ -541,7 +542,7 @@ func getReadBucketCloserForBucket(
 	logger *zap.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
 	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, logger, inputBucket, inputSubDirPath, terminateFunc)
 	if err != nil {
@@ -589,7 +590,7 @@ func getReadWriteBucketForOS(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (ReadWriteBucket, error) {
 	inputDirPath = normalpath.Normalize(inputDirPath)
 	absInputDirPath, err := normalpath.NormalizeAndAbsolute(inputDirPath)
@@ -700,8 +701,8 @@ func getReadBucketCloserForOSProtoFile(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	protoFilePath string,
-	terminateFunc TerminateFunc,
-	protoFileTerminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
+	protoFileTerminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
 	// First, we figure out which directory we consider to be the module that encapsulates
 	// this ProtoFileRef. If we find a buf.yaml or buf.work.yaml, then we use that as the directory. If we
@@ -849,7 +850,7 @@ func getMapPathAndSubDirPath(
 	logger *zap.Logger,
 	inputBucket storage.ReadBucket,
 	inputSubDirPath string,
-	terminateFunc TerminateFunc,
+	terminateFunc buftarget.TerminateFunc,
 ) (mapPath string, subDirPath string, terminate bool, retErr error) {
 	inputSubDirPath, err := normalpath.NormalizeAndValidate(inputSubDirPath)
 	if err != nil {
@@ -939,8 +940,8 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getReadBucketCloserOptions struct {
-	terminateFunc          TerminateFunc
-	protoFileTerminateFunc TerminateFunc
+	terminateFunc          buftarget.TerminateFunc
+	protoFileTerminateFunc buftarget.TerminateFunc
 	copyToInMemory         bool
 }
 
@@ -949,7 +950,7 @@ func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
 }
 
 type getReadWriteBucketOptions struct {
-	terminateFunc TerminateFunc
+	terminateFunc buftarget.TerminateFunc
 }
 
 func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {
