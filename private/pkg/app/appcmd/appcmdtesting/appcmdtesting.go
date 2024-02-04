@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -133,8 +132,11 @@ func RunCommandExitCodeStderrContains(
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
+	if len(expectedStderrPartials) == 0 {
+		require.Empty(t, allStderr, requireErrorMessage(args, stdout, stderr))
+	}
 	for _, expectedPartial := range expectedStderrPartials {
-		assert.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
+		require.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 

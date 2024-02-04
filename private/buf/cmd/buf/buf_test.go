@@ -2321,7 +2321,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 	)
 }
 
-func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
+func testRunStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },

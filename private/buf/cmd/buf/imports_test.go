@@ -28,7 +28,8 @@ import (
 func TestValidNoImports(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "people"),
 	)
@@ -37,7 +38,8 @@ func TestValidNoImports(t *testing.T) {
 func TestValidImportFromCache(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "students"),
 	)
@@ -88,7 +90,8 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 func TestValidImportTransitiveFromCache(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "school"),
 	)
@@ -96,7 +99,7 @@ func TestValidImportTransitiveFromCache(t *testing.T) {
 
 func TestValidImportWKT(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
 		"build",
@@ -108,7 +111,7 @@ func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:import "nonexistent.proto": file does not exist`)},
+		filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:import "nonexistent.proto": file does not exist`),
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -118,7 +121,7 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, bufctl.ExitCodeFileAnnotation,
-		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:`) + `6:8:import "people/v1/people_nonexistent.proto": file does not exist`},
+		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:`)+`6:8:import "people/v1/people_nonexistent.proto": file does not exist`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)
@@ -128,9 +131,13 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 	t.Parallel()
 	// We actually want to verify that there are no warnings now. Transitive dependencies not declared
 	// in your buf.yaml are acceptable now.
-	testRunStderrWithCache(
+	testRunStderrContainsWithCache(
 		t, nil, 0,
-		[]string{},
+		[]string{
+			`WARN`,
+			filepath.FromSlash(`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`),
+			filepath.FromSlash(`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`),
+		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
 	)
@@ -142,7 +149,7 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 		t, nil, 0,
 		// We actually want to verify that there are no warnings now. deps in your v1 buf.yaml may actually
 		// have an effect - they can affect your buf.lock.
-		[]string{},
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),
 	)
@@ -150,7 +157,7 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 
 func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
 		"build",
@@ -160,7 +167,7 @@ func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 
 func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
 		"graph",
@@ -168,7 +175,23 @@ func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 	)
 }
 
-func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
+func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderr,
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
+			}
+		},
+		stdin,
+		args...,
+	)
+}
+
+func testRunStderrContainsWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStderrContains(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
