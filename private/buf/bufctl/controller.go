@@ -718,11 +718,18 @@ func (c *controller) getImageForWorkspace(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
-	return c.buildImage(
+	image, err := c.buildImage(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		functionOptions,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.warnUnconfiguredTransitiveImports(ctx, workspace, image); err != nil {
+		return nil, err
+	}
+	return image, nil
 }
 
 func (c *controller) getWorkspaceForProtoFileRef(
@@ -1023,6 +1030,9 @@ func (c *controller) buildTargetImageWithConfigs(
 		if err != nil {
 			return nil, err
 		}
+		if err := c.warnUnconfiguredTransitiveImports(ctx, workspace, image); err != nil {
+			return nil, err
+		}
 		imageWithConfigs = append(
 			imageWithConfigs,
 			newImageWithConfig(
@@ -1038,6 +1048,74 @@ func (c *controller) buildTargetImageWithConfigs(
 		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	return imageWithConfigs, nil
+}
+
+// warnUnconfiguredTransitiveImports will print a warning whenever a file imports another file that
+// is not in a local Module, or is not in the declared list of dependencies in your buf.yaml.
+func (c *controller) warnUnconfiguredTransitiveImports(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	image bufimage.Image,
+) error {
+	// Construct a struct map of all the ModuleFullName strings of the configured buf.yaml
+	// Module dependencies, and the local Modules. These are considered OK to depend on
+	// for non-imports in the Image.
+	configuredModuleFullNameStrings, err := slicesext.MapError(
+		workspace.ConfiguredDepModuleRefs(),
+		func(moduleRef bufmodule.ModuleRef) (string, error) {
+			moduleFullName := moduleRef.ModuleFullName()
+			if moduleFullName == nil {
+				return "", syserror.New("ModuleFullName nil on ModuleRef")
+			}
+			return moduleFullName.String(), nil
+		},
+	)
+	if err != nil {
+		return err
+	}
+	configuredModuleFullNameStringMap := slicesext.ToStructMap(configuredModuleFullNameStrings)
+	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
+		if moduleFullName := localModule.ModuleFullName(); moduleFullName != nil {
+			configuredModuleFullNameStringMap[moduleFullName.String()] = struct{}{}
+		}
+	}
+
+	// Construct a map from Image file path -> ModuleFullName string.
+	//
+	// If a given file in the Image did not have a ModuleFullName, it came from a local unnamed Module
+	// in the Workspace, and we're safe to ignore it with respect to calculating the undeclared
+	// transitive imports.
+	pathToModuleFullNameString := make(map[string]string)
+	for _, imageFile := range image.Files() {
+		// If nil, this came from a local unnamed Module in the Workspace, and we're safe to ignore.
+		if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+			pathToModuleFullNameString[imageFile.Path()] = moduleFullName.String()
+		}
+	}
+
+	for _, imageFile := range image.Files() {
+		// Ignore imports. We only care about non-imports.
+		if imageFile.IsImport() {
+			continue
+		}
+		for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
+			moduleFullNameString, ok := pathToModuleFullNameString[importPath]
+			if !ok {
+				// The import was from a local unnamed Module in the Workspace.
+				continue
+			}
+			if _, ok := configuredModuleFullNameStringMap[moduleFullNameString]; !ok {
+				c.logger.Sugar().Warnf(
+					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q. Declare %q in the deps key in your buf.yaml`,
+					imageFile.Path(),
+					importPath,
+					moduleFullNameString,
+					moduleFullNameString,
+				)
+			}
+		}
+	}
+	return nil
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
