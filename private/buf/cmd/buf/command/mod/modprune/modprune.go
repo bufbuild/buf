@@ -58,5 +58,5 @@ func run(
 	if err != nil {
 		return err
 	}
-	return internal.Prune(ctx, controller, workspaceDepManager, dirPath)
+	return internal.Prune(ctx, container.Logger(), controller, workspaceDepManager, dirPath)
 }

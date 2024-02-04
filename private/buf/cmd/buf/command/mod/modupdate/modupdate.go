@@ -166,5 +166,5 @@ func run(
 	}
 	// Prune the buf.lock. This also verifies the workspace builds again.
 	// Building also has the side effect of doing tamper-proofing.
-	return internal.Prune(ctx, controller, workspaceDepManager, dirPath)
+	return internal.Prune(ctx, logger, controller, workspaceDepManager, dirPath)
 }

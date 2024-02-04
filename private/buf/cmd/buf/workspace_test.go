@@ -367,7 +367,7 @@ func TestWorkspaceDetached(t *testing.T) {
 			nil,
 			bufctl.ExitCodeFileAnnotation,
 			``,
-			filepath.FromSlash(`Failure: testdata/workspace/success/`+dirPath+`/proto/rpc.proto: import "request.proto": file does not exist`),
+			filepath.FromSlash(`testdata/workspace/success/`+dirPath+`/proto/rpc.proto:5:8:import "request.proto": file does not exist`),
 			"build",
 			filepath.Join("testdata", "workspace", "success", dirPath, "proto"),
 		)

@@ -32,7 +32,7 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		``,
-		filepath.FromSlash(`Failure: testdata/workspace/fail/symlink/b/b.proto: import "c.proto": file does not exist`),
+		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "symlink"),
 	)
@@ -41,7 +41,7 @@ func TestWorkspaceSymlinkFail(t *testing.T) {
 		nil,
 		bufctl.ExitCodeFileAnnotation,
 		``,
-		filepath.FromSlash(`Failure: testdata/workspace/fail/v2/symlink/b/b.proto: import "c.proto": file does not exist`),
+		filepath.FromSlash(`testdata/workspace/fail/v2/symlink/b/b.proto:5:8:import "c.proto": file does not exist`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "symlink"),
 	)

@@ -718,9 +718,6 @@ func (c *controller) getImageForWorkspace(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
-	if err := c.warnDeps(workspace); err != nil {
-		return nil, err
-	}
 	return c.buildImage(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
@@ -985,9 +982,6 @@ func (c *controller) buildTargetImageWithConfigs(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) ([]ImageWithConfig, error) {
-	if err := c.warnDeps(workspace); err != nil {
-		return nil, err
-	}
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
@@ -1044,35 +1038,6 @@ func (c *controller) buildTargetImageWithConfigs(
 		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	return imageWithConfigs, nil
-}
-
-// warnDeps warns on unused deps in your buf.yaml.
-//
-// Only call this if you are building an image. This results in ModuleDeps calls that
-// you don't want to invoke unless you are building - they'll result in import reading,
-// which can cause issues. If this happens for all workspaces, you'll see integration
-// test errors, and correctly so. In the pre-refactor world, we only did this with
-// image building, so we keep it that way for now.
-func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
-	// TODO: Disable this. This function causes a MASSIVE performance hit. Investigate.
-	// It's somewhat obvious why it does if you are doing i.e. --path, but for complete builds,
-	// this causes a 2x perf hit, which doesn't make sense.
-	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
-	if err != nil {
-		return err
-	}
-	for _, malformedDep := range malformedDeps {
-		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUnused:
-			c.logger.Sugar().Warnf(
-				`Module %s is declared in your buf.yaml deps but is unused.`,
-				malformedDep.ModuleFullName(),
-			)
-		default:
-			return fmt.Errorf("unknown MalformedDepType: %v", t)
-		}
-	}
-	return nil
 }
 
 // handleFileAnnotationSetError will attempt to handle the error as a FileAnnotationSet, and if so, print
