@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protosource
+package bufprotosource
 
 var (
 	csharpNamespacePathKey      = getPathKey([]int32{8, 37})

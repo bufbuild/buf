@@ -21,7 +21,7 @@
 // Testing is currently implicitly done through the bufcheck packages, however
 // if this were to be split out into a separate library, it would need a separate
 // testing suite.
-package protosource
+package bufprotosource
 
 import (
 	"context"
