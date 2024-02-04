@@ -50,11 +50,11 @@ func (h *handler) Check(
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) error {
-	previousFiles, err := bufprotosource.NewFilesUnstable(ctx, previousImage)
+	previousFiles, err := bufprotosource.NewFiles(ctx, previousImage)
 	if err != nil {
 		return err
 	}
-	files, err := bufprotosource.NewFilesUnstable(ctx, image)
+	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
 		return err
 	}

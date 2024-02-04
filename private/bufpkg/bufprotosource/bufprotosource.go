@@ -472,12 +472,9 @@ func NewFile(imageFile bufimage.ImageFile) (File, error) {
 	return newFile(imageFile)
 }
 
-// NewFilesUnstable converts the input Image into Files.
-//
-// This may be done concurrently and the returned Files may not be in the same
-// order as the input FileDescriptors. If ordering matters, use NewFile.
-func NewFilesUnstable(ctx context.Context, image bufimage.Image) ([]File, error) {
-	return newFilesUnstable(ctx, image)
+// NewFiles converts the input Image into Files.
+func NewFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
+	return newFiles(ctx, image)
 }
 
 // SortFiles sorts the Files by FilePath.

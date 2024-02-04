@@ -183,7 +183,7 @@ func getProtosourceFiles(
 		}
 		return nil, err
 	}
-	return bufprotosource.NewFilesUnstable(ctx, image)
+	return bufprotosource.NewFiles(ctx, image)
 }
 
 func getGolangFileData(

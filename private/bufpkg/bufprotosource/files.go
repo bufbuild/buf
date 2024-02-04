@@ -16,25 +16,29 @@ package bufprotosource
 
 import (
 	"context"
+	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8
 
-func newFilesUnstable(ctx context.Context, image bufimage.Image) ([]File, error) {
-	imageFiles := image.Files()
-	if len(imageFiles) == 0 {
+func newFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
+	indexedImageFiles := slicesext.ToIndexed(image.Files())
+	if len(indexedImageFiles) == 0 {
 		return nil, nil
 	}
 
-	chunkSize := len(imageFiles) / thread.Parallelism()
+	// Why were we chunking this? We could just send each individual call to thread.Parallelize
+	// and let thread.Parallelize deal with what to do.
+
+	chunkSize := len(indexedImageFiles) / thread.Parallelism()
 	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
-		files := make([]File, 0, len(imageFiles))
-		for _, imageFile := range imageFiles {
-			file, err := NewFile(imageFile)
+		files := make([]File, 0, len(indexedImageFiles))
+		for _, indexedImageFile := range indexedImageFiles {
+			file, err := NewFile(indexedImageFile.Value)
 			if err != nil {
 				return nil, err
 			}
@@ -43,65 +47,29 @@ func newFilesUnstable(ctx context.Context, image bufimage.Image) ([]File, error)
 		return files, nil
 	}
 
-	chunks := imageFilesToChunks(imageFiles, chunkSize)
-	resultC := make(chan *result, len(chunks))
-	for _, imageFileChunk := range chunks {
-		imageFileChunk := imageFileChunk
-		go func() {
-			files := make([]File, 0, len(imageFileChunk))
-			for _, imageFile := range imageFileChunk {
-				file, err := NewFile(imageFile)
+	chunks := slicesext.ToChunks(indexedImageFiles, chunkSize)
+	indexedFiles := make([]slicesext.Indexed[File], 0, len(indexedImageFiles))
+	jobs := make([]func(context.Context) error, len(chunks))
+	var lock sync.Mutex
+	for i, indexedImageFileChunk := range chunks {
+		indexedImageFileChunk := indexedImageFileChunk
+		jobs[i] = func(ctx context.Context) error {
+			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedImageFileChunk))
+			for _, indexedImageFile := range indexedImageFileChunk {
+				file, err := NewFile(indexedImageFile.Value)
 				if err != nil {
-					resultC <- newResult(nil, err)
-					return
+					return err
 				}
-				files = append(files, file)
+				iIndexedFiles = append(iIndexedFiles, slicesext.Indexed[File]{Value: file, Index: indexedImageFile.Index})
 			}
-			resultC <- newResult(files, nil)
-		}()
-	}
-	files := make([]File, 0, len(imageFiles))
-	var err error
-	for i := 0; i < len(chunks); i++ {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case result := <-resultC:
-			files = append(files, result.Files...)
-			err = multierr.Append(err, result.Err)
+			lock.Lock()
+			indexedFiles = append(indexedFiles, iIndexedFiles...)
+			lock.Unlock()
+			return nil
 		}
 	}
-	if err != nil {
+	if err := thread.Parallelize(ctx, jobs); err != nil {
 		return nil, err
 	}
-	return files, nil
-}
-
-func imageFilesToChunks(s []bufimage.ImageFile, chunkSize int) [][]bufimage.ImageFile {
-	var chunks [][]bufimage.ImageFile
-	if len(s) == 0 {
-		return chunks
-	}
-	if chunkSize <= 0 {
-		return [][]bufimage.ImageFile{s}
-	}
-	c := make([]bufimage.ImageFile, len(s))
-	copy(c, s)
-	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
-	for chunkSize < len(c) {
-		c, chunks = c[chunkSize:], append(chunks, c[0:chunkSize:chunkSize])
-	}
-	return append(chunks, c)
-}
-
-type result struct {
-	Files []File
-	Err   error
-}
-
-func newResult(files []File, err error) *result {
-	return &result{
-		Files: files,
-		Err:   err,
-	}
+	return slicesext.IndexedToSortedValues(indexedFiles), nil
 }

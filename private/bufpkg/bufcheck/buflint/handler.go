@@ -53,7 +53,7 @@ func (h *handler) Check(
 	config bufconfig.LintConfig,
 	image bufimage.Image,
 ) error {
-	files, err := bufprotosource.NewFilesUnstable(ctx, image)
+	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
 		return err
 	}
