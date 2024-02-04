@@ -19,7 +19,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
 // IgnoreFunc is an ignore function.
@@ -33,10 +33,10 @@ import (
 // and RPC_RESPONSE_STANDARD_NAME, we want to check both the input/output type, and the method.
 //
 // Any descriptor or location may be nil.
-type IgnoreFunc func(id string, descriptors []protosource.Descriptor, locations []protosource.Location) bool
+type IgnoreFunc func(id string, descriptors []bufprotosource.Descriptor, locations []bufprotosource.Location) bool
 
 // CheckFunc is a check function.
-type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error)
+type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error)
 
 // Rule provides a base embeddable rule.
 type Rule struct {
@@ -92,7 +92,7 @@ func (c *Rule) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ruleJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
+func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []bufprotosource.File, files []bufprotosource.File) (_ []bufanalysis.FileAnnotation, retErr error) {
 	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
 }
 

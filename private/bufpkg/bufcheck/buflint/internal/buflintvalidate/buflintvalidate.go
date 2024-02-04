@@ -16,8 +16,8 @@ package buflintvalidate
 
 import (
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/reflect/protodesc"
 )
@@ -31,8 +31,8 @@ const disabledFieldNumberInMesageConstraints = 1
 //  1. permit _some_ value
 //  2. have a type compatible with the field it validates.
 func Check(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
-	files []protosource.File,
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
+	files []bufprotosource.File,
 ) error {
 	fileDescriptors := make([]protodescriptor.FileDescriptor, 0, len(files))
 	for _, file := range files {
@@ -69,9 +69,9 @@ func Check(
 }
 
 func checkForMessage(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
-	message protosource.Message,
+	message bufprotosource.Message,
 ) error {
 	messageDescriptor, err := getReflectMessageDescriptor(descriptorResolver, message)
 	if err != nil {

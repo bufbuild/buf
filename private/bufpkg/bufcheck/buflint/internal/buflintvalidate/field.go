@@ -21,7 +21,7 @@ import (
 	"unicode/utf8"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/resolver"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -147,9 +147,9 @@ var (
 // checkForField validates that protovalidate rules defined for this field are
 // valid, not including CEL expressions.
 func checkForField(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	descriptorResolver protodesc.Resolver,
-	field protosource.Field,
+	field bufprotosource.Field,
 ) error {
 	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
 	if err != nil {

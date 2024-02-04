@@ -16,7 +16,7 @@ package internal
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
 // RuleBuilder is a rule builder.
@@ -88,7 +88,7 @@ func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
 }
 
 func newNopCheckFunc(
-	f func(string, IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error),
+	f func(string, IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
 ) func(ConfigBuilder) (CheckFunc, error) {
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil

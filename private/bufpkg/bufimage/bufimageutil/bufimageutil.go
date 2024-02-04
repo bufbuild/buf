@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -41,19 +41,6 @@ var (
 	ErrImageFilterTypeIsImport = errors.New("type declared in imported module")
 )
 
-// NewInputFiles converts the ImageFiles to InputFiles.
-//
-// Since protosource is a pkg package, it cannot depend on bufmodule, which has the
-// definition for bufmodule.ModuleFullName, so we have our own interfaces for this
-// in protosource. Given Go's type system, we need to do a conversion here.
-func NewInputFiles(imageFiles []bufimage.ImageFile) []protosource.InputFile {
-	inputFiles := make([]protosource.InputFile, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		inputFiles[i] = newInputFile(imageFile)
-	}
-	return inputFiles
-}
-
 // FreeMessageRangeStrings gets the free MessageRange strings for the target files.
 //
 // Recursive.
@@ -68,7 +55,7 @@ func FreeMessageRangeStrings(
 		if imageFile == nil {
 			return nil, fmt.Errorf("unexpected nil image file: %q", filePath)
 		}
-		file, err := protosource.NewFile(newInputFile(imageFile))
+		file, err := bufprotosource.NewFile(imageFile)
 		if err != nil {
 			return nil, err
 		}
@@ -893,12 +880,12 @@ func (t *transitiveClosure) exploreOptionSingularValueForAny(
 
 func freeMessageRangeStringsRec(
 	s []string,
-	message protosource.Message,
+	message bufprotosource.Message,
 ) []string {
 	for _, nestedMessage := range message.Messages() {
 		s = freeMessageRangeStringsRec(s, nestedMessage)
 	}
-	if e := protosource.FreeMessageRangeString(message); e != "" {
+	if e := bufprotosource.FreeMessageRangeString(message); e != "" {
 		return append(s, e)
 	}
 	return s

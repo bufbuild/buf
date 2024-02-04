@@ -20,8 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -51,11 +50,11 @@ func (h *handler) Check(
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) error {
-	previousFiles, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(previousImage.Files())...)
+	previousFiles, err := bufprotosource.NewFilesUnstable(ctx, previousImage)
 	if err != nil {
 		return err
 	}
-	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
+	files, err := bufprotosource.NewFilesUnstable(ctx, image)
 	if err != nil {
 		return err
 	}

@@ -17,22 +17,24 @@ package bufprotosource
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8
 
-func newFilesUnstable(ctx context.Context, inputFiles ...InputFile) ([]File, error) {
-	if len(inputFiles) == 0 {
+func newFilesUnstable(ctx context.Context, image bufimage.Image) ([]File, error) {
+	imageFiles := image.Files()
+	if len(imageFiles) == 0 {
 		return nil, nil
 	}
 
-	chunkSize := len(inputFiles) / thread.Parallelism()
+	chunkSize := len(imageFiles) / thread.Parallelism()
 	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
-		files := make([]File, 0, len(inputFiles))
-		for _, inputFile := range inputFiles {
-			file, err := NewFile(inputFile)
+		files := make([]File, 0, len(imageFiles))
+		for _, imageFile := range imageFiles {
+			file, err := NewFile(imageFile)
 			if err != nil {
 				return nil, err
 			}
@@ -41,14 +43,14 @@ func newFilesUnstable(ctx context.Context, inputFiles ...InputFile) ([]File, err
 		return files, nil
 	}
 
-	chunks := inputFilesToChunks(inputFiles, chunkSize)
+	chunks := imageFilesToChunks(imageFiles, chunkSize)
 	resultC := make(chan *result, len(chunks))
-	for _, inputFileChunk := range chunks {
-		inputFileChunk := inputFileChunk
+	for _, imageFileChunk := range chunks {
+		imageFileChunk := imageFileChunk
 		go func() {
-			files := make([]File, 0, len(inputFileChunk))
-			for _, inputFile := range inputFileChunk {
-				file, err := NewFile(inputFile)
+			files := make([]File, 0, len(imageFileChunk))
+			for _, imageFile := range imageFileChunk {
+				file, err := NewFile(imageFile)
 				if err != nil {
 					resultC <- newResult(nil, err)
 					return
@@ -58,7 +60,7 @@ func newFilesUnstable(ctx context.Context, inputFiles ...InputFile) ([]File, err
 			resultC <- newResult(files, nil)
 		}()
 	}
-	files := make([]File, 0, len(inputFiles))
+	files := make([]File, 0, len(imageFiles))
 	var err error
 	for i := 0; i < len(chunks); i++ {
 		select {
@@ -75,15 +77,15 @@ func newFilesUnstable(ctx context.Context, inputFiles ...InputFile) ([]File, err
 	return files, nil
 }
 
-func inputFilesToChunks(s []InputFile, chunkSize int) [][]InputFile {
-	var chunks [][]InputFile
+func imageFilesToChunks(s []bufimage.ImageFile, chunkSize int) [][]bufimage.ImageFile {
+	var chunks [][]bufimage.ImageFile
 	if len(s) == 0 {
 		return chunks
 	}
 	if chunkSize <= 0 {
-		return [][]InputFile{s}
+		return [][]bufimage.ImageFile{s}
 	}
-	c := make([]InputFile, len(s))
+	c := make([]bufimage.ImageFile, len(s))
 	copy(c, s)
 	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
 	for chunkSize < len(c) {
