@@ -15,7 +15,6 @@
 package protosource
 
 import (
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -209,8 +208,4 @@ func (f *field) PackedLocation() Location {
 
 func (f *field) ExtendeeLocation() Location {
 	return f.getLocation(f.extendeePath)
-}
-
-func (f *field) PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value {
-	return f.optionExtensionDescriptor.PresentFields()
 }

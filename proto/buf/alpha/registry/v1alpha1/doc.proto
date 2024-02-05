@@ -201,8 +201,6 @@ message Service {
   ServiceOptions service_options = 8;
   // implicitly_deprecated is true if its enclosing file is deprecated.
   bool implicitly_deprecated = 9;
-
-  repeated Option options = 10;
 }
 
 // ServiceOptions provides information for the documentation of options for a given service.
@@ -223,8 +221,6 @@ message Method {
   MethodOptions method_options = 5;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
-
-  repeated Option options = 7;
 }
 
 // MethodOptions provides information for the documentation of options for a method.
@@ -285,8 +281,6 @@ message EnumValue {
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
   EnumValueOptions enum_value_options = 4;
-
-  repeated Option options = 5;
 }
 
 // EnumValueOptions provides information for the documentation of options for an enum value.
@@ -326,7 +320,6 @@ message Message {
   MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
-  repeated Option options = 12;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -373,8 +366,6 @@ message Field {
   string extendee = 9;
 
   FieldOptions field_options = 10;
-
-  repeated Option options = 11;
 }
 
 // FieldOptions provides information for the documentation of options for a field.
@@ -387,12 +378,15 @@ message FieldOptions {
   int32 jstype = 4;
 }
 
-// Option provides information for a descriptor option that can be show in documentations.
-message Option {
-  // The name of the option.
+// DescriptorOption provides information for a descriptor option that can be rendered in documentation.
+message DescriptorOption {
+  // The name of the option. Custom options will be in the form:
+  // [fully.qualified.extension.Name]
   string name = 1;
   // The value of an option.
   LiteralValue value = 2;
+  // Indicates whether this is a custom option or not.
+  bool is_custom = 3;
 }
 
 // MessageLiteral represents an option value for a type that is a message.
@@ -401,7 +395,7 @@ message MessageLiteral {
 }
 
 // ArrayLiteral represents an option value for a type that is a repeated field.
-// Maps are also represented as ArrayLiterals where each elements are a MessageLiteral
+// Maps are also represented using an ArrayLiteral, where each map entry is a MessageLiteral
 // that contains a key and value field.
 message ArrayLiteral {
   repeated LiteralValue elements = 1;

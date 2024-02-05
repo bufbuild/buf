@@ -152,6 +152,9 @@ type OptionExtensionDescriptor interface {
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
+	// PresentFields returns a map of field descriptor to value for all
+	// option fields present. This includes both normal option fields
+	// and extension fields (aka custom options).
 	PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value
 }
 

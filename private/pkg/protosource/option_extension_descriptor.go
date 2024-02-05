@@ -128,14 +128,14 @@ func isDescendantPath(descendant, ancestor []int32) bool {
 }
 
 func (o *optionExtensionDescriptor) PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value {
-	// Note: This does not bother to handle unrecognized extensions.
+	// Note: This does not bother to handle unrecognized fields.
 	// Should not be a problem since descriptors models in the buf CLI codebase should have them
 	// all correctly parsed and known.
 	msg := o.message.ProtoReflect()
-	exts := map[protoreflect.FieldDescriptor]protoreflect.Value{}
+	fields := map[protoreflect.FieldDescriptor]protoreflect.Value{}
 	msg.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		exts[fieldDescriptor] = value
+		fields[fieldDescriptor] = value
 		return true
 	})
-	return exts
+	return fields
 }
