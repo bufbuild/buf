@@ -117,6 +117,27 @@ func RunCommandExitCodeStderr(
 	)
 }
 
+// RunCommandExitCodesStderr runs the command and compares the exit codes and stderr output.
+func RunCommandExitCodesStderr(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCodes []int,
+	expectedStderr string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCodes(t, newCommand, expectedExitCodes, newEnv, stdin, stdout, stderr, args...)
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
+}
+
 // RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
 // with the passed partial messages.
 func RunCommandExitCodeStderrContains(
@@ -192,6 +213,31 @@ func RunCommandExitCode(
 	stderr io.Writer,
 	args ...string,
 ) {
+	RunCommandExitCodes(t, newCommand, []int{expectedExitCode}, newEnv, stdin, stdout, stderr, args...)
+}
+
+// RunCommandExitCodes runs the command and compares the exit code to the expected
+// exit codes.
+//
+// It would be nice if we could do:
+//
+//	type IntOrInts interface {
+//	  int | []int
+//	}
+//
+//	func RunCommandExitCode[I IntOrInts](expectedExitCode I)
+//
+// However we can't: https://github.com/golang/go/issues/49206
+func RunCommandExitCodes(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCodes []int,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	stdout io.Writer,
+	stderr io.Writer,
+	args ...string,
+) {
 	// make the use something different than the actual command
 	// to make sure that all code is binary-name-agnostic.
 	use := "test"
@@ -224,12 +270,16 @@ func RunCommandExitCode(
 			newCommand(use),
 		),
 	)
-	require.Equal(
-		t,
-		expectedExitCode,
-		exitCode,
-		requireErrorMessage(args, stdoutCopy, stderrCopy),
-	)
+	if slicesext.Count(expectedExitCodes, func(i int) bool { return exitCode == i }) == 0 {
+		require.True(
+			t,
+			false,
+			"expected exit code %d to be one of %v\n:%s",
+			exitCode,
+			expectedExitCodes,
+			requireErrorMessage(args, stdoutCopy, stderrCopy),
+		)
+	}
 }
 
 func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
