@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -200,7 +199,6 @@ func testNewWorkspaceProvider(t *testing.T, testModuleDatas ...bufmoduletesting.
 	return NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
-		bufapi.NopClientProvider,
 		bsrProvider,
 		bsrProvider,
 		bsrProvider,

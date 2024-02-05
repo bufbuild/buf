@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -57,7 +58,9 @@ func Migrate(
 	ctx context.Context,
 	messageWriter io.Writer,
 	storageProvider storageos.Provider,
+	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider.
 	clientProvider bufapi.ClientProvider,
+	commitProvider bufmodule.CommitProvider,
 	workspaceDirPaths []string,
 	moduleDirPaths []string,
 	generateTemplatePaths []string,
@@ -117,6 +120,7 @@ func Migrate(
 	migrator := newMigrator(
 		messageWriter,
 		clientProvider,
+		commitProvider,
 		bucket,
 		destionationDirectory,
 	)

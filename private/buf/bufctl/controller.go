@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -141,7 +140,6 @@ func NewController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -155,7 +153,6 @@ func NewController(
 		logger,
 		tracer,
 		container,
-		clientProvider,
 		graphProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
@@ -178,7 +175,6 @@ type controller struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
-	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
@@ -201,7 +197,6 @@ func newController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -215,7 +210,6 @@ func newController(
 		logger:             logger,
 		tracer:             tracer,
 		container:          container,
-		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
@@ -247,7 +241,6 @@ func newController(
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
 		tracer,
-		clientProvider,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
