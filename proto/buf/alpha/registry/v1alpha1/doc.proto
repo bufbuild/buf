@@ -393,6 +393,8 @@ message FieldLiteral {
 
 // MessageLiteral represents an option value for a type that is a message.
 message MessageLiteral {
+  // Map of field names to value. Extension field names will be in the form:
+  // [fully.qualified.extension.Name].
   map<string, LiteralValue> fields = 1;
 }
 

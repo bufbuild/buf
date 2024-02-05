@@ -2397,6 +2397,8 @@ type MessageLiteral struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Map of field names to value. Extension field names will be in the form:
+	// [fully.qualified.extension.Name].
 	Fields map[string]*LiteralValue `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
