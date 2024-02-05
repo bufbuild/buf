@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -185,4 +186,31 @@ func protoGraphToProtoLegacyFederationGraph(
 		}
 	}
 	return protoLegacyFederationGraph
+}
+
+// We have to make sure this is updated if a field is added?
+// TODO: Can we automate this to make sure this is true?
+func protoLegacyFederationUploadRequestContentToProtoUploadRequestContent(
+	registry string,
+	protoLegacyFederationUploadRequestContent *federationv1beta1.UploadRequest_Content,
+) (*modulev1beta1.UploadRequest_Content, error) {
+	protoUploadRequestContent := &modulev1beta1.UploadRequest_Content{
+		ModuleRef:        protoLegacyFederationUploadRequestContent.ModuleRef,
+		DepRefs:          make([]*modulev1beta1.UploadRequest_DepRef, len(protoLegacyFederationUploadRequestContent.DepRefs)),
+		Files:            protoLegacyFederationUploadRequestContent.Files,
+		V1BufYamlFile:    protoLegacyFederationUploadRequestContent.V1BufYamlFile,
+		V1BufLockFile:    protoLegacyFederationUploadRequestContent.V1BufLockFile,
+		ScopedLabelRefs:  protoLegacyFederationUploadRequestContent.ScopedLabelRefs,
+		SourceControlUrl: protoLegacyFederationUploadRequestContent.SourceControlUrl,
+	}
+	for i, legacyDepRef := range protoLegacyFederationUploadRequestContent.DepRefs {
+		if legacyDepRef.Registry != registry {
+			return nil, syserror.Newf("tried to convert a legacy federation UploadRequest_Content to a module UploadRequest_Content with registry %q but found registry %q in DepRefs", registry, legacyDepRef.Registry)
+		}
+		protoUploadRequestContent.DepRefs[i] = &modulev1beta1.UploadRequest_DepRef{
+			ModuleRef: legacyDepRef.ModuleRef,
+			CommitId:  legacyDepRef.CommitId,
+		}
+	}
+	return protoUploadRequestContent, nil
 }

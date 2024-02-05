@@ -76,7 +76,27 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T) (string, string, er
 		}
 		return registries[0], registries[1], nil
 	default:
-		return "", "", fmt.Errorf("attempting to perform a BSR operation more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(registries, ", "))
+		return "", "", fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(registries, ", "))
+	}
+}
+
+func validateDepRegistries(primaryRegistry string, depRegistries []string) error {
+	switch len(depRegistries) {
+	case 0:
+		return nil
+	case 1, 2:
+		for _, depRegistry := range depRegistries {
+			if depRegistry != publicRegistry && depRegistry != primaryRegistry {
+				return fmt.Errorf("dependency must be on either %s or %s but was on %s", publicRegistry, primaryRegistry, depRegistry)
+			}
+			if primaryRegistry == publicRegistry && depRegistry != publicRegistry {
+				// Public to private was never allowed.
+				return fmt.Errorf("cannot have dependencies on %s modules from %s modules", primaryRegistry, depRegistry)
+			}
+		}
+		return nil
+	default:
+		return fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(depRegistries, ", "))
 	}
 }
 

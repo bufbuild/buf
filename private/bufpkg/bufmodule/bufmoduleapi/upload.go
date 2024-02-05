@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -41,7 +42,10 @@ import (
 // Commits will be returned in the order of the input Modules.
 func Upload(
 	ctx context.Context,
-	clientProvider bufapi.UploadServiceClientProvider,
+	clientProvider interface {
+		bufapi.LegacyFederationUploadServiceClientProvider
+		bufapi.UploadServiceClientProvider
+	},
 	targetLocalModulesAndTransitiveLocalDeps []bufmodule.Module,
 	options ...UploadOption,
 ) ([]bufmodule.Commit, error) {
@@ -65,10 +69,11 @@ func Upload(
 	// Validate we're all within one registry for now.
 	registries := slicesext.MapKeysToSortedSlice(registryMap)
 	if len(registries) > 1 {
-		// TODO: This messes up legacy federation.
-		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
+		// We don't allow the upload of content across multiple registries, but in the legacy federation
+		// case, we DO allow for depending on other registries.
+		return nil, fmt.Errorf("cannot upload content for multiple registries at once: %s", strings.Join(registries, ", "))
 	}
-	registry := registries[0]
+	primaryRegistry := registries[0]
 
 	// While the API allows different labels per reference, we don't have a use case for this
 	// in the CLI, so all references will have the same labels. We just pre-compute them now.
@@ -77,13 +82,16 @@ func Upload(
 		labelNameToProtoScopedLabelRef,
 	)
 	uploadedModuleOpaqueIDs := slicesext.ToStructMap(slicesext.Map(targetLocalModulesAndTransitiveLocalDeps, bufmodule.Module.OpaqueID))
-	protoUploadRequestContents, err := slicesext.MapError(
+	depRegistryMap := make(map[string]struct{})
+	protoLegacyFederationUploadRequestContents, err := slicesext.MapError(
 		targetLocalModulesAndTransitiveLocalDeps,
-		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-			return getProtoUploadRequestContent(
+		func(module bufmodule.Module) (*federationv1beta1.UploadRequest_Content, error) {
+			return getProtoLegacyFederationUploadRequestContent(
 				ctx,
 				protoScopedLabelRefs,
 				uploadedModuleOpaqueIDs,
+				depRegistryMap,
+				primaryRegistry,
 				module,
 			)
 		},
@@ -91,23 +99,58 @@ func Upload(
 	if err != nil {
 		return nil, err
 	}
-
-	response, err := clientProvider.UploadServiceClient(registry).Upload(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.UploadRequest{
-				Contents: protoUploadRequestContents,
-			},
-		),
-	)
-	if err != nil {
+	depRegistries := slicesext.MapKeysToSortedSlice(depRegistryMap)
+	if err := validateDepRegistries(primaryRegistry, depRegistries); err != nil {
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(protoUploadRequestContents) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(protoUploadRequestContents), len(response.Msg.Commits))
+
+	var protoCommits []*modulev1beta1.Commit
+	if len(depRegistries) > 0 && (len(depRegistries) > 1 || depRegistries[0] != primaryRegistry) {
+		// If we have dependencies on other registries, or we have multiple registries we depend on, we have
+		// to use legacy federation.
+		response, err := clientProvider.LegacyFederationUploadServiceClient(primaryRegistry).Upload(
+			ctx,
+			connect.NewRequest(
+				&federationv1beta1.UploadRequest{
+					Contents: protoLegacyFederationUploadRequestContents,
+				},
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+		protoCommits = response.Msg.Commits
+	} else {
+		protoUploadRequestContents, err := slicesext.MapError(
+			protoLegacyFederationUploadRequestContents,
+			func(protoLegacyFederationUploadRequestContent *federationv1beta1.UploadRequest_Content) (*modulev1beta1.UploadRequest_Content, error) {
+				return protoLegacyFederationUploadRequestContentToProtoUploadRequestContent(primaryRegistry, protoLegacyFederationUploadRequestContent)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		// If we only have a single registry, invoke the new API endpoint that does not allow
+		// for federation. Do this so that we can maintain federated API endpoint metrics.
+		response, err := clientProvider.UploadServiceClient(primaryRegistry).Upload(
+			ctx,
+			connect.NewRequest(
+				&modulev1beta1.UploadRequest{
+					Contents: protoUploadRequestContents,
+				},
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+		protoCommits = response.Msg.Commits
 	}
-	commits := make([]bufmodule.Commit, len(response.Msg.Commits))
-	for i, protoCommit := range response.Msg.Commits {
+
+	if len(protoCommits) != len(protoLegacyFederationUploadRequestContents) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(protoLegacyFederationUploadRequestContents), len(protoCommits))
+	}
+	commits := make([]bufmodule.Commit, len(protoCommits))
+	for i, protoCommit := range protoCommits {
 		protoCommit := protoCommit
 		// This is how we get the ModuleFullName without calling the ModuleService or OwnerService.
 		moduleFullName := targetLocalModulesAndTransitiveLocalDeps[i].ModuleFullName()
@@ -167,19 +210,26 @@ func getProtoModuleRef(module bufmodule.Module) (*modulev1beta1.ModuleRef, error
 	}, nil
 }
 
-func getProtoUploadRequestContent(
+func getProtoLegacyFederationUploadRequestContent(
 	ctx context.Context,
 	// This slice is already populated.
 	protoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
 	// This map is already populated.
 	uploadedModuleOpaqueIDs map[string]struct{},
+	// This will be populated as we go.
+	depRegistryMap map[string]struct{},
+	primaryRegistry string,
 	module bufmodule.Module,
-) (*modulev1beta1.UploadRequest_Content, error) {
+) (*federationv1beta1.UploadRequest_Content, error) {
 	if !module.IsLocal() {
 		return nil, syserror.New("expected local Module in getProtoUploadRequestContent")
 	}
 	if module.ModuleFullName() == nil {
 		return nil, syserror.Wrap(newRequireModuleFullNameOnUploadError(module))
+	}
+	if module.ModuleFullName().Registry() != primaryRegistry {
+		// This should never happen - the upload Modules should already be verified above to come from one registry.
+		return nil, syserror.Newf("attempting to upload content for registry other than %s in getProtoUploadRequestContent", primaryRegistry)
 	}
 	protoModuleRef, err := getProtoModuleRef(module)
 	if err != nil {
@@ -192,12 +242,16 @@ func getProtoUploadRequestContent(
 	if err != nil {
 		return nil, err
 	}
-	protoDepRefs := make([]*modulev1beta1.UploadRequest_DepRef, 0, len(moduleDeps))
+	protoLegacyFederationDepRefs := make([]*federationv1beta1.UploadRequest_DepRef, 0, len(moduleDeps))
 	for _, moduleDep := range moduleDeps {
 		if moduleDep.ModuleFullName() == nil {
 			// All modules that will be deps need a ModuleFullName.
 			return nil, newRequireModuleFullNameOnUploadError(moduleDep)
 		}
+
+		depRegistry := moduleDep.ModuleFullName().Registry()
+		depRegistryMap[depRegistry] = struct{}{}
+
 		depProtoModuleRef, err := getProtoModuleRef(moduleDep)
 		if err != nil {
 			return nil, err
@@ -206,9 +260,9 @@ func getProtoUploadRequestContent(
 			if _, ok := uploadedModuleOpaqueIDs[moduleDep.OpaqueID()]; !ok {
 				return nil, syserror.Newf("attempted to add local module dep %q when it was not scheduled to be uploaded", moduleDep.OpaqueID())
 			}
-			protoDepRefs = append(
-				protoDepRefs,
-				&modulev1beta1.UploadRequest_DepRef{
+			protoLegacyFederationDepRefs = append(
+				protoLegacyFederationDepRefs,
+				&federationv1beta1.UploadRequest_DepRef{
 					ModuleRef: depProtoModuleRef,
 				},
 			)
@@ -218,11 +272,12 @@ func getProtoUploadRequestContent(
 			if depCommitID.IsNil() {
 				return nil, syserror.Newf("did not have a commit ID for a remote module dependency %q", moduleDep.OpaqueID())
 			}
-			protoDepRefs = append(
-				protoDepRefs,
-				&modulev1beta1.UploadRequest_DepRef{
+			protoLegacyFederationDepRefs = append(
+				protoLegacyFederationDepRefs,
+				&federationv1beta1.UploadRequest_DepRef{
 					ModuleRef: depProtoModuleRef,
 					CommitId:  depCommitID.String(),
+					Registry:  depRegistry,
 				},
 			)
 		}
@@ -241,10 +296,10 @@ func getProtoUploadRequestContent(
 		return nil, err
 	}
 
-	return &modulev1beta1.UploadRequest_Content{
+	return &federationv1beta1.UploadRequest_Content{
 		ModuleRef:       protoModuleRef,
 		Files:           protoFiles,
-		DepRefs:         protoDepRefs,
+		DepRefs:         protoLegacyFederationDepRefs,
 		ScopedLabelRefs: protoScopedLabelRefs,
 		// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
 		// if we do, we should consider whether we should be sending them over, as the
