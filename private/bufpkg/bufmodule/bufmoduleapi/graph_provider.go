@@ -134,7 +134,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 		graph.AddNode(moduleKey)
 	}
 	for _, protoEdge := range protoGraph.Edges {
-		fromCommitID, err := uuid.FromString(protoEdge.FromCommitId)
+		fromCommitID, err := uuid.FromString(protoEdge.FromNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +144,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 			// This could be an API error, but regardless we consider it a system error here.
 			return nil, syserror.Newf("did not have commit id %q in commitIDToModuleKey", fromCommitID)
 		}
-		toCommitID, err := uuid.FromString(protoEdge.ToCommitId)
+		toCommitID, err := uuid.FromString(protoEdge.ToNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
