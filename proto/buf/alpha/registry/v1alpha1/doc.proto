@@ -378,15 +378,17 @@ message FieldOptions {
   int32 jstype = 4;
 }
 
-// DescriptorOption provides information for a descriptor option that can be rendered in documentation.
-message DescriptorOption {
-  // The name of the option. Custom options will be in the form:
-  // [fully.qualified.extension.Name]
+// FieldLiteral provides information for a descriptor option that can be rendered in documentation.
+message FieldLiteral {
+  // When is_extension is true, name is the fully-qualified name of the
+  // extension. Otherwise, it is the simple name of the field.
   string name = 1;
+  // The unique field number associated with the field.
+  int32 tag = 2;
+  // Indicates whether this is an extension or not.
+  bool is_extension = 3;
   // The value of an option.
-  LiteralValue value = 2;
-  // Indicates whether this is a custom option or not.
-  bool is_custom = 3;
+  LiteralValue value = 4;
 }
 
 // MessageLiteral represents an option value for a type that is a message.
