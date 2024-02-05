@@ -152,7 +152,7 @@ type OptionExtensionDescriptor interface {
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
-	PresentExtensions() map[protoreflect.ExtensionDescriptor]protoreflect.Value
+	PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value
 }
 
 // Location defines source code info location information.

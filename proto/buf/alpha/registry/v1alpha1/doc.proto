@@ -202,7 +202,7 @@ message Service {
   // implicitly_deprecated is true if its enclosing file is deprecated.
   bool implicitly_deprecated = 9;
 
-  repeated CustomOption custom_options = 10;
+  repeated Option options = 10;
 }
 
 // ServiceOptions provides information for the documentation of options for a given service.
@@ -224,7 +224,7 @@ message Method {
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
 
-  repeated CustomOption custom_options = 7;
+  repeated Option options = 7;
 }
 
 // MethodOptions provides information for the documentation of options for a method.
@@ -286,7 +286,7 @@ message EnumValue {
   string description = 3;
   EnumValueOptions enum_value_options = 4;
 
-  repeated CustomOption custom_options = 5;
+  repeated Option options = 5;
 }
 
 // EnumValueOptions provides information for the documentation of options for an enum value.
@@ -326,7 +326,7 @@ message Message {
   MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
-  repeated CustomOption custom_options = 12;
+  repeated Option options = 12;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -373,6 +373,8 @@ message Field {
   string extendee = 9;
 
   FieldOptions field_options = 10;
+
+  repeated Option options = 11;
 }
 
 // FieldOptions provides information for the documentation of options for a field.
@@ -383,32 +385,24 @@ message FieldOptions {
   int32 ctype = 3;
   // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
   int32 jstype = 4;
-
-  repeated CustomOption custom_options = 5;
 }
 
-// CustomOption provides information for the documentation of a extension.
-message CustomOption {
-  // The name of the extension.
+// Option provides information for a descriptor option that can be show in documentations.
+message Option {
+  // The name of the option.
   string name = 1;
-  // The value of an extension can be oneof set of values.
-  oneof value {
-    string string_value = 2;
-    int64 int_value = 3;
-    uint64 uint_value = 4;
-    double double_value = 5;
-    bool bool_value = 6;
-    string enum_value = 7;
-    MessageLiteral message_value = 8;
-  }
+  // The value of an option.
+  LiteralValue value = 2;
 }
 
-// MessageLiteral provides the key and value type for a extension value.
+// MessageLiteral represents an option value for a type that is a message.
 message MessageLiteral {
   map<string, LiteralValue> fields = 1;
 }
 
-// ArrayLiteral provides a list of values of a repeated extension value.
+// ArrayLiteral represents an option value for a type that is a repeated field.
+// Maps are also represented as ArrayLiterals where each elements are a MessageLiteral
+// that contains a key and value field.
 message ArrayLiteral {
   repeated LiteralValue elements = 1;
 }

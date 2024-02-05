@@ -215,5 +215,5 @@ func (f *field) ExtendeeLocation() Location {
 }
 
 func (f *field) PresentExtensions() map[protoreflect.FieldDescriptor]protoreflect.Value {
-	return f.optionExtensionDescriptor.PresentExtensions()
+	return f.optionExtensionDescriptor.PresentFields()
 }
