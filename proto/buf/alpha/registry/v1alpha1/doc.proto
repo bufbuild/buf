@@ -326,7 +326,6 @@ message Message {
   MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
-
   repeated CustomOption custom_options = 12;
 }
 
@@ -388,8 +387,11 @@ message FieldOptions {
   repeated CustomOption custom_options = 5;
 }
 
+// CustomOption provides information for the documentation of a extension.
 message CustomOption {
+  // The name of the extension.
   string name = 1;
+  // The value of an extension can be oneof set of values.
   oneof value {
     string string_value = 2;
     int64 int_value = 3;
@@ -401,10 +403,17 @@ message CustomOption {
   }
 }
 
+// MessageLiteral provides the key and value type for a extension value.
 message MessageLiteral {
   map<string, LiteralValue> fields = 1;
 }
 
+// ArrayLiteral provides a list of values of a repeated extension value.
+message ArrayLiteral {
+  repeated LiteralValue elements = 1;
+}
+
+// LiteralValue represents the actual value of the extension.
 message LiteralValue {
   oneof value {
     string string_value = 2;
@@ -416,10 +425,6 @@ message LiteralValue {
     ArrayLiteral array_value = 8;
     MessageLiteral message_value = 9;
   }
-}
-
-message ArrayLiteral {
-  repeated LiteralValue elements = 1;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
