@@ -227,7 +227,40 @@ func (o *omniProvider) GetCommitsForModuleKeys(
 			func() (time.Time, error) {
 				return createTime, nil
 			},
-			moduleKey.Digest,
+		)
+	}
+	return commits, nil
+}
+
+func (o *omniProvider) GetCommitsForCommitKeys(
+	ctx context.Context,
+	commitKeys []bufmodule.CommitKey,
+) ([]bufmodule.Commit, error) {
+	if len(commitKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForCommitKeys(commitKeys); err != nil {
+		return nil, err
+	}
+	commits := make([]bufmodule.Commit, len(commitKeys))
+	for i, commitKey := range commitKeys {
+		module := o.GetModuleForCommitID(commitKey.CommitID())
+		if module == nil {
+			return nil, &fs.PathError{Op: "read", Path: commitKey.CommitID().String(), Err: fs.ErrNotExist}
+		}
+		createTime, ok := o.commitIDToCreateTime[commitKey.CommitID()]
+		if !ok {
+			return nil, &fs.PathError{Op: "read", Path: commitKey.CommitID().String(), Err: fs.ErrNotExist}
+		}
+		moduleKey, err := bufmodule.ModuleToModuleKey(module, commitKey.DigestType())
+		if err != nil {
+			return nil, err
+		}
+		commits[i] = bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return createTime, nil
+			},
 		)
 	}
 	return commits, nil

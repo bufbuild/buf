@@ -115,13 +115,12 @@ func Upload(
 		if err != nil {
 			return nil, err
 		}
-		getDigest := func() (bufmodule.Digest, error) {
-			return ProtoToDigest(protoCommit.Digest)
-		}
 		moduleKey, err := bufmodule.NewModuleKey(
 			moduleFullName,
 			commitID,
-			getDigest,
+			func() (bufmodule.Digest, error) {
+				return ProtoToDigest(protoCommit.Digest)
+			},
 		)
 		if err != nil {
 			return nil, err
@@ -131,10 +130,6 @@ func Upload(
 			func() (time.Time, error) {
 				return protoCommit.CreateTime.AsTime(), nil
 			},
-			// Since we use the same getDigest for ModuleKey, the "tamper-proofing" will
-			// always return true. We might just get rid of the bufmodule.Commit type, or
-			// re-work it a bit. It makes the most sense in the context of the CommitProvider.
-			getDigest,
 		)
 	}
 	return commits, nil

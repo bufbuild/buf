@@ -18,61 +18,57 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
-type hasModuleKey interface {
-	ModuleKey() bufmodule.ModuleKey
+type baseProvider[K any, V any] struct {
+	logger                   *zap.Logger
+	delegateGetValuesForKeys func(context.Context, []K) ([]V, error)
+	storeGetValuesForKeys    func(context.Context, []K) ([]V, []K, error)
+	storePutValues           func(context.Context, []V) error
+	keyToCommitID            func(K) uuid.UUID
+	valueToCommitID          func(V) uuid.UUID
+
+	keysRetrieved atomic.Int64
+	keysHit       atomic.Int64
 }
 
-type baseProvider[T hasModuleKey] struct {
-	logger                         *zap.Logger
-	delegateGetValuesForModuleKeys func(context.Context, []bufmodule.ModuleKey) ([]T, error)
-	storeGetValuesForModuleKeys    func(context.Context, []bufmodule.ModuleKey) ([]T, []bufmodule.ModuleKey, error)
-	storePutValues                 func(context.Context, []T) error
-
-	moduleKeysRetrieved atomic.Int64
-	moduleKeysHit       atomic.Int64
-}
-
-func newBaseProvider[T hasModuleKey](
+func newBaseProvider[K any, V any](
 	logger *zap.Logger,
-	delegateGetValuesForModuleKeys func(context.Context, []bufmodule.ModuleKey) ([]T, error),
-	storeGetValuesForModuleKeys func(context.Context, []bufmodule.ModuleKey) ([]T, []bufmodule.ModuleKey, error),
-	storePutValues func(context.Context, []T) error,
-) *baseProvider[T] {
-	return &baseProvider[T]{
-		logger:                         logger,
-		delegateGetValuesForModuleKeys: delegateGetValuesForModuleKeys,
-		storeGetValuesForModuleKeys:    storeGetValuesForModuleKeys,
-		storePutValues:                 storePutValues,
+	delegateGetValuesForKeys func(context.Context, []K) ([]V, error),
+	storeGetValuesForKeys func(context.Context, []K) ([]V, []K, error),
+	storePutValues func(context.Context, []V) error,
+	keyToCommitID func(K) uuid.UUID,
+	valueToCommitID func(V) uuid.UUID,
+) *baseProvider[K, V] {
+	return &baseProvider[K, V]{
+		logger:                   logger,
+		delegateGetValuesForKeys: delegateGetValuesForKeys,
+		storeGetValuesForKeys:    storeGetValuesForKeys,
+		storePutValues:           storePutValues,
+		keyToCommitID:            keyToCommitID,
+		valueToCommitID:          valueToCommitID,
 	}
 }
 
-func (p *baseProvider[T]) getValuesForModuleKeys(
-	ctx context.Context,
-	moduleKeys []bufmodule.ModuleKey,
-) ([]T, error) {
-	commitIDToIndexedModuleKey, err := slicesext.ToUniqueIndexedValuesMap(
-		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) uuid.UUID {
-			return moduleKey.CommitID()
-		},
+func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]V, error) {
+	commitIDToIndexedKey, err := slicesext.ToUniqueIndexedValuesMap(
+		keys,
+		p.keyToCommitID,
 	)
 	if err != nil {
 		return nil, err
 	}
-	foundValues, notFoundModuleKeys, err := p.storeGetValuesForModuleKeys(ctx, moduleKeys)
+	foundValues, notFoundKeys, err := p.storeGetValuesForKeys(ctx, keys)
 	if err != nil {
 		return nil, err
 	}
-	delegateValues, err := p.delegateGetValuesForModuleKeys(
+	delegateValues, err := p.delegateGetValuesForKeys(
 		ctx,
-		notFoundModuleKeys,
+		notFoundKeys,
 	)
 	if err != nil {
 		return nil, err
@@ -84,19 +80,20 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 		return nil, err
 	}
 
-	p.moduleKeysRetrieved.Add(int64(len(moduleKeys)))
-	p.moduleKeysHit.Add(int64(len(foundValues)))
+	p.keysRetrieved.Add(int64(len(keys)))
+	p.keysHit.Add(int64(len(foundValues)))
 
 	indexedValues, err := slicesext.MapError(
 		append(foundValues, delegateValues...),
-		func(value T) (slicesext.Indexed[T], error) {
-			indexedModuleKey, ok := commitIDToIndexedModuleKey[value.ModuleKey().CommitID()]
+		func(value V) (slicesext.Indexed[V], error) {
+			commitID := p.valueToCommitID(value)
+			indexedKey, ok := commitIDToIndexedKey[commitID]
 			if !ok {
-				return slicesext.Indexed[T]{}, syserror.Newf("did not get value from store with commitID %q", value.ModuleKey().CommitID())
+				return slicesext.Indexed[V]{}, syserror.Newf("did not get value from store with commitID %q", commitID)
 			}
-			return slicesext.Indexed[T]{
+			return slicesext.Indexed[V]{
 				Value: value,
-				Index: indexedModuleKey.Index,
+				Index: indexedKey.Index,
 			}, nil
 		},
 	)
@@ -106,10 +103,10 @@ func (p *baseProvider[T]) getValuesForModuleKeys(
 	return slicesext.IndexedToSortedValues(indexedValues), nil
 }
 
-func (p *baseProvider[T]) getModuleKeysRetrieved() int {
-	return int(p.moduleKeysRetrieved.Load())
+func (p *baseProvider[K, V]) getKeysRetrieved() int {
+	return int(p.keysRetrieved.Load())
 }
 
-func (p *baseProvider[T]) getModuleKeysHit() int {
-	return int(p.moduleKeysHit.Load())
+func (p *baseProvider[K, V]) getKeysHit() int {
+	return int(p.keysHit.Load())
 }

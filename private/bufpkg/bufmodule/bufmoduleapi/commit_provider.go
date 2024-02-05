@@ -76,11 +76,6 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 		return nil, err
 	}
 
-	// We don't want to persist these across calls - this could grow over time and this cache
-	// isn't an LRU cache, and the information also may change over time.
-	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
-	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
-
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
 		func(moduleKey bufmodule.ModuleKey) string {
@@ -91,8 +86,6 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	for registry, indexedModuleKeys := range registryToIndexedModuleKeys {
 		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedModuleKeys(
 			ctx,
-			protoModuleProvider,
-			protoOwnerProvider,
 			registry,
 			indexedModuleKeys,
 			digestType,
@@ -105,10 +98,49 @@ func (a *commitProvider) GetCommitsForModuleKeys(
 	return slicesext.IndexedToSortedValues(indexedCommits), nil
 }
 
+func (a *commitProvider) GetCommitsForCommitKeys(
+	ctx context.Context,
+	commitKeys []bufmodule.CommitKey,
+) ([]bufmodule.Commit, error) {
+	if len(commitKeys) == 0 {
+		return nil, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForCommitKeys(commitKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	// We don't want to persist these across calls - this could grow over time and this cache
+	// isn't an LRU cache, and the information also may change over time.
+	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
+	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
+
+	registryToIndexedCommitKeys := slicesext.ToIndexedValuesMap(
+		commitKeys,
+		func(commitKey bufmodule.CommitKey) string {
+			return commitKey.Registry()
+		},
+	)
+	indexedCommits := make([]slicesext.Indexed[bufmodule.Commit], 0, len(commitKeys))
+	for registry, indexedCommitKeys := range registryToIndexedCommitKeys {
+		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedCommitKeys(
+			ctx,
+			protoModuleProvider,
+			protoOwnerProvider,
+			registry,
+			indexedCommitKeys,
+			digestType,
+		)
+		if err != nil {
+			return nil, err
+		}
+		indexedCommits = append(indexedCommits, registryIndexedCommits...)
+	}
+	return slicesext.IndexedToSortedValues(indexedCommits), nil
+}
+
 func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
 	registry string,
 	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
@@ -138,17 +170,79 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 			if !ok {
 				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
 			}
+			// This is actually backwards - this is not the expected digest, this is the actual digest.
+			// TODO: It doesn't matter too much, but we should switch around CommitWithExpectedDigest
+			// to be CommitWithActualDigest.
+			expectedDigest, err := ProtoToDigest(protoCommit.Digest)
+			if err != nil {
+				return slicesext.Indexed[bufmodule.Commit]{}, err
+			}
 			return slicesext.Indexed[bufmodule.Commit]{
 				Value: bufmodule.NewCommit(
 					indexedModuleKey.Value,
 					func() (time.Time, error) {
 						return protoCommit.CreateTime.AsTime(), nil
 					},
-					func() (bufmodule.Digest, error) {
-						return ProtoToDigest(protoCommit.Digest)
-					},
+					bufmodule.CommitWithExpectedDigest(expectedDigest),
 				),
 				Index: indexedModuleKey.Index,
+			}, nil
+		},
+	)
+}
+
+func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
+	ctx context.Context,
+	protoModuleProvider *protoModuleProvider,
+	protoOwnerProvider *protoOwnerProvider,
+	registry string,
+	indexedCommitKeys []slicesext.Indexed[bufmodule.CommitKey],
+	digestType bufmodule.DigestType,
+) ([]slicesext.Indexed[bufmodule.Commit], error) {
+	commitIDToIndexedCommitKey, err := slicesext.ToUniqueValuesMapError(
+		indexedCommitKeys,
+		func(indexedCommitKey slicesext.Indexed[bufmodule.CommitKey]) (uuid.UUID, error) {
+			return indexedCommitKey.Value.CommitID(), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedCommitKey)
+	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.MapError(
+		protoCommits,
+		func(protoCommit *modulev1beta1.Commit) (slicesext.Indexed[bufmodule.Commit], error) {
+			commitID, err := uuid.FromString(protoCommit.Id)
+			if err != nil {
+				return slicesext.Indexed[bufmodule.Commit]{}, err
+			}
+			indexedCommitKey, ok := commitIDToIndexedCommitKey[commitID]
+			if !ok {
+				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no CommitKey for proto commit ID %q", commitID)
+			}
+			moduleKey, err := getModuleKeyForProtoCommit(
+				ctx,
+				protoModuleProvider,
+				protoOwnerProvider,
+				registry,
+				protoCommit,
+			)
+			if err != nil {
+				return slicesext.Indexed[bufmodule.Commit]{}, err
+			}
+			return slicesext.Indexed[bufmodule.Commit]{
+				// No digest to compare against to add as CommitOption.
+				Value: bufmodule.NewCommit(
+					moduleKey,
+					func() (time.Time, error) {
+						return protoCommit.CreateTime.AsTime(), nil
+					},
+				),
+				Index: indexedCommitKey.Index,
 			}, nil
 		},
 	)

@@ -27,15 +27,6 @@ type Commit interface {
 	ModuleKey() ModuleKey
 	// CreateTime returns the time the Commit was created on the BSR.
 	CreateTime() (time.Time, error)
-	// Digest returns the digest of the content of the Commit.
-	//
-	// This is the Digest as retrieved from the BSR - it relies on the BSR
-	// correctly calculating digests.
-	//
-	// When CreateTime() or other lazy methods are called, this Digest will be checked
-	// against the Digest in ModuleKey, and if there is a difference,
-	// an error will be returned.
-	Digest() (Digest, error)
 
 	isCommit()
 }
@@ -44,13 +35,28 @@ type Commit interface {
 func NewCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	getDigest func() (Digest, error),
+	options ...CommitOption,
 ) Commit {
 	return newCommit(
 		moduleKey,
 		getCreateTime,
-		getDigest,
+		options...,
 	)
+}
+
+// CommitOption is an option for a new Commit.
+type CommitOption func(*commitOptions)
+
+// CommitWithExpectedDigest returns a new CommitOption that will compare the Digest
+// of the ModuleKey provided at construction with this digest whenever any lazy method is called.
+// If the digests do not match, an error is returned
+//
+// This is used in situations where we have a Digest from our read location (such as the BSR
+// or the cache), and we want to compare it with a ModuleKey we were provided from a local location.
+func CommitWithExpectedDigest(expectedDigest Digest) CommitOption {
+	return func(commitOptions *commitOptions) {
+		commitOptions.expectedDigest = expectedDigest
+	}
 }
 
 // *** PRIVATE ***
@@ -58,38 +64,41 @@ func NewCommit(
 type commit struct {
 	moduleKey     ModuleKey
 	getCreateTime func() (time.Time, error)
-	getDigest     func() (Digest, error)
 }
 
 func newCommit(
 	moduleKey ModuleKey,
 	getCreateTime func() (time.Time, error),
-	getDigest func() (Digest, error),
+	options ...CommitOption,
 ) *commit {
-	return &commit{
-		moduleKey:     moduleKey,
-		getCreateTime: syncext.OnceValues(getCreateTime),
-		getDigest: syncext.OnceValues(
+	commitOptions := newCommitOptions()
+	for _, option := range options {
+		option(commitOptions)
+	}
+	if commitOptions.expectedDigest != nil {
+		moduleKey = newModuleKeyNoValidate(
+			moduleKey.ModuleFullName(),
+			moduleKey.CommitID(),
 			func() (Digest, error) {
-				digest, err := getDigest()
-				if err != nil {
-					return nil, err
-				}
 				moduleKeyDigest, err := moduleKey.Digest()
 				if err != nil {
 					return nil, err
 				}
-				if !DigestEqual(digest, moduleKeyDigest) {
+				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, fmt.Errorf(
 						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
 						moduleKey.String(),
+						commitOptions.expectedDigest.String(),
 						moduleKeyDigest.String(),
-						digest.String(),
 					)
 				}
-				return digest, nil
+				return moduleKeyDigest, nil
 			},
-		),
+		)
+	}
+	return &commit{
+		moduleKey:     moduleKey,
+		getCreateTime: syncext.OnceValues(getCreateTime),
 	}
 }
 
@@ -98,14 +107,19 @@ func (c *commit) ModuleKey() ModuleKey {
 }
 
 func (c *commit) CreateTime() (time.Time, error) {
-	if _, err := c.getDigest(); err != nil {
+	// This may invoke tamper-proofing per newCommit construction.
+	if _, err := c.moduleKey.Digest(); err != nil {
 		return time.Time{}, err
 	}
 	return c.getCreateTime()
 }
 
-func (c *commit) Digest() (Digest, error) {
-	return c.getDigest()
+func (*commit) isCommit() {}
+
+type commitOptions struct {
+	expectedDigest Digest
 }
 
-func (*commit) isCommit() {}
+func newCommitOptions() *commitOptions {
+	return &commitOptions{}
+}

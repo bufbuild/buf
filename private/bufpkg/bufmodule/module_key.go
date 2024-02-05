@@ -97,6 +97,18 @@ func UniqueDigestTypeForModuleKeys(moduleKeys []ModuleKey) (DigestType, error) {
 	return digestType, nil
 }
 
+// ModuleKeyToCommitKey converts a ModuleKey to a CommitKey.
+//
+// This is purely lossy - a ModuleKey has more information than a CommitKey, and a
+// CommitKey does not have any information that a ModuleKey does not have.
+func ModuleKeyToCommitKey(moduleKey ModuleKey) (CommitKey, error) {
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
+	return newCommitKey(moduleKey.ModuleFullName().Registry(), moduleKey.CommitID(), digest.Type())
+}
+
 // *** PRIVATE ***
 
 type moduleKey struct {
@@ -117,11 +129,19 @@ func newModuleKey(
 	if commitID.IsNil() {
 		return nil, errors.New("empty commitID when constructing ModuleKey")
 	}
+	return newModuleKeyNoValidate(moduleFullName, commitID, getDigest), nil
+}
+
+func newModuleKeyNoValidate(
+	moduleFullName ModuleFullName,
+	commitID uuid.UUID,
+	getDigest func() (Digest, error),
+) *moduleKey {
 	return &moduleKey{
 		moduleFullName: moduleFullName,
 		commitID:       commitID,
 		getDigest:      syncext.OnceValues(getDigest),
-	}, nil
+	}
 }
 
 func (m *moduleKey) ModuleFullName() ModuleFullName {
