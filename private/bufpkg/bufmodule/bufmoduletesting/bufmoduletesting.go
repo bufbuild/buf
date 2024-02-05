@@ -269,8 +269,8 @@ func (o *omniProvider) GetCommitsForCommitKeys(
 func (o *omniProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (*dag.Graph[uuid.UUID, bufmodule.ModuleKey], error) {
-	graph := dag.NewGraph[uuid.UUID, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+) (*dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[bufmodule.RegistryCommitID, bufmodule.ModuleKey](bufmodule.ModuleKeyToRegistryCommitID)
 	if len(moduleKeys) == 0 {
 		return graph, nil
 	}
@@ -480,7 +480,7 @@ func addModuleDataToModuleSetBuilder(
 
 func addModuleToGraphRec(
 	module bufmodule.Module,
-	graph *dag.Graph[uuid.UUID, bufmodule.ModuleKey],
+	graph *dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
 ) error {
 	moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)

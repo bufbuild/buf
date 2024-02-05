@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 
+	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -155,4 +156,33 @@ func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabel
 			Name: labelName,
 		},
 	}
+}
+
+func protoGraphToProtoLegacyFederationGraph(
+	registry string,
+	protoGraph *modulev1beta1.Graph,
+) *federationv1beta1.Graph {
+	protoLegacyFederationGraph := &federationv1beta1.Graph{
+		Commits: make([]*federationv1beta1.Graph_Commit, len(protoGraph.Commits)),
+		Edges:   make([]*federationv1beta1.Graph_Edge, len(protoGraph.Edges)),
+	}
+	for i, protoCommit := range protoGraph.Commits {
+		protoLegacyFederationGraph.Commits[i] = &federationv1beta1.Graph_Commit{
+			Commit:   protoCommit,
+			Registry: registry,
+		}
+	}
+	for i, protoEdge := range protoGraph.Edges {
+		protoLegacyFederationGraph.Edges[i] = &federationv1beta1.Graph_Edge{
+			FromNode: &federationv1beta1.Graph_Node{
+				CommitId: protoEdge.FromNode.CommitId,
+				Registry: registry,
+			},
+			ToNode: &federationv1beta1.Graph_Node{
+				CommitId: protoEdge.ToNode.CommitId,
+				Registry: registry,
+			},
+		}
+	}
+	return protoLegacyFederationGraph
 }
