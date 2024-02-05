@@ -415,21 +415,21 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 		return nil, err
 	}
 	// Validate all proto files are unique.
-	filepathToModule := make(map[string]Module, len(modules))
+	filePathToModule := make(map[string]Module, len(modules))
 	for _, module := range modules {
 		if err := module.WalkFileInfos(ctx, func(fileInfo FileInfo) error {
 			if fileInfo.FileType() != FileTypeProto {
 				return nil
 			}
 			name := fileInfo.Path()
-			if moduleOther, ok := filepathToModule[name]; ok {
+			if moduleOther, ok := filePathToModule[name]; ok {
 				return &DuplicatePathError{
 					Path:    name,
 					Module1: moduleOther.ModuleFullName(),
 					Module2: module.ModuleFullName(),
 				}
 			}
-			filepathToModule[name] = module
+			filePathToModule[name] = module
 			return nil
 		}); err != nil {
 			return nil, err
