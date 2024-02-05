@@ -165,6 +165,8 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 		return nil, err
 	}
 	if secondaryRegistry == "" {
+		// If we only have a single registry, invoke the new API endpoint that does not allow
+		// for federation. Do this so that we can maintain federated API endpoint metrics.
 		graph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys, digestType)
 		if err != nil {
 			return nil, err
