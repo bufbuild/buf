@@ -17,7 +17,6 @@ package bufmodule
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/fs"
 	"sort"
 	"strings"
@@ -331,7 +330,8 @@ func (b *moduleReadBucket) WalkFileInfos(
 ) error {
 	// Note that we must verify that at least one file in this ModuleReadBucket is
 	// a .proto file, per the documentation on Module.
-	protoFileTracker := newProtoFileTracker(b.module)
+	protoFileTracker := newProtoFileTracker()
+	protoFileTracker.trackModule(b.module)
 
 	walkFileInfosOptions := newWalkFileInfosOptions()
 	for _, option := range options {
@@ -351,7 +351,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 				if err != nil {
 					return err
 				}
-				protoFileTracker.track(fileInfo)
+				protoFileTracker.trackFileInfo(fileInfo)
 				return fn(fileInfo)
 			},
 		); err != nil {
@@ -365,7 +365,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 		if err != nil {
 			return err
 		}
-		protoFileTracker.track(fileInfo)
+		protoFileTracker.trackFileInfo(fileInfo)
 		if !fileInfo.IsTargetFile() {
 			return nil
 		}
@@ -412,6 +412,10 @@ func (b *moduleReadBucket) withModule(module Module) *moduleReadBucket {
 		protoFileTargetPath:  b.protoFileTargetPath,
 		includePackageFiles:  b.includePackageFiles,
 	}
+}
+
+func (b *moduleReadBucket) ShouldBeSelfContained() bool {
+	return false
 }
 
 func (*moduleReadBucket) isModuleReadBucket() {}
@@ -724,24 +728,24 @@ func (f *filteredModuleReadBucket) getFastscanResultForPath(ctx context.Context,
 
 func (*filteredModuleReadBucket) isModuleReadBucket() {}
 
-// multiModuleReadBucket
+// multiProtoFileModuleReadBucket
 
-type multiModuleReadBucket struct {
-	delegates             []ModuleReadBucket
+type multiProtoFileModuleReadBucket[T ModuleReadBucket, S []T] struct {
+	delegates             S
 	shouldBeSelfContained bool
 }
 
-func newMultiModuleReadBucket(
-	delegates []ModuleReadBucket,
+func newMultiProtoFileModuleReadBucket[T ModuleReadBucket, S []T](
+	delegates S,
 	shouldBeSelfContained bool,
-) *multiModuleReadBucket {
-	return &multiModuleReadBucket{
+) *multiProtoFileModuleReadBucket[T, S] {
+	return &multiProtoFileModuleReadBucket[T, S]{
 		delegates:             delegates,
 		shouldBeSelfContained: shouldBeSelfContained,
 	}
 }
 
-func (m *multiModuleReadBucket) GetFile(ctx context.Context, path string) (File, error) {
+func (m *multiProtoFileModuleReadBucket[T, S]) GetFile(ctx context.Context, path string) (File, error) {
 	_, delegateIndex, err := m.getFileInfoAndDelegateIndex(ctx, "read", path)
 	if err != nil {
 		return nil, err
@@ -749,23 +753,36 @@ func (m *multiModuleReadBucket) GetFile(ctx context.Context, path string) (File,
 	return m.delegates[delegateIndex].GetFile(ctx, path)
 }
 
-func (m *multiModuleReadBucket) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
+func (m *multiProtoFileModuleReadBucket[T, S]) StatFileInfo(ctx context.Context, path string) (FileInfo, error) {
 	fileInfo, _, err := m.getFileInfoAndDelegateIndex(ctx, "stat", path)
 	return fileInfo, err
 }
 
-func (m *multiModuleReadBucket) WalkFileInfos(
+func (m *multiProtoFileModuleReadBucket[T, S]) WalkFileInfos(
 	ctx context.Context,
 	fn func(FileInfo) error,
 	options ...WalkFileInfosOption,
 ) error {
 	seenPathToFileInfo := make(map[string]FileInfo)
+	protoFileTracker := newProtoFileTracker()
 	for _, delegate := range m.delegates {
 		if err := delegate.WalkFileInfos(
 			ctx,
 			func(fileInfo FileInfo) error {
+				if fileInfo.FileType() != FileTypeProto {
+					return nil
+				}
 				path := fileInfo.Path()
+				protoFileTracker.trackFileInfo(fileInfo)
 				if existingFileInfo, ok := seenPathToFileInfo[path]; ok {
+					// If we detected the same .proto file, this is an error.
+					if err := protoFileTracker.validate(); err != nil {
+						return err
+					}
+					// If we detected a non-proto file duplicate, this means we constructed the multiProtoFileModuleReadBucket
+					// incorrectly, as we should not do union buckets for non-proto files. It is totally valid
+					// for LICENSE and README.md to be duplicated.
+					//
 					// This does not return all paths that are matching, unlike GetFile and StatFileInfo.
 					// We do not want to continue iterating, as calling WalkFileInfos on the same path
 					// could cause errors downstream as callers expect a single call per path.
@@ -782,11 +799,11 @@ func (m *multiModuleReadBucket) WalkFileInfos(
 	return nil
 }
 
-func (m *multiModuleReadBucket) ShouldBeSelfContained() bool {
+func (m *multiProtoFileModuleReadBucket[T, S]) ShouldBeSelfContained() bool {
 	return m.shouldBeSelfContained
 }
 
-func (m *multiModuleReadBucket) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
+func (m *multiProtoFileModuleReadBucket[T, S]) getFastscanResultForPath(ctx context.Context, path string) (fastscan.Result, error) {
 	_, delegateIndex, err := m.getFileInfoAndDelegateIndex(ctx, "stat", path)
 	if err != nil {
 		return fastscan.Result{}, err
@@ -794,13 +811,14 @@ func (m *multiModuleReadBucket) getFastscanResultForPath(ctx context.Context, pa
 	return m.delegates[delegateIndex].getFastscanResultForPath(ctx, path)
 }
 
-func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(
+func (m *multiProtoFileModuleReadBucket[T, S]) getFileInfoAndDelegateIndex(
 	ctx context.Context,
 	op string,
 	path string,
 ) (FileInfo, int, error) {
 	var fileInfos []FileInfo
 	var delegateIndexes []int
+	protoFileTracker := newProtoFileTracker()
 	for i, delegate := range m.delegates {
 		fileInfo, err := delegate.StatFileInfo(ctx, path)
 		if err != nil {
@@ -809,8 +827,16 @@ func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(
 			}
 			return nil, 0, err
 		}
+		if fileInfo.FileType() != FileTypeProto {
+			continue
+		}
+		protoFileTracker.trackFileInfo(fileInfo)
 		fileInfos = append(fileInfos, fileInfo)
 		delegateIndexes = append(delegateIndexes, i)
+	}
+	// If we detected the same .proto file, this is an error.
+	if err := protoFileTracker.validate(); err != nil {
+		return nil, 0, err
 	}
 	switch len(fileInfos) {
 	case 0:
@@ -818,11 +844,14 @@ func (m *multiModuleReadBucket) getFileInfoAndDelegateIndex(
 	case 1:
 		return fileInfos[0], delegateIndexes[0], nil
 	default:
+		// If we detected a non-proto file duplicate, this means we constructed the multiProtoFileModuleReadBucket
+		// incorrectly, as we should not do union buckets for non-proto files. It is totally valid
+		// for LICENSE and README.md to be duplicated.
 		return nil, 0, newExistsMultipleModulesError(path, fileInfos...)
 	}
 }
 
-func (*multiModuleReadBucket) isModuleReadBucket() {}
+func (*multiProtoFileModuleReadBucket[T, S]) isModuleReadBucket() {}
 
 // storageReadBucket
 
@@ -861,8 +890,8 @@ func (s *storageReadBucket) Walk(ctx context.Context, prefix string, f func(stor
 }
 
 func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
-	return fmt.Errorf(
-		"%s exists in multiple locations: %v",
+	return syserror.Newf(
+		"%s was detected as part of a multiProtoFileModuleReadBucket exists in multiple locations: %v. This should only happen if the multiProtoFileModuleReadBucket was incorrectly constructed",
 		path,
 		strings.Join(
 			slicesext.Map(
@@ -874,44 +903,6 @@ func newExistsMultipleModulesError(path string, fileInfos ...FileInfo) error {
 			" ",
 		),
 	)
-}
-
-// protoFileTracker tracks if we found a .proto file for WalkFileInfos.
-//
-// This allows us to fulfill the documentation for ModuleReadBucket on Module where at least
-// one .proto file will exist in a ModuleReadBucket.
-type protoFileTracker struct {
-	module Module
-	found  bool
-}
-
-func newProtoFileTracker(module Module) *protoFileTracker {
-	return &protoFileTracker{
-		module: module,
-		found:  false,
-	}
-}
-
-func (t *protoFileTracker) track(fileInfo FileInfo) {
-	if fileInfo.FileType() == FileTypeProto {
-		t.found = true
-	}
-}
-
-func (t *protoFileTracker) validate() error {
-	if !t.found {
-		// Prefer BucketID over OpaqueID as the user will understand this better.
-		id := t.module.BucketID()
-		if id == "" {
-			id = t.module.OpaqueID()
-		}
-		return newErrNoProtoFiles(id)
-	}
-	return nil
-}
-
-func (b *moduleReadBucket) ShouldBeSelfContained() bool {
-	return false
 }
 
 type walkFileInfosOptions struct {

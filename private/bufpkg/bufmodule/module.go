@@ -212,15 +212,7 @@ func ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles(module Module) (Mod
 	for _, moduleDep := range moduleDeps {
 		modules = append(modules, moduleDep)
 	}
-	return newMultiModuleReadBucket(
-		slicesext.Map(
-			modules,
-			func(module Module) ModuleReadBucket {
-				return ModuleReadBucketWithOnlyProtoFiles(module)
-			},
-		),
-		true,
-	), nil
+	return newMultiProtoFileModuleReadBucket(modules, true), nil
 }
 
 // ModuleDirectModuleDeps is a convenience function that returns only the direct dependencies of the Module.

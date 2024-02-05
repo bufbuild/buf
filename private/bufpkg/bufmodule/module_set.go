@@ -91,15 +91,7 @@ type ModuleSet interface {
 //
 // Targeting information will remain the same.
 func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleReadBucket {
-	return newMultiModuleReadBucket(
-		slicesext.Map(
-			moduleSet.Modules(),
-			func(module Module) ModuleReadBucket {
-				return ModuleReadBucketWithOnlyProtoFiles(module)
-			},
-		),
-		true,
-	)
+	return newMultiProtoFileModuleReadBucket(moduleSet.Modules(), true)
 }
 
 // ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules converts the ModuleSet to a
@@ -108,15 +100,7 @@ func ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet ModuleSet) ModuleRe
 //
 // Targeting information will remain the same.
 func ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(moduleSet ModuleSet) ModuleReadBucket {
-	return newMultiModuleReadBucket(
-		slicesext.Map(
-			ModuleSetTargetModules(moduleSet),
-			func(module Module) ModuleReadBucket {
-				return ModuleReadBucketWithOnlyProtoFiles(module)
-			},
-		),
-		true,
-	)
+	return newMultiProtoFileModuleReadBucket(ModuleSetTargetModules(moduleSet), true)
 }
 
 // ModuleSetTargetModules is a convenience function that returns the target Modules

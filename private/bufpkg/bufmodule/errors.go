@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"strings"
 )
@@ -155,8 +154,58 @@ func (m *ModuleCycleError) Error() string {
 	return builder.String()
 }
 
-// *** PRIVATE ***
+// DuplicateProtoPathError is the error returned if a .proto file with the same path
+// is detected in two or more Modules.
+//
+// This check is done as part of ModuleReadBucket.Walks, and Module.ModuleDeps.
+type DuplicateProtoPathError struct {
+	// ProtoPath is the path of the .proto that is duplicated.
+	//
+	// A well-formed DuplicateProtoPathError will have a normalized and non-empty ProtoPath.
+	ProtoPath string
+	// OpaqueIDs are the OpaqueIDs of the Module that contain the ProtoPath.
+	//
+	// A well-formed DuplicateProtoPathError will have two or more OpaqueIDs.
+	OpaqueIDs []string
+}
 
-func newErrNoProtoFiles(moduleID string) error {
-	return fmt.Errorf("module %q had no .proto files", moduleID)
+// Error implements the error interface.
+func (d *DuplicateProtoPathError) Error() string {
+	if d == nil {
+		return ""
+	}
+	var builder strings.Builder
+	// Writing even if the error is malformed via d.Path being empty.
+	_, _ = builder.WriteString(d.ProtoPath)
+	_, _ = builder.WriteString(` is contained in multiple modules: `)
+	for i, opaqueID := range d.OpaqueIDs {
+		_, _ = builder.WriteString(opaqueID)
+		if i != len(d.OpaqueIDs)-1 {
+			_, _ = builder.WriteString(`, `)
+		}
+	}
+	return builder.String()
+}
+
+// NoProtoFilesError is the error returned if a Module has no .proto files.
+//
+// This check is done as part of ModuleReadBucket.Walks.
+type NoProtoFilesError struct {
+	// OpaqueID is the OpaqueID of the Module that has no .proto files.
+	//
+	// A well-formed NoProtoFilesError will have a non-empty OpaqueID.
+	OpaqueID string
+}
+
+// Error implements the error interface.
+func (n *NoProtoFilesError) Error() string {
+	if n == nil {
+		return ""
+	}
+	var builder strings.Builder
+	_, _ = builder.WriteString(`module `)
+	// Writing even if the error is malformed via d.OpaqueID being empty.
+	_, _ = builder.WriteString(n.OpaqueID)
+	_, _ = builder.WriteString(` had no .proto files`)
+	return builder.String()
 }

@@ -1019,7 +1019,7 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/duplicate/other/proto/foo.proto testdata/workspace/fail/duplicate/proto/foo.proto`),
+		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate"),
 	)
@@ -1028,7 +1028,7 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/v2/duplicate/other/proto/foo.proto testdata/workspace/fail/v2/duplicate/proto/foo.proto`),
+		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate"),
 	)
@@ -1041,7 +1041,7 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/duplicate/other/proto/foo.proto testdata/workspace/fail/duplicate/proto/foo.proto`),
+		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate", "proto"),
 	)
@@ -1050,7 +1050,7 @@ func TestWorkspaceDuplicateFailSpecificModule(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/v2/duplicate/other/proto/foo.proto testdata/workspace/fail/v2/duplicate/proto/foo.proto`),
+		`Failure: foo.proto is contained in multiple modules: other/proto, proto`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "duplicate", "proto"),
 	)
@@ -1064,7 +1064,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: module "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: module notexist had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
@@ -1073,7 +1073,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: module "notexist" had no .proto files`),
+		filepath.FromSlash(`Failure: module notexist had no .proto files`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "notexist"),
 	)
