@@ -133,10 +133,10 @@ func RunCommandExitCodeStderrContains(
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
 	if len(expectedStderrPartials) == 0 {
-		require.Empty(t, allStderr, requireErrorMessage(args, stdout, stderr))
+		require.Empty(t, allStderr, "stderr was not empty:\n"+requireErrorMessage(args, stdout, stderr))
 	}
 	for _, expectedPartial := range expectedStderrPartials {
-		require.Contains(t, allStderr, expectedPartial, requireErrorMessage(args, stdout, stderr))
+		require.Contains(t, allStderr, expectedPartial, "stderr expected to contain %q:\n:%s", expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 
