@@ -76,18 +76,19 @@ func newCommit(
 		option(commitOptions)
 	}
 	if commitOptions.expectedDigest != nil {
+		originalModuleKey := moduleKey
 		moduleKey = newModuleKeyNoValidate(
-			moduleKey.ModuleFullName(),
-			moduleKey.CommitID(),
+			originalModuleKey.ModuleFullName(),
+			originalModuleKey.CommitID(),
 			func() (Digest, error) {
-				moduleKeyDigest, err := moduleKey.Digest()
+				moduleKeyDigest, err := originalModuleKey.Digest()
 				if err != nil {
 					return nil, err
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, fmt.Errorf(
 						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
-						moduleKey.String(),
+						originalModuleKey.String(),
 						commitOptions.expectedDigest.String(),
 						moduleKeyDigest.String(),
 					)
