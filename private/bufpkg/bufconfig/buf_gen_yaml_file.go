@@ -399,7 +399,7 @@ func (e *externalOptimizeForConfigV1) unmarshalWith(unmarshal func(interface{}) 
 }
 
 // isEmpty returns true if the config is empty
-func (e externalOptimizeForConfigV1) isEmpty() bool { // TODO: does it need to be public?
+func (e externalOptimizeForConfigV1) isEmpty() bool {
 	return e.Default == "" &&
 		len(e.Except) == 0 &&
 		len(e.Override) == 0
@@ -438,7 +438,7 @@ type externalRubyPackageConfigV1 struct {
 }
 
 // isEmpty returns true is the config is empty.
-func (e externalRubyPackageConfigV1) isEmpty() bool { // TODO: does this need to be public? same with other IsEmpty()
+func (e externalRubyPackageConfigV1) isEmpty() bool {
 	return len(e.Except) == 0 && len(e.Override) == 0
 }
 

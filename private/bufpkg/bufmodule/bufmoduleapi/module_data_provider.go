@@ -229,7 +229,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				Values: slicesext.Map(
 					commitIDs,
 					func(commitID uuid.UUID) *modulev1beta1.DownloadRequest_Value {

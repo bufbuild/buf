@@ -23,7 +23,7 @@ import (
 
 // Ordered matches cmp.Ordered until we only support Go versions >= 1.21.
 //
-// TODO: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
+// TODO FUTURE: remove and replace with cmp.Ordered when we only support Go versions >= 1.21.
 type Ordered interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
 		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
@@ -143,7 +143,7 @@ func CountError[T any](s []T, f func(T) (bool, error)) (int, error) {
 
 // Copy returns a copy of the slice.
 //
-// TODO: Delete this in favor of slices.Clone.
+// TODO FUTURE: Delete this in favor of slices.Clone.
 func Copy[T any](s []T) []T {
 	sc := make([]T, len(s))
 	copy(sc, s)
@@ -163,7 +163,7 @@ func ToStructMap[T comparable](s []T) map[T]struct{} {
 //
 // Zero values of T are not added to the map.
 //
-// TODO: Make ToStructMap use this logic, remove ToStructMapOmitEmpty, to match other functions.
+// TODO FUTURE: Make ToStructMap use this logic, remove ToStructMapOmitEmpty, to match other functions.
 func ToStructMapOmitEmpty[T comparable](s []T) map[T]struct{} {
 	var zero T
 	m := make(map[T]struct{}, len(s))
@@ -287,7 +287,7 @@ func IndexedToSortedValues[T any](s []Indexed[T]) []T {
 // MapKeysToSortedSlice converts the map's keys to a sorted slice.
 func MapKeysToSortedSlice[M ~map[K]V, K Ordered, V any](m M) []K {
 	s := MapKeysToSlice(m)
-	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
 	sort.Slice(
 		s,
 		func(i int, j int) bool {
@@ -312,7 +312,7 @@ func MapKeysToSlice[K comparable, V any](m map[K]V) []K {
 // in cases where you know there is a 1-1 mapping from K to V.
 func MapValuesToSortedSlice[K comparable, V Ordered](m map[K]V) []V {
 	s := MapValuesToSlice(m)
-	// TODO: Replace with slices.Sort when we only support Go versions >= 1.21.
+	// TODO FUTURE: Replace with slices.Sort when we only support Go versions >= 1.21.
 	sort.Slice(
 		s,
 		func(i int, j int) bool {

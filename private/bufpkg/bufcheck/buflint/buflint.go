@@ -131,7 +131,7 @@ func GetAllRulesAndCategoriesV2() []string {
 // PrintFileAnnotationSetConfigIgnoreYAMLV1 prints the FileAnnotationSet to the Writer
 // for the config-ignore-yaml format.
 //
-// TODO: This is messed.
+// TODO FUTURE: This is messed.
 func PrintFileAnnotationSetConfigIgnoreYAMLV1(
 	writer io.Writer,
 	fileAnnotationSet bufanalysis.FileAnnotationSet,

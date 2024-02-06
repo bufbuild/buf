@@ -306,7 +306,7 @@ func getProtoLegacyFederationUploadRequestContent(
 		// backend may come to rely on this.
 		V1BufYamlFile: objectDataToProtoFile(v1BufYAMLObjectData),
 		V1BufLockFile: objectDataToProtoFile(v1BufLockObjectData),
-		// TODO: vcs_commit
+		// TODO FUTURE: vcs_commit
 	}, nil
 }
 

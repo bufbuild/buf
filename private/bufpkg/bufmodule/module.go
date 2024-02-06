@@ -267,7 +267,7 @@ func newModule(
 	protoFileTargetPath string,
 	includePackageFiles bool,
 ) (*module, error) {
-	// TODO: get these validations into a common place
+	// TODO FUTURE: get these validations into a common place
 	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
 		return nil, syserror.Newf("cannot set both protoFileTargetPath %q and either targetPaths %v or targetExcludePaths %v", protoFileTargetPath, targetPaths, targetExcludePaths)
 	}

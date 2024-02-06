@@ -73,7 +73,7 @@ type ImageFile interface {
 //
 // If externalPath is empty, path is used.
 //
-// TODO: moduleFullName and commitID should be options since they are optional.
+// TODO FUTURE: moduleFullName and commitID should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
 	moduleFullName bufmodule.ModuleFullName,
@@ -137,7 +137,7 @@ type Image interface {
 // NewImage returns a new Image for the given ImageFiles.
 //
 // The input ImageFiles are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
 	return newImage(imageFiles, false)
@@ -240,9 +240,9 @@ func MergeImages(images ...Image) (Image, error) {
 // NewImageForProto returns a new Image for the given proto Image.
 //
 // The input Files are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 //
-// TODO: do we want to add the ability to do external path resolution here?
+// TODO FUTURE: do we want to add the ability to do external path resolution here?
 func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOption) (Image, error) {
 	var newImageOptions newImageForProtoOptions
 	for _, option := range options {
@@ -312,7 +312,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 // NewImageForCodeGeneratorRequest returns a new Image from a given CodeGeneratorRequest.
 //
 // The input Files are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, options ...NewImageForProtoOption) (Image, error) {
 	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return nil, err
@@ -561,7 +561,7 @@ type newImageForProtoOptions struct {
 }
 
 func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) error {
-	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
 	resolver := protoencoding.NewLazyResolver(protoImage.File...)
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {

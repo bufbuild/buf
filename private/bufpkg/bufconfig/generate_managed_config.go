@@ -830,10 +830,8 @@ func validatePath(path string) error {
 	}
 	if path != normalizedPath {
 		return fmt.Errorf(
-			// TODO: do we want to show the word 'normalized' to users?
-			"%q is not normalized, use %q instead",
+			"path %q in your configuration must be relative and use '/' as the path separator",
 			path,
-			normalizedPath,
 		)
 	}
 	return nil

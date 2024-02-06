@@ -183,7 +183,7 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 		ctx,
 		connect.NewRequest(
 			&federationv1beta1.GetGraphRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					registryCommitIDs,
 					func(registryCommitID bufmodule.RegistryCommitID) *federationv1beta1.ResourceRef {
@@ -239,7 +239,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					commitIDs,
 					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {

@@ -141,7 +141,7 @@ func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					moduleRefs,
 					func(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
@@ -151,7 +151,6 @@ func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
 									Owner:  moduleRef.ModuleFullName().Owner(),
 									Module: moduleRef.ModuleFullName().Name(),
 									Child: &modulev1beta1.ResourceRef_Name_Ref{
-										// TODO: What to do about commit IDs? Need to be dashful.
 										Ref: moduleRef.Ref(),
 									},
 								},

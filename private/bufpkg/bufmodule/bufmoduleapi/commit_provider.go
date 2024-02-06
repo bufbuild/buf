@@ -171,7 +171,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 				return slicesext.Indexed[bufmodule.Commit]{}, syserror.Newf("no ModuleKey for proto commit ID %q", commitID)
 			}
 			// This is actually backwards - this is not the expected digest, this is the actual digest.
-			// TODO: It doesn't matter too much, but we should switch around CommitWithExpectedDigest
+			// TODO FUTURE: It doesn't matter too much, but we should switch around CommitWithExpectedDigest
 			// to be CommitWithActualDigest.
 			expectedDigest, err := ProtoToDigest(protoCommit.Digest)
 			if err != nil {

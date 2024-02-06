@@ -29,7 +29,7 @@ import (
 
 // NewImageFile returns a new ImageFile for testing.
 //
-// TODO: moduleFullName and commit should be options.
+// TODO FUTURE: moduleFullName and commit should be options.
 func NewImageFile(
 	t testing.TB,
 	fileDescriptor protodescriptor.FileDescriptor,
