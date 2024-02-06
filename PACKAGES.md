@@ -12,8 +12,5 @@
 
 ## Specific Packages
 
-- TODO: Move `protoplugin` out of `app` DONE
-- TODO: Look into merging `appcmd` and `appext` DONE
-- TODO: Replicate `cobra.PositionalArgs` so that no one needs to directly import cobra DONE
-- TODO: Better documentation for app
-- TODO: Move x packages to pkg/x, rename to xfilepath, xslices, etc
+- TODO FUTURE: Better documentation for app
+- TODO FUTURE: Move x packages to pkg/x, rename to xfilepath, xslices, etc
