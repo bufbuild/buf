@@ -406,7 +406,7 @@ func (c *controller) GetTargetImageWithConfigs(
 			case bufconfig.FileVersionV2:
 				// Do nothing. Use the default LintConfig and BreakingConfig. With
 				// the new buf.yamls with multiple modules, we don't know what lint or
-				// breaking config to apply. TODO is this right?
+				// breaking config to apply.
 			default:
 				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 			}
@@ -734,14 +734,14 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		// Even though we didn't have an explicit error case, this never actually worked
 		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
 		// not a breaking change - if anything, this is a bug fix.
-		// TODO: Feed flag names through to here.
+		// TODO FUTURE: Feed flag names through to here.
 		return nil, fmt.Errorf("--path is not valid for use with .proto file references")
 	}
 	if len(functionOptions.targetExcludePaths) > 0 {
 		// Even though we didn't have an explicit error case, this never actually worked
 		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
 		// not a breaking change - if anything, this is a bug fix.
-		// TODO: Feed flag names through to here.
+		// TODO FUTURE: Feed flag names through to here.
 		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
 	}
 	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
@@ -1011,7 +1011,7 @@ func (c *controller) buildTargetImageWithConfigs(
 		// This may happen after path targeting. We may have a Module that itself was targeted,
 		// but no target files remain. In this case, this isn't a target image.
 		//
-		// TODO: without allowNotExist, this results in silent behavior when --path is incorrect.
+		// TODO FUTURE: without allowNotExist, this results in silent behavior when --path is incorrect.
 		if len(targetFileInfos) == 0 {
 			continue
 		}
@@ -1178,7 +1178,7 @@ func bootstrapResolver(
 
 // WE DO NOT FILTER IF WE ALREADY FILTERED ON BUILDING OF A WORKSPACE
 // Also, paths are still external paths at this point if this came from a workspace
-// TODO: redo functionOptions, this is a mess
+// TODO FUTURE: redo functionOptions, this is a mess
 func filterImage(
 	image bufimage.Image,
 	functionOptions *functionOptions,
@@ -1207,8 +1207,7 @@ func filterImage(
 			for _, excludePath := range functionOptions.targetExcludePaths {
 				normalizedExcludePaths = append(normalizedExcludePaths, normalpath.Normalize(excludePath))
 			}
-			// TODO: allowNotExist?
-			// TODO: Also, does this affect lint or breaking?
+			// TODO FUTURE: allowNotExist? Also, does this affect lint or breaking?
 			newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
 				newImage,
 				normalizedTargetPaths,
@@ -1238,14 +1237,12 @@ func newProtoencodingMarshaler(
 	case buffetch.MessageEncodingBinpb:
 		return protoencoding.NewWireMarshaler(), nil
 	case buffetch.MessageEncodingJSON:
-		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return nil, err
 		}
 		return newJSONMarshaler(resolver, messageRef), nil
 	case buffetch.MessageEncodingTxtpb:
-		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return nil, err
@@ -1316,7 +1313,7 @@ func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
 			return nil
 		}
 	}
-	// TODO: get standard flag names and bindings into this package.
+	// TODO FUTURE: get standard flag names and bindings into this package.
 	fileAnnotationErrorFormatFlagName := "error-format"
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", fileAnnotationErrorFormatFlagName, fileAnnotationErrorFormat)
 }

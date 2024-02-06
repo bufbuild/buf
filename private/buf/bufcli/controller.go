@@ -54,7 +54,7 @@ func NewController(
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
 		commitProvider,
-		// TODO: Delete defaultHTTPClient and use the one from newConfig
+		// TODO FUTURE: Delete defaultHTTPClient and use the one from newConfig
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
 		defaultGitClonerOptions,

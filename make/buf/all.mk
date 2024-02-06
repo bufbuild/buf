@@ -179,3 +179,7 @@ endif
 .PHONY: newtodos
 newtodos:
 	bash make/buf/scripts/newtodos.bash
+
+.PHONY: newcurrenttodos
+newcurrenttodos:
+	bash make/buf/scripts/newtodos.bash | grep -v FUTURE
