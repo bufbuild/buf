@@ -76,18 +76,23 @@ func newCommit(
 		option(commitOptions)
 	}
 	if commitOptions.expectedDigest != nil {
+		// We need to preserve this, as if we do not, the new value for moduleKey
+		// will end up recursively calling itself when moduleKey.Digest() is called
+		// in the anonymous function. We could just extract moduleKeyDigestFunc := moduleKey.Digest
+		// and call that, but we make a variable to reference the original ModuleKey just for constency.
+		originalModuleKey := moduleKey
 		moduleKey = newModuleKeyNoValidate(
-			moduleKey.ModuleFullName(),
-			moduleKey.CommitID(),
+			originalModuleKey.ModuleFullName(),
+			originalModuleKey.CommitID(),
 			func() (Digest, error) {
-				moduleKeyDigest, err := moduleKey.Digest()
+				moduleKeyDigest, err := originalModuleKey.Digest()
 				if err != nil {
 					return nil, err
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, fmt.Errorf(
 						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
-						moduleKey.String(),
+						originalModuleKey.String(),
 						commitOptions.expectedDigest.String(),
 						moduleKeyDigest.String(),
 					)
