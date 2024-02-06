@@ -378,7 +378,7 @@ message FieldOptions {
   int32 jstype = 4;
 }
 
-// FieldLiteral provides information for a descriptor option that can be rendered in documentation.
+// FieldLiteral represents a field and its value. It can be used to model descriptor options.
 message FieldLiteral {
   // When is_extension is true, name is the fully-qualified name of the
   // extension. Otherwise, it is the simple name of the field.
@@ -387,7 +387,7 @@ message FieldLiteral {
   int32 tag = 2;
   // Indicates whether this is an extension or not.
   bool is_extension = 3;
-  // The value of an option.
+  // The field's value.
   LiteralValue value = 4;
 }
 
@@ -395,7 +395,7 @@ message FieldLiteral {
 message MessageLiteral {
   // Map of field names to value. Extension field names will be in the form:
   // [fully.qualified.extension.Name].
-  map<string, LiteralValue> fields = 1;
+  repeated FieldLiteral fields = 1;
 }
 
 // ArrayLiteral represents an option value for a type that is a repeated field.
