@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: test ref from input config as well.
+// TODO FUTURE: test ref from input config as well.
 func TestGetParsedRefSuccess(t *testing.T) {
 	t.Parallel()
 	// This allows us to test an os-agnostic root directory

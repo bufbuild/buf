@@ -132,7 +132,7 @@ func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
 
 // GetProtocFilePathsErr is like GetProtocFilePaths except it returns an error and accepts a ctx.
 func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]string, error) {
-	// TODO: This is a really convoluted way to get protoc files. It also may have an
+	// TODO FUTURE: This is a really convoluted way to get protoc files. It also may have an
 	// impact on our dependency tree.
 	moduleSet, err := bufprotoc.NewModuleSetForProtoc(
 		ctx,
