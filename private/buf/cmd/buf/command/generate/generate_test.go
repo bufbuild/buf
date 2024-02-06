@@ -40,7 +40,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: this has to change if we split up this repository
+// TODO FUTURE: this has to change if we split up this repository
 var buftestingDirPath = filepath.Join(
 	"..",
 	"..",

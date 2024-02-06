@@ -478,7 +478,7 @@ func getInputImages(
 	return inputImages, nil
 }
 
-// TODO: where does this belong? A flagsext package?
+// TODO FUTURE: where does this belong? A flagsext package?
 // value must not be nil.
 func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage string) {
 	flag := flagSet.VarPF(
