@@ -1,6 +1,5 @@
 - update buf generate help documentation
 - make buf migrate do auto-search
-- https://linear.app/bufbuild/issue/BSR-1733/warn-imports-if-they-dont-come-from-explicit-dependencies
 
 - lots of QA, especially around workspace file searching, target paths
   - Test both dashful and dashless commit IDs
