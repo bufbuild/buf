@@ -74,7 +74,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The name of the dependency to update. When set, only this dependency and its transitive dependencies are updated. May be passed multiple times",
 	)
-	// TODO: implement
+	// TODO FUTURE: implement
 	_ = flagSet.MarkHidden(onlyFlagName)
 }
 
@@ -89,7 +89,7 @@ func run(
 		dirPath = container.Arg(0)
 	}
 	if len(flags.Only) > 0 {
-		// TODO: implement
+		// TODO FUTURE: implement
 		return syserror.Newf("--%s is not yet implemented", onlyFlagName)
 	}
 

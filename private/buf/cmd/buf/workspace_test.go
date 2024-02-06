@@ -35,7 +35,7 @@ func TestWorkspaceDir(t *testing.T) {
 	// Directory paths contained within a workspace.
 	t.Parallel()
 	for _, baseDirPath := range []string{
-		// TODO(doria): can we move `dir` and `dir_buf_work` into a directory `v1` for symmetry with `v2`?
+		// TODO FUTURE(doria): can we move `dir` and `dir_buf_work` into a directory `v1` for symmetry with `v2`?
 		"dir",          // dir contains a v1 buf.work.yaml
 		"dir_buf_work", // dir_buf_work contains a v1 buf.work
 		"v2/dir",       // v2/dir contains a v2 buf.yaml
@@ -1087,7 +1087,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/jumpcontext/buf.work.yaml: directory "../breaking/other/proto" is invalid: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
@@ -1097,7 +1097,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module directory: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "jumpcontext"),
@@ -1112,7 +1112,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/diroverlap/buf.work.yaml: directory "foo" contains directory "foo/bar"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
@@ -1153,7 +1153,7 @@ func TestWorkspaceNoVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/noversion/buf.work.yaml: "version" is not set. Please add "version: v1"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "noversion"),
@@ -1168,7 +1168,7 @@ func TestWorkspaceInvalidVersionFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/invalidversion/buf.work.yaml: unknown file version: "v9"`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
@@ -1183,7 +1183,7 @@ func TestWorkspaceNoDirectoriesFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		// TODO: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
+		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
 		`Failure: decode testdata/workspace/fail/nodirectories/buf.work.yaml: directories is empty`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "nodirectories"),
@@ -1224,7 +1224,7 @@ func TestWorkspaceWithWorkspaceExcludePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input is equal to a value of --exclude-path - this would exclude everything`,
+		`Failure: given input . is equal to a value of --exclude-path . - this would exclude everything`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--exclude-path",
@@ -1235,7 +1235,7 @@ func TestWorkspaceWithWorkspaceExcludePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input is equal to a value of --exclude-path - this would exclude everything`,
+		`Failure: given input . is equal to a value of --exclude-path . - this would exclude everything`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"--exclude-path",
@@ -1328,7 +1328,7 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+		t.Skip("TODO FUTURE: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
 	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
@@ -1367,7 +1367,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("TODO: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+		t.Skip("TODO FUTURE: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
 	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
