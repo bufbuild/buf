@@ -65,6 +65,14 @@ func (r *runner) Start(name string, options ...StartOption) (Process, error) {
 	for _, option := range options {
 		option(execOptions)
 	}
+	// In Golang 1.22, the behavior of exec.Command was changed so that LookPath is no longer called.
+	// This preserves the behavior.
+	// https://cs.opensource.google/go/go/+/f7f266c88598398dcf32b448bcea2100e1702630:src/os/exec/exec.go;dlc=07d4de9312aef72d1bd7427316a2ac21b83e4a20
+	// https://tip.golang.org/doc/go1.22 (search for "LookPath")
+	name, err := exec.LookPath(name)
+	if err != nil {
+		return nil, err
+	}
 	cmd := exec.Command(name, execOptions.args...)
 	execOptions.ApplyToCmd(cmd)
 	r.increment()

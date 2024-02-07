@@ -223,8 +223,6 @@ func createGitDirs(
 	gitExecPath := strings.TrimSpace(string(gitExecPathBytes))
 	gitHTTPBackendPath := filepath.Join(gitExecPath, "git-http-backend")
 	t.Logf("gitHttpBackendPath=%q submodulePath=%q", gitHTTPBackendPath, submodulePath)
-	fileInfo, err := os.Stat(gitHTTPBackendPath)
-	t.Logf("gitHttpBackendPath fileInfo=%v err=%v", fileInfo, err)
 	// https://git-scm.com/docs/git-http-backend#_description
 	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
 	require.NoError(t, err)
