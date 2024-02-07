@@ -152,9 +152,10 @@ type OptionExtensionDescriptor interface {
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
-	// Range implements the same interface as protoreflect.Message. This takes
-	// in a callback that iterates over a protoreflect message field descriptors and values.
-	Range(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
+	// ForEachFieldDescriptor iterates through all fields present in the options message invoking
+	// the callback for each one. If the callback returns false, it terminates the
+	// iteration and returns immediately.
+	ForEachFieldDescriptor(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
 }
 
 // Location defines source code info location information.
