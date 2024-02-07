@@ -81,8 +81,6 @@ func Migrate(
 		workspaceDirPaths,
 		func(workspaceDirPath string) (string, error) {
 			if _, err := normalpath.NormalizeAndValidate(workspaceDirPath); err != nil {
-				// TODO FUTURE: comment back out when we no longer have to support go 1.19
-				//if !filepath.IsLocal(workspaceDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", workspaceDirPath)
 			}
 			return filepath.Clean(workspaceDirPath), nil
@@ -95,8 +93,6 @@ func Migrate(
 		moduleDirPaths,
 		func(moduleDirPath string) (string, error) {
 			if _, err := normalpath.NormalizeAndValidate(moduleDirPath); err != nil {
-				// TODO FUTURE: comment back out when we no longer have to support go 1.19
-				//if !filepath.IsLocal(moduleDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", moduleDirPath)
 			}
 			return filepath.Clean(moduleDirPath), nil
