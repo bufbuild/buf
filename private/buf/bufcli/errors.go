@@ -16,6 +16,7 @@ package bufcli
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -210,4 +211,12 @@ func isEmptyUnknownError(err error) bool {
 		return false
 	}
 	return err.Error() == "" && connect.CodeOf(err) == connect.CodeUnknown
+}
+
+// wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
+func wrappedTLSError(err error) error {
+	if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
+		return tlsErr
+	}
+	return nil
 }
