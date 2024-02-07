@@ -127,15 +127,9 @@ func isDescendantPath(descendant, ancestor []int32) bool {
 	return true
 }
 
-func (o *optionExtensionDescriptor) PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value {
+func (o *optionExtensionDescriptor) Range(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	// Note: This does not bother to handle unrecognized fields.
 	// Should not be a problem since descriptors models in the buf CLI codebase should have them
 	// all correctly parsed and known.
-	msg := o.message.ProtoReflect()
-	fields := map[protoreflect.FieldDescriptor]protoreflect.Value{}
-	msg.Range(func(fieldDescriptor protoreflect.FieldDescriptor, value protoreflect.Value) bool {
-		fields[fieldDescriptor] = value
-		return true
-	})
-	return fields
+	o.message.ProtoReflect().Range(fn)
 }

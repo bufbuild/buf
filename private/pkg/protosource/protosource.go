@@ -152,10 +152,9 @@ type OptionExtensionDescriptor interface {
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
-	// PresentFields returns a map of field descriptor to value for all
-	// option fields present. This includes both normal option fields
-	// and extension fields (aka custom options).
-	PresentFields() map[protoreflect.FieldDescriptor]protoreflect.Value
+	// Range implements the same interface as protoreflect.Message. This takes
+	// in a callback that iterates over a protoreflect message field descriptors and values.
+	Range(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
 }
 
 // Location defines source code info location information.
