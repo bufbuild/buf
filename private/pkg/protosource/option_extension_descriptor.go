@@ -127,7 +127,7 @@ func isDescendantPath(descendant, ancestor []int32) bool {
 	return true
 }
 
-func (o *optionExtensionDescriptor) ForEachFieldDescriptor(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (o *optionExtensionDescriptor) ForEachPresentOption(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	// Note: This does not bother to handle unrecognized fields.
 	// Should not be a problem since descriptors models in the buf CLI codebase should have them
 	// all correctly parsed and known.

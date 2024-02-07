@@ -152,10 +152,12 @@ type OptionExtensionDescriptor interface {
 	// have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
-	// ForEachFieldDescriptor iterates through all fields present in the options message invoking
-	// the callback for each one. If the callback returns false, it terminates the
-	// iteration and returns immediately.
-	ForEachFieldDescriptor(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
+	// ForEachPresentOption iterates through all options that have a set value on this
+	// descriptor, invoking fn for each present option.
+	//
+	// If fn returns false, the iteration is terminated and ForEachPresentOption
+	// immediately returns.
+	ForEachPresentOption(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
 }
 
 // Location defines source code info location information.
