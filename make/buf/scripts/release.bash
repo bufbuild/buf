@@ -43,8 +43,10 @@ sha256() {
 }
 
 if [ -z "${INSIDE_DOCKER}" ]; then
-  if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" -o -z "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" ]; then
-    fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
+  if [ -z "${SKIP_MINISIGN}" ]; then
+    if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" -o -z "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" ]; then
+      fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
+    fi
   fi
   if [ -z "${DOCKER_IMAGE}" ]; then
     fail "DOCKER_IMAGE must be set"
@@ -59,15 +61,17 @@ if [ -z "${INSIDE_DOCKER}" ]; then
   if [ "$(uname -s)" == "Linux" ]; then
     sudo chown -R "$(id -u):$(id -g)" .build
   fi
-  # Produce the signature outside the docker image where we have
-  # minisign installed.
-  secret_key_file="$(mktemp)"
-  trap "rm ${secret_key_file}" EXIT
-  # Prevent printing of private key and password
-  set +x
-  echo "${RELEASE_MINISIGN_PRIVATE_KEY}" > "${secret_key_file}"
-  echo "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" | minisign -S -s "${secret_key_file}" -m .build/release/buf/assets/sha256.txt
-  set -x
+  if [ -z "${SKIP_MINISIGN}" ]; then
+    # Produce the signature outside the docker image where we have
+    # minisign installed.
+    secret_key_file="$(mktemp)"
+    trap "rm ${secret_key_file}" EXIT
+    # Prevent printing of private key and password
+    set +x
+    echo "${RELEASE_MINISIGN_PRIVATE_KEY}" > "${secret_key_file}"
+    echo "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" | minisign -S -s "${secret_key_file}" -m .build/release/buf/assets/sha256.txt
+    set -x
+  fi
   exit 0
 fi
 
