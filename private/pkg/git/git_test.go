@@ -221,9 +221,9 @@ func createGitDirs(
 	gitExecPathBytes, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
 	require.NoError(t, err)
 	gitExecPath := strings.TrimSpace(string(gitExecPathBytes))
-	gitHttpBackendPath := filepath.Join(gitExecPath, "git-http-backend")
-	t.Logf("gitHttpBackendPath=%q submodulePath=%q", gitHttpBackendPath, submodulePath)
-	fileInfo, err := os.Stat(gitHttpBackendPath)
+	gitHTTPBackendPath := filepath.Join(gitExecPath, "git-http-backend")
+	t.Logf("gitHttpBackendPath=%q submodulePath=%q", gitHTTPBackendPath, submodulePath)
+	fileInfo, err := os.Stat(gitHTTPBackendPath)
 	t.Logf("gitHttpBackendPath fileInfo=%v err=%v", fileInfo, err)
 	// https://git-scm.com/docs/git-http-backend#_description
 	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
@@ -231,7 +231,7 @@ func createGitDirs(
 	require.NoError(t, f.Close())
 	server := httptest.NewServer(
 		&cgi.Handler{
-			Path: gitHttpBackendPath,
+			Path: gitHTTPBackendPath,
 			Dir:  submodulePath,
 			Env: append(
 				app.Environ(container),
