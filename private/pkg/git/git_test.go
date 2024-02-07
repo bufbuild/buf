@@ -17,6 +17,7 @@ package git
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http/cgi"
 	"net/http/httptest"
@@ -218,18 +219,31 @@ func createGitDirs(
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "add", "test.proto")
 	runCommand(ctx, t, container, runner, "git", "-C", submodulePath, "commit", "-m", "commit 0")
 
-	gitExecPath, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
+	gitExecPathBytes, err := command.RunStdout(ctx, container, runner, "git", "--exec-path")
 	require.NoError(t, err)
-	t.Log(filepath.Join(string(gitExecPath), "git-http-backend"))
+	gitExecPath := strings.TrimSpace(string(gitExecPathBytes))
+	// In Golang 1.22, the behavior of "os/exec" was changed so that LookPath is no longer called
+	// in some cases. This preserves the behavior.
+	// https://cs.opensource.google/go/go/+/f7f266c88598398dcf32b448bcea2100e1702630:src/os/exec/exec.go;dlc=07d4de9312aef72d1bd7427316a2ac21b83e4a20
+	// https://tip.golang.org/doc/go1.22 (search for "LookPath")
+	gitHTTPBackendPath, err := exec.LookPath(filepath.Join(gitExecPath, "git-http-backend"))
+	require.NoError(t, err)
+	t.Logf("gitHttpBackendPath=%q submodulePath=%q", gitHTTPBackendPath, submodulePath)
 	// https://git-scm.com/docs/git-http-backend#_description
 	f, err := os.Create(filepath.Join(submodulePath, ".git", "git-daemon-export-ok"))
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
-	server := httptest.NewServer(&cgi.Handler{
-		Path: filepath.Join(strings.TrimSpace(string(gitExecPath)), "git-http-backend"),
-		Dir:  submodulePath,
-		Env:  []string{"GIT_PROJECT_ROOT=" + submodulePath},
-	})
+	server := httptest.NewServer(
+		&cgi.Handler{
+			Path: gitHTTPBackendPath,
+			Dir:  submodulePath,
+			Env: append(
+				app.Environ(container),
+				fmt.Sprintf("GIT_PROJECT_ROOT=%s", submodulePath),
+			),
+			Stderr: container.Stderr(),
+		},
+	)
 	t.Cleanup(server.Close)
 	submodulePath = server.URL
 

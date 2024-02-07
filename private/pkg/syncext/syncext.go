@@ -22,7 +22,7 @@ import "sync"
 //
 // If f panics, the returned function will panic with the same value on every call.
 //
-// TODO FUTURE: This is directly copied from 1.21 source, remove when no longer need <1.20.
+// TODO FUTURE: This is directly copied from 1.21 source, remove when no longer need <1.21.
 func OnceValue[T any](f func() T) func() T {
 	var (
 		once   sync.Once
@@ -54,7 +54,7 @@ func OnceValue[T any](f func() T) func() T {
 //
 // If f panics, the returned function will panic with the same value on every call.
 //
-// TODO FUTURE: This is directly copied from 1.21 source, remove when no longer need <1.20.
+// TODO FUTURE: This is directly copied from 1.21 source, remove when no longer need <1.21.
 func OnceValues[T1, T2 any](f func() (T1, T2)) func() (T1, T2) {
 	var (
 		once  sync.Once

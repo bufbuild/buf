@@ -52,7 +52,7 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 	// we verify manually so that we can emit verbose output while doing so
 	conf.InsecureSkipVerify = true
 	conf.VerifyConnection = func(state tls.ConnectionState) error {
-		printer.Printf("* TLS connection using %s / %s", versionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
+		printer.Printf("* TLS connection using %s / %s", tls.VersionName(state.Version), tls.CipherSuiteName(state.CipherSuite))
 		if state.DidResume {
 			printer.Printf("* (TLS session resumed)")
 		}
@@ -152,21 +152,4 @@ func MakeVerboseTLSConfig(settings *TLSSettings, authority string, printer verbo
 	}
 
 	return &conf, nil
-}
-
-func versionName(tlsVersion uint16) string {
-	// TODO: once we can use Go 1.20, it will provide tls.VersionName that we can use
-	//       https://github.com/golang/go/issues/46308
-	switch tlsVersion {
-	case tls.VersionTLS10:
-		return "TLSv1.0"
-	case tls.VersionTLS11:
-		return "TLSv1.1"
-	case tls.VersionTLS12:
-		return "TLSv1.2"
-	case tls.VersionTLS13:
-		return "TLSv1.3"
-	default:
-		return "(unrecognized TLS version)"
-	}
 }
