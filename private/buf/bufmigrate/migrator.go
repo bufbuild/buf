@@ -45,6 +45,7 @@ import (
 type migrator struct {
 	messageWriter  io.Writer
 	clientProvider bufapi.ClientProvider
+	commitProvider bufmodule.CommitProvider
 	// the bucket at "."
 	rootBucket storage.ReadWriteBucket
 	// the directory where the migrated buf.yaml live, this is useful for computing
@@ -64,12 +65,14 @@ func newMigrator(
 	// usually stderr
 	messageWriter io.Writer,
 	clientProvider bufapi.ClientProvider,
+	commitProvider bufmodule.CommitProvider,
 	rootBucket storage.ReadWriteBucket,
 	destinationDir string,
 ) *migrator {
 	return &migrator{
 		messageWriter:            messageWriter,
 		clientProvider:           clientProvider,
+		commitProvider:           commitProvider,
 		destinationDir:           destinationDir,
 		rootBucket:               rootBucket,
 		pathToMigratedBufGenYAML: map[string]bufconfig.BufGenYAMLFile{},
@@ -346,7 +349,15 @@ func (m *migrator) addModuleDirectory(
 		moduleDir,
 		bufconfig.BufLockFileWithDigestResolver(
 			func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error) {
-				return bufmoduleapi.DigestForCommitID(ctx, m.clientProvider, remote, commitID, bufmodule.DigestTypeB4)
+				commitKey, err := bufmodule.NewCommitKey(remote, commitID, bufmodule.DigestTypeB4)
+				if err != nil {
+					return nil, err
+				}
+				commits, err := m.commitProvider.GetCommitsForCommitKeys(ctx, []bufmodule.CommitKey{commitKey})
+				if err != nil {
+					return nil, err
+				}
+				return commits[0].ModuleKey().Digest()
 			},
 		),
 	)
@@ -565,37 +576,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		// bufLock could be nil here, but that's OK, see docs for this function.
 		return bufYAML, bufLock, nil
 	}
-	// TODO: remove entire if-clause when commit service is implemented
-	if true {
-		resolvedDepModuleRefs := make([]bufmodule.ModuleRef, 0, len(depModuleToDeclaredRefs))
-		for _, depModuleRefs := range depModuleToDeclaredRefs {
-			resolvedDepModuleRefs = append(resolvedDepModuleRefs, depModuleRefs[0])
-		}
-		bufYAML, err := bufconfig.NewBufYAMLFile(
-			bufconfig.FileVersionV2,
-			m.moduleConfigs,
-			resolvedDepModuleRefs,
-		)
-		if err != nil {
-			return nil, nil, err
-		}
-		resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(depModuleToLockEntries))
-		for _, depModuleKeys := range depModuleToLockEntries {
-			resolvedDepModuleKeys = append(resolvedDepModuleKeys, depModuleKeys[0])
-		}
-		var bufLock bufconfig.BufLockFile
-		if m.hasSeenBufLock {
-			bufLock, err = bufconfig.NewBufLockFile(
-				bufconfig.FileVersionV2,
-				resolvedDepModuleKeys,
-			)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-		return bufYAML, bufLock, nil
-	}
-	// TODO: the code below this line isn't currently reachable.
+	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider
 	moduleToRefToCommit, err := getModuleToRefToCommit(ctx, m.clientProvider, m.moduleDependencies)
 	if err != nil {
 		return nil, nil, err

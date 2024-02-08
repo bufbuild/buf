@@ -73,7 +73,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		".",
 		`The directory to write the configuration file to`,
 	)
-	// TODO: Bring this flag back in future versions if we decide it's important.
+	// TODO FUTURE: Bring this flag back in future versions if we decide it's important.
 	// We're not breaking anyone by not actually producing comments for now.
 	flagSet.BoolVar(
 		&f.DocumentationComments,

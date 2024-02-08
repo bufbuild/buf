@@ -50,7 +50,7 @@ func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	}
 }
 
-// TODO: add Description and Url field if it's desired to udpate them from the CLI
+// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
 	Visibility string
 }
@@ -93,7 +93,7 @@ func run(
 				OwnerName:      moduleFullName.Owner(),
 				RepositoryName: moduleFullName.Name(),
 				Visibility:     visibility,
-				// TODO: pass description and url
+				// TODO FUTURE: pass description and url
 			},
 		),
 	); err != nil {

@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
@@ -37,10 +37,10 @@ const (
 )
 
 func checkCELForMessage(
-	add func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{}),
+	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
 	messageConstraints *validate.MessageConstraints,
 	messageDescriptor protoreflect.MessageDescriptor,
-	message protosource.Message,
+	message bufprotosource.Message,
 ) error {
 	celEnv, err := celext.DefaultEnv(false)
 	if err != nil {
@@ -206,7 +206,7 @@ func checkCEL(
 	}
 }
 
-func getReflectMessageDescriptor(resolver protodesc.Resolver, message protosource.Message) (protoreflect.MessageDescriptor, error) {
+func getReflectMessageDescriptor(resolver protodesc.Resolver, message bufprotosource.Message) (protoreflect.MessageDescriptor, error) {
 	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(message.FullName()))
 	if err == protoregistry.NotFound {
 		return nil, fmt.Errorf("unable to resolve MessageDescriptor: %s", message.FullName())
@@ -222,7 +222,7 @@ func getReflectMessageDescriptor(resolver protodesc.Resolver, message protosourc
 	return messageDescriptor, nil
 }
 
-func getReflectFieldDescriptor(resolver protodesc.Resolver, field protosource.Field) (protoreflect.FieldDescriptor, error) {
+func getReflectFieldDescriptor(resolver protodesc.Resolver, field bufprotosource.Field) (protoreflect.FieldDescriptor, error) {
 	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(field.FullName()))
 	if err == protoregistry.NotFound {
 		return nil, fmt.Errorf("unable to resolve FieldDescriptor: %s", field.FullName())

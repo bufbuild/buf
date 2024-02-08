@@ -40,7 +40,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: this has to change if we split up this repository
+// TODO FUTURE: this has to change if we split up this repository
 var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
@@ -166,8 +166,6 @@ func TestOutputFlag(t *testing.T) {
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
-	// TODO: un-skip this once proto file ref is implemented
-	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -219,8 +217,6 @@ func TestGenerateDuplicatePluginsV2(t *testing.T) {
 }
 
 func TestOutputWithPathEqualToExclude(t *testing.T) {
-	// TODO: un-skip this once --path and --exclude-path are updated
-	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunStdoutStderr(
@@ -228,7 +224,7 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path flags: a/v1/a.proto`),
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path: a/v1/a.proto`),
 		"--output",
 		tempDirPath,
 		"--template",
@@ -709,7 +705,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 				appext.NewBuilder(
 					name,
 					appext.BuilderWithInterceptor(
-						// TODO: use the real interceptor. Currently in buf.go, NewBuilder receives appflag.BuilderWithInterceptor(newErrorInterceptor()).
+						// TODO FUTURE: use the real interceptor. Currently in buf.go, NewBuilder receives appflag.BuilderWithInterceptor(newErrorInterceptor()).
 						// However we cannot depend on newErrorInterceptor because it would create an import cycle, not to mention it needs to be exported first.
 						// This can depend on newErroInterceptor when it's moved to a separate package and made public.
 						func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {

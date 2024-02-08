@@ -19,7 +19,6 @@ import (
 	"io/fs"
 
 	"github.com/bufbuild/buf/private/pkg/dag"
-	"github.com/gofrs/uuid/v5"
 )
 
 var (
@@ -39,10 +38,8 @@ type GraphProvider interface {
 	// The input ModuleKeys are expected to have the same DigestType. The implementation
 	// may error if this is not the case.
 	//
-	// The input ModuleKeys must all have the same registry. An error will be returned otherwise.
-	//
 	// If any ModuleKey is not found, an error with fs.ErrNotExist will be returned.
-	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[uuid.UUID, ModuleKey], error)
+	GetGraphForModuleKeys(context.Context, []ModuleKey) (*dag.Graph[RegistryCommitID, ModuleKey], error)
 }
 
 // *** PRIVATE ***
@@ -52,6 +49,6 @@ type nopGraphProvider struct{}
 func (nopGraphProvider) GetGraphForModuleKeys(
 	context.Context,
 	[]ModuleKey,
-) (*dag.Graph[uuid.UUID, ModuleKey], error) {
+) (*dag.Graph[RegistryCommitID, ModuleKey], error) {
 	return nil, fs.ErrNotExist
 }

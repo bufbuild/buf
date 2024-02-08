@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -36,7 +37,7 @@ func NewModuleDataProvider(
 /// *** PRIVATE ***
 
 type moduleDataProvider struct {
-	*baseProvider[bufmodule.ModuleData]
+	*baseProvider[bufmodule.ModuleKey, bufmodule.ModuleData]
 }
 
 func newModuleDataProvider(
@@ -50,6 +51,10 @@ func newModuleDataProvider(
 			delegate.GetModuleDatasForModuleKeys,
 			store.GetModuleDatasForModuleKeys,
 			store.PutModuleDatas,
+			bufmodule.ModuleKey.CommitID,
+			func(moduleData bufmodule.ModuleData) uuid.UUID {
+				return moduleData.ModuleKey().CommitID()
+			},
 		),
 	}
 }
@@ -58,5 +63,5 @@ func (p *moduleDataProvider) GetModuleDatasForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleData, error) {
-	return p.baseProvider.getValuesForModuleKeys(ctx, moduleKeys)
+	return p.baseProvider.getValuesForKeys(ctx, moduleKeys)
 }

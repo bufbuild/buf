@@ -104,11 +104,16 @@ func run(
 	if err != nil {
 		return err
 	}
+	commitProvider, err := bufcli.NewCommitProvider(container)
+	if err != nil {
+		return err
+	}
 	return bufmigrate.Migrate(
 		ctx,
 		container.Stderr(),
 		storageos.NewProvider(storageos.ProviderWithSymlinks()),
 		bufapi.NewClientProvider(clientConfig),
+		commitProvider,
 		flags.WorkspaceDirPaths,
 		flags.ModuleDirPaths,
 		flags.BufGenYAMLPaths,

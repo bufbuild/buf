@@ -29,12 +29,11 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -103,11 +102,11 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
-	fullNameToMessage, err := protosource.FullNameToMessage(protosourceFiles...)
+	fullNameToMessage, err := bufprotosource.FullNameToMessage(protosourceFiles...)
 	if err != nil {
 		return err
 	}
-	fullNameToEnum, err := protosource.FullNameToEnum(protosourceFiles...)
+	fullNameToEnum, err := bufprotosource.FullNameToEnum(protosourceFiles...)
 	if err != nil {
 		return err
 	}
@@ -148,7 +147,7 @@ func getProtosourceFiles(
 	ctx context.Context,
 	container appext.Container,
 	bucket storage.ReadBucket,
-) ([]protosource.File, error) {
+) ([]bufprotosource.File, error) {
 	moduleSet, err := bufmodule.NewModuleSetBuilder(
 		ctx,
 		tracing.NewTracer(container.Tracer()),
@@ -184,13 +183,13 @@ func getProtosourceFiles(
 		}
 		return nil, err
 	}
-	return protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
+	return bufprotosource.NewFiles(ctx, image)
 }
 
 func getGolangFileData(
 	pathToData map[string][]byte,
-	fullNameToMessage map[string]protosource.Message,
-	fullNameToEnum map[string]protosource.Enum,
+	fullNameToMessage map[string]bufprotosource.Message,
+	fullNameToEnum map[string]bufprotosource.Enum,
 	packageName string,
 ) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)

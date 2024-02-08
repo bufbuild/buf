@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package protosource
+package bufprotosource
 
 import _ "github.com/bufbuild/buf/private/usage"

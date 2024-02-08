@@ -104,7 +104,7 @@ func run(
 			&registryv1alpha1.ListWebhooksRequest{
 				RepositoryName: flags.RepositoryName,
 				OwnerName:      flags.OwnerName,
-				// TODO: this should probably be in a loop so we can get page token from
+				// TODO FUTURE: this should probably be in a loop so we can get page token from
 				//   response and query for the next page
 			},
 		),

@@ -257,7 +257,7 @@ func fileMatchConfig(
 	return true
 }
 
-// TODO: unify naming of these helpers
+// TODO FUTURE: unify naming of these helpers
 func getJavaPackageValue(imageFile bufimage.ImageFile, stringOverrideOptions stringOverrideOptions) string {
 	if pkg := imageFile.FileDescriptorProto().GetPackage(); pkg != "" {
 		if stringOverrideOptions.prefix != "" {
@@ -304,7 +304,7 @@ func getRubyPackageValue(imageFile bufimage.ImageFile, suffix string) string {
 	return rubyPackage + "::" + suffix
 }
 
-// TODO: is this needed?
+// TODO FUTURE: is this needed?
 // csharpNamespaceValue returns the csharp_namespace for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.

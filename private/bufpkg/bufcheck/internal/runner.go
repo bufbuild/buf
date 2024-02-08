@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -66,7 +66,7 @@ func RunnerWithIgnorePrefix(ignorePrefix string) RunnerOption {
 // Check runs the Rules.
 //
 // An error of type bufanalysis.FileAnnotationSet will be returned on a rule failure.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) (retErr error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufprotosource.File, files []bufprotosource.File) (retErr error) {
 	rules := config.Rules
 	if len(rules) == 0 {
 		return nil
@@ -116,7 +116,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	return func(id string, descriptors []protosource.Descriptor, locations []protosource.Location) bool {
+	return func(id string, descriptors []bufprotosource.Descriptor, locations []bufprotosource.Location) bool {
 		if idIsIgnored(id, descriptors, config) {
 			return true
 		}
@@ -137,7 +137,7 @@ func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
 	}
 }
 
-func idIsIgnored(id string, descriptors []protosource.Descriptor, config *Config) bool {
+func idIsIgnored(id string, descriptors []bufprotosource.Descriptor, config *Config) bool {
 	for _, descriptor := range descriptors {
 		// OR of descriptors
 		if idIsIgnoredForDescriptor(id, descriptor, config) {
@@ -147,7 +147,7 @@ func idIsIgnored(id string, descriptors []protosource.Descriptor, config *Config
 	return false
 }
 
-func idIsIgnoredForDescriptor(id string, descriptor protosource.Descriptor, config *Config) bool {
+func idIsIgnoredForDescriptor(id string, descriptor bufprotosource.Descriptor, config *Config) bool {
 	if descriptor == nil {
 		return false
 	}
@@ -165,7 +165,7 @@ func idIsIgnoredForDescriptor(id string, descriptor protosource.Descriptor, conf
 	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative)
 }
 
-func locationsAreIgnored(id string, ignorePrefix string, locations []protosource.Location, config *Config) bool {
+func locationsAreIgnored(id string, ignorePrefix string, locations []bufprotosource.Location, config *Config) bool {
 	// we already check that ignorePrefix is non-empty, but just doing here for safety
 	if id == "" || ignorePrefix == "" {
 		return false
@@ -185,7 +185,7 @@ func locationsAreIgnored(id string, ignorePrefix string, locations []protosource
 	return false
 }
 
-func descriptorPackageIsUnstable(descriptor protosource.Descriptor) bool {
+func descriptorPackageIsUnstable(descriptor bufprotosource.Descriptor) bool {
 	if descriptor == nil {
 		return false
 	}

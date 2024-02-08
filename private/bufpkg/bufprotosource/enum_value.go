@@ -12,36 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protosource
+package bufprotosource
 
-type oneof struct {
+type enumValue struct {
 	namedDescriptor
 	optionExtensionDescriptor
 
-	message Message
-	fields  []Field
+	enum       Enum
+	number     int
+	deprecated bool
+	numberPath []int32
 }
 
-func newOneof(
+func newEnumValue(
 	namedDescriptor namedDescriptor,
 	optionExtensionDescriptor optionExtensionDescriptor,
-	message Message,
-) *oneof {
-	return &oneof{
+	enum Enum,
+	number int,
+	deprecated bool,
+	numberPath []int32,
+) *enumValue {
+	return &enumValue{
 		namedDescriptor:           namedDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
-		message:                   message,
+		enum:                      enum,
+		number:                    number,
+		deprecated:                deprecated,
+		numberPath:                numberPath,
 	}
 }
 
-func (o *oneof) Message() Message {
-	return o.message
+func (e *enumValue) Enum() Enum {
+	return e.enum
 }
 
-func (o *oneof) Fields() []Field {
-	return o.fields
+func (e *enumValue) Number() int {
+	return e.number
 }
 
-func (o *oneof) addField(field Field) {
-	o.fields = append(o.fields, field)
+func (e *enumValue) Deprecated() bool {
+	return e.deprecated
+}
+
+func (e *enumValue) NumberLocation() Location {
+	return e.getLocation(e.numberPath)
 }

@@ -20,10 +20,8 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -73,7 +71,6 @@ type WorkspaceProvider interface {
 func NewWorkspaceProvider(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -81,7 +78,6 @@ func NewWorkspaceProvider(
 	return newWorkspaceProvider(
 		logger,
 		tracer,
-		clientProvider,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
@@ -93,7 +89,6 @@ func NewWorkspaceProvider(
 type workspaceProvider struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
-	clientProvider     bufapi.ClientProvider
 	graphProvider      bufmodule.GraphProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	commitProvider     bufmodule.CommitProvider
@@ -102,7 +97,6 @@ type workspaceProvider struct {
 func newWorkspaceProvider(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
@@ -110,7 +104,6 @@ func newWorkspaceProvider(
 	return &workspaceProvider{
 		logger:             logger,
 		tracer:             tracer,
-		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
@@ -328,7 +321,15 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			moduleDirPath,
 			bufconfig.BufLockFileWithDigestResolver(
 				func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error) {
-					return bufmoduleapi.DigestForCommitID(ctx, w.clientProvider, remote, commitID, bufmodule.DigestTypeB4)
+					commitKey, err := bufmodule.NewCommitKey(remote, commitID, bufmodule.DigestTypeB4)
+					if err != nil {
+						return nil, err
+					}
+					commits, err := w.commitProvider.GetCommitsForCommitKeys(ctx, []bufmodule.CommitKey{commitKey})
+					if err != nil {
+						return nil, err
+					}
+					return commits[0].ModuleKey().Digest()
 				},
 			),
 		)

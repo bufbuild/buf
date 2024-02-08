@@ -142,7 +142,7 @@ func (a *addedModule) ToModule(
 			// ModuleData.Bucket has sync.OnceValues and getStorageMatchers applied since it can
 			// only be constructed via NewModuleData.
 			//
-			// TODO: This is a bit shady.
+			// TODO FUTURE: This is a bit shady.
 			return moduleData.Bucket()
 		},
 	)

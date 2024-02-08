@@ -15,6 +15,7 @@
 package bufapi
 
 import (
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/legacy/federation/v1beta1/federationv1beta1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1beta1/ownerv1beta1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -63,6 +64,16 @@ type LabelServiceClientProvider interface {
 	LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient
 }
 
+// LegacyFederationGraphServiceClientProvider provides LegacyGraphServiceClients.
+type LegacyFederationGraphServiceClientProvider interface {
+	LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient
+}
+
+// LegacyFederationUploadServiceClientProvider provides LegacyUploadServiceClients.
+type LegacyFederationUploadServiceClientProvider interface {
+	LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient
+}
+
 // ModuleServiceClientProvider provides ModuleServiceClients.
 type ModuleServiceClientProvider interface {
 	ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient
@@ -94,6 +105,8 @@ type ClientProvider interface {
 	DownloadServiceClientProvider
 	GraphServiceClientProvider
 	LabelServiceClientProvider
+	LegacyFederationGraphServiceClientProvider
+	LegacyFederationUploadServiceClientProvider
 	ModuleServiceClientProvider
 	OrganizationServiceClientProvider
 	OwnerServiceClientProvider
@@ -147,6 +160,22 @@ func (c *clientProvider) LabelServiceClient(registry string) modulev1beta1connec
 		c.clientConfig,
 		registry,
 		modulev1beta1connect.NewLabelServiceClient,
+	)
+}
+
+func (c *clientProvider) LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		federationv1beta1connect.NewGraphServiceClient,
+	)
+}
+
+func (c *clientProvider) LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		federationv1beta1connect.NewUploadServiceClient,
 	)
 }
 
@@ -206,6 +235,14 @@ func (nopClientProvider) GraphServiceClient(registry string) modulev1beta1connec
 
 func (nopClientProvider) LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient {
 	return modulev1beta1connect.UnimplementedLabelServiceHandler{}
+}
+
+func (nopClientProvider) LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient {
+	return federationv1beta1connect.UnimplementedGraphServiceHandler{}
+}
+
+func (nopClientProvider) LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient {
+	return federationv1beta1connect.UnimplementedUploadServiceHandler{}
 }
 
 func (nopClientProvider) ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient {

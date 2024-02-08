@@ -16,10 +16,9 @@ package bufmoduleapi
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
-	"strings"
 
+	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -36,6 +35,7 @@ func NewGraphProvider(
 	logger *zap.Logger,
 	clientProvider interface {
 		bufapi.GraphServiceClientProvider
+		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
@@ -49,6 +49,7 @@ type graphProvider struct {
 	logger         *zap.Logger
 	clientProvider interface {
 		bufapi.GraphServiceClientProvider
+		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	}
@@ -58,6 +59,7 @@ func newGraphProvider(
 	logger *zap.Logger,
 	clientProvider interface {
 		bufapi.GraphServiceClientProvider
+		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
@@ -71,8 +73,8 @@ func newGraphProvider(
 func (a *graphProvider) GetGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
-) (*dag.Graph[uuid.UUID, bufmodule.ModuleKey], error) {
-	graph := dag.NewGraph[uuid.UUID, bufmodule.ModuleKey](bufmodule.ModuleKey.CommitID)
+) (*dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[bufmodule.RegistryCommitID, bufmodule.ModuleKey](bufmodule.ModuleKeyToRegistryCommitID)
 	if len(moduleKeys) == 0 {
 		return graph, nil
 	}
@@ -85,37 +87,27 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	// isn't an LRU cache, and the information also may change over time.
 	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
-	registries := slicesext.ToUniqueSorted(
-		slicesext.Map(
-			moduleKeys,
-			func(moduleKey bufmodule.ModuleKey) string { return moduleKey.ModuleFullName().Registry() },
-		),
-	)
-	// Validate we're all within one registry for now.
-	if len(registries) != 1 {
-		// TODO: This messes up legacy federation.
-		return nil, fmt.Errorf("multiple registries detected: %s", strings.Join(registries, ", "))
-	}
-	registry := registries[0]
-	protoGraph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, registry, moduleKeys, digestType)
+	protoLegacyFederationGraph, err := a.getProtoLegacyFederationGraphForModuleKeys(ctx, moduleKeys, digestType)
 	if err != nil {
 		return nil, err
 	}
-	commitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
+	registryCommitIDToModuleKey, err := slicesext.ToUniqueValuesMapError(
 		moduleKeys,
-		func(moduleKey bufmodule.ModuleKey) (uuid.UUID, error) {
-			return moduleKey.CommitID(), nil
+		func(moduleKey bufmodule.ModuleKey) (bufmodule.RegistryCommitID, error) {
+			return bufmodule.ModuleKeyToRegistryCommitID(moduleKey), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	for _, protoCommit := range protoGraph.Commits {
-		commitID, err := uuid.FromString(protoCommit.Id)
+	for _, protoLegacyFederationCommit := range protoLegacyFederationGraph.Commits {
+		registry := protoLegacyFederationCommit.Registry
+		commitID, err := uuid.FromString(protoLegacyFederationCommit.Commit.Id)
 		if err != nil {
 			return nil, err
 		}
-		moduleKey, ok := commitIDToModuleKey[commitID]
+		registryCommitID := bufmodule.NewRegistryCommitID(registry, commitID)
+		moduleKey, ok := registryCommitIDToModuleKey[registryCommitID]
 		if !ok {
 			// This may be a transitive dependency that we don't have. In this case,
 			// go out to the API and get the transitive dependency.
@@ -124,39 +116,112 @@ func (a *graphProvider) GetGraphForModuleKeys(
 				protoModuleProvider,
 				protoOwnerProvider,
 				registry,
-				protoCommit,
+				protoLegacyFederationCommit.Commit,
 			)
 			if err != nil {
 				return nil, err
 			}
-			commitIDToModuleKey[moduleKey.CommitID()] = moduleKey
+			registryCommitIDToModuleKey[registryCommitID] = moduleKey
 		}
 		graph.AddNode(moduleKey)
 	}
-	for _, protoEdge := range protoGraph.Edges {
-		fromCommitID, err := uuid.FromString(protoEdge.FromCommitId)
+	for _, protoLegacyFederationEdge := range protoLegacyFederationGraph.Edges {
+		fromRegistry := protoLegacyFederationEdge.FromNode.Registry
+		fromCommitID, err := uuid.FromString(protoLegacyFederationEdge.FromNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
-		fromModuleKey, ok := commitIDToModuleKey[fromCommitID]
+		fromRegistryCommitID := bufmodule.NewRegistryCommitID(fromRegistry, fromCommitID)
+		fromModuleKey, ok := registryCommitIDToModuleKey[fromRegistryCommitID]
 		if !ok {
 			// We should always have this after our previous iteration.
 			// This could be an API error, but regardless we consider it a system error here.
-			return nil, syserror.Newf("did not have commit id %q in commitIDToModuleKey", fromCommitID)
+			return nil, syserror.Newf("did not have RegistryCommitID %v in registryCommitIDToModuleKey", fromRegistryCommitID)
 		}
-		toCommitID, err := uuid.FromString(protoEdge.ToCommitId)
+		toRegistry := protoLegacyFederationEdge.ToNode.Registry
+		toCommitID, err := uuid.FromString(protoLegacyFederationEdge.ToNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
-		toModuleKey, ok := commitIDToModuleKey[toCommitID]
+		toRegistryCommitID := bufmodule.NewRegistryCommitID(toRegistry, toCommitID)
+		toModuleKey, ok := registryCommitIDToModuleKey[toRegistryCommitID]
 		if !ok {
 			// We should always have this after our previous iteration.
 			// This could be an API error, but regardless we consider it a system error here.
-			return nil, syserror.Newf("did not have commit id %q in commitIDToModuleKey", toCommitID)
+			return nil, syserror.Newf("did not have RegistryCommitID %v in registryCommitIDToModuleKey", toRegistryCommitID)
 		}
 		graph.AddEdge(fromModuleKey, toModuleKey)
 	}
 	return graph, nil
+}
+
+func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+	digestType bufmodule.DigestType,
+) (*federationv1beta1.Graph, error) {
+	primaryRegistry, secondaryRegistry, err := getPrimarySecondaryRegistry(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+	if secondaryRegistry == "" {
+		// If we only have a single registry, invoke the new API endpoint that does not allow
+		// for federation. Do this so that we can maintain federated API endpoint metrics.
+		graph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys, digestType)
+		if err != nil {
+			return nil, err
+		}
+		return protoGraphToProtoLegacyFederationGraph(primaryRegistry, graph), nil
+	}
+
+	registryCommitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
+	protoDigestType, err := digestTypeToProto(digestType)
+	if err != nil {
+		return nil, err
+	}
+	response, err := a.clientProvider.LegacyFederationGraphServiceClient(primaryRegistry).GetGraph(
+		ctx,
+		connect.NewRequest(
+			&federationv1beta1.GetGraphRequest{
+				// TODO FUTURE: chunking
+				ResourceRefs: slicesext.Map(
+					registryCommitIDs,
+					func(registryCommitID bufmodule.RegistryCommitID) *federationv1beta1.ResourceRef {
+						return &federationv1beta1.ResourceRef{
+							Value: &federationv1beta1.ResourceRef_Id{
+								Id: registryCommitID.CommitID.String(),
+							},
+							Registry: registryCommitID.Registry,
+						}
+					},
+				),
+				DigestType: protoDigestType,
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
+		}
+		return nil, err
+	}
+
+	for _, commit := range response.Msg.Graph.Commits {
+		if err := validateRegistryIsPrimaryOrSecondary(commit.Registry, primaryRegistry, secondaryRegistry); err != nil {
+			return nil, err
+		}
+	}
+	for _, edge := range response.Msg.Graph.Edges {
+		if err := validateRegistryIsPrimaryOrSecondary(edge.FromNode.Registry, primaryRegistry, secondaryRegistry); err != nil {
+			return nil, err
+		}
+		if err := validateRegistryIsPrimaryOrSecondary(edge.ToNode.Registry, primaryRegistry, secondaryRegistry); err != nil {
+			return nil, err
+		}
+	}
+
+	return response.Msg.Graph, nil
 }
 
 func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
@@ -174,7 +239,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					commitIDs,
 					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {

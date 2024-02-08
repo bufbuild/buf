@@ -80,6 +80,7 @@ func getModuleDeps(
 	module Module,
 ) ([]ModuleDep, error) {
 	depOpaqueIDToModuleDep := make(map[string]ModuleDep)
+	protoFileTracker := newProtoFileTracker()
 	if err := getModuleDepsRec(
 		ctx,
 		module,
@@ -87,10 +88,15 @@ func getModuleDeps(
 		make(map[string]struct{}),
 		nil,
 		depOpaqueIDToModuleDep,
+		protoFileTracker,
 		true,
 	); err != nil {
 		return nil, err
 	}
+	if err := protoFileTracker.validate(); err != nil {
+		return nil, err
+	}
+
 	moduleDeps := make([]ModuleDep, 0, len(depOpaqueIDToModuleDep))
 	for _, moduleDep := range depOpaqueIDToModuleDep {
 		moduleDeps = append(moduleDeps, moduleDep)
@@ -113,8 +119,9 @@ func getModuleDepsRec(
 	parentOpaqueIDs map[string]struct{},
 	// Ordered version of parentOpaqueIDs so we can print a cycle error.
 	orderedParentOpaqueIDs []string,
-	// already discovered deps
+	// Already discovered deps.
 	depOpaqueIDToModuleDep map[string]ModuleDep,
+	protoFileTracker *protoFileTracker,
 	isDirect bool,
 ) error {
 	opaqueID := module.OpaqueID()
@@ -130,6 +137,8 @@ func getModuleDepsRec(
 		// This should never happen.
 		return syserror.New("moduleSet never set on module")
 	}
+
+	protoFileTracker.trackModule(module)
 	// Doing this BFS so we add all the direct deps to the map first, then if we
 	// see a dep later, it will still be a direct dep in the map, but will be ignored
 	// on recursive calls.
@@ -140,6 +149,8 @@ func getModuleDepsRec(
 			if fileInfo.FileType() != FileTypeProto {
 				return nil
 			}
+			protoFileTracker.trackFileInfo(fileInfo)
+
 			fastscanResult, err := module.getFastscanResultForPath(ctx, fileInfo.Path())
 			if err != nil {
 				var fileAnnotationSet bufanalysis.FileAnnotationSet
@@ -206,6 +217,7 @@ func getModuleDepsRec(
 			parentOpaqueIDs,
 			newOrderedParentOpaqueIDs,
 			depOpaqueIDToModuleDep,
+			protoFileTracker,
 			// Always not direct on recursive calls.
 			// We've already added all the direct deps.
 			false,

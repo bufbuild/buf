@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"io"
 
+	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -155,4 +157,60 @@ func labelNameToProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabel
 			Name: labelName,
 		},
 	}
+}
+
+func protoGraphToProtoLegacyFederationGraph(
+	registry string,
+	protoGraph *modulev1beta1.Graph,
+) *federationv1beta1.Graph {
+	protoLegacyFederationGraph := &federationv1beta1.Graph{
+		Commits: make([]*federationv1beta1.Graph_Commit, len(protoGraph.Commits)),
+		Edges:   make([]*federationv1beta1.Graph_Edge, len(protoGraph.Edges)),
+	}
+	for i, protoCommit := range protoGraph.Commits {
+		protoLegacyFederationGraph.Commits[i] = &federationv1beta1.Graph_Commit{
+			Commit:   protoCommit,
+			Registry: registry,
+		}
+	}
+	for i, protoEdge := range protoGraph.Edges {
+		protoLegacyFederationGraph.Edges[i] = &federationv1beta1.Graph_Edge{
+			FromNode: &federationv1beta1.Graph_Node{
+				CommitId: protoEdge.FromNode.CommitId,
+				Registry: registry,
+			},
+			ToNode: &federationv1beta1.Graph_Node{
+				CommitId: protoEdge.ToNode.CommitId,
+				Registry: registry,
+			},
+		}
+	}
+	return protoLegacyFederationGraph
+}
+
+// We have to make sure this is updated if a field is added?
+// TODO: Can we automate this to make sure this is true?
+func protoLegacyFederationUploadRequestContentToProtoUploadRequestContent(
+	registry string,
+	protoLegacyFederationUploadRequestContent *federationv1beta1.UploadRequest_Content,
+) (*modulev1beta1.UploadRequest_Content, error) {
+	protoUploadRequestContent := &modulev1beta1.UploadRequest_Content{
+		ModuleRef:        protoLegacyFederationUploadRequestContent.ModuleRef,
+		DepRefs:          make([]*modulev1beta1.UploadRequest_DepRef, len(protoLegacyFederationUploadRequestContent.DepRefs)),
+		Files:            protoLegacyFederationUploadRequestContent.Files,
+		V1BufYamlFile:    protoLegacyFederationUploadRequestContent.V1BufYamlFile,
+		V1BufLockFile:    protoLegacyFederationUploadRequestContent.V1BufLockFile,
+		ScopedLabelRefs:  protoLegacyFederationUploadRequestContent.ScopedLabelRefs,
+		SourceControlUrl: protoLegacyFederationUploadRequestContent.SourceControlUrl,
+	}
+	for i, legacyDepRef := range protoLegacyFederationUploadRequestContent.DepRefs {
+		if legacyDepRef.Registry != registry {
+			return nil, syserror.Newf("tried to convert a legacy federation UploadRequest_Content to a module UploadRequest_Content with registry %q but found registry %q in DepRefs", registry, legacyDepRef.Registry)
+		}
+		protoUploadRequestContent.DepRefs[i] = &modulev1beta1.UploadRequest_DepRef{
+			ModuleRef: legacyDepRef.ModuleRef,
+			CommitId:  legacyDepRef.CommitId,
+		}
+	}
+	return protoUploadRequestContent, nil
 }

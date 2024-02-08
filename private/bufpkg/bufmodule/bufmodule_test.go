@@ -329,7 +329,7 @@ func TestBasic(t *testing.T) {
 	)
 }
 
-func TestCycleError(t *testing.T) {
+func TestModuleCycleError(t *testing.T) {
 	t.Parallel()
 
 	moduleSet, err := bufmoduletesting.NewOmniProvider(
@@ -413,6 +413,107 @@ func TestCycleError(t *testing.T) {
 		},
 		moduleCycleError.OpaqueIDs,
 	)
+}
+
+func TestDuplicateProtoPathError(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a; import "b.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package b;`,
+				),
+				"b.proto": []byte(
+					`syntax = proto3; package b;`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	moduleA := moduleSet.GetModuleForOpaqueID("buf.build/foo/a")
+	require.NotNil(t, moduleA)
+
+	checkError := func(err error) {
+		require.Error(t, err)
+		duplicateProtoPathError := &bufmodule.DuplicateProtoPathError{}
+		require.True(t, errors.As(err, &duplicateProtoPathError), err.Error())
+		require.Equal(
+			t,
+			"a.proto",
+			duplicateProtoPathError.ProtoPath,
+		)
+		require.Equal(
+			t,
+			[]string{
+				"buf.build/foo/a",
+				"buf.build/foo/b",
+			},
+			duplicateProtoPathError.OpaqueIDs,
+		)
+	}
+	_, err = moduleA.ModuleDeps()
+	checkError(err)
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	_, err = moduleReadBucket.StatFileInfo(ctx, "a.proto")
+	checkError(err)
+	err = moduleReadBucket.WalkFileInfos(ctx, func(bufmodule.FileInfo) error { return nil })
+	checkError(err)
+}
+
+func TestNoProtoFilesError(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/a",
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a;`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: "buf.build/foo/b",
+			PathToData: map[string][]byte{
+				"LICENSE": []byte(
+					"fake license",
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	moduleA := moduleSet.GetModuleForOpaqueID("buf.build/foo/a")
+	require.NotNil(t, moduleA)
+
+	checkError := func(err error) {
+		require.Error(t, err)
+		noProtoFilesError := &bufmodule.NoProtoFilesError{}
+		require.True(t, errors.As(err, &noProtoFilesError), err.Error())
+		require.Equal(
+			t,
+			"buf.build/foo/b",
+			noProtoFilesError.OpaqueID,
+		)
+	}
+	moduleReadBucket := bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet)
+	err = moduleReadBucket.WalkFileInfos(ctx, func(bufmodule.FileInfo) error { return nil })
+	checkError(err)
 }
 
 func TestProtoFileTargetPath(t *testing.T) {

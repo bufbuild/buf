@@ -356,7 +356,7 @@ func run(
 			formattedReadBucket,
 			"",
 			func(readObject storage.ReadObject) error {
-				// TODO: This is a legacy hack that we shouldn't use. We should not
+				// TODO FUTURE: This is a legacy hack that we shouldn't use. We should not
 				// rely on external paths being writable.
 				//
 				// We do validation above on the flags.Write flag to quasi-ensure that ExternalPath

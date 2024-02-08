@@ -42,7 +42,7 @@ type Graph[Key comparable, Value any] struct {
 //
 // This constructor must be used when initializing a Graph.
 //
-// TODO: It really stinks that we have to use the constructor. We have what amounts
+// TODO FUTURE: It really stinks that we have to use the constructor. We have what amounts
 // to silent errors now below with functions that don't return an error. We should
 // figure out a way to do this properly, or perhaps just panic if we don't use the constructor.
 func NewGraph[Key comparable, Value any](toKey func(Value) Key) *Graph[Key, Value] {

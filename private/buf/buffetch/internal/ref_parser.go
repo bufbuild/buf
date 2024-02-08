@@ -148,7 +148,7 @@ func (a *refParser) getRawRef(
 			}
 			rawRef.GitDepth = depth
 		case "recurse_submodules":
-			// TODO: need to refactor to make sure this is not set for any non-git input
+			// TODO FUTURE: need to refactor to make sure this is not set for any non-git input
 			// ie right now recurse_submodules=false will not error
 			switch value {
 			case "true":
@@ -158,7 +158,7 @@ func (a *refParser) getRawRef(
 				return nil, NewOptionsCouldNotParseRecurseSubmodulesError(value)
 			}
 		case "strip_components":
-			// TODO: need to refactor to make sure this is not set for any non-tarball
+			// TODO FUTURE: need to refactor to make sure this is not set for any non-tarball
 			// ie right now strip_components=0 will not error
 			stripComponents, err := strconv.ParseUint(value, 10, 32)
 			if err != nil {
@@ -253,7 +253,7 @@ func (a *refParser) getRawRefForInputConfig(
 		return nil, err
 	}
 	rawRef.GitRef = inputConfig.Ref()
-	// TODO: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
+	// TODO FUTURE: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
 	if inputConfig.Depth() != nil {
 		if *inputConfig.Depth() == 0 {
 			return nil, NewDepthZeroError()
@@ -367,7 +367,6 @@ func (a *refParser) validateRawRef(
 	return nil
 }
 
-// TODO: these functions may not be necessary
 // empty value is an error
 func parseCompressionType(value string) (CompressionType, error) {
 	switch value {

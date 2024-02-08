@@ -560,13 +560,13 @@ func TestModifyImageFile(
 	for _, testcase := range testcases {
 		testcase := testcase
 		for _, includeSourceInfo := range []bool{true, false} {
-			// TODO: we are only testing sweep here, no need to test both include and exclude source info
+			// TODO FUTURE: we are only testing sweep here, no need to test both include and exclude source info
 			includeSourceInfo := includeSourceInfo
 			t.Run(testcase.description, func(t *testing.T) {
 				t.Parallel()
 				image := testGetImageFromDirs(t, testcase.dirPathToModuleFullName, includeSourceInfo)
 				sweeper := internal.NewMarkSweeper(image)
-				// TODO: check include source code info
+				// TODO FUTURE: check include source code info
 				for filePath, expectedOptions := range testcase.filePathToExpectedOptions {
 					imageFile := image.GetFile(filePath)
 					require.NoError(
@@ -584,14 +584,14 @@ func TestModifyImageFile(
 						"incorrect options result for %s",
 						filePath,
 					)
-					// TODO: sweep and check paths gone
+					// TODO FUTURE: sweep and check paths gone
 				}
 			})
 		}
 	}
 }
 
-// TODO: add default values
+// TODO FUTURE: add default values
 func TestGetStringOverrideFromConfig(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {

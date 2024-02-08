@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
@@ -141,7 +140,6 @@ func NewController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -155,7 +153,6 @@ func NewController(
 		logger,
 		tracer,
 		container,
-		clientProvider,
 		graphProvider,
 		moduleKeyProvider,
 		moduleDataProvider,
@@ -178,7 +175,6 @@ type controller struct {
 	logger             *zap.Logger
 	tracer             tracing.Tracer
 	container          app.EnvStdioContainer
-	clientProvider     bufapi.ClientProvider
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
@@ -201,7 +197,6 @@ func newController(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
 	container app.EnvStdioContainer,
-	clientProvider bufapi.ClientProvider,
 	graphProvider bufmodule.GraphProvider,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
@@ -215,7 +210,6 @@ func newController(
 		logger:             logger,
 		tracer:             tracer,
 		container:          container,
-		clientProvider:     clientProvider,
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
@@ -247,7 +241,6 @@ func newController(
 	controller.workspaceProvider = bufworkspace.NewWorkspaceProvider(
 		logger,
 		tracer,
-		clientProvider,
 		graphProvider,
 		moduleDataProvider,
 		commitProvider,
@@ -413,7 +406,7 @@ func (c *controller) GetTargetImageWithConfigs(
 			case bufconfig.FileVersionV2:
 				// Do nothing. Use the default LintConfig and BreakingConfig. With
 				// the new buf.yamls with multiple modules, we don't know what lint or
-				// breaking config to apply. TODO is this right?
+				// breaking config to apply.
 			default:
 				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 			}
@@ -718,14 +711,18 @@ func (c *controller) getImageForWorkspace(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) (bufimage.Image, error) {
-	if err := c.warnDeps(workspace); err != nil {
-		return nil, err
-	}
-	return c.buildImage(
+	image, err := c.buildImage(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 		functionOptions,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.warnUnconfiguredTransitiveImports(ctx, workspace, image); err != nil {
+		return nil, err
+	}
+	return image, nil
 }
 
 func (c *controller) getWorkspaceForProtoFileRef(
@@ -737,14 +734,14 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		// Even though we didn't have an explicit error case, this never actually worked
 		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
 		// not a breaking change - if anything, this is a bug fix.
-		// TODO: Feed flag names through to here.
+		// TODO FUTURE: Feed flag names through to here.
 		return nil, fmt.Errorf("--path is not valid for use with .proto file references")
 	}
 	if len(functionOptions.targetExcludePaths) > 0 {
 		// Even though we didn't have an explicit error case, this never actually worked
 		// properly in the pre-refactor buf CLI. We're going to call it unusable and this
 		// not a breaking change - if anything, this is a bug fix.
-		// TODO: Feed flag names through to here.
+		// TODO FUTURE: Feed flag names through to here.
 		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
 	}
 	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
@@ -985,9 +982,6 @@ func (c *controller) buildTargetImageWithConfigs(
 	workspace bufworkspace.Workspace,
 	functionOptions *functionOptions,
 ) ([]ImageWithConfig, error) {
-	if err := c.warnDeps(workspace); err != nil {
-		return nil, err
-	}
 	modules := bufmodule.ModuleSetTargetModules(workspace)
 	imageWithConfigs := make([]ImageWithConfig, 0, len(modules))
 	for _, module := range modules {
@@ -1017,7 +1011,7 @@ func (c *controller) buildTargetImageWithConfigs(
 		// This may happen after path targeting. We may have a Module that itself was targeted,
 		// but no target files remain. In this case, this isn't a target image.
 		//
-		// TODO: without allowNotExist, this results in silent behavior when --path is incorrect.
+		// TODO FUTURE: without allowNotExist, this results in silent behavior when --path is incorrect.
 		if len(targetFileInfos) == 0 {
 			continue
 		}
@@ -1027,6 +1021,9 @@ func (c *controller) buildTargetImageWithConfigs(
 			functionOptions,
 		)
 		if err != nil {
+			return nil, err
+		}
+		if err := c.warnUnconfiguredTransitiveImports(ctx, workspace, image); err != nil {
 			return nil, err
 		}
 		imageWithConfigs = append(
@@ -1046,30 +1043,70 @@ func (c *controller) buildTargetImageWithConfigs(
 	return imageWithConfigs, nil
 }
 
-// warnDeps warns on unused deps in your buf.yaml.
-//
-// Only call this if you are building an image. This results in ModuleDeps calls that
-// you don't want to invoke unless you are building - they'll result in import reading,
-// which can cause issues. If this happens for all workspaces, you'll see integration
-// test errors, and correctly so. In the pre-refactor world, we only did this with
-// image building, so we keep it that way for now.
-func (c *controller) warnDeps(workspace bufworkspace.Workspace) error {
-	// TODO: Disable this. This function causes a MASSIVE performance hit. Investigate.
-	// It's somewhat obvious why it does if you are doing i.e. --path, but for complete builds,
-	// this causes a 2x perf hit, which doesn't make sense.
-	malformedDeps, err := bufworkspace.MalformedDepsForWorkspace(workspace)
+// warnUnconfiguredTransitiveImports will print a warning whenever a file imports another file that
+// is not in a local Module, or is not in the declared list of dependencies in your buf.yaml.
+func (c *controller) warnUnconfiguredTransitiveImports(
+	ctx context.Context,
+	workspace bufworkspace.Workspace,
+	image bufimage.Image,
+) error {
+	// Construct a struct map of all the ModuleFullName strings of the configured buf.yaml
+	// Module dependencies, and the local Modules. These are considered OK to depend on
+	// for non-imports in the Image.
+	configuredModuleFullNameStrings, err := slicesext.MapError(
+		workspace.ConfiguredDepModuleRefs(),
+		func(moduleRef bufmodule.ModuleRef) (string, error) {
+			moduleFullName := moduleRef.ModuleFullName()
+			if moduleFullName == nil {
+				return "", syserror.New("ModuleFullName nil on ModuleRef")
+			}
+			return moduleFullName.String(), nil
+		},
+	)
 	if err != nil {
 		return err
 	}
-	for _, malformedDep := range malformedDeps {
-		switch t := malformedDep.Type(); t {
-		case bufworkspace.MalformedDepTypeUnused:
-			c.logger.Sugar().Warnf(
-				`Module %s is declared in your buf.yaml deps but is unused.`,
-				malformedDep.ModuleFullName(),
-			)
-		default:
-			return fmt.Errorf("unknown MalformedDepType: %v", t)
+	configuredModuleFullNameStringMap := slicesext.ToStructMap(configuredModuleFullNameStrings)
+	for _, localModule := range bufmodule.ModuleSetLocalModules(workspace) {
+		if moduleFullName := localModule.ModuleFullName(); moduleFullName != nil {
+			configuredModuleFullNameStringMap[moduleFullName.String()] = struct{}{}
+		}
+	}
+
+	// Construct a map from Image file path -> ModuleFullName string.
+	//
+	// If a given file in the Image did not have a ModuleFullName, it came from a local unnamed Module
+	// in the Workspace, and we're safe to ignore it with respect to calculating the undeclared
+	// transitive imports.
+	pathToModuleFullNameString := make(map[string]string)
+	for _, imageFile := range image.Files() {
+		// If nil, this came from a local unnamed Module in the Workspace, and we're safe to ignore.
+		if moduleFullName := imageFile.ModuleFullName(); moduleFullName != nil {
+			pathToModuleFullNameString[imageFile.Path()] = moduleFullName.String()
+		}
+	}
+
+	for _, imageFile := range image.Files() {
+		// Ignore imports. We only care about non-imports.
+		if imageFile.IsImport() {
+			continue
+		}
+		for _, importPath := range imageFile.FileDescriptorProto().GetDependency() {
+			moduleFullNameString, ok := pathToModuleFullNameString[importPath]
+			if !ok {
+				// The import was from a local unnamed Module in the Workspace.
+				continue
+			}
+			if _, ok := configuredModuleFullNameStringMap[moduleFullNameString]; !ok {
+				c.logger.Sugar().Warnf(
+					`File %q imports %q, which is not in your workspace or in the dependencies declared in your buf.yaml, but is found in transitive dependency %q.
+Declare %q in the deps key in your buf.yaml.`,
+					imageFile.Path(),
+					importPath,
+					moduleFullNameString,
+					moduleFullNameString,
+				)
+			}
 		}
 	}
 	return nil
@@ -1141,7 +1178,7 @@ func bootstrapResolver(
 
 // WE DO NOT FILTER IF WE ALREADY FILTERED ON BUILDING OF A WORKSPACE
 // Also, paths are still external paths at this point if this came from a workspace
-// TODO: redo functionOptions, this is a mess
+// TODO FUTURE: redo functionOptions, this is a mess
 func filterImage(
 	image bufimage.Image,
 	functionOptions *functionOptions,
@@ -1170,8 +1207,7 @@ func filterImage(
 			for _, excludePath := range functionOptions.targetExcludePaths {
 				normalizedExcludePaths = append(normalizedExcludePaths, normalpath.Normalize(excludePath))
 			}
-			// TODO: allowNotExist?
-			// TODO: Also, does this affect lint or breaking?
+			// TODO FUTURE: allowNotExist? Also, does this affect lint or breaking?
 			newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
 				newImage,
 				normalizedTargetPaths,
@@ -1201,14 +1237,12 @@ func newProtoencodingMarshaler(
 	case buffetch.MessageEncodingBinpb:
 		return protoencoding.NewWireMarshaler(), nil
 	case buffetch.MessageEncodingJSON:
-		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return nil, err
 		}
 		return newJSONMarshaler(resolver, messageRef), nil
 	case buffetch.MessageEncodingTxtpb:
-		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
 		if err != nil {
 			return nil, err
@@ -1279,7 +1313,7 @@ func validateFileAnnotationErrorFormat(fileAnnotationErrorFormat string) error {
 			return nil
 		}
 	}
-	// TODO: get standard flag names and bindings into this package.
+	// TODO FUTURE: get standard flag names and bindings into this package.
 	fileAnnotationErrorFormatFlagName := "error-format"
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", fileAnnotationErrorFormatFlagName, fileAnnotationErrorFormat)
 }

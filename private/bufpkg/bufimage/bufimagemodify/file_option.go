@@ -567,7 +567,7 @@ func modifyStringOption(
 	// Now either value is set or prefix and/or suffix is set.
 	value := overrideOptions.value
 	if value == "" {
-		// TODO: pass in prefix and suffix, instead of just override options
+		// TODO FUTURE: pass in prefix and suffix, instead of just override options
 		value = valueFunc(imageFile, overrideOptions)
 	}
 	if value == "" {

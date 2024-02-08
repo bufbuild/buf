@@ -12,24 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protosource
+package bufprotosource
 
-type locationDescriptor struct {
-	descriptor
+import "fmt"
 
-	path []int32
+type reservedName struct {
+	locationDescriptor
+
+	value string
 }
 
-func newLocationDescriptor(
-	descriptor descriptor,
-	path []int32,
-) locationDescriptor {
-	return locationDescriptor{
-		descriptor: descriptor,
-		path:       path,
+func newReservedName(
+	locationDescriptor locationDescriptor,
+	value string,
+) (*reservedName, error) {
+	if value == "" {
+		return nil, fmt.Errorf("no value for reserved name in %q", locationDescriptor.File().Path())
 	}
+	return &reservedName{
+		locationDescriptor: locationDescriptor,
+		value:              value,
+	}, nil
 }
 
-func (l *locationDescriptor) Location() Location {
-	return l.getLocation(l.path)
+func (r *reservedName) Value() string {
+	return r.value
 }

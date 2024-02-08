@@ -39,6 +39,7 @@ func NewModuleDataProvider(
 	clientProvider interface {
 		bufapi.DownloadServiceClientProvider
 		bufapi.GraphServiceClientProvider
+		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
@@ -62,6 +63,7 @@ func newModuleDataProvider(
 	clientProvider interface {
 		bufapi.DownloadServiceClientProvider
 		bufapi.GraphServiceClientProvider
+		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
@@ -163,7 +165,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 			//
 			// There is definitely a better way to do this in one pass for all commits with
 			// memoization - this is algorithmically bad.
-			depModuleKeys, err := graph.TopoSort(moduleKey.CommitID())
+			depModuleKeys, err := graph.TopoSort(bufmodule.ModuleKeyToRegistryCommitID(moduleKey))
 			if err != nil {
 				return err
 			}
@@ -227,7 +229,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				Values: slicesext.Map(
 					commitIDs,
 					func(commitID uuid.UUID) *modulev1beta1.DownloadRequest_Value {

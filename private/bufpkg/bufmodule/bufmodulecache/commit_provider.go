@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
+	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
 
@@ -36,7 +37,8 @@ func NewCommitProvider(
 /// *** PRIVATE ***
 
 type commitProvider struct {
-	*baseProvider[bufmodule.Commit]
+	byModuleKey *baseProvider[bufmodule.ModuleKey, bufmodule.Commit]
+	byCommitKey *baseProvider[bufmodule.CommitKey, bufmodule.Commit]
 }
 
 func newCommitProvider(
@@ -45,11 +47,25 @@ func newCommitProvider(
 	store bufmodulestore.CommitStore,
 ) *commitProvider {
 	return &commitProvider{
-		baseProvider: newBaseProvider(
+		byModuleKey: newBaseProvider(
 			logger,
 			delegate.GetCommitsForModuleKeys,
 			store.GetCommitsForModuleKeys,
 			store.PutCommits,
+			bufmodule.ModuleKey.CommitID,
+			func(commit bufmodule.Commit) uuid.UUID {
+				return commit.ModuleKey().CommitID()
+			},
+		),
+		byCommitKey: newBaseProvider(
+			logger,
+			delegate.GetCommitsForCommitKeys,
+			store.GetCommitsForCommitKeys,
+			store.PutCommits,
+			bufmodule.CommitKey.CommitID,
+			func(commit bufmodule.Commit) uuid.UUID {
+				return commit.ModuleKey().CommitID()
+			},
 		),
 	}
 }
@@ -58,5 +74,12 @@ func (p *commitProvider) GetCommitsForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) ([]bufmodule.Commit, error) {
-	return p.baseProvider.getValuesForModuleKeys(ctx, moduleKeys)
+	return p.byModuleKey.getValuesForKeys(ctx, moduleKeys)
+}
+
+func (p *commitProvider) GetCommitsForCommitKeys(
+	ctx context.Context,
+	commitKeys []bufmodule.CommitKey,
+) ([]bufmodule.Commit, error) {
+	return p.byCommitKey.getValuesForKeys(ctx, commitKeys)
 }

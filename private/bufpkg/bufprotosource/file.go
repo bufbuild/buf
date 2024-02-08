@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protosource
+package bufprotosource
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -232,17 +233,17 @@ func (f *file) SyntaxLocation() Location {
 
 // does not validation of the fileDescriptorProto - this is assumed to be done elsewhere
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
-func newFile(inputFile InputFile) (*file, error) {
-	locationStore := newLocationStore(inputFile.FileDescriptorProto().GetSourceCodeInfo().GetLocation())
+func newFile(imageFile bufimage.ImageFile) (*file, error) {
+	locationStore := newLocationStore(imageFile.FileDescriptorProto().GetSourceCodeInfo().GetLocation())
 	f := &file{
-		FileInfo:       inputFile,
-		fileDescriptor: inputFile.FileDescriptorProto(),
+		FileInfo:       imageFile,
+		fileDescriptor: imageFile.FileDescriptorProto(),
 		optionExtensionDescriptor: newOptionExtensionDescriptor(
-			inputFile.FileDescriptorProto().GetOptions(),
+			imageFile.FileDescriptorProto().GetOptions(),
 			[]int32{8},
 			locationStore,
 		),
-		edition: inputFile.FileDescriptorProto().GetEdition(),
+		edition: imageFile.FileDescriptorProto().GetEdition(),
 	}
 	descriptor := newDescriptor(
 		f,
@@ -250,7 +251,7 @@ func newFile(inputFile InputFile) (*file, error) {
 	)
 	f.descriptor = descriptor
 
-	if inputFile.IsSyntaxUnspecified() {
+	if imageFile.IsSyntaxUnspecified() {
 		// if the syntax is "proto2", protoc and buf will not set the syntax
 		// field even if it was explicitly set, this is why we have
 		// IsSyntaxUnspecified
@@ -299,7 +300,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		fileImport.setIsWeak()
 	}
-	for _, dependencyIndex := range inputFile.UnusedDependencyIndexes() {
+	for _, dependencyIndex := range imageFile.UnusedDependencyIndexes() {
 		if int(dependencyIndex) < 0 || len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}

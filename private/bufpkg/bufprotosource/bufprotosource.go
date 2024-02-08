@@ -21,7 +21,7 @@
 // Testing is currently implicitly done through the bufcheck packages, however
 // if this were to be split out into a separate library, it would need a separate
 // testing suite.
-package protosource
+package bufprotosource
 
 import (
 	"context"
@@ -30,6 +30,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/gofrs/uuid/v5"
@@ -200,7 +202,7 @@ type FileInfo interface {
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// Note that nil checking should work since the backing type is always a pointer.
-	ModuleFullName() ModuleFullName
+	ModuleFullName() bufmodule.ModuleFullName
 	// CommitID is the commit for the module that this file came from.
 	//
 	// This will only be set if ModuleFullName is set, but may not be set
@@ -465,35 +467,14 @@ type Method interface {
 	IdempotencyLevelLocation() Location
 }
 
-// InputFile is an input file for NewFile.
-type InputFile interface {
-	FileInfo
-	// FileDescriptorProto is the backing FileDescriptorProto for this File.
-	//
-	// This will never be nil.
-	// The value Path() is equal to FileDescriptorProto().GetName() .
-	FileDescriptorProto() *descriptorpb.FileDescriptorProto
-	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
-	IsSyntaxUnspecified() bool
-	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
-	// FileDescriptor.GetDependency().
-	//
-	// All indexes will be valid.
-	// Will return nil if empty.
-	UnusedDependencyIndexes() []int32
-}
-
 // NewFile returns a new File.
-func NewFile(inputFile InputFile) (File, error) {
-	return newFile(inputFile)
+func NewFile(imageFile bufimage.ImageFile) (File, error) {
+	return newFile(imageFile)
 }
 
-// NewFilesUnstable converts the input Files into Files.
-//
-// This may be done concurrently and the returned Files may not be in the same
-// order as the input FileDescriptors. If ordering matters, use NewFile.
-func NewFilesUnstable(ctx context.Context, inputFiles ...InputFile) ([]File, error) {
-	return newFilesUnstable(ctx, inputFiles...)
+// NewFiles converts the input Image into Files.
+func NewFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
+	return newFiles(ctx, image)
 }
 
 // SortFiles sorts the Files by FilePath.

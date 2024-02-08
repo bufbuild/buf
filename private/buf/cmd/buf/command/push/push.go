@@ -385,6 +385,5 @@ func combineLabelLikeFlags(flags *flags) []string {
 
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
 	// This error will likely actually go back to users.
-	// TODO: We copied this from bufmoduleapi.Upload, we may want to make this a system error over there.
 	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
 }

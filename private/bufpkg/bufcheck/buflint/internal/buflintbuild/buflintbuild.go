@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
 var (
@@ -116,7 +116,7 @@ var (
 			if configBuilder.EnumZeroValueSuffix == "" {
 				return nil, errors.New("enum_zero_value_suffix is empty")
 			}
-			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckEnumZeroValueSuffix(id, ignoreFunc, files, configBuilder.EnumZeroValueSuffix)
 			}), nil
 		},
@@ -278,7 +278,7 @@ var (
 			return "RPC request and response types are only used in one RPC (configurable)", nil
 		},
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
-			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCRequestResponseUnique(
 					id,
 					ignoreFunc,
@@ -297,7 +297,7 @@ var (
 			return "RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)", nil
 		},
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
-			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCRequestStandardName(
 					id,
 					ignoreFunc,
@@ -314,7 +314,7 @@ var (
 			return "RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)", nil
 		},
 		func(configBuilder internal.ConfigBuilder) (internal.CheckFunc, error) {
-			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckRPCResponseStandardName(
 					id,
 					ignoreFunc,
@@ -343,7 +343,7 @@ var (
 			if configBuilder.ServiceSuffix == "" {
 				return nil, errors.New("service_suffix is empty")
 			}
-			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+			return internal.CheckFunc(func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 				return buflintcheck.CheckServiceSuffix(id, ignoreFunc, files, configBuilder.ServiceSuffix)
 			}), nil
 		},
@@ -357,9 +357,9 @@ var (
 )
 
 func newAdapter(
-	f func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error),
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(string, internal.IgnoreFunc, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, _ []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 		return f(id, ignoreFunc, files)
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -47,7 +48,7 @@ import (
 //   - If only module directories are specified, then the buf.yaml will contain exactly
 //     these directories.
 //   - If a module specified is within some workspace not from workspaceDirPaths, we migrate
-//     the module directory only (updating/deciding on this behavior is still a TODO).
+//     the module directory only (updating/deciding on this behavior is still a todo).
 //   - If only one workspace directory is specified and no module directory is specified,
 //     the buf.yaml will be written at <workspace directory>/buf.yaml. Otherwise, it will
 //     be written at ./buf.yaml.
@@ -57,7 +58,9 @@ func Migrate(
 	ctx context.Context,
 	messageWriter io.Writer,
 	storageProvider storageos.Provider,
+	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider.
 	clientProvider bufapi.ClientProvider,
+	commitProvider bufmodule.CommitProvider,
 	workspaceDirPaths []string,
 	moduleDirPaths []string,
 	generateTemplatePaths []string,
@@ -78,8 +81,6 @@ func Migrate(
 		workspaceDirPaths,
 		func(workspaceDirPath string) (string, error) {
 			if _, err := normalpath.NormalizeAndValidate(workspaceDirPath); err != nil {
-				// TODO: comment back out when we no longer have to support go 1.19
-				//if !filepath.IsLocal(workspaceDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", workspaceDirPath)
 			}
 			return filepath.Clean(workspaceDirPath), nil
@@ -92,8 +93,6 @@ func Migrate(
 		moduleDirPaths,
 		func(moduleDirPath string) (string, error) {
 			if _, err := normalpath.NormalizeAndValidate(moduleDirPath); err != nil {
-				// TODO: comment back out when we no longer have to support go 1.19
-				//if !filepath.IsLocal(moduleDirPath) {
 				return "", fmt.Errorf("%s is not a relative path", moduleDirPath)
 			}
 			return filepath.Clean(moduleDirPath), nil
@@ -117,6 +116,7 @@ func Migrate(
 	migrator := newMigrator(
 		messageWriter,
 		clientProvider,
+		commitProvider,
 		bucket,
 		destionationDirectory,
 	)

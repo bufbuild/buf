@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCommitProviderBasic(t *testing.T) {
+func TestCommitProviderForModuleKeyBasic(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -48,8 +48,8 @@ func TestCommitProviderBasic(t *testing.T) {
 		moduleKeys,
 	)
 	require.NoError(t, err)
-	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
-	require.Equal(t, 0, cacheProvider.getModuleKeysHit())
+	require.Equal(t, 3, cacheProvider.byModuleKey.getKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.byModuleKey.getKeysHit())
 	require.Equal(
 		t,
 		[]string{
@@ -71,8 +71,72 @@ func TestCommitProviderBasic(t *testing.T) {
 		moduleKeys,
 	)
 	require.NoError(t, err)
-	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
-	require.Equal(t, 3, cacheProvider.getModuleKeysHit())
+	require.Equal(t, 6, cacheProvider.byModuleKey.getKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.byModuleKey.getKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+}
+
+func TestCommitProviderForCommitKeyBasic(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	bsrProvider, moduleKeys := testGetBSRProviderAndModuleKeys(t, ctx)
+	commitKeys, err := slicesext.MapError(moduleKeys, bufmodule.ModuleKeyToCommitKey)
+	require.NoError(t, err)
+
+	cacheProvider := newCommitProvider(
+		zap.NewNop(),
+		bsrProvider,
+		bufmodulestore.NewCommitStore(
+			zap.NewNop(),
+			storagemem.NewReadWriteBucket(),
+		),
+	)
+
+	commits, err := cacheProvider.GetCommitsForCommitKeys(
+		ctx,
+		commitKeys,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 3, cacheProvider.byCommitKey.getKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.byCommitKey.getKeysHit())
+	require.Equal(
+		t,
+		[]string{
+			"buf.build/foo/mod1",
+			"buf.build/foo/mod3",
+			"buf.build/foo/mod2",
+		},
+		slicesext.Map(
+			commits,
+			func(commit bufmodule.Commit) string {
+				return commit.ModuleKey().ModuleFullName().String()
+			},
+		),
+	)
+
+	commitKeys[0], commitKeys[1] = commitKeys[1], commitKeys[0]
+	commits, err = cacheProvider.GetCommitsForCommitKeys(
+		ctx,
+		commitKeys,
+	)
+	require.NoError(t, err)
+	require.Equal(t, 6, cacheProvider.byCommitKey.getKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.byCommitKey.getKeysHit())
 	require.Equal(
 		t,
 		[]string{
@@ -109,8 +173,8 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		moduleKeys,
 	)
 	require.NoError(t, err)
-	require.Equal(t, 3, cacheProvider.getModuleKeysRetrieved())
-	require.Equal(t, 0, cacheProvider.getModuleKeysHit())
+	require.Equal(t, 3, cacheProvider.getKeysRetrieved())
+	require.Equal(t, 0, cacheProvider.getKeysHit())
 	require.Equal(
 		t,
 		[]string{
@@ -132,8 +196,8 @@ func TestModuleDataProviderBasic(t *testing.T) {
 		moduleKeys,
 	)
 	require.NoError(t, err)
-	require.Equal(t, 6, cacheProvider.getModuleKeysRetrieved())
-	require.Equal(t, 3, cacheProvider.getModuleKeysHit())
+	require.Equal(t, 6, cacheProvider.getKeysRetrieved())
+	require.Equal(t, 3, cacheProvider.getKeysHit())
 	require.Equal(
 		t,
 		[]string{

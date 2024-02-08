@@ -68,7 +68,7 @@ func removeLocationsFromSourceCodeInfo(
 	sourceCodeInfo *descriptorpb.SourceCodeInfo,
 	pathsToRemove map[string]struct{},
 ) error {
-	// TODO: in v1 there is no need to check for field options, maybe v1 and v2
+	// TODO FUTURE: in v1 there is no need to check for field options, maybe v1 and v2
 	// don't need to share this function.
 
 	// We can't just match on an exact path match because the target

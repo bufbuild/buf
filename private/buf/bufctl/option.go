@@ -42,7 +42,7 @@ func WithCopyToInMemory() ControllerOption {
 	}
 }
 
-// TODO: split up to per-function.
+// TODO FUTURE: split up to per-function.
 type FunctionOption func(*functionOptions)
 
 func WithTargetPaths(targetPaths []string, targetExcludePaths []string) FunctionOption {

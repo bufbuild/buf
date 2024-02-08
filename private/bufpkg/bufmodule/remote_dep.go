@@ -41,7 +41,7 @@ type RemoteDep interface {
 //
 // Sorted by ModuleFullName.
 //
-// TODO: This needs a LOT of testing.
+// TODO FUTURE: This needs a LOT of testing.
 func RemoteDepsForModuleSet(moduleSet ModuleSet) ([]RemoteDep, error) {
 	visitedOpaqueIDs := make(map[string]struct{})
 	remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal := make(map[string]struct{})

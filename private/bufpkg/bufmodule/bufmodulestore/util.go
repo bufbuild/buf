@@ -32,3 +32,18 @@ func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, messag
 		)
 	}
 }
+
+func logDebugCommitKey(logger *zap.Logger, commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
+	if checkedEntry := logger.Check(zap.DebugLevel, message); checkedEntry != nil {
+		checkedEntry.Write(
+			append(
+				[]zap.Field{
+					zap.String("digestType", commitKey.DigestType().String()),
+					zap.String("registry", commitKey.Registry()),
+					zap.String("commitID", commitKey.CommitID().String()),
+				},
+				fields...,
+			)...,
+		)
+	}
+}

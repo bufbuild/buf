@@ -445,7 +445,6 @@ func readBufYAMLFile(
 	}
 }
 
-// TODO: port tests from bufconfig
 func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 	case FileVersionV1Beta1, FileVersionV1:

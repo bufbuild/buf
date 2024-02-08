@@ -222,7 +222,6 @@ func (d *digest) String() string {
 
 func (*digest) isDigest() {}
 
-// TODO: We need to test that this actually does the same calculation as before!
 func getB4Digest(
 	ctx context.Context,
 	bucketWithStorageMatcherApplied storage.ReadBucket,

@@ -501,7 +501,7 @@ func (a *refParser) GetModuleRefForInputConfig(
 	return newModuleRef(parsedModuleRef), nil
 }
 
-// TODO: rename to getParsedRefForString
+// TODO FUTURE: rename to getParsedRefForString
 func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
@@ -831,7 +831,7 @@ func parseMessageEncoding(format string) (MessageEncoding, error) {
 	}
 }
 
-// TODO: this is a terrible heuristic, and we shouldn't be using what amounts
+// TODO FUTURE: this is a terrible heuristic, and we shouldn't be using what amounts
 // to heuristics here (technically this is a documentable rule, but still)
 func assumeModuleOrDir(path string) (string, error) {
 	if path == "" {

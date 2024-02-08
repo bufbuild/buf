@@ -31,18 +31,26 @@ import (
 
 var externalCommitVersion = "v1"
 
-// ModuleStore reads and writes ModulesDatas.
+// CommitStore reads and writes Commits.
 type CommitStore interface {
-	// GetCommitsForModuleKey gets the Commits from the store for the ModuleKeys.
+	// GetCommitsForModuleKeys gets the Commits from the store for the ModuleKeys.
 	//
-	// Returns the found Commits, and the input ModuleKeys that were not found, each
-	// ordered by the order of the input ModuleKeys.
-	GetCommitsForModuleKeys(context.Context, []bufmodule.ModuleKey) (
+	// Returns the found Commits, and the input IDs that were not found, each
+	// ordered by the order of the input IDs.
+	GetCommitsForModuleKeys(ctx context.Context, moduleKeys []bufmodule.ModuleKey) (
 		foundCommits []bufmodule.Commit,
 		notFoundModuleKeys []bufmodule.ModuleKey,
 		err error,
 	)
-
+	// GetCommitsForCommitKeys gets the Commits from the store for the CommitKeys.
+	//
+	// Returns the found Commits, and the input IDs that were not found, each
+	// ordered by the order of the input IDs.
+	GetCommitsForCommitKeys(ctx context.Context, commitKeys []bufmodule.CommitKey) (
+		foundCommits []bufmodule.Commit,
+		notFoundCommitKeys []bufmodule.CommitKey,
+		err error,
+	)
 	// Put puts the Commits to the store.
 	PutCommits(ctx context.Context, commits []bufmodule.Commit) error
 }
@@ -83,7 +91,15 @@ func (p *commitStore) GetCommitsForModuleKeys(
 	var foundCommits []bufmodule.Commit
 	var notFoundModuleKeys []bufmodule.ModuleKey
 	for _, moduleKey := range moduleKeys {
-		commit, err := p.getCommitForModuleKey(ctx, moduleKey)
+		expectedDigest, err := moduleKey.Digest()
+		if err != nil {
+			return nil, nil, err
+		}
+		commitKey, err := bufmodule.ModuleKeyToCommitKey(moduleKey)
+		if err != nil {
+			return nil, nil, err
+		}
+		commit, err := p.getCommitForCommitKey(ctx, commitKey, expectedDigest)
 		if err != nil {
 			if !errors.Is(err, fs.ErrNotExist) {
 				return nil, nil, err
@@ -94,6 +110,26 @@ func (p *commitStore) GetCommitsForModuleKeys(
 		}
 	}
 	return foundCommits, notFoundModuleKeys, nil
+}
+
+func (p *commitStore) GetCommitsForCommitKeys(
+	ctx context.Context,
+	commitKeys []bufmodule.CommitKey,
+) ([]bufmodule.Commit, []bufmodule.CommitKey, error) {
+	var foundCommits []bufmodule.Commit
+	var notFoundCommitKeys []bufmodule.CommitKey
+	for _, commitKey := range commitKeys {
+		commit, err := p.getCommitForCommitKey(ctx, commitKey, nil)
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, nil, err
+			}
+			notFoundCommitKeys = append(notFoundCommitKeys, commitKey)
+		} else {
+			foundCommits = append(foundCommits, commit)
+		}
+	}
+	return foundCommits, notFoundCommitKeys, nil
 }
 
 func (p *commitStore) PutCommits(
@@ -108,15 +144,17 @@ func (p *commitStore) PutCommits(
 	return nil
 }
 
-func (p *commitStore) getCommitForModuleKey(
+func (p *commitStore) getCommitForCommitKey(
 	ctx context.Context,
-	moduleKey bufmodule.ModuleKey,
+	commitKey bufmodule.CommitKey,
+	// may be nil
+	expectedDigest bufmodule.Digest,
 ) (_ bufmodule.Commit, retErr error) {
-	bucket := p.getReadWriteBucketForDir(moduleKey)
-	path := getCommitStoreFilePath(moduleKey)
+	bucket := p.getReadWriteBucketForDir(commitKey)
+	path := getCommitStoreFilePath(commitKey)
 	data, err := storage.ReadPath(ctx, bucket, path)
-	p.logDebugModuleKey(
-		moduleKey,
+	p.logDebugCommitKey(
+		commitKey,
 		"commit store get file",
 		zap.Bool("found", err == nil),
 		zap.Error(err),
@@ -127,7 +165,7 @@ func (p *commitStore) getCommitForModuleKey(
 	var invalidReason string
 	defer func() {
 		if retErr != nil {
-			retErr = p.deleteInvalidCommitFile(ctx, moduleKey, bucket, path, invalidReason, retErr)
+			retErr = p.deleteInvalidCommitFile(ctx, commitKey, bucket, path, invalidReason, retErr)
 		}
 	}()
 	var externalCommit externalCommit
@@ -144,14 +182,36 @@ func (p *commitStore) getCommitForModuleKey(
 		invalidReason = "invalid digest"
 		return nil, err
 	}
+	if commitKey.DigestType() != digest.Type() {
+		invalidReason = "mismatched digest type"
+		return nil, err
+	}
+	moduleFullName, err := bufmodule.NewModuleFullName(
+		commitKey.Registry(),
+		externalCommit.Owner,
+		externalCommit.Module,
+	)
+	if err != nil {
+		invalidReason = "invalid module name"
+		return nil, err
+	}
+	moduleKey, err := bufmodule.NewModuleKey(
+		moduleFullName,
+		commitKey.CommitID(),
+		func() (bufmodule.Digest, error) {
+			return digest, nil
+		},
+	)
+	if err != nil {
+		invalidReason = "invalid module key"
+		return nil, err
+	}
 	return bufmodule.NewCommit(
 		moduleKey,
 		func() (time.Time, error) {
 			return externalCommit.CreateTime, nil
 		},
-		func() (bufmodule.Digest, error) {
-			return digest, nil
-		},
+		bufmodule.CommitWithExpectedDigest(expectedDigest),
 	), nil
 }
 
@@ -168,10 +228,16 @@ func (p *commitStore) putCommit(
 	if err != nil {
 		return err
 	}
-	bucket := p.getReadWriteBucketForDir(moduleKey)
-	path := getCommitStoreFilePath(moduleKey)
+	commitKey, err := bufmodule.ModuleKeyToCommitKey(moduleKey)
+	if err != nil {
+		return err
+	}
+	bucket := p.getReadWriteBucketForDir(commitKey)
+	path := getCommitStoreFilePath(commitKey)
 	externalCommit := externalCommit{
 		Version:    externalCommitVersion,
+		Owner:      moduleKey.ModuleFullName().Owner(),
+		Module:     moduleKey.ModuleFullName().Name(),
 		CreateTime: createTime,
 		Digest:     digest.String(),
 	}
@@ -185,12 +251,10 @@ func (p *commitStore) putCommit(
 	return storage.PutPath(ctx, bucket, path, data, storage.PutWithAtomic())
 }
 
-func (p *commitStore) getReadWriteBucketForDir(
-	moduleKey bufmodule.ModuleKey,
-) storage.ReadWriteBucket {
-	dirPath := getCommitStoreDirPath(moduleKey)
-	p.logDebugModuleKey(
-		moduleKey,
+func (p *commitStore) getReadWriteBucketForDir(commitKey bufmodule.CommitKey) storage.ReadWriteBucket {
+	dirPath := getCommitStoreDirPath(commitKey)
+	p.logDebugCommitKey(
+		commitKey,
 		"commit store dir read write bucket",
 		zap.String("dirPath", dirPath),
 	)
@@ -199,22 +263,22 @@ func (p *commitStore) getReadWriteBucketForDir(
 
 func (p *commitStore) deleteInvalidCommitFile(
 	ctx context.Context,
-	moduleKey bufmodule.ModuleKey,
+	commitKey bufmodule.CommitKey,
 	bucket storage.WriteBucket,
 	path string,
 	invalidReason string,
 	invalidErr error,
 ) error {
-	p.logDebugModuleKey(
-		moduleKey,
+	p.logDebugCommitKey(
+		commitKey,
 		fmt.Sprintf("commit store %s commit file", invalidReason),
 		zap.Error(invalidErr),
 	)
 	// Attempt to delete file as it is missing information.
 	if err := bucket.Delete(ctx, path); err != nil {
 		// Otherwise ignore error.
-		p.logDebugModuleKey(
-			moduleKey,
+		p.logDebugCommitKey(
+			commitKey,
 			fmt.Sprintf("commit store could not delete %s commit file", invalidReason),
 			zap.Error(err),
 		)
@@ -223,26 +287,27 @@ func (p *commitStore) deleteInvalidCommitFile(
 	return &fs.PathError{Op: "read", Path: path, Err: fs.ErrNotExist}
 }
 
-func (p *commitStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, message string, fields ...zap.Field) {
-	logDebugModuleKey(p.logger, moduleKey, message, fields...)
+func (p *commitStore) logDebugCommitKey(commitKey bufmodule.CommitKey, message string, fields ...zap.Field) {
+	logDebugCommitKey(p.logger, commitKey, message, fields...)
 }
 
-// Returns the directory path within the store for the module.
+// Returns the directory path within the store for the Commit.
 //
-// This is "registry/owner/name", e.g. the module "buf.build/acme/weather" will return "buf.build/acme/weather".
-func getCommitStoreDirPath(moduleKey bufmodule.ModuleKey) string {
+// This is "digestType/registry, i.e. "b5/buf.build".
+func getCommitStoreDirPath(
+	commitKey bufmodule.CommitKey,
+) string {
 	return normalpath.Join(
-		moduleKey.ModuleFullName().Registry(),
-		moduleKey.ModuleFullName().Owner(),
-		moduleKey.ModuleFullName().Name(),
+		commitKey.DigestType().String(),
+		commitKey.Registry(),
 	)
 }
 
 // Returns the file path within the directory.
 //
 // This is "commitID.json", e.g. the commit "12345" will return "12345.json".
-func getCommitStoreFilePath(moduleKey bufmodule.ModuleKey) string {
-	return moduleKey.CommitID().String() + ".json"
+func getCommitStoreFilePath(commitKey bufmodule.CommitKey) string {
+	return commitKey.CommitID().String() + ".json"
 }
 
 // externalCommit is the store representation of a Commit.
@@ -254,6 +319,8 @@ func getCommitStoreFilePath(moduleKey bufmodule.ModuleKey) string {
 // a modulev1beta1.Commit has.
 type externalCommit struct {
 	Version    string    `json:"version,omitempty" yaml:"version,omitempty"`
+	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`
+	Module     string    `json:"module,omitempty" yaml:"module,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
@@ -265,6 +332,8 @@ type externalCommit struct {
 // incomplete, and we will auto-evict them from the store.
 func (e externalCommit) isValid() bool {
 	return e.Version == externalCommitVersion &&
+		e.Owner != "" &&
+		e.Module != "" &&
 		!e.CreateTime.IsZero() &&
 		e.Digest != ""
 }

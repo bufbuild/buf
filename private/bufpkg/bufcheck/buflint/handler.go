@@ -21,8 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -54,7 +53,7 @@ func (h *handler) Check(
 	config bufconfig.LintConfig,
 	image bufimage.Image,
 ) error {
-	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
+	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
 		return err
 	}

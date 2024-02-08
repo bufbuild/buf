@@ -15,6 +15,10 @@
 package bufprotocompile
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
+
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -22,6 +26,10 @@ import (
 )
 
 // FileAnnotationForErrorWithPos returns a new FileAnnotation for the ErrorWithPos.
+//
+// This special-cases fs.PathErrors if there is FileInfo information. We know that if there
+// is FileInfo information, and there is a fs.PathError, this can only happen due to import
+// errors. Therefore, we print out a special message saying that the error is for an import.
 func FileAnnotationForErrorWithPos(
 	errorWithPos reporter.ErrorWithPos,
 	options ...FileAnnotationOption,
@@ -36,13 +44,6 @@ func FileAnnotationForErrorWithPos(
 	var startColumn int
 	var endLine int
 	var endColumn int
-	typeString := "COMPILE"
-	message := "Compile error."
-	// this should never happen
-	// maybe we should error
-	if errorWithPos.Unwrap() != nil {
-		message = errorWithPos.Unwrap().Error()
-	}
 	sourcePos := errorWithPos.GetPosition()
 	if sourcePos.Filename != "" {
 		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
@@ -63,6 +64,22 @@ func FileAnnotationForErrorWithPos(
 		startColumn = sourcePos.Col
 		endColumn = sourcePos.Col
 	}
+
+	typeString := "COMPILE"
+	message := "Compile error."
+	// this should never happen
+	// maybe we should error
+	if err := errorWithPos.Unwrap(); err != nil {
+		var pathError *fs.PathError
+		if fileInfo != nil && errors.As(err, &pathError) {
+			// Special-case path errors as being for imports, as we know that they are for
+			// an import if we had a fileInfo.
+			message = fmt.Sprintf("import %q: %s", pathError.Path, pathError.Err)
+		} else {
+			message = err.Error()
+		}
+	}
+
 	return bufanalysis.NewFileAnnotation(
 		fileInfo,
 		startLine,
@@ -75,6 +92,10 @@ func FileAnnotationForErrorWithPos(
 }
 
 // FileAnnotationSetForErrorWithPos returns new FileAnnotations for the ErrorsWithPos.
+//
+// This special-cases fs.PathErrors if there is FileInfo information. We know that if there
+// is FileInfo information, and there is a fs.PathError, this can only happen due to import
+// errors. Therefore, we print out a special message saying that the error is for an import.
 func FileAnnotationSetForErrorsWithPos(
 	errorsWithPos []reporter.ErrorWithPos,
 	options ...FileAnnotationOption,

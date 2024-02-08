@@ -57,7 +57,7 @@ func getProtoCommitsForRegistryAndCommitIDs(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{
-				// TODO: chunking
+				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					commitIDs,
 					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {
