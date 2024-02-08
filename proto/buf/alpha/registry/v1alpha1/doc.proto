@@ -409,13 +409,21 @@ message ArrayLiteral {
 message LiteralValue {
   oneof value {
     string string_value = 2;
-    int64 int_value = 3;
-    uint64 uint_value = 4;
-    double double_value = 5;
-    bool bool_value = 6;
-    string enum_value = 7;
-    ArrayLiteral array_value = 8;
-    MessageLiteral message_value = 9;
+    int32 int32_value = 3;
+    int64 int64_value = 4;
+    uint32 uint32_value = 5;
+    uint64 uint43_value = 6;
+    fixed32 fixed32_value = 7;
+    fixed64 fixed64_value = 8;
+    sfixed32 sfixed32_value = 9;
+    sfixed64 sfixed64_value = 10;
+    float float_value = 11;
+    double double_value = 12;
+    bool bool_value = 13;
+    string enum_value = 14;
+    bytes bytes_value = 15;
+    ArrayLiteral array_value = 16;
+    MessageLiteral message_value = 17;
   }
 }
 
