@@ -148,9 +148,16 @@ type OptionExtensionDescriptor interface {
 	// If no relevant location is found in source code info, this returns nil.
 	OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location
 
-	// PresentExtensionNumbers returns field numbers for all options that
-	// have a set value on this descriptor.
+	// PresentExtensionNumbers returns field numbers for all extensions/custom options
+	// that have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
+
+	// ForEachPresentOption iterates through all options that have a set value on this
+	// descriptor, invoking fn for each present option.
+	//
+	// If fn returns false, the iteration is terminated and ForEachPresentOption
+	// immediately returns.
+	ForEachPresentOption(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
 }
 
 // Location defines source code info location information.
