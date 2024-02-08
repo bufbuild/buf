@@ -135,8 +135,8 @@ func TestInvalidImportFromTransitive(t *testing.T) {
 		t, nil, 0,
 		[]string{
 			`WARN`,
-			filepath.FromSlash(`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`),
-			filepath.FromSlash(`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`),
+			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`,
+			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
