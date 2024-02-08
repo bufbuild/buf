@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf convert --validate` to apply [protovalidate] rules to incoming messages specified with
+  `--from`.
 
 ## [v1.29.0] - 2024-01-24
 
