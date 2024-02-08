@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SyncServiceName is the fully-qualified name of the SyncService service.
@@ -56,6 +56,14 @@ const (
 	// SyncServiceAttachGitTagsProcedure is the fully-qualified name of the SyncService's AttachGitTags
 	// RPC.
 	SyncServiceAttachGitTagsProcedure = "/buf.alpha.registry.v1alpha1.SyncService/AttachGitTags"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	syncServiceServiceDescriptor               = v1alpha1.File_buf_alpha_registry_v1alpha1_sync_proto.Services().ByName("SyncService")
+	syncServiceGetGitSyncPointMethodDescriptor = syncServiceServiceDescriptor.Methods().ByName("GetGitSyncPoint")
+	syncServiceSyncGitCommitMethodDescriptor   = syncServiceServiceDescriptor.Methods().ByName("SyncGitCommit")
+	syncServiceAttachGitTagsMethodDescriptor   = syncServiceServiceDescriptor.Methods().ByName("AttachGitTags")
 )
 
 // SyncServiceClient is a client for the buf.alpha.registry.v1alpha1.SyncService service.
@@ -84,19 +92,22 @@ func NewSyncServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 		getGitSyncPoint: connect.NewClient[v1alpha1.GetGitSyncPointRequest, v1alpha1.GetGitSyncPointResponse](
 			httpClient,
 			baseURL+SyncServiceGetGitSyncPointProcedure,
+			connect.WithSchema(syncServiceGetGitSyncPointMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		syncGitCommit: connect.NewClient[v1alpha1.SyncGitCommitRequest, v1alpha1.SyncGitCommitResponse](
 			httpClient,
 			baseURL+SyncServiceSyncGitCommitProcedure,
+			connect.WithSchema(syncServiceSyncGitCommitMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		attachGitTags: connect.NewClient[v1alpha1.AttachGitTagsRequest, v1alpha1.AttachGitTagsResponse](
 			httpClient,
 			baseURL+SyncServiceAttachGitTagsProcedure,
-			opts...,
+			connect.WithSchema(syncServiceAttachGitTagsMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -145,19 +156,22 @@ func NewSyncServiceHandler(svc SyncServiceHandler, opts ...connect.HandlerOption
 	syncServiceGetGitSyncPointHandler := connect.NewUnaryHandler(
 		SyncServiceGetGitSyncPointProcedure,
 		svc.GetGitSyncPoint,
+		connect.WithSchema(syncServiceGetGitSyncPointMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	syncServiceSyncGitCommitHandler := connect.NewUnaryHandler(
 		SyncServiceSyncGitCommitProcedure,
 		svc.SyncGitCommit,
+		connect.WithSchema(syncServiceSyncGitCommitMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	syncServiceAttachGitTagsHandler := connect.NewUnaryHandler(
 		SyncServiceAttachGitTagsProcedure,
 		svc.AttachGitTags,
-		opts...,
+		connect.WithSchema(syncServiceAttachGitTagsMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.SyncService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

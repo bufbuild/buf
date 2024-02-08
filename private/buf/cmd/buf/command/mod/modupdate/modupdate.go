@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -215,9 +215,13 @@ func getDependencies(
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
-	var remote string
+	var (
+		remote               string
+		moduleIdentityString string
+	)
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
+		moduleIdentityString = moduleConfig.ModuleIdentity.IdentityString()
 	} else {
 		// At this point we know there's at least one dependency. If it's an unnamed module, select
 		// the right remote from the list of dependencies.
@@ -226,10 +230,11 @@ func getDependencies(
 			return nil, fmt.Errorf(`File %q has invalid "deps" references`, existingConfigFilePath)
 		}
 		remote = selectedRef.Remote()
+		moduleIdentityString = selectedRef.IdentityString()
 		container.Logger().Debug(fmt.Sprintf(
 			`File %q does not specify the "name" field. Based on the dependency %q, it appears that you are using a BSR instance at %q. Did you mean to specify "name: %s/..." within %q?`,
 			existingConfigFilePath,
-			selectedRef.IdentityString(),
+			moduleIdentityString,
 			remote,
 			remote,
 			existingConfigFilePath,
@@ -268,8 +273,8 @@ func getDependencies(
 		}),
 	)
 	if err != nil {
-		if remote != bufconnect.DefaultRemote {
-			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
+		if !connect.IsWireError(err) && remote != bufconnect.DefaultRemote {
+			return nil, bufcli.NewInvalidRemoteError(err, remote, moduleIdentityString)
 		}
 		return nil, err
 	}

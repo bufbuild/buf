@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// StudioServiceName is the fully-qualified name of the StudioService service.
@@ -53,6 +53,13 @@ const (
 	// StudioServiceSetStudioAgentPresetsProcedure is the fully-qualified name of the StudioService's
 	// SetStudioAgentPresets RPC.
 	StudioServiceSetStudioAgentPresetsProcedure = "/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	studioServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_studio_proto.Services().ByName("StudioService")
+	studioServiceListStudioAgentPresetsMethodDescriptor = studioServiceServiceDescriptor.Methods().ByName("ListStudioAgentPresets")
+	studioServiceSetStudioAgentPresetsMethodDescriptor  = studioServiceServiceDescriptor.Methods().ByName("SetStudioAgentPresets")
 )
 
 // StudioServiceClient is a client for the buf.alpha.registry.v1alpha1.StudioService service.
@@ -76,13 +83,15 @@ func NewStudioServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		listStudioAgentPresets: connect.NewClient[v1alpha1.ListStudioAgentPresetsRequest, v1alpha1.ListStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceListStudioAgentPresetsProcedure,
+			connect.WithSchema(studioServiceListStudioAgentPresetsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		setStudioAgentPresets: connect.NewClient[v1alpha1.SetStudioAgentPresetsRequest, v1alpha1.SetStudioAgentPresetsResponse](
 			httpClient,
 			baseURL+StudioServiceSetStudioAgentPresetsProcedure,
-			opts...,
+			connect.WithSchema(studioServiceSetStudioAgentPresetsMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -121,13 +130,15 @@ func NewStudioServiceHandler(svc StudioServiceHandler, opts ...connect.HandlerOp
 	studioServiceListStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceListStudioAgentPresetsProcedure,
 		svc.ListStudioAgentPresets,
+		connect.WithSchema(studioServiceListStudioAgentPresetsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	studioServiceSetStudioAgentPresetsHandler := connect.NewUnaryHandler(
 		StudioServiceSetStudioAgentPresetsProcedure,
 		svc.SetStudioAgentPresets,
-		opts...,
+		connect.WithSchema(studioServiceSetStudioAgentPresetsMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.StudioService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -252,15 +252,15 @@ func doManualPushCommit(
 	require.NoError(t, err)
 	fileSet, err := bufcas.NewFileSetForBucket(context.Background(), builtModule.Bucket)
 	require.NoError(t, err)
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
+	protoManifestBlob, protoBlobs, err := bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
 	require.NoError(t, err)
 	handler.ManuallyPushModule(
 		context.Background(),
 		t,
 		targetModuleIdentity,
 		branch,
-		bufcasalpha.BlobToAlpha(protoManifestBlob),
-		bufcasalpha.BlobsToAlpha(protoBlobs),
+		protoManifestBlob,
+		protoBlobs,
 	)
 }
 func doManualPushRandomModule(
@@ -278,15 +278,15 @@ func doManualPushRandomModule(
 	require.NoError(t, err)
 	fileSet, err := bufcas.NewFileSetForBucket(context.Background(), bucket)
 	require.NoError(t, err)
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
+	protoManifestBlob, protoBlobs, err := bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
 	require.NoError(t, err)
 	handler.ManuallyPushModule(
 		context.Background(),
 		t,
 		targetModuleIdentity,
 		branch,
-		bufcasalpha.BlobToAlpha(protoManifestBlob),
-		bufcasalpha.BlobsToAlpha(protoBlobs),
+		protoManifestBlob,
+		protoBlobs,
 	)
 }
 

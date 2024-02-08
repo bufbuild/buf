@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build go1.20
+// Generated. DO NOT EDIT.
 
-package bufcli
+package pythonversion
 
-import (
-	"crypto/tls"
-	"errors"
-)
-
-// wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
-func wrappedTLSError(err error) error {
-	if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
-		return tlsErr
-	}
-	return nil
-}
+import _ "github.com/bufbuild/buf/private/usage"

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -129,9 +129,6 @@ func run(
 		bufcli.NewFetchReader(container.Logger(), storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(),
 	)
-	if err != nil {
-		return err
-	}
 	graphBuilder := bufgraph.NewBuilder(
 		container.Logger(),
 		moduleResolver,

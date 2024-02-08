@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -82,8 +82,8 @@ message MonthlyUsage {
   uint32 total_message_types = 3;
   // The total amount of enum types for the month and year.
   uint32 total_enum_types = 4;
-  // The total amount of services types for the month and year.
-  uint32 total_service_types = 5;
+  // The total amount of method types for the month and year.
+  uint32 total_method_types = 5;
 }
 
 // CollisionType is the type of collisions that can occur.

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// WebhookServiceName is the fully-qualified name of the WebhookService service.
@@ -56,6 +56,14 @@ const (
 	// WebhookServiceListWebhooksProcedure is the fully-qualified name of the WebhookService's
 	// ListWebhooks RPC.
 	WebhookServiceListWebhooksProcedure = "/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	webhookServiceServiceDescriptor             = v1alpha1.File_buf_alpha_registry_v1alpha1_webhook_proto.Services().ByName("WebhookService")
+	webhookServiceCreateWebhookMethodDescriptor = webhookServiceServiceDescriptor.Methods().ByName("CreateWebhook")
+	webhookServiceDeleteWebhookMethodDescriptor = webhookServiceServiceDescriptor.Methods().ByName("DeleteWebhook")
+	webhookServiceListWebhooksMethodDescriptor  = webhookServiceServiceDescriptor.Methods().ByName("ListWebhooks")
 )
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
@@ -82,18 +90,21 @@ func NewWebhookServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 		createWebhook: connect.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceCreateWebhookProcedure,
+			connect.WithSchema(webhookServiceCreateWebhookMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		deleteWebhook: connect.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
 			httpClient,
 			baseURL+WebhookServiceDeleteWebhookProcedure,
+			connect.WithSchema(webhookServiceDeleteWebhookMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		listWebhooks: connect.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
 			httpClient,
 			baseURL+WebhookServiceListWebhooksProcedure,
+			connect.WithSchema(webhookServiceListWebhooksMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -143,18 +154,21 @@ func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect.Handler
 	webhookServiceCreateWebhookHandler := connect.NewUnaryHandler(
 		WebhookServiceCreateWebhookProcedure,
 		svc.CreateWebhook,
+		connect.WithSchema(webhookServiceCreateWebhookMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	webhookServiceDeleteWebhookHandler := connect.NewUnaryHandler(
 		WebhookServiceDeleteWebhookProcedure,
 		svc.DeleteWebhook,
+		connect.WithSchema(webhookServiceDeleteWebhookMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	webhookServiceListWebhooksHandler := connect.NewUnaryHandler(
 		WebhookServiceListWebhooksProcedure,
 		svc.ListWebhooks,
+		connect.WithSchema(webhookServiceListWebhooksMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

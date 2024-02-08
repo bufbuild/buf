@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,10 @@ service ResolveService {
   }
   // GetNPMVersion resolves the given plugin and module references to a version.
   rpc GetNPMVersion(GetNPMVersionRequest) returns (GetNPMVersionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  // GetPythonVersion resolves the given plugin and module references to a version.
+  rpc GetPythonVersion(GetPythonVersionRequest) returns (GetPythonVersionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 }
@@ -173,6 +177,18 @@ message GetSwiftVersionRequest {
 
 message GetSwiftVersionResponse {
   // version is the resolved version to be used with the swift registry.
+  string version = 1;
+}
+
+message GetPythonVersionRequest {
+  // The plugin reference to resolve.
+  GetRemotePackageVersionPlugin plugin_reference = 1;
+  // The module reference to resolve.
+  LocalModuleReference module_reference = 2;
+}
+
+message GetPythonVersionResponse {
+  // version is the resolved version to be used with the python repository.
   string version = 1;
 }
 

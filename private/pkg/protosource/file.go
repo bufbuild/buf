@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -638,9 +638,6 @@ func (f *file) populateMessage(
 			getMessageExtensionPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
-		if err != nil {
-			return nil, err
-		}
 		message.addExtension(field)
 		if oneof != nil {
 			oneof.addField(field)

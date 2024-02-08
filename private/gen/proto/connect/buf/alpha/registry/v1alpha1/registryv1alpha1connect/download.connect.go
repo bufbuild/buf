@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// DownloadServiceName is the fully-qualified name of the DownloadService service.
@@ -53,6 +53,13 @@ const (
 	// DownloadServiceDownloadManifestAndBlobsProcedure is the fully-qualified name of the
 	// DownloadService's DownloadManifestAndBlobs RPC.
 	DownloadServiceDownloadManifestAndBlobsProcedure = "/buf.alpha.registry.v1alpha1.DownloadService/DownloadManifestAndBlobs"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	downloadServiceServiceDescriptor                        = v1alpha1.File_buf_alpha_registry_v1alpha1_download_proto.Services().ByName("DownloadService")
+	downloadServiceDownloadMethodDescriptor                 = downloadServiceServiceDescriptor.Methods().ByName("Download")
+	downloadServiceDownloadManifestAndBlobsMethodDescriptor = downloadServiceServiceDescriptor.Methods().ByName("DownloadManifestAndBlobs")
 )
 
 // DownloadServiceClient is a client for the buf.alpha.registry.v1alpha1.DownloadService service.
@@ -77,12 +84,14 @@ func NewDownloadServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 		download: connect.NewClient[v1alpha1.DownloadRequest, v1alpha1.DownloadResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadProcedure,
+			connect.WithSchema(downloadServiceDownloadMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		downloadManifestAndBlobs: connect.NewClient[v1alpha1.DownloadManifestAndBlobsRequest, v1alpha1.DownloadManifestAndBlobsResponse](
 			httpClient,
 			baseURL+DownloadServiceDownloadManifestAndBlobsProcedure,
+			connect.WithSchema(downloadServiceDownloadManifestAndBlobsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -125,12 +134,14 @@ func NewDownloadServiceHandler(svc DownloadServiceHandler, opts ...connect.Handl
 	downloadServiceDownloadHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadProcedure,
 		svc.Download,
+		connect.WithSchema(downloadServiceDownloadMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	downloadServiceDownloadManifestAndBlobsHandler := connect.NewUnaryHandler(
 		DownloadServiceDownloadManifestAndBlobsProcedure,
 		svc.DownloadManifestAndBlobs,
+		connect.WithSchema(downloadServiceDownloadManifestAndBlobsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

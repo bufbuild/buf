@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// PluginCurationServiceName is the fully-qualified name of the PluginCurationService service.
@@ -66,6 +66,17 @@ const (
 	CodeGenerationServiceGenerateCodeProcedure = "/buf.alpha.registry.v1alpha1.CodeGenerationService/GenerateCode"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	pluginCurationServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("PluginCurationService")
+	pluginCurationServiceListCuratedPluginsMethodDescriptor     = pluginCurationServiceServiceDescriptor.Methods().ByName("ListCuratedPlugins")
+	pluginCurationServiceCreateCuratedPluginMethodDescriptor    = pluginCurationServiceServiceDescriptor.Methods().ByName("CreateCuratedPlugin")
+	pluginCurationServiceGetLatestCuratedPluginMethodDescriptor = pluginCurationServiceServiceDescriptor.Methods().ByName("GetLatestCuratedPlugin")
+	pluginCurationServiceDeleteCuratedPluginMethodDescriptor    = pluginCurationServiceServiceDescriptor.Methods().ByName("DeleteCuratedPlugin")
+	codeGenerationServiceServiceDescriptor                      = v1alpha1.File_buf_alpha_registry_v1alpha1_plugin_curation_proto.Services().ByName("CodeGenerationService")
+	codeGenerationServiceGenerateCodeMethodDescriptor           = codeGenerationServiceServiceDescriptor.Methods().ByName("GenerateCode")
+)
+
 // PluginCurationServiceClient is a client for the buf.alpha.registry.v1alpha1.PluginCurationService
 // service.
 type PluginCurationServiceClient interface {
@@ -93,24 +104,28 @@ func NewPluginCurationServiceClient(httpClient connect.HTTPClient, baseURL strin
 		listCuratedPlugins: connect.NewClient[v1alpha1.ListCuratedPluginsRequest, v1alpha1.ListCuratedPluginsResponse](
 			httpClient,
 			baseURL+PluginCurationServiceListCuratedPluginsProcedure,
+			connect.WithSchema(pluginCurationServiceListCuratedPluginsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		createCuratedPlugin: connect.NewClient[v1alpha1.CreateCuratedPluginRequest, v1alpha1.CreateCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceCreateCuratedPluginProcedure,
+			connect.WithSchema(pluginCurationServiceCreateCuratedPluginMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
 		getLatestCuratedPlugin: connect.NewClient[v1alpha1.GetLatestCuratedPluginRequest, v1alpha1.GetLatestCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceGetLatestCuratedPluginProcedure,
+			connect.WithSchema(pluginCurationServiceGetLatestCuratedPluginMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		deleteCuratedPlugin: connect.NewClient[v1alpha1.DeleteCuratedPluginRequest, v1alpha1.DeleteCuratedPluginResponse](
 			httpClient,
 			baseURL+PluginCurationServiceDeleteCuratedPluginProcedure,
+			connect.WithSchema(pluginCurationServiceDeleteCuratedPluginMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyIdempotent),
 			connect.WithClientOptions(opts...),
 		),
@@ -168,24 +183,28 @@ func NewPluginCurationServiceHandler(svc PluginCurationServiceHandler, opts ...c
 	pluginCurationServiceListCuratedPluginsHandler := connect.NewUnaryHandler(
 		PluginCurationServiceListCuratedPluginsProcedure,
 		svc.ListCuratedPlugins,
+		connect.WithSchema(pluginCurationServiceListCuratedPluginsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceCreateCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceCreateCuratedPluginProcedure,
 		svc.CreateCuratedPlugin,
+		connect.WithSchema(pluginCurationServiceCreateCuratedPluginMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceGetLatestCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceGetLatestCuratedPluginProcedure,
 		svc.GetLatestCuratedPlugin,
+		connect.WithSchema(pluginCurationServiceGetLatestCuratedPluginMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	pluginCurationServiceDeleteCuratedPluginHandler := connect.NewUnaryHandler(
 		PluginCurationServiceDeleteCuratedPluginProcedure,
 		svc.DeleteCuratedPlugin,
+		connect.WithSchema(pluginCurationServiceDeleteCuratedPluginMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyIdempotent),
 		connect.WithHandlerOptions(opts...),
 	)
@@ -245,7 +264,8 @@ func NewCodeGenerationServiceClient(httpClient connect.HTTPClient, baseURL strin
 		generateCode: connect.NewClient[v1alpha1.GenerateCodeRequest, v1alpha1.GenerateCodeResponse](
 			httpClient,
 			baseURL+CodeGenerationServiceGenerateCodeProcedure,
-			opts...,
+			connect.WithSchema(codeGenerationServiceGenerateCodeMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -276,7 +296,8 @@ func NewCodeGenerationServiceHandler(svc CodeGenerationServiceHandler, opts ...c
 	codeGenerationServiceGenerateCodeHandler := connect.NewUnaryHandler(
 		CodeGenerationServiceGenerateCodeProcedure,
 		svc.GenerateCode,
-		opts...,
+		connect.WithSchema(codeGenerationServiceGenerateCodeMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.CodeGenerationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

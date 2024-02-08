@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ func push(
 	if err != nil {
 		return nil, err
 	}
-	protoManifestBlob, protoBlobs, err := bufcas.FileSetToProtoManifestBlobAndBlobs(fileSet)
+	protoManifestBlob, protoBlobs, err := bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
 	if err != nil {
 		return nil, err
 	}
@@ -293,8 +293,8 @@ func push(
 		connect.NewRequest(&registryv1alpha1.PushManifestAndBlobsRequest{
 			Owner:      moduleIdentity.Owner(),
 			Repository: moduleIdentity.Repository(),
-			Manifest:   bufcasalpha.BlobToAlpha(protoManifestBlob),
-			Blobs:      bufcasalpha.BlobsToAlpha(protoBlobs),
+			Manifest:   protoManifestBlob,
+			Blobs:      protoBlobs,
 			Tags:       flags.Tags,
 			DraftName:  draftOrBranchName,
 		}),

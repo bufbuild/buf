@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ func javaMultipleFilesForFile(
 			// The option is already set to the same value, don't do anything.
 			return nil
 		}
-	case options == nil && descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
+	case descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.
 		return nil

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// AuditServiceName is the fully-qualified name of the AuditService service.
@@ -50,6 +50,12 @@ const (
 	// AuditServiceListAuditedEventsProcedure is the fully-qualified name of the AuditService's
 	// ListAuditedEvents RPC.
 	AuditServiceListAuditedEventsProcedure = "/buf.alpha.audit.v1alpha1.AuditService/ListAuditedEvents"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	auditServiceServiceDescriptor                 = v1alpha1.File_buf_alpha_audit_v1alpha1_service_proto.Services().ByName("AuditService")
+	auditServiceListAuditedEventsMethodDescriptor = auditServiceServiceDescriptor.Methods().ByName("ListAuditedEvents")
 )
 
 // AuditServiceClient is a client for the buf.alpha.audit.v1alpha1.AuditService service.
@@ -71,6 +77,7 @@ func NewAuditServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 		listAuditedEvents: connect.NewClient[v1alpha1.ListAuditedEventsRequest, v1alpha1.ListAuditedEventsResponse](
 			httpClient,
 			baseURL+AuditServiceListAuditedEventsProcedure,
+			connect.WithSchema(auditServiceListAuditedEventsMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -102,6 +109,7 @@ func NewAuditServiceHandler(svc AuditServiceHandler, opts ...connect.HandlerOpti
 	auditServiceListAuditedEventsHandler := connect.NewUnaryHandler(
 		AuditServiceListAuditedEventsProcedure,
 		svc.ListAuditedEvents,
+		connect.WithSchema(auditServiceListAuditedEventsMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

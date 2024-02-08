@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// RepositoryBranchServiceName is the fully-qualified name of the RepositoryBranchService service.
@@ -59,6 +59,15 @@ const (
 	// RepositoryBranchServiceGetCurrentDefaultBranchProcedure is the fully-qualified name of the
 	// RepositoryBranchService's GetCurrentDefaultBranch RPC.
 	RepositoryBranchServiceGetCurrentDefaultBranchProcedure = "/buf.alpha.registry.v1alpha1.RepositoryBranchService/GetCurrentDefaultBranch"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	repositoryBranchServiceServiceDescriptor                                 = v1alpha1.File_buf_alpha_registry_v1alpha1_repository_branch_proto.Services().ByName("RepositoryBranchService")
+	repositoryBranchServiceGetRepositoryBranchMethodDescriptor               = repositoryBranchServiceServiceDescriptor.Methods().ByName("GetRepositoryBranch")
+	repositoryBranchServiceListRepositoryBranchesMethodDescriptor            = repositoryBranchServiceServiceDescriptor.Methods().ByName("ListRepositoryBranches")
+	repositoryBranchServiceListRepositoryBranchesByReferenceMethodDescriptor = repositoryBranchServiceServiceDescriptor.Methods().ByName("ListRepositoryBranchesByReference")
+	repositoryBranchServiceGetCurrentDefaultBranchMethodDescriptor           = repositoryBranchServiceServiceDescriptor.Methods().ByName("GetCurrentDefaultBranch")
 )
 
 // RepositoryBranchServiceClient is a client for the
@@ -89,24 +98,28 @@ func NewRepositoryBranchServiceClient(httpClient connect.HTTPClient, baseURL str
 		getRepositoryBranch: connect.NewClient[v1alpha1.GetRepositoryBranchRequest, v1alpha1.GetRepositoryBranchResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceGetRepositoryBranchProcedure,
+			connect.WithSchema(repositoryBranchServiceGetRepositoryBranchMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryBranches: connect.NewClient[v1alpha1.ListRepositoryBranchesRequest, v1alpha1.ListRepositoryBranchesResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceListRepositoryBranchesProcedure,
+			connect.WithSchema(repositoryBranchServiceListRepositoryBranchesMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		listRepositoryBranchesByReference: connect.NewClient[v1alpha1.ListRepositoryBranchesByReferenceRequest, v1alpha1.ListRepositoryBranchesByReferenceResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceListRepositoryBranchesByReferenceProcedure,
+			connect.WithSchema(repositoryBranchServiceListRepositoryBranchesByReferenceMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
 		getCurrentDefaultBranch: connect.NewClient[v1alpha1.GetCurrentDefaultBranchRequest, v1alpha1.GetCurrentDefaultBranchResponse](
 			httpClient,
 			baseURL+RepositoryBranchServiceGetCurrentDefaultBranchProcedure,
+			connect.WithSchema(repositoryBranchServiceGetCurrentDefaultBranchMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -168,24 +181,28 @@ func NewRepositoryBranchServiceHandler(svc RepositoryBranchServiceHandler, opts 
 	repositoryBranchServiceGetRepositoryBranchHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceGetRepositoryBranchProcedure,
 		svc.GetRepositoryBranch,
+		connect.WithSchema(repositoryBranchServiceGetRepositoryBranchMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryBranchServiceListRepositoryBranchesHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceListRepositoryBranchesProcedure,
 		svc.ListRepositoryBranches,
+		connect.WithSchema(repositoryBranchServiceListRepositoryBranchesMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryBranchServiceListRepositoryBranchesByReferenceHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceListRepositoryBranchesByReferenceProcedure,
 		svc.ListRepositoryBranchesByReference,
+		connect.WithSchema(repositoryBranchServiceListRepositoryBranchesByReferenceMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
 	repositoryBranchServiceGetCurrentDefaultBranchHandler := connect.NewUnaryHandler(
 		RepositoryBranchServiceGetCurrentDefaultBranchProcedure,
 		svc.GetCurrentDefaultBranch,
+		connect.WithSchema(repositoryBranchServiceGetCurrentDefaultBranchMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

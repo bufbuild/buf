@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/pythonversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
@@ -239,6 +240,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							mavenversion.NewCommand("maven-version", builder),
 							npmversion.NewCommand("npm-version", builder),
 							swiftversion.NewCommand("swift-version", builder),
+							pythonversion.NewCommand("python-version", builder),
 						},
 					},
 					{

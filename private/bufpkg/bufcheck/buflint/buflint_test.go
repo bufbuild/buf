@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -615,6 +615,7 @@ func TestRunProtovalidateRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 46, 5, 46, 47, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 50, 5, 50, 57, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "map.proto", 53, 5, 53, 50, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "map.proto", 56, 41, 56, 80, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 20, 3, 20, 49, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "message.proto", 27, 5, 27, 51, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "number.proto", 20, 5, 20, 42, "PROTOVALIDATE"),
@@ -642,6 +643,7 @@ func TestRunProtovalidateRules(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 49, 28, 49, 71, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 51, 38, 51, 92, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 53, 26, 53, 74, "PROTOVALIDATE"),
+		bufanalysistesting.NewFileAnnotation(t, "repeated.proto", 55, 42, 55, 76, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 31, 5, 31, 46, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 36, 5, 36, 44, "PROTOVALIDATE"),
 		bufanalysistesting.NewFileAnnotation(t, "string.proto", 41, 5, 41, 44, "PROTOVALIDATE"),

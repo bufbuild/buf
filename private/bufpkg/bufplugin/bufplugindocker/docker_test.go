@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/docker/docker/api/types"
+	dockerimage "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
@@ -232,7 +233,7 @@ func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		delete(d.pushedImages, foundImageID)
-		if err := json.NewEncoder(w).Encode([]types.ImageDeleteResponseItem{
+		if err := json.NewEncoder(w).Encode([]dockerimage.DeleteResponse{
 			{Deleted: "sha256:" + foundImageID},
 		}); err != nil {
 			d.t.Error("failed to encode image delete response:", err)

@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -640,9 +640,6 @@ func (s *syncer) protectSyncedModuleBranch(
 	syncPoint, err := s.handler.ResolveSyncPoint(ctx, moduleIdentity, protectedBranch)
 	if err != nil {
 		return fmt.Errorf("resolve sync point for module %s: %w", moduleIdentity.IdentityString(), err)
-	}
-	if err != nil {
-		return err
 	}
 	if syncPoint == nil {
 		// Branch has never been synced, there is nothing to protected against.

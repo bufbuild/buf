@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// EventServiceName is the fully-qualified name of the EventService service.
@@ -49,6 +49,12 @@ const (
 const (
 	// EventServiceEventProcedure is the fully-qualified name of the EventService's Event RPC.
 	EventServiceEventProcedure = "/buf.alpha.webhook.v1alpha1.EventService/Event"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	eventServiceServiceDescriptor     = v1alpha1.File_buf_alpha_webhook_v1alpha1_event_proto.Services().ByName("EventService")
+	eventServiceEventMethodDescriptor = eventServiceServiceDescriptor.Methods().ByName("Event")
 )
 
 // EventServiceClient is a client for the buf.alpha.webhook.v1alpha1.EventService service.
@@ -70,7 +76,8 @@ func NewEventServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 		event: connect.NewClient[v1alpha1.EventRequest, v1alpha1.EventResponse](
 			httpClient,
 			baseURL+EventServiceEventProcedure,
-			opts...,
+			connect.WithSchema(eventServiceEventMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -100,7 +107,8 @@ func NewEventServiceHandler(svc EventServiceHandler, opts ...connect.HandlerOpti
 	eventServiceEventHandler := connect.NewUnaryHandler(
 		EventServiceEventProcedure,
 		svc.Event,
-		opts...,
+		connect.WithSchema(eventServiceEventMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.webhook.v1alpha1.EventService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

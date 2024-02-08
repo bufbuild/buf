@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -172,17 +172,8 @@ func (fm filemap) apply(m *mockDownloadService) error {
 	if err != nil {
 		return err
 	}
-	protoManifestBlob, err := bufcas.ManifestToProtoBlob(fileSet.Manifest())
-	if err != nil {
-		return err
-	}
-	protoBlobs, err := bufcas.BlobSetToProtoBlobs(fileSet.BlobSet())
-	if err != nil {
-		return err
-	}
-	m.manifestBlob = bufcasalpha.BlobToAlpha(protoManifestBlob)
-	m.blobs = bufcasalpha.BlobsToAlpha(protoBlobs)
-	return nil
+	m.manifestBlob, m.blobs, err = bufcasalpha.FileSetToAlphaManifestBlobAndBlobs(fileSet)
+	return err
 }
 
 func withBlobsFromMap(files map[string][]byte) option {

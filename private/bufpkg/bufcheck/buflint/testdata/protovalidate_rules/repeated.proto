@@ -51,4 +51,6 @@ message RepeatedTest {
   map<int32, string> map_field = 16 [(buf.validate.field).map.values.repeated.unique = true];
   // int64 does not match int32
   int32 wrong_type = 17 [(buf.validate.field).repeated.items.int64.lt = 1];
+  // non repeated
+  repeated int32 non_repeated_rule = 18 [(buf.validate.field).int32.gt = 10];
 }

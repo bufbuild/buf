@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// OwnerServiceName is the fully-qualified name of the OwnerService service.
@@ -50,6 +50,12 @@ const (
 	// OwnerServiceGetOwnerByNameProcedure is the fully-qualified name of the OwnerService's
 	// GetOwnerByName RPC.
 	OwnerServiceGetOwnerByNameProcedure = "/buf.alpha.registry.v1alpha1.OwnerService/GetOwnerByName"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	ownerServiceServiceDescriptor              = v1alpha1.File_buf_alpha_registry_v1alpha1_owner_proto.Services().ByName("OwnerService")
+	ownerServiceGetOwnerByNameMethodDescriptor = ownerServiceServiceDescriptor.Methods().ByName("GetOwnerByName")
 )
 
 // OwnerServiceClient is a client for the buf.alpha.registry.v1alpha1.OwnerService service.
@@ -72,6 +78,7 @@ func NewOwnerServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 		getOwnerByName: connect.NewClient[v1alpha1.GetOwnerByNameRequest, v1alpha1.GetOwnerByNameResponse](
 			httpClient,
 			baseURL+OwnerServiceGetOwnerByNameProcedure,
+			connect.WithSchema(ownerServiceGetOwnerByNameMethodDescriptor),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -104,6 +111,7 @@ func NewOwnerServiceHandler(svc OwnerServiceHandler, opts ...connect.HandlerOpti
 	ownerServiceGetOwnerByNameHandler := connect.NewUnaryHandler(
 		OwnerServiceGetOwnerByNameProcedure,
 		svc.GetOwnerByName,
+		connect.WithSchema(ownerServiceGetOwnerByNameMethodDescriptor),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)

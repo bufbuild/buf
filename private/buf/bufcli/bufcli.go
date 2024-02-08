@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.28.2-dev"
+	Version = "1.29.1-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -584,6 +584,10 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 	if err != nil {
 		return nil, err
 	}
+	otelconnectInterceptor, err := otelconnect.NewInterceptor()
+	if err != nil {
+		return nil, err
+	}
 	client := httpclient.NewClient(config.TLS)
 	options := []connectclient.ConfigOption{
 		connectclient.WithAddressMapper(func(address string) string {
@@ -595,7 +599,7 @@ func newConnectClientConfigWithOptions(container appflag.Container, opts ...conn
 		connectclient.WithInterceptors([]connect.Interceptor{
 			bufconnect.NewSetCLIVersionInterceptor(Version),
 			bufconnect.NewCLIWarningInterceptor(container),
-			otelconnect.NewInterceptor(),
+			otelconnectInterceptor,
 		}),
 	}
 	options = append(options, opts...)

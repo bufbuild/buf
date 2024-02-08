@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package bufcli
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -169,7 +170,7 @@ func wrapError(err error) error {
 			if authErr, ok := bufconnect.AsAuthError(err); ok && authErr.TokenEnvKey() != "" {
 				return fmt.Errorf(`Failure: the %[1]s environment variable is set, but is not valid. Set %[1]s to a valid Buf API key, or unset it. For details, visit https://docs.buf.build/bsr/authentication`, authErr.TokenEnvKey())
 			}
-			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
+			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. If you already have an entry in your netrc, check to see that your token is not expired. For details, visit https://docs.buf.build/bsr/authentication`)
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
@@ -210,4 +211,12 @@ func isEmptyUnknownError(err error) bool {
 		return false
 	}
 	return err.Error() == "" && connect.CodeOf(err) == connect.CodeUnknown
+}
+
+// wrappedTLSError returns an unwrapped TLS error or nil if the error is another type of error.
+func wrappedTLSError(err error) error {
+	if tlsErr := (&tls.CertificateVerificationError{}); errors.As(err, &tlsErr) {
+		return tlsErr
+	}
+	return nil
 }

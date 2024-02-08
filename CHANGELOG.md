@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.29.0] - 2024-01-24
+
 - Add support for `yaml` format. All commands that take image inputs, output images,
   or convert between message formats, now take `yaml` as a format, in addition to
   the existing `binpb` and `txtpb` formats. Some examples:
@@ -12,6 +16,9 @@
   `use_enum_numbers`. This affects output serialization. Some examples:
   - `buf convert --type foo.Bar --from input.binpb --to output.yaml#use_proto_names=true`
   - `buf convert --type foo.Bar --from input.binpb --to -#format=yaml,use_enum_numbers=true`
+- Fix issue where `buf format` would inadvertently mangle files that used
+  the [expanded `Any` syntax](https://protobuf.com/docs/language-spec#any-messages)
+  in option values.
 
 ## [v1.28.1] - 2023-11-15
 
@@ -999,7 +1006,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.28.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.29.0...HEAD
+[v1.29.0]: https://github.com/bufbuild/buf/compare/v1.28.1...v1.29.0
 [v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
 [v1.27.2]: https://github.com/bufbuild/buf/compare/v1.27.1...v1.27.2

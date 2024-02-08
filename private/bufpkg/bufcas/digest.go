@@ -1,4 +1,4 @@
-// Copyright 2020-2023 Buf Technologies, Inc.
+// Copyright 2020-2024 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,11 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
 	"strconv"
 	"strings"
 
-	storagev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/storage/v1beta1"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -43,12 +42,6 @@ var (
 	}
 	stringToDigestType = map[string]DigestType{
 		"shake256": DigestTypeShake256,
-	}
-	digestTypeToProto = map[DigestType]storagev1beta1.Digest_Type{
-		DigestTypeShake256: storagev1beta1.Digest_TYPE_SHAKE256,
-	}
-	protoToDigestType = map[storagev1beta1.Digest_Type]DigestType{
-		storagev1beta1.Digest_TYPE_SHAKE256: DigestTypeShake256,
 	}
 )
 
@@ -101,6 +94,21 @@ type Digest interface {
 	isDigest()
 }
 
+// NewDigest returns a new Digest for the value.
+func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
+	digestOptions := newDigestOptions()
+	for _, option := range options {
+		option(digestOptions)
+	}
+	if digestOptions.digestType == 0 {
+		digestOptions.digestType = DigestTypeShake256
+	}
+	if err := validateDigestParameters(digestOptions.digestType, value); err != nil {
+		return nil, err
+	}
+	return newDigest(digestOptions.digestType, value), nil
+}
+
 // NewDigestForContent creates a new Digest based on the given content read from the Reader.
 //
 // A valid Digest is returned, even in the case of empty content.
@@ -134,21 +142,8 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 		return newDigest(DigestTypeShake256, value), nil
 	default:
 		// This is a system error.
-		return nil, fmt.Errorf("unknown DigestType: %v", digestOptions.digestType)
+		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
 	}
-}
-
-// NewDigestForDigests returns a new Digest for the given Digests.
-//
-// Digests are sorted by string value, and then concatenated with newlines. The resulting
-// content is then turned into a Digest.
-func NewDigestForDigests(digests []Digest, options ...DigestOption) (Digest, error) {
-	digestStrings := make([]string, len(digests))
-	for i, digest := range digests {
-		digestStrings[i] = digest.String()
-	}
-	sort.Strings(digestStrings)
-	return NewDigestForContent(strings.NewReader(strings.Join(digestStrings, "\n")), options...)
 }
 
 // DigestOption is an option for a new Digest.
@@ -281,7 +276,7 @@ func validateDigestParameters(digestType DigestType, value []byte) error {
 	default:
 		// This is really always a system error, but little harm in including it here, even
 		// though it'll get converted into a ParseError in parse.
-		return fmt.Errorf(`unknown digest type: %q`, digestType.String())
+		return syserror.Newf(`unknown digest type: %q`, digestType.String())
 	}
 	return nil
 }
