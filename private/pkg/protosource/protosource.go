@@ -148,7 +148,7 @@ type OptionExtensionDescriptor interface {
 	// If no relevant location is found in source code info, this returns nil.
 	OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location
 
-	// PresentExtensionNumbers returns field numbers for all extensions/custom options only
+	// PresentExtensionNumbers returns field numbers for all extensions/custom options
 	// that have a set value on this descriptor.
 	PresentExtensionNumbers() []int32
 
