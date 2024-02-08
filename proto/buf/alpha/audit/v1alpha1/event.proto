@@ -55,8 +55,7 @@ enum ResourceType {
   RESOURCE_TYPE_CURATED_PLUGIN = 8;
   RESOURCE_TYPE_TOKEN = 10;
   RESOURCE_TYPE_SCIM_TOKEN = 11;
-  RESOURCE_TYPE_REPOSITORY_COMMIT_LABEL = 14;
-  RESOURCE_TYPE_REPOSITORY_LABEL = 12 [deprecated = true];
+  RESOURCE_TYPE_REPOSITORY_LABEL = 12;
   RESOURCE_TYPE_SERVER = 13;
 }
 
@@ -102,12 +101,10 @@ enum EventType {
   EVENT_TYPE_SCIM_TOKEN_CREATED = 26;
   EVENT_TYPE_SCIM_TOKEN_DELETED = 27;
   EVENT_TYPE_REPOSITORY_COMMIT_DELETED = 28;
-  EVENT_TYPE_REPOSITORY_COMMIT_LABEL_CREATED = 38;
-  EVENT_TYPE_REPOSITORY_COMMIT_LABEL_MOVED = 39;
-  EVENT_TYPE_REPOSITORY_COMMIT_LABEL_ARCHIVED = 40;
-  EVENT_TYPE_REPOSITORY_COMMIT_LABEL_UNARCHIVED = 41;
-  EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29 [deprecated = true];
-  EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30 [deprecated = true];
+  EVENT_TYPE_REPOSITORY_LABEL_CREATED = 29;
+  EVENT_TYPE_REPOSITORY_LABEL_MOVED = 30;
+  EVENT_TYPE_REPOSITORY_LABEL_ARCHIVED = 38;
+  EVENT_TYPE_REPOSITORY_LABEL_UNARCHIVED = 39;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_ENABLED = 32;
   EVENT_TYPE_SERVER_BREAKING_CHANGE_POLICY_DISABLED = 33;
   EVENT_TYPE_REPOSITORY_DEFAULT_BRANCH_CHANGED = 34;
@@ -173,12 +170,10 @@ message Event {
     PayloadSCIMTokenCreated scim_token_created = 32;
     PayloadSCIMTokenDeleted scim_token_deleted = 33;
     PayloadRepositoryCommitDeleted repository_commit_deleted = 34;
-    PayloadRepositoryCommitLabelCreated repository_commit_label_created = 44;
-    PayloadRepositoryCommitLabelMoved repository_commit_label_moved = 45;
-    PayloadRepositoryCommitLabelArchived repository_commit_label_archived = 46;
-    PayloadRepositoryCommitLabelUnarchived repository_commit_label_unarchived = 47;
     PayloadRepositoryLabelCreated repository_label_created = 35;
     PayloadRepositoryLabelMoved repository_label_moved = 36;
+    PayloadRepositoryLabelArchived repository_label_archived = 44;
+    PayloadRepositoryLabelUnarchived repository_label_unarchived = 45;
     PayloadCuratedPluginDeleted curated_plugin_deleted = 37;
     PayloadServerBreakingChangePolicyEnabled payload_server_breaking_change_policy_enabled = 38;
     PayloadServerBreakingChangePolicyDisabled payload_server_breaking_change_policy_disabled = 39;
@@ -406,7 +401,7 @@ message PayloadRepositoryCommitDeleted {
   string draft_name = 5;
 }
 
-message PayloadRepositoryCommitLabelCreated {
+message PayloadRepositoryLabelCreated {
   // owner_id is the id of the owner of the repository on which the label was created.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository on which the label was created.
@@ -415,11 +410,13 @@ message PayloadRepositoryCommitLabelCreated {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label was created.
   string repository_name = 4;
+  // label_namespace is the namespace of the label that was created.
+  string label_namespace = 5 [deprecated = true];
   // commit_id is the id of the commit on which the label was created.
-  string commit_id = 5;
+  string commit_id = 6;
 }
 
-message PayloadRepositoryCommitLabelMoved {
+message PayloadRepositoryLabelMoved {
   // owner_id is the id of the owner of the repository on which the label was moved.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository on which the label was moved.
@@ -428,13 +425,15 @@ message PayloadRepositoryCommitLabelMoved {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label was moved.
   string repository_name = 4;
+  // label_namespace is the namespace of the label that was moved.
+  string label_namespace = 5 [deprecated = true];
   // to_commit_id is the id of the commit on which the label was moved to.
-  string to_commit_id = 5;
+  string to_commit_id = 6;
   // from_commit_id is the id of the commit on which the label was moved from.
-  string from_commit_id = 6;
+  string from_commit_id = 7;
 }
 
-message PayloadRepositoryCommitLabelArchived {
+message PayloadRepositoryLabelArchived {
   // owner_id is the id of the owner of the repository on which the label was archived.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository on which the label was archived.
@@ -445,7 +444,7 @@ message PayloadRepositoryCommitLabelArchived {
   string repository_name = 4;
 }
 
-message PayloadRepositoryCommitLabelUnarchived {
+message PayloadRepositoryLabelUnarchived {
   // owner_id is the id of the owner of the repository on which the label was unarchived.
   string owner_id = 1;
   // owner_name is the name of the owner of the repository on which the label was unarchived.
@@ -454,38 +453,6 @@ message PayloadRepositoryCommitLabelUnarchived {
   string repository_id = 3;
   // repository_name is the name of the repository from which the label was unarchived.
   string repository_name = 4;
-}
-
-message PayloadRepositoryLabelCreated {
-  // owner_id is the id of the owner of the repository on which the label will be created.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the repository on which the label will be created.
-  string owner_name = 2;
-  // repository_id is the id of the repository on which the label will be created.
-  string repository_id = 3;
-  // repository_name is the name of the repository from which the label will be created.
-  string repository_name = 4;
-  // label_namespace is the namespace of the label that was created.
-  string label_namespace = 5;
-  // commit_id is the id of the commit on which the label was created.
-  string commit_id = 6;
-}
-
-message PayloadRepositoryLabelMoved {
-  // owner_id is the id of the owner of the repository on which the label will be moved.
-  string owner_id = 1;
-  // owner_name is the name of the owner of the repository on which the label will be moved.
-  string owner_name = 2;
-  // repository_id is the id of the repository on which the label will be moved.
-  string repository_id = 3;
-  // repository_name is the name of the repository from which the label will be moved.
-  string repository_name = 4;
-  // label_namespace is the namespace of the label that was moved.
-  string label_namespace = 5;
-  // to_commit_id is the id of the commit on which the label was moved to.
-  string to_commit_id = 6;
-  // from_commit_id is the id of the commit on which the label was moved from.
-  string from_commit_id = 7;
 }
 
 message PayloadServerBreakingChangePolicyEnabled {
