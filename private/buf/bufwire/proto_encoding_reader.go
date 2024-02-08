@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/protovalidate-go"
+	"github.com/bufbuild/protoyaml-go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.uber.org/multierr"
@@ -71,6 +73,14 @@ func (p *protoEncodingReader) GetMessage(
 	if err != nil {
 		return nil, err
 	}
+	var validator protoyaml.Validator
+	if messageRef.Validate() {
+		var err error
+		validator, err = protovalidate.New()
+		if err != nil {
+			return nil, err
+		}
+	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageRef.MessageEncoding() {
 	case buffetch.MessageEncodingBinpb:
@@ -83,7 +93,9 @@ func (p *protoEncodingReader) GetMessage(
 		unmarshaler = protoencoding.NewYAMLUnmarshaler(
 			resolver,
 			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
+			protoencoding.YAMLUnmarshalerWithValidator(validator),
 		)
+		validator = nil // Validation errors are handled by the unmarshaler.
 	default:
 		return nil, errors.New("unknown message encoding type")
 	}
@@ -107,6 +119,11 @@ func (p *protoEncodingReader) GetMessage(
 	}
 	if err := unmarshaler.Unmarshal(data, message); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal the message: %v", err)
+	}
+	if validator != nil {
+		if err := validator.Validate(message); err != nil {
+			return nil, err
+		}
 	}
 	return message, nil
 }

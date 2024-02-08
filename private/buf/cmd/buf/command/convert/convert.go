@@ -195,12 +195,10 @@ func run(
 	}
 	fromMessageRef, err := buffetch.NewMessageRefParser(
 		container.Logger(),
-		buffetch.MessageRefParserWithDefaultMessageEncoding(
-			buffetch.MessageEncodingBinpb,
-		),
+		buffetch.MessageRefParserWithDefaultMessageEncoding(buffetch.MessageEncodingBinpb),
 	).GetMessageRef(ctx, flags.From)
 	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
+		return fmt.Errorf("--%s: %v", fromFlagName, err)
 	}
 	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
