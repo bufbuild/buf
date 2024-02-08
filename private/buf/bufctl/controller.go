@@ -44,8 +44,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
-	"github.com/bufbuild/protovalidate-go"
-	"github.com/bufbuild/protoyaml-go"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -572,14 +570,6 @@ func (c *controller) GetMessage(
 	if err != nil {
 		return nil, 0, err
 	}
-	var validator protoyaml.Validator
-	if messageRef.Validate() {
-		var err error
-		validator, err = protovalidate.New()
-		if err != nil {
-			return nil, 0, err
-		}
-	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageEncoding {
 	case buffetch.MessageEncodingBinpb:
@@ -592,9 +582,7 @@ func (c *controller) GetMessage(
 		unmarshaler = protoencoding.NewYAMLUnmarshaler(
 			resolver,
 			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
-			protoencoding.YAMLUnmarshalerWithValidator(validator),
 		)
-		validator = nil // Validation errors are handled by the unmarshaler.
 	default:
 		// This is a system error.
 		return nil, 0, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)
@@ -616,11 +604,6 @@ func (c *controller) GetMessage(
 	}
 	if err := unmarshaler.Unmarshal(data, message); err != nil {
 		return nil, 0, err
-	}
-	if validator != nil {
-		if err := validator.Validate(message); err != nil {
-			return nil, 0, err
-		}
 	}
 	return message, messageEncoding, nil
 }
@@ -946,7 +929,6 @@ func (c *controller) getImageForMessageRef(
 		// we've already re-parsed, by unmarshalling 2x above
 		imageFromProtoOptions = append(imageFromProtoOptions, bufimage.WithNoReparse())
 	case buffetch.MessageEncodingYAML:
-		// No need to apply validation - Images do not use protovalidate.
 		resolver, err := bootstrapResolver(protoencoding.NewYAMLUnmarshaler(nil), data)
 		if err != nil {
 			return nil, err
