@@ -573,7 +573,7 @@ func (c *controller) GetMessage(
 		return nil, 0, err
 	}
 	var validator protoyaml.Validator
-	if messageRef.Validate() {
+	if functionOptions.messageValidation {
 		var err error
 		validator, err = protovalidate.New()
 		if err != nil {
@@ -592,6 +592,7 @@ func (c *controller) GetMessage(
 		unmarshaler = protoencoding.NewYAMLUnmarshaler(
 			resolver,
 			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
+			// This will pretty print validation errors.
 			protoencoding.YAMLUnmarshalerWithValidator(validator),
 		)
 		validator = nil // Validation errors are handled by the unmarshaler.

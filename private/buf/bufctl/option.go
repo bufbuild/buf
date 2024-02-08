@@ -117,6 +117,17 @@ func WithIgnoreAndDisallowV1BufWorkYAMLs() FunctionOption {
 	}
 }
 
+// WithMessageValidation returns a new FunctionOption that says to validate the
+// message as it is being read.
+//
+// We want to do this as part of the read/unmarshal, as protoyaml has specific logic
+// on unmarshal that will print pretty validations.
+func WithMessageValidation() FunctionOption {
+	return func(functionOptions *functionOptions) {
+		functionOptions.messageValidation = true
+	}
+}
+
 // *** PRIVATE ***
 
 type functionOptions struct {
@@ -131,6 +142,7 @@ type functionOptions struct {
 	protoFileInfosIncludeImports    bool
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
+	messageValidation               bool
 }
 
 func newFunctionOptions(controller *controller) *functionOptions {
