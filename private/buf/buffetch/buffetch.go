@@ -41,7 +41,6 @@ const (
 
 	useProtoNamesKey  = "use_proto_names"
 	useEnumNumbersKey = "use_enum_numbers"
-	validateKey       = "validate"
 )
 
 var (
@@ -111,16 +110,10 @@ type MessageRef interface {
 	//
 	// May be used for items such as YAML unmarshaling errors.
 	Path() string
-	// UseProtoNames indicates if the message should use proto names when encoding.
-	//
-	// Only applies for MessageEncodingYAML at this time.
+	// UseProtoNames only applies for MessageEncodingYAML at this time.
 	UseProtoNames() bool
-	// UseEnumNumbers indicates if the message should use enum numbers when encoding.
-	//
-	// Only applies for MessageEncodingYAML at this time.
+	// UseEnumNumbers only applies for MessageEncodingYAML at this time.
 	UseEnumNumbers() bool
-	// Validate indicates if the message should be validated when decoding.
-	Validate() bool
 	IsNull() bool
 	internalSingleRef() internal.SingleRef
 }
