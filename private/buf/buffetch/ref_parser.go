@@ -41,29 +41,18 @@ func newRefParser(logger *zap.Logger) *refParser {
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRef),
-			internal.WithSingleFormat(
-				formatBin,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
-			internal.WithSingleFormat(
-				formatBinpb,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(
 				formatJSON,
 				internal.WithSingleCustomOptionKey(useProtoNamesKey),
 				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
-				internal.WithSingleCustomOptionKey(validateKey),
 			),
-			internal.WithSingleFormat(
-				formatTxtpb,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
+			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatYAML,
 				internal.WithSingleCustomOptionKey(useProtoNamesKey),
 				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
-				internal.WithSingleCustomOptionKey(validateKey),
 			),
 			internal.WithSingleFormat(
 				formatBingz,
@@ -110,28 +99,18 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(newProcessRawRefMessage(messageRefParserOptions.defaultMessageEncoding)),
-			internal.WithSingleFormat(
-				formatBin,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
-			internal.WithSingleFormat(
-				formatBinpb,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatBinpb),
 			internal.WithSingleFormat(
 				formatJSON,
 				internal.WithSingleCustomOptionKey(useProtoNamesKey),
 				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
-				internal.WithSingleCustomOptionKey(validateKey),
 			),
-			internal.WithSingleFormat(formatTxtpb,
-				internal.WithSingleCustomOptionKey(validateKey),
-			),
+			internal.WithSingleFormat(formatTxtpb),
 			internal.WithSingleFormat(
 				formatYAML,
 				internal.WithSingleCustomOptionKey(useProtoNamesKey),
 				internal.WithSingleCustomOptionKey(useEnumNumbersKey),
-				internal.WithSingleCustomOptionKey(validateKey),
 			),
 			internal.WithSingleFormat(
 				formatBingz,
