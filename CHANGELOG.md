@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Add `buf convert --validate` to apply [protovalidate] rules to incoming messages specified with
-  `--from`.
+- Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
+  rules to incoming messages specified with `--from`.
 
 ## [v1.29.0] - 2024-01-24
 
