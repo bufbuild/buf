@@ -257,7 +257,8 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 			// message to print.
 			for _, targetExcludePath := range config.targetExcludePaths {
 				if targetPath == targetExcludePath {
-					return nil, fmt.Errorf("cannot set the same path for both --path and --exclude-path: %s", targetPath)
+					unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
+					return nil, fmt.Errorf("cannot set the same path for both --path and --exclude-path: %s", unnormalizedTargetPath)
 				}
 				// This is new post-refactor. Before, we gave precedence to --path. While a change,
 				// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
@@ -271,7 +272,9 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		}
 		for _, targetExcludePath := range config.targetExcludePaths {
 			if targetExcludePath == config.targetSubDirPath {
-				return nil, fmt.Errorf("given input %s is equal to a value of --exclude-path %s - this would exclude everything", config.targetSubDirPath, targetExcludePath)
+				unnormalizedTargetSubDirPath := filepath.Clean(normalpath.Unnormalize(config.targetSubDirPath))
+				unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
+				return nil, fmt.Errorf("given input %s is equal to a value of --exclude-path %s - this would exclude everything", unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
 			}
 		}
 	}
