@@ -121,7 +121,7 @@ func WithIgnoreAndDisallowV1BufWorkYAMLs() FunctionOption {
 // message as it is being read.
 //
 // We want to do this as part of the read/unmarshal, as protoyaml has specific logic
-// on unmarshal that will print pretty validations.
+// on unmarshal that will pretty print validations.
 func WithMessageValidation() FunctionOption {
 	return func(functionOptions *functionOptions) {
 		functionOptions.messageValidation = true
