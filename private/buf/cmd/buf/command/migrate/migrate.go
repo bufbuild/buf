@@ -19,7 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -29,7 +28,7 @@ import (
 const (
 	workspaceDirectoriesFlagName = "workspace"
 	moduleDirectoriesFlagName    = "module"
-	bufGenYAMLPathFlagName       = "template"
+	bufGenYAMLPathFlagName       = "buf-gen-yaml"
 	dryRunFlagName               = "dry-run"
 )
 
@@ -87,7 +86,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.BufGenYAMLPaths,
 		bufGenYAMLPathFlagName,
 		nil,
-		"The paths to the generation templates to migrate",
+		"The paths to the buf.gen.yaml generation templates to migrate",
 	)
 }
 
@@ -100,7 +99,7 @@ func run(
 	if flags.DryRun {
 		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun())
 	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
 	if err != nil {
 		return err
 	}
@@ -118,7 +117,7 @@ func run(
 	return bufmigrate.NewMigrator(
 		container.Logger(),
 		container.Stdout(),
-		bufapi.NewClientProvider(clientConfig),
+		moduleKeyProvider,
 		commitProvider,
 	).Migrate(
 		ctx,

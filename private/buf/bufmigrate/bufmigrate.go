@@ -18,7 +18,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
@@ -65,14 +64,13 @@ type Migrator interface {
 func NewMigrator(
 	logger *zap.Logger,
 	dryRunWriter io.Writer,
-	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider.
-	clientProvider bufapi.ClientProvider,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) Migrator {
 	return newMigrator(
 		logger,
 		dryRunWriter,
-		clientProvider,
+		moduleKeyProvider,
 		commitProvider,
 	)
 }
