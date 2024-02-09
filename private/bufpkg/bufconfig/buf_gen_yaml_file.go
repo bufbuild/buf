@@ -481,8 +481,8 @@ type externalTypesConfigV1 struct {
 // externalBufGenYAMLFileV2 represents the v2 buf.gen.yaml file.
 type externalBufGenYAMLFileV2 struct {
 	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
-	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed externalGenerateManagedConfigV2  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Inputs  []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
 
@@ -490,21 +490,21 @@ type externalBufGenYAMLFileV2 struct {
 type externalGeneratePluginConfigV2 struct {
 	// Exactly one of Remote, Binary and ProtocBuiltin is required.
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	// Revision is only valid with Remote set.
+	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// Binary is the binary path, which can be one string or multiple strings.
 	Binary interface{} `json:"binary,omitempty" yaml:"binary,omitempty"`
 	// ProtocBuiltin is the protoc built-in plugin name, in the form of 'java' instead of 'protoc-gen-java'.
 	ProtocBuiltin *string `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
-	// Out is required.
-	Out string `json:"out,omitempty" yaml:"out,omitempty"`
-	// Revision is only valid with Remote set.
-	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// ProtocPath is only valid with ProtocBuiltin
 	ProtocPath *string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	// Out is required.
+	Out string `json:"out,omitempty" yaml:"out,omitempty"`
 	// Opt can be one string or multiple strings.
 	Opt            interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	IncludeImports bool        `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`
 	IncludeWKT     bool        `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
-	// Strategy 5s only valid with ProtoBuiltin and Binary
+	// Strategy is only valid with ProtoBuiltin and Binary.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
