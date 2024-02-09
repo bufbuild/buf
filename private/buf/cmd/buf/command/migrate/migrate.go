@@ -108,12 +108,21 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufmigrate.Migrate(
-		ctx,
-		container.Stderr(),
-		storageos.NewProvider(storageos.ProviderWithSymlinks()),
+	bucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	return bufmigrate.NewMigrator(
+		container.Logger(),
+		container.Stdout(),
 		bufapi.NewClientProvider(clientConfig),
 		commitProvider,
+	).Migrate(
+		ctx,
+		bucket,
 		flags.WorkspaceDirPaths,
 		flags.ModuleDirPaths,
 		flags.BufGenYAMLPaths,
