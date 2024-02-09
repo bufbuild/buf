@@ -317,9 +317,12 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	if err != nil {
 		return nil, nil, err
 	}
-	// TODO: We need to upgrade digests from b4 to b5, right?
 	var bufLock bufconfig.BufLockFile
 	if migrateBuilder.hasSeenBufLockFile {
+		resolvedDepModuleKeys, err := m.upgradeModuleKeysToB5(ctx, resolvedDepModuleKeys)
+		if err != nil {
+			return nil, nil, err
+		}
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
@@ -376,6 +379,64 @@ func (m *migrator) getCommitIDToCommit(
 		commitIDToCommit[commit.ModuleKey().CommitID()] = commit
 	}
 	return commitIDToCommit, nil
+}
+
+func (m *migrator) upgradeModuleKeysToB5(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys = slicesext.Copy(moduleKeys)
+
+	b4IndexedModuleKeys, err := slicesext.FilterError(
+		slicesext.ToIndexed(moduleKeys),
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bool, error) {
+			digest, err := indexedModuleKey.Value.Digest()
+			if err != nil {
+				return false, err
+			}
+			return digest.Type() == bufmodule.DigestTypeB4, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(b4IndexedModuleKeys) == 0 {
+		return moduleKeys, nil
+	}
+
+	commitKeys, err := slicesext.MapError(
+		b4IndexedModuleKeys,
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
+			return bufmodule.NewCommitKey(
+				indexedModuleKey.Value.ModuleFullName().Registry(),
+				indexedModuleKey.Value.CommitID(),
+				bufmodule.DigestTypeB5,
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	commits, err := m.commitProvider.GetCommitsForCommitKeys(ctx, commitKeys)
+	if err != nil {
+		return nil, err
+	}
+	for i, commit := range commits {
+		// The index into moduleKeys.
+		moduleKeyIndex := b4IndexedModuleKeys[i].Index
+		existingModuleKey := moduleKeys[moduleKeyIndex]
+		newModuleKey, err := bufmodule.NewModuleKey(
+			existingModuleKey.ModuleFullName(),
+			existingModuleKey.CommitID(),
+			commit.ModuleKey().Digest,
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[moduleKeyIndex] = newModuleKey
+	}
+	return moduleKeys, nil
 }
 
 func (m *migrator) dryRunPrintf(format string, args ...any) {
