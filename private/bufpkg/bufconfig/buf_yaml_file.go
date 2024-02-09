@@ -34,16 +34,31 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// DefaultBufYAMLFileName is the default buf.yaml file name.
-const DefaultBufYAMLFileName = "buf.yaml"
+const (
+	// DefaultBufYAMLFileName is the default buf.yaml file name.
+	DefaultBufYAMLFileName = "buf.yaml"
 
-var (
-	bufYAML = newFileName(DefaultBufYAMLFileName, FileVersionV1Beta1, FileVersionV1, FileVersionV2)
 	// Originally we thought we were going to move to buf.mod, and had this around for
 	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
 	// we released with it, however.
-	bufMod           = newFileName("buf.mod", FileVersionV1Beta1, FileVersionV1)
-	bufYAMLFileNames = []*fileName{bufYAML, bufMod}
+	oldBufYAMLFileName        = "buf.mod"
+	defaultBufYAMLFileVersion = FileVersionV1Beta1
+)
+
+var (
+	// ordered
+	bufYAMLFileNames                       = []string{DefaultBufYAMLFileName, oldBufYAMLFileName}
+	bufYAMLFileNameToSupportedFileVersions = map[string]map[FileVersion]struct{}{
+		DefaultBufYAMLFileName: {
+			FileVersionV1Beta1: struct{}{},
+			FileVersionV1:      struct{}{},
+			FileVersionV2:      struct{}{},
+		},
+		oldBufYAMLFileName: {
+			FileVersionV1Beta1: struct{}{},
+			FileVersionV1:      struct{}{},
+		},
+	}
 )
 
 // BufYAMLFile represents a buf.yaml file.
@@ -88,7 +103,7 @@ func GetBufYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, bufYAMLFileNames, readBufYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufYAMLFileNames, bufYAMLFileNameToSupportedFileVersions, readBufYAMLFile)
 }
 
 // GetBufYAMLFileForOverride get the buf.yaml file for either the usually-flag-based override.
@@ -140,7 +155,7 @@ func GetBufYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufYAMLFileNames, true, FileVersionV2)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufYAMLFileNames, bufYAMLFileNameToSupportedFileVersions, true, FileVersionV2, defaultBufYAMLFileVersion)
 }
 
 // PutBufYAMLFileForPrefix puts the buf.yaml file at the given bucket prefix.
@@ -153,7 +168,7 @@ func PutBufYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufYAML, writeBufYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, DefaultBufYAMLFileName, bufYAMLFileNameToSupportedFileVersions, writeBufYAMLFile)
 }
 
 // ReadBufYAMLFile reads the BufYAMLFile from the io.Reader.
@@ -244,6 +259,10 @@ func (c *bufYAMLFile) FileVersion() FileVersion {
 	return c.fileVersion
 }
 
+func (*bufYAMLFile) FileType() FileType {
+	return FileTypeBufYAML
+}
+
 func (c *bufYAMLFile) ObjectData() ObjectData {
 	return c.objectData
 }
@@ -258,6 +277,7 @@ func (c *bufYAMLFile) ConfiguredDepModuleRefs() []bufmodule.ModuleRef {
 
 func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
+func (*bufYAMLFile) isFileInfo()    {}
 
 // TODO: We need to validate all paths on ignore, excludes, etc
 func readBufYAMLFile(
@@ -266,7 +286,7 @@ func readBufYAMLFile(
 	allowJSON bool,
 ) (BufYAMLFile, error) {
 	// We've always required a file version for buf.yaml files.
-	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
+	fileVersion, err := getFileVersionForData(data, allowJSON, true, bufYAMLFileNameToSupportedFileVersions, FileVersionV2, defaultBufYAMLFileVersion)
 	if err != nil {
 		return nil, err
 	}

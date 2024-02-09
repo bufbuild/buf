@@ -52,7 +52,7 @@ func GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (ObjectData, error) {
-	return getV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, prefix, bufYAMLFileNames)
+	return getV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, prefix, bufYAMLFileNames, bufYAMLFileNameToSupportedFileVersions)
 }
 
 // GetBufLockV1Beta1OrV1ObjectDataForPrefix is a helper function that gets the ObjectData for the buf.lock file at
@@ -67,7 +67,7 @@ func GetBufLockV1Beta1OrV1ObjectDataForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (ObjectData, error) {
-	return getV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, prefix, bufLockFileNames)
+	return getV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, prefix, bufLockFileNames, bufLockFileNameToSupportedFileVersions)
 }
 
 // *** PRIVATE ***
@@ -98,10 +98,11 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	fileNames []*fileName,
+	fileNames []string,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 ) (ObjectData, error) {
 	for _, fileName := range fileNames {
-		path := normalpath.Join(prefix, fileName.Name())
+		path := normalpath.Join(prefix, fileName)
 		data, err := storage.ReadPath(ctx, bucket, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
@@ -121,7 +122,7 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 			// as-is for digest calculations pre-refactor, and didn't require a version.
 			return nil, newDecodeError(path, err)
 		}
-		fileVersion, err := parseFileVersion(externalFileVersion.Version, false, FileVersionV1Beta1)
+		fileVersion, err := parseFileVersion(externalFileVersion.Version, fileName, false, fileNameToSupportedFileVersions, FileVersionV1Beta1, FileVersionV1Beta1)
 		if err != nil {
 			// This could be a source of bugs in the future - we likely just took a buf.yaml/buf.lock
 			// as-is for digest calculations pre-refactor, and didn't require a version.
@@ -129,7 +130,7 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 		}
 		switch fileVersion {
 		case FileVersionV1Beta1, FileVersionV1:
-			return newObjectData(fileName.Name(), data), nil
+			return newObjectData(fileName, data), nil
 		case FileVersionV2:
 			return nil, nil
 		default:

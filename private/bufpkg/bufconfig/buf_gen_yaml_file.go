@@ -26,9 +26,21 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+const (
+	defaultBufGenYAMLFileName    = "buf.gen.yaml"
+	defaultBufGenYAMLFileVersion = FileVersionV1Beta1
+)
+
 var (
-	bufGenYAML          = newFileName("buf.gen.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
-	bufGenYAMLFileNames = []*fileName{bufGenYAML}
+	// ordered
+	bufGenYAMLFileNames                       = []string{defaultBufGenYAMLFileName}
+	bufGenYAMLFileNameToSupportedFileVersions = map[string]map[FileVersion]struct{}{
+		defaultBufGenYAMLFileName: {
+			FileVersionV1Beta1: struct{}{},
+			FileVersionV1:      struct{}{},
+			FileVersionV2:      struct{}{},
+		},
+	}
 )
 
 // BufGenYAMLFile represents a buf.gen.yaml file.
@@ -68,7 +80,7 @@ func GetBufGenYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufGenYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, readBufGenYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, bufGenYAMLFileNameToSupportedFileVersions, readBufGenYAMLFile)
 }
 
 // GetBufGenYAMLFileForPrefix gets the buf.gen.yaml file version at the given bucket prefix.
@@ -79,7 +91,7 @@ func GetBufGenYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, true, FileVersionV2)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, bufGenYAMLFileNameToSupportedFileVersions, true, FileVersionV2, defaultBufGenYAMLFileVersion)
 }
 
 // PutBufGenYAMLFileForPrefix puts the buf.gen.yaml file at the given bucket prefix.
@@ -92,7 +104,7 @@ func PutBufGenYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufGenYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufGenYAML, writeBufGenYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, defaultBufGenYAMLFileName, bufGenYAMLFileNameToSupportedFileVersions, writeBufGenYAMLFile)
 }
 
 // ReadBufGenYAMLFile reads the BufGenYAMLFile from the io.Reader.
@@ -133,6 +145,14 @@ func (g *bufGenYAMLFile) FileVersion() FileVersion {
 	return g.fileVersion
 }
 
+func (*bufGenYAMLFile) FileType() FileType {
+	return FileTypeBufGenYAML
+}
+
+func (g *bufGenYAMLFile) ObjectData() ObjectData {
+	return g.objectData
+}
+
 func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
 	return g.generateConfig
 }
@@ -141,12 +161,9 @@ func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
 	return g.inputConfigs
 }
 
-func (g *bufGenYAMLFile) ObjectData() ObjectData {
-	return g.objectData
-}
-
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
 func (*bufGenYAMLFile) isFile()           {}
+func (*bufGenYAMLFile) isFileInfo()       {}
 
 func readBufGenYAMLFile(
 	data []byte,
@@ -154,7 +171,7 @@ func readBufGenYAMLFile(
 	allowJSON bool,
 ) (BufGenYAMLFile, error) {
 	// We have always enforced that buf.gen.yamls have file versions.
-	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
+	fileVersion, err := getFileVersionForData(data, allowJSON, true, bufGenYAMLFileNameToSupportedFileVersions, FileVersionV2, defaultBufGenYAMLFileVersion)
 	if err != nil {
 		return nil, err
 	}

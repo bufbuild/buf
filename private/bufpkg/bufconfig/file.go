@@ -30,8 +30,7 @@ import (
 
 // File is the common interface shared by all config files.
 type File interface {
-	// FileVersion returns the version of the file.
-	FileVersion() FileVersion
+	FileInfo
 
 	// ObjectData returns the underlying ObjectData.
 	//
@@ -50,7 +49,8 @@ func getFileForPrefix[F File](
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	fileNames []*fileName,
+	fileNames []string,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 	readFileFunc func(
 		data []byte,
 		objectData ObjectData,
@@ -58,7 +58,7 @@ func getFileForPrefix[F File](
 	) (F, error),
 ) (F, error) {
 	for _, fileName := range fileNames {
-		path := normalpath.Join(prefix, fileName.Name())
+		path := normalpath.Join(prefix, fileName)
 		data, err := storage.ReadPath(ctx, bucket, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
@@ -67,29 +67,31 @@ func getFileForPrefix[F File](
 			var f F
 			return f, err
 		}
-		f, err := readFileFunc(data, newObjectData(fileName.Name(), data), false)
+		f, err := readFileFunc(data, newObjectData(fileName, data), false)
 		if err != nil {
 			return f, newDecodeError(path, err)
 		}
-		if err := fileName.CheckSupportedFile(f); err != nil {
+		if err := validateSupportedFileVersion(fileName, f.FileVersion(), fileNameToSupportedFileVersions); err != nil {
 			return f, newDecodeError(path, err)
 		}
 		return f, nil
 	}
 	var f F
-	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0].Name()), Err: fs.ErrNotExist}
+	return f, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0]), Err: fs.ErrNotExist}
 }
 
 func getFileVersionForPrefix(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	fileNames []*fileName,
+	fileNames []string,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 	fileVersionRequired bool,
 	suggestedFileVersion FileVersion,
+	defaultFileVersion FileVersion,
 ) (FileVersion, error) {
 	for _, fileName := range fileNames {
-		path := normalpath.Join(prefix, fileName.Name())
+		path := normalpath.Join(prefix, fileName)
 		data, err := storage.ReadPath(ctx, bucket, path)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
@@ -97,16 +99,16 @@ func getFileVersionForPrefix(
 			}
 			return 0, err
 		}
-		fileVersion, err := getFileVersionForData(data, false, fileVersionRequired, suggestedFileVersion)
+		fileVersion, err := getFileVersionForData(data, false, fileVersionRequired, fileNameToSupportedFileVersions, suggestedFileVersion, defaultFileVersion)
 		if err != nil {
 			return 0, newDecodeError(path, err)
 		}
-		if err := fileName.CheckSupportedFileVersion(fileVersion); err != nil {
+		if err := validateSupportedFileVersion(fileName, fileVersion, fileNameToSupportedFileVersions); err != nil {
 			return 0, newDecodeError(path, err)
 		}
 		return fileVersion, nil
 	}
-	return 0, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0].Name()), Err: fs.ErrNotExist}
+	return 0, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0]), Err: fs.ErrNotExist}
 }
 
 func putFileForPrefix[F File](
@@ -114,17 +116,18 @@ func putFileForPrefix[F File](
 	bucket storage.WriteBucket,
 	prefix string,
 	f F,
-	fileName *fileName,
+	fileName string,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 	writeFileFunc func(
 		writer io.Writer,
 		f F,
 	) error,
 ) (retErr error) {
-	if err := fileName.CheckSupportedFile(f); err != nil {
+	if err := validateSupportedFileVersion(fileName, f.FileVersion(), fileNameToSupportedFileVersions); err != nil {
 		// This is effectively a system error. We should be able to write with whatever file name we have.
-		return syserror.Wrap(newEncodeError(fileName.Name(), err))
+		return syserror.Wrap(newEncodeError(fileName, err))
 	}
-	path := normalpath.Join(prefix, fileName.Name())
+	path := normalpath.Join(prefix, fileName)
 	writeObjectCloser, err := bucket.Put(ctx, path, storage.PutWithAtomic())
 	if err != nil {
 		return err
@@ -172,19 +175,6 @@ func writeFile[F File](
 		return newDecodeError(fileName, err)
 	}
 	return nil
-}
-
-func getFileVersionForData(
-	data []byte,
-	allowJSON bool,
-	fileVersionRequired bool,
-	suggestedFileVersion FileVersion,
-) (FileVersion, error) {
-	var externalFileVersion externalFileVersion
-	if err := getUnmarshalNonStrict(allowJSON)(data, &externalFileVersion); err != nil {
-		return 0, err
-	}
-	return parseFileVersion(externalFileVersion.Version, fileVersionRequired, suggestedFileVersion)
 }
 
 func getUnmarshalStrict(allowJSON bool) func([]byte, interface{}) error {

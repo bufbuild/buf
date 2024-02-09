@@ -17,6 +17,8 @@ package bufconfig
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 const (
@@ -62,23 +64,67 @@ func (f FileVersion) String() string {
 	return s
 }
 
+// *** PRIVATE ***
+
+func getFileVersionForData(
+	data []byte,
+	allowJSON bool,
+	fileVersionRequired bool,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
+	suggestedFileVersion FileVersion,
+	defaultFileVersion FileVersion,
+) (FileVersion, error) {
+	var externalFileVersion externalFileVersion
+	if err := getUnmarshalNonStrict(allowJSON)(data, &externalFileVersion); err != nil {
+		return 0, err
+	}
+	return parseFileVersion(
+		externalFileVersion.Version,
+		"",
+		fileVersionRequired,
+		fileNameToSupportedFileVersions,
+		suggestedFileVersion,
+		defaultFileVersion,
+	)
+}
+
 func parseFileVersion(
 	s string,
+	// optional
+	fileName string,
 	fileVersionRequired bool,
+	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 	suggestedFileVersion FileVersion,
+	defaultFileVersion FileVersion,
 ) (FileVersion, error) {
 	if s == "" {
 		if fileVersionRequired {
 			return 0, newNoFileVersionError(suggestedFileVersion)
 		}
-		// Default to v1beta1 for legacy reasons.
-		return FileVersionV1Beta1, nil
+		return defaultFileVersion, nil
 	}
 	c, ok := stringToFileVersion[s]
 	if !ok {
 		return 0, fmt.Errorf("unknown file version: %q", s)
 	}
+	if fileName != "" {
+		if err := validateSupportedFileVersion(fileName, c, fileNameToSupportedFileVersions); err != nil {
+			return 0, err
+		}
+	}
 	return c, nil
+}
+
+func validateSupportedFileVersion(fileName string, fileVersion FileVersion, fileNameToSupportedFileVersions map[string]map[FileVersion]struct{}) error {
+	supportedFileVersions, ok := fileNameToSupportedFileVersions[fileName]
+	if !ok {
+		// This should never happen.
+		return syserror.Newf("unknown configuration file name: %q", fileName)
+	}
+	if _, ok := supportedFileVersions[fileVersion]; !ok {
+		return newUnsupportedFileVersionError(fileName, fileVersion)
+	}
+	return nil
 }
 
 // externalFileVersion represents just the version component of any file.
@@ -91,4 +137,11 @@ type externalFileVersion struct {
 // The suggested FileVersion is printed in the error.
 func newNoFileVersionError(suggestedFileVersion FileVersion) error {
 	return fmt.Errorf(`"version" is not set. Please add "version: %s"`, suggestedFileVersion.String())
+}
+
+func newUnsupportedFileVersionError(name string, fileVersion FileVersion) error {
+	if name == "" {
+		return fmt.Errorf("%s is not supported", fileVersion.String())
+	}
+	return fmt.Errorf("%s is not supported for %s files", fileVersion.String(), name)
 }

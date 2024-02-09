@@ -26,17 +26,30 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
-// DefaultBufWorkYAMLFileName is the default buf.work.yaml file name.
-const DefaultBufWorkYAMLFileName = "buf.work.yaml"
+const (
+	// DefaultBufWorkYAMLFileName is the default buf.work.yaml file name.
+	DefaultBufWorkYAMLFileName = "buf.work.yaml"
 
-var (
-	// We only supported buf.work.yamls in v1.
-	bufWorkYAML = newFileName(DefaultBufWorkYAMLFileName, FileVersionV1)
 	// Originally we thought we were going to move to buf.work, and had this around for
 	// a while, but then reverted back to buf.work.yaml. We still need to support buf.work as
 	// we released with it, however.
-	bufWork              = newFileName("buf.work", FileVersionV1)
-	bufWorkYAMLFileNames = []*fileName{bufWorkYAML, bufWork}
+	oldBufWorkYAMLFileName = "buf.work"
+
+	defaultBufWorkYAMLFileVersion = FileVersionV1
+)
+
+var (
+	// ordered
+	bufWorkYAMLFileNames = []string{DefaultBufWorkYAMLFileName, oldBufWorkYAMLFileName}
+	// We only supported buf.work.yamls in v1.
+	bufWorkYAMLFileNameToSupportedFileVersions = map[string]map[FileVersion]struct{}{
+		DefaultBufWorkYAMLFileName: {
+			FileVersionV1: struct{}{},
+		},
+		oldBufWorkYAMLFileName: {
+			FileVersionV1: struct{}{},
+		},
+	}
 )
 
 // BufWorkYAMLFile represents a buf.work.yaml file.
@@ -75,7 +88,7 @@ func GetBufWorkYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufWorkYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, readBufWorkYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, bufWorkYAMLFileNameToSupportedFileVersions, readBufWorkYAMLFile)
 }
 
 // GetBufWorkYAMLFileForPrefix gets the buf.work.yaml file version at the given bucket prefix.
@@ -86,7 +99,7 @@ func GetBufWorkYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, true, FileVersionV1)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufWorkYAMLFileNames, bufWorkYAMLFileNameToSupportedFileVersions, true, FileVersionV1, defaultBufWorkYAMLFileVersion)
 }
 
 // PutBufWorkYAMLFileForPrefix puts the buf.work.yaml file at the given bucket prefix.
@@ -99,7 +112,7 @@ func PutBufWorkYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufWorkYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufWorkYAML, writeBufWorkYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, DefaultBufWorkYAMLFileName, bufWorkYAMLFileNameToSupportedFileVersions, writeBufWorkYAMLFile)
 }
 
 // ReadBufWorkYAMLFile reads the buf.work.yaml file from the io.Reader.
@@ -141,6 +154,10 @@ func (w *bufWorkYAMLFile) FileVersion() FileVersion {
 	return w.fileVersion
 }
 
+func (*bufWorkYAMLFile) FileType() FileType {
+	return FileTypeBufWorkYAML
+}
+
 func (w *bufWorkYAMLFile) ObjectData() ObjectData {
 	return w.objectData
 }
@@ -151,6 +168,7 @@ func (w *bufWorkYAMLFile) DirPaths() []string {
 
 func (*bufWorkYAMLFile) isBufWorkYAMLFile() {}
 func (*bufWorkYAMLFile) isFile()            {}
+func (*bufWorkYAMLFile) isFileInfo()        {}
 
 func readBufWorkYAMLFile(
 	data []byte,
@@ -158,7 +176,7 @@ func readBufWorkYAMLFile(
 	allowJSON bool,
 ) (BufWorkYAMLFile, error) {
 	// We've always required a file version for buf.work.yamls.
-	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV1)
+	fileVersion, err := getFileVersionForData(data, allowJSON, true, bufWorkYAMLFileNameToSupportedFileVersions, FileVersionV1, defaultBufWorkYAMLFileVersion)
 	if err != nil {
 		return nil, err
 	}
