@@ -39,6 +39,7 @@ const (
 	typeFlagName            = "type"
 	fromFlagName            = "from"
 	toFlagName              = "to"
+	validateFlagName        = "validate"
 	disableSymlinksFlagName = "disable-symlinks"
 )
 
@@ -97,6 +98,7 @@ type flags struct {
 	Type            string
 	From            string
 	To              string
+	Validate        bool
 	DisableSymlinks bool
 
 	// special
@@ -141,6 +143,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			`The output location of the conversion. Supported formats are %s`,
 			buffetch.MessageFormatsString,
+		),
+	)
+	flagSet.BoolVar(
+		&f.Validate,
+		validateFlagName,
+		false,
+		fmt.Sprintf(
+			`Validate the message specified with --%s by applying protovalidate rules to it. See https://github.com/bufbuild/protovalidate for more details.`,
+			fromFlagName,
 		),
 	)
 }
@@ -196,12 +207,17 @@ func run(
 		return schemaImageErr
 	}
 
+	var fromFunctionOptions []bufctl.FunctionOption
+	if flags.Validate {
+		fromFunctionOptions = append(fromFunctionOptions, bufctl.WithMessageValidation())
+	}
 	fromMessage, fromMessageEncoding, err := controller.GetMessage(
 		ctx,
 		schemaImage,
 		flags.From,
 		flags.Type,
 		buffetch.MessageEncodingBinpb,
+		fromFunctionOptions...,
 	)
 	if err != nil {
 		return fmt.Errorf("--%s: %w", fromFlagName, err)
