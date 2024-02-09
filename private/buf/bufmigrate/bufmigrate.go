@@ -111,8 +111,10 @@ func MigrateAll(
 				switch fileVersion {
 				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 					moduleDirPaths = append(moduleDirPaths, dirPath)
+					return nil
 				case bufconfig.FileVersionV2:
 					// ignore
+					return nil
 				default:
 					return syserror.Newf("unknown FileVersion: %v", fileVersion)
 				}
@@ -120,8 +122,10 @@ func MigrateAll(
 				switch fileVersion {
 				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 					bufGenYAMLFilePaths = append(bufGenYAMLFilePaths, path)
+					return nil
 				case bufconfig.FileVersionV2:
 					// ignore
+					return nil
 				default:
 					return syserror.Newf("unknown FileVersion: %v", fileVersion)
 				}
@@ -129,6 +133,7 @@ func MigrateAll(
 				switch fileVersion {
 				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 					workspaceDirPaths = append(workspaceDirPaths, dirPath)
+					return nil
 				case bufconfig.FileVersionV2:
 					return syserror.Newf("invalid FileVersion for %q: %v", path, fileVersion)
 				default:
@@ -136,10 +141,10 @@ func MigrateAll(
 				}
 			case bufconfig.FileTypeBufLock:
 				// ignore
+				return nil
 			default:
 				return syserror.Newf("unknown FileType: %v", fileType)
 			}
-			return syserror.New("should never get here")
 		},
 	); err != nil {
 		return err
