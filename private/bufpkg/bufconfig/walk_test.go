@@ -37,6 +37,7 @@ func TestWalkBasic(t *testing.T) {
 			"buf.gen.yaml":  []byte(`version: v1`),
 			"buf.work.yaml": []byte(`version: v1`),
 			"buf.work":      []byte(`version: v1`),
+			"unknown.yaml":  []byte(`unknown`),
 		},
 		map[string]FileInfo{
 			"buf.yaml":      newFileInfo(FileVersionV1, FileTypeBufYAML),

@@ -18,8 +18,11 @@ import (
 	"context"
 	"io"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -56,7 +59,7 @@ type Migrator interface {
 		bucket storage.ReadWriteBucket,
 		workspaceDirPaths []string,
 		moduleDirPaths []string,
-		generateTemplatePaths []string,
+		bufGenYAMLFilePaths []string,
 		options ...MigrateOption,
 	) error
 }
@@ -83,4 +86,63 @@ func MigrateAsDryRun() MigrateOption {
 	return func(migrateOptions *migrateOptions) {
 		migrateOptions.dryRun = true
 	}
+}
+
+// MigrateAll uses bufconfig.WalkFileInfos to discover all known module, workspace, and buf.gen.yaml
+// paths in the Bucket, and migrates them.
+func MigrateAll(
+	ctx context.Context,
+	migrator Migrator,
+	bucket storage.ReadWriteBucket,
+	options ...MigrateOption,
+) error {
+	var workspaceDirPaths []string
+	var moduleDirPaths []string
+	var bufGenYAMLFilePaths []string
+	if err := bufconfig.WalkFileInfos(
+		ctx,
+		bucket,
+		func(path string, fileInfo bufconfig.FileInfo) error {
+			dirPath := normalpath.Dir(path)
+			fileType := fileInfo.FileType()
+			fileVersion := fileInfo.FileVersion()
+			switch fileType {
+			case bufconfig.FileTypeBufYAML:
+				switch fileVersion {
+				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+					moduleDirPaths = append(moduleDirPaths, dirPath)
+				case bufconfig.FileVersionV2:
+					// ignore
+				default:
+					return syserror.Newf("unknown FileVersion: %v", fileVersion)
+				}
+			case bufconfig.FileTypeBufGenYAML:
+				switch fileVersion {
+				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+					bufGenYAMLFilePaths = append(bufGenYAMLFilePaths, path)
+				case bufconfig.FileVersionV2:
+					// ignore
+				default:
+					return syserror.Newf("unknown FileVersion: %v", fileVersion)
+				}
+			case bufconfig.FileTypeBufWorkYAML:
+				switch fileVersion {
+				case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+					workspaceDirPaths = append(workspaceDirPaths, dirPath)
+				case bufconfig.FileVersionV2:
+					return syserror.Newf("invalid FileVersion for %q: %v", path, fileVersion)
+				default:
+					return syserror.Newf("unknown FileVersion: %v", fileVersion)
+				}
+			case bufconfig.FileTypeBufLock:
+				// ignore
+			default:
+				return syserror.Newf("unknown FileType: %v", fileType)
+			}
+			return syserror.New("should never get here")
+		},
+	); err != nil {
+		return err
+	}
+	return migrator.Migrate(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, options...)
 }

@@ -40,6 +40,10 @@ type migrateBuilder struct {
 	bucket             storage.ReadWriteBucket
 	destinationDirPath string
 
+	addedBufGenYAMLFilePaths map[string]struct{}
+	addedWorkspaceDirPaths   map[string]struct{}
+	addedModuleDirPaths      map[string]struct{}
+
 	moduleConfigs                    []bufconfig.ModuleConfig
 	configuredDepModuleRefs          []bufmodule.ModuleRef
 	hasSeenBufLockFile               bool
@@ -60,6 +64,9 @@ func newMigrateBuilder(
 		commitProvider:                   commitProvider,
 		bucket:                           bucket,
 		destinationDirPath:               destinationDirPath,
+		addedBufGenYAMLFilePaths:         make(map[string]struct{}),
+		addedWorkspaceDirPaths:           make(map[string]struct{}),
+		addedModuleDirPaths:              make(map[string]struct{}),
 		pathToMigratedBufGenYAMLFile:     make(map[string]bufconfig.BufGenYAMLFile),
 		moduleFullNameStringToParentPath: make(map[string]string),
 		pathsToDelete:                    make(map[string]struct{}),
@@ -74,6 +81,11 @@ func newMigrateBuilder(
 //
 // bufGenYAMLPath is relative to the call site of CLI or an absolute path.
 func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath string) (retErr error) {
+	if _, ok := m.addedBufGenYAMLFilePaths[bufGenYAMLFilePath]; ok {
+		return nil
+	}
+	m.addedBufGenYAMLFilePaths[bufGenYAMLFilePath] = struct{}{}
+
 	file, err := m.bucket.Get(ctx, bufGenYAMLFilePath)
 	if err != nil {
 		return err
@@ -118,6 +130,11 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 //
 // workspaceDirectory is relative to the root bucket of the migrator.
 func (m *migrateBuilder) addWorkspace(ctx context.Context, workspaceDirPath string) (retErr error) {
+	if _, ok := m.addedWorkspaceDirPaths[workspaceDirPath]; ok {
+		return nil
+	}
+	m.addedWorkspaceDirPaths[workspaceDirPath] = struct{}{}
+
 	bufWorkYAML, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, m.bucket, workspaceDirPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("%q does not have a workspace configuration file (i.e. typically a buf.work.yaml)", workspaceDirPath)
@@ -144,6 +161,11 @@ func (m *migrateBuilder) addWorkspace(ctx context.Context, workspaceDirPath stri
 //
 // moduleDir is relative to the root bucket of the migrator.
 func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (retErr error) {
+	if _, ok := m.addedModuleDirPaths[moduleDirPath]; ok {
+		return nil
+	}
+	m.addedModuleDirPaths[moduleDirPath] = struct{}{}
+
 	// First get module configs from the buf.yaml at moduleDir.
 	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, m.bucket, moduleDirPath)
 	if errors.Is(err, fs.ErrNotExist) {
