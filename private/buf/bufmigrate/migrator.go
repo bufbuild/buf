@@ -105,7 +105,7 @@ func (m *migrator) Migrate(
 		}
 	}
 	for _, moduleDirPath := range moduleDirPaths {
-		// TODO: read upwards to make sure it's not in a workspace.
+		// TODO FUTURE: read upwards to make sure it's not in a workspace.
 		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
 		// The logic for this is in getMapPathAndSubDirPath from buffetch/internal
 		if err := migrateBuilder.addModule(ctx, moduleDirPath); err != nil {
@@ -292,7 +292,6 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		// bufLock could be nil here, but that's OK, see docs for this function.
 		return bufYAML, bufLock, nil
 	}
-	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider
 	moduleToRefToCommit, err := m.getModuleToRefToCommit(ctx, migrateBuilder.configuredDepModuleRefs)
 	if err != nil {
 		return nil, nil, err
