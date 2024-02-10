@@ -37,7 +37,7 @@ import (
 type migrateBuilder struct {
 	logger             *zap.Logger
 	commitProvider     bufmodule.CommitProvider
-	bucket             storage.ReadWriteBucket
+	bucket             storage.ReadBucket
 	destinationDirPath string
 
 	addedBufGenYAMLFilePaths map[string]struct{}
@@ -56,7 +56,7 @@ type migrateBuilder struct {
 func newMigrateBuilder(
 	logger *zap.Logger,
 	commitProvider bufmodule.CommitProvider,
-	bucket storage.ReadWriteBucket,
+	bucket storage.ReadBucket,
 	destinationDirPath string,
 ) *migrateBuilder {
 	return &migrateBuilder{
@@ -119,7 +119,8 @@ func (m *migrateBuilder) addBufGenYAML(ctx context.Context, bufGenYAMLFilePath s
 		// Types is always nil in v2.
 		nil,
 	)
-	//m.pathsToDelete[bufGenYAMLFilePath] = struct{}{}
+	// Even though we're just writing over this, we store this so that Diff can pick it up.
+	m.pathsToDelete[bufGenYAMLFilePath] = struct{}{}
 	m.pathToMigratedBufGenYAMLFile[bufGenYAMLFilePath] = migratedBufGenYAMLFile
 	return nil
 }

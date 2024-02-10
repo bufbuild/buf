@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
@@ -29,7 +30,8 @@ const (
 	workspaceDirectoriesFlagName = "workspace"
 	moduleDirectoriesFlagName    = "module"
 	bufGenYAMLFilePathFlagName   = "buf-gen-yaml"
-	dryRunFlagName               = "dry-run"
+	diffFlagName                 = "diff"
+	diffFlagShortName            = "d"
 )
 
 // NewCommand returns a new Command.
@@ -56,7 +58,7 @@ type flags struct {
 	WorkspaceDirPaths   []string
 	ModuleDirPaths      []string
 	BufGenYAMLFilePaths []string
-	DryRun              bool
+	Diff                bool
 }
 
 func newFlags() *flags {
@@ -76,17 +78,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The module directories to migrate. buf.yaml and buf.lock will be migrated",
 	)
-	flagSet.BoolVar(
-		&f.DryRun,
-		dryRunFlagName,
-		false,
-		"Print the changes to be made without writing to the disk",
-	)
 	flagSet.StringSliceVar(
 		&f.BufGenYAMLFilePaths,
 		bufGenYAMLFilePathFlagName,
 		nil,
 		"The paths to the buf.gen.yaml generation templates to migrate",
+	)
+	flagSet.BoolVarP(
+		&f.Diff,
+		diffFlagName,
+		diffFlagShortName,
+		false,
+		"Write a diff to stdout instead of migrating files on disk. Useful for perfoming a dry run.",
 	)
 }
 
@@ -95,10 +98,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	var migrateOptions []bufmigrate.MigrateOption
-	if flags.DryRun {
-		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun())
-	}
+	runner := command.NewRunner()
 	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
 	if err != nil {
 		return err
@@ -116,16 +116,34 @@ func run(
 	}
 	migrator := bufmigrate.NewMigrator(
 		container.Logger(),
-		container.Stdout(),
+		runner,
 		moduleKeyProvider,
 		commitProvider,
 	)
-	if len(flags.WorkspaceDirPaths) == 0 && len(flags.ModuleDirPaths) == 0 && len(flags.BufGenYAMLFilePaths) == 0 {
+	all := len(flags.WorkspaceDirPaths) == 0 && len(flags.ModuleDirPaths) == 0 && len(flags.BufGenYAMLFilePaths) == 0
+	if flags.Diff {
+		if all {
+			return bufmigrate.DiffAll(
+				ctx,
+				migrator,
+				bucket,
+				container.Stdout(),
+			)
+		}
+		return migrator.Diff(
+			ctx,
+			bucket,
+			container.Stdout(),
+			flags.WorkspaceDirPaths,
+			flags.ModuleDirPaths,
+			flags.BufGenYAMLFilePaths,
+		)
+	}
+	if all {
 		return bufmigrate.MigrateAll(
 			ctx,
 			migrator,
 			bucket,
-			migrateOptions...,
 		)
 	}
 	return migrator.Migrate(
@@ -134,6 +152,5 @@ func run(
 		flags.WorkspaceDirPaths,
 		flags.ModuleDirPaths,
 		flags.BufGenYAMLFilePaths,
-		migrateOptions...,
 	)
 }

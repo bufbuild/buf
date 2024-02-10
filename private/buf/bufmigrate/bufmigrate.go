@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -60,32 +61,30 @@ type Migrator interface {
 		workspaceDirPaths []string,
 		moduleDirPaths []string,
 		bufGenYAMLFilePaths []string,
-		options ...MigrateOption,
+	) error
+	// Diff runs migrate, but produces a diff instead of writing the migration.
+	Diff(
+		ctx context.Context,
+		bucket storage.ReadBucket,
+		writer io.Writer,
+		workspaceDirPaths []string,
+		moduleDirPaths []string,
+		bufGenYAMLFilePaths []string,
 	) error
 }
 
 func NewMigrator(
 	logger *zap.Logger,
-	dryRunWriter io.Writer,
+	runner command.Runner,
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
 ) Migrator {
 	return newMigrator(
 		logger,
-		dryRunWriter,
+		runner,
 		moduleKeyProvider,
 		commitProvider,
 	)
-}
-
-// MigrateOption is a migrate option.
-type MigrateOption func(*migrateOptions)
-
-// MigrateAsDryRun print the summary of the changes to be made, without writing to the disk.
-func MigrateAsDryRun() MigrateOption {
-	return func(migrateOptions *migrateOptions) {
-		migrateOptions.dryRun = true
-	}
 }
 
 // MigrateAll uses bufconfig.WalkFileInfos to discover all known module, workspace, and buf.gen.yaml
@@ -94,11 +93,35 @@ func MigrateAll(
 	ctx context.Context,
 	migrator Migrator,
 	bucket storage.ReadWriteBucket,
-	options ...MigrateOption,
 ) error {
-	var workspaceDirPaths []string
-	var moduleDirPaths []string
-	var bufGenYAMLFilePaths []string
+	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket)
+	if err != nil {
+		return err
+	}
+	return migrator.Migrate(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
+}
+
+// DiffAll uses bufconfig.WalkFileInfos to discover all known module, workspace, and buf.gen.yaml
+// paths in the Bucket, and diffs them.
+func DiffAll(
+	ctx context.Context,
+	migrator Migrator,
+	bucket storage.ReadBucket,
+	writer io.Writer,
+) error {
+	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket)
+	if err != nil {
+		return err
+	}
+	return migrator.Diff(ctx, bucket, writer, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
+}
+
+// *** PRIVATE ***
+
+func getWorkspaceModuleBufGenYAMLPaths(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+) (workspaceDirPaths []string, moduleDirPaths []string, bufGenYAMLFilePaths []string, retErr error) {
 	if err := bufconfig.WalkFileInfos(
 		ctx,
 		bucket,
@@ -147,7 +170,7 @@ func MigrateAll(
 			}
 		},
 	); err != nil {
-		return err
+		return nil, nil, nil, err
 	}
-	return migrator.Migrate(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, options...)
+	return workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, nil
 }
