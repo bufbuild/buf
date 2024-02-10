@@ -345,14 +345,11 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		}
 	}
 	for depModule, lockEntries := range depModuleToLockEntries {
-		commitIDToKey, err := slicesext.ToUniqueValuesMapError(
-			lockEntries,
-			func(moduleKey bufmodule.ModuleKey) (uuid.UUID, error) {
-				return moduleKey.CommitID(), nil
-			},
-		)
-		if err != nil {
-			return nil, nil, err
+		commitIDToKey := make(map[uuid.UUID]bufmodule.ModuleKey)
+		for _, lockEntry := range lockEntries {
+			// There may be duplicates, we ignore this. They should be the same.
+			// We could check,
+			commitIDToKey[lockEntry.CommitID()] = lockEntry
 		}
 		depModuleToLockEntries[depModule] = slicesext.MapValuesToSlice(commitIDToKey)
 		if len(commitIDToKey) > 1 {
