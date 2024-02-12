@@ -769,10 +769,10 @@ func TestGetStringOverrideFromConfig(t *testing.T) {
 	}
 }
 
-func TestModifyFieldOption(t *testing.T) {
-	t.Parallel()
-	// TODO in v2
-}
+// TODO FUTURE in v2
+//func TestModifyFieldOption(t *testing.T) {
+//t.Parallel()
+//}
 
 func testGetImageFile(
 	t *testing.T,

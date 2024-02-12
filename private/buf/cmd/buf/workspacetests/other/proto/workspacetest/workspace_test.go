@@ -172,8 +172,8 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 	// Specify an overlapping input in a sub-directory.
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	testRunStdoutStderr(
 		t,
 		nil,

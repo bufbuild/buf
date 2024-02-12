@@ -36,7 +36,6 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <directory>",
 		Short: "Open the module's homepage in a web browser",
-		// TODO: This doesn't really work in v2 world. We'll need to figure out what we want to do.
 		Long: `The first argument is the directory with the buf.yaml of the module to open.
 
 The directory must have a buf.yaml that contains a single specified module name.

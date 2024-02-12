@@ -189,7 +189,7 @@ func protoGraphToProtoLegacyFederationGraph(
 }
 
 // We have to make sure this is updated if a field is added?
-// TODO: Can we automate this to make sure this is true?
+// TODO FUTURE: Can we automate this to make sure this is true?
 func protoLegacyFederationUploadRequestContentToProtoUploadRequestContent(
 	registry string,
 	protoLegacyFederationUploadRequestContent *federationv1beta1.UploadRequest_Content,

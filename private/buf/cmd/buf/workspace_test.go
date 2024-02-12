@@ -176,8 +176,6 @@ modules:
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
-		// TODO: targeting information problem. The rpc.proto file should be the only one
-		// targeted, but request.proto was targeted.
 		testRunStdout(
 			t,
 			nil,
@@ -1123,8 +1121,8 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
@@ -1328,7 +1326,8 @@ func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
 
 func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("TODO FUTURE: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+		// TODO FUTURE: failing test, fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed
+		t.Skip()
 	}
 	// The --path flag did not reference a file found in the archive.
 	zipDir := createZipFromDir(
@@ -1367,7 +1366,8 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 
 func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("TODO FUTURE: fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed")
+		// TODO FUTURE: failing test, fix on windows, there is temp dir clean-up fail, a reference to archive.zip not closed
+		t.Skip()
 	}
 	// The --path flag did not reference an absolute file patfound in the archive.
 	zipDir := createZipFromDir(
