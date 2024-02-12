@@ -107,8 +107,7 @@ func run(
 		return fmt.Errorf("buf.yaml already exists in directory %s, will not overwrite", flags.OutDirPath)
 	}
 
-	// TODO: what about v2?
-	fileVersion := bufconfig.FileVersionV1
+	fileVersion := bufconfig.FileVersionV2
 	var moduleFullName bufmodule.ModuleFullName
 	if container.NumArgs() > 0 {
 		moduleFullName, err = bufmodule.ParseModuleFullName(container.Arg(0))
@@ -118,7 +117,7 @@ func run(
 	}
 
 	moduleConfig, err := bufconfig.NewModuleConfig(
-		"",
+		".",
 		moduleFullName,
 		map[string][]string{
 			".": {},

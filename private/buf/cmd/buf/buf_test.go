@@ -241,8 +241,8 @@ func TestFail6(t *testing.T) {
 
 func TestFail7(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -336,8 +336,8 @@ func TestFail10(t *testing.T) {
 
 func TestFail11(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -1297,8 +1297,8 @@ func TestExportExcludeImports(t *testing.T) {
 
 func TestExportPaths(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1324,8 +1324,8 @@ func TestExportPaths(t *testing.T) {
 
 func TestExportPathsAndExcludes(t *testing.T) {
 	t.Parallel()
-	// TODO
-	t.Skip("TODO")
+	// TODO failing test
+	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,

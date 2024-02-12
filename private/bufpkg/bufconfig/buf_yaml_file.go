@@ -205,6 +205,12 @@ func newBufYAMLFile(
 		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
 	for _, moduleConfig := range moduleConfigs {
+		if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && moduleConfig.DirPath() != "" {
+			return nil, fmt.Errorf("non-empty DirPath %q in NewBufYAMLFile for %v ModuleConfig", moduleConfig.DirPath(), fileVersion)
+		}
+		if fileVersion == FileVersionV2 && moduleConfig.DirPath() == "" {
+			return nil, errors.New("empty DirPath in NewBufYAMLFile for v2 ModuleConfig")
+		}
 		if moduleConfig == nil {
 			return nil, errors.New("ModuleConfig was nil in NewBufYAMLFile")
 		}

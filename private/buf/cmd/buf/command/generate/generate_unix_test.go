@@ -26,8 +26,8 @@ import (
 )
 
 func TestProtoFileRef(t *testing.T) {
-	// TODO: un-skip this once --path and --exclude-path are updated
-	t.Skip("TODO")
+	// TODO: failing test, un-skip this once --path and --exclude-path are updated
+	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -79,8 +79,8 @@ func TestOutputWithExclude(t *testing.T) {
 }
 
 func TestOutputWithPathWithinExclude(t *testing.T) {
-	// TODO: un-skip this once --path and --exclude-path are updated
-	t.Skip("TODO")
+	// TODO: failing test, un-skip this once --path and --exclude-path are updated
+	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -128,8 +128,8 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 }
 
 func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
-	// TODO: un-skip this once --path and --exclude-path are updated
-	t.Skip("TODO")
+	// TODO: failing test, un-skip this once --path and --exclude-path are updated
+	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(
@@ -166,8 +166,8 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 }
 
 func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
-	// TODO: un-skip this once --path and --exclude-path are updated
-	t.Skip("TODO")
+	// TODO: failing test, un-skip this once --path and --exclude-path are updated
+	t.Skip()
 	t.Parallel()
 	tempDirPath := t.TempDir()
 	testRunSuccess(

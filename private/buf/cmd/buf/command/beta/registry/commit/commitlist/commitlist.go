@@ -118,7 +118,7 @@ func run(
 
 	reference := moduleRef.Ref()
 	if reference == "" {
-		// TODO: deal with main
+		// This will go away when we call the new API.
 		reference = "main"
 	}
 

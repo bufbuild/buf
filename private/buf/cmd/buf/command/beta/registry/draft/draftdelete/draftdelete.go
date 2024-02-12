@@ -17,7 +17,6 @@ package draftdelete
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -79,14 +78,10 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	// TODO: deal with main
 	if moduleRef.Ref() == "main" {
-		// bufmodule.ParseModuleRef will give a default reference when user did not specify one
-		// we need to check the origin input and return different errors for different cases.
-		// TODO: deal with main
-		if strings.HasSuffix(container.Arg(0), ":main") {
-			return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", "main")
-		}
+		return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", "main")
+	}
+	if moduleRef.Ref() == "" {
 		return appcmd.NewInvalidArgumentError("a valid draft name need to be specified")
 	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
