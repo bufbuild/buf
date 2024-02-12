@@ -44,15 +44,39 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 
 // PutPath puts the data at the path.
 func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte, options ...PutOption) (retErr error) {
-	writeObject, err := writeBucket.Put(ctx, path, options...)
+	writeObjectCloser, err := writeBucket.Put(ctx, path, options...)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObject.Close())
+		retErr = multierr.Append(retErr, writeObjectCloser.Close())
 	}()
-	_, err = writeObject.Write(data)
+	_, err = writeObjectCloser.Write(data)
 	return err
+}
+
+// ForReadObject gets a ReadObjectCloser at the given path, calls f on it, and then closes the ReadObjectCloser.
+func ForReadObject(ctx context.Context, readBucket ReadBucket, path string, f func(ReadObject) error) (retErr error) {
+	readObjectCloser, err := readBucket.Get(ctx, path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
+	}()
+	return f(readObjectCloser)
+}
+
+// ForWriteObject gets a WriteObjectCloser at the given path, calls f on it, and then closes the WriteObjectCloser.
+func ForWriteObject(ctx context.Context, writeBucket WriteBucket, path string, f func(WriteObject) error, options ...PutOption) (retErr error) {
+	writeObjectCloser, err := writeBucket.Put(ctx, path, options...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+	}()
+	return f(writeObjectCloser)
 }
 
 // WalkReadObjects walks the bucket and calls get on each, closing the resulting ReadObjectCloser

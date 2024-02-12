@@ -26,9 +26,21 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
+const (
+	defaultBufGenYAMLFileName    = "buf.gen.yaml"
+	defaultBufGenYAMLFileVersion = FileVersionV1Beta1
+)
+
 var (
-	bufGenYAML          = newFileName("buf.gen.yaml", FileVersionV1Beta1, FileVersionV1, FileVersionV2)
-	bufGenYAMLFileNames = []*fileName{bufGenYAML}
+	// ordered
+	bufGenYAMLFileNames                       = []string{defaultBufGenYAMLFileName}
+	bufGenYAMLFileNameToSupportedFileVersions = map[string]map[FileVersion]struct{}{
+		defaultBufGenYAMLFileName: {
+			FileVersionV1Beta1: struct{}{},
+			FileVersionV1:      struct{}{},
+			FileVersionV2:      struct{}{},
+		},
+	}
 )
 
 // BufGenYAMLFile represents a buf.gen.yaml file.
@@ -68,7 +80,7 @@ func GetBufGenYAMLFileForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (BufGenYAMLFile, error) {
-	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, readBufGenYAMLFile)
+	return getFileForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, bufGenYAMLFileNameToSupportedFileVersions, readBufGenYAMLFile)
 }
 
 // GetBufGenYAMLFileForPrefix gets the buf.gen.yaml file version at the given bucket prefix.
@@ -79,7 +91,7 @@ func GetBufGenYAMLFileVersionForPrefix(
 	bucket storage.ReadBucket,
 	prefix string,
 ) (FileVersion, error) {
-	return getFileVersionForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, true, FileVersionV2)
+	return getFileVersionForPrefix(ctx, bucket, prefix, bufGenYAMLFileNames, bufGenYAMLFileNameToSupportedFileVersions, true, FileVersionV2, defaultBufGenYAMLFileVersion)
 }
 
 // PutBufGenYAMLFileForPrefix puts the buf.gen.yaml file at the given bucket prefix.
@@ -92,7 +104,7 @@ func PutBufGenYAMLFileForPrefix(
 	prefix string,
 	bufYAMLFile BufGenYAMLFile,
 ) error {
-	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, bufGenYAML, writeBufGenYAMLFile)
+	return putFileForPrefix(ctx, bucket, prefix, bufYAMLFile, defaultBufGenYAMLFileName, bufGenYAMLFileNameToSupportedFileVersions, writeBufGenYAMLFile)
 }
 
 // ReadBufGenYAMLFile reads the BufGenYAMLFile from the io.Reader.
@@ -133,6 +145,14 @@ func (g *bufGenYAMLFile) FileVersion() FileVersion {
 	return g.fileVersion
 }
 
+func (*bufGenYAMLFile) FileType() FileType {
+	return FileTypeBufGenYAML
+}
+
+func (g *bufGenYAMLFile) ObjectData() ObjectData {
+	return g.objectData
+}
+
 func (g *bufGenYAMLFile) GenerateConfig() GenerateConfig {
 	return g.generateConfig
 }
@@ -141,12 +161,9 @@ func (g *bufGenYAMLFile) InputConfigs() []InputConfig {
 	return g.inputConfigs
 }
 
-func (g *bufGenYAMLFile) ObjectData() ObjectData {
-	return g.objectData
-}
-
 func (*bufGenYAMLFile) isBufGenYAMLFile() {}
 func (*bufGenYAMLFile) isFile()           {}
+func (*bufGenYAMLFile) isFileInfo()       {}
 
 func readBufGenYAMLFile(
 	data []byte,
@@ -154,7 +171,7 @@ func readBufGenYAMLFile(
 	allowJSON bool,
 ) (BufGenYAMLFile, error) {
 	// We have always enforced that buf.gen.yamls have file versions.
-	fileVersion, err := getFileVersionForData(data, allowJSON, true, FileVersionV2)
+	fileVersion, err := getFileVersionForData(data, allowJSON, true, bufGenYAMLFileNameToSupportedFileVersions, FileVersionV2, defaultBufGenYAMLFileVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -464,8 +481,8 @@ type externalTypesConfigV1 struct {
 // externalBufGenYAMLFileV2 represents the v2 buf.gen.yaml file.
 type externalBufGenYAMLFileV2 struct {
 	Version string                           `json:"version,omitempty" yaml:"version,omitempty"`
-	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Managed externalGenerateManagedConfigV2  `json:"managed,omitempty" yaml:"managed,omitempty"`
+	Plugins []externalGeneratePluginConfigV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 	Inputs  []externalInputConfigV2          `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 }
 
@@ -473,21 +490,21 @@ type externalBufGenYAMLFileV2 struct {
 type externalGeneratePluginConfigV2 struct {
 	// Exactly one of Remote, Binary and ProtocBuiltin is required.
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	// Revision is only valid with Remote set.
+	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// Binary is the binary path, which can be one string or multiple strings.
 	Binary interface{} `json:"binary,omitempty" yaml:"binary,omitempty"`
 	// ProtocBuiltin is the protoc built-in plugin name, in the form of 'java' instead of 'protoc-gen-java'.
 	ProtocBuiltin *string `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
-	// Out is required.
-	Out string `json:"out,omitempty" yaml:"out,omitempty"`
-	// Revision is only valid with Remote set.
-	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
 	// ProtocPath is only valid with ProtocBuiltin
 	ProtocPath *string `json:"protoc_path,omitempty" yaml:"protoc_path,omitempty"`
+	// Out is required.
+	Out string `json:"out,omitempty" yaml:"out,omitempty"`
 	// Opt can be one string or multiple strings.
 	Opt            interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	IncludeImports bool        `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`
 	IncludeWKT     bool        `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
-	// Strategy 5s only valid with ProtoBuiltin and Binary
+	// Strategy is only valid with ProtoBuiltin and Binary.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 

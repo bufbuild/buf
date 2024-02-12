@@ -19,9 +19,9 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufmigrate"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 )
@@ -29,8 +29,9 @@ import (
 const (
 	workspaceDirectoriesFlagName = "workspace"
 	moduleDirectoriesFlagName    = "module"
-	bufGenYAMLPathFlagName       = "template"
-	dryRunFlagName               = "dry-run"
+	bufGenYAMLFilePathFlagName   = "buf-gen-yaml"
+	diffFlagName                 = "diff"
+	diffFlagShortName            = "d"
 )
 
 // NewCommand returns a new Command.
@@ -41,8 +42,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: `Migrate configuration to the latest version`,
-		Long:  `Migrate configuration files at the specified directories or paths to the latest version.`,
+		Short: `Migrate all buf.yaml, buf.work.yaml, buf.gen.yaml, and buf.lock files at the specified directories or paths to v2.`,
+		Long:  `If no flags are specified, the current directory is searched for buf.yamls, buf.work.yamls, and buf.gen.yamls.`,
 		Args:  appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -54,10 +55,10 @@ func NewCommand(
 }
 
 type flags struct {
-	WorkspaceDirPaths []string
-	ModuleDirPaths    []string
-	BufGenYAMLPaths   []string
-	DryRun            bool
+	WorkspaceDirPaths   []string
+	ModuleDirPaths      []string
+	BufGenYAMLFilePaths []string
+	Diff                bool
 }
 
 func newFlags() *flags {
@@ -69,7 +70,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.WorkspaceDirPaths,
 		workspaceDirectoriesFlagName,
 		nil,
-		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated.",
+		"The workspace directories to migrate. buf.work.yaml, buf.yamls and buf.locks will be migrated",
 	)
 	flagSet.StringSliceVar(
 		&f.ModuleDirPaths,
@@ -77,17 +78,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The module directories to migrate. buf.yaml and buf.lock will be migrated",
 	)
-	flagSet.BoolVar(
-		&f.DryRun,
-		dryRunFlagName,
-		false,
-		"Print the changes to be made without writing to the disk",
-	)
 	flagSet.StringSliceVar(
-		&f.BufGenYAMLPaths,
-		bufGenYAMLPathFlagName,
+		&f.BufGenYAMLFilePaths,
+		bufGenYAMLFilePathFlagName,
 		nil,
-		"The paths to the generation templates to migrate",
+		"The paths to the buf.gen.yaml generation templates to migrate",
+	)
+	flagSet.BoolVarP(
+		&f.Diff,
+		diffFlagName,
+		diffFlagShortName,
+		false,
+		"Write a diff to stdout instead of migrating files on disk. Useful for perfoming a dry run.",
 	)
 }
 
@@ -96,11 +98,8 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	var migrateOptions []bufmigrate.MigrateOption
-	if flags.DryRun {
-		migrateOptions = append(migrateOptions, bufmigrate.MigrateAsDryRun())
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
+	runner := command.NewRunner()
+	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
 	if err != nil {
 		return err
 	}
@@ -108,15 +107,50 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufmigrate.Migrate(
-		ctx,
-		container.Stderr(),
-		storageos.NewProvider(storageos.ProviderWithSymlinks()),
-		bufapi.NewClientProvider(clientConfig),
+	bucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	migrator := bufmigrate.NewMigrator(
+		container.Logger(),
+		runner,
+		moduleKeyProvider,
 		commitProvider,
+	)
+	all := len(flags.WorkspaceDirPaths) == 0 && len(flags.ModuleDirPaths) == 0 && len(flags.BufGenYAMLFilePaths) == 0
+	if flags.Diff {
+		if all {
+			return bufmigrate.DiffAll(
+				ctx,
+				migrator,
+				bucket,
+				container.Stdout(),
+			)
+		}
+		return migrator.Diff(
+			ctx,
+			bucket,
+			container.Stdout(),
+			flags.WorkspaceDirPaths,
+			flags.ModuleDirPaths,
+			flags.BufGenYAMLFilePaths,
+		)
+	}
+	if all {
+		return bufmigrate.MigrateAll(
+			ctx,
+			migrator,
+			bucket,
+		)
+	}
+	return migrator.Migrate(
+		ctx,
+		bucket,
 		flags.WorkspaceDirPaths,
 		flags.ModuleDirPaths,
-		flags.BufGenYAMLPaths,
-		migrateOptions...,
+		flags.BufGenYAMLFilePaths,
 	)
 }

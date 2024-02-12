@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	betagraph "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/lsp"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -70,7 +71,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
@@ -119,7 +119,6 @@ func NewRootCommand(name string) *appcmd.Command {
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			graph.NewCommand("graph", builder),
-			migrate.NewCommand("migrate", builder),
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
@@ -148,11 +147,12 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					lsp.NewCommand("lsp", builder),
-					betagraph.NewCommand("graph", builder),
+					migrate.NewCommand("migrate", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
+					lsp.NewCommand("lsp", builder),
 					studioagent.NewCommand("studio-agent", builder),
+					betagraph.NewCommand("graph", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry",

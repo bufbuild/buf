@@ -17,497 +17,311 @@ package bufmigrate
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 
-	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	"connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
+	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type migrator struct {
-	messageWriter  io.Writer
-	clientProvider bufapi.ClientProvider
-	commitProvider bufmodule.CommitProvider
-	// the bucket at "."
-	rootBucket storage.ReadWriteBucket
-	// the directory where the migrated buf.yaml live, this is useful for computing
-	// module directory paths, and possibly other paths.
-	destinationDir string
-
-	moduleConfigs            []bufconfig.ModuleConfig
-	moduleDependencies       []bufmodule.ModuleRef
-	hasSeenBufLock           bool
-	depModuleKeys            []bufmodule.ModuleKey
-	pathToMigratedBufGenYAML map[string]bufconfig.BufGenYAMLFile
-	moduleNameToParentFile   map[string]string
-	filesToDelete            map[string]struct{}
+	logger            *zap.Logger
+	runner            command.Runner
+	moduleKeyProvider bufmodule.ModuleKeyProvider
+	commitProvider    bufmodule.CommitProvider
 }
 
 func newMigrator(
-	// usually stderr
-	messageWriter io.Writer,
-	clientProvider bufapi.ClientProvider,
+	logger *zap.Logger,
+	runner command.Runner,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	commitProvider bufmodule.CommitProvider,
-	rootBucket storage.ReadWriteBucket,
-	destinationDir string,
 ) *migrator {
 	return &migrator{
-		messageWriter:            messageWriter,
-		clientProvider:           clientProvider,
-		commitProvider:           commitProvider,
-		destinationDir:           destinationDir,
-		rootBucket:               rootBucket,
-		pathToMigratedBufGenYAML: map[string]bufconfig.BufGenYAMLFile{},
-		moduleNameToParentFile:   map[string]string{},
-		filesToDelete:            map[string]struct{}{},
+		logger:            logger,
+		runner:            runner,
+		moduleKeyProvider: moduleKeyProvider,
+		commitProvider:    commitProvider,
 	}
 }
 
-// addBufGenYAML adds a buf.gen.yaml to the list of files to migrate. It returns nil
-// nil if the file is already in v2.
-//
-// If the file is in v1 and has a 'types' section on the top level, this function will
-// ignore 'types' and print a warning, while migrating everything else in the file.
-//
-// bufGenYAMLPath is relative to the call site of CLI or an absolute path.
-func (m *migrator) addBufGenYAML(
-	bufGenYAMLPath string,
-) (retErr error) {
-	file, err := os.Open(bufGenYAMLPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	bufGenYAML, err := bufconfig.ReadBufGenYAMLFile(file)
-	if err != nil {
-		return err
-	}
-	if bufGenYAML.FileVersion() == bufconfig.FileVersionV2 {
-		m.warnf("%s is a v2 file, no migration required", bufGenYAMLPath)
-		return nil
-	}
-	if typeConfig := bufGenYAML.GenerateConfig().GenerateTypeConfig(); typeConfig != nil && len(typeConfig.IncludeTypes()) > 0 {
-		// TODO: what does this sentence mean? Get someone else to read it and understand it without any explanation.
-		m.warnf(
-			"%s is a v1 generation template with a top-level 'types' section including %s. In a v2 generation template, 'types' can"+
-				" only exist within an input in the 'inputs' section. Since the migration command does not have information"+
-				" on inputs, the migrated generation will not have an 'inputs' section. To add these types in the migrated file, you can"+
-				" first add an input to 'inputs' and then add these types to the input.",
-			bufGenYAMLPath,
-			stringutil.SliceToHumanString(typeConfig.IncludeTypes()),
-		)
-	}
-	// No special transformation needed, writeBufGenYAMLFile handles it correctly.
-	migratedBufGenYAML := bufconfig.NewBufGenYAMLFile(
-		bufconfig.FileVersionV2,
-		bufGenYAML.GenerateConfig(),
-		// Types is always nil in v2.
-		nil,
-	)
-	m.filesToDelete[bufGenYAMLPath] = struct{}{}
-	m.pathToMigratedBufGenYAML[bufGenYAMLPath] = migratedBufGenYAML
-	return nil
-}
-
-// addWorkspaceDirectory adds the buf.work.yaml at the root of the workspace directory
-// to the list of files to migrate, the buf.yamls and buf.locks at the root of each
-// directory pointed to by this workspace.
-//
-// workspaceDirectory is relative to the root bucket of the migrator.
-func (m *migrator) addWorkspaceDirectory(
+func (m *migrator) Migrate(
 	ctx context.Context,
-	workspaceDirectory string,
-) (retErr error) {
-	bufWorkYAML, err := bufconfig.GetBufWorkYAMLFileForPrefix(
-		ctx,
-		m.rootBucket,
-		workspaceDirectory,
-	)
-	if errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("%q does not have a workspace configuration file (i.e. typically a buf.work.yaml)", workspaceDirectory)
-	}
+	bucket storage.ReadWriteBucket,
+	workspaceDirPaths []string,
+	moduleDirPaths []string,
+	bufGenYAMLFilePaths []string,
+) error {
+	migrateBuilder, err := m.getMigrateBuilder(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	if err != nil {
 		return err
 	}
-	objectData := bufWorkYAML.ObjectData()
-	if objectData == nil {
-		return syserror.New("ObjectData was nil on BufWorkYAMLFile created for prefix")
-	}
-	m.filesToDelete[filepath.Join(workspaceDirectory, objectData.Name())] = struct{}{}
-	for _, moduleDirRelativeToWorkspace := range bufWorkYAML.DirPaths() {
-		if err := m.addModuleDirectory(ctx, filepath.Join(workspaceDirectory, moduleDirRelativeToWorkspace)); err != nil {
-			return err
-		}
-	}
-	return nil
+	return m.migrate(ctx, bucket, migrateBuilder)
 }
 
-// addModuleDirectory adds buf.yaml and buf.lock at the root of moduleDir to the list
-// of files to migrate. More specifically, it adds module configs and dependency module
-// keys to the migrator.
-//
-// moduleDir is relative to the root bucket of the migrator.
-func (m *migrator) addModuleDirectory(
+func (m *migrator) Diff(
 	ctx context.Context,
-	moduleDir string,
-) (retErr error) {
-	// First get module configs from the buf.yaml at moduleDir.
-	bufYAML, err := bufconfig.GetBufYAMLFileForPrefix(
-		ctx,
-		m.rootBucket,
-		moduleDir,
-	)
-	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
-		// If buf.yaml isn't present, migration does not fail. Instead we add an
-		// empty module config representing this directory.
-		moduleRootRelativeToDestination, err := filepath.Rel(m.destinationDir, moduleDir)
-		if err != nil {
-			return err
-		}
-		emptyModuleConfig, err := bufconfig.NewModuleConfig(
-			moduleRootRelativeToDestination,
-			nil,
-			map[string][]string{
-				".": {},
-			},
-			bufconfig.NewLintConfig(
-				bufconfig.NewCheckConfig(
-					bufconfig.FileVersionV2,
-					nil,
-					nil,
-					nil,
-					nil,
-				),
-				"",
-				false,
-				false,
-				false,
-				"",
-				false,
-			),
-			bufconfig.NewBreakingConfig(
-				bufconfig.NewCheckConfig(
-					bufconfig.FileVersionV2,
-					nil,
-					nil,
-					nil,
-					nil,
-				),
-				false,
-			),
-		)
-		if err != nil {
-			return err
-		}
-		if err := m.appendModuleConfig(
-			emptyModuleConfig,
-			filepath.Join(moduleDir, bufconfig.DefaultBufYAMLFileName),
-		); err != nil {
-			return err
-		}
-		// Assuming there is no co-resident buf.lock when there is no buf.yaml,
-		// we return early here.
-		return nil
-	}
+	bucket storage.ReadBucket,
+	writer io.Writer,
+	workspaceDirPaths []string,
+	moduleDirPaths []string,
+	bufGenYAMLFilePaths []string,
+) error {
+	migrateBuilder, err := m.getMigrateBuilder(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	if err != nil {
 		return err
 	}
-	objectData := bufYAML.ObjectData()
-	if objectData == nil {
-		return syserror.New("ObjectData was nil on BufYAMLFile created for prefix")
-	}
-	bufYAMLPath := filepath.Join(moduleDir, objectData.Name())
-	// If this module is already visited, we don't add it for a second time. It's
-	// possbile to visit the same module directory twice when the user specifies both
-	// a workspace and a module in this workspace.
-	if _, ok := m.filesToDelete[bufYAMLPath]; ok {
-		return nil
-	}
-	switch bufYAML.FileVersion() {
-	case bufconfig.FileVersionV1Beta1:
-		if len(bufYAML.ModuleConfigs()) != 1 {
-			// This should never happen because it's guaranteed by the bufYAMLFile interface.
-			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAML.ModuleConfigs()))
-		}
-		moduleConfig := bufYAML.ModuleConfigs()[0]
-		moduleFullName := moduleConfig.ModuleFullName()
-		// If a buf.yaml v1beta1 has a non-empty name and multiple roots, the
-		// resulting buf.yaml v2 should have these roots as module directories,
-		// but they should not share the same module name. Instead we just give
-		// them empty module names.
-		if len(moduleConfig.RootToExcludes()) > 1 && moduleFullName != nil {
-			m.warnf(
-				"%s has name %s and multiple roots. These roots are now separate unnamed modules.",
-				bufYAMLPath,
-				moduleFullName.String(),
-			)
-			moduleFullName = nil
-		}
-		// Each root in buf.yaml v1beta1 should become its own module config in v2,
-		// and we iterate through these roots in deterministic order.
-		sortedRoots := slicesext.MapKeysToSortedSlice(moduleConfig.RootToExcludes())
-		for _, root := range sortedRoots {
-			moduleRootRelativeToDestination, err := filepath.Rel(
-				m.destinationDir,
-				filepath.Join(moduleDir, root),
-			)
-			if err != nil {
-				return err
-			}
-			lintConfigForRoot, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
-			if err != nil {
-				return err
-			}
-			breakingConfigForRoot, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
-			if err != nil {
-				return err
-			}
-			moduleConfigForRoot, err := bufconfig.NewModuleConfig(
-				moduleRootRelativeToDestination,
-				moduleFullName,
-				// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
-				// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
-				map[string][]string{".": moduleConfig.RootToExcludes()[root]},
-				lintConfigForRoot,
-				breakingConfigForRoot,
-			)
-			if err != nil {
-				return err
-			}
-			if err := m.appendModuleConfig(moduleConfigForRoot, bufYAMLPath); err != nil {
-				return err
-			}
-		}
-		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
-	case bufconfig.FileVersionV1:
-		if len(bufYAML.ModuleConfigs()) != 1 {
-			// This should never happen because it's guaranteed by the bufYAMLFile interface.
-			return syserror.Newf("expect exactly 1 module config from buf yaml, got %d", len(bufYAML.ModuleConfigs()))
-		}
-		moduleConfig := bufYAML.ModuleConfigs()[0]
-		moduleRootRelativeToDestination, err := filepath.Rel(m.destinationDir, filepath.Dir(bufYAMLPath))
-		if err != nil {
-			return err
-		}
-		lintConfig, err := equivalentLintConfigInV2(moduleConfig.LintConfig())
-		if err != nil {
-			return err
-		}
-		breakingConfig, err := equivalentBreakingConfigInV2(moduleConfig.BreakingConfig())
-		if err != nil {
-			return err
-		}
-		moduleConfig, err = bufconfig.NewModuleConfig(
-			moduleRootRelativeToDestination,
-			moduleConfig.ModuleFullName(),
-			// We do not need to handle paths in root-to-excludes, lint or breaking config specially,
-			// because the paths are transformed correctly by readBufYAMLFile and writeBufYAMLFile.
-			moduleConfig.RootToExcludes(),
-			lintConfig,
-			breakingConfig,
-		)
-		if err != nil {
-			return err
-		}
-		if err := m.appendModuleConfig(moduleConfig, bufYAMLPath); err != nil {
-			return err
-		}
-		m.moduleDependencies = append(m.moduleDependencies, bufYAML.ConfiguredDepModuleRefs()...)
-	case bufconfig.FileVersionV2:
-		m.warnf("%s is a v2 file, no migration required", bufYAMLPath)
-		return nil
-	default:
-		return syserror.Newf("unexpected version: %v", bufYAML.FileVersion())
-	}
-	m.filesToDelete[bufYAMLPath] = struct{}{}
-	// Now we read buf.lock and add its lock entries to the list of candidate lock entries
-	// for the migrated buf.lock. These lock entries are candidates because different buf.locks
-	// can have lock entries for the same module but for different commits.
-	bufLockFile, err := bufconfig.GetBufLockFileForPrefix(
-		ctx,
-		m.rootBucket,
-		moduleDir,
-		bufconfig.BufLockFileWithDigestResolver(
-			func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error) {
-				commitKey, err := bufmodule.NewCommitKey(remote, commitID, bufmodule.DigestTypeB4)
-				if err != nil {
-					return nil, err
-				}
-				commits, err := m.commitProvider.GetCommitsForCommitKeys(ctx, []bufmodule.CommitKey{commitKey})
-				if err != nil {
-					return nil, err
-				}
-				return commits[0].ModuleKey().Digest()
-			},
-		),
-	)
-	if errors.Is(errors.Unwrap(err), fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	objectData = bufLockFile.ObjectData()
-	if objectData == nil {
-		return syserror.New("ObjectData was nil on BufLockFile created for prefix")
-	}
-	bufLockFilePath := filepath.Join(moduleDir, objectData.Name())
-	// We don't need to check whether it's already in the map, but because if it were,
-	// its co-resident buf.yaml would also have been a duplicate and made this
-	// function return at an earlier point.
-	m.filesToDelete[bufLockFilePath] = struct{}{}
-	m.hasSeenBufLock = true
-	switch bufLockFile.FileVersion() {
-	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
-		m.depModuleKeys = append(m.depModuleKeys, bufLockFile.DepModuleKeys()...)
-	case bufconfig.FileVersionV2:
-		m.warnf("%s is a v2 file, no migration required", bufLockFilePath)
-		return nil
-	default:
-		return syserror.Newf("unrecognized version: %v", bufLockFile.FileVersion())
-	}
-	return nil
+	return m.diff(ctx, writer, migrateBuilder)
 }
 
-func (m *migrator) migrateAsDryRun(ctx context.Context) (retErr error) {
-	if len(m.filesToDelete) > 0 {
-		m.infof(
-			"In an actual run, these files will be removed:\n%s\n\nThe following files will be overwritten or created:\n",
-			strings.Join(slicesext.MapKeysToSortedSlice(m.filesToDelete), "\n"),
-		)
-	} else {
-		m.info("In an actual run:\n")
+func (m *migrator) getMigrateBuilder(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	workspaceDirPaths []string,
+	moduleDirPaths []string,
+	bufGenYAMLFilePaths []string,
+) (*migrateBuilder, error) {
+	if len(workspaceDirPaths) == 0 && len(moduleDirPaths) == 0 && len(bufGenYAMLFilePaths) == 0 {
+		return nil, errors.New("no directory or file specified")
+	}
+	// Directories cannot jump context because in the migrated buf.yaml v2, each
+	// directory path cannot jump context. I.e. it's not valid to have `- directory: ..`
+	// in a buf.yaml v2.
+	workspaceDirPaths, err := slicesext.MapError(workspaceDirPaths, normalpath.NormalizeAndValidate)
+	if err != nil {
+		return nil, err
+	}
+	moduleDirPaths, err = slicesext.MapError(moduleDirPaths, normalpath.NormalizeAndValidate)
+	if err != nil {
+		return nil, err
+	}
+	// This does mean that buf.gen.yamls need to be under the directory this is run at, but this is OK.
+	bufGenYAMLFilePaths, err = slicesext.MapError(bufGenYAMLFilePaths, normalpath.NormalizeAndValidate)
+	if err != nil {
+		return nil, err
+	}
+	// the directory where the migrated buf.yaml live, this is useful for computing
+	// module directory paths, and possibly other paths.
+	destinationDirPath := "."
+	if len(workspaceDirPaths) == 1 && len(moduleDirPaths) == 0 {
+		destinationDirPath = workspaceDirPaths[0]
+	}
+	migrateBuilder := newMigrateBuilder(
+		m.logger,
+		m.commitProvider,
+		bucket,
+		destinationDirPath,
+	)
+	for _, workspaceDirPath := range workspaceDirPaths {
+		if err := migrateBuilder.addWorkspace(ctx, workspaceDirPath); err != nil {
+			return nil, err
+		}
+	}
+	for _, moduleDirPath := range moduleDirPaths {
+		// TODO FUTURE: read upwards to make sure it's not in a workspace.
+		// i.e. for ./foo/bar/buf.yaml, check none of "./foo", ".", "../", "../..", and etc. is a workspace.
+		// The logic for this is in getMapPathAndSubDirPath from buffetch/internal
+		if err := migrateBuilder.addModule(ctx, moduleDirPath); err != nil {
+			return nil, err
+		}
+	}
+	for _, bufGenYAMLFilePath := range bufGenYAMLFilePaths {
+		if err := migrateBuilder.addBufGenYAML(ctx, bufGenYAMLFilePath); err != nil {
+			return nil, err
+		}
+	}
+	return migrateBuilder, nil
+}
+
+func (m *migrator) migrate(ctx context.Context, bucket storage.WriteBucket, migrateBuilder *migrateBuilder) (retErr error) {
+	for _, path := range slicesext.MapKeysToSortedSlice(migrateBuilder.pathsToDelete) {
+		if err := bucket.Delete(ctx, path); err != nil {
+			return err
+		}
+	}
+	for path, migratedBufGenYAMLFile := range migrateBuilder.pathToMigratedBufGenYAMLFile {
+		if err := storage.ForWriteObject(ctx, bucket, path, func(writeObject storage.WriteObject) error {
+			return bufconfig.WriteBufGenYAMLFile(writeObject, migratedBufGenYAMLFile)
+		}); err != nil {
+			return err
+		}
 	}
 	// We create a buf.yaml if we have seen visited any module directory. Note
 	// we add a module config even for a module directory without a buf.yaml.
-	if len(m.moduleConfigs) > 0 {
-		migratedBufYAML, migratedBufLock, err := m.buildBufYAMLAndBufLock(ctx)
+	if len(migrateBuilder.moduleConfigs) > 0 {
+		migratedBufYAMLFile, migratedBufLockFile, err := m.buildBufYAMLAndBufLockFiles(ctx, migrateBuilder)
 		if err != nil {
 			return err
 		}
-		m.infof(
-			"%s will be written:\n",
-			filepath.Join(m.destinationDir, bufconfig.DefaultBufWorkYAMLFileName),
-		)
-		if err := bufconfig.WriteBufYAMLFile(m.messageWriter, migratedBufYAML); err != nil {
+		if err := bufconfig.PutBufYAMLFileForPrefix(ctx, bucket, migrateBuilder.destinationDirPath, migratedBufYAMLFile); err != nil {
 			return err
 		}
-		if migratedBufLock != nil {
-			m.infof(
-				"%s will be written:\n",
-				filepath.Join(m.destinationDir, bufconfig.DefaultBufLockFileName),
-			)
-			if err := bufconfig.WriteBufLockFile(m.messageWriter, migratedBufLock); err != nil {
+		if migratedBufLockFile != nil {
+			if err := bufconfig.PutBufLockFileForPrefix(ctx, bucket, migrateBuilder.destinationDirPath, migratedBufLockFile); err != nil {
 				return err
 			}
-		}
-	}
-	for bufGenYAMLPath, migratedBufGenYAML := range m.pathToMigratedBufGenYAML {
-		m.infof(
-			"%s will be written:\n",
-			bufGenYAMLPath,
-		)
-		if err := bufconfig.WriteBufGenYAMLFile(m.messageWriter, migratedBufGenYAML); err != nil {
-			return err
 		}
 	}
 	return nil
 }
 
-func (m *migrator) migrate(
+func (m *migrator) diff(
 	ctx context.Context,
+	writer io.Writer,
+	migrateBuilder *migrateBuilder,
 ) (retErr error) {
-	for bufGenYAMLPath, migratedBufGenYAML := range m.pathToMigratedBufGenYAML {
-		// os.Create truncates the existing file.
-		file, err := os.Create(bufGenYAMLPath)
+	originalFileBucket, addedFileBucket, err := m.getOriginalAndAddedFileBuckets(ctx, migrateBuilder)
+	if err != nil {
+		return err
+	}
+	return storage.Diff(
+		ctx,
+		m.runner,
+		writer,
+		originalFileBucket,
+		addedFileBucket,
+	)
+}
+
+// Doing this as a separate function so we can use defer for WriteObjectCloser.Close.
+// Files are not written until Close is called.
+func (m *migrator) getOriginalAndAddedFileBuckets(
+	ctx context.Context,
+	migrateBuilder *migrateBuilder,
+) (_ storage.ReadBucket, _ storage.ReadBucket, retErr error) {
+	// Contains the original files before modification. Includes both the deleted files
+	// and the originals of any files that were added.
+	originalFileBucket := storagemem.NewReadWriteBucket()
+	// Contains the added files
+	addedFileBucket := storagemem.NewReadWriteBucket()
+	for pathToDelete := range migrateBuilder.pathsToDelete {
+		if err := storage.CopyPath(
+			ctx,
+			migrateBuilder.bucket,
+			pathToDelete,
+			originalFileBucket,
+			pathToDelete,
+		); err != nil {
+			return nil, nil, err
+		}
+	}
+	// We create a buf.yaml if we have seen visited any module directory. Note
+	// we add a module config even for a module directory without a buf.yaml.
+	if len(migrateBuilder.moduleConfigs) > 0 {
+		migratedBufYAMLFile, migratedBufLockFile, err := m.buildBufYAMLAndBufLockFiles(ctx, migrateBuilder)
 		if err != nil {
-			return err
+			return nil, nil, err
+		}
+		migratedBufYAMLFilePath := normalpath.Join(migrateBuilder.destinationDirPath, bufconfig.DefaultBufYAMLFileName)
+		if err := storage.CopyPath(
+			ctx,
+			migrateBuilder.bucket,
+			migratedBufYAMLFilePath,
+			originalFileBucket,
+			migratedBufYAMLFilePath,
+		); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, nil, err
+			}
+		}
+		writeObjectCloser, err := addedFileBucket.Put(ctx, migratedBufYAMLFilePath)
+		if err != nil {
+			return nil, nil, err
 		}
 		defer func() {
-			retErr = multierr.Append(retErr, file.Close())
+			retErr = multierr.Append(retErr, writeObjectCloser.Close())
 		}()
-		if err := bufconfig.WriteBufGenYAMLFile(file, migratedBufGenYAML); err != nil {
-			return err
+		if err := bufconfig.WriteBufYAMLFile(writeObjectCloser, migratedBufYAMLFile); err != nil {
+			return nil, nil, err
 		}
-	}
-	// We create a buf.yaml if we have seen visited any module directory. Note
-	// we add a module config even for a module directory without a buf.yaml.
-	if len(m.moduleConfigs) > 0 {
-		migratedBufYAML, migratedBufLock, err := m.buildBufYAMLAndBufLock(ctx)
-		if err != nil {
-			return err
-		}
-		for _, fileToDelete := range slicesext.MapKeysToSortedSlice(m.filesToDelete) {
-			if err := os.Remove(fileToDelete); err != nil {
-				return err
-			}
-		}
-		if err := bufconfig.PutBufYAMLFileForPrefix(
-			ctx,
-			m.rootBucket,
-			m.destinationDir,
-			migratedBufYAML,
-		); err != nil {
-			return err
-		}
-		if migratedBufLock != nil {
-			if err := bufconfig.PutBufLockFileForPrefix(
+		if migratedBufLockFile != nil {
+			migratedBufLockFilePath := normalpath.Join(migrateBuilder.destinationDirPath, bufconfig.DefaultBufLockFileName)
+			if err := storage.CopyPath(
 				ctx,
-				m.rootBucket,
-				m.destinationDir,
-				migratedBufLock,
+				migrateBuilder.bucket,
+				migratedBufLockFilePath,
+				originalFileBucket,
+				migratedBufLockFilePath,
 			); err != nil {
-				return err
+				if !errors.Is(err, fs.ErrNotExist) {
+					return nil, nil, err
+				}
+			}
+			writeObjectCloser, err := addedFileBucket.Put(ctx, migratedBufLockFilePath)
+			if err != nil {
+				return nil, nil, err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, writeObjectCloser.Close())
+			}()
+			if err := bufconfig.WriteBufLockFile(writeObjectCloser, migratedBufLockFile); err != nil {
+				return nil, nil, err
 			}
 		}
 	}
-	return nil
+	for bufGenYAMLPath, migratedBufGenYAMLFile := range migrateBuilder.pathToMigratedBufGenYAMLFile {
+		if err := storage.CopyPath(
+			ctx,
+			migrateBuilder.bucket,
+			bufGenYAMLPath,
+			originalFileBucket,
+			bufGenYAMLPath,
+		); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, nil, err
+			}
+		}
+		writeObjectCloser, err := addedFileBucket.Put(ctx, bufGenYAMLPath)
+		if err != nil {
+			return nil, nil, err
+		}
+		defer func() {
+			retErr = multierr.Append(retErr, writeObjectCloser.Close())
+		}()
+		if err := bufconfig.WriteBufGenYAMLFile(writeObjectCloser, migratedBufGenYAMLFile); err != nil {
+			return nil, nil, err
+		}
+	}
+	return originalFileBucket, addedFileBucket, nil
 }
 
 // If this function doesn't return an error, the BufYAMLFile returned is never nil,
 // but the BufLockFile returned may be nil.
-func (m *migrator) buildBufYAMLAndBufLock(
+func (m *migrator) buildBufYAMLAndBufLockFiles(
 	ctx context.Context,
+	migrateBuilder *migrateBuilder,
 ) (bufconfig.BufYAMLFile, bufconfig.BufLockFile, error) {
 	// module full name --> the list of declared dependencies that are this module.
 	depModuleToDeclaredRefs := make(map[string][]bufmodule.ModuleRef)
-	for _, declaredRef := range m.moduleDependencies {
+	for _, declaredRef := range migrateBuilder.configuredDepModuleRefs {
 		moduleFullName := declaredRef.ModuleFullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
-		if _, ok := m.moduleNameToParentFile[moduleFullName]; ok {
+		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
 		}
 		depModuleToDeclaredRefs[moduleFullName] = append(depModuleToDeclaredRefs[moduleFullName], declaredRef)
 	}
 	// module full name --> the list of lock entries that are this module.
 	depModuleToLockEntries := make(map[string][]bufmodule.ModuleKey)
-	for _, lockEntry := range m.depModuleKeys {
+	for _, lockEntry := range migrateBuilder.depModuleKeys {
 		moduleFullName := lockEntry.ModuleFullName().String()
 		// If a declared dependency also shows up in the workspace, it's not a dependency.
 		//
 		// We are only removing lock entries that are in the workspace. A lock entry
 		// could be for an indirect dependenceny not listed in deps in any buf.yaml.
-		if _, ok := m.moduleNameToParentFile[moduleFullName]; ok {
+		if _, ok := migrateBuilder.moduleFullNameStringToParentPath[moduleFullName]; ok {
 			continue
 		}
 		depModuleToLockEntries[moduleFullName] = append(depModuleToLockEntries[moduleFullName], lockEntry)
@@ -531,14 +345,11 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		}
 	}
 	for depModule, lockEntries := range depModuleToLockEntries {
-		commitIDToKey, err := slicesext.ToUniqueValuesMapError(
-			lockEntries,
-			func(moduleKey bufmodule.ModuleKey) (uuid.UUID, error) {
-				return moduleKey.CommitID(), nil
-			},
-		)
-		if err != nil {
-			return nil, nil, err
+		commitIDToKey := make(map[uuid.UUID]bufmodule.ModuleKey)
+		for _, lockEntry := range lockEntries {
+			// There may be duplicates, we ignore this. They should be the same.
+			// We could check,
+			commitIDToKey[lockEntry.CommitID()] = lockEntry
 		}
 		depModuleToLockEntries[depModule] = slicesext.MapValuesToSlice(commitIDToKey)
 		if len(commitIDToKey) > 1 {
@@ -553,7 +364,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		}
 		bufYAML, err := bufconfig.NewBufYAMLFile(
 			bufconfig.FileVersionV2,
-			m.moduleConfigs,
+			migrateBuilder.moduleConfigs,
 			resolvedDeclaredRefs,
 		)
 		if err != nil {
@@ -564,7 +375,7 @@ func (m *migrator) buildBufYAMLAndBufLock(
 			resolvedLockEntries = append(resolvedLockEntries, lockEntry...)
 		}
 		var bufLock bufconfig.BufLockFile
-		if m.hasSeenBufLock {
+		if migrateBuilder.hasSeenBufLockFile {
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedLockEntries,
@@ -576,12 +387,11 @@ func (m *migrator) buildBufYAMLAndBufLock(
 		// bufLock could be nil here, but that's OK, see docs for this function.
 		return bufYAML, bufLock, nil
 	}
-	// TODO: This code should be reworked to use bufmodule.CommitProvider and bufmodule.ModuleKeyProvider
-	moduleToRefToCommit, err := getModuleToRefToCommit(ctx, m.clientProvider, m.moduleDependencies)
+	moduleToRefToCommit, err := m.getModuleToRefToCommit(ctx, migrateBuilder.configuredDepModuleRefs)
 	if err != nil {
 		return nil, nil, err
 	}
-	commitIDToCommit, err := getCommitIDToCommit(ctx, m.clientProvider, m.depModuleKeys)
+	commitIDToCommit, err := m.getCommitIDToCommit(ctx, migrateBuilder.depModuleKeys)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -596,15 +406,19 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	}
 	bufYAML, err := bufconfig.NewBufYAMLFile(
 		bufconfig.FileVersionV2,
-		m.moduleConfigs,
+		migrateBuilder.moduleConfigs,
 		resolvedDepModuleRefs,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
-	// TODO: We need to upgrade digests from b4 to b5, right?
 	var bufLock bufconfig.BufLockFile
-	if m.hasSeenBufLock {
+	if migrateBuilder.hasSeenBufLockFile {
+		// TODO: enable when b5 is ready
+		//resolvedDepModuleKeys, err := m.upgradeModuleKeysToB5(ctx, resolvedDepModuleKeys)
+		//if err != nil {
+		//return nil, nil, err
+		//}
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
@@ -616,45 +430,136 @@ func (m *migrator) buildBufYAMLAndBufLock(
 	return bufYAML, bufLock, nil
 }
 
-func (m *migrator) appendModuleConfig(moduleConfig bufconfig.ModuleConfig, parentFile string) error {
-	m.moduleConfigs = append(m.moduleConfigs, moduleConfig)
-	if moduleConfig.ModuleFullName() == nil {
-		return nil
+func (m *migrator) getModuleToRefToCommit(
+	ctx context.Context,
+	moduleRefs []bufmodule.ModuleRef,
+) (map[string]map[string]bufmodule.Commit, error) {
+	// TODO: Change to b5
+	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB4)
+	if err != nil {
+		return nil, err
 	}
-	if file, ok := m.moduleNameToParentFile[moduleConfig.ModuleFullName().String()]; ok {
-		return fmt.Errorf("module %s is found in both %s and %s", moduleConfig.ModuleFullName(), file, parentFile)
+	commits, err := m.commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
+	if err != nil {
+		return nil, err
 	}
-	m.moduleNameToParentFile[moduleConfig.ModuleFullName().String()] = parentFile
-	return nil
+	moduleToRefToCommit := make(map[string]map[string]bufmodule.Commit)
+	for i, moduleRef := range moduleRefs {
+		if moduleRef.Ref() == "" {
+			continue
+		}
+		// We know that that the ModuleKeys and Commits match up with the ModuleRefs via the definition
+		// of GetModuleKeysForModuleRefs and GetCommitsForModuleKeys.
+		commit := commits[i]
+
+		moduleFullName := moduleRef.ModuleFullName()
+		if moduleToRefToCommit[moduleFullName.String()] == nil {
+			moduleToRefToCommit[moduleFullName.String()] = make(map[string]bufmodule.Commit)
+		}
+		moduleToRefToCommit[moduleFullName.String()][moduleRef.Ref()] = commit
+	}
+	return moduleToRefToCommit, nil
 }
 
-func (m *migrator) info(message string) {
-	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("%s\n", message)))
+func (m *migrator) getCommitIDToCommit(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) (map[uuid.UUID]bufmodule.Commit, error) {
+	commits, err := m.commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+	commitIDToCommit := make(map[uuid.UUID]bufmodule.Commit, len(commits))
+	for _, commit := range commits {
+		// We don't know if these are unique, so we do not use slicesext.ToUniqueValuesMapError.
+		commitIDToCommit[commit.ModuleKey().CommitID()] = commit
+	}
+	return commitIDToCommit, nil
 }
 
-func (m *migrator) infof(format string, args ...any) {
-	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("%s\n", fmt.Sprintf(format, args...))))
-}
+func (m *migrator) upgradeModuleKeysToB5(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys = slicesext.Copy(moduleKeys)
 
-func (m *migrator) warnf(format string, args ...any) {
-	_, _ = m.messageWriter.Write([]byte(fmt.Sprintf("Warning: %s\n", fmt.Sprintf(format, args...))))
+	b4IndexedModuleKeys, err := slicesext.FilterError(
+		slicesext.ToIndexed(moduleKeys),
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bool, error) {
+			digest, err := indexedModuleKey.Value.Digest()
+			if err != nil {
+				return false, err
+			}
+			return digest.Type() == bufmodule.DigestTypeB4, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(b4IndexedModuleKeys) == 0 {
+		return moduleKeys, nil
+	}
+
+	commitKeys, err := slicesext.MapError(
+		b4IndexedModuleKeys,
+		func(indexedModuleKey slicesext.Indexed[bufmodule.ModuleKey]) (bufmodule.CommitKey, error) {
+			return bufmodule.NewCommitKey(
+				indexedModuleKey.Value.ModuleFullName().Registry(),
+				indexedModuleKey.Value.CommitID(),
+				bufmodule.DigestTypeB5,
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	commits, err := m.commitProvider.GetCommitsForCommitKeys(ctx, commitKeys)
+	if err != nil {
+		return nil, err
+	}
+	for i, commit := range commits {
+		// The index into moduleKeys.
+		moduleKeyIndex := b4IndexedModuleKeys[i].Index
+		existingModuleKey := moduleKeys[moduleKeyIndex]
+		newModuleKey, err := bufmodule.NewModuleKey(
+			existingModuleKey.ModuleFullName(),
+			existingModuleKey.CommitID(),
+			commit.ModuleKey().Digest,
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[moduleKeyIndex] = newModuleKey
+	}
+	return moduleKeys, nil
 }
 
 func resolvedDeclaredAndLockedDependencies(
-	moduleToRefToCommit map[string]map[string]*modulev1beta1.Commit,
-	commitIDToCommit map[uuid.UUID]*modulev1beta1.Commit,
+	moduleToRefToCommit map[string]map[string]bufmodule.Commit,
+	commitIDToCommit map[uuid.UUID]bufmodule.Commit,
 	moduleFullNameToDeclaredRefs map[string][]bufmodule.ModuleRef,
 	moduleFullNameToLockKeys map[string][]bufmodule.ModuleKey,
 ) ([]bufmodule.ModuleRef, []bufmodule.ModuleKey, error) {
 	depModuleFullNameToResolvedRef := make(map[string]bufmodule.ModuleRef)
 	for moduleFullName, refs := range moduleFullNameToDeclaredRefs {
+		var errs []error
 		// There are multiple pinned versions of the same dependency, we use the latest one.
 		sort.Slice(refs, func(i, j int) bool {
 			refToCommit := moduleToRefToCommit[moduleFullName]
-			iTime := refToCommit[refs[i].Ref()].GetCreateTime().AsTime()
-			jTime := refToCommit[refs[j].Ref()].GetCreateTime().AsTime()
+			iTime, err := refToCommit[refs[i].Ref()].CreateTime()
+			if err != nil {
+				errs = append(errs, err)
+			}
+			jTime, err := refToCommit[refs[j].Ref()].CreateTime()
+			if err != nil {
+				errs = append(errs, err)
+			}
 			return iTime.After(jTime)
 		})
+		if len(errs) > 0 {
+			return nil, nil, multierr.Combine(errs...)
+		}
 		depModuleFullNameToResolvedRef[moduleFullName] = refs[0]
 	}
 	resolvedDepModuleKeys := make([]bufmodule.ModuleKey, 0, len(moduleFullNameToLockKeys))
@@ -664,29 +569,25 @@ func resolvedDeclaredAndLockedDependencies(
 			// If we have already picked a pinned dependency ref for this dependency,
 			// we use that as the lock entry as well.
 			resolvedCommit := moduleToRefToCommit[moduleFullName][resolvedRef.Ref()]
-			commitID, err := uuid.FromString(resolvedCommit.GetId())
-			if err != nil {
-				return nil, nil, err
-			}
-			key, err := bufmodule.NewModuleKey(
-				resolvedRef.ModuleFullName(),
-				commitID,
-				func() (bufmodule.Digest, error) {
-					return bufmoduleapi.ProtoToDigest(resolvedCommit.GetDigest())
-				},
-			)
-			if err != nil {
-				return nil, nil, err
-			}
-			resolvedDepModuleKeys = append(resolvedDepModuleKeys, key)
+			resolvedDepModuleKeys = append(resolvedDepModuleKeys, resolvedCommit.ModuleKey())
 			continue
 		}
+		var errs []error
 		// Otherwise, we pick the latest key from the buf.locks we have read.
 		sort.Slice(lockKeys, func(i, j int) bool {
-			iTime := commitIDToCommit[lockKeys[i].CommitID()].GetCreateTime().AsTime()
-			jTime := commitIDToCommit[lockKeys[j].CommitID()].GetCreateTime().AsTime()
+			iTime, err := commitIDToCommit[lockKeys[i].CommitID()].CreateTime()
+			if err != nil {
+				errs = append(errs, err)
+			}
+			jTime, err := commitIDToCommit[lockKeys[j].CommitID()].CreateTime()
+			if err != nil {
+				errs = append(errs, err)
+			}
 			return iTime.After(jTime)
 		})
+		if len(errs) > 0 {
+			return nil, nil, multierr.Combine(errs...)
+		}
 		resolvedDepModuleKeys = append(resolvedDepModuleKeys, lockKeys[0])
 	}
 	resolvedDeclaredDependencies := slicesext.MapValuesToSlice(depModuleFullNameToResolvedRef)
@@ -698,90 +599,6 @@ func resolvedDeclaredAndLockedDependencies(
 		return resolvedDepModuleKeys[i].ModuleFullName().String() < resolvedDepModuleKeys[j].ModuleFullName().String()
 	})
 	return resolvedDeclaredDependencies, resolvedDepModuleKeys, nil
-}
-
-func getModuleToRefToCommit(
-	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
-	moduleRefs []bufmodule.ModuleRef,
-) (map[string]map[string]*modulev1beta1.Commit, error) {
-	moduleToRefToCommit := make(map[string]map[string]*modulev1beta1.Commit)
-	for _, moduleRef := range moduleRefs {
-		if moduleRef.Ref() == "" {
-			continue
-		}
-		moduleFullName := moduleRef.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
-			ctx,
-			connect.NewRequest(
-				&modulev1beta1.GetCommitsRequest{
-					ResourceRefs: []*modulev1beta1.ResourceRef{
-						{
-							Value: &modulev1beta1.ResourceRef_Name_{
-								Name: &modulev1beta1.ResourceRef_Name{
-									Owner:  moduleFullName.Owner(),
-									Module: moduleFullName.Name(),
-									Child: &modulev1beta1.ResourceRef_Name_Ref{
-										Ref: moduleRef.Ref(),
-									},
-								},
-							},
-						},
-					},
-				},
-			),
-		)
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
-			}
-			return nil, err
-		}
-		if len(response.Msg.Commits) != 1 {
-			return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
-		}
-		if moduleToRefToCommit[moduleFullName.String()] == nil {
-			moduleToRefToCommit[moduleFullName.String()] = make(map[string]*modulev1beta1.Commit)
-		}
-		moduleToRefToCommit[moduleFullName.String()][moduleRef.Ref()] = response.Msg.Commits[0]
-	}
-	return moduleToRefToCommit, nil
-}
-
-func getCommitIDToCommit(
-	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
-	moduleKeys []bufmodule.ModuleKey,
-) (map[uuid.UUID]*modulev1beta1.Commit, error) {
-	commitIDToCommit := make(map[uuid.UUID]*modulev1beta1.Commit)
-	for _, moduleKey := range moduleKeys {
-		moduleFullName := moduleKey.ModuleFullName()
-		response, err := clientProvider.CommitServiceClient(moduleFullName.Registry()).GetCommits(
-			ctx,
-			connect.NewRequest(
-				&modulev1beta1.GetCommitsRequest{
-					ResourceRefs: []*modulev1beta1.ResourceRef{
-						{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: moduleKey.CommitID().String(),
-							},
-						},
-					},
-				},
-			),
-		)
-		if err != nil {
-			if connect.CodeOf(err) == connect.CodeNotFound {
-				return nil, &fs.PathError{Op: "read", Path: moduleKey.CommitID().String(), Err: fs.ErrNotExist}
-			}
-			return nil, err
-		}
-		if len(response.Msg.Commits) != 1 {
-			return nil, fmt.Errorf("expected 1 Commit, got %d", len(response.Msg.Commits))
-		}
-		commitIDToCommit[moduleKey.CommitID()] = response.Msg.Commits[0]
-	}
-	return commitIDToCommit, nil
 }
 
 func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
@@ -899,4 +716,12 @@ func equivalentCheckConfigInV2(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	), nil
+}
+
+type migrateOptions struct {
+	dryRun bool
+}
+
+func newMigrateOptions() *migrateOptions {
+	return &migrateOptions{}
 }
