@@ -385,10 +385,21 @@ message FieldLiteral {
   string name = 1;
   // The unique field number associated with the field.
   int32 tag = 2;
+
+  enum FieldType {
+    FIELD_TYPE_UNSPECIFIED = 0;
+    FIELD_TYPE_NORMAL = 1;
+    FIELD_TYPE_EXTENSION = 2;
+    FIELD_TYPE_ANY = 3;
+  }
   // Indicates whether this is an extension or not.
-  bool is_extension = 3;
+  FieldType field_type = 3;
   // The field's value.
   LiteralValue value = 4;
+
+  // this is the module where the extension is defined if the field type
+  // is extension or the module where the messages is defined for field type any
+  ImportModuleRef import_module_ref = 5;
 }
 
 // MessageLiteral represents an option value for a type that is a message.
@@ -413,7 +424,7 @@ message LiteralValue {
     uint64 uint_value = 4;
     double double_value = 5;
     bool bool_value = 6;
-    int32 enum_value = 7;
+    string enum_value = 7;
     ArrayLiteral array_value = 8;
     MessageLiteral message_value = 9;
   }
