@@ -140,7 +140,7 @@ func run(
 			}
 		default:
 			if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-				return errors.New("buf mod ls-lint-rules does not work for buf.yaml v2 yet")
+				return errors.New("buf mod ls-lint-rules does not work for buf.yaml v2s with multiple modules")
 			}
 			return syserror.New("multiple ModuleConfigs for a non-v2 buf.yaml")
 		}

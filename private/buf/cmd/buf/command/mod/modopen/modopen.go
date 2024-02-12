@@ -39,10 +39,12 @@ func NewCommand(
 		// TODO: This doesn't really work in v2 world. We'll need to figure out what we want to do.
 		Long: `The first argument is the directory with the buf.yaml of the module to open.
 
-The directory must have a buf.yaml that contains a specified module name.
+The directory must have a buf.yaml that contains a single specified module name.
 
 The directory defaults to "." if no argument is specified.`,
-		Args: appcmd.MaximumNArgs(1),
+		Deprecated: "This command does not work well with v2 buf.yamls and is now considered deprecated.",
+		Hidden:     true,
+		Args:       appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container)
@@ -69,7 +71,7 @@ func run(
 	moduleConfigs := bufYAMLFile.ModuleConfigs()
 	if len(moduleConfigs) != 1 {
 		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-			return errors.New("buf mod open does not work for v2 buf.yamls yet")
+			return errors.New("buf mod open does not work for v2 buf.yamls with multiple modules as we do not know what module to open")
 		}
 		return syserror.Newf("got %d ModuleConfigs from a buf.yaml that is not v2", len(moduleConfigs))
 	}

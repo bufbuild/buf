@@ -10,6 +10,11 @@
   `buf.registry.module.v1beta1.CommitService/GetCommitNodes`. Is it for computing digest? Or is it because the buf.lock is in v1?
 
 - Rename `buf mod` commands?
+  - `buf mod open` deprecated and hidden
+  - `buf mod ls-lint-rules, ls-breaking-rules` do not work for multiple module workspaces
+  - `buf mod cc` not really module-specific
+  - `buf mod init` is now really `config init`
+  - `buf mod prune, update` is now really `buf workspace prune, update`
 
 - Migrate buf.work.yaml, buf.yaml and buf.lock
   - It would be nice if the bufconfig.File exposes a Path() method. Or a path() method and

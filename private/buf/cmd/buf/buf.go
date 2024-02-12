@@ -128,6 +128,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					modinit.NewCommand("init", builder),
 					modprune.NewCommand("prune", builder),
 					modupdate.NewCommand("update", builder),
+					// Deprecated and hidden.
 					modopen.NewCommand("open", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
 					modlslintrules.NewCommand("ls-lint-rules", builder),
