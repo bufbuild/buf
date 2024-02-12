@@ -413,7 +413,7 @@ message LiteralValue {
     uint64 uint_value = 4;
     double double_value = 5;
     bool bool_value = 6;
-    string enum_value = 7;
+    int32 enum_value = 7;
     ArrayLiteral array_value = 8;
     MessageLiteral message_value = 9;
   }
