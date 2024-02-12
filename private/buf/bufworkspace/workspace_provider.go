@@ -341,8 +341,7 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 			switch fileVersion := bufLockFile.FileVersion(); fileVersion {
 			case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
 			case bufconfig.FileVersionV2:
-			// TODO: re-enable once we fix tests
-			//return nil, errors.New("got a v2 buf.lock file for a v1 buf.yaml")
+				return nil, errors.New("got a v2 buf.lock file for a v1 buf.yaml - this is not allowed, run buf mod update to update your buf.lock file")
 			default:
 				return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 			}

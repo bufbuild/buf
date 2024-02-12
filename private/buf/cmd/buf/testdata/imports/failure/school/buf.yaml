@@ -1,4 +1,6 @@
-version: v1
-name: bufbuild.test/bufbot/school
+version: v2
+modules:
+  - name: bufbuild.test/bufbot/school
+    directory: .
 deps:
   - bufbuild.test/bufbot/students
