@@ -1,12 +1,12 @@
 version: v2
 modules:
-  - directory: ignores1
+  - path: ignores1
     lint:
       use:
         - ENUM_PASCAL_CASE
         - FIELD_LOWER_SNAKE_CASE
         - MESSAGE_PASCAL_CASE
-  - directory: ignores2
+  - path: ignores2
     lint:
       use:
         - ENUM_PASCAL_CASE
@@ -15,7 +15,7 @@ modules:
       ignore:
         - ignores2/bar2/bar2.proto
         - ignores2/foo2
-  - directory: ignores3
+  - path: ignores3
     lint:
       use:
         - ENUM_PASCAL_CASE

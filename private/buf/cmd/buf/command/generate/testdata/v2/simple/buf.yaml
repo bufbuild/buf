@@ -1,6 +1,6 @@
 version: v2
 modules:
-  - directory: .
+  - path: .
     lint:
       except:
         - PACKAGE_NO_IMPORT_CYCLE

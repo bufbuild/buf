@@ -1,4 +1,4 @@
 version: v2
 modules:
-  - directory: a
-  - directory: b
+  - path: a
+  - path: b

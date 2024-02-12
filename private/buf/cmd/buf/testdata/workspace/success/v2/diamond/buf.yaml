@@ -1,8 +1,8 @@
 version: v2
 modules:
-  - directory: other/proto
-  - directory: private/proto
-  - directory: proto
+  - path: other/proto
+  - path: private/proto
+  - path: proto
     name: bufbuild.test/workspace/first
     lint:
       except:

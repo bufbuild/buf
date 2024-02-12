@@ -1,8 +1,8 @@
 version: v2
 modules:
-  - directory: external
+  - path: external
     name: bufbuild.test/workspace/external
-  - directory: internal
+  - path: internal
     name: bufbuild.test/workspace/internal
 deps:
   - bufbuild.test/workspace/external

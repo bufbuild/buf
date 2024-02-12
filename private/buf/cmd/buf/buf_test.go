@@ -1184,7 +1184,7 @@ func TestModInitBasic(t *testing.T) {
 		t,
 		`version: v2
 modules:
-  - directory: .
+  - path: .
     lint:
       use:
         - DEFAULT

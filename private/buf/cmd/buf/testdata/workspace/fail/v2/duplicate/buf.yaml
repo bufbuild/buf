@@ -1,4 +1,4 @@
 version: v2
 modules:
-  - directory: other/proto
-  - directory: proto
+  - path: other/proto
+  - path: proto

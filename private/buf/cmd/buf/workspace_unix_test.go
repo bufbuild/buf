@@ -131,7 +131,7 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: decode testdata/workspace/fail/v2/absolute/buf.yaml: invalid module directory: /home/buf: expected to be relative`,
+		`Failure: decode testdata/workspace/fail/v2/absolute/buf.yaml: invalid module path: /home/buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "absolute"),
 	)

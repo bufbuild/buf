@@ -367,13 +367,13 @@ func readBufYAMLFile(
 		}
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalModules {
-			dirPath := externalModule.Directory
+			dirPath := externalModule.Path
 			if dirPath == "" {
 				dirPath = "."
 			}
 			dirPath, err := normalpath.NormalizeAndValidate(dirPath)
 			if err != nil {
-				return nil, fmt.Errorf("invalid module directory: %w", err)
+				return nil, fmt.Errorf("invalid module path: %w", err)
 			}
 			var moduleFullName bufmodule.ModuleFullName
 			if externalModule.Name != "" {
@@ -553,7 +553,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				return filepath.Join(moduleDirPath, importPath)
 			}
 			externalModule := externalBufYAMLFileModuleV2{
-				Directory: moduleDirPath,
+				Path: moduleDirPath,
 			}
 			if moduleFullName := moduleConfig.ModuleFullName(); moduleFullName != nil {
 				externalModule.Name = moduleFullName.String()
@@ -799,11 +799,11 @@ type externalBufYAMLFileV2 struct {
 
 // externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
 type externalBufYAMLFileModuleV2 struct {
-	Directory string                                 `json:"directory,omitempty" yaml:"directory,omitempty"`
-	Name      string                                 `json:"name,omitempty" yaml:"name,omitempty"`
-	Excludes  []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
-	Lint      externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
-	Breaking  externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Path     string                                 `json:"path,omitempty" yaml:"path,omitempty"`
+	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Excludes []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
 // externalBufYAMLFileBuildV1Beta1V1 represents build configuation within a v1 or

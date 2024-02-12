@@ -167,12 +167,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--config",
 			`version: v2
 modules:
-  - directory: a
-  - directory: other/proto
+  - path: a
+  - path: other/proto
     lint:
       use:
 	    - PACKAGE_DIRECTORY_MATCH
-  - directory: proto`,
+  - path: proto`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
@@ -1096,7 +1096,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		1,
 		``,
 		// TODO FUTURE: figure out why even on windows, the cleaned, unnormalised path is "/"-separated from decode error
-		`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module directory: ../breaking/other/proto: is outside the context directory`,
+		`Failure: decode testdata/workspace/fail/v2/jumpcontext/buf.yaml: invalid module path: ../breaking/other/proto: is outside the context directory`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "v2", "jumpcontext"),
 	)

@@ -97,7 +97,7 @@ func (m *migrator) getMigrateBuilder(
 		return nil, errors.New("no directory or file specified")
 	}
 	// Directories cannot jump context because in the migrated buf.yaml v2, each
-	// directory path cannot jump context. I.e. it's not valid to have `- directory: ..`
+	// directory path cannot jump context. I.e. it's not valid to have `- path: ..`
 	// in a buf.yaml v2.
 	workspaceDirPaths, err := slicesext.MapError(workspaceDirPaths, normalpath.NormalizeAndValidate)
 	if err != nil {
