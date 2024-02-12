@@ -1,15 +1,15 @@
 - update buf generate help documentation
-- make buf migrate do auto-search
 
 - lots of QA, especially around workspace file searching, target paths
   - Test both dashful and dashless commit IDs
   - Lots of testing around b4 and b5 digests
 - document behavior of file searching, config override
 - go through all todos
-- `buf mod init` should create a v2 buf.yaml.
 - Is `buf build` supposed to call the API when there is already a buf.lock? On the same
   directory, the released version (main) doesn't make that API call but `bufmod` calls
   `buf.registry.module.v1beta1.CommitService/GetCommitNodes`. Is it for computing digest? Or is it because the buf.lock is in v1?
+
+- Rename `buf mod` commands?
 
 - Migrate buf.work.yaml, buf.yaml and buf.lock
   - It would be nice if the bufconfig.File exposes a Path() method. Or a path() method and
