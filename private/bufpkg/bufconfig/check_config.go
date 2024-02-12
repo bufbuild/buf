@@ -15,13 +15,11 @@
 package bufconfig
 
 import (
-	"sort"
-
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
 var (
-	defaultCheckConfigV1 = NewCheckConfig(
+	defaultCheckConfigV1 = newCheckConfigNoValidate(
 		FileVersionV1,
 		nil,
 		nil,
@@ -63,13 +61,27 @@ func NewCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
-) CheckConfig {
+) (CheckConfig, error) {
 	return newCheckConfig(
 		fileVersion,
 		use,
 		except,
 		ignore,
 		ignoreOnly,
+	)
+}
+
+// NewCheckConfig returns a new CheckConfig for only the use IDs and categories.
+func NewCheckConfigForUseIDsAndCategories(
+	fileVersion FileVersion,
+	use []string,
+) CheckConfig {
+	return newCheckConfigNoValidate(
+		fileVersion,
+		slicesext.ToUniqueSorted(use),
+		nil,
+		nil,
+		nil,
 	)
 }
 
@@ -91,20 +103,41 @@ func newCheckConfig(
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
-) *checkConfig {
-	sort.Strings(use)
-	sort.Strings(except)
+) (*checkConfig, error) {
+	use = slicesext.ToUniqueSorted(use)
+	except = slicesext.ToUniqueSorted(except)
+	ignore = slicesext.ToUniqueSorted(ignore)
+	ignore, err := normalizeAndCheckPaths(ignore, "ignore")
+	if err != nil {
+		return nil, err
+	}
 	newIgnoreOnly := make(map[string][]string, len(ignoreOnly))
 	for k, v := range ignoreOnly {
 		v = slicesext.ToUniqueSorted(v)
+		v, err := normalizeAndCheckPaths(v, "ignore_only path")
+		if err != nil {
+			return nil, err
+		}
 		newIgnoreOnly[k] = v
 	}
+	ignoreOnly = newIgnoreOnly
+
+	return newCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly), nil
+}
+
+func newCheckConfigNoValidate(
+	fileVersion FileVersion,
+	use []string,
+	except []string,
+	ignore []string,
+	ignoreOnly map[string][]string,
+) *checkConfig {
 	return &checkConfig{
 		fileVersion: fileVersion,
-		use:         slicesext.ToUniqueSorted(use),
-		except:      slicesext.ToUniqueSorted(except),
-		ignore:      slicesext.ToUniqueSorted(ignore),
-		ignoreOnly:  newIgnoreOnly,
+		use:         use,
+		except:      except,
+		ignore:      ignore,
+		ignoreOnly:  ignoreOnly,
 	}
 }
 

@@ -156,12 +156,9 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 
 func newBreakingConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.BreakingConfig {
 	return bufconfig.NewBreakingConfig(
-		bufconfig.NewCheckConfig(
+		bufconfig.NewCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
 			internal.AllIDsForVersionSpec(versionSpec),
-			nil,
-			nil,
-			nil,
 		),
 		false,
 	)

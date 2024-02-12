@@ -671,13 +671,16 @@ func equivalentCheckConfigInV2(
 	)
 	// First create a check config with the exact same UseIDsAndCategories. This
 	// is a simple translation. It may or may not be equivalent to the given check config.
-	simplyTranslatedCheckConfig := bufconfig.NewCheckConfig(
+	simplyTranslatedCheckConfig, err := bufconfig.NewCheckConfig(
 		bufconfig.FileVersionV2,
 		checkConfig.UseIDsAndCategories(),
 		checkConfig.ExceptIDsAndCategories(),
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
+	if err != nil {
+		return nil, err
+	}
 	simplyTranslatedRules, err := getRulesFunc(simplyTranslatedCheckConfig)
 	if err != nil {
 		return nil, err
@@ -715,7 +718,7 @@ func equivalentCheckConfigInV2(
 		append(checkConfig.ExceptIDsAndCategories(), extraIDs...),
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
-	), nil
+	)
 }
 
 type migrateOptions struct {

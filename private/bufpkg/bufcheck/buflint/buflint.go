@@ -226,12 +226,9 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 
 func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.LintConfig {
 	return bufconfig.NewLintConfig(
-		bufconfig.NewCheckConfig(
+		bufconfig.NewCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
 			internal.AllIDsForVersionSpec(versionSpec),
-			nil,
-			nil,
-			nil,
 		),
 		"",
 		false,

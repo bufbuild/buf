@@ -1182,13 +1182,15 @@ func TestModInitBasic(t *testing.T) {
 	t.Parallel()
 	testModInit(
 		t,
-		`version: v1
-lint:
-  use:
-    - DEFAULT
-breaking:
-  use:
-    - FILE
+		`version: v2
+modules:
+  - directory: .
+    lint:
+      use:
+        - DEFAULT
+    breaking:
+      use:
+        - FILE
 `,
 		false,
 		"",

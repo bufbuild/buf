@@ -718,14 +718,18 @@ func getLintConfigForExternalLint(
 		}
 		ignoreOnly[idOrCategory] = transformedPaths
 	}
+	checkConfig, err := newCheckConfig(
+		fileVersion,
+		externalLint.Use,
+		externalLint.Except,
+		ignore,
+		ignoreOnly,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return newLintConfig(
-		newCheckConfig(
-			fileVersion,
-			externalLint.Use,
-			externalLint.Except,
-			ignore,
-			ignoreOnly,
-		),
+		checkConfig,
 		externalLint.EnumZeroValueSuffix,
 		externalLint.RPCAllowSameRequestResponse,
 		externalLint.RPCAllowGoogleProtobufEmptyRequests,
@@ -758,14 +762,18 @@ func getBreakingConfigForExternalBreaking(
 		}
 		ignoreOnly[idOrCategory] = transformedPaths
 	}
+	checkConfig, err := newCheckConfig(
+		fileVersion,
+		externalBreaking.Use,
+		externalBreaking.Except,
+		ignore,
+		ignoreOnly,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return newBreakingConfig(
-		newCheckConfig(
-			fileVersion,
-			externalBreaking.Use,
-			externalBreaking.Except,
-			ignore,
-			ignoreOnly,
-		),
+		checkConfig,
 		externalBreaking.IgnoreUnstablePackages,
 	), nil
 }
