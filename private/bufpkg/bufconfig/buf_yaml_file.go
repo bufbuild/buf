@@ -285,7 +285,6 @@ func (*bufYAMLFile) isBufYAMLFile() {}
 func (*bufYAMLFile) isFile()        {}
 func (*bufYAMLFile) isFileInfo()    {}
 
-// TODO: We need to validate all paths on ignore, excludes, etc
 func readBufYAMLFile(
 	data []byte,
 	objectData ObjectData,
@@ -320,7 +319,6 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
-		// TODO: we do no validation of paths now
 		lintConfig, err := getLintConfigForExternalLint(
 			fileVersion,
 			externalBufYAMLFile.Lint,
@@ -329,7 +327,6 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
-		// TODO: we do no validation of paths now
 		breakingConfig, err := getBreakingConfigForExternalBreaking(
 			fileVersion,
 			externalBufYAMLFile.Breaking,
@@ -425,7 +422,6 @@ func readBufYAMLFile(
 				}
 				return filepath.Rel(dirPath, pathInWorkspace)
 			}
-			// TODO: we do no validation of paths now
 			lintConfig, err := getLintConfigForExternalLint(
 				fileVersion,
 				externalModule.Lint,
@@ -434,7 +430,6 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
-			// TODO: we do no validation of paths now
 			breakingConfig, err := getBreakingConfigForExternalBreaking(
 				fileVersion,
 				externalModule.Breaking,
