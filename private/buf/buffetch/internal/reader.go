@@ -601,7 +601,6 @@ func getReadWriteBucketForOS(
 	fsRoot := absInputDirPathComponents[0]
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
 		fsRoot,
-		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
@@ -661,7 +660,6 @@ func getReadWriteBucketForOS(
 	}
 	bucket, err := storageosProvider.NewReadWriteBucket(
 		bucketPath,
-		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
@@ -718,7 +716,6 @@ func getReadBucketCloserForOSProtoFile(
 	fsRoot := absProtoFileDirPathComponents[0]
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
 		fsRoot,
-		// TODO: is this right? verify in deleted code
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
