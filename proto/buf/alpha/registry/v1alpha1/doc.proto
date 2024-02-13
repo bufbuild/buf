@@ -364,6 +364,7 @@ message Field {
   // Extendee is the name of the type that is being ext if the field is an extension.
   // This is an empty string for fields that are not extenions.
   string extendee = 9;
+
   FieldOptions field_options = 10;
 }
 
@@ -375,6 +376,58 @@ message FieldOptions {
   int32 ctype = 3;
   // jstype holds a value of the enumeration `google.protobuf.FieldOptions.JSType.
   int32 jstype = 4;
+}
+
+// FieldType indicates whether a field is a normal, an extension or an any.
+enum FieldType {
+  FIELD_TYPE_UNSPECIFIED = 0;
+  FIELD_TYPE_NORMAL = 1;
+  FIELD_TYPE_EXTENSION = 2;
+  FIELD_TYPE_ANY = 3;
+}
+
+// FieldLiteral represents a field and its value. It can be used to model descriptor options.
+message FieldLiteral {
+  // When is_extension is true, name is the fully-qualified name of the
+  // extension. Otherwise, it is the simple name of the field.
+  string name = 1;
+  // The unique field number associated with the field.
+  int32 tag = 2;
+  // Indicates whether this is an extension or not.
+  FieldType field_type = 3;
+  // The field's value.
+  LiteralValue value = 4;
+  // This is the module where the extension is defined if the field type
+  // is extension or the module where the messages is defined for field type any.
+  ImportModuleRef import_module_ref = 5;
+}
+
+// MessageLiteral represents an option value for a type that is a message.
+message MessageLiteral {
+  // Map of field names to value. Extension field names will be in the form:
+  // [fully.qualified.extension.Name].
+  repeated FieldLiteral fields = 1;
+}
+
+// ArrayLiteral represents an option value for a type that is a repeated field.
+// Maps are also represented using an ArrayLiteral, where each map entry is a MessageLiteral
+// that contains a key and value field.
+message ArrayLiteral {
+  repeated LiteralValue elements = 1;
+}
+
+// LiteralValue represents the actual value of the extension.
+message LiteralValue {
+  oneof value {
+    string string_value = 2;
+    int64 int_value = 3;
+    uint64 uint_value = 4;
+    double double_value = 5;
+    bool bool_value = 6;
+    string enum_value_name_value = 7;
+    ArrayLiteral array_value = 8;
+    MessageLiteral message_value = 9;
+  }
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
