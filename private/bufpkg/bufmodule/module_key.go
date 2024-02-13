@@ -47,7 +47,7 @@ type ModuleKey interface {
 	// Digest returns the Module digest.
 	//
 	// Note this is *not* a bufcas.Digest - this is a Digest. bufcas.Digests are a lower-level
-	// type that just deal in terms of files and content. A Moduleigest is a specific algorithm
+	// type that just deal in terms of files and content. A ModuleDigest is a specific algorithm
 	// applied to a set of files and dependencies.
 	Digest() (Digest, error)
 
