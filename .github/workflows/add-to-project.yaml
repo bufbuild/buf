@@ -1,0 +1,21 @@
+name: Add issues and PRs to project
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - transferred
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  call-workflow-add-to-project:
+    name: Call workflow to add issue to project
+    uses: bufbuild/base-workflows/.github/workflows/add-to-project.yaml@main
+    secrets: inherit
