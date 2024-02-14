@@ -201,6 +201,10 @@ message Service {
   ServiceOptions service_options = 8;
   // implicitly_deprecated is true if its enclosing file is deprecated.
   bool implicitly_deprecated = 9;
+  // All options that are present on the service. This is a super-set of
+  // service_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  repeated FieldLiteral options = 10;
 }
 
 // ServiceOptions provides information for the documentation of options for a given service.
@@ -221,6 +225,7 @@ message Method {
   MethodOptions method_options = 5;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
+  repeated FieldLiteral options = 7;
 }
 
 // MethodOptions provides information for the documentation of options for a method.
@@ -263,6 +268,8 @@ message Enum {
   EnumOptions enum_options = 8;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 9;
+
+  repeated FieldLiteral options = 10;
 }
 
 // EnumOptions provides information for the documentation of options for an enum.
@@ -281,6 +288,8 @@ message EnumValue {
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
   EnumValueOptions enum_value_options = 4;
+
+  repeated FieldLiteral options = 5;
 }
 
 // EnumValueOptions provides information for the documentation of options for an enum value.
@@ -320,6 +329,8 @@ message Message {
   MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
+
+  repeated FieldLiteral options = 12;
 }
 
 // MessageField can be either a single field or a oneof set of fields.
