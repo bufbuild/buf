@@ -375,11 +375,15 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
 		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
