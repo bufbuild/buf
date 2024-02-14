@@ -53,6 +53,9 @@ type ModuleConfig interface {
 	// For v1beta1 and v1 buf.yamls, this is always empty.
 	// For v2 buf.yamls, this is never empty.
 	//
+	// TODO FUTURE: It is really bad that we differentiate between empty and "." here. We should just
+	// redefine this so that v1beta1 and v1 always are ".". This may break things though.
+	//
 	// In v2, this will be used as the BucketID within Workspaces. For v1, it is up
 	// to the Workspace constructor to come up with a BucketID (likely the directory name
 	// within buf.work.yaml).

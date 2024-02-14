@@ -322,6 +322,8 @@ func readBufYAMLFile(
 		lintConfig, err := getLintConfigForExternalLint(
 			fileVersion,
 			externalBufYAMLFile.Lint,
+			// All paths apply to this module.
+			func(string) bool { return true },
 			normalpath.NormalizeAndValidate,
 		)
 		if err != nil {
@@ -330,6 +332,8 @@ func readBufYAMLFile(
 		breakingConfig, err := getBreakingConfigForExternalBreaking(
 			fileVersion,
 			externalBufYAMLFile.Breaking,
+			// All paths apply to this module.
+			func(string) bool { return true },
 			normalpath.NormalizeAndValidate,
 		)
 		if err != nil {
@@ -365,6 +369,9 @@ func readBufYAMLFile(
 				{},
 			}
 		}
+		// If a module does not have its own lint section, then we use this as the default.
+		defaultExternalLintConfig := externalBufYAMLFile.Lint
+		defaultExternalBreakingConfig := externalBufYAMLFile.Breaking
 		var moduleConfigs []ModuleConfig
 		for _, externalModule := range externalModules {
 			dirPath := externalModule.Path
@@ -382,28 +389,28 @@ func readBufYAMLFile(
 					return nil, err
 				}
 			}
+			// Makes sure that the given path is normalized, validated, and contained within dirPath.
+			//
+			// Used on excludes, and lint and breaking change paths.
+			//
+			// We first check that a given path is within a module before passing it to this function
+			// if the path came from defaultExternalLintConfig or defaultExternalBreakingConfig.
+			validateAndTransformPath := func(path string) (string, error) {
+				path, err := normalpath.NormalizeAndValidate(path)
+				if err != nil {
+					// user error
+					return "", fmt.Errorf("invalid path: %w", err)
+				}
+				if path == dirPath {
+					return "", fmt.Errorf("path %q is equal to module directory %q", path, dirPath)
+				}
+				if !normalpath.EqualsOrContainsPath(dirPath, path, normalpath.Relative) {
+					return "", fmt.Errorf("%q does not reside within module directory %q", path, dirPath)
+				}
+				return normalpath.Rel(dirPath, path)
+			}
 			// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
-			relExcludes, err := slicesext.MapError(
-				externalModule.Excludes,
-				func(exclude string) (string, error) {
-					exclude, err := normalpath.NormalizeAndValidate(exclude)
-					if err != nil {
-						// user error
-						return "", fmt.Errorf("invalid exclude: %w", err)
-					}
-					if exclude == dirPath {
-						return "", fmt.Errorf("exclude %q is equal to module directory %q", exclude, dirPath)
-					}
-					if !normalpath.EqualsOrContainsPath(dirPath, exclude, normalpath.Relative) {
-						return "", fmt.Errorf("exclude %q does not reside within module directory %q", exclude, dirPath)
-					}
-					relExclude, err := normalpath.Rel(dirPath, exclude)
-					if err != nil {
-						return "", err
-					}
-					return relExclude, nil
-				},
-			)
+			relExcludes, err := slicesext.MapError(externalModule.Excludes, validateAndTransformPath)
 			if err != nil {
 				return nil, err
 			}
@@ -411,28 +418,30 @@ func readBufYAMLFile(
 			if err != nil {
 				return nil, err
 			}
-			validateAndTransformPath := func(pathInWorkspace string) (string, error) {
-				pathInWorkspace, err := normalpath.NormalizeAndValidate(pathInWorkspace)
-				if err != nil {
-					// user error
-					return "", fmt.Errorf("invalid path: %w", err)
-				}
-				if !normalpath.EqualsOrContainsPath(dirPath, pathInWorkspace, normalpath.Relative) {
-					return "", fmt.Errorf("%q does not reside within module directory %q", pathInWorkspace, dirPath)
-				}
-				return filepath.Rel(dirPath, pathInWorkspace)
+			externalLintConfig := defaultExternalLintConfig
+			if !externalModule.Lint.isEmpty() {
+				externalLintConfig = externalModule.Lint
 			}
+			// TODO: just ignore paths that don't apply to the module
 			lintConfig, err := getLintConfigForExternalLint(
 				fileVersion,
-				externalModule.Lint,
+				externalLintConfig,
+				func(path string) bool {
+
+				}
 				validateAndTransformPath,
 			)
 			if err != nil {
 				return nil, err
 			}
+			externalBreakingConfig := defaultExternalBreakingConfig
+			if !externalModule.Breaking.isEmpty() {
+				externalBreakingConfig = externalModule.Breaking
+			}
+			// TODO: just ignore paths that don't apply to the module
 			breakingConfig, err := getBreakingConfigForExternalBreaking(
 				fileVersion,
-				externalModule.Breaking,
+				externalBreakingConfig,
 				validateAndTransformPath,
 			)
 			if err != nil {
@@ -512,24 +521,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				}
 			}
 		}
-		// All already sorted.
-		lintConfig := moduleConfig.LintConfig()
-		externalBufYAMLFile.Lint.Use = lintConfig.UseIDsAndCategories()
-		externalBufYAMLFile.Lint.Except = lintConfig.ExceptIDsAndCategories()
-		externalBufYAMLFile.Lint.Ignore = lintConfig.IgnorePaths()
-		externalBufYAMLFile.Lint.IgnoreOnly = lintConfig.IgnoreIDOrCategoryToPaths()
-		externalBufYAMLFile.Lint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
-		externalBufYAMLFile.Lint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
-		externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
-		externalBufYAMLFile.Lint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
-		externalBufYAMLFile.Lint.ServiceSuffix = lintConfig.ServiceSuffix()
-		externalBufYAMLFile.Lint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
-		breakingConfig := moduleConfig.BreakingConfig()
-		externalBufYAMLFile.Breaking.Use = breakingConfig.UseIDsAndCategories()
-		externalBufYAMLFile.Breaking.Except = breakingConfig.ExceptIDsAndCategories()
-		externalBufYAMLFile.Breaking.Ignore = breakingConfig.IgnorePaths()
-		externalBufYAMLFile.Breaking.IgnoreOnly = breakingConfig.IgnoreIDOrCategoryToPaths()
-		externalBufYAMLFile.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+		externalBufYAMLFile.Lint = getExternalLintForLintConfig(moduleConfig.LintConfig(), ".")
+		externalBufYAMLFile.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), ".")
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
 			return err
@@ -567,30 +560,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
 			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
-			// All already sorted.
-			lintConfig := moduleConfig.LintConfig()
-			externalModule.Lint.Use = lintConfig.UseIDsAndCategories()
-			externalModule.Lint.Except = lintConfig.ExceptIDsAndCategories()
-			externalModule.Lint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
-			externalModule.Lint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
-			for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
-				externalModule.Lint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
-			}
-			externalModule.Lint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
-			externalModule.Lint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
-			externalModule.Lint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
-			externalModule.Lint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
-			externalModule.Lint.ServiceSuffix = lintConfig.ServiceSuffix()
-			externalModule.Lint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
-			breakingConfig := moduleConfig.BreakingConfig()
-			externalModule.Breaking.Use = breakingConfig.UseIDsAndCategories()
-			externalModule.Breaking.Except = breakingConfig.ExceptIDsAndCategories()
-			externalModule.Breaking.Ignore = slicesext.Map(breakingConfig.IgnorePaths(), joinDirPath)
-			externalModule.Breaking.IgnoreOnly = make(map[string][]string, len(breakingConfig.IgnoreIDOrCategoryToPaths()))
-			for idOrCategory, importPaths := range breakingConfig.IgnoreIDOrCategoryToPaths() {
-				externalModule.Breaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
-			}
-			externalModule.Breaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+			externalModule.Lint = getExternalLintForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
+			externalModule.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), moduleDirPath)
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
@@ -693,6 +664,8 @@ func getConfiguredDepModuleRefsForExternalDeps(
 func getLintConfigForExternalLint(
 	fileVersion FileVersion,
 	externalLint externalBufYAMLFileLintV1Beta1V1V2,
+	// returns true if the path applies to this module's lint configuration
+	pathAppliesFunc func(string) bool,
 	pathTransformFunc func(string) (string, error),
 ) (LintConfig, error) {
 	ignore, err := slicesext.MapError(
@@ -737,6 +710,8 @@ func getLintConfigForExternalLint(
 func getBreakingConfigForExternalBreaking(
 	fileVersion FileVersion,
 	externalBreaking externalBufYAMLFileBreakingV1Beta1V1V2,
+	// returns true if the path applies to this module's breaking configuration
+	pathAppliesFunc func(string) bool,
 	pathTransformFunc func(string) (string, error),
 ) (BreakingConfig, error) {
 	ignore, err := slicesext.MapError(
@@ -773,6 +748,47 @@ func getBreakingConfigForExternalBreaking(
 	), nil
 }
 
+func getExternalLintForLintConfig(lintConfig LintConfig, moduleDirPath string) externalBufYAMLFileLintV1Beta1V1V2 {
+	joinDirPath := func(importPath string) string {
+		return normalpath.Join(moduleDirPath, importPath)
+	}
+	externalLint := externalBufYAMLFileLintV1Beta1V1V2{}
+	// All already sorted.
+	externalLint.Use = lintConfig.UseIDsAndCategories()
+	externalLint.Except = lintConfig.ExceptIDsAndCategories()
+	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
+	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
+		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+	}
+	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
+	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
+	externalLint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
+	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
+	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
+	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+	return externalLint
+
+}
+
+func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleDirPath string) externalBufYAMLFileBreakingV1Beta1V1V2 {
+	joinDirPath := func(importPath string) string {
+		return normalpath.Join(moduleDirPath, importPath)
+	}
+	externalBreaking := externalBufYAMLFileBreakingV1Beta1V1V2{}
+	// All already sorted.
+	externalBreaking.Use = breakingConfig.UseIDsAndCategories()
+	externalBreaking.Except = breakingConfig.ExceptIDsAndCategories()
+	externalBreaking.Ignore = slicesext.Map(breakingConfig.IgnorePaths(), joinDirPath)
+	externalBreaking.IgnoreOnly = make(map[string][]string, len(breakingConfig.IgnoreIDOrCategoryToPaths()))
+	for idOrCategory, importPaths := range breakingConfig.IgnoreIDOrCategoryToPaths() {
+		externalBreaking.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+	}
+	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
+	return externalBreaking
+
+}
+
 // externalBufYAMLFileV1Beta1V1 represents the v1 or v1beta1 buf.yaml file, which have
 // the same shape EXCEPT build.roots.
 //
@@ -792,9 +808,11 @@ type externalBufYAMLFileV1Beta1V1 struct {
 // Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
 type externalBufYAMLFileV2 struct {
-	Version string                        `json:"version,omitempty" yaml:"version,omitempty"`
-	Modules []externalBufYAMLFileModuleV2 `json:"modules,omitempty" yaml:"modules,omitempty"`
-	Deps    []string                      `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Version  string                                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Modules  []externalBufYAMLFileModuleV2          `json:"modules,omitempty" yaml:"modules,omitempty"`
+	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
 // externalBufYAMLFileModuleV2 represents a single module configuation within a v2 buf.yaml file.
@@ -834,6 +852,19 @@ type externalBufYAMLFileLintV1Beta1V1V2 struct {
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
 }
 
+func (el externalBufYAMLFileLintV1Beta1V1V2) isEmpty() bool {
+	return len(el.Use) == 0 &&
+		len(el.Except) == 0 &&
+		len(el.Ignore) == 0 &&
+		len(el.IgnoreOnly) == 0 &&
+		el.EnumZeroValueSuffix == "" &&
+		!el.RPCAllowSameRequestResponse &&
+		!el.RPCAllowGoogleProtobufEmptyRequests &&
+		!el.RPCAllowGoogleProtobufEmptyResponses &&
+		el.ServiceSuffix == "" &&
+		!el.AllowCommentIgnores
+}
+
 // externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,
 // or v2 buf.yaml file, which have the same shape.
 //
@@ -847,4 +878,12 @@ type externalBufYAMLFileBreakingV1Beta1V1V2 struct {
 	/// IgnoreOnly are the ID/category to paths to ignore.
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+}
+
+func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
+	return len(eb.Use) == 0 &&
+		len(eb.Except) == 0 &&
+		len(eb.Ignore) == 0 &&
+		len(eb.IgnoreOnly) == 0 &&
+		!eb.IgnoreUnstablePackages
 }
