@@ -268,7 +268,9 @@ message Enum {
   EnumOptions enum_options = 8;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 9;
-
+  // All options that are present on the enum. This is a super-set of
+  // enum_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
   repeated FieldLiteral options = 10;
 }
 
@@ -329,7 +331,9 @@ message Message {
   MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
-
+  // All options that are present on the message. This is a super-set of
+  // message_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
   repeated FieldLiteral options = 12;
 }
 

@@ -1498,8 +1498,11 @@ type Enum struct {
 	Values      []*EnumValue `protobuf:"bytes,7,rep,name=values,proto3" json:"values,omitempty"`
 	EnumOptions *EnumOptions `protobuf:"bytes,8,opt,name=enum_options,json=enumOptions,proto3" json:"enum_options,omitempty"`
 	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
-	ImplicitlyDeprecated bool            `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	Options              []*FieldLiteral `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
+	ImplicitlyDeprecated bool `protobuf:"varint,9,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the enum. This is a super-set of
+	// enum_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	Options []*FieldLiteral `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *Enum) Reset() {
@@ -1898,8 +1901,11 @@ type Message struct {
 	MessageExtensions []*Field        `protobuf:"bytes,9,rep,name=message_extensions,json=messageExtensions,proto3" json:"message_extensions,omitempty"`
 	MessageOptions    *MessageOptions `protobuf:"bytes,10,opt,name=message_options,json=messageOptions,proto3" json:"message_options,omitempty"`
 	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
-	ImplicitlyDeprecated bool            `protobuf:"varint,11,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	Options              []*FieldLiteral `protobuf:"bytes,12,rep,name=options,proto3" json:"options,omitempty"`
+	ImplicitlyDeprecated bool `protobuf:"varint,11,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the message. This is a super-set of
+	// message_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	Options []*FieldLiteral `protobuf:"bytes,12,rep,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *Message) Reset() {
