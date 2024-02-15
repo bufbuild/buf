@@ -44,19 +44,19 @@ type ModuleData interface {
 	// DeclaredDepModuleKeys returns the declared dependencies for this specific Module.
 	DeclaredDepModuleKeys() ([]ModuleKey, error)
 
-	// BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
+	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
 	//
 	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
 	// synthesize a value for v2 buf.yamls.
 	//
-	// This is used for digest calcuations. It is not used otherwise.
+	// This is used for digest calculations. It is not used otherwise.
 	V1Beta1OrV1BufYAMLObjectData() (ObjectData, error)
-	// BufYAMLObjectData gets the v1beta1 or v1 buf.lock ObjectData.
+	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.lock ObjectData.
 	//
 	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
 	// synthesize a value for v2 buf.yamls.
 	//
-	// This is used for digest calcuations. It is not used otherwise.
+	// This is used for digest calculations. It is not used otherwise.
 	V1Beta1OrV1BufLockObjectData() (ObjectData, error)
 
 	isModuleData()
