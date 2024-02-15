@@ -322,9 +322,7 @@ func readBufYAMLFile(
 		lintConfig, err := getLintConfigForExternalLint(
 			fileVersion,
 			externalBufYAMLFile.Lint,
-			// All paths apply to this module.
-			func(string) bool { return true },
-			normalpath.NormalizeAndValidate,
+			".",
 		)
 		if err != nil {
 			return nil, err
@@ -332,9 +330,7 @@ func readBufYAMLFile(
 		breakingConfig, err := getBreakingConfigForExternalBreaking(
 			fileVersion,
 			externalBufYAMLFile.Breaking,
-			// All paths apply to this module.
-			func(string) bool { return true },
-			normalpath.NormalizeAndValidate,
+			".",
 		)
 		if err != nil {
 			return nil, err
@@ -395,22 +391,24 @@ func readBufYAMLFile(
 			//
 			// We first check that a given path is within a module before passing it to this function
 			// if the path came from defaultExternalLintConfig or defaultExternalBreakingConfig.
-			validateAndTransformPath := func(path string) (string, error) {
-				path, err := normalpath.NormalizeAndValidate(path)
-				if err != nil {
-					// user error
-					return "", fmt.Errorf("invalid path: %w", err)
-				}
-				if path == dirPath {
-					return "", fmt.Errorf("path %q is equal to module directory %q", path, dirPath)
-				}
-				if !normalpath.EqualsOrContainsPath(dirPath, path, normalpath.Relative) {
-					return "", fmt.Errorf("%q does not reside within module directory %q", path, dirPath)
-				}
-				return normalpath.Rel(dirPath, path)
-			}
 			// The only root for v2 buf.yamls must be ".", so we have to make the excludes relative first.
-			relExcludes, err := slicesext.MapError(externalModule.Excludes, validateAndTransformPath)
+			relExcludes, err := slicesext.MapError(
+				externalModule.Excludes,
+				func(path string) (string, error) {
+					path, err := normalpath.NormalizeAndValidate(path)
+					if err != nil {
+						// user error
+						return "", fmt.Errorf("invalid exclude path: %w", err)
+					}
+					if path == dirPath {
+						return "", fmt.Errorf("exclude path %q is equal to module directory %q", path, dirPath)
+					}
+					if !normalpath.EqualsOrContainsPath(dirPath, path, normalpath.Relative) {
+						return "", fmt.Errorf("exclude path %q does not reside within module directory %q", path, dirPath)
+					}
+					return normalpath.Rel(dirPath, path)
+				},
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -422,14 +420,10 @@ func readBufYAMLFile(
 			if !externalModule.Lint.isEmpty() {
 				externalLintConfig = externalModule.Lint
 			}
-			// TODO: just ignore paths that don't apply to the module
 			lintConfig, err := getLintConfigForExternalLint(
 				fileVersion,
 				externalLintConfig,
-				func(path string) bool {
-
-				}
-				validateAndTransformPath,
+				dirPath,
 			)
 			if err != nil {
 				return nil, err
@@ -438,11 +432,10 @@ func readBufYAMLFile(
 			if !externalModule.Breaking.isEmpty() {
 				externalBreakingConfig = externalModule.Breaking
 			}
-			// TODO: just ignore paths that don't apply to the module
 			breakingConfig, err := getBreakingConfigForExternalBreaking(
 				fileVersion,
 				externalBreakingConfig,
-				validateAndTransformPath,
+				dirPath,
 			)
 			if err != nil {
 				return nil, err
@@ -664,27 +657,21 @@ func getConfiguredDepModuleRefsForExternalDeps(
 func getLintConfigForExternalLint(
 	fileVersion FileVersion,
 	externalLint externalBufYAMLFileLintV1Beta1V1V2,
-	// returns true if the path applies to this module's lint configuration
-	pathAppliesFunc func(string) bool,
-	pathTransformFunc func(string) (string, error),
+	moduleDirPath string,
 ) (LintConfig, error) {
-	ignore, err := slicesext.MapError(
-		externalLint.Ignore,
-		pathTransformFunc,
-	)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
-	for idOrCategory, specifiedPaths := range externalLint.IgnoreOnly {
-		transformedPaths, err := slicesext.MapError(
-			specifiedPaths,
-			pathTransformFunc,
-		)
+	for idOrCategory, paths := range externalLint.IgnoreOnly {
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath)
 		if err != nil {
 			return nil, err
 		}
-		ignoreOnly[idOrCategory] = transformedPaths
+		if len(relPaths) > 0 {
+			ignoreOnly[idOrCategory] = relPaths
+		}
 	}
 	checkConfig, err := newCheckConfig(
 		fileVersion,
@@ -710,27 +697,21 @@ func getLintConfigForExternalLint(
 func getBreakingConfigForExternalBreaking(
 	fileVersion FileVersion,
 	externalBreaking externalBufYAMLFileBreakingV1Beta1V1V2,
-	// returns true if the path applies to this module's breaking configuration
-	pathAppliesFunc func(string) bool,
-	pathTransformFunc func(string) (string, error),
+	moduleDirPath string,
 ) (BreakingConfig, error) {
-	ignore, err := slicesext.MapError(
-		externalBreaking.Ignore,
-		pathTransformFunc,
-	)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalBreaking.Ignore, moduleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
-	for idOrCategory, specifiedPaths := range externalBreaking.IgnoreOnly {
-		transformedPaths, err := slicesext.MapError(
-			specifiedPaths,
-			pathTransformFunc,
-		)
+	for idOrCategory, paths := range externalBreaking.IgnoreOnly {
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath)
 		if err != nil {
 			return nil, err
 		}
-		ignoreOnly[idOrCategory] = transformedPaths
+		if len(relPaths) > 0 {
+			ignoreOnly[idOrCategory] = relPaths
+		}
 	}
 	checkConfig, err := newCheckConfig(
 		fileVersion,
@@ -746,6 +727,39 @@ func getBreakingConfigForExternalBreaking(
 		checkConfig,
 		externalBreaking.IgnoreUnstablePackages,
 	), nil
+}
+
+// getRelPathsForLintOrBreakingExternalPaths performs the following operation for either
+// getLintConfigForExternalLint or getBreakingConfigForExternalBreaking:
+//
+//   - Normalized and validates the path. If the path is invalid, returns error.
+//   - Checks to make sure the path is not equal to the given module directory path. If so, returns error.
+//   - If the path is not contained within the module directory path, the path is not added to the
+//     returned slice. This can happen when we are transforming a path from the default workspace-wide lint
+//     or breaking config. We want to skip these paths.
+//   - Otherwise, adds the path relative to the given module directory path to the returned slice.
+func getRelPathsForLintOrBreakingExternalPaths(paths []string, moduleDirPath string) ([]string, error) {
+	relPaths := make([]string, 0, len(paths))
+	for _, path := range paths {
+		path, err := normalpath.NormalizeAndValidate(path)
+		if err != nil {
+			// user error
+			return nil, fmt.Errorf("invalid path: %w", err)
+		}
+		if path == moduleDirPath {
+			// user error
+			return nil, fmt.Errorf("path %q is equal to module directory %q", path, moduleDirPath)
+		}
+		if !normalpath.EqualsOrContainsPath(moduleDirPath, path, normalpath.Relative) {
+			continue
+		}
+		relPath, err := normalpath.Rel(moduleDirPath, path)
+		if err != nil {
+			return nil, err
+		}
+		relPaths = append(relPaths, relPath)
+	}
+	return relPaths, nil
 }
 
 func getExternalLintForLintConfig(lintConfig LintConfig, moduleDirPath string) externalBufYAMLFileLintV1Beta1V1V2 {
