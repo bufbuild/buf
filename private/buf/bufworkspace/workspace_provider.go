@@ -375,11 +375,15 @@ func (w *workspaceProvider) getWorkspaceForBucketAndModuleDirPathsV1Beta1OrV1(
 		}
 		v1BufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
 		v1BufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, moduleDirPath)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
 		moduleSetBuilder.AddLocalModule(
 			mappedModuleBucket,
@@ -432,19 +436,15 @@ func (w *workspaceProvider) getWorkspaceForBucketBufYAMLV2(
 	var err error
 	if overrideBufYAMLFile != nil {
 		bufYAMLFile = overrideBufYAMLFile
-		// We don't want to have ObjectData for a --config override.
-		// TODO: What happened when you specified a --config pre-refactor with tamper-proofing? We might
-		// have actually still used the buf.yaml for tamper-proofing, if so, we need to attempt to read it
-		// regardless of whether override was specified.
 	} else {
 		bufYAMLFile, err = bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, ".")
 		if err != nil {
 			// This should be apparent from above functions.
 			return nil, syserror.Newf("error getting v2 buf.yaml: %w", err)
 		}
-		if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
-			return nil, syserror.Newf("expected v2 buf.yaml but got %v", bufYAMLFile.FileVersion())
-		}
+	}
+	if bufYAMLFile.FileVersion() != bufconfig.FileVersionV2 {
+		return nil, syserror.Newf("expected v2 buf.yaml but got %v", bufYAMLFile.FileVersion())
 	}
 
 	// config.targetSubDirPath is the input targetSubDirPath. We only want to target modules that are inside

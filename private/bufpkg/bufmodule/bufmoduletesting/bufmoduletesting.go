@@ -444,11 +444,15 @@ func addModuleDataToModuleSetBuilder(
 		ctx := context.Background()
 		bufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
 		if err != nil {
-			return err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
 		}
 		bufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
 		if err != nil {
-			return err
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
 		}
 		localModuleOptions = append(
 			localModuleOptions,

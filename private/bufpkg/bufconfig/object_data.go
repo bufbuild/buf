@@ -44,7 +44,7 @@ type ObjectData interface {
 // the given bucket prefix, if the buf.yaml file was v1beta1 or v1.
 //
 // The file is only parsed for its file version. No additional validation is performed.
-// If the file does not exist, nil is returned. This is as opposed to other functions that return fs.ErrNotExist.
+// If the file does not exist, an error that satisfies fs.ErrNotExist is returned.
 //
 // This function is used to help optionally get ObjectData where it is needed for digest calculations.
 func GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(
@@ -59,7 +59,7 @@ func GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(
 // the given bucket prefix, if the buf.lock file was v1beta1 or v1.
 //
 // The file is only parsed for its file version. No additional validation is performed.
-// If the file does not exist, nil is returned. This is as opposed to other functions that return fs.ErrNotExist.
+// If the file does not exist, an error that satisfies fs.ErrNotExist is returned.
 //
 // This function is used to help optionally get ObjectData where it is needed for digest calculations.
 func GetBufLockV1Beta1OrV1ObjectDataForPrefix(
@@ -101,6 +101,9 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 	fileNames []string,
 	fileNameToSupportedFileVersions map[string]map[FileVersion]struct{},
 ) (ObjectData, error) {
+	if len(fileNames) == 0 {
+		return nil, syserror.New("expected at least one file name for getV1Beta1OrV1ObjectDataForPrefix")
+	}
 	for _, fileName := range fileNames {
 		path := normalpath.Join(prefix, fileName)
 		data, err := storage.ReadPath(ctx, bucket, path)
@@ -137,5 +140,5 @@ func getV1Beta1OrV1ObjectDataForPrefix(
 			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
 		}
 	}
-	return nil, nil
+	return nil, &fs.PathError{Op: "read", Path: normalpath.Join(prefix, fileNames[0]), Err: fs.ErrNotExist}
 }
