@@ -184,7 +184,7 @@ func testReadWriteBufYAMLFileRoundTrip(
 	if err != nil {
 		return
 	}
-	outputBufYAMLData := testCleanYAMLData(string(buffer.Bytes()))
+	outputBufYAMLData := testCleanYAMLData(buffer.String())
 	assert.Equal(t, expectedOutputBufYAMLFileData, outputBufYAMLData, "output:\n%s", outputBufYAMLData)
 }
 

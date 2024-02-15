@@ -1185,12 +1185,12 @@ func TestModInitBasic(t *testing.T) {
 		`version: v2
 modules:
   - path: .
-    lint:
-      use:
-        - DEFAULT
-    breaking:
-      use:
-        - FILE
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
 `,
 		false,
 		"",
