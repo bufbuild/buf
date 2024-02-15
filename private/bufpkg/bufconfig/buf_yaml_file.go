@@ -323,6 +323,7 @@ func readBufYAMLFile(
 			fileVersion,
 			externalBufYAMLFile.Lint,
 			".",
+			true,
 		)
 		if err != nil {
 			return nil, err
@@ -331,6 +332,7 @@ func readBufYAMLFile(
 			fileVersion,
 			externalBufYAMLFile.Breaking,
 			".",
+			true,
 		)
 		if err != nil {
 			return nil, err
@@ -417,25 +419,33 @@ func readBufYAMLFile(
 				return nil, err
 			}
 			externalLintConfig := defaultExternalLintConfig
+			lintRequirePathsToBeContainedWithinModuleDirPath := false
 			if !externalModule.Lint.isEmpty() {
 				externalLintConfig = externalModule.Lint
+				// We have a module-specific configuration, all paths must be within the module.
+				lintRequirePathsToBeContainedWithinModuleDirPath = true
 			}
 			lintConfig, err := getLintConfigForExternalLint(
 				fileVersion,
 				externalLintConfig,
 				dirPath,
+				lintRequirePathsToBeContainedWithinModuleDirPath,
 			)
 			if err != nil {
 				return nil, err
 			}
 			externalBreakingConfig := defaultExternalBreakingConfig
+			breakingRequirePathsToBeContainedWithinModuleDirPath := false
 			if !externalModule.Breaking.isEmpty() {
 				externalBreakingConfig = externalModule.Breaking
+				// We have a module-specific configuration, all paths must be within the module.
+				breakingRequirePathsToBeContainedWithinModuleDirPath = true
 			}
 			breakingConfig, err := getBreakingConfigForExternalBreaking(
 				fileVersion,
 				externalBreakingConfig,
 				dirPath,
+				breakingRequirePathsToBeContainedWithinModuleDirPath,
 			)
 			if err != nil {
 				return nil, err
@@ -658,14 +668,15 @@ func getLintConfigForExternalLint(
 	fileVersion FileVersion,
 	externalLint externalBufYAMLFileLintV1Beta1V1V2,
 	moduleDirPath string,
+	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
 	for idOrCategory, paths := range externalLint.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath)
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
@@ -698,14 +709,15 @@ func getBreakingConfigForExternalBreaking(
 	fileVersion FileVersion,
 	externalBreaking externalBufYAMLFileBreakingV1Beta1V1V2,
 	moduleDirPath string,
+	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (BreakingConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalBreaking.Ignore, moduleDirPath)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalBreaking.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
 	for idOrCategory, paths := range externalBreaking.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath)
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
@@ -735,10 +747,15 @@ func getBreakingConfigForExternalBreaking(
 //   - Normalized and validates the path. If the path is invalid, returns error.
 //   - Checks to make sure the path is not equal to the given module directory path. If so, returns error.
 //   - If the path is not contained within the module directory path, the path is not added to the
-//     returned slice. This can happen when we are transforming a path from the default workspace-wide lint
-//     or breaking config. We want to skip these paths.
+//     returned slice if requirePathsToBeContainedWithinModuleDirPath is false. This can happen when we
+//     are transforming a path from the default workspace-wide lint or breaking config. We want to skip these paths.
+//     If requirePathsToBeContainedWithinModuleDirPath is true, return error.
 //   - Otherwise, adds the path relative to the given module directory path to the returned slice.
-func getRelPathsForLintOrBreakingExternalPaths(paths []string, moduleDirPath string) ([]string, error) {
+func getRelPathsForLintOrBreakingExternalPaths(
+	paths []string,
+	moduleDirPath string,
+	requirePathsToBeContainedWithinModuleDirPath bool,
+) ([]string, error) {
 	relPaths := make([]string, 0, len(paths))
 	for _, path := range paths {
 		path, err := normalpath.NormalizeAndValidate(path)
@@ -751,7 +768,10 @@ func getRelPathsForLintOrBreakingExternalPaths(paths []string, moduleDirPath str
 			return nil, fmt.Errorf("path %q is equal to module directory %q", path, moduleDirPath)
 		}
 		if !normalpath.EqualsOrContainsPath(moduleDirPath, path, normalpath.Relative) {
-			continue
+			if !requirePathsToBeContainedWithinModuleDirPath {
+				continue
+			}
+			return nil, fmt.Errorf("path %q is not contained within module directory %q", path, moduleDirPath)
 		}
 		relPath, err := normalpath.Rel(moduleDirPath, path)
 		if err != nil {
