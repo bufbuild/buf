@@ -477,6 +477,9 @@ func (m *migrator) getCommitIDToCommit(
 	return commitIDToCommit, nil
 }
 
+// TODO: remove once we use this
+var _ = (*migrator).upgradeModuleKeysToB5
+
 func (m *migrator) upgradeModuleKeysToB5(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
@@ -719,12 +722,4 @@ func equivalentCheckConfigInV2(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
-}
-
-type migrateOptions struct {
-	dryRun bool
-}
-
-func newMigrateOptions() *migrateOptions {
-	return &migrateOptions{}
 }

@@ -782,7 +782,6 @@ func getExternalLintForLintConfig(lintConfig LintConfig, moduleDirPath string) e
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
 	return externalLint
-
 }
 
 func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleDirPath string) externalBufYAMLFileBreakingV1Beta1V1V2 {
@@ -800,7 +799,6 @@ func getExternalBreakingForBreakingConfig(breakingConfig BreakingConfig, moduleD
 	}
 	externalBreaking.IgnoreUnstablePackages = breakingConfig.IgnoreUnstablePackages()
 	return externalBreaking
-
 }
 
 // externalBufYAMLFileV1Beta1V1 represents the v1 or v1beta1 buf.yaml file, which have
