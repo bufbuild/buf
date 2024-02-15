@@ -225,6 +225,9 @@ message Method {
   MethodOptions method_options = 5;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
+  // All options that are present on the method. This is a super-set of
+  // method_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
   repeated FieldLiteral options = 7;
 }
 
@@ -290,7 +293,9 @@ message EnumValue {
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
   EnumValueOptions enum_value_options = 4;
-
+  // All options that are present on the enum. This is a super-set of
+  // enum_value_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
   repeated FieldLiteral options = 5;
 }
 

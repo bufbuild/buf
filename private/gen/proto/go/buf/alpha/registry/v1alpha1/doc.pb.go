@@ -1249,8 +1249,11 @@ type Method struct {
 	Response      *MethodRequestResponse `protobuf:"bytes,4,opt,name=response,proto3" json:"response,omitempty"`
 	MethodOptions *MethodOptions         `protobuf:"bytes,5,opt,name=method_options,json=methodOptions,proto3" json:"method_options,omitempty"`
 	// implicitly_deprecated is true if its enclosing file or parent element is deprecated.
-	ImplicitlyDeprecated bool            `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
-	Options              []*FieldLiteral `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
+	ImplicitlyDeprecated bool `protobuf:"varint,6,opt,name=implicitly_deprecated,json=implicitlyDeprecated,proto3" json:"implicitly_deprecated,omitempty"`
+	// All options that are present on the method. This is a super-set of
+	// method_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	Options []*FieldLiteral `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *Method) Reset() {
@@ -1677,7 +1680,10 @@ type EnumValue struct {
 	// Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
 	Description      string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	EnumValueOptions *EnumValueOptions `protobuf:"bytes,4,opt,name=enum_value_options,json=enumValueOptions,proto3" json:"enum_value_options,omitempty"`
-	Options          []*FieldLiteral   `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
+	// All options that are present on the enum. This is a super-set of
+	// enum_value_options and uses a dynamic representation so it can also
+	// accommodate custom options with arbitrary types.
+	Options []*FieldLiteral `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *EnumValue) Reset() {
