@@ -25,17 +25,22 @@ import (
 
 // TODO(doria): we need to add the following info:
 // BufWorkYAMLDirPaths (for v1 vs. v2 workspaces)
+// Document that everything here is relative paths
 
 // BucketTargeting provides the path to the controllng workspace, target paths, and target
 // exclude paths mapped to the bucket.
 type BucketTargeting interface {
-	// ControllingWorkspace returns the mapped path for the controlling workspace.
-	ControllingWorkspace() string
-	// TargetPaths returns the target paths mapped to the bucket.
+	// ControllingWorkspace returns the path for the controlling workspace relative to the root of the bucket.
+	ControllingWorkspacePath() string
+	// InputPath returns the input path relative to the root fo the bucket
+	// TODO(doria): should the input path be treated differently from all other target paths?
+	InputPath() string
+	// TargetPaths returns the target paths relative to the root of the bucket.
 	TargetPaths() []string
-	// TargetExcludePaths returns the target exclude paths mapped to the bucket.
+	// TargetExcludePaths returns the target exclude paths relative to the root of the bucket.
 	TargetExcludePaths() []string
 	// Terminated returns whether the controlling workspace was found through the terminateFunc.
+	// TODO(doria): should be be able to kill this.
 	Terminated() bool
 
 	isBucketTargeting()
@@ -44,13 +49,13 @@ type BucketTargeting interface {
 func NewBucketTargeting(
 	ctx context.Context,
 	logger *zap.Logger,
-	inputBucket storage.ReadBucket,
-	inputSubDirPath string,
+	bucket storage.ReadBucket,
+	inputPath string,
 	targetPaths []string,
 	targetExcludePaths []string,
 	terminateFunc TerminateFunc, // TODO(doria): move that out of buffetch
 ) (BucketTargeting, error) {
-	return newBucketTargeting(ctx, logger, inputBucket, inputSubDirPath, targetPaths, targetExcludePaths, terminateFunc)
+	return newBucketTargeting(ctx, logger, bucket, inputPath, targetPaths, targetExcludePaths, terminateFunc)
 }
 
 // *** PRIVATE ***
@@ -60,14 +65,19 @@ var (
 )
 
 type bucketTargeting struct {
-	controllingWorkspace string
-	targetPaths          []string
-	targetExcludePaths   []string
-	terminated           bool
+	controllingWorkspacePath string
+	inputPath                string
+	targetPaths              []string
+	targetExcludePaths       []string
+	terminated               bool
 }
 
-func (b *bucketTargeting) ControllingWorkspace() string {
-	return b.controllingWorkspace
+func (b *bucketTargeting) ControllingWorkspacePath() string {
+	return b.controllingWorkspacePath
+}
+
+func (b *bucketTargeting) InputPath() string {
+	return b.inputPath
 }
 
 func (b *bucketTargeting) TargetPaths() []string {
@@ -88,63 +98,63 @@ func (b *bucketTargeting) isBucketTargeting() {
 func newBucketTargeting(
 	ctx context.Context,
 	logger *zap.Logger,
-	inputBucket storage.ReadBucket,
+	bucket storage.ReadBucket,
 	inputPath string,
 	targetPaths []string,
 	targetExcludePaths []string,
 	terminateFunc TerminateFunc,
 ) (*bucketTargeting, error) {
 	// First we map the controlling workspace for the inputPath.
-	controllingWorkspace, mappedInputPath, terminated, err := mapControllingWorkspaceAndPath(
+	controllingWorkspacePath, mappedInputPath, terminated, err := mapControllingWorkspaceAndPath(
 		ctx,
 		logger,
-		inputBucket,
+		bucket,
 		inputPath,
 		terminateFunc,
 	)
 	if err != nil {
 		return nil, err
 	}
-	// The input path should not be treated differently from just a normal target path.
-	mappedTargetPaths := []string{mappedInputPath}
+	mappedTargetPaths := make([]string, len(targetPaths))
 	// Then we do the same for each target path. If the target paths resolve to different
 	// controlling workspaces, then we return an error.
 	// We currently do not compile nested workspaces, but this algorithm lets us potentially
 	// handle nested workspaces in the future.
 	// TODO(doria): this shouldn't have a big impact on performance, right?
 	// TODO(doria): do we need to handle that there was a termination through the paths? maybe.
-	for _, targetPath := range targetPaths {
-		controllingWorkspaceForPath, mappedPath, _, err := mapControllingWorkspaceAndPath(
+	for i, targetPath := range targetPaths {
+		controllingWorkspacePathForTargetPath, mappedPath, _, err := mapControllingWorkspaceAndPath(
 			ctx,
 			logger,
-			inputBucket,
+			bucket,
 			targetPath,
 			terminateFunc,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if controllingWorkspaceForPath != controllingWorkspace {
-			return nil, fmt.Errorf("more than one workspace resolved for given paths: %q, %q", controllingWorkspaceForPath, controllingWorkspace)
+		if controllingWorkspacePathForTargetPath != controllingWorkspacePath {
+			return nil, fmt.Errorf("more than one workspace resolved for given paths: %q, %q", controllingWorkspacePathForTargetPath, controllingWorkspacePath)
 		}
-		mappedTargetPaths = append(mappedTargetPaths, mappedPath)
+		mappedTargetPaths[i] = mappedPath
 	}
 	// NOTE: we do not map excluded paths to their own workspaces -- we use the controlling
 	// workspace we resolved through our input path and target paths. If an excluded path does
 	// not exist, we do not validate this.
-	var mappedTargetExcludePaths []string
-	for _, targetExcludePath := range targetExcludePaths {
-		mappedTargetExcludePath, err := normalpath.Rel(controllingWorkspace, targetExcludePath)
+	mappedTargetExcludePaths := make([]string, len(targetExcludePaths))
+	for i, targetExcludePath := range targetExcludePaths {
+		mappedTargetExcludePath, err := normalpath.Rel(controllingWorkspacePath, targetExcludePath)
 		if err != nil {
 			return nil, err
 		}
-		mappedTargetExcludePaths = append(mappedTargetExcludePaths, mappedTargetExcludePath)
+		mappedTargetExcludePaths[i] = mappedTargetExcludePath
 	}
 	return &bucketTargeting{
-		controllingWorkspace: controllingWorkspace,
-		targetPaths:          mappedTargetPaths,
-		targetExcludePaths:   mappedTargetExcludePaths,
-		terminated:           terminated,
+		controllingWorkspacePath: controllingWorkspacePath,
+		inputPath:                mappedInputPath,
+		targetPaths:              mappedTargetPaths,
+		targetExcludePaths:       mappedTargetExcludePaths,
+		terminated:               terminated,
 	}, nil
 }
 
@@ -153,18 +163,18 @@ func newBucketTargeting(
 func mapControllingWorkspaceAndPath(
 	ctx context.Context,
 	logger *zap.Logger,
-	inputBucket storage.ReadBucket,
+	bucket storage.ReadBucket,
 	path string,
 	terminateFunc TerminateFunc,
 ) (string, string, bool, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
-		return "", "", err
+		return "", "", false, err
 	}
 	// If no terminateFunc is passed, we can simply assume that we are mapping the bucket at
 	// the path.
 	if terminateFunc == nil {
-		return path, ".", nil
+		return path, ".", false, nil
 	}
 	// We can't do this in a traditional loop like this:
 	//
@@ -176,7 +186,7 @@ func mapControllingWorkspaceAndPath(
 	// Instead, we effectively do a do-while loop.
 	curDirPath := path
 	for {
-		terminate, err := terminateFunc(ctx, inputBucket, curDirPath, path)
+		terminate, err := terminateFunc(ctx, bucket, curDirPath, path)
 		if err != nil {
 			return "", "", false, err
 		}

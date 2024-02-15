@@ -167,7 +167,7 @@ func (r *reader) GetReadBucketCloser(
 			ctx,
 			container,
 			t,
-			getReadBucketCloserOptions.terminateFunc,
+			// getReadBucketCloserOptions.terminateFunc,
 			getReadBucketCloserOptions.protoFileTerminateFunc,
 		)
 	default:
@@ -237,10 +237,6 @@ func (r *reader) getArchiveBucket(
 	archiveRef ArchiveRef,
 	terminateFunc buftarget.TerminateFunc,
 ) (_ ReadBucketCloser, retErr error) {
-	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
-	if err != nil {
-		return nil, err
-	}
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
 		return nil, err
@@ -287,7 +283,7 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), archiveRef.SubDirPath(), terminateFunc)
 }
 
 func (r *reader) getDirBucket(
@@ -307,7 +303,6 @@ func (r *reader) getProtoFileBucket(
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
 	terminateFunc buftarget.TerminateFunc,
-	protoFileTerminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
@@ -318,7 +313,6 @@ func (r *reader) getProtoFileBucket(
 		r.storageosProvider,
 		protoFileRef.Path(),
 		terminateFunc,
-		protoFileTerminateFunc,
 	)
 }
 
@@ -333,10 +327,6 @@ func (r *reader) getGitBucket(
 	}
 	if r.gitCloner == nil {
 		return nil, errors.New("git cloner is nil")
-	}
-	subDirPath, err := normalpath.NormalizeAndValidate(gitRef.SubDirPath())
-	if err != nil {
-		return nil, err
 	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
@@ -356,7 +346,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), subDirPath, terminateFunc)
+	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), gitRef.SubDirPath(), terminateFunc)
 }
 
 func (r *reader) getModuleKey(
@@ -544,43 +534,35 @@ func getReadBucketCloserForBucket(
 	inputSubDirPath string,
 	terminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
-	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(ctx, logger, inputBucket, inputSubDirPath, terminateFunc)
+	// TODO(doria): delete later, keeping some notes as we work.
+	// The point of doing this is to remap the bucket based on a controlling workspace if found
+	// and then also remapping the `SubDirPath` against this.
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		inputBucket,
+		inputSubDirPath,
+		nil, // TODO(doria): we should plumb paths down here
+		nil, // TODO(doria): we should plumb paths down here
+		terminateFunc,
+	)
 	if err != nil {
 		return nil, err
 	}
-	if mapPath != "." {
+	if bucketTargeting.ControllingWorkspacePath() != "." {
 		inputBucket = storage.MapReadBucketCloser(
 			inputBucket,
-			storage.MapOnPrefix(mapPath),
+			storage.MapOnPrefix(bucketTargeting.ControllingWorkspacePath()),
 		)
 	}
 	logger.Debug(
 		"buffetch creating new bucket",
-		zap.String("inputSubDirPath", inputSubDirPath),
-		zap.String("mapPath", mapPath),
-		zap.String("subDirPath", subDirPath),
+		zap.String("controllingWorkspacePath", bucketTargeting.ControllingWorkspacePath()),
+		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
 	)
 	return newReadBucketCloser(
 		inputBucket,
-		subDirPath,
-		// This turns paths that were done relative to the root of the input into paths
-		// that are now relative to the mapped bucket.
-		//
-		// This happens if you do i.e. .git#subdir=foo/bar --path foo/bar/baz.proto
-		// We need to turn the path into baz.proto
-		func(externalPath string) (string, error) {
-			if filepath.IsAbs(externalPath) {
-				return "", fmt.Errorf("%s: absolute paths cannot be used for this input type", externalPath)
-			}
-			if !normalpath.EqualsOrContainsPath(mapPath, externalPath, normalpath.Relative) {
-				return "", fmt.Errorf("path %q from input does not contain path %q", mapPath, externalPath)
-			}
-			relPath, err := normalpath.Rel(mapPath, externalPath)
-			if err != nil {
-				return "", err
-			}
-			return normalpath.NormalizeAndValidate(relPath)
-		},
+		bucketTargeting,
 	)
 }
 
@@ -592,14 +574,10 @@ func getReadWriteBucketForOS(
 	inputDirPath string,
 	terminateFunc buftarget.TerminateFunc,
 ) (ReadWriteBucket, error) {
-	inputDirPath = normalpath.Normalize(inputDirPath)
-	absInputDirPath, err := normalpath.NormalizeAndAbsolute(inputDirPath)
+	fsRoot, inputSubDirPath, err := fsRootAndFSRelPathForPath(inputDirPath)
 	if err != nil {
 		return nil, err
 	}
-	// Split the absolute path into components to get the FS root
-	absInputDirPathComponents := normalpath.Components(absInputDirPath)
-	fsRoot := absInputDirPathComponents[0]
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
 		fsRoot,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -607,22 +585,25 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
-	var inputSubDirPath string
-	if len(absInputDirPathComponents) > 1 {
-		// The first component is the FS root, so we check this is safe and join
-		// the rest of the components for the relative input subdir path.
-		inputSubDirPath = normalpath.Join(absInputDirPathComponents[1:]...)
-	}
-	mapPath, subDirPath, _, err := getMapPathAndSubDirPath(
+	osRootBucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
 		osRootBucket,
 		inputSubDirPath,
+		nil, // TODO(doria): we should plumb paths down here
+		nil, // TODO(doria): we should plumb paths down here
 		terminateFunc,
 	)
 	if err != nil {
 		return nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
+	// TODO(doria): I'd like to completely kill and refactor this if possible.
+	// We now know where the workspace is relative to the FS root.
+	// If the input path is provided as an absolute path, we create a new bucket for the
+	// controlling workspace using an absolute path.
+	// Otherwise we current working directory (pwd) and create the bucket using a relative
+	// path to that.
+	//
 	// Examples:
 	//
 	// inputDirPath: path/to/foo
@@ -637,28 +618,37 @@ func getReadWriteBucketForOS(
 	// returnSubDirPath: foo
 	// Make bucket on: FS root + returnMapPath (since absolute)
 	var bucketPath string
+	var inputPath string
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		bucketPath = normalpath.Join(fsRoot, mapPath)
+		var err error
+		bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspacePath())
+		inputPath, err = normalpath.Rel(bucketPath, normalpath.Join(fsRoot, inputSubDirPath))
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		pwd, err := osext.Getwd()
 		if err != nil {
 			return nil, err
 		}
-		// Removing the root so we can make mapPath relative.
-		// We are using normalpath.Components to split the path and remove the root (first component).
-		// The length of the root may vary depending on the OS and file path type (e.g. Windows paths),
-		// but normalpath.Components takes care of that.
-		pwdComponents := normalpath.Components(pwd)
-		if len(pwdComponents) > 1 {
-			pwd = normalpath.Normalize(normalpath.Join(pwdComponents[1:]...))
-		} else {
-			pwd = ""
+		_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
+		if err != nil {
+			return nil, err
 		}
-		bucketPath, err = normalpath.Rel(pwd, mapPath)
+		bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspacePath())
+		if err != nil {
+			return nil, err
+		}
+		inputPath, err = normalpath.Rel(osRootBucketTargeting.ControllingWorkspacePath(), inputSubDirPath)
 		if err != nil {
 			return nil, err
 		}
 	}
+	// Now that we've mapped the workspace against the FS root, we recreate the bucket with
+	// at the sub dir path.
+	// First we get the absolute path of the controlling workspace, which based on the OS root
+	// bucket targeting is the FS root joined with the controlling workspace path.
+	// And we use it to make a bucket.
 	bucket, err := storageosProvider.NewReadWriteBucket(
 		bucketPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -666,32 +656,21 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug(
-		"creating new OS bucket for controlling workspace",
-		zap.String("inputDirPath", inputDirPath),
-		zap.String("workspacePath", bucketPath),
-		zap.String("subDirPath", subDirPath),
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		bucket,
+		inputPath,
+		nil, // TODO(doria): we should plumb paths down here
+		nil, // TODO(doria): we should plumb paths down here
+		terminateFunc,
 	)
+	if err != nil {
+		return nil, err
+	}
 	return newReadWriteBucket(
 		bucket,
-		subDirPath,
-		// This function turns paths into paths relative to the bucket.
-		func(externalPath string) (string, error) {
-			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketPath))
-			if err != nil {
-				return "", err
-			}
-			// We shouldn't actually need to unnormalize externalPath but we do anyways.
-			absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
-			if err != nil {
-				return "", err
-			}
-			path, err := filepath.Rel(absBucketPath, absExternalPath)
-			if err != nil {
-				return "", err
-			}
-			return normalpath.NormalizeAndValidate(path)
-		},
+		bucketTargeting,
 	)
 }
 
@@ -702,202 +681,36 @@ func getReadBucketCloserForOSProtoFile(
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc buftarget.TerminateFunc,
-	protoFileTerminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, error) {
-	// First, we figure out which directory we consider to be the module that encapsulates
-	// this ProtoFileRef. If we find a buf.yaml or buf.work.yaml, then we use that as the directory. If we
-	// do not, we use the current directory as the directory.
-	protoFileDirPath := normalpath.Dir(protoFilePath)
-	absProtoFileDirPath, err := normalpath.NormalizeAndAbsolute(protoFileDirPath)
-	if err != nil {
-		return nil, err
-	}
-	// Split the absolute path into components to get the FS root
-	absProtoFileDirPathComponents := normalpath.Components(absProtoFileDirPath)
-	fsRoot := absProtoFileDirPathComponents[0]
-	osRootBucket, err := storageosProvider.NewReadWriteBucket(
-		fsRoot,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	var inputSubDirPath string
-	if len(absProtoFileDirPathComponents) > 1 {
-		// The first component is the FS root, so we check this is safe and join
-		// the rest of the components for the relative input subdir path.
-		inputSubDirPath = normalpath.Join(absProtoFileDirPathComponents[1:]...)
-	}
-	// mapPath is the path to the bucket that contains a buf.yaml.
-	// subDirPath is the relative path from mapPath to the protoFileDirPath, but we don't use it.
-	mapPath, _, terminate, err := getMapPathAndSubDirPath(
+	protoFileDir := normalpath.Dir(protoFilePath)
+	readWriteBucket, err := getReadWriteBucketForOS(
 		ctx,
 		logger,
-		osRootBucket,
-		inputSubDirPath,
-		protoFileTerminateFunc,
+		storageosProvider,
+		protoFileDir,
+		terminateFunc,
 	)
-	if err != nil {
-		return nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
-	}
-
-	var protoTerminateFileDirPath string
-	if !terminate {
-		// If we did not find a buf.yaml or buf.work.yaml, use the current directory.
-		// If the ProtoFileRef path was absolute, use an absolute path, otherwise relative.
-		//
-		// However, if the current directory does not contain the .proto file, we cannot use it,
-		// as we need the bucket to encapsulate the .proto file. In this case, we fall back
-		// to using the absolute directory of the .proto file. We need to do this because
-		// PathForExternalPath (defined in getReadWriteBucketForOS) needs to make sure that
-		// a given path can be made relative to the bucket, and be normalized and validated.
-		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			pwd, err := osext.Getwd()
-			if err != nil {
-				return nil, err
-			}
-			protoTerminateFileDirPath = normalpath.Normalize(pwd)
-		} else {
-			protoTerminateFileDirPath = "."
-		}
-		absProtoTerminateFileDirPath, err := normalpath.NormalizeAndAbsolute(protoTerminateFileDirPath)
-		if err != nil {
-			return nil, err
-		}
-		if !normalpath.EqualsOrContainsPath(absProtoFileDirPath, absProtoTerminateFileDirPath, normalpath.Absolute) {
-			logger.Debug(
-				"did not find enclosing module or workspace for proto file ref and pwd does not encapsulate proto file",
-				zap.String("protoFilePath", protoFilePath),
-				zap.String("defaultingToAbsProtoFileDirPath", absProtoFileDirPath),
-			)
-			protoTerminateFileDirPath = absProtoFileDirPath
-		} else {
-			logger.Debug(
-				"did not find enclosing module or workspace for proto file ref",
-				zap.String("protoFilePath", protoFilePath),
-				zap.String("defaultingToPwd", protoTerminateFileDirPath),
-			)
-		}
-	} else {
-		// We found a buf.yaml or buf.work.yaml, use that directory.
-		// If we found a buf.yaml or buf.work.yaml and the ProtoFileRef path is absolute, use an absolute path, otherwise relative.
-		if filepath.IsAbs(normalpath.Unnormalize(protoFileDirPath)) {
-			protoTerminateFileDirPath = normalpath.Join(fsRoot, mapPath)
-		} else {
-			pwd, err := osext.Getwd()
-			if err != nil {
-				return nil, err
-			}
-			// Removing the root so we can make mapPath relative.
-			// We are using normalpath.Components to split the path and remove the root (first component).
-			// The length of the root may vary depending on the OS and file path type (e.g. Windows paths),
-			// but normalpath.Components takes care of that.
-			pwdComponents := normalpath.Components(pwd)
-			if len(pwdComponents) > 1 {
-				pwd = normalpath.Normalize(normalpath.Join(pwdComponents[1:]...))
-			} else {
-				pwd = ""
-			}
-			protoTerminateFileDirPath, err = normalpath.Rel(pwd, mapPath)
-			if err != nil {
-				return nil, err
-			}
-		}
-		logger.Debug(
-			"found enclosing module or workspace for proto file ref",
-			zap.String("protoFilePath", protoFilePath),
-			zap.String("enclosingDirPath", protoTerminateFileDirPath),
-		)
-	}
-	// Now, build a workspace bucket based on the directory we found.
-	// If the directory is a module directory, we'll get the enclosing workspace.
-	// If the directory is a workspace directory, this will effectively be a no-op.
-	readWriteBucket, err := getReadWriteBucketForOS(ctx, logger, storageosProvider, protoTerminateFileDirPath, terminateFunc)
 	if err != nil {
 		return nil, err
 	}
 	return newReadBucketCloserForReadWriteBucket(readWriteBucket), nil
 }
 
-// Gets two values:
-//
-//   - The directory relative to the bucket that the bucket should be mapped onto.
-//   - A new subDirPath that matches the inputSubDirPath but for the new ReadBucketCloser.
-//
-// Examples:
-//
-// inputSubDirPath: path/to/foo
-// terminateFileLocation: path/to
-// returnMapPath: path/to
-// returnSubDirPath: foo
-//
-// inputSubDirPath: users/alice/path/to/foo
-// terminateFileLocation: users/alice/path/to
-// returnMapPath: users/alice/path/to
-// returnSubDirPath: foo
-//
-// inputBucket: path/to/foo
-// terminateFileLocation: NONE
-// returnMapPath: path/to/foo
-// returnSubDirPath: .
-
-// inputSubDirPath: .
-// terminateFileLocation: NONE
-// returnMapPath: .
-// returnSubDirPath: .
-func getMapPathAndSubDirPath(
-	ctx context.Context,
-	logger *zap.Logger,
-	inputBucket storage.ReadBucket,
-	inputSubDirPath string,
-	terminateFunc buftarget.TerminateFunc,
-) (mapPath string, subDirPath string, terminate bool, retErr error) {
-	inputSubDirPath, err := normalpath.NormalizeAndValidate(inputSubDirPath)
+// fsRootAndFSRelPathForPath is a helper function that takes a path and returns the FS
+// root and relative path to the FS root.
+func fsRootAndFSRelPathForPath(path string) (string, string, error) {
+	absPath, err := normalpath.NormalizeAndAbsolute(path)
 	if err != nil {
-		return "", "", false, err
+		return "", "", err
 	}
-	// The for loops would take care of this base case, but we don't want
-	// to call storage.MapReadBucket unless we have to.
-	if terminateFunc == nil {
-		return inputSubDirPath, ".", false, nil
+	// Split the absolute path into components to get the FS root
+	absPathComponents := normalpath.Components(absPath)
+	fsRoot := absPathComponents[0]
+	fsRelPath, err := normalpath.Rel(fsRoot, absPath)
+	if err != nil {
+		return "", "", err
 	}
-	// We can't do this in a traditional loop like this:
-	//
-	// for curDirPath := inputSubDirPath; curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
-	//
-	// If we do that, then we don't run terminateFunc for ".", which we want to so that we get
-	// the correct value for the terminate bool.
-	//
-	// Instead, we effectively do a do-while loop.
-	curDirPath := inputSubDirPath
-	for {
-		terminate, err := terminateFunc(ctx, inputBucket, curDirPath, inputSubDirPath)
-		if err != nil {
-			return "", "", false, err
-		}
-		if terminate {
-			logger.Debug(
-				"buffetch termination found",
-				zap.String("curDirPath", curDirPath),
-				zap.String("inputSubDirPath", inputSubDirPath),
-			)
-			subDirPath, err := normalpath.Rel(curDirPath, inputSubDirPath)
-			if err != nil {
-				return "", "", false, err
-			}
-			return curDirPath, subDirPath, true, nil
-		}
-		if curDirPath == "." {
-			// Do this instead. This makes this loop effectively a do-while loop.
-			break
-		}
-		curDirPath = normalpath.Dir(curDirPath)
-	}
-	logger.Debug(
-		"buffetch no termination found",
-		zap.String("inputSubDirPath", inputSubDirPath),
-	)
-	return inputSubDirPath, ".", false, nil
+	return fsRoot, fsRelPath, nil
 }
 
 // We attempt to fix up paths we get back to better printing to the user.

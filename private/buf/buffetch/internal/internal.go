@@ -468,6 +468,15 @@ type Reader interface {
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
 	) (bufmodule.ModuleKey, error)
+
+	// TODO(doria): rename this
+	// GetBucketTargeting(
+	// 	ctx context.Context,
+	// 	inputSubDirPath string,
+	// 	targetPaths []string,
+	// 	targetExcludePaths []string,
+	// 	terminateFunc TerminateFunc, // TODO(doria): move that out of buffetch
+	// ) (buftarget.BucketTargeting, error)
 }
 
 // NewReader returns a new Reader.

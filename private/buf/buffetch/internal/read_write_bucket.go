@@ -15,6 +15,9 @@
 package internal
 
 import (
+	"path/filepath"
+
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -30,17 +33,31 @@ type readWriteBucket struct {
 
 func newReadWriteBucket(
 	storageReadWriteBucket storage.ReadWriteBucket,
-	subDirPath string,
-	pathForExternalPath func(string) (string, error),
+	bucketTargeting buftarget.BucketTargeting,
 ) (*readWriteBucket, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
+	// TODO(doria): document this
+	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(bucketTargeting.InputPath())
 	if err != nil {
 		return nil, err
 	}
 	return &readWriteBucket{
-		ReadWriteBucket:     storageReadWriteBucket,
-		subDirPath:          normalizedSubDirPath,
-		pathForExternalPath: pathForExternalPath,
+		ReadWriteBucket: storageReadWriteBucket,
+		subDirPath:      normalizedSubDirPath,
+		pathForExternalPath: func(externalPath string) (string, error) {
+			absBucketPath, err := filepath.Abs(normalpath.Unnormalize(bucketTargeting.ControllingWorkspacePath()))
+			if err != nil {
+				return "", err
+			}
+			absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
+			if err != nil {
+				return "", err
+			}
+			path, err := filepath.Rel(absBucketPath, absExternalPath)
+			if err != nil {
+				return "", err
+			}
+			return normalpath.NormalizeAndValidate(path)
+		},
 	}, nil
 }
 

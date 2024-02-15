@@ -16,7 +16,10 @@ package internal
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -33,17 +36,33 @@ type readBucketCloser struct {
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	subDirPath string,
-	pathForExternalPath func(string) (string, error),
+	bucketTargeting buftarget.BucketTargeting,
 ) (*readBucketCloser, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
+	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(bucketTargeting.InputPath())
 	if err != nil {
 		return nil, err
 	}
 	return &readBucketCloser{
-		ReadBucketCloser:    storageReadBucketCloser,
-		subDirPath:          normalizedSubDirPath,
-		pathForExternalPath: pathForExternalPath,
+		ReadBucketCloser: storageReadBucketCloser,
+		subDirPath:       normalizedSubDirPath,
+		// This turns paths that were done relative to the root of the input into paths
+		// that are now relative to the mapped bucket.
+		//
+		// This happens if you do i.e. .git#subdir=foo/bar --path foo/bar/baz.proto
+		// We need to turn the path into baz.proto
+		pathForExternalPath: func(externalPath string) (string, error) {
+			if filepath.IsAbs(externalPath) {
+				return "", fmt.Errorf("%s: absolute paths cannot be used for this input type", externalPath)
+			}
+			if !normalpath.EqualsOrContainsPath(bucketTargeting.ControllingWorkspacePath(), externalPath, normalpath.Relative) {
+				return "", fmt.Errorf("path %q from input does not contain path %q", bucketTargeting.ControllingWorkspacePath(), externalPath)
+			}
+			relPath, err := normalpath.Rel(bucketTargeting.ControllingWorkspacePath(), externalPath)
+			if err != nil {
+				return "", err
+			}
+			return normalpath.NormalizeAndValidate(relPath)
+		},
 	}, nil
 }
 
