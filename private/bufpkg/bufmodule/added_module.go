@@ -160,7 +160,6 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
-	// TODO: normalize and validate all paths
 	return newModule(
 		ctx,
 		getBucket,

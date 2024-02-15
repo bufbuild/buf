@@ -283,6 +283,26 @@ func newModule(
 	if moduleFullName == nil && !commitID.IsNil() {
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
+
+	normalizeAndValidateIfNotEmpty := func(path string) (string, error) {
+		if path == "" {
+			return path, nil
+		}
+		return normalpath.NormalizeAndValidate(path)
+	}
+	targetPaths, err := slicesext.MapError(targetPaths, normalizeAndValidateIfNotEmpty)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
+	targetExcludePaths, err = slicesext.MapError(targetExcludePaths, normalizeAndValidateIfNotEmpty)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
+	protoFileTargetPath, err = normalizeAndValidateIfNotEmpty(protoFileTargetPath)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
+
 	module := &module{
 		ctx:                    ctx,
 		getBucket:              syncOnceValuesGetBucketWithStorageMatcherApplied,

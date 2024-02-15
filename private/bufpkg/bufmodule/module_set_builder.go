@@ -320,7 +320,6 @@ func (b *moduleSetBuilder) AddLocalModule(
 		return b.addError(syserror.Newf("proto file target %q is not a .proto file", localModuleOptions.protoFileTargetPath))
 	}
 
-	// TODO: normalize and validate all paths
 	module, err := newModule(
 		b.ctx,
 		getSyncOnceValuesGetBucketWithStorageMatcherApplied(
