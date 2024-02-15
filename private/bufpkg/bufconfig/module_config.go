@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
@@ -50,11 +51,7 @@ func init() {
 type ModuleConfig interface {
 	// DirPath returns the path of the Module within the Workspace, if specified.
 	//
-	// For v1beta1 and v1 buf.yamls, this is always empty.
-	// For v2 buf.yamls, this is never empty.
-	//
-	// TODO FUTURE: It is really bad that we differentiate between empty and "." here. We should just
-	// redefine this so that v1beta1 and v1 always are ".". This may break things though.
+	// This is always present. For v1beta1 and v1 buf.yamls, this is always ".".
 	//
 	// In v2, this will be used as the BucketID within Workspaces. For v1, it is up
 	// to the Workspace constructor to come up with a BucketID (likely the directory name
@@ -137,6 +134,11 @@ func newModuleConfig(
 	lintConfig LintConfig,
 	breakingConfig BreakingConfig,
 ) (*moduleConfig, error) {
+	// Returns "." on empty input.
+	dirPath, err := normalpath.NormalizeAndValidate(dirPath)
+	if err != nil {
+		return nil, err
+	}
 	if lintConfig == nil {
 		return nil, errors.New("LintConfig was nil")
 	}
@@ -154,12 +156,9 @@ func newModuleConfig(
 	}
 	fileVersion := lintFileVersion
 	if fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1 {
-		if dirPath != "" {
+		if dirPath != "." {
 			return nil, fmt.Errorf("had dirPath %q for NewModuleConfig with FileVersion %v", dirPath, fileVersion)
 		}
-	}
-	if fileVersion == FileVersionV2 && dirPath == "" {
-		return nil, fmt.Errorf("had empty dirPath for NewModuleConfig with FileVersion %v", fileVersion)
 	}
 	if fileVersion == FileVersionV1 || fileVersion == FileVersionV2 {
 		if len(rootToExcludes) != 1 {
@@ -171,6 +170,10 @@ func newModuleConfig(
 	}
 	newRootToExcludes := make(map[string][]string)
 	for root, excludes := range rootToExcludes {
+		excludes, err := slicesext.MapError(excludes, normalpath.NormalizeAndValidate)
+		if err != nil {
+			return nil, err
+		}
 		newRootToExcludes[root] = slicesext.ToUniqueSorted(excludes)
 	}
 	return &moduleConfig{

@@ -17,6 +17,7 @@ package bufconfig
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -205,11 +206,8 @@ func newBufYAMLFile(
 		return nil, errors.New("had 0 ModuleConfigs passed to NewBufYAMLFile")
 	}
 	for _, moduleConfig := range moduleConfigs {
-		if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && moduleConfig.DirPath() != "" {
-			return nil, fmt.Errorf("non-empty DirPath %q in NewBufYAMLFile for %v ModuleConfig", moduleConfig.DirPath(), fileVersion)
-		}
-		if fileVersion == FileVersionV2 && moduleConfig.DirPath() == "" {
-			return nil, errors.New("empty DirPath in NewBufYAMLFile for v2 ModuleConfig")
+		if (fileVersion == FileVersionV1Beta1 || fileVersion == FileVersionV1) && moduleConfig.DirPath() != "." {
+			return nil, fmt.Errorf("invalid DirPath %q in NewBufYAMLFile for %v ModuleConfig", moduleConfig.DirPath(), fileVersion)
 		}
 		if moduleConfig == nil {
 			return nil, errors.New("ModuleConfig was nil in NewBufYAMLFile")
@@ -488,8 +486,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		}
 		moduleConfig := moduleConfigs[0]
 		// Just some extra sanity checking that we've properly validated.
-		if moduleConfig.DirPath() != "" {
-			return syserror.Newf("expected ModuleConfig DirPath to be empty but was %q", moduleConfig.DirPath())
+		if moduleConfig.DirPath() != "." {
+			return syserror.Newf("expected ModuleConfig DirPath to be . but was %q", moduleConfig.DirPath())
 		}
 		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
 			Version: fileVersion.String(),
@@ -543,6 +541,20 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				return moduleRef.String()
 			},
 		)
+		// Keep maps of the JSON-marshaled data to the external lint and breaking configs.
+		//
+		// If both of these maps are of length 0 or 1, we say that the user really just has a
+		// single configuration for lint and breaking, and we infer that they only want
+		// to have a single top-level lint and breaking config. In this case, we delete
+		// all of the per-module lint and breaking configs, and install the sole value
+		// from each.
+		//
+		// We could make other decisions: if there are two or more matching configs, do a default,
+		// and then just override the non-matching, but this gets complicated. The current logic
+		// takes care of the base case when writing buf.yaml files.
+		stringToExternalLint := make(map[string]externalBufYAMLFileLintV1Beta1V1V2)
+		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
+
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
 			moduleDirPath := moduleConfig.DirPath()
 			joinDirPath := func(importPath string) string {
@@ -563,10 +575,43 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
 			}
 			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
-			externalModule.Lint = getExternalLintForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
-			externalModule.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), moduleDirPath)
+
+			externalLint := getExternalLintForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
+			externalLintData, err := json.Marshal(externalLint)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			stringToExternalLint[string(externalLintData)] = externalLint
+			externalModule.Lint = externalLint
+
+			externalBreaking := getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), moduleDirPath)
+			externalBreakingData, err := json.Marshal(externalBreaking)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			stringToExternalBreaking[string(externalBreakingData)] = externalBreaking
+			externalModule.Breaking = externalBreaking
+
 			externalBufYAMLFile.Modules = append(externalBufYAMLFile.Modules, externalModule)
 		}
+
+		if len(stringToExternalLint) <= 1 && len(stringToExternalBreaking) <= 1 {
+			externalLint, err := getZeroOrSingleValueForMap(stringToExternalLint)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			externalBreaking, err := getZeroOrSingleValueForMap(stringToExternalBreaking)
+			if err != nil {
+				return syserror.Wrap(err)
+			}
+			externalBufYAMLFile.Lint = externalLint
+			externalBufYAMLFile.Breaking = externalBreaking
+			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
+				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV1Beta1V1V2{}
+				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
+			}
+		}
+
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
 			return err
@@ -918,4 +963,16 @@ func (eb externalBufYAMLFileBreakingV1Beta1V1V2) isEmpty() bool {
 		len(eb.Ignore) == 0 &&
 		len(eb.IgnoreOnly) == 0 &&
 		!eb.IgnoreUnstablePackages
+}
+
+func getZeroOrSingleValueForMap[K comparable, V any](m map[K]V) (V, error) {
+	var zero V
+	if len(m) > 1 {
+		return zero, syserror.Newf("map was of length %d empty in getZeroOrSingleValueForMap", len(m))
+	}
+	for _, v := range m {
+		return v, nil
+	}
+	// len(m) == 0
+	return zero, nil
 }
