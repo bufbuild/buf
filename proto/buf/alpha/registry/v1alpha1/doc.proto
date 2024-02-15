@@ -359,6 +359,10 @@ message MessageOptions {
 message Oneof {
   string name = 1;
   repeated Field fields = 2;
+  // All options that are present on the OneOf.
+  // This is a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  repeated FieldLiteral options = 3;
 }
 
 // Field provides information for the documentation of a message field.
@@ -386,6 +390,10 @@ message Field {
   string extendee = 9;
 
   FieldOptions field_options = 10;
+  // All options that are present on the field. This is a super-set of
+  // field_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  repeated FieldLiteral options = 11;
 }
 
 // FieldOptions provides information for the documentation of options for a field.
