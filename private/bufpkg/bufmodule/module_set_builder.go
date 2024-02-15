@@ -210,7 +210,9 @@ func LocalModuleWithProtoFileTargetPath(
 // LocalModuleWithV1Beta1OrV1BufYAMLObjectData returns a new LocalModuleOption that attaches the original
 // source buf.yaml file associated with this module for v1 or v1beta1 buf.yaml-backed Modules.
 //
-// This is required for Modules backed with a v1beta1 or v1 buf.yaml.
+// If a buf.yaml exists on disk, should be set for Modules backed with a v1beta1 or v1 buf.yaml. It is possible
+// that a Module has no buf.yaml (if it was built from defaults), in which case this will not be set.
+//
 // For Modules backed with v2 buf.yamls, this should not be set.
 //
 // This file content is just used for dependency calculations. It is not parsed.
@@ -223,12 +225,12 @@ func LocalModuleWithV1Beta1OrV1BufYAMLObjectData(v1BufYAMLObjectData ObjectData)
 // LocalModuleWithV1Beta1OrV1BufLockObjectData returns a new LocalModuleOption that attaches the original
 // source buf.local file associated with this Module for v1 or v1beta1 buf.lock-backed Modules.
 //
-// This is required for Modules backed with a v1beta1 or v1 buf.lock.
-// For Modules backed with v2 buf.locks, this should not be set.
-//
+// If a buf.lock exists on disk, should be set for Modules backed with a v1beta1 or v1 buf.lock.
 // Note that a buf.lock may not exist for a v1 Module, if there are no dependencies, and in this
 // case, this is not set. However, if there is a buf.lock file that was generated, even if it
 // had no dependencies, this is set.
+//
+// For Modules backed with v2 buf.locks, this should not be set.
 //
 // This file content is just used for dependency calculations. It is not parsed.
 func LocalModuleWithV1Beta1OrV1BufLockObjectData(v1BufLockObjectData ObjectData) LocalModuleOption {
