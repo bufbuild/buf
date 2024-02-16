@@ -198,13 +198,20 @@ message Service {
   string file_path = 5;
   Location location = 6;
   repeated Method methods = 7;
-  ServiceOptions service_options = 8;
   // implicitly_deprecated is true if its enclosing file is deprecated.
   bool implicitly_deprecated = 9;
+  // All options that are present on the service. This is a super-set of
+  // service_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // This supersedes service_options.
+  repeated FieldLiteral options = 10;
+  // Use options instead.
+  ServiceOptions service_options = 8 [deprecated = true];
 }
 
 // ServiceOptions provides information for the documentation of options for a given service.
 message ServiceOptions {
+  option deprecated = true;
   bool deprecated = 1;
 }
 
@@ -218,13 +225,20 @@ message Method {
   string description = 2;
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
-  MethodOptions method_options = 5;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 6;
+  // All options that are present on the method. This is a super-set of
+  // method_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // This supersedes method_options.
+  repeated FieldLiteral options = 7;
+  // Use options instead.
+  MethodOptions method_options = 5 [deprecated = true];
 }
 
 // MethodOptions provides information for the documentation of options for a method.
 message MethodOptions {
+  option deprecated = true;
   bool deprecated = 1;
   // idempotency_level holds a value of the enumeration `google.protobuf.MethodOptions.IdempotencyLevel.
   int32 idempotency_level = 2;
@@ -260,13 +274,20 @@ message Enum {
   string file_path = 5;
   Location location = 6;
   repeated EnumValue values = 7;
-  EnumOptions enum_options = 8;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 9;
+  // All options that are present on the enum. This is a super-set of
+  // enum_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // // This supersedes enum_options.
+  repeated FieldLiteral options = 10;
+  // Use options instead.
+  EnumOptions enum_options = 8 [deprecated = true];
 }
 
 // EnumOptions provides information for the documentation of options for an enum.
 message EnumOptions {
+  option deprecated = true;
   bool deprecated = 1;
   bool allow_alias = 2;
 }
@@ -280,11 +301,18 @@ message EnumValue {
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
   string description = 3;
-  EnumValueOptions enum_value_options = 4;
+  // All options that are present on the enum. This is a super-set of
+  // enum_value_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // // This supersedes enum_value_options.
+  repeated FieldLiteral options = 5;
+  // Use options instead.
+  EnumValueOptions enum_value_options = 4 [deprecated = true];
 }
 
 // EnumValueOptions provides information for the documentation of options for an enum value.
 message EnumValueOptions {
+  option deprecated = true;
   bool deprecated = 1;
 }
 
@@ -317,9 +345,15 @@ message Message {
   repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
-  MessageOptions message_options = 10;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
   bool implicitly_deprecated = 11;
+  // All options that are present on the message. This is a super-set of
+  // message_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // // This supersedes message_options.
+  repeated FieldLiteral options = 12;
+  // Use options instead.
+  MessageOptions message_options = 10 [deprecated = true];
 }
 
 // MessageField can be either a single field or a oneof set of fields.
@@ -332,6 +366,7 @@ message MessageField {
 
 // MessageOptions provides information for the documentation of options for a message.
 message MessageOptions {
+  option deprecated = true;
   bool deprecated = 1;
 }
 
@@ -339,6 +374,10 @@ message MessageOptions {
 message Oneof {
   string name = 1;
   repeated Field fields = 2;
+  // All options that are present on the OneOf.
+  // This is a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  repeated FieldLiteral options = 3;
 }
 
 // Field provides information for the documentation of a message field.
@@ -364,12 +403,18 @@ message Field {
   // Extendee is the name of the type that is being ext if the field is an extension.
   // This is an empty string for fields that are not extenions.
   string extendee = 9;
-
-  FieldOptions field_options = 10;
+  // All options that are present on the field. This is a super-set of
+  // field_options and uses a dynamic representation so it can also
+  // accommodate custom options with arbitrary types.
+  // This supersedes field_options.
+  repeated FieldLiteral options = 11;
+  // Use options instead.
+  FieldOptions field_options = 10 [deprecated = true];
 }
 
 // FieldOptions provides information for the documentation of options for a field.
 message FieldOptions {
+  option deprecated = true;
   bool deprecated = 1;
   optional bool packed = 2;
   // ctype holds a value of the enumeration `google.protobuf.FieldOptions.CType.
