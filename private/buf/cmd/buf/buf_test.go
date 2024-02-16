@@ -241,8 +241,6 @@ func TestFail6(t *testing.T) {
 
 func TestFail7(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -336,8 +334,6 @@ func TestFail10(t *testing.T) {
 
 func TestFail11(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -1299,8 +1295,6 @@ func TestExportExcludeImports(t *testing.T) {
 
 func TestExportPaths(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1326,8 +1320,6 @@ func TestExportPaths(t *testing.T) {
 
 func TestExportPathsAndExcludes(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1489,7 +1481,7 @@ func TestBuildWithPaths(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"build",
 		filepath.Join("testdata", "paths"),
 		"--path",
@@ -1521,7 +1513,7 @@ func TestLintWithPaths(t *testing.T) {
 		"",
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"lint",
 		filepath.Join("testdata", "paths"),
 		"--path",

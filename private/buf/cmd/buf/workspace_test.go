@@ -1383,7 +1383,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		1,
 		``,
 		filepath.FromSlash(fmt.Sprintf(
-			`Failure: %s/proto/rpc.proto: absolute paths cannot be used for this input type`,
+			`Failure: %s/proto/rpc.proto: expected to be relative`,
 			wd,
 		)),
 		"lint",
@@ -1402,7 +1402,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		1,
 		``,
 		filepath.FromSlash(fmt.Sprintf(
-			`Failure: %s/proto/rpc.proto: absolute paths cannot be used for this input type`,
+			`Failure: %s/proto/rpc.proto: expected to be relative`,
 			wd,
 		)),
 		"lint",

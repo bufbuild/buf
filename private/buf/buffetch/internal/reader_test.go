@@ -29,20 +29,26 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO(doria): add tests with target paths and target exclude paths
+
 func TestGetReadBucketCloserForBucketNoTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	inputBucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/bufyaml/one/two")
 	require.NoError(t, err)
-	readBucketCloser, err := getReadBucketCloserForBucket(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		nil,
 	)
 	require.NoError(t, err)
-	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	require.Nil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, "three/four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, "three/four/five", bucketTargeting.InputPath())
 	_, err = readBucketCloser.Stat(ctx, "buf.yaml")
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
@@ -53,15 +59,19 @@ func TestGetReadBucketCloserTerminateFileName(t *testing.T) {
 	ctx := context.Background()
 	inputBucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/bufyaml/one/two")
 	require.NoError(t, err)
-	readBucketCloser, err := getReadBucketCloserForBucket(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, "three", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	_, err = readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
@@ -72,15 +82,19 @@ func TestGetReadBucketCloserForBucketNoSubDirPath(t *testing.T) {
 	ctx := context.Background()
 	inputBucket, err := storageos.NewProvider().NewReadWriteBucket("testdata/bufyaml/one/two/three/four/five")
 	require.NoError(t, err)
-	readBucketCloser, err := getReadBucketCloserForBucket(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		".",
+		nil, // no target paths
+		nil, // no target exclude paths
 		nil,
 	)
 	require.NoError(t, err)
+	require.Nil(t, bucketTargeting.ControllingWorkspace())
 	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.InputPath())
 	_, err = readBucketCloser.Stat(ctx, "buf.yaml")
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
@@ -93,15 +107,19 @@ func TestGetReadBucketCloserForBucketAbs(t *testing.T) {
 	require.NoError(t, err)
 	inputBucket, err := storageos.NewProvider().NewReadWriteBucket(normalpath.Join(absDirPath, "testdata/bufyaml/one/two"))
 	require.NoError(t, err)
-	readBucketCloser, err := getReadBucketCloserForBucket(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForBucket(
 		ctx,
 		zap.NewNop(),
 		storage.NopReadBucketCloser(inputBucket),
 		"three/four/five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, "three", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	_, err = readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
@@ -110,16 +128,20 @@ func TestGetReadBucketCloserForBucketAbs(t *testing.T) {
 func TestGetReadWriteBucketForOSNoTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	readWriteBucket, err := getReadWriteBucketForOS(
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		nil,
 	)
 	require.NoError(t, err)
-	require.Equal(t, ".", readWriteBucket.SubDirPath())
-	fileInfo, err := readWriteBucket.Stat(ctx, "buf.yaml")
+	require.Nil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, "testdata/bufyaml/one/two/three/four/five", readWriteBucket.SubDirPath())
+	require.Equal(t, "testdata/bufyaml/one/two/three/four/five", bucketTargeting.InputPath())
+	fileInfo, err := readWriteBucket.Stat(ctx, "testdata/bufyaml/one/two/three/four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
 }
@@ -127,15 +149,19 @@ func TestGetReadWriteBucketForOSNoTerminateFileName(t *testing.T) {
 func TestGetReadWriteBucketForOSTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	readWriteBucket, err := getReadWriteBucketForOS(
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	fileInfo, err := readWriteBucket.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -158,15 +184,19 @@ func TestGetReadWriteBucketForOSParentPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readWriteBucket, err := getReadWriteBucketForOS(
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	fileInfo, err := readWriteBucket.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -191,15 +221,19 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readWriteBucket, err := getReadWriteBucketForOS(
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five"),
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readWriteBucket.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	fileInfo, err := readWriteBucket.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
@@ -211,15 +245,19 @@ func TestGetReadWriteBucketForOSAbsPwd(t *testing.T) {
 func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "proto", readBucketCloser.SubDirPath())
+	require.Equal(t, "proto", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -229,15 +267,19 @@ func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testin
 func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
+	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -261,15 +303,19 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -295,15 +341,19 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/proto/foo.proto"),
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
@@ -316,15 +366,19 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -345,15 +399,19 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, ".", readBucketCloser.SubDirPath())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, "five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -380,15 +438,19 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 			panic(r)
 		}
 	}()
-	readBucketCloser, err := getReadBucketCloserForOSProtoFile(
+	readBucketCloser, bucketTargeting, err := getReadBucketCloserForOSProtoFile(
 		ctx,
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"),
+		nil, // no target paths
+		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
+	require.Equal(t, "four/five", bucketTargeting.InputPath())
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"), fileInfo.ExternalPath())
@@ -404,14 +466,15 @@ func testNewTerminateAtFileNamesFunc(terminateFileNames ...string) buftarget.Ter
 			ctx context.Context,
 			bucket storage.ReadBucket,
 			prefix string,
-			originalSubDirPath string,
-		) (bool, error) {
+			inputPath string,
+		) (buftarget.ControllingWorkspace, error) {
 			for _, terminateFileName := range terminateFileNames {
+				// We do not test for config file logic here, so it is fine to return empty configs.
 				if _, err := bucket.Stat(ctx, normalpath.Join(prefix, terminateFileName)); err == nil {
-					return true, nil
+					return buftarget.NewControllingWorkspace(prefix, nil, nil), nil
 				}
 			}
-			return false, nil
+			return nil, nil
 		},
 	)
 }

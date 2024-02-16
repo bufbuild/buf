@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
@@ -32,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
@@ -753,6 +755,7 @@ func testBreaking(
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	logger := zaptest.NewLogger(t)
 
 	previousDirPath := filepath.Join("testdata_previous", relDirPath)
 	dirPath := filepath.Join("testdata", relDirPath)
@@ -763,9 +766,29 @@ func testBreaking(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
+	previousBucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		previousReadWriteBucket,
+		previousDirPath,
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		readWriteBucket,
+		dirPath,
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
 	)
 	require.NoError(t, err)
 
@@ -779,11 +802,13 @@ func testBreaking(
 	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		previousReadWriteBucket,
+		previousBucketTargeting,
 	)
 	require.NoError(t, err)
 	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		readWriteBucket,
+		bucketTargeting,
 	)
 	require.NoError(t, err)
 

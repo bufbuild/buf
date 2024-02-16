@@ -409,6 +409,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
 			// This context ends up getting stored on the Module, is this a problem re: tracing?
+			// doria: yes.
 			return addedModule.ToModule(ctx, b.moduleDataProvider)
 		},
 	)

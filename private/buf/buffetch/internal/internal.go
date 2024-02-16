@@ -184,7 +184,7 @@ type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
 	Path() string
-	// IncludePackageFiles says to include the same package files TODO update comment
+	// IncludePackageFiles says to include the files from the same package files
 	IncludePackageFiles() bool
 	FileScheme() FileScheme
 	protoFileRef()
@@ -412,12 +412,6 @@ type BucketExtender interface {
 	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-
-	// PathForExternalPath takes a path external to the asset and converts it to
-	// a path that is relative to the asset.
-	//
-	// The returned path will be normalized and validated.
-	PathForExternalPath(externalPath string) (string, error)
 }
 
 // ReadBucketCloser is a bucket returned from GetReadBucketCloser.
@@ -444,23 +438,19 @@ type Reader interface {
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
 	// GetReadBucketCloser gets the bucket.
-	//
-	// If done for a ProtoFileRef, the Bucket will be for the enclosing module or workspace via
-	// terminateFileNames or protoFileTerminateFileNames. No filtering of the Bucket is performed, this is
-	// the responsibility of the caller.
 	GetReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetReadBucketCloserOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloser, buftarget.BucketTargeting, error)
 	// GetReadWriteBucket gets the bucket.
 	GetReadWriteBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
 		options ...GetReadWriteBucketOption,
-	) (ReadWriteBucket, error)
+	) (ReadWriteBucket, buftarget.BucketTargeting, error)
 	// GetModuleKey gets the ModuleKey.
 	GetModuleKey(
 		ctx context.Context,
@@ -468,15 +458,6 @@ type Reader interface {
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
 	) (bufmodule.ModuleKey, error)
-
-	// TODO(doria): rename this
-	// GetBucketTargeting(
-	// 	ctx context.Context,
-	// 	inputSubDirPath string,
-	// 	targetPaths []string,
-	// 	targetExcludePaths []string,
-	// 	terminateFunc TerminateFunc, // TODO(doria): move that out of buffetch
-	// ) (buftarget.BucketTargeting, error)
 }
 
 // NewReader returns a new Reader.
@@ -857,6 +838,20 @@ func WithGetReadBucketCloserProtoFileTerminateFunc(protoFileTerminateFunc buftar
 	}
 }
 
+// WithGetReadBucketCloserTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetPaths(targetPaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetPaths = targetPaths
+	}
+}
+
+// WithGetReadBucketCloserTargetExcludePaths sets the target exclude paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetExcludePaths(targetExcludePaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
 // GetReadWriteBucketOption is a GetReadWriteBucket option.
 type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
 
@@ -870,6 +865,19 @@ type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
 func WithGetReadWriteBucketTerminateFunc(terminateFunc buftarget.TerminateFunc) GetReadWriteBucketOption {
 	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
 		getReadWriteBucketOptions.terminateFunc = terminateFunc
+	}
+}
+
+// WithGetReadWriteBucketTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadWriteBucketTargetPaths(targetPaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetPaths = targetPaths
+	}
+}
+
+func WithGetReadWriteBucketTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 

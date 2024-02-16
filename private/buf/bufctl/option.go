@@ -14,7 +14,9 @@
 
 package bufctl
 
-import "github.com/bufbuild/buf/private/buf/buffetch"
+import (
+	"github.com/bufbuild/buf/private/buf/buffetch"
+)
 
 type ControllerOption func(*controller)
 
@@ -144,34 +146,24 @@ func newFunctionOptions(controller *controller) *functionOptions {
 	}
 }
 
-func (f *functionOptions) withPathsForBucketExtender(
-	bucketExtender buffetch.BucketExtender,
-) (*functionOptions, error) {
-	deref := *f
-	c := &deref
-	for i, inputTargetPath := range c.targetPaths {
-		targetPath, err := bucketExtender.PathForExternalPath(inputTargetPath)
-		if err != nil {
-			return nil, err
-		}
-		c.targetPaths[i] = targetPath
-	}
-	for i, inputTargetExcludePath := range c.targetExcludePaths {
-		targetExcludePath, err := bucketExtender.PathForExternalPath(inputTargetExcludePath)
-		if err != nil {
-			return nil, err
-		}
-		c.targetExcludePaths[i] = targetExcludePath
-	}
-	return c, nil
-}
-
 func (f *functionOptions) getGetReadBucketCloserOptions() []buffetch.GetReadBucketCloserOption {
 	var getReadBucketCloserOptions []buffetch.GetReadBucketCloserOption
 	if f.copyToInMemory {
 		getReadBucketCloserOptions = append(
 			getReadBucketCloserOptions,
 			buffetch.GetReadBucketCloserWithCopyToInMemory(),
+		)
+	}
+	if len(f.targetPaths) > 0 {
+		getReadBucketCloserOptions = append(
+			getReadBucketCloserOptions,
+			buffetch.GetReadBucketCloserWithTargetPaths(f.targetPaths),
+		)
+	}
+	if len(f.targetExcludePaths) > 0 {
+		getReadBucketCloserOptions = append(
+			getReadBucketCloserOptions,
+			buffetch.GetReadBucketCloserWithTargetExcludePaths(f.targetExcludePaths),
 		)
 	}
 	if f.configOverride != "" {

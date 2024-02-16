@@ -17,6 +17,7 @@ package bufworkspace
 import (
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -25,10 +26,13 @@ import (
 type moduleTargeting struct {
 	// Whether this module is really a target module.
 	//
+	// TODO(doria): protofile ref
 	// False if this was not specified as a target module by the caller.
-	// Also false if there were config.targetPaths or config.protoFileTargetPath, but
+	// Also false if there were bucketTargeting.TargetPaths() or bucketTargeting.protoFileTargetPath, but
 	// these paths did not match anything in the module.
 	isTargetModule bool
+	// moduleDirPath is the directory path of the module
+	moduleDirPath string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
 	moduleTargetPaths []string
 	// relative to the actual moduleDirPath and the roots parsed from the buf.yaml
@@ -41,21 +45,25 @@ type moduleTargeting struct {
 func newModuleTargeting(
 	moduleDirPath string,
 	roots []string,
+	bucketTargeting buftarget.BucketTargeting,
 	config *workspaceBucketConfig,
 	isTentativelyTargetModule bool,
 ) (*moduleTargeting, error) {
 	if !isTentativelyTargetModule {
 		// If this is not a target Module, we do not want to target anything, as targeting
 		// paths for non-target Modules is an error.
-		return &moduleTargeting{}, nil
+		return &moduleTargeting{moduleDirPath: moduleDirPath}, nil
 	}
 	// If we have no target paths, then we always match the value of isTargetModule.
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
 	// to consider this module a target.
-	isTargetModule := len(config.targetPaths) == 0 && config.protoFileTargetPath == ""
+	// TODO(doria): deal with proto file ref appropriately
+	isTargetModule := len(bucketTargeting.TargetPaths()) == 0 && config.protoFileTargetPath == ""
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
-	for _, targetPath := range config.targetPaths {
+	// We use the bucketTargeting.TargetPaths() instead of the workspace config target paths
+	// since those are stripped of the path to the module.
+	for _, targetPath := range bucketTargeting.TargetPaths() {
 		if targetPath == moduleDirPath {
 			// We're just going to be realists in our error messages here.
 			// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
@@ -71,7 +79,9 @@ func newModuleTargeting(
 			moduleTargetPaths = append(moduleTargetPaths, moduleTargetPath)
 		}
 	}
-	for _, targetExcludePath := range config.targetExcludePaths {
+	// We use the bucketTargeting.TargetExcludePaths() instead of the workspace config target
+	// exclude paths since those are stripped of the path to the module.
+	for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
 		if targetExcludePath == moduleDirPath {
 			// We're just going to be realists in our error messages here.
 			// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
@@ -121,6 +131,7 @@ func newModuleTargeting(
 		includePackageFiles = config.includePackageFiles
 	}
 	return &moduleTargeting{
+		moduleDirPath:             moduleDirPath,
 		isTargetModule:            isTargetModule,
 		moduleTargetPaths:         moduleTargetPaths,
 		moduleTargetExcludePaths:  moduleTargetExcludePaths,

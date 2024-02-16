@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
@@ -32,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 // Hint on how to get these:
@@ -1167,6 +1169,16 @@ func testLintWithOptions(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		zaptest.NewLogger(t),
+		readWriteBucket,
+		dirPath,
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
 	workspace, err := bufworkspace.NewWorkspaceProvider(
 		zap.NewNop(),
 		tracing.NopTracer,
@@ -1176,6 +1188,7 @@ func testLintWithOptions(
 	).GetWorkspaceForBucket(
 		ctx,
 		readWriteBucket,
+		bucketTargeting,
 	)
 	require.NoError(t, err)
 

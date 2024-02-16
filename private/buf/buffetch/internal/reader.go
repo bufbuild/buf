@@ -112,12 +112,11 @@ func (r *reader) GetReadBucketCloser(
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
 	options ...GetReadBucketCloserOption,
-) (retReadBucketCloser ReadBucketCloser, retErr error) {
+) (retReadBucketCloser ReadBucketCloser, _ buftarget.BucketTargeting, retErr error) {
 	getReadBucketCloserOptions := newGetReadBucketCloserOptions()
 	for _, option := range options {
 		option(getReadBucketCloserOptions)
 	}
-
 	if getReadBucketCloserOptions.copyToInMemory {
 		defer func() {
 			if retReadBucketCloser != nil {
@@ -135,31 +134,36 @@ func (r *reader) GetReadBucketCloser(
 			}
 		}()
 	}
-
 	switch t := bucketRef.(type) {
 	case ArchiveRef:
 		return r.getArchiveBucket(
 			ctx,
 			container,
 			t,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
 			getReadBucketCloserOptions.terminateFunc,
 		)
 	case DirRef:
-		readWriteBucket, err := r.getDirBucket(
+		readWriteBucket, bucketTargeting, err := r.getDirBucket(
 			ctx,
 			container,
 			t,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
 			getReadBucketCloserOptions.terminateFunc,
 		)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return newReadBucketCloserForReadWriteBucket(readWriteBucket), nil
+		return newReadBucketCloserForReadWriteBucket(readWriteBucket), bucketTargeting, nil
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
+			getReadBucketCloserOptions.targetPaths,
+			getReadBucketCloserOptions.targetExcludePaths,
 			getReadBucketCloserOptions.terminateFunc,
 		)
 	case ProtoFileRef:
@@ -167,11 +171,10 @@ func (r *reader) GetReadBucketCloser(
 			ctx,
 			container,
 			t,
-			// getReadBucketCloserOptions.terminateFunc,
 			getReadBucketCloserOptions.protoFileTerminateFunc,
 		)
 	default:
-		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
+		return nil, nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
 	}
 }
 
@@ -180,7 +183,7 @@ func (r *reader) GetReadWriteBucket(
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	options ...GetReadWriteBucketOption,
-) (ReadWriteBucket, error) {
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
 	getReadWriteBucketOptions := newGetReadWriteBucketOptions()
 	for _, option := range options {
 		option(getReadWriteBucketOptions)
@@ -189,6 +192,8 @@ func (r *reader) GetReadWriteBucket(
 		ctx,
 		container,
 		dirRef,
+		getReadWriteBucketOptions.targetPaths,
+		getReadWriteBucketOptions.targetExcludePaths,
 		getReadWriteBucketOptions.terminateFunc,
 	)
 }
@@ -235,11 +240,13 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
+	targetPaths []string,
+	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (_ ReadBucketCloser, retErr error) {
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
@@ -252,21 +259,21 @@ func (r *reader) getArchiveBucket(
 				archiveRef.StripComponents(),
 			),
 		); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	case ArchiveTypeZip:
 		var readerAt io.ReaderAt
 		if size < 0 {
 			data, err := io.ReadAll(readCloser)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
 			readerAt, err = ioext.ReaderAtForReader(readCloser)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 		if err := storagearchive.Unzip(
@@ -278,24 +285,42 @@ func (r *reader) getArchiveBucket(
 				archiveRef.StripComponents(),
 			),
 		); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	default:
-		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
+		return nil, nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), archiveRef.SubDirPath(), terminateFunc)
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readWriteBucket),
+		archiveRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
+	targetPaths []string,
+	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (ReadWriteBucket, error) {
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
 	if !r.localEnabled {
-		return nil, NewReadLocalDisabledError()
+		return nil, nil, NewReadLocalDisabledError()
 	}
-	return getReadWriteBucketForOS(ctx, r.logger, r.storageosProvider, dirRef.Path(), terminateFunc)
+	return getReadWriteBucketForOS(
+		ctx,
+		r.logger,
+		r.storageosProvider,
+		dirRef.Path(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
 }
 
 func (r *reader) getProtoFileBucket(
@@ -303,9 +328,9 @@ func (r *reader) getProtoFileBucket(
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
 	terminateFunc buftarget.TerminateFunc,
-) (ReadBucketCloser, error) {
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	if !r.localEnabled {
-		return nil, NewReadLocalDisabledError()
+		return nil, nil, NewReadLocalDisabledError()
 	}
 	return getReadBucketCloserForOSProtoFile(
 		ctx,
@@ -320,17 +345,19 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
+	targetPaths []string,
+	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (_ ReadBucketCloser, retErr error) {
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	if !r.gitEnabled {
-		return nil, NewReadGitDisabledError()
+		return nil, nil, NewReadGitDisabledError()
 	}
 	if r.gitCloner == nil {
-		return nil, errors.New("git cloner is nil")
+		return nil, nil, errors.New("git cloner is nil")
 	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
@@ -344,9 +371,17 @@ func (r *reader) getGitBucket(
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
 		},
 	); err != nil {
-		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
+		return nil, nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return getReadBucketCloserForBucket(ctx, r.logger, storage.NopReadBucketCloser(readWriteBucket), gitRef.SubDirPath(), terminateFunc)
+	return getReadBucketCloserForBucket(
+		ctx,
+		r.logger,
+		storage.NopReadBucketCloser(readWriteBucket),
+		gitRef.SubDirPath(),
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
 }
 
 func (r *reader) getModuleKey(
@@ -532,38 +567,46 @@ func getReadBucketCloserForBucket(
 	logger *zap.Logger,
 	inputBucket storage.ReadBucketCloser,
 	inputSubDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (ReadBucketCloser, error) {
-	// TODO(doria): delete later, keeping some notes as we work.
-	// The point of doing this is to remap the bucket based on a controlling workspace if found
-	// and then also remapping the `SubDirPath` against this.
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
 		inputBucket,
 		inputSubDirPath,
-		nil, // TODO(doria): we should plumb paths down here
-		nil, // TODO(doria): we should plumb paths down here
+		targetPaths,
+		targetExcludePaths,
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if bucketTargeting.ControllingWorkspacePath() != "." {
+	var bucketPath string
+	if bucketTargeting.ControllingWorkspace() != nil {
+		bucketPath = bucketTargeting.ControllingWorkspace().Path()
+	} else {
+		bucketPath = bucketTargeting.InputPath()
+	}
+	if bucketPath != "." {
 		inputBucket = storage.MapReadBucketCloser(
 			inputBucket,
-			storage.MapOnPrefix(bucketTargeting.ControllingWorkspacePath()),
+			storage.MapOnPrefix(bucketPath),
 		)
+		// We return the same bucket targeting information, since we are using mappers to remap
+		// paths with the controlling workspace as the prefix when using the bucket.
 	}
 	logger.Debug(
 		"buffetch creating new bucket",
-		zap.String("controllingWorkspacePath", bucketTargeting.ControllingWorkspacePath()),
+		zap.String("bucketPath", bucketPath),
 		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
 	)
-	return newReadBucketCloser(
-		inputBucket,
-		bucketTargeting,
-	)
+	readBucketCloser, err := newReadBucketCloser(inputBucket, bucketPath, bucketTargeting)
+	if err != nil {
+		return nil, nil, err
+	}
+	return readBucketCloser, bucketTargeting, nil
 }
 
 // Use for directory-based buckets.
@@ -572,32 +615,49 @@ func getReadWriteBucketForOS(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	inputDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
-) (ReadWriteBucket, error) {
-	fsRoot, inputSubDirPath, err := fsRootAndFSRelPathForPath(inputDirPath)
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
+	fsRoot, fsRootInputSubDirPath, err := fsRootAndFSRelPathForPath(inputDirPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	fsRootTargetPaths := make([]string, len(targetPaths))
+	for i, targetPath := range targetPaths {
+		_, fsRootTargetPath, err := fsRootAndFSRelPathForPath(targetPath)
+		if err != nil {
+			return nil, nil, err
+		}
+		fsRootTargetPaths[i] = fsRootTargetPath
+	}
+	fsRootTargetExcludePaths := make([]string, len(targetExcludePaths))
+	for i, targetExcludePath := range targetExcludePaths {
+		_, fsRootTargetExcludePath, err := fsRootAndFSRelPathForPath(targetExcludePath)
+		if err != nil {
+			return nil, nil, err
+		}
+		fsRootTargetExcludePaths[i] = fsRootTargetExcludePath
 	}
 	osRootBucket, err := storageosProvider.NewReadWriteBucket(
 		fsRoot,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	osRootBucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
 		osRootBucket,
-		inputSubDirPath,
-		nil, // TODO(doria): we should plumb paths down here
-		nil, // TODO(doria): we should plumb paths down here
+		fsRootInputSubDirPath,
+		fsRootTargetPaths,
+		fsRootTargetExcludePaths,
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
+		return nil, nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
-	// TODO(doria): I'd like to completely kill and refactor this if possible.
 	// We now know where the workspace is relative to the FS root.
 	// If the input path is provided as an absolute path, we create a new bucket for the
 	// controlling workspace using an absolute path.
@@ -610,39 +670,79 @@ func getReadWriteBucketForOS(
 	// terminateFileLocation: path/to
 	// returnMapPath: path/to
 	// returnSubDirPath: foo
-	// Make bucket on: Rel(pwd, returnMapPath)
+	// Make bucket on: Rel(pwd, controlling workspace)
 	//
 	// inputDirPath: /users/alice/path/to/foo
 	// terminateFileLocation: /users/alice/path/to
 	// returnMapPath: /users/alice/path/to
 	// returnSubDirPath: foo
-	// Make bucket on: FS root + returnMapPath (since absolute)
+	// Make bucket on: FS root + controlling workspace (since absolute)
+	//
+	// If no controlling workspace is found, we use the current working directory.
 	var bucketPath string
 	var inputPath string
+	bucketTargetPaths := make([]string, len(osRootBucketTargeting.TargetPaths()))
+	bucketTargetExcludePaths := make([]string, len(osRootBucketTargeting.TargetExcludePaths()))
+	pwd, err := osext.Getwd()
+	if err != nil {
+		return nil, nil, err
+	}
+	_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
+	if err != nil {
+		return nil, nil, err
+	}
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		var err error
-		bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspacePath())
-		inputPath, err = normalpath.Rel(bucketPath, normalpath.Join(fsRoot, inputSubDirPath))
-		if err != nil {
-			return nil, err
+		if osRootBucketTargeting.ControllingWorkspace() != nil {
+			bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspace().Path())
+		} else {
+			bucketPath = normalpath.Join(fsRoot, pwdFSRelPath)
 		}
+		inputPath = osRootBucketTargeting.InputPath()
+		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
+		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 	} else {
-		pwd, err := osext.Getwd()
-		if err != nil {
-			return nil, err
+		if osRootBucketTargeting.ControllingWorkspace() != nil {
+			bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspace().Path())
+			if err != nil {
+				return nil, nil, err
+			}
+			inputPath = osRootBucketTargeting.InputPath()
+			bucketTargetPaths = osRootBucketTargeting.TargetPaths()
+			bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
+
+		} else {
+			bucketPath = "."
+			inputPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.InputPath())
+			if err != nil {
+				return nil, nil, err
+			}
+			for i, targetPath := range osRootBucketTargeting.TargetPaths() {
+				bucketTargetPaths[i], err = normalpath.Rel(pwdFSRelPath, targetPath)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
+			for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
+				bucketTargetExcludePaths[i], err = normalpath.Rel(pwdFSRelPath, targetExcludePath)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
 		}
-		_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
-		if err != nil {
-			return nil, err
-		}
-		bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspacePath())
-		if err != nil {
-			return nil, err
-		}
-		inputPath, err = normalpath.Rel(osRootBucketTargeting.ControllingWorkspacePath(), inputSubDirPath)
-		if err != nil {
-			return nil, err
-		}
+		//for i, osRootTargetPath := range osRootBucketTargeting.TargetPaths() {
+		//	targetPath, err := normalpath.Rel(pwdFSRelPath, osRootTargetPath)
+		//	if err != nil {
+		//		return nil, nil, err
+		//	}
+		//	bucketTargetPaths[i] = targetPath
+		//}
+		//for i, osRootTargetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
+		//	targetExcludePath, err := normalpath.Rel(pwdFSRelPath, osRootTargetExcludePath)
+		//	if err != nil {
+		//		return nil, nil, err
+		//	}
+		//	bucketTargetExcludePaths[i] = targetExcludePath
+		//}
 	}
 	// Now that we've mapped the workspace against the FS root, we recreate the bucket with
 	// at the sub dir path.
@@ -654,24 +754,25 @@ func getReadWriteBucketForOS(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
 		bucket,
 		inputPath,
-		nil, // TODO(doria): we should plumb paths down here
-		nil, // TODO(doria): we should plumb paths down here
+		bucketTargetPaths,
+		bucketTargetExcludePaths,
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return newReadWriteBucket(
-		bucket,
-		bucketTargeting,
-	)
+	readWriteBucket, err := newReadWriteBucket(bucket, bucketPath, bucketTargeting)
+	if err != nil {
+		return nil, nil, err
+	}
+	return readWriteBucket, bucketTargeting, nil
 }
 
 // Use for ProtoFileRefs.
@@ -681,19 +782,25 @@ func getReadBucketCloserForOSProtoFile(
 	storageosProvider storageos.Provider,
 	protoFilePath string,
 	terminateFunc buftarget.TerminateFunc,
-) (ReadBucketCloser, error) {
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
+	// For proto file refs, we treat the input directory as the directory of
+	// the file and the file as a target path.
+	// No other target paths and target exclude paths are supported with
+	// proto file refs.
 	protoFileDir := normalpath.Dir(protoFilePath)
-	readWriteBucket, err := getReadWriteBucketForOS(
+	readWriteBucket, bucketTargeting, err := getReadWriteBucketForOS(
 		ctx,
 		logger,
 		storageosProvider,
 		protoFileDir,
+		[]string{protoFilePath},
+		nil, // no target exclude paths are supported for proto file refs
 		terminateFunc,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return newReadBucketCloserForReadWriteBucket(readWriteBucket), nil
+	return newReadBucketCloserForReadWriteBucket(readWriteBucket), bucketTargeting, nil
 }
 
 // fsRootAndFSRelPathForPath is a helper function that takes a path and returns the FS
@@ -756,6 +863,8 @@ type getReadBucketCloserOptions struct {
 	terminateFunc          buftarget.TerminateFunc
 	protoFileTerminateFunc buftarget.TerminateFunc
 	copyToInMemory         bool
+	targetPaths            []string
+	targetExcludePaths     []string
 }
 
 func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
@@ -763,7 +872,9 @@ func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
 }
 
 type getReadWriteBucketOptions struct {
-	terminateFunc buftarget.TerminateFunc
+	terminateFunc      buftarget.TerminateFunc
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
 func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {

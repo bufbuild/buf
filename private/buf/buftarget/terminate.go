@@ -16,19 +16,75 @@ package buftarget
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io/fs"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // TerminateFunc is a termination function.
-//
-// This function should return true if the search should terminate at the prefix, that is
-// the prefix should be where the bucket is mapped onto.
-//
-// The original subDirPath is also given to the TerminateFunc.
 type TerminateFunc func(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	prefix string,
-	originalSubDirPath string,
-) (terminate bool, err error)
+	originalInputPath string,
+) (ControllingWorkspace, error)
+
+// TerminateAtControllingWorkspace implements a TerminateFunc and returns controlling workspace
+// if one is found at the given prefix.
+//
+// All paths must be relative.
+func TerminateAtControllingWorkspace(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalInputPath string,
+) (ControllingWorkspace, error) {
+	return terminateAtControllingWorkspace(ctx, bucket, prefix, originalInputPath)
+}
+
+// *** PRIVATE ***
+
+func terminateAtControllingWorkspace(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalInputPath string,
+) (ControllingWorkspace, error) {
+	bufWorkYAMLFile, err := bufconfig.GetBufWorkYAMLFileForPrefix(ctx, bucket, prefix)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	bufWorkYAMLExists := err == nil
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, prefix)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	bufYAMLExists := err == nil
+	if bufWorkYAMLExists && bufYAMLExists {
+		// This isn't actually the external directory path, but we do the best we can here for now.
+		return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", prefix)
+	}
+	if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+		// We don't require the workspace to point to the prefix (likely because we're
+		// finding the controlling workspace for a ProtoFileRef), we're good to go.
+		return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
+	}
+	if bufWorkYAMLExists {
+		// For v1 workspaces, we ensure that the module paths lists actually contain the the
+		// original input paths. If not, then we do not use this workspace.
+		relDirPath, err := normalpath.Rel(prefix, originalInputPath)
+		if err != nil {
+			return nil, err
+		}
+		_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
+		if prefix == originalInputPath || refersToCurDirPath {
+			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
+		}
+	}
+	return nil, nil
+}

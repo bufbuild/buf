@@ -71,6 +71,7 @@ func (t *protoFileTracker) validate() error {
 	var noProtoFilesErrors []*NoProtoFilesError
 	for opaqueID, protoFileExists := range t.opaqueIDToProtoFileExists {
 		if !protoFileExists {
+			panic("#########")
 			noProtoFilesErrors = append(
 				noProtoFilesErrors,
 				&NoProtoFilesError{
