@@ -10,7 +10,7 @@ require (
 	github.com/bufbuild/protovalidate-go v0.5.1
 	github.com/bufbuild/protoyaml-go v0.1.8
 	github.com/docker/docker v25.0.3+incompatible
-	github.com/go-chi/chi/v5 v5.0.11
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/cel-go v0.19.0
