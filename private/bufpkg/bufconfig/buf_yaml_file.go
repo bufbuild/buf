@@ -317,7 +317,7 @@ func readBufYAMLFile(
 		if err != nil {
 			return nil, err
 		}
-		lintConfig, err := getLintConfigForExternalLint(
+		lintConfig, err := getLintConfigForExternalLintV1Beta1V1(
 			fileVersion,
 			externalBufYAMLFile.Lint,
 			".",
@@ -423,7 +423,7 @@ func readBufYAMLFile(
 				// We have a module-specific configuration, all paths must be within the module.
 				lintRequirePathsToBeContainedWithinModuleDirPath = true
 			}
-			lintConfig, err := getLintConfigForExternalLint(
+			lintConfig, err := getLintConfigForExternalLintV2(
 				fileVersion,
 				externalLintConfig,
 				dirPath,
@@ -522,7 +522,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				}
 			}
 		}
-		externalBufYAMLFile.Lint = getExternalLintForLintConfig(moduleConfig.LintConfig(), ".")
+		externalBufYAMLFile.Lint = getExternalLintV1Beta1V1ForLintConfig(moduleConfig.LintConfig(), ".")
 		externalBufYAMLFile.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), ".")
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
 		if err != nil {
@@ -552,7 +552,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		// We could make other decisions: if there are two or more matching configs, do a default,
 		// and then just override the non-matching, but this gets complicated. The current logic
 		// takes care of the base case when writing buf.yaml files.
-		stringToExternalLint := make(map[string]externalBufYAMLFileLintV1Beta1V1V2)
+		stringToExternalLint := make(map[string]externalBufYAMLFileLintV2)
 		stringToExternalBreaking := make(map[string]externalBufYAMLFileBreakingV1Beta1V1V2)
 
 		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
@@ -576,7 +576,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			}
 			externalModule.Excludes = slicesext.Map(excludes, joinDirPath)
 
-			externalLint := getExternalLintForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
+			externalLint := getExternalLintV2ForLintConfig(moduleConfig.LintConfig(), moduleDirPath)
 			externalLintData, err := json.Marshal(externalLint)
 			if err != nil {
 				return syserror.Wrap(err)
@@ -607,7 +607,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Lint = externalLint
 			externalBufYAMLFile.Breaking = externalBreaking
 			for i := 0; i < len(externalBufYAMLFile.Modules); i++ {
-				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV1Beta1V1V2{}
+				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
 			}
 		}
@@ -709,9 +709,9 @@ func getConfiguredDepModuleRefsForExternalDeps(
 	return configuredDepModuleRefs, nil
 }
 
-func getLintConfigForExternalLint(
+func getLintConfigForExternalLintV1Beta1V1(
 	fileVersion FileVersion,
-	externalLint externalBufYAMLFileLintV1Beta1V1V2,
+	externalLint externalBufYAMLFileLintV1Beta1V1,
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
@@ -747,6 +747,47 @@ func getLintConfigForExternalLint(
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
 		externalLint.AllowCommentIgnores,
+	), nil
+}
+
+func getLintConfigForExternalLintV2(
+	fileVersion FileVersion,
+	externalLint externalBufYAMLFileLintV2,
+	moduleDirPath string,
+	requirePathsToBeContainedWithinModuleDirPath bool,
+) (LintConfig, error) {
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	if err != nil {
+		return nil, err
+	}
+	ignoreOnly := make(map[string][]string)
+	for idOrCategory, paths := range externalLint.IgnoreOnly {
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+		if err != nil {
+			return nil, err
+		}
+		if len(relPaths) > 0 {
+			ignoreOnly[idOrCategory] = relPaths
+		}
+	}
+	checkConfig, err := newCheckConfig(
+		fileVersion,
+		externalLint.Use,
+		externalLint.Except,
+		ignore,
+		ignoreOnly,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newLintConfig(
+		checkConfig,
+		externalLint.EnumZeroValueSuffix,
+		externalLint.RPCAllowSameRequestResponse,
+		externalLint.RPCAllowGoogleProtobufEmptyRequests,
+		externalLint.RPCAllowGoogleProtobufEmptyResponses,
+		externalLint.ServiceSuffix,
+		!externalLint.DisallowCommentIgnores,
 	), nil
 }
 
@@ -827,11 +868,11 @@ func getRelPathsForLintOrBreakingExternalPaths(
 	return relPaths, nil
 }
 
-func getExternalLintForLintConfig(lintConfig LintConfig, moduleDirPath string) externalBufYAMLFileLintV1Beta1V1V2 {
+func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath string) externalBufYAMLFileLintV1Beta1V1 {
 	joinDirPath := func(importPath string) string {
 		return normalpath.Join(moduleDirPath, importPath)
 	}
-	externalLint := externalBufYAMLFileLintV1Beta1V1V2{}
+	externalLint := externalBufYAMLFileLintV1Beta1V1{}
 	// All already sorted.
 	externalLint.Use = lintConfig.UseIDsAndCategories()
 	externalLint.Except = lintConfig.ExceptIDsAndCategories()
@@ -846,6 +887,28 @@ func getExternalLintForLintConfig(lintConfig LintConfig, moduleDirPath string) e
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+	return externalLint
+}
+
+func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string) externalBufYAMLFileLintV2 {
+	joinDirPath := func(importPath string) string {
+		return normalpath.Join(moduleDirPath, importPath)
+	}
+	externalLint := externalBufYAMLFileLintV2{}
+	// All already sorted.
+	externalLint.Use = lintConfig.UseIDsAndCategories()
+	externalLint.Except = lintConfig.ExceptIDsAndCategories()
+	externalLint.Ignore = slicesext.Map(lintConfig.IgnorePaths(), joinDirPath)
+	externalLint.IgnoreOnly = make(map[string][]string, len(lintConfig.IgnoreIDOrCategoryToPaths()))
+	for idOrCategory, importPaths := range lintConfig.IgnoreIDOrCategoryToPaths() {
+		externalLint.IgnoreOnly[idOrCategory] = slicesext.Map(importPaths, joinDirPath)
+	}
+	externalLint.EnumZeroValueSuffix = lintConfig.EnumZeroValueSuffix()
+	externalLint.RPCAllowSameRequestResponse = lintConfig.RPCAllowSameRequestResponse()
+	externalLint.RPCAllowGoogleProtobufEmptyRequests = lintConfig.RPCAllowGoogleProtobufEmptyRequests()
+	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
+	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
+	externalLint.DisallowCommentIgnores = !lintConfig.AllowCommentIgnores()
 	return externalLint
 }
 
@@ -876,7 +939,7 @@ type externalBufYAMLFileV1Beta1V1 struct {
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Build    externalBufYAMLFileBuildV1Beta1V1      `json:"build,omitempty" yaml:"build,omitempty"`
-	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Lint     externalBufYAMLFileLintV1Beta1V1       `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
@@ -888,7 +951,7 @@ type externalBufYAMLFileV2 struct {
 	Version  string                                 `json:"version,omitempty" yaml:"version,omitempty"`
 	Modules  []externalBufYAMLFileModuleV2          `json:"modules,omitempty" yaml:"modules,omitempty"`
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
@@ -897,7 +960,7 @@ type externalBufYAMLFileModuleV2 struct {
 	Path     string                                 `json:"path,omitempty" yaml:"path,omitempty"`
 	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Excludes []string                               `json:"excludes,omitempty" yaml:"excludes,omitempty"`
-	Lint     externalBufYAMLFileLintV1Beta1V1V2     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Breaking externalBufYAMLFileBreakingV1Beta1V1V2 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 }
 
@@ -909,12 +972,12 @@ type externalBufYAMLFileBuildV1Beta1V1 struct {
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
-// externalBufYAMLFileLintV1Beta1V1V2 represents lint configuation within a v1beta1, v1,
-// or v2 buf.yaml file, which have the same shape.
+// externalBufYAMLFileLintV1Beta1V1 represents lint configuation within a v1beta1 or v1
+// buf.yaml file, which have the same shape.
 //
 // Note that the lint and breaking ids/categories DID change between versions, make
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
-type externalBufYAMLFileLintV1Beta1V1V2 struct {
+type externalBufYAMLFileLintV1Beta1V1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// Ignore are the paths to ignore.
@@ -929,7 +992,7 @@ type externalBufYAMLFileLintV1Beta1V1V2 struct {
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
 }
 
-func (el externalBufYAMLFileLintV1Beta1V1V2) isEmpty() bool {
+func (el externalBufYAMLFileLintV1Beta1V1) isEmpty() bool {
 	return len(el.Use) == 0 &&
 		len(el.Except) == 0 &&
 		len(el.Ignore) == 0 &&
@@ -940,6 +1003,38 @@ func (el externalBufYAMLFileLintV1Beta1V1V2) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
 		!el.AllowCommentIgnores
+}
+
+// externalBufYAMLFileLintV2 represents lint configuation within a  v2 buf.yaml file.
+//
+// Note that the lint and breaking ids/categories DID change between versions, make
+// sure to deal with this when parsing what to set as defaults, or how to interpret categories.
+type externalBufYAMLFileLintV2 struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// Ignore are the paths to ignore.
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	/// IgnoreOnly are the ID/category to paths to ignore.
+	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
+	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
+	RPCAllowGoogleProtobufEmptyRequests  bool                `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
+	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	DisallowCommentIgnores               bool                `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
+}
+
+func (el externalBufYAMLFileLintV2) isEmpty() bool {
+	return len(el.Use) == 0 &&
+		len(el.Except) == 0 &&
+		len(el.Ignore) == 0 &&
+		len(el.IgnoreOnly) == 0 &&
+		el.EnumZeroValueSuffix == "" &&
+		!el.RPCAllowSameRequestResponse &&
+		!el.RPCAllowGoogleProtobufEmptyRequests &&
+		!el.RPCAllowGoogleProtobufEmptyResponses &&
+		el.ServiceSuffix == "" &&
+		!el.DisallowCommentIgnores
 }
 
 // externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,

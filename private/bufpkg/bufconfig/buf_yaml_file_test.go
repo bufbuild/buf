@@ -42,12 +42,14 @@ func TestReadWriteBufYAMLFileRoundTrip(t *testing.T) {
 lint:
   use:
     - DEFAULT
+  allow_comment_ignores: true
 `,
 		// expected output
 		`version: v1
 lint:
   use:
     - DEFAULT
+  allow_comment_ignores: true
 `,
 	)
 
@@ -58,6 +60,7 @@ lint:
 lint:
   use:
     - DEFAULT
+  disallow_comment_ignores: true
 modules:
   - path: .
 `,
@@ -68,6 +71,7 @@ modules:
 lint:
   use:
     - DEFAULT
+  disallow_comment_ignores: true
 `,
 	)
 
