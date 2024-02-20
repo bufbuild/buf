@@ -48,7 +48,7 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T) (string, string, er
 	if len(s) == 0 {
 		return "", "", syserror.New("must have at least one value in getPrimarySecondaryRegistry")
 	}
-	registryMap, err := slicesext.ToUniqueValuesMapError(
+	registryMap, err := slicesext.ToValuesMapError(
 		s,
 		func(e T) (string, error) {
 			moduleFullName := e.ModuleFullName()
