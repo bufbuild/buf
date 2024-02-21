@@ -383,12 +383,12 @@ func validateCreateFlags(flags *flags) error {
 func validateLabelFlags(flags *flags) error {
 	for _, label := range flags.Labels {
 		if label == "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string.", labelFlagName)
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
 		}
 	}
 	for _, tag := range flags.Tags {
 		if tag == "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string.", tagFlagName)
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", tagFlagName)
 		}
 	}
 	return nil
