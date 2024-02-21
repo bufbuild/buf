@@ -140,7 +140,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if err := validateCreateFlags(flags); err != nil {
+	if err := validateFlags(flags); err != nil {
 		return err
 	}
 
@@ -346,11 +346,21 @@ func createUploadModulesIfNotExist(
 	return nil
 }
 
+func validateFlags(flags *flags) error {
+	if err := validateCreateFlags(flags); err != nil {
+		return err
+	}
+	if err := validateLabelFlags(flags); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateCreateFlags(flags *flags) error {
 	if flags.Create {
 		if flags.CreateVisibility == "" {
 			return appcmd.NewInvalidArgumentErrorf(
-				"--%s is required if --%s is set.",
+				"--%s is required if --%s is set",
 				createVisibilityFlagName,
 				createFlagName,
 			)
@@ -361,7 +371,7 @@ func validateCreateFlags(flags *flags) error {
 	} else {
 		if flags.CreateVisibility != "" {
 			return appcmd.NewInvalidArgumentErrorf(
-				"Cannot set --%s without --%s.",
+				"Cannot set --%s without --%s",
 				createVisibilityFlagName,
 				createFlagName,
 			)
@@ -370,17 +380,29 @@ func validateCreateFlags(flags *flags) error {
 	return nil
 }
 
+func validateLabelFlags(flags *flags) error {
+	for _, label := range flags.Labels {
+		if label == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
+		}
+	}
+	for _, tag := range flags.Tags {
+		if tag == "" {
+			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", tagFlagName)
+		}
+	}
+	return nil
+}
+
 func combineLabelLikeFlags(flags *flags) []string {
-	return slicesext.ToUniqueSorted(
-		append(
-			flags.Labels,
-			append(
-				flags.Tags,
-				flags.Draft,
-				flags.Branch,
-			)...,
-		),
-	)
+	labels := append(slicesext.Copy(flags.Labels), flags.Tags...)
+	if flags.Draft != "" {
+		labels = append(labels, flags.Draft)
+	}
+	if flags.Branch != "" {
+		labels = append(labels, flags.Branch)
+	}
+	return slicesext.ToUniqueSorted(labels)
 }
 
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
