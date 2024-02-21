@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package modprune
+package depupdate
 
 import _ "github.com/bufbuild/buf/private/usage"

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modupdate
+package depupdate
 
 import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -37,19 +37,21 @@ const (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Update a module's locked dependencies in buf.lock",
+		Short: "Update pinned dependencies in a buf.lock",
 		Long: `Fetch the latest digests for the specified references in buf.yaml,
 and write them and their transitive dependencies to buf.lock.
 
 The first argument is the directory of the local module to update.
-Defaults to "." if no argument is specified.
-
-Note that updating is only allowed for v2 buf.yaml files. Run "buf migrate" to migrate to v2.`,
-		Args: appcmd.MaximumNArgs(1),
+Defaults to "." if no argument is specified.`,
+		Args:       appcmd.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

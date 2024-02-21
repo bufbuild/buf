@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 - Move `buf beta graph` to the now-stable `buf dep graph`.
-- Deprecate `buf mod {clear-cache,cc}` in favor of `buf registry cc`.
+- Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
+- Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
+- Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
 - Deprecate `buf mod open`.
 - Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
   rules to incoming messages specified with `--from`.

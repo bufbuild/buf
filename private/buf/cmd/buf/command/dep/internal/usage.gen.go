@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package modupdate
+package internal
 
 import _ "github.com/bufbuild/buf/private/usage"

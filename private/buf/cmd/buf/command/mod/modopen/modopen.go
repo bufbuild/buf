@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/browser"
 )
 
-const deprecationMessage = "this command is not supported for v2 buf.yaml files as v2 buf.yaml files contain multiple modules"
+const deprecationMessage = "this command is not supported for v2 buf.yaml files as v2 buf.yaml files contain multiple modules. However, this command will continue to work for v1 buf.yaml files."
 
 // NewCommand returns a new open Command.
 func NewCommand(

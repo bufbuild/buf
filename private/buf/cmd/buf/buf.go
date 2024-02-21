@@ -64,6 +64,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/depgraph"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/depprune"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/depupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
@@ -73,8 +75,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
@@ -100,6 +100,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		name,
 		appext.BuilderWithTimeout(120*time.Second),
 		appext.BuilderWithTracing(),
+
 		appext.BuilderWithInterceptor(newErrorInterceptor()),
 	)
 	return &appcmd.Command{
@@ -124,6 +125,8 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Work with dependencies",
 				SubCommands: []*appcmd.Command{
 					depgraph.NewCommand("graph", builder),
+					depprune.NewCommand("prune", builder, ``, false),
+					depupdate.NewCommand("update", builder, ``, false),
 				},
 			},
 			{
@@ -131,12 +134,14 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Manage Buf modules",
 				SubCommands: []*appcmd.Command{
 					modinit.NewCommand("init", builder),
-					modprune.NewCommand("prune", builder),
-					modupdate.NewCommand("update", builder),
+					// Deprecated and hidden.
+					depprune.NewCommand("prune", builder, `use "buf dep prune" instead. However, "buf mod update" will continue to work.`, true),
+					// Deprecated and hidden.
+					depupdate.NewCommand("update", builder, `use "buf dep update" instead. However, "buf mod update" will contianue to work.`, true),
 					// Deprecated and hidden.
 					modopen.NewCommand("open", builder),
 					// Deprecated and hidden.
-					registrycc.NewCommand("clear-cache", builder, `Use "buf registry cc" instead`, true, "cc"),
+					registrycc.NewCommand("clear-cache", builder, `use "buf registry cc" instead. However, "buf mod clear-cache" will continue to work.`, true, "cc"),
 					modlslintrules.NewCommand("ls-lint-rules", builder),
 					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},

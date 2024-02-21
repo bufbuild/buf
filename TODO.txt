@@ -5,9 +5,7 @@
 
 - update buf generate help documentation
 - Rename `buf mod` commands?
-  - `buf mod open` deprecated and hidden
   - `buf mod ls-lint-rules, ls-breaking-rules` do not work for multiple module workspaces
-  - `buf mod cc` not really module-specific
   - `buf mod init` is now really `config init`
   - `buf mod prune, update` is now really `buf workspace prune, update`
 

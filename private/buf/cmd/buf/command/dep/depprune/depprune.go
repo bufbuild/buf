@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modprune
+package depprune
 
 import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/internal"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
@@ -27,13 +27,17 @@ import (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Prune unused dependencies from buf.lock",
+		Short: "Prune unused dependencies from a buf.lock",
 		Long: `The first argument is the directory of your buf.yaml configuration file.
 Defaults to "." if no argument is specified.`,
-		Args: appcmd.MaximumNArgs(1),
+		Args:       appcmd.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container)
