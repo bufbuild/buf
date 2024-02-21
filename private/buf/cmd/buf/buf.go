@@ -60,6 +60,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/bufinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
@@ -71,7 +72,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
@@ -110,6 +110,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		Version:             bufcli.Version,
 		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
+			bufinit.NewCommand("init", builder, ``, false, false),
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
 			format.NewCommand("format", builder),
@@ -133,7 +134,8 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "mod",
 				Short: "Manage Buf modules",
 				SubCommands: []*appcmd.Command{
-					modinit.NewCommand("init", builder),
+					// Deprecated and hidden.
+					bufinit.NewCommand("init", builder, `use "buf init" instead. However, "buf mod init" will continue to work.`, true, true),
 					// Deprecated and hidden.
 					depprune.NewCommand("prune", builder, `use "buf dep prune" instead. However, "buf mod update" will continue to work.`, true),
 					// Deprecated and hidden.

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Move `buf beta graph` to the now-stable `buf dep graph`.
+- Move `buf mod init` to `buf init`. `buf mod init` is now deprecated.
 - Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
 - Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
 - Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.

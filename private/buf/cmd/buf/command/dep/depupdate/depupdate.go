@@ -92,7 +92,7 @@ func run(
 	}
 	if len(flags.Only) > 0 {
 		// TODO FUTURE: implement
-		return syserror.Newf("--%s is not yet implemented", onlyFlagName)
+		return syserror.Newf("--%s is not implemented", onlyFlagName)
 	}
 
 	logger := container.Logger()

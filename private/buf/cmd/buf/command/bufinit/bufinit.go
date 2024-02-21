@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modinit
+package bufinit
 
 import (
 	"context"
@@ -37,12 +37,22 @@ const (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
+	hidden bool,
+	bindOldFlags bool,
 ) *appcmd.Command {
-	flags := newFlags()
+	flags := newFlags(bindOldFlags)
 	return &appcmd.Command{
 		Use:   name + " [buf.build/owner/foobar]",
-		Short: "Initializes and writes a new buf.yaml file.",
-		Args:  appcmd.MaximumNArgs(1),
+		Short: "Initialize buf configuration files for your local development",
+		Long: `This command will write a new buf.yaml file to start your local development.
+
+If a buf.yaml already exists, this command will not overwrite it, and will produce an error.
+
+The effects of this command may change over time - this command may initialize i.e. buf.gen.yaml files in the future.`,
+		Args:       appcmd.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -59,10 +69,14 @@ type flags struct {
 	DocumentationComments bool
 	// Hidden.
 	Uncomment bool
+
+	bindOldFlags bool
 }
 
-func newFlags() *flags {
-	return &flags{}
+func newFlags(bindOldFlags bool) *flags {
+	return &flags{
+		bindOldFlags: bindOldFlags,
+	}
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
@@ -71,24 +85,26 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outDirPathFlagName,
 		outDirPathFlagShortName,
 		".",
-		`The directory to write the configuration file to`,
+		`The directory to write the configuration files to`,
 	)
-	// TODO FUTURE: Bring this flag back in future versions if we decide it's important.
-	// We're not breaking anyone by not actually producing comments for now.
-	flagSet.BoolVar(
-		&f.DocumentationComments,
-		documentationCommentsFlagName,
-		false,
-		"Write inline documentation in the form of comments in the resulting configuration file",
-	)
-	_ = flagSet.MarkHidden(documentationCommentsFlagName)
-	flagSet.BoolVar(
-		&f.Uncomment,
-		uncommentFlagName,
-		false,
-		"Uncomment examples in the resulting configuration file",
-	)
-	_ = flagSet.MarkHidden(uncommentFlagName)
+	if f.bindOldFlags {
+		// TODO FUTURE: Bring this flag back in future versions if we decide it's important.
+		// We're not breaking anyone by not actually producing comments for now.
+		flagSet.BoolVar(
+			&f.DocumentationComments,
+			documentationCommentsFlagName,
+			false,
+			"Write inline documentation in the form of comments in the resulting configuration file",
+		)
+		_ = flagSet.MarkHidden(documentationCommentsFlagName)
+		flagSet.BoolVar(
+			&f.Uncomment,
+			uncommentFlagName,
+			false,
+			"Uncomment examples in the resulting configuration file",
+		)
+		_ = flagSet.MarkHidden(uncommentFlagName)
+	}
 }
 
 func run(
