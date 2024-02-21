@@ -356,26 +356,6 @@ func validateFlags(flags *flags) error {
 	return nil
 }
 
-func validateLabelFlags(flags *flags) error {
-	for _, label := range flags.Labels {
-		if label == "" {
-			return appcmd.NewInvalidArgumentErrorf(
-				"--%s requires a non-empty string.",
-				labelFlagName,
-			)
-		}
-	}
-	for _, tag := range flags.Tags {
-		if tag == "" {
-			return appcmd.NewInvalidArgumentErrorf(
-				"--%s requires a non-empty string.",
-				tagFlagName,
-			)
-		}
-	}
-	return nil
-}
-
 func validateCreateFlags(flags *flags) error {
 	if flags.Create {
 		if flags.CreateVisibility == "" {
@@ -394,6 +374,26 @@ func validateCreateFlags(flags *flags) error {
 				"Cannot set --%s without --%s.",
 				createVisibilityFlagName,
 				createFlagName,
+			)
+		}
+	}
+	return nil
+}
+
+func validateLabelFlags(flags *flags) error {
+	for _, label := range flags.Labels {
+		if label == "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"--%s requires a non-empty string.",
+				labelFlagName,
+			)
+		}
+	}
+	for _, tag := range flags.Tags {
+		if tag == "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"--%s requires a non-empty string.",
+				tagFlagName,
 			)
 		}
 	}
