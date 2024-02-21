@@ -140,7 +140,7 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if err := validateCreateFlags(flags); err != nil {
+	if err := validateFlags(flags); err != nil {
 		return err
 	}
 
@@ -346,6 +346,37 @@ func createUploadModulesIfNotExist(
 	return nil
 }
 
+func validateFlags(flags *flags) error {
+	if err := validateCreateFlags(flags); err != nil {
+		return err
+	}
+	if err := validateLabelFlags(flags); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateLabelFlags(flags *flags) error {
+	for _, label := range flags.Labels {
+		if label == "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"--%s requires a non-empty string.",
+				labelFlagName,
+			)
+		}
+	}
+	for _, tag := range flags.Tags {
+		if tag == "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"%s|--%s requires a non-empty string.",
+				tagFlagShortName,
+				tagFlagName,
+			)
+		}
+	}
+	return nil
+}
+
 func validateCreateFlags(flags *flags) error {
 	if flags.Create {
 		if flags.CreateVisibility == "" {
@@ -371,16 +402,16 @@ func validateCreateFlags(flags *flags) error {
 }
 
 func combineLabelLikeFlags(flags *flags) []string {
-	return slicesext.ToUniqueSorted(
-		append(
-			flags.Labels,
-			append(
-				flags.Tags,
-				flags.Draft,
-				flags.Branch,
-			)...,
-		),
-	)
+	labels := make([]string, 0, len(flags.Labels)+len(flags.Tags))
+	labels = append(labels, flags.Labels...)
+	labels = append(labels, flags.Tags...)
+	if flags.Draft != "" {
+		labels = append(labels, flags.Draft)
+	}
+	if flags.Branch != "" {
+		labels = append(labels, flags.Branch)
+	}
+	return slicesext.ToUniqueSorted(labels)
 }
 
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
