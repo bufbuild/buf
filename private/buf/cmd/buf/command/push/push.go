@@ -360,7 +360,7 @@ func validateCreateFlags(flags *flags) error {
 	if flags.Create {
 		if flags.CreateVisibility == "" {
 			return appcmd.NewInvalidArgumentErrorf(
-				"--%s is required if --%s is set.",
+				"--%s is required if --%s is set",
 				createVisibilityFlagName,
 				createFlagName,
 			)
@@ -371,7 +371,7 @@ func validateCreateFlags(flags *flags) error {
 	} else {
 		if flags.CreateVisibility != "" {
 			return appcmd.NewInvalidArgumentErrorf(
-				"Cannot set --%s without --%s.",
+				"Cannot set --%s without --%s",
 				createVisibilityFlagName,
 				createFlagName,
 			)
@@ -395,9 +395,7 @@ func validateLabelFlags(flags *flags) error {
 }
 
 func combineLabelLikeFlags(flags *flags) []string {
-	labels := make([]string, 0, len(flags.Labels)+len(flags.Tags))
-	labels = append(labels, flags.Labels...)
-	labels = append(labels, flags.Tags...)
+	labels := append(slicesext.Copy(flags.Labels), flags.Tags...)
 	if flags.Draft != "" {
 		labels = append(labels, flags.Draft)
 	}
