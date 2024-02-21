@@ -992,6 +992,9 @@ type externalBufYAMLFileLintV1Beta1V1 struct {
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
 }
 
+// Suppressing unused warning. Keeping this function around for now.
+var _ = externalBufYAMLFileLintV1Beta1V1.isEmpty
+
 func (el externalBufYAMLFileLintV1Beta1V1) isEmpty() bool {
 	return len(el.Use) == 0 &&
 		len(el.Except) == 0 &&
