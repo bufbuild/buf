@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modclearcache
+package registrycc
 
 import (
 	"context"
@@ -31,14 +31,18 @@ import (
 func NewCommand(
 	name string,
 	builder appext.SubCommandBuilder,
+	deprecated string,
+	hidden bool,
 	aliases ...string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:     name,
-		Aliases: aliases,
-		Short:   "Clear the BSR module cache",
-		Args:    appcmd.NoArgs,
+		Use:        name,
+		Aliases:    aliases,
+		Short:      "Clear the registry cache",
+		Args:       appcmd.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

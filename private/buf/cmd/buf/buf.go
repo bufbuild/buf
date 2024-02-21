@@ -69,7 +69,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
@@ -77,6 +76,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
@@ -135,7 +135,8 @@ func NewRootCommand(name string) *appcmd.Command {
 					modupdate.NewCommand("update", builder),
 					// Deprecated and hidden.
 					modopen.NewCommand("open", builder),
-					modclearcache.NewCommand("clear-cache", builder, "cc"),
+					// Deprecated and hidden.
+					registrycc.NewCommand("clear-cache", builder, `Use "buf registry cc" instead`, true, "cc"),
 					modlslintrules.NewCommand("ls-lint-rules", builder),
 					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},
@@ -146,6 +147,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
+					registrycc.NewCommand("cc", builder, ``, false),
 				},
 			},
 			{

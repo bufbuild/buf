@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Move `buf beta graph` to the now-stable `buf dep graph`.
+- Deprecate `buf mod {clear-cache,cc}` in favor of `buf registry cc`.
 - Deprecate `buf mod open`.
 - Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
   rules to incoming messages specified with `--from`.
