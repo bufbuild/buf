@@ -37,7 +37,7 @@ func GetModuleConfigForProtocPlugin(
 	)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return bufconfig.DefaultModuleConfig, nil
+			return bufconfig.DefaultModuleConfigV1, nil
 		}
 		return nil, err
 	}

@@ -2,6 +2,7 @@
   - Test both dashful and dashless commit IDs
   - Lots of testing around b4 and b5 digests
 - document behavior of file searching, config override
+- Make error messages more helpful in deprecation cases (ie in the help text, point to the new command)
 
 - update buf generate help documentation
 - Rename `buf mod` commands?

@@ -15,10 +15,15 @@
 package bufconfig
 
 var (
-	DefaultBreakingConfig BreakingConfig = defaultBreakingConfigV1
-
-	defaultBreakingConfigV1 = NewBreakingConfig(
+	// DefaultBreakingConfigV1 is the default breaking config for v1.
+	DefaultBreakingConfigV1 BreakingConfig = NewBreakingConfig(
 		defaultCheckConfigV1,
+		false,
+	)
+
+	// DefaultBreakingConfigV2 is the default breaking config for v1.
+	DefaultBreakingConfigV2 BreakingConfig = NewBreakingConfig(
+		defaultCheckConfigV2,
 		false,
 	)
 )

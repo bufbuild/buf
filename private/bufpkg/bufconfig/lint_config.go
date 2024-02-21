@@ -15,10 +15,20 @@
 package bufconfig
 
 var (
-	DefaultLintConfig LintConfig = defaultLintConfigV1
-
-	defaultLintConfigV1 = NewLintConfig(
+	// DefaultLintConfigV1 is the default lint config for v1.
+	DefaultLintConfigV1 LintConfig = NewLintConfig(
 		defaultCheckConfigV1,
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	)
+
+	// DefaultLintConfigV2 is the default lint config for v2.
+	DefaultLintConfigV2 LintConfig = NewLintConfig(
+		defaultCheckConfigV2,
 		"",
 		false,
 		false,

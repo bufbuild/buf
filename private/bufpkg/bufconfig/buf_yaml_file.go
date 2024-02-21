@@ -360,10 +360,7 @@ func readBufYAMLFile(
 		}
 		externalModules := externalBufYAMLFile.Modules
 		if len(externalModules) == 0 {
-			// Always make sure we have at least one ModuleConfig, with the defaults.
-			externalModules = []externalBufYAMLFileModuleV2{
-				{},
-			}
+			return nil, fmt.Errorf(`%v buf.yaml files must specify at least one module using the "modules" key`, fileVersion)
 		}
 		// If a module does not have its own lint section, then we use this as the default.
 		defaultExternalLintConfig := externalBufYAMLFile.Lint

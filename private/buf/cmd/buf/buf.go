@@ -61,6 +61,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
@@ -130,16 +132,20 @@ func NewRootCommand(name string) *appcmd.Command {
 				},
 			},
 			{
-				Use:   "dep",
+				Use:   "config",
 				Short: "Work with configuration files",
 				SubCommands: []*appcmd.Command{
 					configinit.NewCommand("init", builder, ``, false, false),
 					configmigrate.NewCommand("migrate", builder),
+					configlslintrules.NewCommand("ls-lint-rules", builder),
+					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},
 			},
 			{
-				Use:   "mod",
-				Short: "Manage Buf modules",
+				Use:        "mod",
+				Short:      `Manage Buf modules. All commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
+				Deprecated: `All commands are deprecated and have moved to the "buf config", "buf dep", or "buf registry" subcommands.`,
+				Hidden:     true,
 				SubCommands: []*appcmd.Command{
 					// Deprecated and hidden.
 					configinit.NewCommand("init", builder, `use "buf config init" instead. However, "buf mod init" will continue to work.`, true, true),
@@ -151,7 +157,9 @@ func NewRootCommand(name string) *appcmd.Command {
 					modopen.NewCommand("open", builder),
 					// Deprecated and hidden.
 					registrycc.NewCommand("clear-cache", builder, `use "buf registry cc" instead. However, "buf mod clear-cache" will continue to work.`, true, "cc"),
+					// Deprecated and hidden.
 					modlslintrules.NewCommand("ls-lint-rules", builder),
+					// Deprecated and hidden.
 					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},
 			},

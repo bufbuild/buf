@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modlslintrules
+package configlsbreakingrules
 
 import (
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -31,11 +31,12 @@ func NewCommand(
 	return internal.NewLSCommand(
 		name,
 		builder,
-		"lint",
-		buflint.GetAllRulesV1Beta1,
-		buflint.GetAllRulesV1,
+		"breaking",
+		bufbreaking.GetAllRulesV1Beta1,
+		bufbreaking.GetAllRulesV1,
+		bufbreaking.GetAllRulesV2,
 		func(moduleConfig bufconfig.ModuleConfig) ([]bufcheck.Rule, error) {
-			return buflint.RulesForConfig(moduleConfig.LintConfig())
+			return bufbreaking.RulesForConfig(moduleConfig.BreakingConfig())
 		},
 	)
 }

@@ -26,6 +26,13 @@ var (
 		nil,
 		nil,
 	)
+	defaultCheckConfigV2 = newCheckConfigNoValidate(
+		FileVersionV1,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
 )
 
 // CheckConfig is the common interface for the configuration shared by

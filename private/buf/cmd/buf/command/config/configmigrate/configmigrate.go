@@ -42,7 +42,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: `Migrate all buf.yaml, buf.work.yaml, buf.gen.yaml, and buf.lock files at the specified directories or paths to v2.`,
+		Short: `Migrate all buf.yaml, buf.work.yaml, buf.gen.yaml, and buf.lock files at the specified directories or paths to v2`,
 		Long: `If no flags are specified, the current directory is searched for buf.yamls, buf.work.yamls, and buf.gen.yamls.
 
 The effects of this command may change over time `,

@@ -135,7 +135,7 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 	// but given the presence of ignore_only, we don't want to apply configOverride to
 	// non-target modules as the config override might have file paths, and we won't
 	// lint or breaking change detect against non-target modules anyways.
-	targetModuleConfig := bufconfig.DefaultModuleConfig
+	targetModuleConfig := bufconfig.DefaultModuleConfigV1
 	if config.configOverride != "" {
 		bufYAMLFile, err := bufconfig.GetBufYAMLFileForOverride(config.configOverride)
 		if err != nil {
@@ -195,8 +195,8 @@ func (w *workspaceProvider) GetWorkspaceForModuleKey(
 			opaqueIDToBreakingConfig[module.OpaqueID()] = targetModuleConfig.BreakingConfig()
 		} else {
 			// For all non-targets, set the default lint and breaking config.
-			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
-			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
+			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
+			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfigV1
 		}
 	}
 	return newWorkspace(
@@ -579,8 +579,8 @@ func (w *workspaceProvider) getWorkspaceForBucketModuleSet(
 			opaqueIDToLintConfig[module.OpaqueID()] = moduleConfig.LintConfig()
 			opaqueIDToBreakingConfig[module.OpaqueID()] = moduleConfig.BreakingConfig()
 		} else {
-			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfig
-			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfig
+			opaqueIDToLintConfig[module.OpaqueID()] = bufconfig.DefaultLintConfigV1
+			opaqueIDToBreakingConfig[module.OpaqueID()] = bufconfig.DefaultBreakingConfigV1
 		}
 	}
 	return newWorkspace(
@@ -608,7 +608,7 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 			if errors.Is(err, fs.ErrNotExist) {
 				// If we do not have a buf.yaml, we use the default config.
 				// This is a v1 config.
-				return bufconfig.DefaultModuleConfig, nil, nil
+				return bufconfig.DefaultModuleConfigV1, nil, nil
 			}
 			return nil, nil, err
 		}

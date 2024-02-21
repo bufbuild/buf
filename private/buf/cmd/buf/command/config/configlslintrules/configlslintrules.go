@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modlslintrules
+package configlslintrules
 
 import (
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -34,6 +34,7 @@ func NewCommand(
 		"lint",
 		buflint.GetAllRulesV1Beta1,
 		buflint.GetAllRulesV1,
+		buflint.GetAllRulesV2,
 		func(moduleConfig bufconfig.ModuleConfig) ([]bufcheck.Rule, error) {
 			return buflint.RulesForConfig(moduleConfig.LintConfig())
 		},

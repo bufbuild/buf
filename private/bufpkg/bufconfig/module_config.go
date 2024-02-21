@@ -23,19 +23,36 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 )
 
-// DefaultModuleConfig is the default ModuleConfig.
-var DefaultModuleConfig ModuleConfig
+var (
+	// DefaultModuleConfigV1 is the default ModuleConfig for v1.
+	DefaultModuleConfigV1 ModuleConfig
+
+	// DefaultModuleConfigV2 is the default ModuleConfig for v1.
+	DefaultModuleConfigV2 ModuleConfig
+)
 
 func init() {
 	var err error
-	DefaultModuleConfig, err = newModuleConfig(
-		"",
+	DefaultModuleConfigV1, err = newModuleConfig(
+		".",
 		nil,
 		map[string][]string{
 			".": {},
 		},
-		DefaultLintConfig,
-		DefaultBreakingConfig,
+		DefaultLintConfigV1,
+		DefaultBreakingConfigV1,
+	)
+	if err != nil {
+		panic(err.Error())
+	}
+	DefaultModuleConfigV2, err = newModuleConfig(
+		".",
+		nil,
+		map[string][]string{
+			".": {},
+		},
+		DefaultLintConfigV2,
+		DefaultBreakingConfigV2,
 	)
 	if err != nil {
 		panic(err.Error())
