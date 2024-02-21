@@ -28,6 +28,8 @@ import (
 	"github.com/pkg/browser"
 )
 
+const deprecationMessage = "This command has been deprecated. buf mod open is not supported for v2 buf.yaml files as they contain multiple modules."
+
 // NewCommand returns a new open Command.
 func NewCommand(
 	name string,
@@ -41,7 +43,7 @@ func NewCommand(
 The directory must have a buf.yaml that contains a single specified module name.
 
 The directory defaults to "." if no argument is specified.`,
-		Deprecated: "This command does not work well with v2 buf.yamls and is now considered deprecated.",
+		Deprecated: deprecationMessage,
 		Hidden:     true,
 		Args:       appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -67,16 +69,20 @@ func run(
 		}
 		return err
 	}
-	moduleConfigs := bufYAMLFile.ModuleConfigs()
-	if len(moduleConfigs) != 1 {
-		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-			return errors.New("buf mod open does not work for v2 buf.yamls with multiple modules as we do not know what module to open")
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		if len(moduleConfigs) != 1 {
+			return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
 		}
-		return syserror.Newf("got %d ModuleConfigs from a buf.yaml that is not v2", len(moduleConfigs))
+		moduleFullName := moduleConfigs[0].ModuleFullName()
+		if moduleFullName == nil {
+			return fmt.Errorf("%s/buf.yaml has no module name", dirPath)
+		}
+		return browser.OpenURL("https://" + moduleFullName.String())
+	case bufconfig.FileVersionV2:
+		return errors.New(deprecationMessage)
+	default:
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
-	moduleFullName := moduleConfigs[0].ModuleFullName()
-	if moduleFullName == nil {
-		return fmt.Errorf("%s/buf.yaml has no module name", dirPath)
-	}
-	return browser.OpenURL("https://" + moduleFullName.String())
 }

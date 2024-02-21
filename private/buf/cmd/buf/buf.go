@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	betagraph "github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -64,10 +63,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/depgraph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/format"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/graph"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
@@ -117,10 +116,16 @@ func NewRootCommand(name string) *appcmd.Command {
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			lsfiles.NewCommand("ls-files", builder),
-			graph.NewCommand("graph", builder),
 			push.NewCommand("push", builder),
 			convert.NewCommand("convert", builder),
 			curl.NewCommand("curl", builder),
+			{
+				Use:   "dep",
+				Short: "Work with dependencies",
+				SubCommands: []*appcmd.Command{
+					depgraph.NewCommand("graph", builder),
+				},
+			},
 			{
 				Use:   "mod",
 				Short: "Manage Buf modules",
@@ -148,7 +153,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
 					migrate.NewCommand("migrate", builder),
-					betagraph.NewCommand("graph", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					studioagent.NewCommand("studio-agent", builder),
@@ -255,13 +259,6 @@ func NewRootCommand(name string) *appcmd.Command {
 							pythonversion.NewCommand("python-version", builder),
 						},
 					},
-					//{
-					//Use:   "repo",
-					//Short: "Manage Git repositories",
-					//SubCommands: []*appcmd.Command{
-					//reposync.NewCommand("sync", builder),
-					//},
-					//},
 				},
 			},
 		},

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package graph
+package depgraph
 
 import (
 	"context"
@@ -64,7 +64,7 @@ brew install graphviz
 
 You can easily visualize a dependency graph using the dot tool:
 
-buf graph | dot -Tpng >| graph.png && open graph.png
+buf dep graph | dot -Tpng >| graph.png && open graph.png
 
 ` + bufcli.GetSourceOrModuleLong(`the source or module to print the dependency graph for`),
 		Args: appcmd.MaximumNArgs(1),

@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package graph
+package depgraph
 
 import _ "github.com/bufbuild/buf/private/usage"
