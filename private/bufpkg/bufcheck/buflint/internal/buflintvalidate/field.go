@@ -258,7 +258,7 @@ func checkFieldFlags(
 			adder.getFieldRuleName(),
 		)
 	}
-	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnoreEmpty() {
+	if fieldConstraints.GetRequired() && (fieldConstraints.GetIgnoreEmpty() || fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_EMPTY) {
 		adder.addForPathsf(
 			[][]int32{
 				{requiredFieldNumber},
@@ -320,7 +320,7 @@ func checkConstraintsForExtension(
 			adder.getFieldRuleName(requiredFieldNumber),
 		)
 	}
-	if fieldConstraints.GetIgnoreEmpty() {
+	if fieldConstraints.GetIgnoreEmpty() || fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_EMPTY {
 		adder.addForPathf(
 			[]int32{ignoreEmptyFieldNumber},
 			"Field %q is an extension field and cannot have %s.",
