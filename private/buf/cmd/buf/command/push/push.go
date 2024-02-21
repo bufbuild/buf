@@ -368,8 +368,7 @@ func validateLabelFlags(flags *flags) error {
 	for _, tag := range flags.Tags {
 		if tag == "" {
 			return appcmd.NewInvalidArgumentErrorf(
-				"-%s|--%s requires a non-empty string.",
-				tagFlagShortName,
+				"--%s requires a non-empty string.",
 				tagFlagName,
 			)
 		}
