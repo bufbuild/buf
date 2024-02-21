@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Move `buf beta graph` to the now-stable `buf dep graph`.
+- Promote `buf beta graph` to stable via `buf dep graph`.
 - Move `buf mod init` to `buf init`. `buf mod init` is now deprecated.
 - Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
 - Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
