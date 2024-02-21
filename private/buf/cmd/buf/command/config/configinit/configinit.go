@@ -148,7 +148,8 @@ func run(
 			false,
 			false,
 			"",
-			false,
+			// We actually want comment ignores enabled by default
+			true,
 		),
 		bufconfig.NewBreakingConfig(
 			bufconfig.NewCheckConfigForUseIDsAndCategories(
