@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/price"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -60,8 +59,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/stats"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/studioagent"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/bufinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigrate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/curl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/dep/depgraph"
@@ -110,7 +110,6 @@ func NewRootCommand(name string) *appcmd.Command {
 		Version:             bufcli.Version,
 		BindPersistentFlags: builder.BindRoot,
 		SubCommands: []*appcmd.Command{
-			bufinit.NewCommand("init", builder, ``, false, false),
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
 			format.NewCommand("format", builder),
@@ -131,11 +130,19 @@ func NewRootCommand(name string) *appcmd.Command {
 				},
 			},
 			{
+				Use:   "dep",
+				Short: "Work with configuration files",
+				SubCommands: []*appcmd.Command{
+					configinit.NewCommand("init", builder, ``, false, false),
+					configmigrate.NewCommand("migrate", builder),
+				},
+			},
+			{
 				Use:   "mod",
 				Short: "Manage Buf modules",
 				SubCommands: []*appcmd.Command{
 					// Deprecated and hidden.
-					bufinit.NewCommand("init", builder, `use "buf init" instead. However, "buf mod init" will continue to work.`, true, true),
+					configinit.NewCommand("init", builder, `use "buf config init" instead. However, "buf mod init" will continue to work.`, true, true),
 					// Deprecated and hidden.
 					depprune.NewCommand("prune", builder, `use "buf dep prune" instead. However, "buf mod update" will continue to work.`, true),
 					// Deprecated and hidden.
@@ -161,7 +168,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change",
 				SubCommands: []*appcmd.Command{
-					migrate.NewCommand("migrate", builder),
 					price.NewCommand("price", builder),
 					stats.NewCommand("stats", builder),
 					studioagent.NewCommand("studio-agent", builder),

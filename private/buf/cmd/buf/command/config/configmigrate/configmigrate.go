@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package migrate
+package configmigrate
 
 import (
 	"context"
@@ -43,8 +43,10 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: `Migrate all buf.yaml, buf.work.yaml, buf.gen.yaml, and buf.lock files at the specified directories or paths to v2.`,
-		Long:  `If no flags are specified, the current directory is searched for buf.yamls, buf.work.yamls, and buf.gen.yamls.`,
-		Args:  appcmd.MaximumNArgs(0),
+		Long: `If no flags are specified, the current directory is searched for buf.yamls, buf.work.yamls, and buf.gen.yamls.
+
+The effects of this command may change over time `,
+		Args: appcmd.MaximumNArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)

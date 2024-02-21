@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufinit
+package configmigrate
 
 import _ "github.com/bufbuild/buf/private/usage"

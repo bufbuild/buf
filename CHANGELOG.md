@@ -2,14 +2,18 @@
 
 ## [Unreleased]
 
-- Promote `buf beta graph` to stable via `buf dep graph`.
-- Move `buf mod init` to `buf init`. `buf mod init` is now deprecated.
+- Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
+  rules to incoming messages specified with `--from`.
+- Add `buf config migrate` to migrate configuration files to the latest version (now `v2`).
+- Promote `buf beta graph` to stable as `buf dep graph`.
+- Move `buf mod init` to `buf config init`. `buf mod init` is now deprecated.
+- Move `buf mod ls-lint-rules` to `buf config ls-lint-rules`. `buf mod ls-lint-rules` is now deprecated.
+- Move `buf mod ls-breaking-rules` to `buf config ls-breaking-rules`. `buf mod ls-breaking-rules` is now deprecated.
 - Move `buf mod prune` to `buf dep prune`. `buf mod prune` is now deprecated.
 - Move `buf mod update` to `buf dep update`. `buf mod update` is now deprecated.
 - Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
 - Deprecate `buf mod open`.
-- Add `buf convert --validate` to apply [protovalidate](https://github.com/bufbuild/protovalidate)
-  rules to incoming messages specified with `--from`.
+- Delete `buf beta migrate-v1beta1`.
 
 ## [v1.29.0] - 2024-01-24
 
