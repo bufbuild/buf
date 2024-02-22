@@ -188,6 +188,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
