@@ -223,6 +223,23 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(webpagesCobraCommand)
+
+		printTree := false
+		oldRun := cobraCommand.Run
+		cobraCommand.Flags().BoolVar(
+			&printTree,
+			"print-tree",
+			false,
+			"Print the entire sub-command tree.",
+		)
+		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
+			if printTree {
+				_, err := container.Stdout().Write([]byte(commandTreeString(cobraCommand)))
+				runErr = err
+				return
+			}
+			oldRun(cmd, args)
+		}
 	}
 
 	cobraCommand.SetOut(container.Stderr())
