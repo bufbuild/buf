@@ -296,7 +296,6 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 			return err
 		}
 		return p.bucket.Delete(ctx, tarPath)
-	} else {
 	}
 	dirPath, err := getModuleDataStoreDirPath(moduleKey)
 	if err != nil {
