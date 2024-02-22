@@ -157,6 +157,10 @@ func run(
 	}
 	// We're about to edit the buf.lock file on disk. If we have a subsequent error,
 	// attempt to revert the buf.lock file.
+	//
+	// TODO FUTURE: We should be able to update the buf.lock file in an in-memory bucket, then do the rebuild,
+	// and if the rebuild is successful, then actually write to disk. It shouldn't even be that much work - just
+	// overlay the new buf.lock file in a union bucket.
 	defer func() {
 		if retErr != nil {
 			retErr = multierr.Append(retErr, workspaceDepManager.UpdateBufLockFile(ctx, existingDepModuleKeys))
