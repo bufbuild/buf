@@ -167,15 +167,14 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return nil, err
 		}
 	} else {
-		moduleCacheBucket = p.getReadWriteBucketForDir(moduleKey)
+		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
+		// Not checking for fs.ErrNotExist. Function only returns error on actual system error.
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer func() {
 		if retErr != nil {
-			p.logDebugModuleKey(
-				moduleKey,
-				"module data store deleting invalid data",
-				zap.Error(retErr),
-			)
 			retErr = p.deleteInvalidModuleData(ctx, moduleKey, retErr)
 		}
 	}()
@@ -272,28 +271,37 @@ func (p *moduleDataStore) deleteInvalidModuleData(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 	invalidErr error,
-) error {
+) (retErr error) {
 	p.logDebugModuleKey(
 		moduleKey,
 		"module data store invalid module data",
 		zap.Error(invalidErr),
 	)
-	var deleteErr error
+	defer func() {
+		if retErr != nil {
+			// Do not return error, just log. We always returns a file not found error.
+			p.logDebugModuleKey(
+				moduleKey,
+				"module data store could not delete module data",
+				zap.Error(retErr),
+			)
+		}
+		// This will act as if the file is not found.
+		retErr = &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+	}()
+
 	if p.tar {
-		deleteErr = p.bucket.Delete(ctx, getModuleDataStoreTarPath(moduleKey))
-	} else {
-		deleteErr = p.bucket.DeleteAll(ctx, getModuleDataStoreDirPath(moduleKey))
+		tarPath, err := getModuleDataStoreTarPath(moduleKey)
+		if err != nil {
+			return err
+		}
+		return p.bucket.Delete(ctx, tarPath)
 	}
-	if deleteErr != nil {
-		// Otherwise ignore error.
-		p.logDebugModuleKey(
-			moduleKey,
-			"module data store could not delete module data",
-			zap.Error(deleteErr),
-		)
+	dirPath, err := getModuleDataStoreDirPath(moduleKey)
+	if err != nil {
+		return err
 	}
-	// This will act as if the file is not found.
-	return &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+	return p.bucket.DeleteAll(ctx, dirPath)
 }
 
 func (p *moduleDataStore) putModuleData(
@@ -302,6 +310,7 @@ func (p *moduleDataStore) putModuleData(
 ) (retErr error) {
 	moduleKey := moduleData.ModuleKey()
 	var moduleCacheBucket storage.WriteBucket
+	var err error
 	if p.tar {
 		var callback func(ctx context.Context) error
 		moduleCacheBucket, callback = p.getWriteBucketAndCallbackForTar(moduleKey)
@@ -312,7 +321,10 @@ func (p *moduleDataStore) putModuleData(
 			}
 		}()
 	} else {
-		moduleCacheBucket = p.getReadWriteBucketForDir(moduleKey)
+		moduleCacheBucket, err = p.getReadWriteBucketForDir(moduleKey)
+		if err != nil {
+			return err
+		}
 	}
 	depModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 	if err != nil {
@@ -385,23 +397,31 @@ func (p *moduleDataStore) putModuleData(
 	return storage.PutPath(ctx, moduleCacheBucket, externalModuleDataFileName, data)
 }
 
+// Only returns error on actual system error.
 func (p *moduleDataStore) getReadWriteBucketForDir(
 	moduleKey bufmodule.ModuleKey,
-) storage.ReadWriteBucket {
-	dirPath := getModuleDataStoreDirPath(moduleKey)
+) (storage.ReadWriteBucket, error) {
+	dirPath, err := getModuleDataStoreDirPath(moduleKey)
+	if err != nil {
+		return nil, err
+	}
 	p.logDebugModuleKey(
 		moduleKey,
 		"module data store dir read write bucket",
 		zap.String("dirPath", dirPath),
 	)
-	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath))
+	return storage.MapReadWriteBucket(p.bucket, storage.MapOnPrefix(dirPath)), nil
 }
 
+// May return fs.ErrNotExist error if tar not found.
 func (p *moduleDataStore) getReadBucketForTar(
 	ctx context.Context,
 	moduleKey bufmodule.ModuleKey,
 ) (_ storage.ReadBucket, retErr error) {
-	tarPath := getModuleDataStoreTarPath(moduleKey)
+	tarPath, err := getModuleDataStoreTarPath(moduleKey)
+	if err != nil {
+		return nil, err
+	}
 	defer func() {
 		p.logDebugModuleKey(
 			moduleKey,
@@ -434,7 +454,10 @@ func (p *moduleDataStore) getWriteBucketAndCallbackForTar(
 ) (storage.WriteBucket, func(context.Context) error) {
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	return readWriteBucket, func(ctx context.Context) (retErr error) {
-		tarPath := getModuleDataStoreTarPath(moduleKey)
+		tarPath, err := getModuleDataStoreTarPath(moduleKey)
+		if err != nil {
+			return err
+		}
 		defer func() {
 			p.logDebugModuleKey(
 				moduleKey,
@@ -470,30 +493,40 @@ func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, messa
 
 // Returns the module's path within the store if storing individual files.
 //
-// This is "registry/owner/name/${COMMIT_ID}",
-// e.g. the module "buf.build/acme/weather" with commit "12345" will return
-// "buf.build/acme/weather/12345".
-func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) string {
+// This is "digestType/registry/owner/name/${COMMIT_ID}",
+// e.g. the module "buf.build/acme/weather" with commit "12345" and digest
+// type "b5" will return "b5/buf.build/acme/weather/12345".
+func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) (string, error) {
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return "", err
+	}
 	return normalpath.Join(
+		digest.Type().String(),
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
 		moduleKey.CommitID().String(),
-	)
+	), nil
 }
 
 // Returns the module's path within the store if storing tar files.
 //
 // This is "registry/owner/name/${COMMIT_ID}.tar",
-// e.g. the module "buf.build/acme/weather" with commit "12345" will return
-// "buf.build/acme/weather/12345.tar".
-func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) string {
+// e.g. the module "buf.build/acme/weather" with commit "12345" and digest
+// type "b5" will return "b5/buf.build/acme/weather/12345.tar".
+func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) (string, error) {
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return "", err
+	}
 	return normalpath.Join(
+		digest.Type().String(),
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
 		moduleKey.CommitID().String()+".tar",
-	)
+	), nil
 }
 
 func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) (bufmodule.ModuleKey, error) {
