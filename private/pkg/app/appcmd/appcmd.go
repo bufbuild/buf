@@ -223,23 +223,6 @@ func run(
 			return err
 		}
 		cobraCommand.AddCommand(webpagesCobraCommand)
-
-		printTree := false
-		oldRun := cobraCommand.Run
-		cobraCommand.Flags().BoolVar(
-			&printTree,
-			"print-tree",
-			false,
-			"Print the entire sub-command tree.",
-		)
-		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
-			if printTree {
-				_, err := container.Stdout().Write([]byte(commandTreeString(cobraCommand)))
-				runErr = err
-				return
-			}
-			oldRun(cmd, args)
-		}
 	}
 
 	cobraCommand.SetOut(container.Stderr())
@@ -358,6 +341,7 @@ func commandToCobra(
 			}
 			cobraCommand.AddCommand(subCobraCommand)
 		}
+		addHelpTreeFlag(container, cobraCommand, runErrAddr)
 	}
 	if command.Version != "" {
 		doVersion := false
@@ -406,4 +390,68 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 
 func printUsage(container app.StderrContainer, usage string) {
 	_, _ = container.Stderr().Write([]byte(usage + "\n"))
+}
+
+func addHelpTreeFlag(
+	container app.Container,
+	cmd *cobra.Command,
+	runErrAddr *error,
+) {
+	helpTree := false
+	oldRun := cmd.Run
+	cmd.Flags().BoolVar(
+		&helpTree,
+		"help-tree",
+		false,
+		"Print the entire sub-command tree",
+	)
+	cmd.Run = func(cmd *cobra.Command, args []string) {
+		if helpTree {
+			_, err := container.Stdout().Write([]byte(helpTreeString(cmd)))
+			*runErrAddr = err
+			return
+		}
+		oldRun(cmd, args)
+	}
+}
+
+func helpTreeString(cmd *cobra.Command) string {
+	var builder strings.Builder
+	helpTreeStringRec(cmd, &builder, maxPaddingRec(cmd, 0), 0)
+	return builder.String()
+
+}
+
+func helpTreeStringRec(cmd *cobra.Command, builder *strings.Builder, maxPadding int, curIndentCount int) {
+	if cmd.Hidden {
+		return
+	}
+	if name := cmd.Name(); name != "" {
+		_, _ = builder.WriteString(strings.Repeat(" ", curIndentCount*2))
+		_, _ = builder.WriteString(name)
+		_, _ = builder.WriteString(strings.Repeat(" ", maxPadding-(len(cmd.Name())+(curIndentCount*2))))
+		_, _ = builder.WriteString("  ")
+		_, _ = builder.WriteString(cmd.Short)
+		_, _ = builder.WriteString("\n")
+	}
+	for _, child := range cmd.Commands() {
+		helpTreeStringRec(child, builder, maxPadding, curIndentCount+1)
+	}
+}
+
+func maxPaddingRec(cmd *cobra.Command, curIndentCount int) int {
+	maxPadding := (curIndentCount * 2) + len(cmd.Name())
+	for _, child := range cmd.Commands() {
+		if !child.Hidden {
+			maxPadding = maxInt(maxPadding, maxPaddingRec(child, curIndentCount+1))
+		}
+	}
+	return maxPadding
+}
+
+func maxInt(i int, j int) int {
+	if i > j {
+		return i
+	}
+	return j
 }
