@@ -152,7 +152,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					// Deprecated and hidden.
 					depprune.NewCommand("prune", builder, `use "buf dep prune" instead. However, "buf mod update" will continue to work.`, true),
 					// Deprecated and hidden.
-					depupdate.NewCommand("update", builder, `use "buf dep update" instead. However, "buf mod update" will contianue to work.`, true),
+					depupdate.NewCommand("update", builder, `use "buf dep update" instead. However, "buf mod update" will continue to work.`, true),
 					// Deprecated and hidden.
 					modopen.NewCommand("open", builder),
 					// Deprecated and hidden.
