@@ -17,15 +17,18 @@ package export
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 )
@@ -178,7 +181,17 @@ func run(
 	for _, imageFile := range image.Files() {
 		moduleFile, err := moduleReadBucket.GetFile(ctx, imageFile.Path())
 		if err != nil {
-			return err
+			if errors.Is(err, fs.ErrNotExist) && datawkt.Exists(imageFile.Path()) {
+				// Images include all imports, including WKTs. WKTs may or may not exist as part of the Workspace. They are implicitly
+				// added to Images if they are not present in a Module or its dependencies. However, we want to make sure that
+				// we still export them if they were part of a Module, or were part of an explicit dependency (for example,
+				// buf.build/protocolbuffers/wellknowntypes).
+				//
+				// This is the only case where a file may exist in the Image but not in the Workspace. Any other case where a file
+				// does not exist is a system error.
+				continue
+			}
+			return syserror.Wrap(err)
 		}
 		if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
 			return multierr.Append(err, moduleFile.Close())
