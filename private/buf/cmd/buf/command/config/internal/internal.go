@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	onlyConfiguredFlagName = "only-configured"
+	configuredOnlyFlagName = "configured-only"
 	configFlagName         = "config"
 	formatFlagName         = "format"
 	versionFlagName        = "version"
@@ -74,7 +74,7 @@ func NewLSCommand(
 }
 
 type flags struct {
-	OnlyConfigured bool
+	ConfiguredOnly bool
 	Config         string
 	Format         string
 	Version        string
@@ -87,8 +87,8 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.BoolVar(
-		&f.OnlyConfigured,
-		onlyConfiguredFlagName,
+		&f.ConfiguredOnly,
+		configuredOnlyFlagName,
 		false,
 		"List rules that are configured instead of listing all available rules",
 	)
@@ -98,7 +98,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			`The buf.yaml file or data to use for configuration. --%s must be set`,
-			onlyConfiguredFlagName,
+			configuredOnlyFlagName,
 		),
 	)
 	flagSet.StringVar(
@@ -116,7 +116,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"", // do not set a default as we need to know if this is unset
 		fmt.Sprintf(
 			"List all the rules for the given configuration version. By default, the version in the buf.yaml in the current directory is used, or the latest version otherwise (currently v2). Cannot be set if --%s is set. Must be one of %s",
-			onlyConfiguredFlagName,
+			configuredOnlyFlagName,
 			slicesext.Map(
 				bufconfig.AllFileVersions,
 				func(fileVersion bufconfig.FileVersion) string {
@@ -131,7 +131,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		fmt.Sprintf(
 			"The path to the specific module to list configured rules for as specified in the buf.yaml. If the buf.yaml has more than one module defined, this must be set. --%s must be set",
-			onlyConfiguredFlagName,
+			configuredOnlyFlagName,
 		),
 	)
 }
@@ -146,16 +146,16 @@ func lsRun(
 	getAllRulesV2 func() ([]bufcheck.Rule, error),
 	getRulesForModuleConfig func(bufconfig.ModuleConfig) ([]bufcheck.Rule, error),
 ) error {
-	if flags.OnlyConfigured {
+	if flags.ConfiguredOnly {
 		if flags.Version != "" {
 			return appcmd.NewInvalidArgumentErrorf("--%s cannot be specified if --%s is specified", versionFlagName, configFlagName)
 		}
 	} else {
 		if flags.Config != "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", onlyConfiguredFlagName, configFlagName)
+			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", configuredOnlyFlagName, configFlagName)
 		}
 		if flags.ModulePath != "" {
-			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", onlyConfiguredFlagName, modulePathFlagName)
+			return appcmd.NewInvalidArgumentErrorf("--%s must be set if --%s is specified", configuredOnlyFlagName, modulePathFlagName)
 		}
 	}
 
@@ -181,7 +181,7 @@ func lsRun(
 	}
 
 	var rules []bufcheck.Rule
-	if flags.OnlyConfigured {
+	if flags.ConfiguredOnly {
 		moduleConfigs := bufYAMLFile.ModuleConfigs()
 		switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
