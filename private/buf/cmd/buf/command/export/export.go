@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -176,6 +177,10 @@ func run(
 		return errors.New("no .proto target files found")
 	}
 	for _, imageFile := range image.Files() {
+		if datawkt.Exists(imageFile.Path()) {
+			// export doesn't include WKT files, they're not present in the workspace bucket
+			continue
+		}
 		moduleFile, err := moduleReadBucket.GetFile(ctx, imageFile.Path())
 		if err != nil {
 			return err
