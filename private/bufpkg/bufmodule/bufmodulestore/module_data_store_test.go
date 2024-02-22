@@ -88,15 +88,19 @@ func testModuleDataStoreBasic(t *testing.T, tar bool) {
 
 	// Corrupt the cache.
 	if tar {
-		require.NoError(t, storage.PutPath(ctx, bucket, getModuleDataStoreTarPath(moduleKeys[0]), []byte("invalid_tar")))
+		tarPath, err := getModuleDataStoreTarPath(moduleKeys[0])
+		require.NoError(t, err)
+		require.NoError(t, storage.PutPath(ctx, bucket, tarPath, []byte("invalid_tar")))
 	} else {
+		dirPath, err := getModuleDataStoreDirPath(moduleKeys[0])
+		require.NoError(t, err)
 		require.NoError(
 			t,
 			storage.PutPath(
 				ctx,
 				bucket,
 				normalpath.Join(
-					getModuleDataStoreDirPath(moduleKeys[0]),
+					dirPath,
 					externalModuleDataFileName,
 				),
 				[]byte("invalid_info_json"),
