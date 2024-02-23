@@ -224,8 +224,8 @@ func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
 	// The other attributes are already immutable, so we don't need to copy them.
 	return NewImageFile(
 		clonedDescriptor,
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
 		imageFile.ExternalPath(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),

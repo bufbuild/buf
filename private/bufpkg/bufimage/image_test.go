@@ -242,7 +242,8 @@ func TestCloneImage(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test that they are equal by comparing their proto versions
-	protoClone := ImageToProtoImage(clone)
+	protoClone, err := ImageToProtoImage(clone)
+	require.NoError(t, err)
 
 	require.Empty(t, cmp.Diff(protoImage, protoClone, protocmp.Transform()))
 
