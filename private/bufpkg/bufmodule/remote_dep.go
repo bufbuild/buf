@@ -43,10 +43,25 @@ type RemoteDep interface {
 //
 // TODO FUTURE: This needs a LOT of testing.
 func RemoteDepsForModuleSet(moduleSet ModuleSet) ([]RemoteDep, error) {
+	return RemoteDepsForModules(moduleSet.Modules())
+}
+
+// RemoteDepsForModules returns the remote dependencies of the local Modules.
+//
+// Sorted by ModuleFullName.
+//
+// This is used in situations where we have already filtered a ModuleSet down to a specific
+// set of modules, such as in the Uploader. Generally, you want to use RemoteDepsForModuleSet.
+//
+// This function may validate that all Modules are from the same ModuleSet, although it
+// currently does not.
+//
+// TODO FUTURE: This needs a LOT of testing.
+func RemoteDepsForModules(modules []Module) ([]RemoteDep, error) {
 	visitedOpaqueIDs := make(map[string]struct{})
 	remoteDepModuleFullNameStringsThatAreDirectDepsOfLocal := make(map[string]struct{})
 	var remoteDepModules []Module
-	for _, module := range moduleSet.Modules() {
+	for _, module := range modules {
 		if !module.IsLocal() {
 			continue
 		}

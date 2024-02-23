@@ -159,8 +159,6 @@ func run(
 	}
 	clientProvider := bufapi.NewClientProvider(clientConfig)
 
-	// We just do this for the future world in where we might want to allow
-	// more than one registry, even though we don't allow this with the below upload request.
 	registryToUploadModules, err := getRegistryToUploadModuleWithModuleFullName(uploadModules)
 	if err != nil {
 		return err

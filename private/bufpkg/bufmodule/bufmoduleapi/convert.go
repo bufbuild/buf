@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 var (
@@ -39,18 +38,6 @@ var (
 		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.DigestTypeB5,
 	}
 )
-
-// ParseModuleVisibility parses the ModuleVisibility from the string.
-func ParseModuleVisibility(s string) (modulev1beta1.ModuleVisibility, error) {
-	switch s {
-	case "public":
-		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
-	case "private":
-		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
-	default:
-		return 0, fmt.Errorf("unknown visibility: %q", s)
-	}
-}
 
 // DigestToProto converts the given Digest to a proto Digest.
 func DigestToProto(digest bufmodule.Digest) (*modulev1beta1.Digest, error) {
@@ -81,6 +68,17 @@ func ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) 
 }
 
 // *** PRIVATE ***
+
+func moduleVisibilityToProto(moduleVisibility bufmodule.ModuleVisibility) (modulev1beta1.ModuleVisibility, error) {
+	switch moduleVisibility {
+	case bufmodule.ModuleVisibilityPublic:
+		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil
+	case bufmodule.ModuleVisibilityPrivate:
+		return modulev1beta1.ModuleVisibility_MODULE_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("unknown ModuleVisibility: %v", moduleVisibility)
+	}
+}
 
 func digestTypeToProto(digestType bufmodule.DigestType) (modulev1beta1.DigestType, error) {
 	protoDigestType, ok := digestTypeToProtoDigestType[digestType]
@@ -191,26 +189,14 @@ func protoGraphToProtoLegacyFederationGraph(
 // We have to make sure this is updated if a field is added?
 // TODO FUTURE: Can we automate this to make sure this is true?
 func protoLegacyFederationUploadRequestContentToProtoUploadRequestContent(
-	registry string,
 	protoLegacyFederationUploadRequestContent *federationv1beta1.UploadRequest_Content,
-) (*modulev1beta1.UploadRequest_Content, error) {
-	protoUploadRequestContent := &modulev1beta1.UploadRequest_Content{
+) *modulev1beta1.UploadRequest_Content {
+	return &modulev1beta1.UploadRequest_Content{
 		ModuleRef:        protoLegacyFederationUploadRequestContent.ModuleRef,
-		DepRefs:          make([]*modulev1beta1.UploadRequest_DepRef, len(protoLegacyFederationUploadRequestContent.DepRefs)),
 		Files:            protoLegacyFederationUploadRequestContent.Files,
 		V1BufYamlFile:    protoLegacyFederationUploadRequestContent.V1BufYamlFile,
 		V1BufLockFile:    protoLegacyFederationUploadRequestContent.V1BufLockFile,
 		ScopedLabelRefs:  protoLegacyFederationUploadRequestContent.ScopedLabelRefs,
 		SourceControlUrl: protoLegacyFederationUploadRequestContent.SourceControlUrl,
 	}
-	for i, legacyDepRef := range protoLegacyFederationUploadRequestContent.DepRefs {
-		if legacyDepRef.Registry != registry {
-			return nil, syserror.Newf("tried to convert a legacy federation UploadRequest_Content to a module UploadRequest_Content with registry %q but found registry %q in DepRefs", registry, legacyDepRef.Registry)
-		}
-		protoUploadRequestContent.DepRefs[i] = &modulev1beta1.UploadRequest_DepRef{
-			ModuleRef: legacyDepRef.ModuleRef,
-			CommitId:  legacyDepRef.CommitId,
-		}
-	}
-	return protoUploadRequestContent, nil
 }

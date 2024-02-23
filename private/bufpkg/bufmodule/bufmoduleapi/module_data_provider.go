@@ -239,10 +239,10 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 									Id: commitID.String(),
 								},
 							},
-							DigestType: protoDigestType,
 						}
 					},
 				),
+				DigestType: protoDigestType,
 			},
 		),
 	)

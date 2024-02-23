@@ -231,10 +231,6 @@ func getProtoLegacyFederationUploadRequestContent(
 		// This should never happen - the upload Modules should already be verified above to come from one registry.
 		return nil, syserror.Newf("attempting to upload content for registry other than %s in getProtoUploadRequestContent", primaryRegistry)
 	}
-	protoModuleRef, err := getProtoModuleRef(module)
-	if err != nil {
-		return nil, err
-	}
 
 	// Includes transitive dependencies.
 	// Sorted by OpaqueID.
@@ -252,21 +248,7 @@ func getProtoLegacyFederationUploadRequestContent(
 		depRegistry := moduleDep.ModuleFullName().Registry()
 		depRegistryMap[depRegistry] = struct{}{}
 
-		depProtoModuleRef, err := getProtoModuleRef(moduleDep)
-		if err != nil {
-			return nil, err
-		}
-		if moduleDep.IsLocal() {
-			if _, ok := uploadedModuleOpaqueIDs[moduleDep.OpaqueID()]; !ok {
-				return nil, syserror.Newf("attempted to add local module dep %q when it was not scheduled to be uploaded", moduleDep.OpaqueID())
-			}
-			protoLegacyFederationDepRefs = append(
-				protoLegacyFederationDepRefs,
-				&federationv1beta1.UploadRequest_DepRef{
-					ModuleRef: depProtoModuleRef,
-				},
-			)
-		} else {
+		if !moduleDep.IsLocal() {
 			// If the dependency is remote, add it as a dep ref.
 			depCommitID := moduleDep.CommitID()
 			if depCommitID.IsNil() {
@@ -275,9 +257,8 @@ func getProtoLegacyFederationUploadRequestContent(
 			protoLegacyFederationDepRefs = append(
 				protoLegacyFederationDepRefs,
 				&federationv1beta1.UploadRequest_DepRef{
-					ModuleRef: depProtoModuleRef,
-					CommitId:  depCommitID.String(),
-					Registry:  depRegistry,
+					CommitId: depCommitID.String(),
+					Registry: depRegistry,
 				},
 			)
 		}
@@ -297,7 +278,6 @@ func getProtoLegacyFederationUploadRequestContent(
 	}
 
 	return &federationv1beta1.UploadRequest_Content{
-		ModuleRef:       protoModuleRef,
 		Files:           protoFiles,
 		DepRefs:         protoLegacyFederationDepRefs,
 		ScopedLabelRefs: protoScopedLabelRefs,
@@ -308,17 +288,4 @@ func getProtoLegacyFederationUploadRequestContent(
 		V1BufLockFile: objectDataToProtoFile(v1BufLockObjectData),
 		// TODO FUTURE: vcs_commit
 	}, nil
-}
-
-func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
-	// This error will likely actually go back to users.
-	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
-}
-
-type uploadOptions struct {
-	labels []string
-}
-
-func newUploadOptions() *uploadOptions {
-	return &uploadOptions{}
 }
