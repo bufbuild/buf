@@ -100,15 +100,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleKeyProvider, err := bufcli.NewModuleKeyProvider(container)
-	if err != nil {
-		return err
-	}
-	graphProvider, err := bufcli.NewGraphProvider(container)
-	if err != nil {
-		return err
-	}
-
 	workspaceDepManager, err := controller.GetWorkspaceDepManager(ctx, dirPath)
 	if err != nil {
 		return err
@@ -118,9 +109,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	// Get all the configured deps.
-	configuredDepModuleKeys, err := moduleKeyProvider.GetModuleKeysForModuleRefs(
+	configuredDepModuleKeys, err := internal.ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
 		ctx,
+		container,
 		configuredDepModuleRefs,
 		workspaceDepManager.BufLockFileDigestType(),
 	)
@@ -128,26 +119,8 @@ func run(
 		return err
 	}
 	logger.Debug(
-		"deps from buf.yaml",
-		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
-	)
-	// Walk the graph to get all configured deps and their transitive dependencies.
-	graph, err := graphProvider.GetGraphForModuleKeys(ctx, configuredDepModuleKeys)
-	if err != nil {
-		return err
-	}
-	var newDepModuleKeys []bufmodule.ModuleKey
-	if err := graph.WalkNodes(
-		func(depModuleKey bufmodule.ModuleKey, _ []bufmodule.ModuleKey, _ []bufmodule.ModuleKey) error {
-			newDepModuleKeys = append(newDepModuleKeys, depModuleKey)
-			return nil
-		},
-	); err != nil {
-		return err
-	}
-	logger.Debug(
 		"all deps",
-		zap.Strings("deps", slicesext.Map(newDepModuleKeys, bufmodule.ModuleKey.String)),
+		zap.Strings("deps", slicesext.Map(configuredDepModuleKeys, bufmodule.ModuleKey.String)),
 	)
 
 	// Store the existing buf.lock data.
@@ -167,10 +140,14 @@ func run(
 		}
 	}()
 	// Edit the buf.lock file with the unpruned dependencies.
-	if err := workspaceDepManager.UpdateBufLockFile(ctx, newDepModuleKeys); err != nil {
+	if err := workspaceDepManager.UpdateBufLockFile(ctx, configuredDepModuleKeys); err != nil {
 		return err
 	}
 	// Prune the buf.lock. This also verifies the workspace builds again.
 	// Building also has the side effect of doing tamper-proofing.
-	return internal.Prune(ctx, logger, controller, workspaceDepManager, dirPath)
+	//
+	// Note that the check to make sure configuredDepModuleKeys is a superset of the remote deps should be a no-op
+	// in this case, they should be equivalent based on the updates we just did, but we do the check
+	// anyways to triple verify.
+	return internal.Prune(ctx, logger, controller, configuredDepModuleKeys, workspaceDepManager, dirPath)
 }

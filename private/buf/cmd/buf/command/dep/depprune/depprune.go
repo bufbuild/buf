@@ -62,5 +62,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	return internal.Prune(ctx, container.Logger(), controller, workspaceDepManager, dirPath)
+	configuredDepModuleRefs, err := workspaceDepManager.ConfiguredDepModuleRefs(ctx)
+	if err != nil {
+		return err
+	}
+	configuredDepModuleKeys, err := internal.ModuleKeysAndTransitiveDepModuleKeysForModuleRefs(
+		ctx,
+		container,
+		configuredDepModuleRefs,
+		workspaceDepManager.BufLockFileDigestType(),
+	)
+	if err != nil {
+		return err
+	}
+	return internal.Prune(ctx, container.Logger(), controller, configuredDepModuleKeys, workspaceDepManager, dirPath)
 }
