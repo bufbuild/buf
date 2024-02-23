@@ -419,7 +419,6 @@ func helpTreeString(cmd *cobra.Command) string {
 	var builder strings.Builder
 	helpTreeStringRec(cmd, &builder, maxPaddingRec(cmd, 0), 0)
 	return builder.String()
-
 }
 
 func helpTreeStringRec(cmd *cobra.Command, builder *strings.Builder, maxPadding int, curIndentCount int) {
