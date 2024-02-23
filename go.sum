@@ -1,10 +1,10 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20231115204500-e097f827e652.1/go.mod h1:tiTMKD8j6Pd/D2WzREoweufjzaJKHZg35f/VGcZ2v3I=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20240221180331-f05a6f4403ce.1 h1:AmmAwHbvaeOIxDKG2+aTn5C36HjmFIMkrdTp49rp80Q=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20240221180331-f05a6f4403ce.1/go.mod h1:tiTMKD8j6Pd/D2WzREoweufjzaJKHZg35f/VGcZ2v3I=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20240205220923-a51531945699.1 h1:rHPh/aW2n1H1uFpvLeiU5NgJGDpi9sAR8enJlPlqXrE=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20240205220923-a51531945699.1/go.mod h1:lIf6ueJF1cQ06Cx9j0Q04nDDOqLIPf+pC6p9sHRzkbE=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240205220923-a51531945699.1 h1:r8L4OIRuYIYpgOHmvn34AxAo6vQTDizNxCbjt7nktMY=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240205220923-a51531945699.1/go.mod h1:L+pboYag9Pd0vt+ErAHa7QSdqP0Dzd7S+4OLKlrXNXQ=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240220184920-d74c604afa8f.1 h1:2Ai1pOYQG7/GDwk67dUcL79c4JHe5E/AIfDM8SgfPUU=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240220184920-d74c604afa8f.1/go.mod h1:fIIrGCl/An0t18WURMpQzR8y1vxe9XLtIWPfFYSqyJY=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240220184920-d74c604afa8f.1 h1:oVnq/l6w+4TyNOMJ8K4WVide/2PoIOb66GjwAG6HZuU=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240220184920-d74c604afa8f.1/go.mod h1:L+pboYag9Pd0vt+ErAHa7QSdqP0Dzd7S+4OLKlrXNXQ=
 connectrpc.com/connect v1.15.0 h1:lFdeCbZrVVDydAqwr4xGV2y+ULn+0Z73s5JBj2LikWo=
 connectrpc.com/connect v1.15.0/go.mod h1:bQmjpDY8xItMnttnurVgOkHUBMRT9cpsNi2O4AjKhmA=
 connectrpc.com/otelconnect v0.7.0 h1:ZH55ZZtcJOTKWWLy3qmL4Pam4RzRWBJFOqTPyAqCXkY=
@@ -141,8 +141,8 @@ github.com/vbatts/tar-split v0.11.5 h1:3bHCTIheBm1qFTcgh9oPu+nNBtX+XJIupG/vacinC
 github.com/vbatts/tar-split v0.11.5/go.mod h1:yZbwRsSeGjusneWgA781EKej9HF8vme8okylkAeNKLk=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.48.0 h1:doUP+ExOpH3spVTLS0FcWGLnQrPct/hD/bCPbDRUEAU=
-go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.48.0/go.mod h1:rdENBZMT2OE6Ne/KLwpiXudnAsbdrdBaqBvTN8M8BgA=
+go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 h1:jq9TW8u3so/bN+JPT166wjOI6/vQPF6Xe7nMNIltagk=
+go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0/go.mod h1:p8pYQP+m5XfbZm9fxtSKAbM6oIllS7s2AfxrChvc7iw=
 go.opentelemetry.io/otel v1.24.0 h1:0LAOdjNmQeSTzGBzduGe/rU4tZhMwL5rWgtp9Ku5Jfo=
 go.opentelemetry.io/otel v1.24.0/go.mod h1:W7b9Ozg4nkF5tWI5zsXkaKKDjdVjpD4oAt9Qi/MArHo=
 go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.24.0 h1:t6wl9SPayj+c7lEIFgm4ooDBZVb01IhLB4InpomhRw8=

@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.32.0-20240221180331-f05a6f4403ce.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.14.0-20240205220923-a51531945699.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240205220923-a51531945699.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240220184920-d74c604afa8f.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.32.0-20240220184920-d74c604afa8f.1
 	connectrpc.com/connect v1.15.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.8.0
@@ -79,7 +79,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.48.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
