@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -120,6 +121,44 @@ type Image interface {
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
 	return newImage(imageFiles, false)
+}
+
+// CloneImage returns a deep copy of the given image.
+func CloneImage(image Image) (Image, error) {
+	originalFiles := image.Files()
+	imageFiles := make([]ImageFile, len(originalFiles))
+	for i, originalFile := range originalFiles {
+		clonedFile, err := CloneImageFile(originalFile)
+		if err != nil {
+			return nil, err
+		}
+		imageFiles[i] = clonedFile
+	}
+	return NewImage(imageFiles)
+}
+
+// CloneImageFile returns a deep copy of the given image file.
+func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
+	clonedProto := proto.Clone(imageFile.FileDescriptorProto())
+	clonedDescriptor, ok := clonedProto.(*descriptorpb.FileDescriptorProto)
+	if !ok {
+		// Shouldn't actually be possible...
+		return nil, fmt.Errorf("failed to clone image file %q: input %T; clone is %T but expecting %T",
+			imageFile.Path(), imageFile, clonedProto, (*descriptorpb.FileDescriptorProto)(nil))
+	}
+	originalUnusedDeps := imageFile.UnusedDependencyIndexes()
+	unusedDeps := make([]int32, len(originalUnusedDeps))
+	copy(unusedDeps, originalUnusedDeps)
+	// The other attributes are already immutable, so we don't need to copy them.
+	return NewImageFile(
+		clonedDescriptor,
+		imageFile.ModuleIdentity(),
+		imageFile.Commit(),
+		imageFile.ExternalPath(),
+		imageFile.IsImport(),
+		imageFile.IsSyntaxUnspecified(),
+		unusedDeps,
+	)
 }
 
 // MergeImages returns a new Image for the given Images. ImageFiles
