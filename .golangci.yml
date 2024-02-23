@@ -186,6 +186,14 @@ issues:
     - linters:
         - staticcheck
       text: "GetDeprecatedLegacyJsonFieldConflicts is deprecated"
+    - linters:
+        - staticcheck
+      text: "GetIgnoreEmpty is deprecated"
+      path: private/bufpkg/bufcheck/buflint/internal/buflintvalidate/field.go
+    - linters:
+        - staticcheck
+      text: "GetSkipped is deprecated"
+      path: private/bufpkg/bufcheck/buflint/internal/buflintvalidate/field.go
     # We verify manually so that we can emit verbose output while doing so.
     - linters:
         - gosec
