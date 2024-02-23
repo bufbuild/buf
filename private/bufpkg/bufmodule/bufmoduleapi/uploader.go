@@ -181,9 +181,6 @@ func (a *uploader) Upload(
 			protoLegacyFederationUploadRequestContents,
 			protoLegacyFederationUploadRequestContentToProtoUploadRequestContent,
 		)
-		if err != nil {
-			return nil, err
-		}
 		protoDepCommitIds := slicesext.Map(
 			protoLegacyFederationDepRefs,
 			func(protoLegacyFederationDepRef *federationv1beta1.UploadRequest_DepRef) string {

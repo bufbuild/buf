@@ -53,7 +53,7 @@ func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility) UploadO
 	}
 }
 
-// UploadOptions are the possition options for upload.
+// UploadOptions are the possible options for upload.
 //
 // This is used by Uploader implementations.
 type UploadOptions interface {
