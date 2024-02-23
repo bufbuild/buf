@@ -131,27 +131,16 @@ message FieldConstraints {
   // }
   // ```
   repeated Constraint cel = 23;
-  // `skipped` is an optional boolean attribute that specifies that the
-  // validation rules of this field should not be evaluated. If skipped is set to
-  // true, any validation rules set for the field will be ignored.
+  // If `required` is true, the field must be populated. A populated field can be
+  // described as "serialized in the wire format," which includes:
   //
-  // ```proto
-  // message MyMessage {
-  //   // The field `value` must not be set.
-  //   optional MyOtherMessage value = 1 [(buf.validate.field).skipped = true];
-  // }
-  // ```
-  bool skipped = 24;
-  // If `required` is true, the field must be populated. Field presence can be
-  // described as "serialized in the wire format," which follows the following rules:
-  //
-  // - the following "nullable" fields must be explicitly set to be considered present:
-  //   - singular message fields (may be their empty value)
+  // - the following "nullable" fields must be explicitly set to be considered populated:
+  //   - singular message fields (whose fields may be unpopulated/default values)
   //   - member fields of a oneof (may be their default value)
   //   - proto3 optional fields (may be their default value)
-  //   - proto2 scalar fields
-  // - proto3 scalar fields must be non-zero to be considered present
-  // - repeated and map fields must be non-empty to be considered present
+  //   - proto2 scalar fields (both optional and required)
+  // - proto3 scalar fields must be non-zero to be considered populated
+  // - repeated and map fields must be non-empty to be considered populated
   //
   // ```proto
   // message MyMessage {
@@ -160,22 +149,21 @@ message FieldConstraints {
   // }
   // ```
   bool required = 25;
-  // If `ignore_empty` is true and applied to a non-nullable field (see
-  // `required` for more details), validation is skipped on the field if it is
-  // the default or empty value. Adding `ignore_empty` to a "nullable" field is
-  // a noop as these unset fields already skip validation (with the exception
-  // of `required`).
+  // Skip validation on the field if its value matches the specified criteria.
+  // See Ignore enum for details.
   //
   // ```proto
-  // message MyRepeated {
-  //   // The field `value` min_len rule is only applied if the field isn't empty.
-  //   repeated string value = 1 [
-  //     (buf.validate.field).ignore_empty = true,
-  //     (buf.validate.field).min_len = 5
+  // message UpdateRequest {
+  //   // The uri rule only applies if the field is populated and not an empty
+  //   // string.
+  //   optional string url = 1 [
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE,
+  //     (buf.validate.field).string.uri = true,
   //   ];
   // }
   // ```
-  bool ignore_empty = 26;
+  Ignore ignore = 27;
+
   oneof type {
     // Scalar Field Types
     FloatRules float = 1;
@@ -204,6 +192,165 @@ message FieldConstraints {
     DurationRules duration = 21;
     TimestampRules timestamp = 22;
   }
+
+  // DEPRECATED: use ignore=IGNORE_ALWAYS instead. TODO: remove this field pre-v1.
+  bool skipped = 24 [deprecated = true];
+  // DEPRECATED: use ignore=IGNORE_IF_UNPOPULATED instead. TODO: remove this field pre-v1.
+  bool ignore_empty = 26 [deprecated = true];
+}
+
+// Specifies how FieldConstraints.ignore behaves. See the documentation for
+// FieldConstraints.required for definitions of "populated" and "nullable".
+enum Ignore {
+  // buf:lint:ignore ENUM_NO_ALLOW_ALIAS // allowance for deprecations. TODO: remove pre-v1.
+  option allow_alias = true;
+  // Validation is only skipped if it's an unpopulated nullable fields.
+  //
+  // ```proto
+  // syntax="proto3";
+  //
+  // message Request {
+  //   // The uri rule applies to any value, including the empty string.
+  //   string foo = 1 [
+  //     (buf.validate.field).string.uri = true
+  //   ];
+  //
+  //   // The uri rule only applies if the field is set, including if it's
+  //   // set to the empty string.
+  //   optional string bar = 2 [
+  //     (buf.validate.field).string.uri = true
+  //   ];
+  //
+  //   // The min_items rule always applies, even if the list is empty.
+  //   repeated string baz = 3 [
+  //     (buf.validate.field).repeated.min_items = 3
+  //   ];
+  //
+  //   // The custom CEL rule applies only if the field is set, including if
+  //   // it's the "zero" value of that message.
+  //   SomeMessage quux = 4 [
+  //     (buf.validate.field).cel = {/* ... */}
+  //   ];
+  // }
+  // ```
+  IGNORE_UNSPECIFIED = 0;
+
+  // Validation is skipped if the field is unpopulated. This rule is redundant
+  // if the field is already nullable. This value is equivalent behavior to the
+  // deprecated ignore_empty rule.
+  //
+  // ```proto
+  // syntax="proto3
+  //
+  // message Request {
+  //   // The uri rule applies only if the value is not the empty string.
+  //   string foo = 1 [
+  //     (buf.validate.field).string.uri = true,
+  //     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+  //   ];
+  //
+  //   // IGNORE_IF_UNPOPULATED is equivalent to IGNORE_UNSPECIFIED in this
+  //   // case: the uri rule only applies if the field is set, including if
+  //   // it's set to the empty string.
+  //   optional string bar = 2 [
+  //     (buf.validate.field).string.uri = true,
+  //     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+  //   ];
+  //
+  //   // The min_items rule only applies if the list has at least one item.
+  //   repeated string baz = 3 [
+  //     (buf.validate.field).repeated.min_items = 3,
+  //     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+  //   ];
+  //
+  //   // IGNORE_IF_UNPOPULATED is equivalent to IGNORE_UNSPECIFIED in this
+  //   // case: the custom CEL rule applies only if the field is set, including
+  //   // if it's the "zero" value of that message.
+  //   SomeMessage quux = 4 [
+  //     (buf.validate.field).cel = {/* ... */},
+  //     (buf.validate.field).ignore = IGNORE_IF_UNPOPULATED
+  //   ];
+  // }
+  // ```
+  IGNORE_IF_UNPOPULATED = 1;
+
+  // Validation is skipped if the field is unpopulated or if it is a nullable
+  // field populated with its default value. This is typically the zero or
+  // empty value, but proto2 scalars support custom defaults. For messages, the
+  // default is a non-null message with all its fields unpopulated.
+  //
+  // ```proto
+  // syntax="proto3
+  //
+  // message Request {
+  //   // IGNORE_IF_DEFAULT_VALUE is equivalent to IGNORE_IF_UNPOPULATED in
+  //   // this case; the uri rule applies only if the value is not the empty
+  //   // string.
+  //   string foo = 1 [
+  //     (buf.validate.field).string.uri = true,
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE
+  //   ];
+  //
+  //   // The uri rule only applies if the field is set to a value other than
+  //   // the empty string.
+  //   optional string bar = 2 [
+  //     (buf.validate.field).string.uri = true,
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE
+  //   ];
+  //
+  //   // IGNORE_IF_DEFAULT_VALUE is equivalent to IGNORE_IF_UNPOPULATED in
+  //   // this case; the min_items rule only applies if the list has at least
+  //   // one item.
+  //   repeated string baz = 3 [
+  //     (buf.validate.field).repeated.min_items = 3,
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE
+  //   ];
+  //
+  //   // The custom CEL rule only applies if the field is set to a value other
+  //   // than an empty message (i.e., fields are unpopulated).
+  //   SomeMessage quux = 4 [
+  //     (buf.validate.field).cel = {/* ... */},
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE
+  //   ];
+  // }
+  // ```
+  //
+  // This rule is affected by proto2 custom default values:
+  //
+  // ```proto
+  // syntax="proto2";
+  //
+  // message Request {
+  //   // The gt rule only applies if the field is set and it's value is not
+  //   the default (i.e., not -42). The rule even applies if the field is set
+  //   to zero since the default value differs.
+  //   optional int32 value = 1 [
+  //     default = -42,
+  //     (buf.validate.field).int32.gt = 0,
+  //     (buf.validate.field).ignore = IGNORE_IF_DEFAULT_VALUE
+  //   ];
+  // }
+  IGNORE_IF_DEFAULT_VALUE = 2;
+
+  // The validation rules of this field will be skipped and not evaluated. This
+  // is useful for situations that necessitate turning off the rules of a field
+  // containing a message that may not make sense in the current context, or to
+  // temporarily disable constraints during development.
+  //
+  // ```proto
+  // message MyMessage {
+  //   // The field's rules will always be ignored, including any validation's
+  //   // on value's fields.
+  //   MyOtherMessage value = 1 [
+  //     (buf.validate.field).ignore = IGNORE_ALWAYS];
+  // }
+  // ```
+  IGNORE_ALWAYS = 3;
+
+  // Deprecated: Use IGNORE_IF_UNPOPULATED instead. TODO: Remove this value pre-v1.
+  IGNORE_EMPTY = 1 [deprecated = true];
+  // Deprecated: Use IGNORE_IF_DEFAULT_VALUE. TODO: Remove this value pre-v1.
+  IGNORE_DEFAULT = 2 [deprecated = true];
 }
 
 // FloatRules describes the constraints applied to `float` values. These
@@ -2694,11 +2841,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.email = true];
     // }
     // ```
-    bool email = 12 [(priv.field).cel = {
-      id: "string.email",
-      message: "value must be a valid email address",
-      expression: "this.isEmail()"
-    }];
+    bool email = 12 [
+      (priv.field).cel = {
+        id: "string.email",
+        message: "value must be a valid email address",
+        expression: "this == '' || this.isEmail()",
+      },
+      (priv.field).cel = {
+        id: "string.email_empty",
+        message: "value is empty, which is not a valid email address",
+        expression: "this != ''",
+      }
+    ];
 
     // `hostname` specifies that the field value must be a valid
     // hostname as defined by [RFC 1034](https://tools.ietf.org/html/rfc1034#section-3.5). This constraint doesn't support
@@ -2711,11 +2865,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.hostname = true];
     // }
     // ```
-    bool hostname = 13 [(priv.field).cel = {
-      id: "string.hostname",
-      message: "value must be a valid hostname",
-      expression: "this.isHostname()",
-    }];
+    bool hostname = 13 [
+      (priv.field).cel = {
+        id: "string.hostname",
+        message: "value must be a valid hostname",
+        expression: "this == '' || this.isHostname()",
+      },
+      (priv.field).cel = {
+        id: "string.hostname_empty",
+        message: "value is empty, which is not a valid hostname",
+        expression: "this != ''",
+      }
+    ];
 
     // `ip` specifies that the field value must be a valid IP
     // (v4 or v6) address, without surrounding square brackets for IPv6 addresses.
@@ -2728,11 +2889,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.ip = true];
     // }
     // ```
-    bool ip = 14 [(priv.field).cel = {
-      id: "string.ip",
-      message: "value must be a valid IP address",
-      expression: "this.isIp()",
-    }];
+    bool ip = 14 [
+      (priv.field).cel = {
+        id: "string.ip",
+        message: "value must be a valid IP address",
+        expression: "this == '' || this.isIp()",
+      },
+      (priv.field).cel = {
+        id: "string.ip_empty",
+        message: "value is empty, which is not a valid IP address",
+        expression: "this != ''",
+      }
+    ];
 
     // `ipv4` specifies that the field value must be a valid IPv4
     // address. If the field value isn't a valid IPv4 address, an error message
@@ -2744,11 +2912,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.ipv4 = true];
     // }
     // ```
-    bool ipv4 = 15 [(priv.field).cel = {
-      id: "string.ipv4",
-      message: "value must be a valid IPv4 address",
-      expression: "this.isIp(4)"
-    }];
+    bool ipv4 = 15 [
+      (priv.field).cel = {
+        id: "string.ipv4",
+        message: "value must be a valid IPv4 address",
+        expression: "this == '' || this.isIp(4)",
+      },
+      (priv.field).cel = {
+        id: "string.ipv4_empty",
+        message: "value is empty, which is not a valid IPv4 address",
+        expression: "this != ''",
+      }
+    ];
 
     // `ipv6` specifies that the field value must be a valid
     // IPv6 address, without surrounding square brackets. If the field value is
@@ -2760,11 +2935,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.ipv6 = true];
     // }
     // ```
-    bool ipv6 = 16 [(priv.field).cel = {
-      id: "string.ipv6",
-      message: "value must be a valid IPv6 address",
-      expression: "this.isIp(6)",
-    }];
+    bool ipv6 = 16 [
+      (priv.field).cel = {
+        id: "string.ipv6",
+        message: "value must be a valid IPv6 address",
+        expression: "this == '' || this.isIp(6)",
+      },
+      (priv.field).cel = {
+        id: "string.ipv6_empty",
+        message: "value is empty, which is not a valid IPv6 address",
+        expression: "this != ''",
+      }
+    ];
 
     // `uri` specifies that the field value must be a valid,
     // absolute URI as defined by [RFC 3986](https://tools.ietf.org/html/rfc3986#section-3). If the field value isn't a valid,
@@ -2776,11 +2958,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.uri = true];
     // }
     // ```
-    bool uri = 17 [(priv.field).cel = {
-      id: "string.uri",
-      message: "value must be a valid URI",
-      expression: "this.isUri()",
-    }];
+    bool uri = 17 [
+      (priv.field).cel = {
+        id: "string.uri",
+        message: "value must be a valid URI",
+        expression: "this == '' || this.isUri()",
+      },
+      (priv.field).cel = {
+        id: "string.uri_empty",
+        message: "value is empty, which is not a valid URI",
+        expression: "this != ''",
+      }
+    ];
 
     // `uri_ref` specifies that the field value must be a valid URI
     // as defined by [RFC 3986](https://tools.ietf.org/html/rfc3986#section-3) and may be either relative or absolute. If the
@@ -2810,11 +2999,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.address = true];
     // }
     // ```
-    bool address = 21 [(priv.field).cel = {
-      id: "string.address",
-      message: "value must be a valid hostname, or ip address",
-      expression: "this.isHostname() || this.isIp()",
-    }];
+    bool address = 21 [
+      (priv.field).cel = {
+        id: "string.address",
+        message: "value must be a valid hostname, or ip address",
+        expression: "this == '' || this.isHostname() || this.isIp()",
+      },
+      (priv.field).cel = {
+        id: "string.address_empty",
+        message: "value is empty, which is not a valid hostname, or ip address",
+        expression: "this != ''",
+      }
+    ];
 
     // `uuid` specifies that the field value must be a valid UUID as defined by
     // [RFC 4122](https://tools.ietf.org/html/rfc4122#section-4.1.2). If the
@@ -2826,10 +3022,18 @@ message StringRules {
     //   string value = 1 [(buf.validate.field).string.uuid = true];
     // }
     // ```
-    bool uuid = 22 [(priv.field).cel = {
-      id: "string.uuid",
-      expression: "!this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$') ? 'value must be a valid UUID' : ''"
-    }];
+    bool uuid = 22 [
+      (priv.field).cel = {
+        id: "string.uuid",
+        message: "value must be a valid UUID",
+        expression: "this == '' || this.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')",
+      },
+      (priv.field).cel = {
+        id: "string.uuid_empty",
+        message: "value is empty, which is not a valid UUID",
+        expression: "this != ''",
+      }
+    ];
 
     // `ip_with_prefixlen` specifies that the field value must be a valid IP (v4 or v6)
     // address with prefix length. If the field value isn't a valid IP with prefix
@@ -2842,11 +3046,18 @@ message StringRules {
     //    string value = 1 [(buf.validate.field).string.ip_with_prefixlen = true];
     // }
     // ```
-    bool ip_with_prefixlen = 26 [(priv.field).cel = {
-      id: "string.ip_with_prefixlen",
-      message: "value must be a valid IP prefix",
-      expression: "this.isIpPrefix()",
-    }];
+    bool ip_with_prefixlen = 26 [
+      (priv.field).cel = {
+        id: "string.ip_with_prefixlen",
+        message: "value must be a valid IP prefix",
+        expression: "this == '' || this.isIpPrefix()",
+      },
+      (priv.field).cel = {
+        id: "string.ip_with_prefixlen_empty",
+        message: "value is empty, which is not a valid IP prefix",
+        expression: "this != ''",
+      }
+    ];
 
     // `ipv4_with_prefixlen` specifies that the field value must be a valid
     // IPv4 address with prefix.
@@ -2855,15 +3066,22 @@ message StringRules {
     //
     // ```proto
     // message MyString {
-    //   // value must be a valid IPv4 address with prefix lentgh
+    //   // value must be a valid IPv4 address with prefix length
     //    string value = 1 [(buf.validate.field).string.ipv4_with_prefixlen = true];
     // }
     // ```
-    bool ipv4_with_prefixlen = 27 [(priv.field).cel = {
-      id: "string.ipv4_with_prefixlen",
-      message: "value must be a valid IPv4 address with prefix length",
-      expression: "this.isIpPrefix(4)"
-    }];
+    bool ipv4_with_prefixlen = 27 [
+      (priv.field).cel = {
+        id: "string.ipv4_with_prefixlen",
+        message: "value must be a valid IPv4 address with prefix length",
+        expression: "this == '' || this.isIpPrefix(4)"
+      },
+      (priv.field).cel = {
+        id: "string.ipv4_with_prefixlen_empty",
+        message: "value is empty, which is not a valid IPv4 address with prefix length",
+        expression: "this != ''"
+      }
+    ];
 
     // `ipv6_with_prefixlen` specifies that the field value must be a valid
     // IPv6 address with prefix length.
@@ -2876,11 +3094,18 @@ message StringRules {
     //    string value = 1 [(buf.validate.field).string.ipv6_with_prefixlen = true];
     // }
     // ```
-    bool ipv6_with_prefixlen = 28 [(priv.field).cel = {
-      id: "string.ipv6_with_prefixlen",
-      message: "value must be a valid IPv6 address with prefix length",
-      expression: "this.isIpPrefix(6)",
-    }];
+    bool ipv6_with_prefixlen = 28 [
+      (priv.field).cel = {
+        id: "string.ipv6_with_prefixlen",
+        message: "value must be a valid IPv6 address with prefix length",
+        expression: "this == '' || this.isIpPrefix(6)",
+      },
+      (priv.field).cel = {
+        id: "string.ipv6_with_prefixlen_empty",
+        message: "value is empty, which is not a valid IPv6 address with prefix length",
+        expression: "this != ''",
+      }
+    ];
 
     // `ip_prefix` specifies that the field value must be a valid IP (v4 or v6) prefix.
     // If the field value isn't a valid IP prefix, an error message will be
@@ -2893,11 +3118,18 @@ message StringRules {
     //    string value = 1 [(buf.validate.field).string.ip_prefix = true];
     // }
     // ```
-    bool ip_prefix = 29 [(priv.field).cel = {
-      id: "string.ip_prefix",
-      message: "value must be a valid IP prefix",
-      expression: "this.isIpPrefix(true)",
-    }];
+    bool ip_prefix = 29 [
+      (priv.field).cel = {
+        id: "string.ip_prefix",
+        message: "value must be a valid IP prefix",
+        expression: "this == '' || this.isIpPrefix(true)",
+      },
+      (priv.field).cel = {
+        id: "string.ip_prefix_empty",
+        message: "value is empty, which is not a valid IP prefix",
+        expression: "this != ''",
+      }
+    ];
 
     // `ipv4_prefix` specifies that the field value must be a valid IPv4
     // prefix. If the field value isn't a valid IPv4 prefix, an error message
@@ -2910,11 +3142,18 @@ message StringRules {
     //    string value = 1 [(buf.validate.field).string.ipv4_prefix = true];
     // }
     // ```
-    bool ipv4_prefix = 30 [(priv.field).cel = {
-      id: "string.ipv4_prefix",
-      message: "value must be a valid IPv4 prefix",
-      expression: "this.isIpPrefix(4, true)"
-    }];
+    bool ipv4_prefix = 30 [
+      (priv.field).cel = {
+        id: "string.ipv4_prefix",
+        message: "value must be a valid IPv4 prefix",
+        expression: "this == '' || this.isIpPrefix(4, true)"
+      },
+      (priv.field).cel = {
+        id: "string.ipv4_prefix_empty",
+        message: "value is empty, which is not a valid IPv4 prefix",
+        expression: "this != ''"
+      }
+    ];
 
     // `ipv6_prefix` specifies that the field value must be a valid IPv6 prefix.
     // If the field value is not a valid IPv6 prefix, an error message will be
@@ -2927,11 +3166,35 @@ message StringRules {
     //    string value = 1 [(buf.validate.field).string.ipv6_prefix = true];
     // }
     // ```
-    bool ipv6_prefix = 31 [(priv.field).cel = {
-      id: "string.ipv6_prefix",
-      message: "value must be a valid IPv6 prefix",
-      expression: "this.isIpPrefix(6, true)",
-    }];
+    bool ipv6_prefix = 31 [
+      (priv.field).cel = {
+        id: "string.ipv6_prefix",
+        message: "value must be a valid IPv6 prefix",
+        expression: "this == '' || this.isIpPrefix(6, true)",
+      },
+      (priv.field).cel = {
+        id: "string.ipv6_prefix_empty",
+        message: "value is empty, which is not a valid IPv6 prefix",
+        expression: "this != ''",
+      }
+    ];
+
+    // `host_and_port` specifies the field value must be a valid host and port
+    // pair. The host must be a valid hostname or IP address while the port
+    // must be in the range of 0-65535, inclusive. IPv6 addresses must be delimited
+    // with square brackets (e.g., `[::1]:1234`).
+    bool host_and_port = 32 [
+      (priv.field).cel = {
+        id: "string.host_and_port",
+        message: "value must be a valid host (hostname or IP address) and port pair",
+        expression: "this == '' || this.isHostAndPort(true)",
+      },
+      (priv.field).cel = {
+        id: "string.host_and_port_empty",
+        message: "value is empty, which is not a valid host and port pair",
+        expression: "this != ''",
+      }
+    ];
 
     // `well_known_regex` specifies a common well-known pattern
     // defined as a regex. If the field value doesn't match the well-known
@@ -2940,7 +3203,7 @@ message StringRules {
     // ```proto
     // message MyString {
     //   // value must be a valid HTTP header value
-    //   string value = 1 [(buf.validate.field).string.well_known_regex = 2];
+    //   string value = 1 [(buf.validate.field).string.well_known_regex = KNOWN_REGEX_HTTP_HEADER_VALUE];
     // }
     // ```
     //
@@ -2955,18 +3218,25 @@ message StringRules {
     // | KNOWN_REGEX_HTTP_HEADER_VALUE | 2      | HTTP header value as defined by [RFC 7230](https://tools.ietf.org/html/rfc7230#section-3.2.4) |
     KnownRegex well_known_regex = 24 [
       (priv.field).cel = {
-        id: "string.well_known_regex.header_name"
+        id: "string.well_known_regex.header_name",
+        message: "value must be a valid HTTP header name",
         expression:
-          "rules.well_known_regex == 1 && !this.matches(!has(rules.strict) || rules.strict ?"
+          "rules.well_known_regex != 1 || this == '' || this.matches(!has(rules.strict) || rules.strict ?"
           "'^:?[0-9a-zA-Z!#$%&\\'*+-.^_|~\\x60]+$' :"
-          "'^[^\\u0000\\u000A\\u000D]+$') ? 'value must be a valid HTTP header name' : ''",
+          "'^[^\\u0000\\u000A\\u000D]+$')",
+      },
+      (priv.field).cel = {
+        id: "string.well_known_regex.header_name_empty",
+        message: "value is empty, which is not a valid HTTP header name",
+        expression: "rules.well_known_regex != 1 || this != ''",
       },
       (priv.field).cel = {
         id: "string.well_known_regex.header_value",
+        message: "value must be a valid HTTP header value",
         expression:
-          "rules.well_known_regex == 2 && !this.matches(!has(rules.strict) || rules.strict ?"
+          "rules.well_known_regex != 2 || this.matches(!has(rules.strict) || rules.strict ?"
           "'^[^\\u0000-\\u0008\\u000A-\\u001F\\u007F]*$' :"
-          "'^[^\\u0000\\u000A\\u000D]*$') ? 'value must be a valid HTTP header value' : ''",
+          "'^[^\\u0000\\u000A\\u000D]*$')",
       }
     ];
   }
@@ -3163,10 +3433,18 @@ message BytesRules {
     //   optional bytes value = 1 [(buf.validate.field).bytes.ip = true];
     // }
     // ```
-    bool ip = 10 [(priv.field).cel = {
-      id: "bytes.ip",
-      expression: "this.size() != 4 && this.size() != 16 ? 'value must be a valid IP address' : ''"
-    }];
+    bool ip = 10 [
+      (priv.field).cel = {
+        id: "bytes.ip",
+        message: "value must be a valid IP address",
+        expression: "this.size() == 0 || this.size() == 4 || this.size() == 16",
+      },
+      (priv.field).cel = {
+        id: "bytes.ip_empty",
+        message: "value is empty, which is not a valid IP address",
+        expression: "this.size() != 0",
+      }
+    ];
 
     // `ipv4` ensures that the field `value` is a valid IPv4 address in byte format.
     // If the field value doesn't meet this constraint, an error message is generated.
@@ -3177,10 +3455,18 @@ message BytesRules {
     //   optional bytes value = 1 [(buf.validate.field).bytes.ipv4 = true];
     // }
     // ```
-    bool ipv4 = 11 [(priv.field).cel = {
-      id: "bytes.ipv4",
-      expression: "this.size() != 4 ? 'value must be a valid IPv4 address' : ''"
-    }];
+    bool ipv4 = 11 [
+      (priv.field).cel = {
+        id: "bytes.ipv4",
+        message: "value must be a valid IPv4 address",
+        expression: "this.size() == 0 || this.size() == 4",
+      },
+      (priv.field).cel = {
+        id: "bytes.ipv4_empty",
+        message: "value is empty, which is not a valid IPv4 address",
+        expression: "this.size() != 0",
+      }
+    ];
 
     // `ipv6` ensures that the field `value` is a valid IPv6 address in byte format.
     // If the field value doesn't meet this constraint, an error message is generated.
@@ -3190,10 +3476,18 @@ message BytesRules {
     //   optional bytes value = 1 [(buf.validate.field).bytes.ipv6 = true];
     // }
     // ```
-    bool ipv6 = 12 [(priv.field).cel = {
-      id: "bytes.ipv6",
-      expression: "this.size() != 16 ? 'value must be a valid IPv6 address' : ''"
-    }];
+    bool ipv6 = 12 [
+      (priv.field).cel = {
+        id: "bytes.ipv6",
+        message: "value must be a valid IPv6 address",
+        expression: "this.size() == 0 || this.size() == 16"
+      },
+      (priv.field).cel = {
+        id: "bytes.ipv6_empty",
+        message: "value is empty, which is not a valid IPv6 address",
+        expression: "this.size() != 0",
+      }
+    ];
   }
 }
 
@@ -3249,7 +3543,7 @@ message EnumRules {
   //
   // message MyMessage {
   //   // The field `value` must be equal to one of the specified values.
-  //   MyEnum value = 1 [(buf.validate.field).enum.in = {1, 2}];
+  //   MyEnum value = 1 [(buf.validate.field).enum = { in: [1, 2]}];
   // }
   // ```
   repeated int32 in = 3 [(priv.field).cel = {
@@ -3270,7 +3564,7 @@ message EnumRules {
   //
   // message MyMessage {
   //   // The field `value` must not be equal to any of the specified values.
-  //   MyEnum value = 1 [(buf.validate.field).enum.not_in = {1, 2}];
+  //   MyEnum value = 1 [(buf.validate.field).enum = { not_in: [1, 2]}];
   // }
   // ```
   repeated int32 not_in = 4 [(priv.field).cel = {
