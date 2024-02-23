@@ -62,6 +62,7 @@ const (
 	skippedFieldNumber        = 24
 	requiredFieldNumber       = 25
 	ignoreEmptyFieldNumber    = 26
+	ignoreFieldNumber         = 27
 	// https://buf.build/bufbuild/protovalidate/docs/v0.5.1:buf.validate#buf.validate.StringRules
 	minLenFieldNumberInStringRules         = 2
 	maxLenFieldNumberInStringRules         = 3
@@ -258,6 +259,16 @@ func checkFieldFlags(
 			adder.getFieldRuleName(),
 		)
 	}
+	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_ALWAYS && fieldCount > 1 {
+		adder.addForPathf(
+			[]int32{ignoreFieldNumber},
+			"Field %q has %s=%v and therefore other rules in %s are not applied and should be removed.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ignoreFieldNumber),
+			validate.Ignore_IGNORE_ALWAYS,
+			adder.getFieldRuleName(),
+		)
+	}
 	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnoreEmpty() {
 		adder.addForPathsf(
 			[][]int32{
@@ -268,6 +279,19 @@ func checkFieldFlags(
 			adder.fieldName(),
 			adder.getFieldRuleName(requiredFieldNumber),
 			adder.getFieldRuleName(ignoreEmptyFieldNumber),
+		)
+	}
+	if fieldConstraints.GetRequired() && fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+		adder.addForPathsf(
+			[][]int32{
+				{requiredFieldNumber},
+				{ignoreFieldNumber},
+			},
+			"Field %q has both %s and %s=%v. A field cannot be empty if it is required.",
+			adder.fieldName(),
+			adder.getFieldRuleName(requiredFieldNumber),
+			adder.getFieldRuleName(ignoreFieldNumber),
+			validate.Ignore_IGNORE_IF_UNPOPULATED,
 		)
 	}
 }
@@ -326,6 +350,15 @@ func checkConstraintsForExtension(
 			"Field %q is an extension field and cannot have %s.",
 			adder.fieldName(),
 			adder.getFieldRuleName(ignoreEmptyFieldNumber),
+		)
+	}
+	if fieldConstraints.GetIgnore() == validate.Ignore_IGNORE_IF_UNPOPULATED {
+		adder.addForPathf(
+			[]int32{ignoreFieldNumber},
+			"Field %q is an extension field and cannot have %s=%v.",
+			adder.fieldName(),
+			adder.getFieldRuleName(ignoreFieldNumber),
+			validate.Ignore_IGNORE_IF_UNPOPULATED,
 		)
 	}
 }
