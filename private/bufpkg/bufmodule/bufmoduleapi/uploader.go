@@ -20,6 +20,8 @@ import (
 	"time"
 
 	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
+	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
+	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -71,7 +73,10 @@ func (a *uploader) Upload(
 	moduleSet bufmodule.ModuleSet,
 	options ...bufmodule.UploadOption,
 ) ([]bufmodule.Commit, error) {
-	uploadOptions := bufmodule.NewUploadOptions(options)
+	uploadOptions, err := bufmodule.NewUploadOptions(options)
+	if err != nil {
+		return nil, err
+	}
 
 	contentModules, err := bufmodule.ModuleSetTargetLocalModulesAndTransitiveLocalDeps(moduleSet)
 	if err != nil {
@@ -101,6 +106,12 @@ func (a *uploader) Upload(
 		}
 	}
 
+	// While the API allows different labels per reference, we don't have a use case for this
+	// in the CLI, so all references will have the same labels. We just pre-compute them now.
+	protoScopedLabelRefs := slicesext.Map(
+		slicesext.ToUniqueSorted(uploadOptions.Labels()),
+		labelNameToProtoScopedLabelRef,
+	)
 	remoteDeps, err := bufmodule.RemoteDepsForModules(contentModules)
 	if err != nil {
 		return nil, err
@@ -148,7 +159,7 @@ func (a *uploader) Upload(
 	if len(remoteDepRegistries) > 0 && (len(remoteDepRegistries) > 1 || remoteDepRegistries[0] != primaryRegistry) {
 		// If we have dependencies on other registries, or we have multiple registries we depend on, we have
 		// to use legacy federation.
-		response, err := clientProvider.LegacyFederationUploadServiceClient(primaryRegistry).Upload(
+		response, err := a.clientProvider.LegacyFederationUploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&federationv1beta1.UploadRequest{
@@ -179,7 +190,7 @@ func (a *uploader) Upload(
 				return protoLegacyFederationDepRef.CommitId
 			},
 		)
-		response, err := clientProvider.UploadServiceClient(primaryRegistry).Upload(
+		response, err := a.clientProvider.UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&modulev1beta1.UploadRequest{
@@ -239,7 +250,7 @@ func (a *uploader) createContentModulesIfNotExist(
 	if err != nil {
 		return err
 	}
-	if _, err := clientProvider.ModuleServiceClient(primaryRegistry).CreateModules(
+	if _, err := a.clientProvider.ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.CreateModulesRequest{
@@ -270,7 +281,7 @@ func (a *uploader) validateContentModulesExist(
 	primaryRegistry string,
 	contentModules []bufmodule.Module,
 ) error {
-	_, err := clientProvider.ModuleServiceClient(primaryRegistry).GetModules(
+	_, err := a.clientProvider.ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetModulesRequest{
@@ -298,14 +309,13 @@ func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (stri
 	for _, module := range contentModules {
 		moduleFullName := module.ModuleFullName()
 		if moduleFullName == nil {
-			return nil, newRequireModuleFullNameOnUploadError(module)
+			return "", newRequireModuleFullNameOnUploadError(module)
 		}
 		moduleRegistry := moduleFullName.Registry()
 		if registry != "" && moduleRegistry != registry {
-			return fmt
 			// We don't allow the upload of content across multiple registries, but in the legacy federation
 			// case, we DO allow for depending on other registries.
-			return nil, fmt.Errorf(
+			return "", fmt.Errorf(
 				"cannot upload content for multiple registries at once: %s, %s",
 				registry,
 				moduleRegistry,
@@ -359,7 +369,7 @@ func getProtoLegacyFederationUploadRequestContent(
 }
 
 func getProtoLegacyFederationUploadRequestDepRef(
-	remoteDeps bufmodule.RemoteDep,
+	remoteDep bufmodule.RemoteDep,
 ) (*federationv1beta1.UploadRequest_DepRef, error) {
 	if remoteDep.ModuleFullName() == nil {
 		return nil, newRequireModuleFullNameOnUploadError(remoteDep)
