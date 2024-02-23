@@ -19,16 +19,11 @@ import (
 	"fmt"
 	"strings"
 
-	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -148,50 +143,23 @@ func run(
 	if err != nil {
 		return err
 	}
-	uploadModules, err := bufmodule.ModuleSetTargetLocalModulesAndTransitiveLocalDeps(workspace)
+
+	uploader, err := bufcli.NewUploader(container)
 	if err != nil {
 		return err
 	}
 
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	clientProvider := bufapi.NewClientProvider(clientConfig)
-
-	registryToUploadModules, err := getRegistryToUploadModuleWithModuleFullName(uploadModules)
-	if err != nil {
-		return err
+	uploadOptions := []bufmodule.UploadOption{
+		bufmodule.UploadWithLabels(combineLabelLikeFlags(flags)...),
 	}
 	if flags.Create {
-		moduleVisiblity, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility)
+		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
 		if err != nil {
 			return err
 		}
-		if err := createUploadModulesIfNotExist(
-			ctx,
-			clientProvider,
-			registryToUploadModules,
-			moduleVisiblity,
-		); err != nil {
-			return err
-		}
-	} else {
-		if err := validateUploadModulesExist(
-			ctx,
-			clientProvider,
-			registryToUploadModules,
-		); err != nil {
-			return err
-		}
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity))
 	}
-
-	commits, err := bufmoduleapi.Upload(
-		ctx,
-		clientProvider,
-		uploadModules,
-		bufmoduleapi.UploadWithLabels(combineLabelLikeFlags(flags)...),
-	)
+	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
 	if err != nil {
 		return err
 	}
@@ -263,87 +231,6 @@ func getBuildableWorkspace(
 	return workspace, nil
 }
 
-func getRegistryToUploadModuleWithModuleFullName(uploadModules []bufmodule.Module) (map[string][]bufmodule.Module, error) {
-	registryToUploadModules := make(map[string][]bufmodule.Module, len(uploadModules))
-	for _, module := range uploadModules {
-		moduleFullName := module.ModuleFullName()
-		if moduleFullName == nil {
-			return nil, newRequireModuleFullNameOnUploadError(module)
-		}
-		registryToUploadModules[moduleFullName.Registry()] = append(
-			registryToUploadModules[moduleFullName.Registry()],
-			module,
-		)
-	}
-	return registryToUploadModules, nil
-}
-
-func validateUploadModulesExist(
-	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
-	registryToUploadModules map[string][]bufmodule.Module,
-) error {
-	for registry, targetModules := range registryToUploadModules {
-		if _, err := clientProvider.ModuleServiceClient(registry).GetModules(
-			ctx,
-			connect.NewRequest(
-				&modulev1beta1.GetModulesRequest{
-					ModuleRefs: slicesext.Map(
-						targetModules,
-						func(module bufmodule.Module) *modulev1beta1.ModuleRef {
-							return &modulev1beta1.ModuleRef{
-								Value: &modulev1beta1.ModuleRef_Name_{
-									Name: &modulev1beta1.ModuleRef_Name{
-										Owner:  module.ModuleFullName().Owner(),
-										Module: module.ModuleFullName().Name(),
-									},
-								},
-							}
-						},
-					),
-				},
-			),
-		); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func createUploadModulesIfNotExist(
-	ctx context.Context,
-	clientProvider bufapi.ClientProvider,
-	registryToUploadModules map[string][]bufmodule.Module,
-	moduleVisibility modulev1beta1.ModuleVisibility,
-) error {
-	for registry, targetModules := range registryToUploadModules {
-		if _, err := clientProvider.ModuleServiceClient(registry).CreateModules(
-			ctx,
-			connect.NewRequest(
-				&modulev1beta1.CreateModulesRequest{
-					Values: slicesext.Map(
-						targetModules,
-						func(module bufmodule.Module) *modulev1beta1.CreateModulesRequest_Value {
-							return &modulev1beta1.CreateModulesRequest_Value{
-								OwnerRef: &ownerv1beta1.OwnerRef{
-									Value: &ownerv1beta1.OwnerRef_Name{
-										Name: module.ModuleFullName().Owner(),
-									},
-								},
-								Name:       module.ModuleFullName().Name(),
-								Visibility: moduleVisibility,
-							}
-						},
-					),
-				},
-			),
-		); err != nil && connect.CodeOf(err) != connect.CodeAlreadyExists {
-			return err
-		}
-	}
-	return nil
-}
-
 func validateFlags(flags *flags) error {
 	if err := validateCreateFlags(flags); err != nil {
 		return err
@@ -363,7 +250,7 @@ func validateCreateFlags(flags *flags) error {
 				createFlagName,
 			)
 		}
-		if _, err := bufmoduleapi.ParseModuleVisibility(flags.CreateVisibility); err != nil {
+		if _, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility); err != nil {
 			return appcmd.NewInvalidArgumentError(err.Error())
 		}
 	} else {
@@ -401,9 +288,4 @@ func combineLabelLikeFlags(flags *flags) []string {
 		labels = append(labels, flags.Branch)
 	}
 	return slicesext.ToUniqueSorted(labels)
-}
-
-func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
-	// This error will likely actually go back to users.
-	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
 }
