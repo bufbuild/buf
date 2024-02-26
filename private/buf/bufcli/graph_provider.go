@@ -27,10 +27,17 @@ func NewGraphProvider(container appext.Container) (bufmodule.GraphProvider, erro
 	if err != nil {
 		return nil, err
 	}
+	return newGraphProvider(container, bufapi.NewClientProvider(clientConfig)), nil
+}
+
+func newGraphProvider(
+	container appext.Container,
+	clientProvider bufapi.ClientProvider,
+) bufmodule.GraphProvider {
 	return bufmoduleapi.NewGraphProvider(
 		container.Logger(),
-		bufapi.NewClientProvider(
-			clientConfig,
-		),
-	), nil
+		clientProvider,
+		// OK if empty
+		bufmoduleapi.GraphProviderWithPublicRegistry(container.Env(publicRegistryEnvKey)),
+	)
 }

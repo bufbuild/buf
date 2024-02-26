@@ -25,7 +25,7 @@ import (
 
 // If we ever get to a case where we're supporting legacy federation, and we're moving buf.build,
 // we have way bigger problems than this hardcoded variable.
-const publicRegistry = "buf.build"
+const defaultPublicRegistry = "buf.build"
 
 type hasModuleFullName interface {
 	ModuleFullName() bufmodule.ModuleFullName
@@ -44,7 +44,7 @@ type hasModuleFullName interface {
 // beyond a non-public registry depending on buf.build.
 //
 // This is used to support legacy federation.
-func getPrimarySecondaryRegistry[T hasModuleFullName](s []T) (string, string, error) {
+func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry string) (string, string, error) {
 	if len(s) == 0 {
 		return "", "", syserror.New("must have at least one value in getPrimarySecondaryRegistry")
 	}
@@ -80,7 +80,7 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T) (string, string, er
 	}
 }
 
-func validateDepRegistries(primaryRegistry string, depRegistries []string) error {
+func validateDepRegistries(primaryRegistry string, depRegistries []string, publicRegistry string) error {
 	switch len(depRegistries) {
 	case 0:
 		return nil

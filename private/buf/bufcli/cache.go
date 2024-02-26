@@ -132,6 +132,7 @@ func newModuleDataProvider(
 	delegateModuleDataProvider := bufmoduleapi.NewModuleDataProvider(
 		container.Logger(),
 		clientProvider,
+		newGraphProvider(container, clientProvider),
 	)
 	// No symlinks.
 	storageosProvider := storageos.NewProvider()

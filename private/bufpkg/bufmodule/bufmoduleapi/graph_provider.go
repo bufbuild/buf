@@ -39,8 +39,25 @@ func NewGraphProvider(
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
+	options ...GraphProviderOption,
 ) bufmodule.GraphProvider {
-	return newGraphProvider(logger, clientProvider)
+	return newGraphProvider(logger, clientProvider, options...)
+}
+
+// GraphProviderOption is an option for a new GraphProvider.
+type GraphProviderOption func(*graphProvider)
+
+// GraphProviderWithPublicRegistry returns a new GraphProviderOption that specifies
+// the hostname of the public registry. By default this is "buf.build", however in testing,
+// this may be something else. This is needed to discern which which registry to make calls
+// against in the case where there is >1 registries represented in the ModuleKeys - we always
+// want to call the non-public registry.
+func GraphProviderWithPublicRegistry(publicRegistry string) GraphProviderOption {
+	return func(graphProvider *graphProvider) {
+		if publicRegistry != "" {
+			graphProvider.publicRegistry = publicRegistry
+		}
+	}
 }
 
 // *** PRIVATE ***
@@ -53,6 +70,7 @@ type graphProvider struct {
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	}
+	publicRegistry string
 }
 
 func newGraphProvider(
@@ -63,11 +81,17 @@ func newGraphProvider(
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
+	options ...GraphProviderOption,
 ) *graphProvider {
-	return &graphProvider{
+	graphProvider := &graphProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
+		publicRegistry: defaultPublicRegistry,
 	}
+	for _, option := range options {
+		option(graphProvider)
+	}
+	return graphProvider
 }
 
 func (a *graphProvider) GetGraphForModuleKeys(
@@ -160,7 +184,7 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 	moduleKeys []bufmodule.ModuleKey,
 	digestType bufmodule.DigestType,
 ) (*federationv1beta1.Graph, error) {
-	primaryRegistry, secondaryRegistry, err := getPrimarySecondaryRegistry(moduleKeys)
+	primaryRegistry, secondaryRegistry, err := getPrimarySecondaryRegistry(moduleKeys, a.publicRegistry)
 	if err != nil {
 		return nil, err
 	}

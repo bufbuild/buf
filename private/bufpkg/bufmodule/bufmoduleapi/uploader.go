@@ -39,8 +39,25 @@ func NewUploader(
 		bufapi.ModuleServiceClientProvider
 		bufapi.UploadServiceClientProvider
 	},
+	options ...UploaderOption,
 ) bufmodule.Uploader {
-	return newUploader(logger, clientProvider)
+	return newUploader(logger, clientProvider, options...)
+}
+
+// UploaderOption is an option for a new Uploader.
+type UploaderOption func(*uploader)
+
+// UploaderWithPublicRegistry returns a new UploaderOption that specifies
+// the hostname of the public registry. By default this is "buf.build", however in testing,
+// this may be something else. This is needed to discern which which registry to make calls
+// against in the case where there is >1 registries represented in the ModuleKeys - we always
+// want to call the non-public registry.
+func UploaderWithPublicRegistry(publicRegistry string) UploaderOption {
+	return func(uploader *uploader) {
+		if publicRegistry != "" {
+			uploader.publicRegistry = publicRegistry
+		}
+	}
 }
 
 // *** PRIVATE ***
@@ -52,6 +69,7 @@ type uploader struct {
 		bufapi.ModuleServiceClientProvider
 		bufapi.UploadServiceClientProvider
 	}
+	publicRegistry string
 }
 
 func newUploader(
@@ -61,11 +79,17 @@ func newUploader(
 		bufapi.ModuleServiceClientProvider
 		bufapi.UploadServiceClientProvider
 	},
+	options ...UploaderOption,
 ) *uploader {
-	return &uploader{
+	uploader := &uploader{
 		logger:         logger,
 		clientProvider: clientProvider,
+		publicRegistry: defaultPublicRegistry,
 	}
+	for _, option := range options {
+		option(uploader)
+	}
+	return uploader
 }
 
 func (a *uploader) Upload(
@@ -151,7 +175,7 @@ func (a *uploader) Upload(
 			},
 		),
 	)
-	if err := validateDepRegistries(primaryRegistry, remoteDepRegistries); err != nil {
+	if err := validateDepRegistries(primaryRegistry, remoteDepRegistries, a.publicRegistry); err != nil {
 		return nil, err
 	}
 

@@ -43,8 +43,9 @@ func NewModuleDataProvider(
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
+	graphProvider bufmodule.GraphProvider,
 ) bufmodule.ModuleDataProvider {
-	return newModuleDataProvider(logger, clientProvider)
+	return newModuleDataProvider(logger, clientProvider, graphProvider)
 }
 
 // *** PRIVATE ***
@@ -62,19 +63,15 @@ func newModuleDataProvider(
 	logger *zap.Logger,
 	clientProvider interface {
 		bufapi.DownloadServiceClientProvider
-		bufapi.GraphServiceClientProvider
-		bufapi.LegacyFederationGraphServiceClientProvider
 		bufapi.ModuleServiceClientProvider
 		bufapi.OwnerServiceClientProvider
 	},
+	graphProvider bufmodule.GraphProvider,
 ) *moduleDataProvider {
 	return &moduleDataProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
-		graphProvider: NewGraphProvider(
-			logger,
-			clientProvider,
-		),
+		graphProvider:  graphProvider,
 	}
 }
 

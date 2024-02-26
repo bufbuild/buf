@@ -27,10 +27,17 @@ func NewUploader(container appext.Container) (bufmodule.Uploader, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newUploader(container, bufapi.NewClientProvider(clientConfig)), nil
+}
+
+func newUploader(
+	container appext.Container,
+	clientProvider bufapi.ClientProvider,
+) bufmodule.Uploader {
 	return bufmoduleapi.NewUploader(
 		container.Logger(),
-		bufapi.NewClientProvider(
-			clientConfig,
-		),
-	), nil
+		clientProvider,
+		// OK if empty
+		bufmoduleapi.UploaderWithPublicRegistry(container.Env(publicRegistryEnvKey)),
+	)
 }

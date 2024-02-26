@@ -37,6 +37,10 @@ const (
 	// implemented now, all 1000 .proto file are copied. You could get smarter with caching
 	// at a per-file level.
 	copyToInMemoryEnvKey = "BUF_BETA_COPY_FILES_TO_MEMORY"
+
+	// This should only be used for testing. This is not part of Buf's API, and should
+	// never be documented or part of Buf's contract.
+	publicRegistryEnvKey = "BUF_TESTING_PUBLIC_REGISTRY"
 )
 
 var (

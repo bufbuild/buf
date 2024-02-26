@@ -50,7 +50,7 @@ func NewController(
 		container.Logger(),
 		tracing.NewTracer(container.Tracer()),
 		container,
-		bufmoduleapi.NewGraphProvider(container.Logger(), clientProvider),
+		newGraphProvider(container, clientProvider),
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
 		commitProvider,
