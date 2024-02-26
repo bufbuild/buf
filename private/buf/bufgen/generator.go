@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufpluginexec"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -53,13 +52,12 @@ func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:              logger,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner, wasmPluginExecutor),
+		pluginexecGenerator: bufpluginexec.NewGenerator(logger, storageosProvider, runner),
 		clientConfig:        clientConfig,
 	}
 }
@@ -100,7 +98,6 @@ func (g *generator) Generate(
 		generateOptions.baseOutDirPath,
 		generateOptions.includeImports,
 		generateOptions.includeWellKnownTypes,
-		generateOptions.wasmEnabled,
 	)
 }
 
@@ -112,7 +109,6 @@ func (g *generator) generate(
 	baseOutDirPath string,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	wasmEnabled bool,
 ) error {
 	if err := modifyImage(ctx, g.logger, config, image); err != nil {
 		return err
@@ -124,7 +120,6 @@ func (g *generator) generate(
 		image,
 		includeImports,
 		includeWellKnownTypes,
-		wasmEnabled,
 	)
 	if err != nil {
 		return err
@@ -165,10 +160,9 @@ func (g *generator) execPlugins(
 	image bufimage.Image,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
-	// Collect all of the plugin jobs so that they can be executed in parallel.
+	// Collect all the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
 	requiredFeatures := computeRequiredFeatures(image)
@@ -194,7 +188,6 @@ func (g *generator) execPlugins(
 					currentPluginConfig,
 					includeImports,
 					includeWellKnownTypes,
-					wasmEnabled,
 				)
 				if err != nil {
 					return err
@@ -274,7 +267,6 @@ func (g *generator) execLocalPlugin(
 	pluginConfig *PluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	wasmEnabled bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy)
 	if err != nil {
@@ -283,12 +275,6 @@ func (g *generator) execLocalPlugin(
 	generateOptions := []bufpluginexec.GenerateOption{
 		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path...),
 		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath),
-	}
-	if wasmEnabled {
-		generateOptions = append(
-			generateOptions,
-			bufpluginexec.GenerateWithWASMEnabled(),
-		)
 	}
 	response, err := g.pluginexecGenerator.Generate(
 		ctx,
@@ -617,7 +603,6 @@ type generateOptions struct {
 	baseOutDirPath        string
 	includeImports        bool
 	includeWellKnownTypes bool
-	wasmEnabled           bool
 }
 
 func newGenerateOptions() *generateOptions {

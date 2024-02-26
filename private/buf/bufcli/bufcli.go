@@ -75,9 +75,6 @@ const (
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
-	// AlphaEnableWASMEnvKey is an env var to enable WASM local plugin execution
-	AlphaEnableWASMEnvKey = "BUF_ALPHA_ENABLE_WASM"
-
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
 
@@ -85,9 +82,6 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
-
-	// WASMCompilationCacheDir compiled WASM plugin cache directory
-	WASMCompilationCacheDir = "wasmplugin-bin"
 )
 
 var (
@@ -874,11 +868,6 @@ func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1al
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s", visibility)
 	}
-}
-
-// IsAlphaWASMEnabled returns an BUF_ALPHA_ENABLE_WASM is set to true.
-func IsAlphaWASMEnabled(container app.EnvContainer) (bool, error) {
-	return app.EnvBool(container, AlphaEnableWASMEnvKey, false)
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
