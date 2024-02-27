@@ -120,7 +120,6 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 //
 // protocPath and pluginPath are optional.
 //
-//   - If a WASM plugin path is specified as the plugin name, this returns a WASM handler.
 //   - If the plugin path is set, this returns a new binary handler for that path.
 //   - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
 //     and if one is found, a new binary handler is returned for this.
