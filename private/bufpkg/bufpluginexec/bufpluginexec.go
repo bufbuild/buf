@@ -23,9 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -94,9 +92,8 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 ) Generator {
-	return newGenerator(logger, storageosProvider, runner, wasmPluginExecutor)
+	return newGenerator(logger, storageosProvider, runner)
 }
 
 // GenerateOption is an option for Generate.
@@ -119,18 +116,10 @@ func GenerateWithProtocPath(protocPath string) GenerateOption {
 	}
 }
 
-// GenerateWithWASMEnabled returns a new GenerateOption that sets wasmEnabled according to the env variable.
-func GenerateWithWASMEnabled() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.wasmEnabled = true
-	}
-}
-
 // NewHandler returns a new Handler based on the plugin name and optional path.
 //
 // protocPath and pluginPath are optional.
 //
-//   - If a WASM plugin path is specified as the plugin name, this returns a WASM handler.
 //   - If the plugin path is set, this returns a new binary handler for that path.
 //   - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
 //     and if one is found, a new binary handler is returned for this.
@@ -139,20 +128,12 @@ func GenerateWithWASMEnabled() GenerateOption {
 func NewHandler(
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	pluginName string,
 	options ...HandlerOption,
 ) (appproto.Handler, error) {
 	handlerOptions := newHandlerOptions()
 	for _, option := range options {
 		option(handlerOptions)
-	}
-
-	// Initialize WASM plugin handler. This is the quickest check we can do in order to
-	// branch here. A more stringent check is done inside the handler initialization.
-	// In a followup we should unify the following three checks into a strategy pattern.
-	if looksLikeWASM(pluginName) && handlerOptions.wasmEnabled {
-		return newWasmHandler(wasmPluginExecutor, pluginName)
 	}
 
 	// Initialize binary plugin handler when path is specified with optional args. Return
@@ -209,13 +190,6 @@ func HandlerWithPluginPath(pluginPath ...string) HandlerOption {
 	}
 }
 
-// HandlerWithWASMEnabled returns a new HandlerOption that sets wasmEnabled according to the env variable.
-func HandlerWithWASMEnabled() HandlerOption {
-	return func(handlerOptions *handlerOptions) {
-		handlerOptions.wasmEnabled = true
-	}
-}
-
 // NewBinaryHandler returns a new Handler that invokes the specific plugin
 // specified by pluginPath.
 //
@@ -229,19 +203,12 @@ func NewBinaryHandler(runner command.Runner, pluginPath string, pluginArgs []str
 }
 
 type handlerOptions struct {
-	protocPath  string
-	pluginPath  []string
-	wasmEnabled bool
+	protocPath string
+	pluginPath []string
 }
 
 func newHandlerOptions() *handlerOptions {
 	return &handlerOptions{}
-}
-
-// looksLikeWASM is a minimal check for WASM plugins. A more stringent validation
-// of the file is done in the handlers Handle method.
-func looksLikeWASM(pluginName string) bool {
-	return strings.HasSuffix(pluginName, ".wasm")
 }
 
 // unsafeLookPath is a wrapper around exec.LookPath that restores the original

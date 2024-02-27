@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -117,14 +116,12 @@ func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	clientConfig *connectclient.Config,
 ) Generator {
 	return newGenerator(
 		logger,
 		storageosProvider,
 		runner,
-		wasmPluginExecutor,
 		clientConfig,
 	)
 }
@@ -158,13 +155,6 @@ func GenerateWithIncludeImports() GenerateOption {
 func GenerateWithIncludeWellKnownTypes() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeWellKnownTypes = true
-	}
-}
-
-// GenerateWithWASMEnabled says to enable WASM support.
-func GenerateWithWASMEnabled() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.wasmEnabled = true
 	}
 }
 
