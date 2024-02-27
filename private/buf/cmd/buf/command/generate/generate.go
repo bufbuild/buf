@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -317,11 +316,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-		filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
-	if err != nil {
-		return err
-	}
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -383,22 +377,11 @@ func run(
 			bufgen.GenerateWithIncludeWellKnownTypesOverride(*flags.IncludeWKTOverride),
 		)
 	}
-	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
-	if err != nil {
-		return err
-	}
-	if wasmEnabled {
-		generateOptions = append(
-			generateOptions,
-			bufgen.GenerateWithWASMEnabled(),
-		)
-	}
 	return bufgen.NewGenerator(
 		logger,
 		tracing.NewTracer(container.Tracer()),
 		storageosProvider,
 		command.NewRunner(),
-		wasmPluginExecutor,
 		clientConfig,
 	).Generate(
 		ctx,
