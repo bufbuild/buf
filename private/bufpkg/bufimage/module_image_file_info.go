@@ -12,29 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufctl
+package bufimage
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/gofrs/uuid/v5"
 )
 
-type moduleProtoFileInfo struct {
+type moduleImageFileInfo struct {
 	bufmodule.FileInfo
 }
 
-func newModuleProtoFileInfo(fileInfo bufmodule.FileInfo) *moduleProtoFileInfo {
-	return &moduleProtoFileInfo{
+func newModuleImageFileInfo(fileInfo bufmodule.FileInfo) *moduleImageFileInfo {
+	return &moduleImageFileInfo{
 		FileInfo: fileInfo,
 	}
 }
 
-func (p *moduleProtoFileInfo) ModuleFullName() bufmodule.ModuleFullName {
+func (p *moduleImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
 	return p.FileInfo.Module().ModuleFullName()
 }
 
-func (p *moduleProtoFileInfo) CommitID() uuid.UUID {
+func (p *moduleImageFileInfo) CommitID() uuid.UUID {
 	return p.FileInfo.Module().CommitID()
 }
 
-func (*moduleProtoFileInfo) isProtoFileInfo() {}
+func (p *moduleImageFileInfo) Imports() ([]string, error) {
+	return p.FileInfo.ProtoFileImports()
+}
+
+func (p *moduleImageFileInfo) IsImport() bool {
+	return !p.FileInfo.IsTargetFile()
+}
+
+func (*moduleImageFileInfo) isImageFileInfo() {}

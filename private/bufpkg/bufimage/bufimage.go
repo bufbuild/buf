@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -33,8 +34,11 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// ImageFile is a Protobuf file within an image.
-type ImageFile interface {
+// ImageFileInfo is the minimal interface that can be fufulled by both an ImageFile
+// and (with conversion) a bufmodule.FileInfo.
+//
+// This is used by ls-files.
+type ImageFileInfo interface {
 	storage.ObjectInfo
 
 	// ModuleFullName returns the full name of the Module that this ImageFile came from,
@@ -50,14 +54,76 @@ type ImageFile interface {
 	// May be empty, that is CommitID().IsNil() may be true. Callers should not rely on this
 	// value being present. If ModuleFullName is nil, this will always be empty.
 	CommitID() uuid.UUID
+	// Imports returns the imports for this ImageFile.
+	Imports() ([]string, error)
+	// IsImport returns true if this file is an import.
+	IsImport() bool
+
+	isImageFileInfo()
+}
+
+// ImageFileInfoForModuleFileInfo returns a new ImageFileInfo for the bufmodule.FileInfo.
+func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFileInfo {
+	return newModuleImageFileInfo(moduleFileInfo)
+}
+
+// ImageFileInfosOnlyTargetsAndTargetImports returns a new slice of ImageFileInfos that only
+// contains the non-imports (ie targets), and the files that those non-imports themselves
+// transitively import.
+//
+// This is used in ls-files.
+//
+// As an example, assume a module has files a.proto, b.proto, and it has a dependency on
+// a module with files c.proto, d.proto. a.proto imports c.proto. We only target the module
+// with a.proto, b.proto. The resulting slice should have a.proto, b.proto, c.proto, but not
+// d.proto.
+//
+// It is assumed that the input ImageFileInfos are self-contained, that is every import should
+// be contained within the input .
+//
+// The result will be sorted by path.
+func ImageFileInfosOnlyTargetsAndTargetImports(
+	imageFileInfos []ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+	resultPaths := make(map[string]struct{}, len(imageFileInfos))
+	for _, imageFileInfo := range imageFileInfos {
+		if imageFileInfo.IsImport() {
+			continue
+		}
+		if err := imageFileInfosOnlyTargetsAndTargetImportsRec(imageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+			return nil, err
+		}
+	}
+	resultImageFileInfos := make([]ImageFileInfo, 0, len(resultPaths))
+	for resultPath := range resultPaths {
+		imageFileInfo, ok := pathToImageFileInfo[resultPath]
+		if !ok {
+			return nil, fmt.Errorf("no ImageFileInfo for path %q", resultPath)
+		}
+		resultImageFileInfos = append(resultImageFileInfos, imageFileInfo)
+	}
+	sort.Slice(
+		resultImageFileInfos,
+		func(i int, j int) bool {
+			return resultImageFileInfos[i].Path() < resultImageFileInfos[j].Path()
+		},
+	)
+	return resultImageFileInfos, nil
+}
+
+// ImageFile is a Protobuf file within an image.
+type ImageFile interface {
+	ImageFileInfo
 
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// This will never be nil.
 	// The value Path() is equal to FileDescriptorProto().GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
-	// IsImport returns true if this file is an import.
-	IsImport() bool
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
 	IsSyntaxUnspecified() bool
 	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
@@ -641,6 +707,32 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) err
 					}
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func imageFileInfosOnlyTargetsAndTargetImportsRec(
+	imageFileInfo ImageFileInfo,
+	pathToImageFileInfo map[string]ImageFileInfo,
+	resultPaths map[string]struct{},
+) error {
+	path := imageFileInfo.Path()
+	if _, ok := resultPaths[path]; ok {
+		return nil
+	}
+	resultPaths[path] = struct{}{}
+	imports, err := imageFileInfo.Imports()
+	if err != nil {
+		return err
+	}
+	for _, imp := range imports {
+		importImageFileInfo, ok := pathToImageFileInfo[imp]
+		if !ok {
+			return fmt.Errorf("no ImageFileInfo for import %q", imp)
+		}
+		if err := imageFileInfosOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+			return err
 		}
 	}
 	return nil

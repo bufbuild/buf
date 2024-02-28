@@ -40,13 +40,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/protovalidate-go"
 	"github.com/bufbuild/protoyaml-go"
-	"github.com/gofrs/uuid/v5"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -59,19 +57,6 @@ type ImageWithConfig interface {
 	BreakingConfig() bufconfig.BreakingConfig
 
 	isImageWithConfig()
-}
-
-// ProtoFileInfo is a minimal FileInfo that can be constructed from either
-// a ModuleSet or an Image with no additional lazy calls.
-//
-// This is used by ls-files.
-type ProtoFileInfo interface {
-	storage.ObjectInfo
-
-	ModuleFullName() bufmodule.ModuleFullName
-	CommitID() uuid.UUID
-
-	isProtoFileInfo()
 }
 
 type Controller interface {
@@ -105,15 +90,14 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) ([]ImageWithConfig, error)
-	// GetProtoFileInfos gets the .proto FileInfos for the given input.
+	// GetImageFileInfos gets the .proto FileInfos for the given input.
 	//
-	// If WithFileInfosIncludeImports is set, imports are included, otherwise
-	// just the targeted files are included.
-	GetProtoFileInfos(
+	// Imports are always included.
+	GetImageFileInfos(
 		ctx context.Context,
 		input string,
 		options ...FunctionOption,
-	) ([]ProtoFileInfo, error)
+	) ([]bufimage.ImageFileInfo, error)
 	PutImage(
 		ctx context.Context,
 		imageOutput string,
@@ -426,11 +410,11 @@ func (c *controller) GetTargetImageWithConfigs(
 	}
 }
 
-func (c *controller) GetProtoFileInfos(
+func (c *controller) GetImageFileInfos(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
-) (_ []ProtoFileInfo, retErr error) {
+) (_ []bufimage.ImageFileInfo, retErr error) {
 	defer c.handleFileAnnotationSetRetError(&retErr)
 	functionOptions := newFunctionOptions(c)
 	for _, option := range options {
@@ -438,20 +422,8 @@ func (c *controller) GetProtoFileInfos(
 	}
 	// We never care about SourceCodeInfo here.
 	functionOptions.imageExcludeSourceInfo = true
-
-	if functionOptions.protoFileInfosIncludeImports {
-		// There are cleaner ways we could do this on per-ref basis, but this matches
-		// what we did in the pre-buf-refactor, and it's simple and fine. We could
-		// optimize this later if we really wanted.
-		image, err := c.getImage(ctx, input, functionOptions)
-		if err != nil {
-			return nil, err
-		}
-		return getProtoFileInfosForImage(image)
-	}
-	// We now know that we don't want imports. Just get the targets. We set up
-	// functionOptions to do this for images here too.
-	functionOptions.imageExcludeImports = true
+	// We always want to include imports for images.
+	functionOptions.imageExcludeImports = false
 
 	ref, err := c.buffetchRefParser.GetRef(ctx, input)
 	if err != nil {
@@ -463,25 +435,30 @@ func (c *controller) GetProtoFileInfos(
 		if err != nil {
 			return nil, err
 		}
-		return getProtoFileInfosForModuleSet(ctx, workspace)
+		return getImageFileInfosForModuleSet(ctx, workspace)
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getProtoFileInfosForModuleSet(ctx, workspace)
+		return getImageFileInfosForModuleSet(ctx, workspace)
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getProtoFileInfosForModuleSet(ctx, workspace)
+		return getImageFileInfosForModuleSet(ctx, workspace)
 	case buffetch.MessageRef:
 		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getProtoFileInfosForImage(image)
+		imageFiles := image.Files()
+		imageFileInfos := make([]bufimage.ImageFileInfo, len(imageFiles))
+		for i, imageFile := range imageFiles {
+			imageFileInfos[i] = imageFile
+		}
+		return imageFileInfos, nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
@@ -1157,9 +1134,8 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 	}
 }
 
-// We expect that we only want target files when we call this.
-func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]ProtoFileInfo, error) {
-	targetFileInfos, err := bufmodule.GetTargetFileInfos(
+func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]bufimage.ImageFileInfo, error) {
+	fileInfos, err := bufmodule.GetFileInfos(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),
 	)
@@ -1167,19 +1143,9 @@ func getProtoFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.Modu
 		return nil, err
 	}
 	return slicesext.Map(
-		targetFileInfos,
-		func(fileInfo bufmodule.FileInfo) ProtoFileInfo {
-			return newModuleProtoFileInfo(fileInfo)
-		},
-	), nil
-}
-
-// Any import filtering is expected to be done before this.
-func getProtoFileInfosForImage(image bufimage.Image) ([]ProtoFileInfo, error) {
-	return slicesext.Map(
-		image.Files(),
-		func(imageFile bufimage.ImageFile) ProtoFileInfo {
-			return newImageProtoFileInfo(imageFile)
+		fileInfos,
+		func(fileInfo bufmodule.FileInfo) bufimage.ImageFileInfo {
+			return bufimage.ImageFileInfoForModuleFileInfo(fileInfo)
 		},
 	), nil
 }

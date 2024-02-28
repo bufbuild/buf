@@ -123,7 +123,6 @@ func run(
 	protoFileInfos, err := controller.GetProtoFileInfos(
 		ctx,
 		input,
-		bufctl.WithProtoFileInfosIncludeImports(flags.IncludeImports),
 		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {

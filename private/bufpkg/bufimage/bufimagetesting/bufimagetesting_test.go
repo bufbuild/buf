@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/gofrs/uuid/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -711,6 +712,109 @@ func TestBasic(t *testing.T) {
 		diff = cmp.Diff(codeGeneratorRequestsIncludeImports[i], requestsFromImages[i], protocmp.Transform())
 		require.Equal(t, "", diff)
 	}
+}
+
+func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
+	t.Parallel()
+
+	protoImageFileC := NewProtoImageFileIsImport(
+		t,
+		"c.proto",
+	)
+	protoImageFileD := NewProtoImageFileIsImport(
+		t,
+		"d.proto",
+	)
+	protoImageFileTimestamp := NewProtoImageFileIsImport(
+		t,
+		"google/protobuf/timestamp.proto",
+	)
+	protoImageFileA := NewProtoImageFile(
+		t,
+		"a.proto",
+		"c.proto",
+		"google/protobuf/timestamp.proto",
+	)
+	protoImageFileB := NewProtoImageFile(
+		t,
+		"b.proto",
+	)
+
+	fileC := NewImageFile(
+		t,
+		protoImageFileC,
+		nil,
+		uuid.Nil,
+		"",
+		"",
+		true,
+		false,
+		nil,
+	)
+	fileD := NewImageFile(
+		t,
+		protoImageFileD,
+		nil,
+		uuid.Nil,
+		"",
+		"",
+		true,
+		false,
+		nil,
+	)
+	fileTimestamp := NewImageFile(
+		t,
+		protoImageFileTimestamp,
+		nil,
+		uuid.Nil,
+		"",
+		"",
+		true,
+		false,
+		nil,
+	)
+	fileA := NewImageFile(
+		t,
+		protoImageFileA,
+		nil,
+		uuid.Nil,
+		"",
+		"",
+		false,
+		false,
+		nil,
+	)
+	fileB := NewImageFile(
+		t,
+		protoImageFileB,
+		nil,
+		uuid.Nil,
+		"",
+		"",
+		false,
+		false,
+		nil,
+	)
+
+	imageFileInfos := []bufimage.ImageFileInfo{
+		fileC,
+		fileD,
+		fileA,
+		fileTimestamp,
+		fileB,
+	}
+	resultImageFileInfos, err := bufimage.ImageFileInfosOnlyTargetsAndTargetImports(imageFileInfos)
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"a.proto",
+			"b.proto",
+			"c.proto",
+			"google/protobuf/timestamp.proto",
+		},
+		slicesext.Map(resultImageFileInfos, bufimage.ImageFileInfo.Path),
+	)
 }
 
 func testProtoImageFileToFileDescriptorProto(imageFile *imagev1.ImageFile) *descriptorpb.FileDescriptorProto {

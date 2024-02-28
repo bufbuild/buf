@@ -76,12 +76,6 @@ func WithImageAsFileDescriptorSet(imageAsFileDescriptorSet bool) FunctionOption 
 	}
 }
 
-func WithProtoFileInfosIncludeImports(protoFileInfosIncludeImports bool) FunctionOption {
-	return func(functionOptions *functionOptions) {
-		functionOptions.protoFileInfosIncludeImports = protoFileInfosIncludeImports
-	}
-}
-
 // WithConfigOverride applies the config override.
 //
 // This flag will only work if no buf.work.yaml is detected, and the buf.yaml is a
@@ -139,7 +133,6 @@ type functionOptions struct {
 	imageExcludeImports             bool
 	imageTypes                      []string
 	imageAsFileDescriptorSet        bool
-	protoFileInfosIncludeImports    bool
 	configOverride                  string
 	ignoreAndDisallowV1BufWorkYAMLs bool
 	messageValidation               bool

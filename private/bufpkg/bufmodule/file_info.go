@@ -43,12 +43,11 @@ type FileInfo interface {
 	// the Module will have IsTargetFile() set to true.
 	IsTargetFile() bool
 
-	// protoFileImports returns the file's declared .proto imports, if any.
+	// ProtoFileImports returns the file's declared .proto imports, if any.
 	//
 	// Always returns empty if this file is not a .proto file.
-	//
-	// Not exposing this function publicly yet as we don't have a use case.
-	protoFileImports() ([]string, error)
+	ProtoFileImports() ([]string, error)
+
 	// protoFilePackage returns the file's declared Protobuf package, any.
 	//
 	// Always returns empty if this file is not a .proto file.
@@ -106,7 +105,7 @@ func (f *fileInfo) IsTargetFile() bool {
 	return f.isTargetFile
 }
 
-func (f *fileInfo) protoFileImports() ([]string, error) {
+func (f *fileInfo) ProtoFileImports() ([]string, error) {
 	return f.getProtoFileImports()
 }
 
