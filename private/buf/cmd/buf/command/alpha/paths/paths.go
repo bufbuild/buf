@@ -16,6 +16,7 @@ package paths
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -100,17 +101,50 @@ func run(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
-	paths := slicesext.Map(
+	externalFileInfos := slicesext.Map(
 		fileInfos,
-		func(fileInfo bufmodule.FileInfo) string {
-			return fileInfo.ExternalPath()
+		newExternalFileInfo,
+	)
+	sort.Slice(
+		externalFileInfos,
+		func(i int, j int) bool {
+			return externalFileInfos[i].Path < externalFileInfos[j].Path
 		},
 	)
-	sort.Strings(paths)
-	for _, path := range paths {
-		if _, err := fmt.Fprintln(container.Stdout(), path); err != nil {
+	for _, externalFileInfo := range externalFileInfos {
+		data, err := json.Marshal(externalFileInfo)
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(container.Stdout(), string(data)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+type externalFileInfo struct {
+	Path         string `json:"path" yaml:"path"`
+	ExternalPath string `json:"external_path" yaml:"external_path"`
+	Module       string `json:"module" yaml:"module"`
+	Commit       string `json:"commit" yaml:"commit"`
+	Target       bool   `json:"target" yaml:"target"`
+}
+
+func newExternalFileInfo(fileInfo bufmodule.FileInfo) *externalFileInfo {
+	var module string
+	if moduleFullName := fileInfo.Module().ModuleFullName(); moduleFullName != nil {
+		module = moduleFullName.String()
+	}
+	var commit string
+	if commitID := fileInfo.Module().CommitID(); !commitID.IsNil() {
+		commit = commitID.String()
+	}
+	return &externalFileInfo{
+		Path:         fileInfo.Path(),
+		ExternalPath: fileInfo.ExternalPath(),
+		Module:       module,
+		Commit:       commit,
+		Target:       fileInfo.IsTargetFile(),
+	}
 }
