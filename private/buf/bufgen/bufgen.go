@@ -24,7 +24,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
@@ -92,7 +91,6 @@ func NewGenerator(
 	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	// Pass a clientConfig instead of a CodeGenerationServiceClient because the
 	// plugins' remotes/registries is not known at this time, and remotes/registries
 	// may be different for different plugins.
@@ -103,7 +101,6 @@ func NewGenerator(
 		tracer,
 		storageosProvider,
 		runner,
-		wasmPluginExecutor,
 		clientConfig,
 	)
 }
@@ -146,12 +143,5 @@ func GenerateWithIncludeImportsOverride(includeImports bool) GenerateOption {
 func GenerateWithIncludeWellKnownTypesOverride(includeWellKnownTypes bool) GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeWellKnownTypesOverride = &includeWellKnownTypes
-	}
-}
-
-// GenerateWithWASMEnabled says to enable WASM support.
-func GenerateWithWASMEnabled() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.wasmEnabled = true
 	}
 }

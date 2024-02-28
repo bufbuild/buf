@@ -124,6 +124,7 @@ func run(
 		ctx,
 		input,
 		bufctl.WithProtoFileInfosIncludeImports(flags.IncludeImports),
+		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {
 		return err
