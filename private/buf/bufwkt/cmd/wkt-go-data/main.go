@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -110,10 +111,26 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	if err != nil {
 		return err
 	}
+	pathToFile, err := bufprotosource.FilePathToFile(protosourceFiles...)
+	if err != nil {
+		return err
+	}
+	pathToImports := make(map[string][]string, len(pathToFile))
+	for path, file := range pathToFile {
+		imports := slicesext.Map(
+			file.FileImports(),
+			func(fileImport bufprotosource.FileImport) string {
+				return fileImport.Import()
+			},
+		)
+		sort.Strings(imports)
+		pathToImports[path] = imports
+	}
 	golangFileData, err := getGolangFileData(
 		pathToData,
 		fullNameToMessage,
 		fullNameToEnum,
+		pathToImports,
 		packageName,
 	)
 	if err != nil {
@@ -190,6 +207,8 @@ func getGolangFileData(
 	pathToData map[string][]byte,
 	fullNameToMessage map[string]bufprotosource.Message,
 	fullNameToEnum map[string]bufprotosource.Enum,
+	// imports are sorted
+	pathToImports map[string][]string,
 	packageName string,
 ) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
@@ -269,6 +288,22 @@ var (
 		p("\n")
 	}
 	p(`}
+
+	pathToImports = map[string][]string{
+`)
+	for _, pathToImportsPair := range sortedPairs(pathToImports) {
+		p(`"`)
+		p(pathToImportsPair.key)
+		p(`": []string{\n`)
+		for _, imp := range pathToImportsPair.val {
+			p(`"`)
+			p(imp)
+			p(`",\n`)
+		}
+		p(`},`)
+		p("\n")
+	}
+	p(`}
 )
 
 func init() {
@@ -297,6 +332,17 @@ func MessageFilePath(messageName string) (string, bool) {
 func EnumFilePath(enumName string) (string, bool) {
 	filePath, ok := enumNameToFilePath[enumName]
 	return filePath, ok
+}
+
+// Imports gets the imports for the given file path, if the file path exists.
+func Imports(path string) ([]string, bool) {
+	imports, ok := pathToImports[path]
+	if !ok {
+		return nil, false
+	}
+	c := make([]string, len(imports)
+	copy(c, imports)
+	return c
 }
 `)
 	return format.Source(buffer.Bytes())

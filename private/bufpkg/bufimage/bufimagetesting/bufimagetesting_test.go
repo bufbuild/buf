@@ -803,7 +803,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		fileTimestamp,
 		fileB,
 	}
-	resultImageFileInfos, err := bufimage.ImageFileInfosOnlyTargetsAndTargetImports(imageFileInfos)
+	resultImageFileInfos, err := bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)
 	require.NoError(t, err)
 	require.Equal(
 		t,

@@ -34,7 +34,7 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// ImageFileInfo is the minimal interface that can be fufulled by both an ImageFile
+// ImageFileInfo is the minimal interface that can be fulfilled by both an ImageFile
 // and (with conversion) a bufmodule.FileInfo.
 //
 // This is used by ls-files.
@@ -67,7 +67,7 @@ func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFile
 	return newModuleImageFileInfo(moduleFileInfo)
 }
 
-// ImageFileInfosOnlyTargetsAndTargetImports returns a new slice of ImageFileInfos that only
+// ImageFileInfosWithOnlyTargetsAndTargetImports returns a new slice of ImageFileInfos that only
 // contains the non-imports (ie targets), and the files that those non-imports themselves
 // transitively import.
 //
@@ -79,10 +79,12 @@ func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFile
 // d.proto.
 //
 // It is assumed that the input ImageFileInfos are self-contained, that is every import should
-// be contained within the input .
+// be contained within the input. This may not be necessarily true for a set of bufmodule.FileInfos
+// converted to bufimage.ImageFileInfos directly - bufmodule.Modules do not include the Well-Known
+// Types. You need to make sure these are present as well.
 //
 // The result will be sorted by path.
-func ImageFileInfosOnlyTargetsAndTargetImports(
+func ImageFileInfosWithOnlyTargetsAndTargetImports(
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
 	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
@@ -94,7 +96,7 @@ func ImageFileInfosOnlyTargetsAndTargetImports(
 		if imageFileInfo.IsImport() {
 			continue
 		}
-		if err := imageFileInfosOnlyTargetsAndTargetImportsRec(imageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(imageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
 			return nil, err
 		}
 	}
@@ -712,7 +714,7 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) err
 	return nil
 }
 
-func imageFileInfosOnlyTargetsAndTargetImportsRec(
+func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
 	imageFileInfo ImageFileInfo,
 	pathToImageFileInfo map[string]ImageFileInfo,
 	resultPaths map[string]struct{},
@@ -731,7 +733,7 @@ func imageFileInfosOnlyTargetsAndTargetImportsRec(
 		if !ok {
 			return fmt.Errorf("no ImageFileInfo for import %q", imp)
 		}
-		if err := imageFileInfosOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
 			return err
 		}
 	}

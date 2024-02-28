@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -120,7 +121,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	protoFileInfos, err := controller.GetProtoFileInfos(
+	imageFileInfos, err := controller.GetImageFileInfos(
 		ctx,
 		input,
 		bufctl.WithConfigOverride(flags.Config),
@@ -128,14 +129,27 @@ func run(
 	if err != nil {
 		return err
 	}
-	pathFunc := bufctl.ProtoFileInfo.ExternalPath
+	if !flags.IncludeImports {
+		imageFileInfos = slicesext.Filter(
+			imageFileInfos,
+			func(imageFileInfo bufimage.ImageFileInfo) bool {
+				return !imageFileInfo.IsImport()
+			},
+		)
+	} else {
+		imageFileInfos, err = bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)
+		if err != nil {
+			return err
+		}
+	}
+	pathFunc := bufimage.ImageFileInfo.ExternalPath
 	if flags.AsImportPaths {
-		pathFunc = bufctl.ProtoFileInfo.Path
+		pathFunc = bufimage.ImageFileInfo.Path
 	}
 	paths := slicesext.Map(
-		protoFileInfos,
-		func(protoFileInfo bufctl.ProtoFileInfo) string {
-			return pathFunc(protoFileInfo)
+		imageFileInfos,
+		func(imageFileInfo bufimage.ImageFileInfo) string {
+			return pathFunc(imageFileInfo)
 		},
 	)
 	sort.Strings(paths)
@@ -146,3 +160,29 @@ func run(
 	}
 	return nil
 }
+
+//type externalFileInfo struct {
+//Path      string `json:"path" yaml:"path"`
+//LocalPath string `json:"local_path" yaml:"local_path"`
+//Module    string `json:"module" yaml:"module"`
+//Commit    string `json:"commit" yaml:"commit"`
+//Target    bool   `json:"target" yaml:"target"`
+//}
+
+//func newExternalFileInfo(fileInfo bufmodule.FileInfo) *externalFileInfo {
+//var module string
+//if moduleFullName := fileInfo.Module().ModuleFullName(); moduleFullName != nil {
+//module = moduleFullName.String()
+//}
+//var commit string
+//if commitID := fileInfo.Module().CommitID(); !commitID.IsNil() {
+//commit = commitID.String()
+//}
+//return &externalFileInfo{
+//Path:      fileInfo.Path(),
+//LocalPath: fileInfo.LocalPath(),
+//Module:    module,
+//Commit:    commit,
+//Target:    fileInfo.IsTargetFile(),
+//}
+//}
