@@ -349,6 +349,7 @@ func getImageFilesRec(
 		parserAccessorHandler.CommitID(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
+		parserAccessorHandler.LocalPath(path),
 		!isNotImport,
 		syntaxUnspecified,
 		unusedDependencyIndexes,

@@ -790,6 +790,7 @@ func testGetImageFile(
 		parsedModuleFullName,
 		uuid.Nil,
 		path,
+		"",
 		false,
 		false,
 		nil,

@@ -334,6 +334,7 @@ func testBuildCodeGeneratorRequest(
 			nil,
 			uuid.Nil,
 			"",
+			"",
 			!isNotImport,
 			false,
 			nil,

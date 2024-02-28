@@ -32,6 +32,7 @@ type parserAccessorHandler struct {
 	ctx                  context.Context
 	moduleReadBucket     bufmodule.ModuleReadBucket
 	pathToExternalPath   map[string]string
+	pathToLocalPath      map[string]string
 	nonImportPaths       map[string]struct{}
 	pathToModuleFullName map[string]bufmodule.ModuleFullName
 	pathToCommitID       map[string]uuid.UUID
@@ -46,6 +47,7 @@ func newParserAccessorHandler(
 		ctx:                  ctx,
 		moduleReadBucket:     moduleReadBucket,
 		pathToExternalPath:   make(map[string]string),
+		pathToLocalPath:      make(map[string]string),
 		nonImportPaths:       make(map[string]struct{}),
 		pathToModuleFullName: make(map[string]bufmodule.ModuleFullName),
 		pathToCommitID:       make(map[string]uuid.UUID),
@@ -66,7 +68,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 				// this should never happen, but just in case
 				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())
 			}
-			if err := p.addPath(path, path, nil, uuid.Nil); err != nil {
+			if err := p.addPath(path, path, "", nil, uuid.Nil); err != nil {
 				return nil, err
 			}
 			return wktModuleFile, nil
@@ -85,6 +87,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 	if err := p.addPath(
 		path,
 		moduleFile.ExternalPath(),
+		moduleFile.LocalPath(),
 		moduleFile.Module().ModuleFullName(),
 		moduleFile.Module().CommitID(),
 	); err != nil {
@@ -105,6 +108,13 @@ func (p *parserAccessorHandler) ExternalPath(path string) string {
 	return path
 }
 
+// LocalPath returns the local path for the input path if present.
+func (p *parserAccessorHandler) LocalPath(path string) string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.pathToLocalPath[path]
+}
+
 // ModuleFullName returns nil if not available.
 func (p *parserAccessorHandler) ModuleFullName(path string) bufmodule.ModuleFullName {
 	p.lock.RLock()
@@ -122,6 +132,7 @@ func (p *parserAccessorHandler) CommitID(path string) uuid.UUID {
 func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
+	localPath string,
 	moduleFullName bufmodule.ModuleFullName,
 	commitID uuid.UUID,
 ) error {
@@ -134,6 +145,16 @@ func (p *parserAccessorHandler) addPath(
 		}
 	} else {
 		p.pathToExternalPath[path] = externalPath
+	}
+	if localPath != "" {
+		existingLocalPath, ok := p.pathToLocalPath[path]
+		if ok {
+			if existingLocalPath != localPath {
+				return fmt.Errorf("parser accessor had local paths %q and %q for path %q", existingLocalPath, localPath, path)
+			}
+		} else {
+			p.pathToLocalPath[path] = localPath
+		}
 	}
 	if moduleFullName != nil {
 		p.pathToModuleFullName[path] = moduleFullName

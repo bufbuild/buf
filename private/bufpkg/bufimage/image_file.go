@@ -28,6 +28,7 @@ type imageFile struct {
 	moduleFullName          bufmodule.ModuleFullName
 	commitID                uuid.UUID
 	externalPath            string
+	localPath               string
 	isImport                bool
 	isSyntaxUnspecified     bool
 	unusedDependencyIndexes []int32
@@ -38,6 +39,7 @@ func newImageFile(
 	moduleFullName bufmodule.ModuleFullName,
 	commitID uuid.UUID,
 	externalPath string,
+	localPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
@@ -50,6 +52,7 @@ func newImageFile(
 		moduleFullName,
 		commitID,
 		externalPath,
+		localPath,
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
@@ -61,6 +64,7 @@ func newImageFileNoValidate(
 	moduleFullName bufmodule.ModuleFullName,
 	commitID uuid.UUID,
 	externalPath string,
+	localPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
@@ -76,6 +80,7 @@ func newImageFileNoValidate(
 		moduleFullName:          moduleFullName,
 		commitID:                commitID,
 		externalPath:            externalPath,
+		localPath:               localPath,
 		isImport:                isImport,
 		isSyntaxUnspecified:     isSyntaxUnspecified,
 		unusedDependencyIndexes: unusedDependencyIndexes,
@@ -91,6 +96,10 @@ func (f *imageFile) ExternalPath() string {
 		return f.Path()
 	}
 	return f.externalPath
+}
+
+func (f *imageFile) LocalPath() string {
+	return f.localPath
 }
 
 func (f *imageFile) ModuleFullName() bufmodule.ModuleFullName {

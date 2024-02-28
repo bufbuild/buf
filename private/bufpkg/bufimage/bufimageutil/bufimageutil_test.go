@@ -469,7 +469,7 @@ func benchmarkFilterImage(b *testing.B, opts ...bufimage.BuildImageOption) {
 					clone, ok := proto.Clone(imageFile.FileDescriptorProto()).(*descriptorpb.FileDescriptorProto)
 					require.True(b, ok)
 					var err error
-					imageFiles[j], err = bufimage.NewImageFile(clone, nil, uuid.Nil, "", false, false, nil)
+					imageFiles[j], err = bufimage.NewImageFile(clone, nil, uuid.Nil, "", "", false, false, nil)
 					require.NoError(b, err)
 				}
 				image, err := bufimage.NewImage(imageFiles)
