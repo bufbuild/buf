@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/pythonversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/paths"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -255,6 +256,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
+					paths.NewCommand("paths", builder),
 					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
