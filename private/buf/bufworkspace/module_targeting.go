@@ -57,8 +57,7 @@ func newModuleTargeting(
 	// If we have no target paths, then we always match the value of isTargetModule.
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
 	// to consider this module a target.
-	// TODO(doria): deal with proto file ref appropriately
-	isTargetModule := len(bucketTargeting.TargetPaths()) == 0 && config.protoFileTargetPath == ""
+	isTargetModule := len(bucketTargeting.TargetPaths()) == 0
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 	// We use the bucketTargeting.TargetPaths() instead of the workspace config target paths

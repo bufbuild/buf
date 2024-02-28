@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -75,15 +74,19 @@ func terminateAtControllingWorkspace(
 		return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 	}
 	if bufWorkYAMLExists {
-		// For v1 workspaces, we ensure that the module paths lists actually contain the the
-		// original input paths. If not, then we do not use this workspace.
+		// For v1 workspaces, we ensure that the module path list actually contains the original
+		// input paths.
+		if prefix == originalInputPath {
+			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
+		}
 		relDirPath, err := normalpath.Rel(prefix, originalInputPath)
 		if err != nil {
 			return nil, err
 		}
-		_, refersToCurDirPath := slicesext.ToStructMap(bufWorkYAMLFile.DirPaths())[relDirPath]
-		if prefix == originalInputPath || refersToCurDirPath {
-			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
+		for _, dirPath := range bufWorkYAMLFile.DirPaths() {
+			if normalpath.EqualsOrContainsPath(dirPath, relDirPath, normalpath.Relative) {
+				return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
+			}
 		}
 	}
 	return nil, nil

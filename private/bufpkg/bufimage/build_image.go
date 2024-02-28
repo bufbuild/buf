@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -59,7 +58,6 @@ func buildImage(
 		return nil, bufmodule.ErrNoTargetProtoFiles
 	}
 	paths := bufmodule.FileInfoPaths(targetFileInfos)
-	fmt.Println(strings.Join(paths, "\n"))
 
 	buildResult := getBuildResult(
 		ctx,

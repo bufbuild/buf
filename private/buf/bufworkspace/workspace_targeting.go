@@ -164,11 +164,6 @@ func v2WorkspaceTargeting(
 	bucketTargeting buftarget.BucketTargeting,
 	bufYAMLFile bufconfig.BufYAMLFile,
 ) (*workspaceTargeting, error) {
-	workspaceDirPath := bucketTargeting.InputPath()
-	if controllingWorkspace := bucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
-		workspaceDirPath = controllingWorkspace.Path()
-	}
-	bucket = storage.MapReadBucket(bucket, storage.MapOnPrefix(workspaceDirPath))
 	// We keep track of if any module was tentatively targeted, and then actually targeted via
 	// the paths flags. We use this pre-building of the ModuleSet to see if the --path and
 	// --exclude-path flags resulted in no targeted modules. This condition is represented
