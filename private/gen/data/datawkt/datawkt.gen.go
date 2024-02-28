@@ -155,6 +155,29 @@ var (
 		"google.protobuf.Syntax":                                  "google/protobuf/type.proto",
 		"google.protobuf.compiler.CodeGeneratorResponse.Feature":  "google/protobuf/compiler/plugin.proto",
 	}
+
+	pathToImports = map[string][]string{
+		"google/protobuf/any.proto": {},
+		"google/protobuf/api.proto": {
+			"google/protobuf/source_context.proto",
+			"google/protobuf/type.proto",
+		},
+		"google/protobuf/compiler/plugin.proto": {
+			"google/protobuf/descriptor.proto",
+		},
+		"google/protobuf/descriptor.proto":     {},
+		"google/protobuf/duration.proto":       {},
+		"google/protobuf/empty.proto":          {},
+		"google/protobuf/field_mask.proto":     {},
+		"google/protobuf/source_context.proto": {},
+		"google/protobuf/struct.proto":         {},
+		"google/protobuf/timestamp.proto":      {},
+		"google/protobuf/type.proto": {
+			"google/protobuf/any.proto",
+			"google/protobuf/source_context.proto",
+		},
+		"google/protobuf/wrappers.proto": {},
+	}
 )
 
 func init() {
@@ -183,4 +206,15 @@ func MessageFilePath(messageName string) (string, bool) {
 func EnumFilePath(enumName string) (string, bool) {
 	filePath, ok := enumNameToFilePath[enumName]
 	return filePath, ok
+}
+
+// Imports gets the imports for the given file path, if the file path exists.
+func Imports(path string) ([]string, bool) {
+	imports, ok := pathToImports[path]
+	if !ok {
+		return nil, false
+	}
+	c := make([]string, len(imports))
+	copy(c, imports)
+	return c
 }

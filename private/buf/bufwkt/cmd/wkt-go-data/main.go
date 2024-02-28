@@ -294,11 +294,13 @@ var (
 	for _, pathToImportsPair := range sortedPairs(pathToImports) {
 		p(`"`)
 		p(pathToImportsPair.key)
-		p(`": []string{\n`)
+		p(`": []string{`)
+		p("\n")
 		for _, imp := range pathToImportsPair.val {
 			p(`"`)
 			p(imp)
-			p(`",\n`)
+			p(`",`)
+			p("\n")
 		}
 		p(`},`)
 		p("\n")
@@ -340,12 +342,16 @@ func Imports(path string) ([]string, bool) {
 	if !ok {
 		return nil, false
 	}
-	c := make([]string, len(imports)
+	c := make([]string, len(imports))
 	copy(c, imports)
 	return c
 }
 `)
-	return format.Source(buffer.Bytes())
+	formatted, err := format.Source(buffer.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("could not format: %w\n%s", err, buffer.String())
+	}
+	return formatted, nil
 }
 
 type keyValPair[K any, V any] struct {
