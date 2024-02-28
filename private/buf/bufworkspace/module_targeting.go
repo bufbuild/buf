@@ -21,12 +21,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 type moduleTargeting struct {
 	// Whether this module is really a target module.
 	//
-	// TODO(doria): protofile ref
 	// False if this was not specified as a target module by the caller.
 	// Also false if there were bucketTargeting.TargetPaths() or bucketTargeting.protoFileTargetPath, but
 	// these paths did not match anything in the module.
@@ -57,68 +57,22 @@ func newModuleTargeting(
 	// If we have no target paths, then we always match the value of isTargetModule.
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
 	// to consider this module a target.
-	isTargetModule := len(bucketTargeting.TargetPaths()) == 0
+	isTargetModule := len(bucketTargeting.TargetPaths()) == 0 && config.protoFileTargetPath == ""
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
-	// We use the bucketTargeting.TargetPaths() instead of the workspace config target paths
-	// since those are stripped of the path to the module.
-	for _, targetPath := range bucketTargeting.TargetPaths() {
-		if targetPath == moduleDirPath {
-			// We're just going to be realists in our error messages here.
-			// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
-			// if we were really clever, we'd go back and just add this as a module path.
-			return nil, fmt.Errorf("module %q was specified with --path - specify this module path directly as an input", targetPath)
-		}
-		if normalpath.ContainsPath(moduleDirPath, targetPath, normalpath.Relative) {
-			isTargetModule = true
-			moduleTargetPath, err := normalpath.Rel(moduleDirPath, targetPath)
-			if err != nil {
-				return nil, err
-			}
-			moduleTargetPaths = append(moduleTargetPaths, moduleTargetPath)
-		}
-	}
-	// We use the bucketTargeting.TargetExcludePaths() instead of the workspace config target
-	// exclude paths since those are stripped of the path to the module.
-	for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
-		if targetExcludePath == moduleDirPath {
-			// We're just going to be realists in our error messages here.
-			// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
-			// if we were really clever, we'd go back and just remove this as a module path if it was specified.
-			// This really should be allowed - how else do you exclude from a workspace?
-			return nil, fmt.Errorf("module %q was specified with --exclude-path - this flag cannot be used to specify module directories", targetExcludePath)
-		}
-		if normalpath.ContainsPath(moduleDirPath, targetExcludePath, normalpath.Relative) {
-			moduleTargetExcludePath, err := normalpath.Rel(moduleDirPath, targetExcludePath)
-			if err != nil {
-				return nil, err
-			}
-			moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
-		}
-	}
-	moduleTargetPaths, err := slicesext.MapError(
-		moduleTargetPaths,
-		func(moduleTargetPath string) (string, error) {
-			return applyRootsToTargetPath(roots, moduleTargetPath, normalpath.Relative)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	moduleTargetExcludePaths, err = slicesext.MapError(
-		moduleTargetExcludePaths,
-		func(moduleTargetExcludePath string) (string, error) {
-			return applyRootsToTargetPath(roots, moduleTargetExcludePath, normalpath.Relative)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 	var moduleProtoFileTargetPath string
 	var includePackageFiles bool
-	if config.protoFileTargetPath != "" &&
-		normalpath.ContainsPath(moduleDirPath, config.protoFileTargetPath, normalpath.Relative) {
-		isTargetModule = true
+	if config.protoFileTargetPath != "" {
+		var err error
+		// We are currently returning the mapped proto file path as a target path in bucketTargeting.
+		// At the user level, we do not allow setting target paths or exclude paths for proto file
+		// references, so we do this check here.
+		if len(bucketTargeting.TargetPaths()) != 1 {
+			return nil, syserror.New("ProtoFileTargetPath not properly returned with bucketTargeting")
+		}
+		if normalpath.ContainsPath(moduleDirPath, bucketTargeting.TargetPaths()[0], normalpath.Relative) {
+			isTargetModule = true
+		}
 		moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, config.protoFileTargetPath)
 		if err != nil {
 			return nil, err
@@ -128,6 +82,62 @@ func newModuleTargeting(
 			return nil, err
 		}
 		includePackageFiles = config.includePackageFiles
+	} else {
+		var err error
+		// We use the bucketTargeting.TargetPaths() instead of the workspace config target paths
+		// since those are stripped of the path to the module.
+		for _, targetPath := range bucketTargeting.TargetPaths() {
+			if targetPath == moduleDirPath {
+				// We're just going to be realists in our error messages here.
+				// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
+				// if we were really clever, we'd go back and just add this as a module path.
+				return nil, fmt.Errorf("module %q was specified with --path - specify this module path directly as an input", targetPath)
+			}
+			if normalpath.ContainsPath(moduleDirPath, targetPath, normalpath.Relative) {
+				isTargetModule = true
+				moduleTargetPath, err := normalpath.Rel(moduleDirPath, targetPath)
+				if err != nil {
+					return nil, err
+				}
+				moduleTargetPaths = append(moduleTargetPaths, moduleTargetPath)
+			}
+		}
+		// We use the bucketTargeting.TargetExcludePaths() instead of the workspace config target
+		// exclude paths since those are stripped of the path to the module.
+		for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
+			if targetExcludePath == moduleDirPath {
+				// We're just going to be realists in our error messages here.
+				// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
+				// if we were really clever, we'd go back and just remove this as a module path if it was specified.
+				// This really should be allowed - how else do you exclude from a workspace?
+				return nil, fmt.Errorf("module %q was specified with --exclude-path - this flag cannot be used to specify module directories", targetExcludePath)
+			}
+			if normalpath.ContainsPath(moduleDirPath, targetExcludePath, normalpath.Relative) {
+				moduleTargetExcludePath, err := normalpath.Rel(moduleDirPath, targetExcludePath)
+				if err != nil {
+					return nil, err
+				}
+				moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
+			}
+		}
+		moduleTargetPaths, err = slicesext.MapError(
+			moduleTargetPaths,
+			func(moduleTargetPath string) (string, error) {
+				return applyRootsToTargetPath(roots, moduleTargetPath, normalpath.Relative)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		moduleTargetExcludePaths, err = slicesext.MapError(
+			moduleTargetExcludePaths,
+			func(moduleTargetExcludePath string) (string, error) {
+				return applyRootsToTargetPath(roots, moduleTargetExcludePath, normalpath.Relative)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &moduleTargeting{
 		moduleDirPath:             moduleDirPath,

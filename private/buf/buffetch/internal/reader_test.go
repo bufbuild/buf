@@ -250,14 +250,14 @@ func TestGetReadBucketCloserForOSProtoFileNoWorkspaceTerminateFileName(t *testin
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "proto", readBucketCloser.SubDirPath())
 	require.Equal(t, "proto", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -272,14 +272,14 @@ func TestGetReadBucketCloserForOSProtoFileTerminateFileName(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/bufyaml/one/two/three/four/five/proto/foo.proto",
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
 	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/bufyaml/one/two/three/four/five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -308,14 +308,14 @@ func TestGetReadBucketCloserForOSProtoFileParentPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
 	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, "five/buf.yaml", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -346,14 +346,14 @@ func TestGetReadBucketCloserForOSProtoFileAbsPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/proto/foo.proto"),
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
 	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/buf.yaml")
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/bufyaml/one/two/three/four/five/buf.yaml"), filepath.ToSlash(fileInfo.ExternalPath()))
@@ -371,14 +371,14 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLTerminateFileName(t *testing.
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"testdata/nobufyaml/one/two/three/four/five/proto/foo.proto",
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
 	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -404,14 +404,14 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLParentPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		"five/proto/foo.proto",
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five/proto", readBucketCloser.SubDirPath())
 	require.Equal(t, "four/five/proto", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, "five/proto/foo.proto", filepath.ToSlash(fileInfo.ExternalPath()))
@@ -443,14 +443,14 @@ func TestGetReadBucketCloserForOSProtoFileNoBufYAMLAbsPwd(t *testing.T) {
 		zap.NewNop(),
 		storageos.NewProvider(),
 		normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"),
-		nil, // no target paths
-		nil, // no target exclude paths
 		testNewTerminateAtFileNamesFunc("buf.work.yaml"),
 	)
 	require.NoError(t, err)
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
 	require.Equal(t, "four/five", readBucketCloser.SubDirPath())
 	require.Equal(t, "four/five", bucketTargeting.InputPath())
+	require.Len(t, bucketTargeting.TargetPaths(), 1)
+	require.Equal(t, "four/five/proto/foo.proto", bucketTargeting.TargetPaths()[0])
 	fileInfo, err := readBucketCloser.Stat(ctx, "four/five/proto/foo.proto")
 	require.NoError(t, err)
 	require.Equal(t, normalpath.Join(absDirPath, "testdata/nobufyaml/one/two/three/four/five/proto/foo.proto"), fileInfo.ExternalPath())
