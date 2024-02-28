@@ -378,6 +378,14 @@ func getProtoLegacyFederationUploadRequestContent(
 	}
 
 	return &federationv1beta1.UploadRequest_Content{
+		ModuleRef: &modulev1beta1.ModuleRef{
+			Value: &modulev1beta1.ModuleRef_Name_{
+				Name: &modulev1beta1.ModuleRef_Name{
+					Owner:  module.ModuleFullName().Owner(),
+					Module: module.ModuleFullName().Name(),
+				},
+			},
+		},
 		Files:           protoFiles,
 		ScopedLabelRefs: protoScopedLabelRefs,
 		// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,

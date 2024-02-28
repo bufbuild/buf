@@ -9,7 +9,7 @@ require (
 	connectrpc.com/connect v1.15.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.8.0
-	github.com/bufbuild/protovalidate-go v0.5.2
+	github.com/bufbuild/protovalidate-go v0.6.0
 	github.com/bufbuild/protoyaml-go v0.1.8
 	github.com/docker/docker v25.0.3+incompatible
 	github.com/go-chi/chi/v5 v5.0.12
@@ -28,7 +28,6 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
-	github.com/tetratelabs/wazero v1.6.0
 	go.opentelemetry.io/otel v1.24.0
 	go.opentelemetry.io/otel/sdk v1.24.0
 	go.opentelemetry.io/otel/trace v1.24.0

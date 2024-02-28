@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -29,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -185,11 +183,6 @@ func run(
 				return err
 			}
 		}
-		wasmPluginExecutor, err := bufwasm.NewPluginExecutor(
-			filepath.Join(container.CacheDirPath(), bufcli.WASMCompilationCacheDir))
-		if err != nil {
-			return err
-		}
 		pluginResponses := make([]*protoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
@@ -202,7 +195,6 @@ func run(
 				tracer,
 				storageosProvider,
 				runner,
-				wasmPluginExecutor,
 				container,
 				images,
 				pluginName,

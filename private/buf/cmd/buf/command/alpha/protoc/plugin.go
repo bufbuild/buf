@@ -19,10 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -50,7 +48,6 @@ func executePlugin(
 	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
@@ -61,18 +58,10 @@ func executePlugin(
 		tracer,
 		storageosProvider,
 		runner,
-		wasmPluginExecutor,
 	)
 	var options []bufpluginexec.GenerateOption
 	if pluginInfo.Path != "" {
 		options = append(options, bufpluginexec.GenerateWithPluginPath(pluginInfo.Path))
-	}
-	wasmEnabled, err := bufcli.IsAlphaWASMEnabled(container)
-	if err != nil {
-		return nil, err
-	}
-	if wasmEnabled {
-		options = append(options, bufpluginexec.GenerateWithWASMEnabled())
 	}
 	response, err := generator.Generate(
 		ctx,

@@ -17,7 +17,6 @@ package bufpluginexec
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoplugin"
@@ -28,11 +27,10 @@ import (
 )
 
 type generator struct {
-	logger             *zap.Logger
-	tracer             tracing.Tracer
-	storageosProvider  storageos.Provider
-	runner             command.Runner
-	wasmPluginExecutor bufwasm.PluginExecutor
+	logger            *zap.Logger
+	tracer            tracing.Tracer
+	storageosProvider storageos.Provider
+	runner            command.Runner
 }
 
 func newGenerator(
@@ -40,14 +38,12 @@ func newGenerator(
 	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 ) *generator {
 	return &generator{
-		logger:             logger,
-		tracer:             tracer,
-		storageosProvider:  storageosProvider,
-		runner:             runner,
-		wasmPluginExecutor: wasmPluginExecutor,
+		logger:            logger,
+		tracer:            tracer,
+		storageosProvider: storageosProvider,
+		runner:            runner,
 	}
 }
 
@@ -66,17 +62,10 @@ func (g *generator) Generate(
 		HandlerWithPluginPath(generateOptions.pluginPath...),
 		HandlerWithProtocPath(generateOptions.protocPath),
 	}
-	if generateOptions.wasmEnabled {
-		handlerOptions = append(
-			handlerOptions,
-			HandlerWithWASMEnabled(),
-		)
-	}
 	handler, err := NewHandler(
 		g.storageosProvider,
 		g.runner,
 		g.tracer,
-		g.wasmPluginExecutor,
 		pluginName,
 		handlerOptions...,
 	)
@@ -94,9 +83,8 @@ func (g *generator) Generate(
 }
 
 type generateOptions struct {
-	pluginPath  []string
-	protocPath  string
-	wasmEnabled bool
+	pluginPath []string
+	protocPath string
 }
 
 func newGenerateOptions() *generateOptions {

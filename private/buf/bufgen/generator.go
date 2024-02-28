@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	"github.com/bufbuild/buf/private/bufpkg/bufwasm"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -56,14 +55,13 @@ func newGenerator(
 	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
-	wasmPluginExecutor bufwasm.PluginExecutor,
 	clientConfig *connectclient.Config,
 ) *generator {
 	return &generator{
 		logger:              logger,
 		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufpluginexec.NewGenerator(logger, tracer, storageosProvider, runner, wasmPluginExecutor),
+		pluginexecGenerator: bufpluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
 		clientConfig:        clientConfig,
 	}
 }
@@ -136,7 +134,6 @@ func (g *generator) generateCode(
 		inputImage,
 		includeImportsOverride,
 		includeWellKnownTypesOverride,
-		false, // wasm enabled is false
 	)
 	if err != nil {
 		return err
@@ -177,7 +174,6 @@ func (g *generator) execPlugins(
 	image bufimage.Image,
 	includeImportsOverride *bool,
 	includeWellKnownTypesOverride *bool,
-	wasmEnabled bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
@@ -214,7 +210,6 @@ func (g *generator) execPlugins(
 					currentPluginConfig,
 					includeImports,
 					includeWellKnownTypes,
-					wasmEnabled,
 				)
 				if err != nil {
 					return err
@@ -287,7 +282,6 @@ func (g *generator) execLocalPlugin(
 	pluginConfig bufconfig.GeneratePluginConfig,
 	includeImports bool,
 	includeWellKnownTypes bool,
-	wasmEnabled bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(Strategy(pluginConfig.Strategy()))
 	if err != nil {
@@ -296,12 +290,6 @@ func (g *generator) execLocalPlugin(
 	generateOptions := []bufpluginexec.GenerateOption{
 		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
 		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
-	}
-	if wasmEnabled {
-		generateOptions = append(
-			generateOptions,
-			bufpluginexec.GenerateWithWASMEnabled(),
-		)
 	}
 	response, err := g.pluginexecGenerator.Generate(
 		ctx,
@@ -461,7 +449,6 @@ type generateOptions struct {
 	baseOutDirPath                string
 	includeImportsOverride        *bool
 	includeWellKnownTypesOverride *bool
-	wasmEnabled                   bool
 }
 
 func newGenerateOptions() *generateOptions {
