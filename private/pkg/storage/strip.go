@@ -70,7 +70,7 @@ func stripObjectInfoExternalPath(objectInfo ObjectInfo) ObjectInfo {
 	if path == objectInfo.ExternalPath() {
 		return objectInfo
 	}
-	return storageutil.NewObjectInfo(path, path)
+	return storageutil.NewObjectInfo(path, path, objectInfo.LocalPath())
 }
 
 func stripReadObjectCloserExternalPath(readObjectCloser ReadObjectCloser) ReadObjectCloser {

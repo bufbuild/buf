@@ -133,7 +133,7 @@ func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
 	return nil
 }
 
-func (*bucket) SetExternalPathSupported() bool {
+func (*bucket) SetExternalAndLocalPathsSupported() bool {
 	return true
 }
 

@@ -247,7 +247,7 @@ func (w *mapWriteBucketCloser) Put(ctx context.Context, path string, opts ...Put
 	if err != nil {
 		return nil, err
 	}
-	return replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser), nil
+	return replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser), nil
 }
 
 func (w *mapWriteBucketCloser) Delete(ctx context.Context, path string) error {
@@ -270,7 +270,7 @@ func (w *mapWriteBucketCloser) DeleteAll(ctx context.Context, prefix string) err
 	return w.delegate.DeleteAll(ctx, fullPrefix)
 }
 
-func (*mapWriteBucketCloser) SetExternalPathSupported() bool {
+func (*mapWriteBucketCloser) SetExternalAndLocalPathsSupported() bool {
 	return false
 }
 
@@ -303,6 +303,7 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
 	return storageutil.NewObjectInfo(
 		path,
 		objectInfo.ExternalPath(),
+		objectInfo.LocalPath(),
 	)
 }
 
@@ -313,14 +314,18 @@ func replaceReadObjectCloserPath(readObjectCloser ReadObjectCloser, path string)
 	return compositeReadObjectCloser{replaceObjectInfoPath(readObjectCloser, path), readObjectCloser}
 }
 
-func replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {
-	return writeObjectCloserExternalPathNotSuppoted{writeObjectCloser}
+func replaceWriteObjectCloserExternalAndLocalPathsNotSupported(writeObjectCloser WriteObjectCloser) WriteObjectCloser {
+	return writeObjectCloserExternalAndLocalPathsNotSuppoted{writeObjectCloser}
 }
 
-type writeObjectCloserExternalPathNotSuppoted struct {
+type writeObjectCloserExternalAndLocalPathsNotSuppoted struct {
 	io.WriteCloser
 }
 
-func (writeObjectCloserExternalPathNotSuppoted) SetExternalPath(string) error {
+func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetExternalPath(string) error {
 	return ErrSetExternalPathUnsupported
+}
+
+func (writeObjectCloserExternalAndLocalPathsNotSuppoted) SetLocalPath(string) error {
+	return ErrSetLocalPathUnsupported
 }

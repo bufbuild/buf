@@ -35,6 +35,7 @@ func TestOS(t *testing.T) {
 		testNewReadBucket,
 		testNewWriteBucket,
 		testWriteBucketToReadBucket,
+		true,
 	)
 }
 

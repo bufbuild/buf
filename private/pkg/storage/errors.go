@@ -26,6 +26,8 @@ var (
 	ErrClosed = errors.New("already closed")
 	// ErrSetExternalPathUnsupported is the error returned if a bucket does not support SetExternalPath.
 	ErrSetExternalPathUnsupported = errors.New("setting the external path is unsupported for this bucket")
+	// ErrSetLocalPathUnsupported is the error returned if a bucket does not support SetLocalPath.
+	ErrSetLocalPathUnsupported = errors.New("setting the local path is unsupported for this bucket")
 )
 
 // NewErrNotExist returns a new error for a path not existing.

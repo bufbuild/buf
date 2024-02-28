@@ -72,7 +72,12 @@ func AssertObjectInfo(
 	readBucket storage.ReadBucket,
 	path string,
 	externalPath string,
+	externalPathShouldEqualLocalPath bool,
 ) {
+	var localPath string
+	if externalPathShouldEqualLocalPath {
+		localPath = externalPath
+	}
 	objectInfo, err := readBucket.Stat(context.Background(), path)
 	require.NoError(t, err)
 	AssertObjectInfoEqual(
@@ -80,6 +85,7 @@ func AssertObjectInfo(
 		storageutil.NewObjectInfo(
 			path,
 			externalPath,
+			localPath,
 		),
 		objectInfo,
 	)
@@ -161,6 +167,7 @@ func RunTestSuite(
 	newReadBucket func(*testing.T, string, storageos.Provider) (storage.ReadBucket, GetExternalPathFunc),
 	newWriteBucket func(*testing.T, storageos.Provider) storage.WriteBucket,
 	writeBucketToReadBucket func(*testing.T, storage.WriteBucket) storage.ReadBucket,
+	externalPathsShouldEqualLocalPaths bool,
 ) {
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
@@ -257,6 +264,7 @@ func RunTestSuite(
 			readBucket,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "a", "1.proto")),
+			externalPathsShouldEqualLocalPaths,
 		)
 		readBucket = storage.MapReadBucket(
 			readBucket,
@@ -277,6 +285,7 @@ func RunTestSuite(
 			readBucket,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "a", "b", "1.proto")),
+			externalPathsShouldEqualLocalPaths,
 		)
 	})
 
@@ -302,6 +311,7 @@ func RunTestSuite(
 			readBucket,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "ab", "1.proto")),
+			externalPathsShouldEqualLocalPaths,
 		)
 		readBucket = storage.MapReadBucket(
 			readBucket,
@@ -324,6 +334,7 @@ func RunTestSuite(
 			readBucket,
 			"2.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "ab", "2.proto")),
+			externalPathsShouldEqualLocalPaths,
 		)
 	})
 
