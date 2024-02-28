@@ -124,11 +124,11 @@ func run(
 }
 
 type externalFileInfo struct {
-	Path         string `json:"path" yaml:"path"`
-	ExternalPath string `json:"external_path" yaml:"external_path"`
-	Module       string `json:"module" yaml:"module"`
-	Commit       string `json:"commit" yaml:"commit"`
-	Target       bool   `json:"target" yaml:"target"`
+	Path      string `json:"path" yaml:"path"`
+	LocalPath string `json:"local_path" yaml:"local_path"`
+	Module    string `json:"module" yaml:"module"`
+	Commit    string `json:"commit" yaml:"commit"`
+	Target    bool   `json:"target" yaml:"target"`
 }
 
 func newExternalFileInfo(fileInfo bufmodule.FileInfo) *externalFileInfo {
@@ -141,10 +141,10 @@ func newExternalFileInfo(fileInfo bufmodule.FileInfo) *externalFileInfo {
 		commit = commitID.String()
 	}
 	return &externalFileInfo{
-		Path:         fileInfo.Path(),
-		ExternalPath: fileInfo.ExternalPath(),
-		Module:       module,
-		Commit:       commit,
-		Target:       fileInfo.IsTargetFile(),
+		Path:      fileInfo.Path(),
+		LocalPath: fileInfo.LocalPath(),
+		Module:    module,
+		Commit:    commit,
+		Target:    fileInfo.IsTargetFile(),
 	}
 }
