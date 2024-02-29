@@ -231,9 +231,9 @@ import (
 
 var (
 	// ReadBucket is the storage.ReadBucket with the static data generated for this package.
-	ReadBucket storage.ReadBucket
-
-	pathToData = map[string][]byte{
+	ReadBucket storage.ReadBucket`)
+	p("\n\n")
+	p(`pathToData = map[string][]byte{
 `)
 	paths := make([]string, 0, len(pathToData))
 	for path := range pathToData {
@@ -263,9 +263,9 @@ var (
 		p(`},
 `)
 	}
-	p(`}
-
-	messageNameToFilePath = map[string]string{
+	p(`}`)
+	p("\n\n")
+	p(`messageNameToFilePath = map[string]string{
 `)
 	for _, fullNameToMessagePair := range sortedPairs(fullNameToMessage) {
 		p(`"`)
@@ -275,9 +275,9 @@ var (
 		p(`",`)
 		p("\n")
 	}
-	p(`}
-
-	enumNameToFilePath = map[string]string{
+	p(`}`)
+	p("\n\n")
+	p(`enumNameToFilePath = map[string]string{
 `)
 	for _, fullNameToEnumPair := range sortedPairs(fullNameToEnum) {
 		p(`"`)
@@ -287,9 +287,9 @@ var (
 		p(`",`)
 		p("\n")
 	}
-	p(`}
-
-	pathToImports = map[string][]string{
+	p(`}`)
+	p("\n\n")
+	p(`pathToImports = map[string][]string{
 `)
 	for _, pathToImportsPair := range sortedPairs(pathToImports) {
 		p(`"`)
@@ -306,9 +306,9 @@ var (
 		p("\n")
 	}
 	p(`}
-)
-
-func init() {
+)`)
+	p("\n\n")
+	p(`func init() {
 	readBucket, err := storagemem.NewReadBucket(pathToData)
 	if err != nil {
 		panic(err.Error())
