@@ -344,7 +344,7 @@ func Imports(path string) ([]string, bool) {
 	}
 	c := make([]string, len(imports))
 	copy(c, imports)
-	return c
+	return c, true
 }
 `)
 	formatted, err := format.Source(buffer.Bytes())
