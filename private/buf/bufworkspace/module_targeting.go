@@ -58,6 +58,7 @@ func newModuleTargeting(
 	// Otherwise, we need to see that at least one path matches the moduleDirPath for us
 	// to consider this module a target.
 	isTargetModule := len(bucketTargeting.TargetPaths()) == 0 && config.protoFileTargetPath == ""
+
 	var moduleTargetPaths []string
 	var moduleTargetExcludePaths []string
 	var moduleProtoFileTargetPath string
@@ -70,18 +71,19 @@ func newModuleTargeting(
 		if len(bucketTargeting.TargetPaths()) != 1 {
 			return nil, syserror.New("ProtoFileTargetPath not properly returned with bucketTargeting")
 		}
-		if normalpath.ContainsPath(moduleDirPath, bucketTargeting.TargetPaths()[0], normalpath.Relative) {
+		protoFileTargetPath := bucketTargeting.TargetPaths()[0]
+		if normalpath.ContainsPath(moduleDirPath, protoFileTargetPath, normalpath.Relative) {
 			isTargetModule = true
+			moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, protoFileTargetPath)
+			if err != nil {
+				return nil, err
+			}
+			moduleProtoFileTargetPath, err = applyRootsToTargetPath(roots, moduleProtoFileTargetPath, normalpath.Relative)
+			if err != nil {
+				return nil, err
+			}
+			includePackageFiles = config.includePackageFiles
 		}
-		moduleProtoFileTargetPath, err = normalpath.Rel(moduleDirPath, config.protoFileTargetPath)
-		if err != nil {
-			return nil, err
-		}
-		moduleProtoFileTargetPath, err = applyRootsToTargetPath(roots, moduleProtoFileTargetPath, normalpath.Relative)
-		if err != nil {
-			return nil, err
-		}
-		includePackageFiles = config.includePackageFiles
 	} else {
 		var err error
 		// We use the bucketTargeting.TargetPaths() instead of the workspace config target paths

@@ -171,7 +171,7 @@ func (r *reader) GetReadBucketCloser(
 			ctx,
 			container,
 			t,
-			getReadBucketCloserOptions.protoFileTerminateFunc,
+			getReadBucketCloserOptions.terminateFunc,
 		)
 	default:
 		return nil, nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -678,29 +678,46 @@ func getReadWriteBucketForOS(
 	// returnSubDirPath: foo
 	// Make bucket on: FS root + controlling workspace (since absolute)
 	//
-	// If no controlling workspace is found, we use the current working directory.
+	// If no controlling workspace is found, for absolute paths, close the workspace at the
+	// input path. For relative paths, we use the current working directory.
 	var bucketPath string
 	var inputPath string
 	bucketTargetPaths := make([]string, len(osRootBucketTargeting.TargetPaths()))
 	bucketTargetExcludePaths := make([]string, len(osRootBucketTargeting.TargetExcludePaths()))
-	pwd, err := osext.Getwd()
-	if err != nil {
-		return nil, nil, err
-	}
-	_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
-	if err != nil {
-		return nil, nil, err
-	}
 	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
 		if osRootBucketTargeting.ControllingWorkspace() != nil {
 			bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspace().Path())
+			inputPath = osRootBucketTargeting.InputPath()
+			bucketTargetPaths = osRootBucketTargeting.TargetPaths()
+			bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 		} else {
-			bucketPath = normalpath.Join(fsRoot, pwdFSRelPath)
+			bucketPath = normalpath.Join(fsRoot, fsRootInputSubDirPath)
+			inputPath, err = normalpath.Rel(fsRootInputSubDirPath, fsRootInputSubDirPath)
+			if err != nil {
+				return nil, nil, err
+			}
+			for i, targetPath := range osRootBucketTargeting.TargetPaths() {
+				bucketTargetPaths[i], err = normalpath.Rel(fsRootInputSubDirPath, targetPath)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
+			for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
+				bucketTargetExcludePaths[i], err = normalpath.Rel(fsRootInputSubDirPath, targetExcludePath)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
 		}
-		inputPath = osRootBucketTargeting.InputPath()
-		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
-		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 	} else {
+		pwd, err := osext.Getwd()
+		if err != nil {
+			return nil, nil, err
+		}
+		_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
+		if err != nil {
+			return nil, nil, err
+		}
 		if osRootBucketTargeting.ControllingWorkspace() != nil {
 			bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspace().Path())
 			if err != nil {
@@ -729,20 +746,6 @@ func getReadWriteBucketForOS(
 				}
 			}
 		}
-		//for i, osRootTargetPath := range osRootBucketTargeting.TargetPaths() {
-		//	targetPath, err := normalpath.Rel(pwdFSRelPath, osRootTargetPath)
-		//	if err != nil {
-		//		return nil, nil, err
-		//	}
-		//	bucketTargetPaths[i] = targetPath
-		//}
-		//for i, osRootTargetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
-		//	targetExcludePath, err := normalpath.Rel(pwdFSRelPath, osRootTargetExcludePath)
-		//	if err != nil {
-		//		return nil, nil, err
-		//	}
-		//	bucketTargetExcludePaths[i] = targetExcludePath
-		//}
 	}
 	// Now that we've mapped the workspace against the FS root, we recreate the bucket with
 	// at the sub dir path.
@@ -860,11 +863,10 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getReadBucketCloserOptions struct {
-	terminateFunc          buftarget.TerminateFunc
-	protoFileTerminateFunc buftarget.TerminateFunc
-	copyToInMemory         bool
-	targetPaths            []string
-	targetExcludePaths     []string
+	terminateFunc      buftarget.TerminateFunc
+	copyToInMemory     bool
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
 func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {

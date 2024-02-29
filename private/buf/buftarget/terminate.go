@@ -35,8 +35,6 @@ type TerminateFunc func(
 
 // TerminateAtControllingWorkspace implements a TerminateFunc and returns controlling workspace
 // if one is found at the given prefix.
-//
-// All paths must be relative.
 func TerminateAtControllingWorkspace(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -44,6 +42,17 @@ func TerminateAtControllingWorkspace(
 	originalInputPath string,
 ) (ControllingWorkspace, error) {
 	return terminateAtControllingWorkspace(ctx, bucket, prefix, originalInputPath)
+}
+
+// TerminateAtV1Module is a special terminate func that returns a controlling workspace with
+// a v1 module confiugration if found at the given prefix.
+func TerminateAtV1Module(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalInputPath string,
+) (ControllingWorkspace, error) {
+	return terminateAtV1Module(ctx, bucket, prefix, originalInputPath)
 }
 
 // *** PRIVATE ***
@@ -68,10 +77,19 @@ func terminateAtControllingWorkspace(
 		// This isn't actually the external directory path, but we do the best we can here for now.
 		return nil, fmt.Errorf("cannot have a buf.work.yaml and buf.yaml in the same directory %q", prefix)
 	}
+	relDirPath, err := normalpath.Rel(prefix, originalInputPath)
+	if err != nil {
+		return nil, err
+	}
 	if bufYAMLExists && bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-		// We don't require the workspace to point to the prefix (likely because we're
-		// finding the controlling workspace for a ProtoFileRef), we're good to go.
-		return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
+		if prefix == originalInputPath {
+			return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
+		}
+		for _, moduleConfig := range bufYAMLFile.ModuleConfigs() {
+			if normalpath.EqualsOrContainsPath(moduleConfig.DirPath(), relDirPath, normalpath.Relative) {
+				return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
+			}
+		}
 	}
 	if bufWorkYAMLExists {
 		// For v1 workspaces, we ensure that the module path list actually contains the original
@@ -79,15 +97,27 @@ func terminateAtControllingWorkspace(
 		if prefix == originalInputPath {
 			return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 		}
-		relDirPath, err := normalpath.Rel(prefix, originalInputPath)
-		if err != nil {
-			return nil, err
-		}
 		for _, dirPath := range bufWorkYAMLFile.DirPaths() {
 			if normalpath.EqualsOrContainsPath(dirPath, relDirPath, normalpath.Relative) {
 				return newControllingWorkspace(prefix, bufWorkYAMLFile, nil), nil
 			}
 		}
+	}
+	return nil, nil
+}
+
+func terminateAtV1Module(
+	ctx context.Context,
+	bucket storage.ReadBucket,
+	prefix string,
+	originalInputPath string,
+) (ControllingWorkspace, error) {
+	bufYAMLFile, err := bufconfig.GetBufYAMLFileForPrefix(ctx, bucket, prefix)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
+	if err == nil && bufYAMLFile.FileVersion() == bufconfig.FileVersionV1 {
+		return newControllingWorkspace(prefix, nil, bufYAMLFile), nil
 	}
 	return nil, nil
 }

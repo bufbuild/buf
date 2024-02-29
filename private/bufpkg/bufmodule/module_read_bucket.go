@@ -362,6 +362,7 @@ func (b *moduleReadBucket) WalkFileInfos(
 		}
 		return protoFileTracker.validate()
 	}
+
 	// If we are walking target files, then we track the module if it is the target module
 	if b.module.IsTarget() {
 		protoFileTracker.trackModule(b.module)

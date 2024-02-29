@@ -255,9 +255,10 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
-		"", // stderr should be empty
+		"", // stdout is empty
+		// This is new behavior we introduced. When setting a config override, we no longer do
+		// a search for the controlling workspace. See bufctl/option.go for additional details.
+		filepath.FromSlash(`Failure: testdata/export/other/proto/unimported.proto: import "another.proto": file does not exist`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -273,7 +274,7 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 		// during the refactor. This is actually more correct - pre-refactor, the CLI was acting
 		// as if the buf.yaml at testdata/fail/buf.yaml mattered in some way. In fact, it doesn't -
 		// you've said that you have overridden it entirely.
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "testdata/fail/buf".
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory ".".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
@@ -1977,7 +1978,7 @@ func TestFormatSingleFile(t *testing.T) {
 		"format",
 		filepath.Join("testdata", "format", "simple"),
 		"-o",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 	)
 	testRunStdout(
 		t,
@@ -1985,7 +1986,7 @@ func TestFormatSingleFile(t *testing.T) {
 		0,
 		``,
 		"format",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 		"-d",
 	)
 }

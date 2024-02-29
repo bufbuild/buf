@@ -87,7 +87,7 @@ func newWorkspaceTargeting(
 				config,
 				bucket,
 				bucketTargeting,
-				[]string{bucketTargeting.InputPath()}, // we assume a v1 workspace with a single v1 module at the input path
+				[]string{bucketTargeting.InputPath()},
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
@@ -145,15 +145,13 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 		"targeting workspace with no found buf.work.yaml or buf.yaml",
 		zap.String("input path", bucketTargeting.InputPath()),
 	)
-	// We did not find any buf.work.yaml or buf.yaml, operate as if a
-	// default v1 buf.yaml was at bucketTargeting.InputPath().
-	return v1WorkspaceTargeting(
+	// We did not find any buf.work.yaml or buf.yaml, we invoke fallback logic.
+	return fallbackWorkspaceTargeting(
 		ctx,
+		logger,
 		config,
 		bucket,
 		bucketTargeting,
-		[]string{bucketTargeting.InputPath()},
-		nil,
 	)
 }
 
@@ -189,6 +187,12 @@ func v2WorkspaceTargeting(
 		// This is new behavior - before, we required that you input an exact match for the module directory path,
 		// but now, we will take all the modules underneath this workspace.
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputPath(), moduleDirPath, normalpath.Relative)
+		// We ignore this check for proto file refs, since the input is considered the directory
+		// of the proto file reference, which is unlikely to contain a module in its entirety.
+		// In the future, it would be nice to handle this more elegently.
+		if config.protoFileTargetPath != "" {
+			isTentativelyTargetModule = true
+		}
 		if isTentativelyTargetModule {
 			hadIsTentativelyTargetModule = true
 		}
@@ -213,7 +217,10 @@ func v2WorkspaceTargeting(
 		})
 	}
 	if !hadIsTentativelyTargetModule {
-		return nil, fmt.Errorf("input path %q did not contain modules found in workspace %v", bucketTargeting.InputPath(), moduleDirPaths)
+		// Check if the input is overlapping within a module dir path. If so, return a nicer
+		// error. In the future, we want to remove special treatment for input path, and it
+		// should be treated just like any target path.
+		return nil, checkForOverlap(bucketTargeting.InputPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -283,6 +290,12 @@ func v1WorkspaceTargeting(
 		// This is new behavior - before, we required that you input an exact match for the module directory path,
 		// but now, we will take all the modules underneath this workspace.
 		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputPath(), moduleDirPath, normalpath.Relative)
+		// We ignore this check for proto file refs, since the input is considered the directory
+		// of the proto file reference, which is unlikely to contain a module in its entirety.
+		// In the future, it would be nice to handle this more elegently.
+		if config.protoFileTargetPath != "" {
+			isTentativelyTargetModule = true
+		}
 		if isTentativelyTargetModule {
 			hadIsTentativelyTargetModule = true
 		}
@@ -307,7 +320,10 @@ func v1WorkspaceTargeting(
 		})
 	}
 	if !hadIsTentativelyTargetModule {
-		return nil, syserror.Newf("subDirPath %q did not result in any target modules from moduleDirPaths %v", bucketTargeting.InputPath(), moduleDirPaths)
+		// Check if the input is overlapping within a module dir path. If so, return a nicer
+		// error. In the future, we want to remove special treatment for input path, and it
+		// should be treated just like any target path.
+		return nil, checkForOverlap(bucketTargeting.InputPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -320,6 +336,112 @@ func v1WorkspaceTargeting(
 			allConfiguredDepModuleRefs: allConfiguredDepModuleRefs,
 		},
 	}, nil
+}
+
+// fallbackWorkspaceTargeting is the fallback logic when there is no config override or
+// controlling workspace discovered through bucket targeting.
+//
+// 1. We check if there are target paths. If there are no target paths, then we return
+// a v1 workspace with the only module directory path as the input, since we have no other
+// information to go on.
+//
+// 2. If there are target paths, then we check from each target path, walking up, if there
+// is a workspace or v1 module.
+//
+//	a. If we find nothing, then same fallback as 1.
+//	b. If we find a v1 or v2 workspace, we ensure that all them resolve to the same workspace.
+//	c. If we find no workspace, then we can check for v1 module configs.
+func fallbackWorkspaceTargeting(
+	ctx context.Context,
+	logger *zap.Logger,
+	config *workspaceBucketConfig,
+	bucket storage.ReadBucket,
+	bucketTargeting buftarget.BucketTargeting,
+) (*workspaceTargeting, error) {
+	// No target paths, return a v1 workspace with a single module dir path at the input
+	if len(bucketTargeting.TargetPaths()) == 0 {
+		return v1WorkspaceTargeting(
+			ctx,
+			config,
+			bucket,
+			bucketTargeting,
+			[]string{bucketTargeting.InputPath()},
+			nil,
+		)
+	}
+	var v1BufWorkYAML bufconfig.BufWorkYAMLFile
+	var v2BufYAMLFile bufconfig.BufYAMLFile
+	var controllingWorkspacePath string
+	var v1ModulePaths []string
+	for _, targetPath := range bucketTargeting.TargetPaths() {
+		controllingWorkspaceOrModule, err := checkForControllingWorkspaceOrV1Module(
+			ctx,
+			logger,
+			bucket,
+			targetPath,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if controllingWorkspaceOrModule != nil {
+			// v1 workspace found
+			if bufWorkYAMLFile := controllingWorkspaceOrModule.BufWorkYAMLFile(); bufWorkYAMLFile != nil {
+				if controllingWorkspacePath != "" && controllingWorkspaceOrModule.Path() != controllingWorkspacePath {
+					return nil, fmt.Errorf("different controlling workspaces found: %q, %q", controllingWorkspacePath, controllingWorkspaceOrModule.Path())
+				}
+				controllingWorkspacePath = controllingWorkspaceOrModule.Path()
+				v1BufWorkYAML = bufWorkYAMLFile
+				continue
+			}
+			// v2 workspace or v1 module found
+			if bufYAMLFile := controllingWorkspaceOrModule.BufYAMLFile(); bufYAMLFile != nil {
+				if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+					if controllingWorkspacePath != "" && controllingWorkspaceOrModule.Path() != controllingWorkspacePath {
+						return nil, fmt.Errorf("different controlling workspaces found: %q, %q", controllingWorkspacePath, controllingWorkspaceOrModule.Path())
+					}
+					controllingWorkspacePath = controllingWorkspaceOrModule.Path()
+					v2BufYAMLFile = bufYAMLFile
+					continue
+				}
+				if bufYAMLFile.FileVersion() == bufconfig.FileVersionV1 {
+					v1ModulePaths = append(v1ModulePaths, controllingWorkspaceOrModule.Path())
+				}
+			}
+		}
+	}
+	// We should not have found a controlling workspace and also have a list of v1 modules we
+	// need to build.
+	// In the future, we may be able to support multi-building, but for now, we error. We have
+	// the option to prioritise the workspace here and drop the v1ModulePaths, but that might
+	// be confusing to users.
+	if controllingWorkspacePath != "" && len(v1ModulePaths) > 0 {
+		return nil, fmt.Errorf("found a workspace %q that does not contain all found modules: %v", controllingWorkspacePath, v1ModulePaths)
+	}
+	if v2BufYAMLFile != nil {
+		return v2WorkspaceTargeting(
+			ctx,
+			config,
+			bucket,
+			bucketTargeting,
+			v2BufYAMLFile,
+		)
+	}
+	if v1BufWorkYAML != nil {
+		v1ModulePaths = v1BufWorkYAML.DirPaths()
+	}
+	// If we still have no v1 module paths, then we go to the final fallback and set a v1
+	// module at the input path.
+	if len(v1ModulePaths) == 0 {
+		v1ModulePaths = append(v1ModulePaths, bucketTargeting.InputPath())
+	}
+	return v1WorkspaceTargeting(
+		ctx,
+		config,
+		bucket,
+		bucketTargeting,
+		v1ModulePaths,
+		nil,
+	)
 }
 
 func getMappedModuleBucketAndModuleTargeting(
@@ -420,4 +542,80 @@ func getModuleConfigAndConfiguredDepModuleRefsV1Beta1OrV1(
 		return nil, nil, syserror.Newf("received %d ModuleConfigs from a v1beta1 or v1 BufYAMLFile", len(moduleConfigs))
 	}
 	return moduleConfigs[0], bufYAMLFile.ConfiguredDepModuleRefs(), nil
+}
+
+// checkForControllingWorkspaceOrV1Module take a bucket and path, and walks up the bucket
+// from the base of the path, checking for a controlling workspace or v1 module.
+func checkForControllingWorkspaceOrV1Module(
+	ctx context.Context,
+	logger *zap.Logger,
+	bucket storage.ReadBucket,
+	path string,
+) (buftarget.ControllingWorkspace, error) {
+	path, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return nil, err
+	}
+	// Keep track of any v1 module found along the way. If we find a v1 or v2 workspace, we
+	// return that over the v1 module, but we return this as the fallback.
+	var fallbackV1Module buftarget.ControllingWorkspace
+	// Similar to the mapping loop in buftarget for buftarget.BucketTargeting, we can't do
+	// this in a traditional loop like this:
+	//
+	// for curDirPath := path; curDirPath != "."; curDirPath = normalpath.Dir(curDirPath) {
+	//
+	// If we do that, then we don't run terminateFunc for ".", which we want to so that we get
+	// the correct value for the terminate bool.
+	//
+	// Instead, we effectively do a do-while loop.
+	curDirPath := path
+	for {
+		// First, check for a v1 or v2 controlling workspace
+		controllingWorkspace, err := buftarget.TerminateAtControllingWorkspace(
+			ctx,
+			bucket,
+			curDirPath,
+			path,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if controllingWorkspace != nil {
+			logger.Debug(
+				"buffetch termination found",
+				zap.String("curDirPath", curDirPath),
+				zap.String("path", path),
+			)
+			return controllingWorkspace, nil
+		}
+		// Then check for a v1 module
+		v1Module, err := buftarget.TerminateAtV1Module(ctx, bucket, curDirPath, path)
+		if err != nil {
+			return nil, err
+		}
+		if v1Module != nil {
+			if fallbackV1Module != nil {
+				return nil, fmt.Errorf("nested modules %q and %q are not allowed", fallbackV1Module.Path(), v1Module.Path())
+			}
+			fallbackV1Module = v1Module
+		}
+		if curDirPath == "." {
+			break
+		}
+		curDirPath = normalpath.Dir(curDirPath)
+	}
+	logger.Debug(
+		"buffetch no termination found",
+		zap.String("path", path),
+	)
+	return fallbackV1Module, nil
+}
+
+func checkForOverlap(inputPath string, moduleDirPaths []string) error {
+	for _, moduleDirPath := range moduleDirPaths {
+		if normalpath.ContainsPath(moduleDirPath, inputPath, normalpath.Relative) {
+			return fmt.Errorf("failed to build input %q because it is contained by directory %q", inputPath, moduleDirPath)
+		}
+	}
+	return fmt.Errorf("input path %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
 }

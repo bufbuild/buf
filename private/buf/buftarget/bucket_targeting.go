@@ -102,7 +102,6 @@ func newBucketTargeting(
 		logger,
 		bucket,
 		inputPath,
-		inputPath,
 		terminateFunc,
 	)
 	if err != nil {
@@ -153,7 +152,6 @@ func mapControllingWorkspaceAndPath(
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
 	path string,
-	originalInputPath string,
 	terminateFunc TerminateFunc,
 ) (ControllingWorkspace, string, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
@@ -175,7 +173,7 @@ func mapControllingWorkspaceAndPath(
 	// Instead, we effectively do a do-while loop.
 	curDirPath := path
 	for {
-		controllingWorkspace, err := terminateFunc(ctx, bucket, curDirPath, originalInputPath)
+		controllingWorkspace, err := terminateFunc(ctx, bucket, curDirPath, path)
 		if err != nil {
 			return nil, "", err
 		}

@@ -230,10 +230,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		return nil, err
 	}
 	if config.protoFileTargetPath != "" {
-		config.protoFileTargetPath, err = normalpath.NormalizeAndValidate(config.protoFileTargetPath)
-		if err != nil {
-			return nil, err
-		}
+		config.protoFileTargetPath = normalpath.Normalize(config.protoFileTargetPath)
 	}
 	if len(config.targetPaths) > 0 || len(config.targetExcludePaths) > 0 {
 		if config.protoFileTargetPath != "" {

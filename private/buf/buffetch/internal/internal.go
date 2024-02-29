@@ -826,18 +826,6 @@ func WithGetReadBucketCloserTerminateFunc(terminateFunc buftarget.TerminateFunc)
 	}
 }
 
-// WithGetReadBucketCloserProtoFileTerminateFunc is like WithGetReadBucketCloserTerminateFunc, but determines
-// where to stop searching for the enclosing module or workspace when given a ProtoFileRef.
-//
-// See bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef, which is the only thing that uses this.
-// This finds the enclosing module or workspace.
-// This is only used for ProtoFileRefs.
-func WithGetReadBucketCloserProtoFileTerminateFunc(protoFileTerminateFunc buftarget.TerminateFunc) GetReadBucketCloserOption {
-	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
-		getReadBucketCloserOptions.protoFileTerminateFunc = protoFileTerminateFunc
-	}
-}
-
 // WithGetReadBucketCloserTargetPaths sets the target paths for the bucket targeting information.
 func WithGetReadBucketCloserTargetPaths(targetPaths []string) GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {

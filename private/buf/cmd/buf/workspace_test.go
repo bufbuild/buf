@@ -1121,26 +1121,17 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: failed to build input "proto/buf" because it is contained by directory "proto" listed in testdata/workspace/fail/overlap/buf.work.yaml`),
+		filepath.FromSlash(`Failure: failed to build input "proto/buf" because it is contained by directory "proto"`),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		1,
-		``,
-		filepath.FromSlash(`Failure: failed to build input "other" because it contains directory "other/proto" listed in testdata/workspace/success/dir/buf.work.yaml`),
-		"build",
-		filepath.Join("testdata", "workspace", "success", "dir", "other"),
-	)
+	// This works because of our fallback logic, so we build the workspace at testdata/workspace/success/dir
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "workspace", "success", "dir", "other"))
 }
 
 func TestWorkspaceNoVersionFail(t *testing.T) {
