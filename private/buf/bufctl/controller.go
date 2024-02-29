@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"sort"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
@@ -93,6 +94,7 @@ type Controller interface {
 	// GetImageFileInfos gets the .proto FileInfos for the given input.
 	//
 	// Imports are always included.
+	// Sorted by Path.
 	GetImageFileInfos(
 		ctx context.Context,
 		input string,
@@ -458,6 +460,12 @@ func (c *controller) GetImageFileInfos(
 		for i, imageFile := range imageFiles {
 			imageFileInfos[i] = imageFile
 		}
+		sort.Slice(
+			imageFileInfos,
+			func(i int, j int) bool {
+				return imageFileInfos[i].Path() < imageFileInfos[j].Path()
+			},
+		)
 		return imageFileInfos, nil
 	default:
 		// This is a system error.
@@ -1135,6 +1143,7 @@ func (c *controller) handleFileAnnotationSetRetError(retErrAddr *error) {
 }
 
 func getImageFileInfosForModuleSet(ctx context.Context, moduleSet bufmodule.ModuleSet) ([]bufimage.ImageFileInfo, error) {
+	// Sorted.
 	fileInfos, err := bufmodule.GetFileInfos(
 		ctx,
 		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(moduleSet),

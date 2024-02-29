@@ -16,8 +16,9 @@ package lsfiles
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"sort"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
@@ -31,11 +32,20 @@ import (
 )
 
 const (
-	asImportPathsFlagName   = "as-import-paths"
+	formatFlagName          = "format"
 	configFlagName          = "config"
 	errorFormatFlagName     = "error-format"
 	includeImportsFlagName  = "include-imports"
 	disableSymlinksFlagName = "disable-symlinks"
+	asImportPathsFlagName   = "as-import-paths"
+
+	formatText   = "text"
+	formatJSON   = "json"
+	formatImport = "import"
+)
+
+var (
+	allFormats = []string{formatText, formatJSON, formatImport}
 )
 
 // NewCommand returns a new Command.
@@ -59,11 +69,13 @@ func NewCommand(
 }
 
 type flags struct {
-	AsImportPaths   bool
+	Format          string
 	Config          string
 	ErrorFormat     string
 	IncludeImports  bool
 	DisableSymlinks bool
+	// Deprecated
+	AsImportPaths bool
 	// special
 	InputHashtag string
 }
@@ -75,17 +87,20 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
-	flagSet.BoolVar(
-		&f.AsImportPaths,
-		asImportPathsFlagName,
-		false,
-		"Strip local directory paths and print filepaths as they are imported",
-	)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
 		`The buf.yaml configuration file or data to use`,
+	)
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		formatText,
+		fmt.Sprintf(
+			`The format to print the Protofile files. Must be one of %s`,
+			strings.Join(allFormats, ", "),
+		),
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -102,6 +117,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Include imports",
 	)
+	flagSet.BoolVar(
+		&f.AsImportPaths,
+		asImportPathsFlagName,
+		false,
+		"Strip local directory paths and print filepaths as they are imported",
+	)
+	_ = flagSet.MarkDeprecated(asImportPathsFlagName, fmt.Sprintf("Use --%s=import instead", formatFlagName))
+	_ = flagSet.MarkHidden(asImportPathsFlagName)
 }
 
 func run(
@@ -109,6 +132,9 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
+	if flags.AsImportPaths {
+		flags.Format = formatImport
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
@@ -121,6 +147,7 @@ func run(
 	if err != nil {
 		return err
 	}
+	// Sorted.
 	imageFileInfos, err := controller.GetImageFileInfos(
 		ctx,
 		input,
@@ -143,47 +170,61 @@ func run(
 			return err
 		}
 	}
-	pathFunc := bufimage.ImageFileInfo.ExternalPath
-	if flags.AsImportPaths {
-		pathFunc = bufimage.ImageFileInfo.Path
+	var formatFunc func(bufimage.ImageFileInfo) (string, error)
+	switch flags.Format {
+	case formatText:
+		formatFunc = func(imageFileInfo bufimage.ImageFileInfo) (string, error) {
+			return imageFileInfo.ExternalPath(), nil
+		}
+	case formatJSON:
+		formatFunc = func(imageFileInfo bufimage.ImageFileInfo) (string, error) {
+			data, err := json.Marshal(newExternalImageFileInfo(imageFileInfo))
+			if err != nil {
+				return "", err
+			}
+			return string(data), nil
+		}
+	case formatImport:
+		formatFunc = func(imageFileInfo bufimage.ImageFileInfo) (string, error) {
+			return imageFileInfo.Path(), nil
+		}
+	default:
+		return appcmd.NewInvalidArgumentErrorf("--%s must be one of %s", formatFlagName, strings.Join(allFormats, ", "))
 	}
-	paths := slicesext.Map(
-		imageFileInfos,
-		func(imageFileInfo bufimage.ImageFileInfo) string {
-			return pathFunc(imageFileInfo)
-		},
-	)
-	sort.Strings(paths)
-	for _, path := range paths {
-		if _, err := fmt.Fprintln(container.Stdout(), path); err != nil {
+	lines, err := slicesext.MapError(imageFileInfos, formatFunc)
+	if err != nil {
+		return err
+	}
+	for _, line := range lines {
+		if _, err := fmt.Fprintln(container.Stdout(), line); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-//type externalFileInfo struct {
-//Path      string `json:"path" yaml:"path"`
-//LocalPath string `json:"local_path" yaml:"local_path"`
-//Module    string `json:"module" yaml:"module"`
-//Commit    string `json:"commit" yaml:"commit"`
-//Target    bool   `json:"target" yaml:"target"`
-//}
+type externalImageFileInfo struct {
+	ImportPath string `json:"import_path" yaml:"import_path"`
+	LocalPath  string `json:"local_path" yaml:"local_path"`
+	Module     string `json:"module" yaml:"module"`
+	Commit     string `json:"commit" yaml:"commit"`
+	IsImport   bool   `json:"is_import" yaml:"is_import"`
+}
 
-//func newExternalFileInfo(fileInfo bufmodule.FileInfo) *externalFileInfo {
-//var module string
-//if moduleFullName := fileInfo.Module().ModuleFullName(); moduleFullName != nil {
-//module = moduleFullName.String()
-//}
-//var commit string
-//if commitID := fileInfo.Module().CommitID(); !commitID.IsNil() {
-//commit = commitID.String()
-//}
-//return &externalFileInfo{
-//Path:      fileInfo.Path(),
-//LocalPath: fileInfo.LocalPath(),
-//Module:    module,
-//Commit:    commit,
-//Target:    fileInfo.IsTargetFile(),
-//}
-//}
+func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalImageFileInfo {
+	var module string
+	if moduleFullName := imageFileInfo.ModuleFullName(); moduleFullName != nil {
+		module = moduleFullName.String()
+	}
+	var commit string
+	if commitID := imageFileInfo.CommitID(); !commitID.IsNil() {
+		commit = commitID.String()
+	}
+	return &externalImageFileInfo{
+		ImportPath: imageFileInfo.Path(),
+		LocalPath:  imageFileInfo.LocalPath(),
+		Module:     module,
+		Commit:     commit,
+		IsImport:   imageFileInfo.IsImport(),
+	}
+}
