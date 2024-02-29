@@ -725,14 +725,15 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		t,
 		"d.proto",
 	)
-	protoImageFileTimestamp := NewProtoImageFileIsImport(
-		t,
-		"google/protobuf/timestamp.proto",
-	)
+	//protoImageFileTimestamp := NewProtoImageFileIsImport(
+	//t,
+	//"google/protobuf/timestamp.proto",
+	//)
 	protoImageFileA := NewProtoImageFile(
 		t,
 		"a.proto",
 		"c.proto",
+		// Should be automatically added.
 		"google/protobuf/timestamp.proto",
 	)
 	protoImageFileB := NewProtoImageFile(
@@ -762,17 +763,17 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		false,
 		nil,
 	)
-	fileTimestamp := NewImageFile(
-		t,
-		protoImageFileTimestamp,
-		nil,
-		uuid.Nil,
-		"",
-		"",
-		true,
-		false,
-		nil,
-	)
+	//fileTimestamp := NewImageFile(
+	//t,
+	//protoImageFileTimestamp,
+	//nil,
+	//uuid.Nil,
+	//"",
+	//"",
+	//true,
+	//false,
+	//nil,
+	//)
 	fileA := NewImageFile(
 		t,
 		protoImageFileA,
@@ -800,7 +801,7 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		fileC,
 		fileD,
 		fileA,
-		fileTimestamp,
+		//fileTimestamp,
 		fileB,
 	}
 	resultImageFileInfos, err := bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)

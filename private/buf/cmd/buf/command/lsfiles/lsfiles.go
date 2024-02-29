@@ -137,6 +137,7 @@ func run(
 			},
 		)
 	} else {
+		// Also automatically adds imported WKTs if not present.
 		imageFileInfos, err = bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)
 		if err != nil {
 			return err

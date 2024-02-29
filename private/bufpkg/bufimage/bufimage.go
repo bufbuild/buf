@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -79,9 +80,9 @@ func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFile
 // d.proto.
 //
 // It is assumed that the input ImageFileInfos are self-contained, that is every import should
-// be contained within the input. This may not be necessarily true for a set of bufmodule.FileInfos
-// converted to bufimage.ImageFileInfos directly - bufmodule.Modules do not include the Well-Known
-// Types. You need to make sure these are present as well.
+// be contained within the input, except for the Well-Known Types. If a Well-Known Type is imported
+// and not present in the input, an ImageFileInfo for the Well-Known Type is automatically added
+// to the result.
 //
 // The result will be sorted by path.
 func ImageFileInfosWithOnlyTargetsAndTargetImports(
@@ -731,11 +732,25 @@ func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
 	for _, imp := range imports {
 		importImageFileInfo, ok := pathToImageFileInfo[imp]
 		if !ok {
-			return fmt.Errorf("no ImageFileInfo for import %q", imp)
+			importImageFileInfo = getWellKnownTypeImageFileInfo(imp, true)
+			if importImageFileInfo == nil {
+				return fmt.Errorf("no ImageFileInfo for import %q", imp)
+			}
+			// We need to add to this map as the caller uses it.
+			pathToImageFileInfo[imp] = importImageFileInfo
 		}
 		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// Returns nil if the path is not a Well-Known Type.
+func getWellKnownTypeImageFileInfo(path string, isImport bool) ImageFileInfo {
+	imports, ok := datawkt.FileImports(path)
+	if !ok {
+		return nil
+	}
+	return newWellKnownTypeImageFileInfo(path, imports, isImport)
 }
