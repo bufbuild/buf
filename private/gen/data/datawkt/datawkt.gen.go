@@ -216,5 +216,5 @@ func Imports(path string) ([]string, bool) {
 	}
 	c := make([]string, len(imports))
 	copy(c, imports)
-	return c
+	return c, true
 }
