@@ -15,10 +15,12 @@
 package bufimagetesting
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/gofrs/uuid/v5"
@@ -804,7 +806,11 @@ func TestImageFileInfosWithOnlyTargetsAndTargetImports(t *testing.T) {
 		//fileTimestamp,
 		fileB,
 	}
-	resultImageFileInfos, err := bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)
+	resultImageFileInfos, err := bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(
+		context.Background(),
+		datawkt.ReadBucket,
+		imageFileInfos,
+	)
 	require.NoError(t, err)
 	require.Equal(
 		t,

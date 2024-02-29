@@ -150,6 +150,25 @@ func Copy[T any](s []T) []T {
 	return sc
 }
 
+// Equal reports whether two slices are equal: the same length and all
+// elements equal. If the lengths are different, Equal returns false.
+// Otherwise, the elements are compared in increasing index order, and the
+// comparison stops at the first unequal pair.
+// Floating point NaNs are not considered equal.
+//
+// TODO FUTURE: Delete this in favor of slices.Equal when we are >1.21.
+func Equal[S ~[]E, E comparable](s1, s2 S) bool {
+	if len(s1) != len(s2) {
+		return false
+	}
+	for i := range s1 {
+		if s1[i] != s2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // ToStructMap converts the slice to a map with struct{} values.
 func ToStructMap[T comparable](s []T) map[T]struct{} {
 	m := make(map[T]struct{}, len(s))

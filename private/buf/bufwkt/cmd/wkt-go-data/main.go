@@ -42,9 +42,10 @@ import (
 )
 
 const (
-	programName = "wkt-go-data"
-	pkgFlagName = "package"
-	sliceLength = math.MaxInt64
+	programName             = "wkt-go-data"
+	pkgFlagName             = "package"
+	protobufVersionFlagName = "protobuf-version"
+	sliceLength             = math.MaxInt64
 )
 
 var failedError = app.NewError( /* exitCode */ 100, "something went wrong")
@@ -69,7 +70,8 @@ func newCommand() *appcmd.Command {
 }
 
 type flags struct {
-	Pkg string
+	Pkg             string
+	ProtobufVersion string
 }
 
 func newFlags() *flags {
@@ -83,6 +85,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The name of the generated package.",
 	)
+	flagSet.StringVar(
+		&f.ProtobufVersion,
+		protobufVersionFlagName,
+		"",
+		"The version of protobuf used to get the Well-Known Types.",
+	)
 }
 
 func run(ctx context.Context, container appext.Container, flags *flags) error {
@@ -90,6 +98,10 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	packageName := flags.Pkg
 	if packageName == "" {
 		packageName = filepath.Base(dirPath)
+	}
+	protobufVersion := flags.ProtobufVersion
+	if protobufVersion == "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", protobufVersionFlagName)
 	}
 	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath)
 	if err != nil {
@@ -127,6 +139,7 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 		pathToImports[path] = imports
 	}
 	golangFileData, err := getGolangFileData(
+		protobufVersion,
 		pathToData,
 		fullNameToMessage,
 		fullNameToEnum,
@@ -204,6 +217,7 @@ func getProtosourceFiles(
 }
 
 func getGolangFileData(
+	protobufVersion string,
 	pathToData map[string][]byte,
 	fullNameToMessage map[string]bufprotosource.Message,
 	fullNameToEnum map[string]bufprotosource.Enum,
@@ -238,9 +252,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-)
-
-var (
+)`)
+	p("\n\n")
+	p(`// Version is the version of github.com/protocolbuffers/protobuf used to extract the Well-Known Types.
+const Version = "`)
+	p(protobufVersion)
+	p(`"`)
+	p("\n\n")
+	p(`var (
 	// ReadBucket is the storage.ReadBucket with the static data generated for this package.
 	ReadBucket storage.ReadBucket`)
 	p("\n\n")

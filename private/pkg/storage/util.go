@@ -101,6 +101,8 @@ func WalkReadObjects(
 }
 
 // AllPaths walks the bucket and gets all the paths.
+//
+// The returned paths are sorted.
 func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]string, error) {
 	var allPaths []string
 	if err := readBucket.Walk(
@@ -113,7 +115,32 @@ func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]stri
 	); err != nil {
 		return nil, err
 	}
+	sort.Strings(allPaths)
 	return allPaths, nil
+}
+
+// AllObjectInfos walks the bucket and gets all the ObjectInfos.
+//
+// The returned ObjectInfos are sorted by path.
+func AllObjectInfos(ctx context.Context, readBucket ReadBucket, prefix string) ([]ObjectInfo, error) {
+	var allObjectInfos []ObjectInfo
+	if err := readBucket.Walk(
+		ctx,
+		prefix,
+		func(objectInfo ObjectInfo) error {
+			allObjectInfos = append(allObjectInfos, objectInfo)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	sort.Slice(
+		allObjectInfos,
+		func(i int, j int) bool {
+			return allObjectInfos[i].Path() < allObjectInfos[j].Path()
+		},
+	)
+	return allObjectInfos, nil
 }
 
 // Exists returns true if the path exists, false otherwise.

@@ -74,7 +74,7 @@ godata: installspdx-go-data installwkt-go-data $(PROTOC)
 	rm -rf private/gen/data
 	mkdir -p private/gen/data/datawkt
 	mkdir -p private/gen/data/dataspdx
-	wkt-go-data $(CACHE_INCLUDE) --package datawkt > private/gen/data/datawkt/datawkt.gen.go
+	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
 
 prepostgenerate:: godata

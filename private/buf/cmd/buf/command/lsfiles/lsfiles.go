@@ -18,12 +18,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -32,12 +34,13 @@ import (
 )
 
 const (
-	formatFlagName          = "format"
-	configFlagName          = "config"
-	errorFormatFlagName     = "error-format"
-	includeImportsFlagName  = "include-imports"
-	disableSymlinksFlagName = "disable-symlinks"
-	asImportPathsFlagName   = "as-import-paths"
+	formatFlagName            = "format"
+	configFlagName            = "config"
+	errorFormatFlagName       = "error-format"
+	includeImportsFlagName    = "include-imports"
+	includeImportableFlagName = "include-importable"
+	disableSymlinksFlagName   = "disable-symlinks"
+	asImportPathsFlagName     = "as-import-paths"
 
 	formatText   = "text"
 	formatJSON   = "json"
@@ -69,11 +72,13 @@ func NewCommand(
 }
 
 type flags struct {
-	Format          string
-	Config          string
-	ErrorFormat     string
-	IncludeImports  bool
-	DisableSymlinks bool
+	Format            string
+	Config            string
+	IncludeImports    bool
+	IncludeImportable bool
+	DisableSymlinks   bool
+	// Deprecated. This flag no longer has any effect as we don't build images anymore.
+	ErrorFormat string
 	// Deprecated
 	AsImportPaths bool
 	// special
@@ -102,6 +107,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			strings.Join(allFormats, ", "),
 		),
 	)
+	flagSet.BoolVar(
+		&f.IncludeImports,
+		includeImportsFlagName,
+		false,
+		"Include imports",
+	)
+	flagSet.BoolVar(
+		&f.IncludeImportable,
+		includeImportableFlagName,
+		false,
+		fmt.Sprintf(
+			"Include all .proto file that are importable by the input. --%s is redundant if this is set",
+			includeImportsFlagName,
+		),
+	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -111,12 +131,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
-	flagSet.BoolVar(
-		&f.IncludeImports,
-		includeImportsFlagName,
-		false,
-		"Include imports",
-	)
+	_ = flagSet.MarkDeprecated(errorFormatFlagName, "This flag no longer has any effect")
+	_ = flagSet.MarkHidden(errorFormatFlagName)
 	flagSet.BoolVar(
 		&f.AsImportPaths,
 		asImportPathsFlagName,
@@ -142,13 +158,12 @@ func run(
 	controller, err := bufcli.NewController(
 		container,
 		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
-		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
 	// Sorted.
-	imageFileInfos, err := controller.GetImageFileInfos(
+	imageFileInfos, err := controller.GetImportableImageFileInfos(
 		ctx,
 		input,
 		bufctl.WithConfigOverride(flags.Config),
@@ -156,27 +171,51 @@ func run(
 	if err != nil {
 		return err
 	}
-	if !flags.IncludeImports {
-		imageFileInfos = slicesext.Filter(
-			imageFileInfos,
-			func(imageFileInfo bufimage.ImageFileInfo) bool {
-				return !imageFileInfo.IsImport()
-			},
-		)
-	} else {
-		// Also automatically adds imported WKTs if not present.
-		imageFileInfos, err = bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(imageFileInfos)
-		if err != nil {
-			return err
+	if !flags.IncludeImportable {
+		if !flags.IncludeImports {
+			imageFileInfos = slicesext.Filter(
+				imageFileInfos,
+				func(imageFileInfo bufimage.ImageFileInfo) bool {
+					return !imageFileInfo.IsImport()
+				},
+			)
+		} else {
+			// Also automatically adds imported WKTs if not present.
+			imageFileInfos, err = bufimage.ImageFileInfosWithOnlyTargetsAndTargetImports(
+				ctx,
+				datawkt.ReadBucket,
+				imageFileInfos,
+			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	var formatFunc func(bufimage.ImageFileInfo) (string, error)
 	switch flags.Format {
 	case formatText:
+		sort.Slice(
+			imageFileInfos,
+			func(i int, j int) bool {
+				return imageFileInfos[i].ExternalPath() < imageFileInfos[j].ExternalPath()
+			},
+		)
 		formatFunc = func(imageFileInfo bufimage.ImageFileInfo) (string, error) {
 			return imageFileInfo.ExternalPath(), nil
 		}
 	case formatJSON:
+		sort.Slice(
+			imageFileInfos,
+			func(i int, j int) bool {
+				if imageFileInfos[i].LocalPath() < imageFileInfos[j].LocalPath() {
+					return true
+				}
+				if imageFileInfos[i].LocalPath() > imageFileInfos[j].LocalPath() {
+					return false
+				}
+				return imageFileInfos[i].Path() < imageFileInfos[j].Path()
+			},
+		)
 		formatFunc = func(imageFileInfo bufimage.ImageFileInfo) (string, error) {
 			data, err := json.Marshal(newExternalImageFileInfo(imageFileInfo))
 			if err != nil {
@@ -204,8 +243,8 @@ func run(
 }
 
 type externalImageFileInfo struct {
+	Path       string `json:"path" yaml:"path"`
 	ImportPath string `json:"import_path" yaml:"import_path"`
-	LocalPath  string `json:"local_path" yaml:"local_path"`
 	Module     string `json:"module" yaml:"module"`
 	Commit     string `json:"commit" yaml:"commit"`
 	IsImport   bool   `json:"is_import" yaml:"is_import"`
@@ -221,8 +260,10 @@ func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalIma
 		commit = commitID.String()
 	}
 	return &externalImageFileInfo{
+		Path: imageFileInfo.LocalPath(),
+		// This seems backwards when you read it, but it is right: the Path is the import path,
+		// the LocalPath is the path that a user would have for a file on disk.
 		ImportPath: imageFileInfo.Path(),
-		LocalPath:  imageFileInfo.LocalPath(),
 		Module:     module,
 		Commit:     commit,
 		IsImport:   imageFileInfo.IsImport(),

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
@@ -27,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
@@ -68,6 +70,31 @@ func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFile
 	return newModuleImageFileInfo(moduleFileInfo)
 }
 
+// AppendWellKnownTypeImageFileInfos appends any Well-Known Types that are not already present
+// in the input ImageFileInfos.
+//
+// For example, if imageFileInfos contains "google/protobuf/timestamp.proto", the returned
+// ImageFileInfos will have all the Well-Known Types except for "google/protobuf/timestamp.proto"
+// appended.
+//
+// This function uses the input wktBucket to determine what is a Well-Known Type.
+// This bucket should contain all the Well-Known Types, and nothing else. This is used instead
+// of using datawkt directly so that we can pass in a bucket backed by a cache on-disk with
+// the Well-Known Types, and use its LocalPath information.
+//
+// The appended Well-Known Types will be in sorted order by path, and will all be marked as imports.
+func AppendWellKnownTypeImageFileInfos(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
+	imageFileInfos []ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+	return appendWellKnownTypeImageFileInfos(ctx, wktBucket, imageFileInfos, pathToImageFileInfo)
+}
+
 // ImageFileInfosWithOnlyTargetsAndTargetImports returns a new slice of ImageFileInfos that only
 // contains the non-imports (ie targets), and the files that those non-imports themselves
 // transitively import.
@@ -82,13 +109,19 @@ func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFile
 // It is assumed that the input ImageFileInfos are self-contained, that is every import should
 // be contained within the input, except for the Well-Known Types. If a Well-Known Type is imported
 // and not present in the input, an ImageFileInfo for the Well-Known Type is automatically added
-// to the result.
+// to the result from the given bucket.
 //
 // The result will be sorted by path.
 func ImageFileInfosWithOnlyTargetsAndTargetImports(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
 	imageFileInfos []ImageFileInfo,
 ) ([]ImageFileInfo, error) {
 	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+	imageFileInfos, err = appendWellKnownTypeImageFileInfos(ctx, wktBucket, imageFileInfos, pathToImageFileInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -715,6 +748,40 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) err
 	return nil
 }
 
+// We pass in the pathToImageFileInfo here because we also call this in
+// ImageFileInfosWithOnlyTargetsAndTargetImports and we don't want to have to make this map twice.
+//
+// This also modifies the pathToImageFileInfo map if a Well-Known Type is added.
+func appendWellKnownTypeImageFileInfos(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
+	imageFileInfos []ImageFileInfo,
+	pathToImageFileInfo map[string]ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	// Sorted.
+	wktObjectInfos, err := storage.AllObjectInfos(ctx, wktBucket, "")
+	if err != nil {
+		return nil, err
+	}
+	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
+	if !slicesext.Equal(datawkt.AllFilePaths, wktPaths) {
+		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
+	}
+	resultImageFileInfos := slicesext.Copy(imageFileInfos)
+	for _, wktObjectInfo := range wktObjectInfos {
+		if _, ok := pathToImageFileInfo[wktObjectInfo.Path()]; !ok {
+			fileImports, ok := datawkt.FileImports(wktObjectInfo.Path())
+			if !ok {
+				return nil, syserror.Newf("datawkt.FileImports returned false for wkt %s", wktObjectInfo.Path())
+			}
+			imageFileInfo := newWellKnownTypeImageFileInfo(wktObjectInfo, fileImports, true)
+			resultImageFileInfos = append(resultImageFileInfos, imageFileInfo)
+			pathToImageFileInfo[wktObjectInfo.Path()] = imageFileInfo
+		}
+	}
+	return resultImageFileInfos, nil
+}
+
 func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
 	imageFileInfo ImageFileInfo,
 	pathToImageFileInfo map[string]ImageFileInfo,
@@ -732,25 +799,11 @@ func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
 	for _, imp := range imports {
 		importImageFileInfo, ok := pathToImageFileInfo[imp]
 		if !ok {
-			importImageFileInfo = getWellKnownTypeImageFileInfo(imp, true)
-			if importImageFileInfo == nil {
-				return fmt.Errorf("no ImageFileInfo for import %q", imp)
-			}
-			// We need to add to this map as the caller uses it.
-			pathToImageFileInfo[imp] = importImageFileInfo
+			return fmt.Errorf("no ImageFileInfo for import %q", imp)
 		}
 		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-// Returns nil if the path is not a Well-Known Type.
-func getWellKnownTypeImageFileInfo(path string, isImport bool) ImageFileInfo {
-	imports, ok := datawkt.FileImports(path)
-	if !ok {
-		return nil
-	}
-	return newWellKnownTypeImageFileInfo(path, imports, isImport)
 }

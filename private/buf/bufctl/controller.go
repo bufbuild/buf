@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -91,11 +92,14 @@ type Controller interface {
 		input string,
 		options ...FunctionOption,
 	) ([]ImageWithConfig, error)
-	// GetImageFileInfos gets the .proto FileInfos for the given input.
+	// GetImportableImageFileInfos gets the importable .proto FileInfos for the given input.
 	//
-	// Imports are always included.
-	// Sorted by Path.
-	GetImageFileInfos(
+	// This includes all files that can be possible imported. For example, if a Module
+	// is given, this will return FileInfos for the Module, its dependencies, and all of
+	// the Well-Known Types.
+	//
+	// Returned ImageFileInfos are sorted by Path.
+	GetImportableImageFileInfos(
 		ctx context.Context,
 		input string,
 		options ...FunctionOption,
@@ -412,7 +416,7 @@ func (c *controller) GetTargetImageWithConfigs(
 	}
 }
 
-func (c *controller) GetImageFileInfos(
+func (c *controller) GetImportableImageFileInfos(
 	ctx context.Context,
 	input string,
 	options ...FunctionOption,
@@ -431,46 +435,65 @@ func (c *controller) GetImageFileInfos(
 	if err != nil {
 		return nil, err
 	}
+	var imageFileInfos []bufimage.ImageFileInfo
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getImageFileInfosForModuleSet(ctx, workspace)
+		imageFileInfos, err = getImageFileInfosForModuleSet(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
 	case buffetch.SourceRef:
 		workspace, err := c.getWorkspaceForSourceRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getImageFileInfosForModuleSet(ctx, workspace)
+		imageFileInfos, err = getImageFileInfosForModuleSet(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
-		return getImageFileInfosForModuleSet(ctx, workspace)
+		imageFileInfos, err = getImageFileInfosForModuleSet(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
 	case buffetch.MessageRef:
 		image, err := c.getImageForMessageRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
 		imageFiles := image.Files()
-		imageFileInfos := make([]bufimage.ImageFileInfo, len(imageFiles))
+		imageFileInfos = make([]bufimage.ImageFileInfo, len(imageFiles))
 		for i, imageFile := range imageFiles {
 			imageFileInfos[i] = imageFile
 		}
-		sort.Slice(
-			imageFileInfos,
-			func(i int, j int) bool {
-				return imageFileInfos[i].Path() < imageFileInfos[j].Path()
-			},
-		)
-		return imageFileInfos, nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("invalid Ref: %T", ref)
 	}
+	imageFileInfos, err = bufimage.AppendWellKnownTypeImageFileInfos(
+		ctx,
+		// TODO: Use a cached bucket backed on disk so we can get local paths.
+		datawkt.ReadBucket,
+		imageFileInfos,
+	)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(
+		imageFileInfos,
+		func(i int, j int) bool {
+			return imageFileInfos[i].Path() < imageFileInfos[j].Path()
+		},
+	)
+	return imageFileInfos, nil
 }
 
 func (c *controller) PutImage(

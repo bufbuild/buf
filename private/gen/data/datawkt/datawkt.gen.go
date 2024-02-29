@@ -23,6 +23,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 )
 
+// Version is the version of github.com/protocolbuffers/protobuf used to extract the Well-Known Types.
+const Version = "25.0"
+
 var (
 	// ReadBucket is the storage.ReadBucket with the static data generated for this package.
 	ReadBucket storage.ReadBucket

@@ -16,37 +16,26 @@ package bufimage
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/gofrs/uuid/v5"
 )
 
 type wellKnownTypeImageFileInfo struct {
-	path     string
+	storage.ObjectInfo
 	imports  []string
 	isImport bool
 }
 
 func newWellKnownTypeImageFileInfo(
-	path string,
+	objectInfo storage.ObjectInfo,
 	imports []string,
 	isImport bool,
 ) *wellKnownTypeImageFileInfo {
 	return &wellKnownTypeImageFileInfo{
-		path:     path,
-		imports:  imports,
-		isImport: isImport,
+		ObjectInfo: objectInfo,
+		imports:    imports,
+		isImport:   isImport,
 	}
-}
-
-func (p *wellKnownTypeImageFileInfo) Path() string {
-	return p.path
-}
-
-func (p *wellKnownTypeImageFileInfo) ExternalPath() string {
-	return p.path
-}
-
-func (p *wellKnownTypeImageFileInfo) LocalPath() string {
-	return ""
 }
 
 func (p *wellKnownTypeImageFileInfo) ModuleFullName() bufmodule.ModuleFullName {
