@@ -27,7 +27,6 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.idea/ \
 	.vscode/ \
 	private/buf/cmd/buf/command/alpha/protoc/test.txt \
-	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/buf/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/

@@ -162,7 +162,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	// Sorted.
+	// Sorted by Path.
 	imageFileInfos, err := controller.GetImportableImageFileInfos(
 		ctx,
 		input,

@@ -24,6 +24,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -136,6 +137,7 @@ func NewController(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
 	gitClonerOptions git.ClonerOptions,
@@ -149,6 +151,7 @@ func NewController(
 		moduleKeyProvider,
 		moduleDataProvider,
 		commitProvider,
+		wktStore,
 		httpClient,
 		httpauthAuthenticator,
 		gitClonerOptions,
@@ -170,6 +173,7 @@ type controller struct {
 	moduleDataProvider bufmodule.ModuleDataProvider
 	graphProvider      bufmodule.GraphProvider
 	commitProvider     bufmodule.CommitProvider
+	wktStore           bufwktstore.Store
 
 	disableSymlinks           bool
 	fileAnnotationErrorFormat string
@@ -193,6 +197,7 @@ func newController(
 	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	moduleDataProvider bufmodule.ModuleDataProvider,
 	commitProvider bufmodule.CommitProvider,
+	wktStore bufwktstore.Store,
 	httpClient *http.Client,
 	httpauthAuthenticator httpauth.Authenticator,
 	gitClonerOptions git.ClonerOptions,
@@ -205,6 +210,7 @@ func newController(
 		graphProvider:      graphProvider,
 		moduleDataProvider: moduleDataProvider,
 		commitProvider:     commitProvider,
+		wktStore:           wktStore,
 	}
 	for _, option := range options {
 		option(controller)
@@ -436,6 +442,11 @@ func (c *controller) GetImportableImageFileInfos(
 		return nil, err
 	}
 	var imageFileInfos []bufimage.ImageFileInfo
+	// For images, we want to get a bucket with no local paths. For everything else,
+	// we want to get a bucket with local paths. datawkt.ReadBucket will result in
+	// no local paths, otherwise we get the bucket from the bufwktstore.Store to
+	// get local paths.
+	wktBucket := datawkt.ReadBucket
 	switch t := ref.(type) {
 	case buffetch.ProtoFileRef:
 		workspace, err := c.getWorkspaceForProtoFileRef(ctx, t, functionOptions)
@@ -443,6 +454,10 @@ func (c *controller) GetImportableImageFileInfos(
 			return nil, err
 		}
 		imageFileInfos, err = getImageFileInfosForModuleSet(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
+		wktBucket, err = c.wktStore.GetBucket(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -455,12 +470,20 @@ func (c *controller) GetImportableImageFileInfos(
 		if err != nil {
 			return nil, err
 		}
+		wktBucket, err = c.wktStore.GetBucket(ctx)
+		if err != nil {
+			return nil, err
+		}
 	case buffetch.ModuleRef:
 		workspace, err := c.getWorkspaceForModuleRef(ctx, t, functionOptions)
 		if err != nil {
 			return nil, err
 		}
 		imageFileInfos, err = getImageFileInfosForModuleSet(ctx, workspace)
+		if err != nil {
+			return nil, err
+		}
+		wktBucket, err = c.wktStore.GetBucket(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -480,8 +503,7 @@ func (c *controller) GetImportableImageFileInfos(
 	}
 	imageFileInfos, err = bufimage.AppendWellKnownTypeImageFileInfos(
 		ctx,
-		// TODO: Use a cached bucket backed on disk so we can get local paths.
-		datawkt.ReadBucket,
+		wktBucket,
 		imageFileInfos,
 	)
 	if err != nil {

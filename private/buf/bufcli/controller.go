@@ -46,6 +46,10 @@ func NewController(
 	if err != nil {
 		return nil, err
 	}
+	wktStore, err := newWKTStore(container)
+	if err != nil {
+		return nil, err
+	}
 	return bufctl.NewController(
 		container.Logger(),
 		tracing.NewTracer(container.Tracer()),
@@ -54,6 +58,7 @@ func NewController(
 		bufmoduleapi.NewModuleKeyProvider(container.Logger(), clientProvider),
 		moduleDataProvider,
 		commitProvider,
+		wktStore,
 		// TODO FUTURE: Delete defaultHTTPClient and use the one from newConfig
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,

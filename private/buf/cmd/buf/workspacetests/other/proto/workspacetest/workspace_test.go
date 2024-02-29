@@ -216,7 +216,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 		expectedStdout,
 		func(use string) map[string]string {
 			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): "cache",
+				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
 			}
 		},
 		stdin,
@@ -233,7 +233,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		expectedStderr,
 		func(use string) map[string]string {
 			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): "cache",
+				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
 			}
 		},
 		stdin,

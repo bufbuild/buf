@@ -21,12 +21,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/buf/bufwkt/bufwktstore"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulestore"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 )
@@ -47,6 +49,7 @@ var (
 		v2CacheModuleRelDirPath,
 		v3CacheModuleRelDirPath,
 		v3CacheCommitsRelDirPath,
+		v3CacheWKTRelDirPath,
 	}
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
@@ -89,6 +92,10 @@ var (
 	//
 	// Normalized.
 	v3CacheCommitsRelDirPath = normalpath.Join("v3", "commits")
+	// v3CacheWKTRelDirPath is the relative path to the well-known types cache directory in its newest iteration.
+	//
+	// Normalized.
+	v3CacheWKTRelDirPath = normalpath.Join("v3", "wellknowntypes")
 )
 
 // NewModuleDataProvider returns a new ModuleDataProvider while creating the
@@ -119,6 +126,25 @@ func NewCommitProvider(container appext.Container) (bufmodule.CommitProvider, er
 			clientConfig,
 		),
 	)
+}
+
+// newWKTStore returns a new bufwktstore.Store while creating the required cache directories.
+func newWKTStore(container appext.Container) (bufwktstore.Store, error) {
+	if err := createCacheDir(container.CacheDirPath(), v3CacheWKTRelDirPath); err != nil {
+		return nil, err
+	}
+	fullCacheDirPath := normalpath.Join(container.CacheDirPath(), v3CacheWKTRelDirPath)
+	// No symlinks.
+	storageosProvider := storageos.NewProvider()
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(fullCacheDirPath)
+	if err != nil {
+		return nil, err
+	}
+	return bufwktstore.NewStore(
+		container.Logger(),
+		command.NewRunner(),
+		cacheBucket,
+	), nil
 }
 
 func newModuleDataProvider(
