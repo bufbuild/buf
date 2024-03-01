@@ -655,100 +655,115 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
-	// We now know where the workspace is relative to the FS root.
-	// If the input path is provided as an absolute path, we create a new bucket for the
-	// controlling workspace using an absolute path.
-	// Otherwise we current working directory (pwd) and create the bucket using a relative
-	// path to that.
+	// osRootBucketTargeting returns the information on whether or not a controlling
+	// workspace was found based on the input path.
 	//
-	// Examples:
+	// *** CONTROLLING WOKRSPACE FOUND ***
 	//
-	// inputDirPath: path/to/foo
-	// terminateFileLocation: path/to
-	// returnMapPath: path/to
-	// returnSubDirPath: foo
-	// Make bucket on: Rel(pwd, controlling workspace)
+	// In the case where a controlling workspace is found, we want to create a new bucket
+	// for the controlling workspace.
+	// If the input path is an absolute path, we want to use an absolute path:
 	//
-	// inputDirPath: /users/alice/path/to/foo
-	// terminateFileLocation: /users/alice/path/to
-	// returnMapPath: /users/alice/path/to
-	// returnSubDirPath: foo
-	// Make bucket on: FS root + controlling workspace (since absolute)
+	//    bucketPath := fsRoot + controllingWorkspace.Path()
 	//
-	// If no controlling workspace is found, for absolute paths, close the workspace at the
-	// input path. For relative paths, we use the current working directory.
+	// If the input path is a relative path, we want to use a relative path between the
+	// current working directory (pwd) and controlling workspace.
+	//
+	//    bucketPath := Rel(Rel(fsRoot, pwd), controllingWorkspace.Path())
+	//
+	// We do not need to remap the input path, target paths, and target exclude paths
+	// returned by buftarget.BucketTargeting, because they are already relative to the
+	// controlling workpsace.
+	//
+	// *** CONTROLLING WOKRSPACE NOT FOUND ***
+	//
+	// In the case where a controlling workpsace is not found, we have three outcomes for
+	// creating a new bucket.
+	// If the input path is an absolute path, we want to use an absolute path to the input
+	// path:
+	//
+	//    bucketPath := Abs(inputPath)
+	//
+	// If the input path is a relative path, there are two possible outcomes: the input path,
+	// target paths, and target exclude paths are within the context of the working directory
+	// or outside of the context of the working directory.
+	//
+	// In the case where the input path, target paths, and target exclude paths are within
+	// the context of the working directory, we use pwd:
+	//
+	//    bucketPath := Rel(fsRoot,pwd)
+	//
+	// In the case where the input path, target paths, and target exclude paths are outside
+	// the context of the working directory, we use the input path relative to the pwd:
+	//
+	//    bucketPath := Rel(Rel(fsRoot,pwd), Rel(fsRoot, inputPath))
+	//
+	// For all cases where no controlling workspace was found, we need to remap the input
+	// path, target paths, and target exclude paths to the root of the new bucket.
 	var bucketPath string
 	var inputPath string
 	bucketTargetPaths := make([]string, len(osRootBucketTargeting.TargetPaths()))
 	bucketTargetExcludePaths := make([]string, len(osRootBucketTargeting.TargetExcludePaths()))
-	if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
-		if osRootBucketTargeting.ControllingWorkspace() != nil {
+	if controllingWorkspace := osRootBucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
+		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
 			bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspace().Path())
-			inputPath = osRootBucketTargeting.InputPath()
-			bucketTargetPaths = osRootBucketTargeting.TargetPaths()
-			bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 		} else {
-			bucketPath = normalpath.Join(fsRoot, fsRootInputSubDirPath)
-			inputPath, err = normalpath.Rel(fsRootInputSubDirPath, fsRootInputSubDirPath)
+			// Relative input path
+			pwdFSRelPath, err := getPWDFSRelPath()
 			if err != nil {
 				return nil, nil, err
 			}
-			for i, targetPath := range osRootBucketTargeting.TargetPaths() {
-				bucketTargetPaths[i], err = normalpath.Rel(fsRootInputSubDirPath, targetPath)
-				if err != nil {
-					return nil, nil, err
-				}
-			}
-			for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
-				bucketTargetExcludePaths[i], err = normalpath.Rel(fsRootInputSubDirPath, targetExcludePath)
-				if err != nil {
-					return nil, nil, err
-				}
-			}
-		}
-	} else {
-		pwd, err := osext.Getwd()
-		if err != nil {
-			return nil, nil, err
-		}
-		_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
-		if err != nil {
-			return nil, nil, err
-		}
-		if osRootBucketTargeting.ControllingWorkspace() != nil {
 			bucketPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.ControllingWorkspace().Path())
 			if err != nil {
 				return nil, nil, err
 			}
-			inputPath = osRootBucketTargeting.InputPath()
-			bucketTargetPaths = osRootBucketTargeting.TargetPaths()
-			bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
-
+		}
+		inputPath = osRootBucketTargeting.InputPath()
+		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
+		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
+	} else {
+		// No controlling workspace found
+		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
+			bucketPath = inputDirPath
 		} else {
-			bucketPath = "."
-			inputPath, err = normalpath.Rel(pwdFSRelPath, osRootBucketTargeting.InputPath())
+			// Relative input path
+			pwdFSRelPath, err := getPWDFSRelPath()
 			if err != nil {
 				return nil, nil, err
 			}
-			for i, targetPath := range osRootBucketTargeting.TargetPaths() {
-				bucketTargetPaths[i], err = normalpath.Rel(pwdFSRelPath, targetPath)
-				if err != nil {
-					return nil, nil, err
-				}
-			}
-			for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
-				bucketTargetExcludePaths[i], err = normalpath.Rel(pwdFSRelPath, targetExcludePath)
+			if filepath.IsLocal(normalpath.Unnormalize(inputDirPath)) {
+				// Use current working directory
+				bucketPath = "."
+			} else {
+				// Relative input path outside of working directory context
+				bucketPath, err = normalpath.Rel(pwdFSRelPath, fsRootInputSubDirPath)
 				if err != nil {
 					return nil, nil, err
 				}
 			}
 		}
+		// Map input path, target paths, and target exclude paths to the new bucket path.
+		_, bucketPathFSRelPath, err := fsRootAndFSRelPathForPath(bucketPath)
+		if err != nil {
+			return nil, nil, err
+		}
+		inputPath, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.InputPath())
+		if err != nil {
+			return nil, nil, err
+		}
+		for i, targetPath := range osRootBucketTargeting.TargetPaths() {
+			bucketTargetPaths[i], err = normalpath.Rel(bucketPathFSRelPath, targetPath)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		for i, targetExcludePath := range osRootBucketTargeting.TargetExcludePaths() {
+			bucketTargetExcludePaths[i], err = normalpath.Rel(bucketPathFSRelPath, targetExcludePath)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 	}
-	// Now that we've mapped the workspace against the FS root, we recreate the bucket with
-	// at the sub dir path.
-	// First we get the absolute path of the controlling workspace, which based on the OS root
-	// bucket targeting is the FS root joined with the controlling workspace path.
-	// And we use it to make a bucket.
 	bucket, err := storageosProvider.NewReadWriteBucket(
 		bucketPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -798,6 +813,20 @@ func getReadBucketCloserForOSProtoFile(
 		return nil, nil, err
 	}
 	return newReadBucketCloserForReadWriteBucket(readWriteBucket), bucketTargeting, nil
+}
+
+// getPWDFSRelPath is a helper function that gets the relative path of the current working
+// directory to the FS root.
+func getPWDFSRelPath() (string, error) {
+	pwd, err := osext.Getwd()
+	if err != nil {
+		return "", err
+	}
+	_, pwdFSRelPath, err := fsRootAndFSRelPathForPath(pwd)
+	if err != nil {
+		return "", err
+	}
+	return pwdFSRelPath, nil
 }
 
 // fsRootAndFSRelPathForPath is a helper function that takes a path and returns the FS

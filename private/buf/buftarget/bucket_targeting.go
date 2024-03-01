@@ -22,9 +22,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// BucketTargeting provides the path to the controllng workspace, target paths, and target
-// exclude paths mapped to the bucket.
-// All paths for targeting information are normalized.
+// BucketTargeting provides targeting information for the bucket based on any controlling
+// workspaces that have been found.
 type BucketTargeting interface {
 	// ControllingWorkpsace returns the information for the controlling workspace, if one was
 	// found. If not found, then this will be nil.
@@ -42,7 +41,12 @@ type BucketTargeting interface {
 // NewBucketTargeting returns new targeting information for the given bucket, input path,
 // target paths, and target exclude paths.
 //
-// Paths must be relative.
+// The inputPath, targetPaths, and targetExcludePaths are expected to be relative to the
+// root of the bucket.
+//
+// If a controlling workspace is found, the input path, target paths, and target exclude
+// paths are mapped as relative paths to the controlling workspace path.
+// Otherwise, the input path, target paths, and target exclude paths are returned as-is.
 func NewBucketTargeting(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -52,7 +56,15 @@ func NewBucketTargeting(
 	targetExcludePaths []string,
 	terminateFunc TerminateFunc,
 ) (BucketTargeting, error) {
-	return newBucketTargeting(ctx, logger, bucket, inputPath, targetPaths, targetExcludePaths, terminateFunc)
+	return newBucketTargeting(
+		ctx,
+		logger,
+		bucket,
+		inputPath,
+		targetPaths,
+		targetExcludePaths,
+		terminateFunc,
+	)
 }
 
 // *** PRIVATE ***
