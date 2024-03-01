@@ -35,15 +35,12 @@ func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
 	bucketPath string,
 	bucketTargeting buftarget.BucketTargeting,
-) (*readBucketCloser, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(bucketTargeting.InputPath())
-	if err != nil {
-		return nil, err
-	}
+) *readBucketCloser {
+	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.InputPath())
 	return &readBucketCloser{
 		ReadBucketCloser: storageReadBucketCloser,
 		subDirPath:       normalizedSubDirPath,
-	}, nil
+	}
 }
 
 func newReadBucketCloserForReadWriteBucket(

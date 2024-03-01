@@ -32,15 +32,12 @@ func newReadWriteBucket(
 	storageReadWriteBucket storage.ReadWriteBucket,
 	bucketPath string,
 	bucketTargeting buftarget.BucketTargeting,
-) (*readWriteBucket, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(bucketTargeting.InputPath())
-	if err != nil {
-		return nil, err
-	}
+) *readWriteBucket {
+	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.InputPath())
 	return &readWriteBucket{
 		ReadWriteBucket: storageReadWriteBucket,
 		subDirPath:      normalizedSubDirPath,
-	}, nil
+	}
 }
 
 func (r *readWriteBucket) SubDirPath() string {

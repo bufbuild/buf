@@ -602,10 +602,7 @@ func getReadBucketCloserForBucket(
 		zap.String("bucketPath", bucketPath),
 		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
 	)
-	readBucketCloser, err := newReadBucketCloser(inputBucket, bucketPath, bucketTargeting)
-	if err != nil {
-		return nil, nil, err
-	}
+	readBucketCloser := newReadBucketCloser(inputBucket, bucketPath, bucketTargeting)
 	return readBucketCloser, bucketTargeting, nil
 }
 
@@ -771,10 +768,7 @@ func getReadWriteBucketForOS(
 	if err != nil {
 		return nil, nil, err
 	}
-	readWriteBucket, err := newReadWriteBucket(bucket, bucketPath, bucketTargeting)
-	if err != nil {
-		return nil, nil, err
-	}
+	readWriteBucket := newReadWriteBucket(bucket, bucketPath, bucketTargeting)
 	return readWriteBucket, bucketTargeting, nil
 }
 

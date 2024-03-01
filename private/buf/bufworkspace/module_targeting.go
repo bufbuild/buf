@@ -173,7 +173,7 @@ func applyRootsToTargetPath(roots []string, path string, pathType normalpath.Pat
 			return "", err
 		}
 		// just in case
-		return normalpath.NormalizeAndValidate(targetPath)
+		return normalpath.Normalize(targetPath), nil
 	default:
 		// this should never happen
 		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))

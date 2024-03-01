@@ -63,10 +63,7 @@ func (o ObjectInfo) LocalPath() string {
 
 // ValidatePath validates a path.
 func ValidatePath(path string) (string, error) {
-	path, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return "", err
-	}
+	path = normalpath.Normalize(path)
 	if path == "." {
 		return "", errors.New("cannot use root")
 	}

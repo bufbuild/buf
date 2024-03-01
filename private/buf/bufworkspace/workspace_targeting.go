@@ -552,10 +552,7 @@ func checkForControllingWorkspaceOrV1Module(
 	bucket storage.ReadBucket,
 	path string,
 ) (buftarget.ControllingWorkspace, error) {
-	path, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return nil, err
-	}
+	path = normalpath.Normalize(path)
 	// Keep track of any v1 module found along the way. If we find a v1 or v2 workspace, we
 	// return that over the v1 module, but we return this as the fallback.
 	var fallbackV1Module buftarget.ControllingWorkspace

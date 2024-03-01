@@ -211,10 +211,7 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 		option.applyToWorkspaceBucketConfig(config)
 	}
 	var err error
-	config.targetSubDirPath, err = normalpath.NormalizeAndValidate(config.targetSubDirPath)
-	if err != nil {
-		return nil, err
-	}
+	config.targetSubDirPath = normalpath.Normalize(config.targetSubDirPath)
 	config.targetPaths, err = slicesext.MapError(
 		config.targetPaths,
 		normalpath.NormalizeAndValidate,
