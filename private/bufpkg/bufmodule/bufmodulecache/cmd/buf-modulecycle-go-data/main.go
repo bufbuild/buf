@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"go/format"
 	"io"
-	"math"
 	"sort"
 	"strings"
 
@@ -32,9 +31,11 @@ import (
 )
 
 const (
-	programName = "modulecycle-go-data"
-	pkgFlagName = "package"
-	sliceLength = math.MaxInt64
+	programName               = "buf-modulecycle-go-data"
+	pkgFlagName               = "package"
+	testModuleFullNameStringA = "bufbuild.internal/foo/bar-a"
+	testModuleFullNameStringB = "bufbuild.internal/foo/bar-b"
+	testModuleFullNameStringC = "bufbuild.internal/foo/bar-c"
 )
 
 func main() {
@@ -98,20 +99,24 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 }
 
 func getSortedHexEncodedDigests(data []byte) ([]string, error) {
-	var lines []string
+	lines := map[string]struct{}{
+		testModuleFullNameStringA: {},
+		testModuleFullNameStringB: {},
+		testModuleFullNameStringC: {},
+	}
 	for _, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
-			lines = append(lines, line)
+			lines[line] = struct{}{}
 		}
 	}
-	hexEncodedDigests := make([]string, len(lines))
-	for i, line := range lines {
+	hexEncodedDigests := make([]string, 0, len(lines))
+	for line := range lines {
 		digest, err := shake256.NewDigestForContent(strings.NewReader(line))
 		if err != nil {
 			return nil, err
 		}
-		hexEncodedDigests[i] = hex.EncodeToString(digest.Value())
+		hexEncodedDigests = append(hexEncodedDigests, hex.EncodeToString(digest.Value()))
 	}
 	sort.Strings(hexEncodedDigests)
 	return hexEncodedDigests, nil
@@ -138,13 +143,36 @@ func getGolangFileData(
 	"encoding/hex"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/shake256"
 )`)
 	p("\n\n")
+	p(`const (`)
+	p("\n")
+	p(`// TestModuleFullNameStringA is a test ModuleFullName string that will always result in Exists returning true.`)
+	p("\n")
+	p(`TestModuleFullNameStringA = "`)
+	p(testModuleFullNameStringA)
+	p(`"`)
+	p("\n")
+	p(`// TestModuleFullNameStringB is a test ModuleFullName string that will always result in Exists returning true.`)
+	p("\n")
+	p(`TestModuleFullNameStringB = "`)
+	p(testModuleFullNameStringB)
+	p(`"`)
+	p("\n")
+	p(`// TestModuleFullNameStringC is a test ModuleFullName string that will always result in Exists returning true.`)
+	p("\n")
+	p(`TestModuleFullNameStringC = "`)
+	p(testModuleFullNameStringC)
+	p(`"`)
+	p("\n\n")
+	p(`)`)
+	p("\n\n")
 	p(`var (`)
 	p("\n")
-	p(`// moduleFullNameStringHexEncodedDigests are the shake256 digests of the module names that are allowed to have cycles for legacy reasons.`)
+	p(`// moduleFullNameStringHexEncodedDigests are the shake256 digests of the module names that are allowed to have cycles for legacy reasons.
+//
+// This list always includes TestModuleFullNameString.* for testing.`)
 	p("\n")
 	p(`moduleFullNameStringHexEncodedDigests = map[string]struct{}{`)
 	p("\n")
@@ -157,12 +185,11 @@ func getGolangFileData(
 	p(`}`)
 	p(`)`)
 	p("\n\n")
-	p(`// Exists returns true if the ModuleFullName is allowed to have a cycle.
-func Exists(moduleFullName bufmodule.ModuleFullName) (bool, error) {
-	if moduleFullName == nil {
+	p(`// Exists returns true if the ModuleFullName string is allowed to have a cycle.
+func Exists(moduleFullNameString string) (bool, error) {
+	if moduleFullNameString == "" {
 		return false, nil
 	}
-	moduleFullNameString := moduleFullName.String()
 	digest, err := shake256.NewDigestForContent(strings.NewReader(moduleFullNameString))
 	if err != nil {
 		return false, err

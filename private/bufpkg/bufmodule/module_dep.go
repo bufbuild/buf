@@ -22,6 +22,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/gen/data/datamodulecycle"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -126,7 +127,19 @@ func getModuleDepsRec(
 ) error {
 	opaqueID := module.OpaqueID()
 	if _, ok := parentOpaqueIDs[opaqueID]; ok {
-		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+		// We assume all Modules that were in the cycle were stored in datamodulecycle, so any
+		// one of them is fine.
+		moduleFullName := module.ModuleFullName()
+		if moduleFullName == nil {
+			return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+		}
+		exists, err := datamodulecycle.Exists(moduleFullName.String())
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
+		}
 	}
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
 		return nil

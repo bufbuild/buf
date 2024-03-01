@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/gen/data/datamodulecycle"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -413,6 +414,54 @@ func TestModuleCycleError(t *testing.T) {
 		},
 		moduleCycleError.OpaqueIDs,
 	)
+}
+
+func TestModuleCycleEAllowed(t *testing.T) {
+	t.Parallel()
+
+	moduleSet, err := bufmoduletesting.NewOmniProvider(
+		bufmoduletesting.ModuleData{
+			Name: datamodulecycle.TestModuleFullNameStringA,
+			PathToData: map[string][]byte{
+				"a.proto": []byte(
+					`syntax = proto3; package a; import "b.proto";`,
+				),
+				"a1.proto": []byte(
+					`syntax = proto3; package a;`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: datamodulecycle.TestModuleFullNameStringB,
+			PathToData: map[string][]byte{
+				"b.proto": []byte(
+					`syntax = proto3; package b; import "c.proto";`,
+				),
+			},
+		},
+		bufmoduletesting.ModuleData{
+			Name: datamodulecycle.TestModuleFullNameStringC,
+			PathToData: map[string][]byte{
+				"c.proto": []byte(
+					`syntax = proto3; package b; import "a1.proto";`,
+				),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	moduleA := moduleSet.GetModuleForOpaqueID(datamodulecycle.TestModuleFullNameStringA)
+	require.NotNil(t, moduleA)
+	_, err = moduleA.ModuleDeps()
+	require.NoError(t, err)
+	moduleB := moduleSet.GetModuleForOpaqueID(datamodulecycle.TestModuleFullNameStringB)
+	require.NotNil(t, moduleB)
+	_, err = moduleB.ModuleDeps()
+	require.NoError(t, err)
+	moduleC := moduleSet.GetModuleForOpaqueID(datamodulecycle.TestModuleFullNameStringC)
+	require.NotNil(t, moduleC)
+	_, err = moduleC.ModuleDeps()
+	require.NoError(t, err)
 }
 
 func TestDuplicateProtoPathError(t *testing.T) {
