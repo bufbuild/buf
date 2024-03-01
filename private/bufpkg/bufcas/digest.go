@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/shake256"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -32,8 +32,6 @@ const (
 	//
 	// This is both the default and the only currently-known value for DigestType.
 	DigestTypeShake256 DigestType = iota + 1
-
-	shake256Length = 64
 )
 
 var (
@@ -103,10 +101,17 @@ func NewDigest(value []byte, options ...DigestOption) (Digest, error) {
 	if digestOptions.digestType == 0 {
 		digestOptions.digestType = DigestTypeShake256
 	}
-	if err := validateDigestParameters(digestOptions.digestType, value); err != nil {
-		return nil, err
+	switch digestOptions.digestType {
+	case DigestTypeShake256:
+		shake256Digest, err := shake256.NewDigest(value)
+		if err != nil {
+			return nil, err
+		}
+		return newDigest(DigestTypeShake256, shake256Digest.Value()), nil
+	default:
+		// This is a system error.
+		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
 	}
-	return newDigest(digestOptions.digestType, value), nil
 }
 
 // NewDigestForContent creates a new Digest based on the given content read from the Reader.
@@ -124,22 +129,11 @@ func NewDigestForContent(reader io.Reader, options ...DigestOption) (Digest, err
 	}
 	switch digestOptions.digestType {
 	case DigestTypeShake256:
-		shakeHash := sha3.NewShake256()
-		// TODO: remove in the future, this should have no effect
-		shakeHash.Reset()
-		if _, err := io.Copy(shakeHash, reader); err != nil {
+		shake256Digest, err := shake256.NewDigestForContent(reader)
+		if err != nil {
 			return nil, err
 		}
-		value := make([]byte, shake256Length)
-		if _, err := shakeHash.Read(value); err != nil {
-			// sha3.ShakeHash never errors or short reads. Something horribly wrong
-			// happened if your computer ended up here.
-			return nil, err
-		}
-		if err := validateDigestParameters(DigestTypeShake256, value); err != nil {
-			return nil, err
-		}
-		return newDigest(DigestTypeShake256, value), nil
+		return newDigest(DigestTypeShake256, shake256Digest.Value()), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown DigestType: %v", digestOptions.digestType)
@@ -265,13 +259,9 @@ func newDigestOptions() *digestOptions {
 func validateDigestParameters(digestType DigestType, value []byte) error {
 	switch digestType {
 	case DigestTypeShake256:
-		if len(value) != shake256Length {
-			return fmt.Errorf(
-				`invalid %s digest value: expected %d bytes, got %d`,
-				digestType.String(),
-				shake256Length,
-				len(value),
-			)
+		_, err := shake256.NewDigest(value)
+		if err != nil {
+			return err
 		}
 	default:
 		// This is really always a system error, but little harm in including it here, even
