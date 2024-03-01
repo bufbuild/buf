@@ -13,6 +13,7 @@ private/buf/bufwkt/cmd/wkt-go-data/wkt-go-data
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 private/buf/cmd/buf/command/alpha/protoc/test.txt
+private/bufpkg/bufmodule/bufmodulecache/cmd/modulecycle-go-data/modulecycle-go-data
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless/buf-commit-id-from-dashless
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless/buf-commit-id-to-dashless
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
@@ -22,7 +23,6 @@ private/bufpkg/buftesting/cache/
 private/pkg/bandeps/cmd/bandeps/bandeps
 private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
 private/pkg/licenseheader/cmd/license-header/license-header
-private/pkg/shake256/cmd/shake256-go-data/shake256-go-data
 private/pkg/spdx/cmd/spdx-go-data/spdx-go-data
 private/pkg/storage/cmd/ddiff/ddiff
 private/pkg/storage/cmd/storage-go-data/storage-go-data

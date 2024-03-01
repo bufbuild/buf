@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	programName = "shake256-go-data"
+	programName = "modulecycle-go-data"
 	pkgFlagName = "package"
 	sliceLength = math.MaxInt64
 )
@@ -81,9 +81,6 @@ func run(ctx context.Context, container appext.Container, flags *flags) error {
 	data, err := io.ReadAll(container.Stdin())
 	if err != nil {
 		return err
-	}
-	if len(data) == 0 {
-		return appcmd.NewInvalidArgumentError("expected data on stdin")
 	}
 	hexEncodedDigests, err := getSortedHexEncodedDigests(data)
 	if err != nil {
@@ -154,7 +151,7 @@ func getGolangFileData(
 	for _, hexEncodedDigest := range hexEncodedDigests {
 		p(`"`)
 		p(hexEncodedDigest)
-		p(`": struct{},`)
+		p(`": {},`)
 		p("\n")
 	}
 	p(`}`)
