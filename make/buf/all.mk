@@ -12,6 +12,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
+	private/pkg/shake256/cmd/shake256-go-data \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
 	private/pkg/licenseheader/cmd/license-header \
@@ -43,6 +44,8 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
+MODULE_CYCLE_FILE_PATH ?=
+
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
 include make/go/dep_minisign.mk
@@ -69,12 +72,18 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installwkt-go-data $(PROTOC)
-	rm -rf private/gen/data
+godata: installspdx-go-data installwkt-go-data installshake256-go-data $(PROTOC)
+	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
-	mkdir -p private/gen/data/dataspdx
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
+	rm -rf private/gen/data/dataspdx
+	mkdir -p private/gen/data/dataspdx
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
+ifdef MODULE_CYCLE_FILE_PATH
+	rm -rf private/gen/data/datamodulecycle
+	mkdir -p private/gen/data/datamodulecycle
+	cat "$(MODULE_CYCLE_FILE_PATH)" | shake256-go-data --package datamodulecycle > private/gen/data/datamodulecycle/datamodulecycle.gen.go
+endif
 
 prepostgenerate:: godata
 
