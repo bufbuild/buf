@@ -29,8 +29,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO(doria): add tests with target paths and target exclude paths
-
 func TestGetReadBucketCloserForBucketNoTerminateFileName(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
