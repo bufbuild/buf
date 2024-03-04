@@ -18,49 +18,49 @@ import (
 	"context"
 	"fmt"
 
-	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"go.uber.org/zap"
 )
 
-// protoOwnerProvider provides a per-call provider of proto Modules.
+// v1ProtoModuleProvider provides a per-call provider of proto Modules.
 //
 // We don't want to persist these across calls - this could grow over time and this cache
 // isn't an LRU cache, and the information also may change over time.
-type protoOwnerProvider struct {
-	logger          *zap.Logger
-	clientProvider  bufapi.OwnerServiceClientProvider
-	protoOwnerCache cache.Cache[string, *ownerv1.Owner]
+type v1ProtoModuleProvider struct {
+	logger           *zap.Logger
+	clientProvider   bufapi.V1ModuleServiceClientProvider
+	protoModuleCache cache.Cache[string, *modulev1.Module]
 }
 
-func newProtoOwnerProvider(
+func newV1ProtoModuleProvider(
 	logger *zap.Logger,
-	clientProvider bufapi.OwnerServiceClientProvider,
-) *protoOwnerProvider {
-	return &protoOwnerProvider{
+	clientProvider bufapi.V1ModuleServiceClientProvider,
+) *v1ProtoModuleProvider {
+	return &protoModuleProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
 	}
 }
 
-func (a *protoOwnerProvider) getProtoOwnerForOwnerID(
+func (a *v1ProtoModuleProvider) getV1ProtoModuleForModuleID(
 	ctx context.Context,
 	registry string,
-	ownerID string,
-) (*ownerv1.Owner, error) {
-	return a.protoOwnerCache.GetOrAdd(
-		registry+"/"+ownerID,
-		func() (*ownerv1.Owner, error) {
-			response, err := a.clientProvider.OwnerServiceClient(registry).GetOwners(
+	moduleID string,
+) (*modulev1.Module, error) {
+	return a.protoModuleCache.GetOrAdd(
+		registry+"/"+moduleID,
+		func() (*modulev1.Module, error) {
+			response, err := a.clientProvider.V1ModuleServiceClient(registry).GetModules(
 				ctx,
 				connect.NewRequest(
-					&ownerv1.GetOwnersRequest{
-						OwnerRefs: []*ownerv1.OwnerRef{
+					&modulev1.GetModulesRequest{
+						ModuleRefs: []*modulev1.ModuleRef{
 							{
-								Value: &ownerv1.OwnerRef_Id{
-									Id: ownerID,
+								Value: &modulev1.ModuleRef_Id{
+									Id: moduleID,
 								},
 							},
 						},
@@ -70,10 +70,10 @@ func (a *protoOwnerProvider) getProtoOwnerForOwnerID(
 			if err != nil {
 				return nil, err
 			}
-			if len(response.Msg.Owners) != 1 {
-				return nil, fmt.Errorf("expected 1 Owner, got %d", len(response.Msg.Owners))
+			if len(response.Msg.Modules) != 1 {
+				return nil, fmt.Errorf("expected 1 Module, got %d", len(response.Msg.Modules))
 			}
-			return response.Msg.Owners[0], nil
+			return response.Msg.Modules[0], nil
 		},
 	)
 }
