@@ -38,7 +38,7 @@ type universalProtoCommit struct {
 	Digest     bufmodule.Digest
 }
 
-func newUniversalProtoCommitForV1(v1ProtoCommit modulev1.Commit) (*universalProtoCommit, error) {
+func newUniversalProtoCommitForV1(v1ProtoCommit *modulev1.Commit) (*universalProtoCommit, error) {
 	digest, err := V1ProtoToDigest(v1ProtoCommit.Digest)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func newUniversalProtoCommitForV1(v1ProtoCommit modulev1.Commit) (*universalProt
 	}, nil
 }
 
-func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit modulev1beta1.Commit) (*universalProtoCommit, error) {
+func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit *modulev1beta1.Commit) (*universalProtoCommit, error) {
 	digest, err := V1Beta1ProtoToDigest(v1beta1ProtoCommit.Digest)
 	if err != nil {
 		return nil, err

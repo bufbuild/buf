@@ -111,7 +111,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	// isn't an LRU cache, and the information also may change over time.
 	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
 	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
-	protoLegacyFederationGraph, err := a.getProtoLegacyFederationGraphForModuleKeys(ctx, moduleKeys, digestType)
+	v1beta1ProtoGraph, err := a.getV1Beta1ProtoGraphForModuleKeys(ctx, moduleKeys, digestType)
 	if err != nil {
 		return nil, err
 	}
@@ -124,23 +124,28 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	for _, protoLegacyFederationCommit := range protoLegacyFederationGraph.Commits {
-		registry := protoLegacyFederationCommit.Registry
-		commitID, err := uuid.FromString(protoLegacyFederationCommit.Commit.Id)
+	for _, v1beta1ProtoGraphCommit := range v1beta1ProtoGraph.Commits {
+		v1beta1ProtoCommit := v1beta1ProtoGraphCommit.Commit
+		registry := v1beta1ProtoGraphCommit.Registry
+		commitID, err := uuid.FromString(v1beta1ProtoCommit.Id)
 		if err != nil {
 			return nil, err
 		}
 		registryCommitID := bufmodule.NewRegistryCommitID(registry, commitID)
 		moduleKey, ok := registryCommitIDToModuleKey[registryCommitID]
 		if !ok {
+			universalProtoCommit, err := newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit)
+			if err != nil {
+				return nil, err
+			}
 			// This may be a transitive dependency that we don't have. In this case,
 			// go out to the API and get the transitive dependency.
-			moduleKey, err = getModuleKeyForProtoCommit(
+			moduleKey, err = getModuleKeyForUniversalProtoCommit(
 				ctx,
 				v1ProtoModuleProvider,
 				v1ProtoOwnerProvider,
 				registry,
-				protoLegacyFederationCommit.Commit,
+				universalProtoCommit,
 			)
 			if err != nil {
 				return nil, err
@@ -149,9 +154,9 @@ func (a *graphProvider) GetGraphForModuleKeys(
 		}
 		graph.AddNode(moduleKey)
 	}
-	for _, protoLegacyFederationEdge := range protoLegacyFederationGraph.Edges {
-		fromRegistry := protoLegacyFederationEdge.FromNode.Registry
-		fromCommitID, err := uuid.FromString(protoLegacyFederationEdge.FromNode.CommitId)
+	for _, v1beta1ProtoEdge := range v1beta1ProtoGraph.Edges {
+		fromRegistry := v1beta1ProtoEdge.FromNode.Registry
+		fromCommitID, err := uuid.FromString(v1beta1ProtoEdge.FromNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -162,8 +167,8 @@ func (a *graphProvider) GetGraphForModuleKeys(
 			// This could be an API error, but regardless we consider it a system error here.
 			return nil, syserror.Newf("did not have RegistryCommitID %v in registryCommitIDToModuleKey", fromRegistryCommitID)
 		}
-		toRegistry := protoLegacyFederationEdge.ToNode.Registry
-		toCommitID, err := uuid.FromString(protoLegacyFederationEdge.ToNode.CommitId)
+		toRegistry := v1beta1ProtoEdge.ToNode.Registry
+		toCommitID, err := uuid.FromString(v1beta1ProtoEdge.ToNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +184,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	return graph, nil
 }
 
-func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
+func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 	digestType bufmodule.DigestType,
@@ -188,38 +193,40 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if secondaryRegistry == "" {
+	if secondaryRegistry == "" && digestType == bufmodule.DigestTypeB5 {
 		// If we only have a single registry, invoke the new API endpoint that does not allow
 		// for federation. Do this so that we can maintain federated API endpoint metrics.
-		graph, err := a.getProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys, digestType)
+		graph, err := a.getV1ProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys)
 		if err != nil {
 			return nil, err
 		}
-		return protoGraphToProtoLegacyFederationGraph(primaryRegistry, graph), nil
+		return v1ProtoGraphToV1Beta1ProtoGraph(primaryRegistry, graph), nil
 	}
 
 	registryCommitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
-	protoDigestType, err := digestTypeToProto(digestType)
+	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
 	if err != nil {
 		return nil, err
 	}
-	response, err := a.clientProvider.LegacyFederationGraphServiceClient(primaryRegistry).GetGraph(
+	response, err := a.clientProvider.V1Beta1GraphServiceClient(primaryRegistry).GetGraph(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetGraphRequest{
 				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					registryCommitIDs,
-					func(registryCommitID bufmodule.RegistryCommitID) *modulev1beta1.ResourceRef {
-						return &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
-								Id: registryCommitID.CommitID.String(),
+					func(registryCommitID bufmodule.RegistryCommitID) *modulev1beta1.GetGraphRequest_ResourceRef {
+						return &modulev1beta1.GetGraphRequest_ResourceRef{
+							ResourceRef: &modulev1beta1.ResourceRef{
+								Value: &modulev1beta1.ResourceRef_Id{
+									Id: registryCommitID.CommitID.String(),
+								},
 							},
 							Registry: registryCommitID.Registry,
 						}
 					},
 				),
-				DigestType: protoDigestType,
+				DigestType: v1beta1ProtoDigestType,
 			},
 		),
 	)
@@ -248,18 +255,13 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 	return response.Msg.Graph, nil
 }
 
-func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
+func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 	ctx context.Context,
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
-	digestType bufmodule.DigestType,
 ) (*modulev1.Graph, error) {
 	commitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
-	protoDigestType, err := digestTypeToProto(digestType)
-	if err != nil {
-		return nil, err
-	}
-	response, err := a.clientProvider.GraphServiceClient(registry).GetGraph(
+	response, err := a.clientProvider.V1GraphServiceClient(registry).GetGraph(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetGraphRequest{
@@ -274,7 +276,6 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 						}
 					},
 				),
-				DigestType: protoDigestType,
 			},
 		),
 	)

@@ -33,6 +33,7 @@ func getModuleKeyForUniversalProtoCommit(
 		ctx,
 		v1ProtoModuleProvider,
 		v1ProtoOwnerProvider,
+		registry,
 		univeralProtoCommit.OwnerID,
 		universalProtoCommit.ModuleID,
 	)
