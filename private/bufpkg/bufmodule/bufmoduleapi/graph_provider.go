@@ -18,7 +18,7 @@ import (
 	"context"
 	"io/fs"
 
-	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -183,7 +183,7 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 	digestType bufmodule.DigestType,
-) (*federationv1beta1.Graph, error) {
+) (*modulev1beta1.Graph, error) {
 	primaryRegistry, secondaryRegistry, err := getPrimarySecondaryRegistry(moduleKeys, a.publicRegistry)
 	if err != nil {
 		return nil, err
@@ -206,13 +206,13 @@ func (a *graphProvider) getProtoLegacyFederationGraphForModuleKeys(
 	response, err := a.clientProvider.LegacyFederationGraphServiceClient(primaryRegistry).GetGraph(
 		ctx,
 		connect.NewRequest(
-			&federationv1beta1.GetGraphRequest{
+			&modulev1beta1.GetGraphRequest{
 				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					registryCommitIDs,
-					func(registryCommitID bufmodule.RegistryCommitID) *federationv1beta1.ResourceRef {
-						return &federationv1beta1.ResourceRef{
-							Value: &federationv1beta1.ResourceRef_Id{
+					func(registryCommitID bufmodule.RegistryCommitID) *modulev1beta1.ResourceRef {
+						return &modulev1beta1.ResourceRef{
+							Value: &modulev1beta1.ResourceRef_Id{
 								Id: registryCommitID.CommitID.String(),
 							},
 							Registry: registryCommitID.Registry,
@@ -253,7 +253,7 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 	registry string,
 	moduleKeys []bufmodule.ModuleKey,
 	digestType bufmodule.DigestType,
-) (*modulev1beta1.Graph, error) {
+) (*modulev1.Graph, error) {
 	commitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKey.CommitID)
 	protoDigestType, err := digestTypeToProto(digestType)
 	if err != nil {
@@ -262,13 +262,13 @@ func (a *graphProvider) getProtoGraphForRegistryAndModuleKeys(
 	response, err := a.clientProvider.GraphServiceClient(registry).GetGraph(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.GetGraphRequest{
+			&modulev1.GetGraphRequest{
 				// TODO FUTURE: chunking
 				ResourceRefs: slicesext.Map(
 					commitIDs,
-					func(commitID uuid.UUID) *modulev1beta1.ResourceRef {
-						return &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Id{
+					func(commitID uuid.UUID) *modulev1.ResourceRef {
+						return &modulev1.ResourceRef{
+							Value: &modulev1.ResourceRef_Id{
 								Id: commitID.String(),
 							},
 						}

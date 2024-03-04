@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	federationv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/legacy/federation/v1beta1"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -144,7 +144,7 @@ func (a *uploader) Upload(
 	// Maintains ordering, important for when we create bufmodule.Commit objects below.
 	protoLegacyFederationUploadRequestContents, err := slicesext.MapError(
 		contentModules,
-		func(module bufmodule.Module) (*federationv1beta1.UploadRequest_Content, error) {
+		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
 			return getProtoLegacyFederationUploadRequestContent(
 				ctx,
 				protoScopedLabelRefs,
@@ -179,14 +179,14 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
-	var protoCommits []*modulev1beta1.Commit
+	var protoCommits []*modulev1.Commit
 	if len(remoteDepRegistries) > 0 && (len(remoteDepRegistries) > 1 || remoteDepRegistries[0] != primaryRegistry) {
 		// If we have dependencies on other registries, or we have multiple registries we depend on, we have
 		// to use legacy federation.
 		response, err := a.clientProvider.LegacyFederationUploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
-				&federationv1beta1.UploadRequest{
+				&modulev1beta1.UploadRequest{
 					Contents: protoLegacyFederationUploadRequestContents,
 					DepRefs:  protoLegacyFederationDepRefs,
 				},
@@ -207,14 +207,14 @@ func (a *uploader) Upload(
 		)
 		protoDepCommitIds := slicesext.Map(
 			protoLegacyFederationDepRefs,
-			func(protoLegacyFederationDepRef *federationv1beta1.UploadRequest_DepRef) string {
+			func(protoLegacyFederationDepRef *modulev1beta1.UploadRequest_DepRef) string {
 				return protoLegacyFederationDepRef.CommitId
 			},
 		)
 		response, err := a.clientProvider.UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
-				&modulev1beta1.UploadRequest{
+				&modulev1.UploadRequest{
 					Contents:     protoUploadRequestContents,
 					DepCommitIds: protoDepCommitIds,
 				},
@@ -274,13 +274,13 @@ func (a *uploader) createContentModulesIfNotExist(
 	if _, err := a.clientProvider.ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.CreateModulesRequest{
+			&modulev1.CreateModulesRequest{
 				Values: slicesext.Map(
 					contentModules,
-					func(module bufmodule.Module) *modulev1beta1.CreateModulesRequest_Value {
-						return &modulev1beta1.CreateModulesRequest_Value{
-							OwnerRef: &ownerv1beta1.OwnerRef{
-								Value: &ownerv1beta1.OwnerRef_Name{
+					func(module bufmodule.Module) *modulev1.CreateModulesRequest_Value {
+						return &modulev1.CreateModulesRequest_Value{
+							OwnerRef: &ownerv1.OwnerRef{
+								Value: &ownerv1.OwnerRef_Name{
 									Name: module.ModuleFullName().Owner(),
 								},
 							},
@@ -305,13 +305,13 @@ func (a *uploader) validateContentModulesExist(
 	_, err := a.clientProvider.ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
 		connect.NewRequest(
-			&modulev1beta1.GetModulesRequest{
+			&modulev1.GetModulesRequest{
 				ModuleRefs: slicesext.Map(
 					contentModules,
-					func(module bufmodule.Module) *modulev1beta1.ModuleRef {
-						return &modulev1beta1.ModuleRef{
-							Value: &modulev1beta1.ModuleRef_Name_{
-								Name: &modulev1beta1.ModuleRef_Name{
+					func(module bufmodule.Module) *modulev1.ModuleRef {
+						return &modulev1.ModuleRef{
+							Value: &modulev1.ModuleRef_Name_{
+								Name: &modulev1.ModuleRef_Name{
 									Owner:  module.ModuleFullName().Owner(),
 									Module: module.ModuleFullName().Name(),
 								},
@@ -349,10 +349,10 @@ func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (stri
 
 func getProtoLegacyFederationUploadRequestContent(
 	ctx context.Context,
-	protoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
+	protoScopedLabelRefs []*modulev1.ScopedLabelRef,
 	primaryRegistry string,
 	module bufmodule.Module,
-) (*federationv1beta1.UploadRequest_Content, error) {
+) (*modulev1beta1.UploadRequest_Content, error) {
 	if !module.IsLocal() {
 		return nil, syserror.New("expected local Module in getProtoLegacyFederationUploadRequestContent")
 	}
@@ -377,10 +377,10 @@ func getProtoLegacyFederationUploadRequestContent(
 		return nil, err
 	}
 
-	return &federationv1beta1.UploadRequest_Content{
-		ModuleRef: &modulev1beta1.ModuleRef{
-			Value: &modulev1beta1.ModuleRef_Name_{
-				Name: &modulev1beta1.ModuleRef_Name{
+	return &modulev1beta1.UploadRequest_Content{
+		ModuleRef: &modulev1.ModuleRef{
+			Value: &modulev1.ModuleRef_Name_{
+				Name: &modulev1.ModuleRef_Name{
 					Owner:  module.ModuleFullName().Owner(),
 					Module: module.ModuleFullName().Name(),
 				},
@@ -399,7 +399,7 @@ func getProtoLegacyFederationUploadRequestContent(
 
 func getProtoLegacyFederationUploadRequestDepRef(
 	remoteDep bufmodule.RemoteDep,
-) (*federationv1beta1.UploadRequest_DepRef, error) {
+) (*modulev1beta1.UploadRequest_DepRef, error) {
 	if remoteDep.ModuleFullName() == nil {
 		return nil, newRequireModuleFullNameOnUploadError(remoteDep)
 	}
@@ -407,7 +407,7 @@ func getProtoLegacyFederationUploadRequestDepRef(
 	if depCommitID.IsNil() {
 		return nil, syserror.Newf("did not have a commit ID for a remote module dependency %q", remoteDep.OpaqueID())
 	}
-	return &federationv1beta1.UploadRequest_DepRef{
+	return &modulev1beta1.UploadRequest_DepRef{
 		CommitId: depCommitID.String(),
 		Registry: remoteDep.ModuleFullName().Registry(),
 	}, nil
