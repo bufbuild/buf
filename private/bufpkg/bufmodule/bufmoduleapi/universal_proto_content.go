@@ -37,10 +37,10 @@ type universalProtoContent struct {
 	V1BufLockFile *universalProtoFile
 }
 
-func newUniversalProtoContentForV1(v1ProtoContent *modulev1.DownloadResponse_Content) {
+func newUniversalProtoContentForV1(v1ProtoContent *modulev1.DownloadResponse_Content) *universalProtoContent {
 	return &universalProtoContent{
 		CommitID: v1ProtoContent.Commit.Id,
-		ModuleD:  v1ProtoContent.Commit.ModuleId,
+		ModuleID: v1ProtoContent.Commit.ModuleId,
 		Files:    slicesext.Map(v1ProtoContent.Files, newUniversalProtoFileForV1),
 	}
 }
@@ -48,7 +48,7 @@ func newUniversalProtoContentForV1(v1ProtoContent *modulev1.DownloadResponse_Con
 func newUniversalProtoContentForV1Beta1(v1beta1ProtoContent *modulev1beta1.DownloadResponse_Content) *universalProtoContent {
 	return &universalProtoContent{
 		CommitID:      v1beta1ProtoContent.Commit.Id,
-		ModuleD:       v1beta1ProtoContent.Commit.ModuleId,
+		ModuleID:      v1beta1ProtoContent.Commit.ModuleId,
 		Files:         slicesext.Map(v1beta1ProtoContent.Files, newUniversalProtoFileForV1Beta1),
 		V1BufYAMLFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile),
 		V1BufLockFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile),
@@ -72,14 +72,14 @@ func getUniversalProtoContentsForRegistryAndCommitIDs(
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1beta1ProtoContents, newUniversalProtoContentForV1Beta1)
+		return slicesext.Map(v1beta1ProtoContents, newUniversalProtoContentForV1Beta1), nil
 	case bufmodule.DigestTypeB5:
 		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
 		v1ProtoContents, err := getV1ProtoContentsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
 		}
-		return slicesext.MapError(v1ProtoContents, newUniversalProtoContentForV1)
+		return slicesext.Map(v1ProtoContents, newUniversalProtoContentForV1), nil
 	default:
 		return nil, syserror.Newf("unknown DigestType: %v", digestType)
 	}
@@ -89,14 +89,21 @@ func getV1ProtoContentsForRegistryAndResourceRefs(
 	ctx context.Context,
 	clientProvider bufapi.V1DownloadServiceClientProvider,
 	registry string,
-	v1ProtoResourceRefs *[]modulev1.ResourceRef,
+	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.DownloadResponse_Content, error) {
 	response, err := clientProvider.V1DownloadServiceClient(registry).Download(
 		ctx,
 		connect.NewRequest(
-			&modulev1.Downloadequest{
+			&modulev1.DownloadRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: v1ProtoResourceRefs,
+				Values: slicesext.Map(
+					v1ProtoResourceRefs,
+					func(v1ProtoResourceRef *modulev1.ResourceRef) *modulev1.DownloadRequest_Value {
+						return &modulev1.DownloadRequest_Value{
+							ResourceRef: v1ProtoResourceRef,
+						}
+					},
+				),
 			},
 		),
 	)
@@ -117,7 +124,7 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 	ctx context.Context,
 	clientProvider bufapi.V1Beta1DownloadServiceClientProvider,
 	registry string,
-	v1beta1ProtoResourceRefs *[]modulev1beta1.ResourceRef,
+	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.DownloadResponse_Content, error) {
 	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
@@ -129,8 +136,15 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 		connect.NewRequest(
 			&modulev1beta1.DownloadRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: v1Beta1ProtoResourceRefs,
-				DigestType:   v1Beta1ProtoDigestType,
+				Values: slicesext.Map(
+					v1beta1ProtoResourceRefs,
+					func(v1beta1ProtoResourceRef *modulev1beta1.ResourceRef) *modulev1beta1.DownloadRequest_Value {
+						return &modulev1beta1.DownloadRequest_Value{
+							ResourceRef: v1beta1ProtoResourceRef,
+						}
+					},
+				),
+				DigestType: v1beta1ProtoDigestType,
 			},
 		),
 	)
@@ -141,8 +155,8 @@ func getV1Beta1ProtoContentsForRegistryAndResourceRefs(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Contents) != len(v1Beta1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1Beta1ProtoResourceRefs), len(response.Msg.Contents))
+	if len(response.Msg.Contents) != len(v1beta1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Contents, got %d", len(v1beta1ProtoResourceRefs), len(response.Msg.Contents))
 	}
 	return response.Msg.Contents, nil
 }

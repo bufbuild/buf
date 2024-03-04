@@ -101,14 +101,14 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
-	univeralProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.clientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
+	universalProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.clientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
 	if err != nil {
 		return nil, err
 	}
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, universalProtoCommit := range universalProtoCommits {
 		universalProtoCommit := universalProtoCommit
-		commitID, err := uuid.FromString(universalProtoCommit.IDDC)
+		commitID, err := uuid.FromString(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
 		}

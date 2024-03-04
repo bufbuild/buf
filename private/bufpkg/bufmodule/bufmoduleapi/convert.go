@@ -57,11 +57,11 @@ func DigestToV1Proto(digest bufmodule.Digest) (*modulev1.Digest, error) {
 	}, nil
 }
 
-// ProtoToV1Digest converts the given proto Digest to a Digest.
+// V1ProtoToDigest converts the given proto Digest to a Digest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func ProtoToV1Digest(protoDigest *modulev1.Digest) (bufmodule.Digest, error) {
+func V1ProtoToDigest(protoDigest *modulev1.Digest) (bufmodule.Digest, error) {
 	digestType, err := v1ProtoToDigestType(protoDigest.Type)
 	if err != nil {
 		return nil, err
@@ -85,11 +85,11 @@ func DigestToV1Beta1Proto(digest bufmodule.Digest) (*modulev1beta1.Digest, error
 	}, nil
 }
 
-// ProtoToV1Beta1Digest converts the given proto Digest to a Digest.
+// V1Beta1ProtoToDigest converts the given proto Digest to a Digest.
 //
 // Validation is performed to ensure the DigestType is known, and the value
 // is a valid digest value for the given DigestType.
-func ProtoToV1Beta1Digest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
+func V1Beta1ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, error) {
 	digestType, err := v1beta1ProtoToDigestType(protoDigest.Type)
 	if err != nil {
 		return nil, err

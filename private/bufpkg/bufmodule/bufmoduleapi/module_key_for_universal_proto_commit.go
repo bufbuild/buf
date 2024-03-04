@@ -34,7 +34,7 @@ func getModuleKeyForUniversalProtoCommit(
 		v1ProtoModuleProvider,
 		v1ProtoOwnerProvider,
 		registry,
-		univeralProtoCommit.OwnerID,
+		universalProtoCommit.OwnerID,
 		universalProtoCommit.ModuleID,
 	)
 	if err != nil {

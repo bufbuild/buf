@@ -28,7 +28,7 @@ type universalProtoFile struct {
 	Content []byte
 }
 
-func newUniversalProtoFileForV1(v1File *modulev1.File) {
+func newUniversalProtoFileForV1(v1File *modulev1.File) *universalProtoFile {
 	return &universalProtoFile{
 		Path:    v1File.Path,
 		Content: v1File.Content,

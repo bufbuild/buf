@@ -47,7 +47,7 @@ func newUniversalProtoCommitForV1(v1ProtoCommit *modulev1.Commit) (*universalPro
 		ID:         v1ProtoCommit.Id,
 		OwnerID:    v1ProtoCommit.OwnerId,
 		ModuleID:   v1ProtoCommit.ModuleId,
-		CreateTime: v1ProtoCommit.CreateTime().AsTime(),
+		CreateTime: v1ProtoCommit.CreateTime.AsTime(),
 		Digest:     digest,
 	}, nil
 }
@@ -61,7 +61,7 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit *modulev1beta1.Commit)
 		ID:         v1beta1ProtoCommit.Id,
 		OwnerID:    v1beta1ProtoCommit.OwnerId,
 		ModuleID:   v1beta1ProtoCommit.ModuleId,
-		CreateTime: v1beta1ProtoCommit.CreateTime().AsTime(),
+		CreateTime: v1beta1ProtoCommit.CreateTime.AsTime(),
 		Digest:     digest,
 	}, nil
 }
@@ -126,7 +126,7 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 ) ([]*universalProtoCommit, error) {
 	switch digestType {
 	case bufmodule.DigestTypeB4:
-		v1Beta1ProtoResourceRefs := moduleRefsToV1VBeta1ProtoResourceRefs(moduleRefs)
+		v1beta1ProtoResourceRefs := moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs)
 		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
@@ -148,7 +148,7 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
 	clientProvider bufapi.V1CommitServiceClientProvider,
 	registry string,
-	v1ProtoResourceRefs *[]modulev1.ResourceRef,
+	v1ProtoResourceRefs []*modulev1.ResourceRef,
 ) ([]*modulev1.Commit, error) {
 	response, err := clientProvider.V1CommitServiceClient(registry).GetCommits(
 		ctx,
@@ -176,7 +176,7 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 	ctx context.Context,
 	clientProvider bufapi.V1Beta1CommitServiceClientProvider,
 	registry string,
-	v1beta1ProtoResourceRefs *[]modulev1beta1.ResourceRef,
+	v1beta1ProtoResourceRefs []*modulev1beta1.ResourceRef,
 	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.Commit, error) {
 	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
@@ -188,8 +188,8 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: v1Beta1ProtoResourceRefs,
-				DigestType:   v1Beta1ProtoDigestType,
+				ResourceRefs: v1beta1ProtoResourceRefs,
+				DigestType:   v1beta1ProtoDigestType,
 			},
 		),
 	)
@@ -200,8 +200,8 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(v1Beta1ProtoResourceRefs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1Beta1ProtoResourceRefs), len(response.Msg.Commits))
+	if len(response.Msg.Commits) != len(v1beta1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1beta1ProtoResourceRefs), len(response.Msg.Commits))
 	}
 	return response.Msg.Commits, nil
 }
