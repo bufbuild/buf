@@ -152,33 +152,6 @@ func v1beta1ProtoToDigestType(protoDigestType modulev1beta1.DigestType) (bufmodu
 }
 
 // It is assumed that the bucket is already filtered to just module files.
-func bucketToV1ProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modulev1.File, error) {
-	var protoFiles []*modulev1.File
-	if err := storage.WalkReadObjects(
-		ctx,
-		bucket,
-		"",
-		func(readObject storage.ReadObject) error {
-			data, err := io.ReadAll(readObject)
-			if err != nil {
-				return err
-			}
-			protoFiles = append(
-				protoFiles,
-				&modulev1.File{
-					Path:    readObject.Path(),
-					Content: data,
-				},
-			)
-			return nil
-		},
-	); err != nil {
-		return nil, err
-	}
-	return protoFiles, nil
-}
-
-// It is assumed that the bucket is already filtered to just module files.
 func bucketToV1Beta1ProtoFiles(ctx context.Context, bucket storage.ReadBucket) ([]*modulev1beta1.File, error) {
 	var protoFiles []*modulev1beta1.File
 	if err := storage.WalkReadObjects(
@@ -203,34 +176,6 @@ func bucketToV1Beta1ProtoFiles(ctx context.Context, bucket storage.ReadBucket) (
 		return nil, err
 	}
 	return protoFiles, nil
-}
-
-func objectDataToV1ProtoFile(objectData bufmodule.ObjectData) *modulev1.File {
-	if objectData == nil {
-		return nil
-	}
-	return &modulev1.File{
-		Path:    objectData.Name(),
-		Content: objectData.Data(),
-	}
-}
-
-func objectDataToV1Beta1ProtoFile(objectData bufmodule.ObjectData) *modulev1beta1.File {
-	if objectData == nil {
-		return nil
-	}
-	return &modulev1beta1.File{
-		Path:    objectData.Name(),
-		Content: objectData.Data(),
-	}
-}
-
-func labelNameToV1ProtoScopedLabelRef(labelName string) *modulev1.ScopedLabelRef {
-	return &modulev1.ScopedLabelRef{
-		Value: &modulev1.ScopedLabelRef_Name{
-			Name: labelName,
-		},
-	}
 }
 
 func labelNameToV1Beta1ProtoScopedLabelRef(labelName string) *modulev1beta1.ScopedLabelRef {

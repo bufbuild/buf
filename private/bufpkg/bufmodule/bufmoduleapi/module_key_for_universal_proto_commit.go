@@ -29,7 +29,7 @@ func getModuleKeyForUniversalProtoCommit(
 	registry string,
 	universalProtoCommit *universalProtoCommit,
 ) (bufmodule.ModuleKey, error) {
-	moduleFullName, err := getModuleFullNameForRegistryProtoOwnerIdProtoModuleId(
+	moduleFullName, err := getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 		ctx,
 		v1ProtoModuleProvider,
 		v1ProtoOwnerProvider,
@@ -53,7 +53,7 @@ func getModuleKeyForUniversalProtoCommit(
 	)
 }
 
-func getModuleFullNameForRegistryProtoOwnerIdProtoModuleId(
+func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 	ctx context.Context,
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	v1ProtoOwnerProvider *v1ProtoOwnerProvider,

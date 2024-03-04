@@ -126,7 +126,6 @@ func getGolangFileData(
 	packageName string,
 	hexEncodedDigests []string,
 ) ([]byte, error) {
-
 	buffer := bytes.NewBuffer(nil)
 	p := func(s string) {
 		_, _ = buffer.WriteString(s)
