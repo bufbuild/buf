@@ -26,7 +26,7 @@ import (
 // the Digest for the Commit.
 func DigestForCommitID(
 	ctx context.Context,
-	clientProvider struct {
+	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider
 	},

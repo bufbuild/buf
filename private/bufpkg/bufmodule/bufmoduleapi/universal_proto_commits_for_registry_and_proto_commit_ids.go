@@ -32,6 +32,8 @@ import (
 
 type universalProtoCommit struct {
 	ID         string
+	OwnerID    string
+	ModuleID   string
 	CreateTime time.Time
 	Digest     bufmodule.Digest
 }
@@ -43,6 +45,8 @@ func newUniversalProtoCommitForV1(v1ProtoCommit modulev1.Commit) (*universalProt
 	}
 	return &universalProtoCommit{
 		ID:         v1ProtoCommit.Id,
+		OwnerID:    v1ProtoCommit.OwnerId,
+		ModuleID:   v1ProtoCommit.ModuleId,
 		CreateTime: v1ProtoCommit.CreateTime().AsTime(),
 		Digest:     digest,
 	}, nil
@@ -55,6 +59,8 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit modulev1beta1.Commit) 
 	}
 	return &universalProtoCommit{
 		ID:         v1beta1ProtoCommit.Id,
+		OwnerID:    v1beta1ProtoCommit.OwnerId,
+		ModuleID:   v1beta1ProtoCommit.ModuleId,
 		CreateTime: v1beta1ProtoCommit.CreateTime().AsTime(),
 		Digest:     digest,
 	}, nil
@@ -62,7 +68,7 @@ func newUniversalProtoCommitForV1Beta1(v1beta1ProtoCommit modulev1beta1.Commit) 
 
 func getUniversalProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider struct {
+	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider
 	},
@@ -80,7 +86,7 @@ func getUniversalProtoCommitForRegistryAndCommitID(
 
 func getUniversalProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider struct {
+	clientProvider interface {
 		bufapi.V1CommitServiceClientProvider
 		bufapi.V1Beta1CommitServiceClientProvider
 	},
