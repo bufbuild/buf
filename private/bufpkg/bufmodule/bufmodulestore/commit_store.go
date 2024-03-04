@@ -314,9 +314,9 @@ func getCommitStoreFilePath(commitKey bufmodule.CommitKey) string {
 //
 // We could use a protobuf Message for this.
 //
-// Note that we do not want to use modulev1beta1.Commit. This would hard-link the API
+// Note that we do not want to use registry-proto Commits. This would hard-link the API
 // and persistence layers, and a bufmodule.Commit does not have all the information that
-// a modulev1beta1.Commit has.
+// a registry-proto Commit has.
 type externalCommit struct {
 	Version    string    `json:"version,omitempty" yaml:"version,omitempty"`
 	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`

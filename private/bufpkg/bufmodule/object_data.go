@@ -27,7 +27,7 @@ import (
 // As opposed to most of our interfaces, it does not have a private method limiting its implementation
 // to this package.
 //
-// modulev1beta1.Files can be converted into ObjectDatas.
+// registry-proto Files can be converted into ObjectDatas.
 type ObjectData interface {
 	// Name returns the file name.
 	//
