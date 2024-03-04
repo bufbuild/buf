@@ -45,7 +45,6 @@ type WorkspaceDepManagerProvider interface {
 		ctx context.Context,
 		bucket storage.ReadWriteBucket,
 		bucketTargeting buftarget.BucketTargeting,
-		options ...WorkspaceDepManagerOption,
 	) (WorkspaceDepManager, error)
 }
 
@@ -81,7 +80,6 @@ func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	ctx context.Context,
 	bucket storage.ReadWriteBucket,
 	bucketTargeting buftarget.BucketTargeting,
-	options ...WorkspaceDepManagerOption,
 ) (_ WorkspaceDepManager, retErr error) {
 	controllingWorkspace := bucketTargeting.ControllingWorkspace()
 	if controllingWorkspace == nil || controllingWorkspace.BufWorkYAMLFile() != nil {

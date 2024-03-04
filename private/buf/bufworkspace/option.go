@@ -29,21 +29,9 @@ type WorkspaceBucketOption interface {
 	applyToWorkspaceBucketConfig(*workspaceBucketConfig)
 }
 
-// WorkspaceDepManagerOption is an option for a new WorkspaceDepManager.
-type WorkspaceDepManagerOption interface {
-	applyToWorkspaceDepManagerConfig(*workspaceDepManagerConfig)
-}
-
 // WorkspaceModuleKeyOption is an option for a new Workspace created by a ModuleKey.
 type WorkspaceModuleKeyOption interface {
 	applyToWorkspaceModuleKeyConfig(*workspaceModuleKeyConfig)
-}
-
-// WorkspaceBucketOrDepManagerOption is an option that applies to either creating
-// a Workspace by Bucket, or creating a WorkspaceDepManager.
-type WorkspaceBucketAndDepManagerOption interface {
-	WorkspaceBucketOption
-	WorkspaceDepManagerOption
 }
 
 // WorkspaceOption is an option for a new Workspace created by either a Bucket or ModuleKey.
@@ -59,7 +47,7 @@ type WorkspaceBucketAndModuleKeyOption interface {
 // the foo/bar module.
 //
 // A TargetSubDirPath of "." is equivalent of not setting this option.
-func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketAndDepManagerOption {
+func WithTargetSubDirPath(targetSubDirPath string) WorkspaceBucketOption {
 	return &workspaceTargetSubDirPathOption{
 		targetSubDirPath: targetSubDirPath,
 	}
@@ -145,10 +133,6 @@ type workspaceTargetSubDirPathOption struct {
 }
 
 func (s *workspaceTargetSubDirPathOption) applyToWorkspaceBucketConfig(config *workspaceBucketConfig) {
-	config.targetSubDirPath = s.targetSubDirPath
-}
-
-func (s *workspaceTargetSubDirPathOption) applyToWorkspaceDepManagerConfig(config *workspaceDepManagerConfig) {
 	config.targetSubDirPath = s.targetSubDirPath
 }
 
@@ -271,23 +255,6 @@ func newWorkspaceBucketConfig(options []WorkspaceBucketOption) (*workspaceBucket
 				return nil, fmt.Errorf("given input %s is equal to a value of --exclude-path %s - this would exclude everything", unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
 			}
 		}
-	}
-	return config, nil
-}
-
-type workspaceDepManagerConfig struct {
-	targetSubDirPath string
-}
-
-func newWorkspaceDepManagerConfig(options []WorkspaceDepManagerOption) (*workspaceDepManagerConfig, error) {
-	config := &workspaceDepManagerConfig{}
-	for _, option := range options {
-		option.applyToWorkspaceDepManagerConfig(config)
-	}
-	var err error
-	config.targetSubDirPath, err = normalpath.NormalizeAndValidate(config.targetSubDirPath)
-	if err != nil {
-		return nil, err
 	}
 	return config, nil
 }
