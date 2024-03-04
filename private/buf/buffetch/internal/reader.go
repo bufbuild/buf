@@ -587,7 +587,7 @@ func getReadBucketCloserForBucket(
 	if bucketTargeting.ControllingWorkspace() != nil {
 		bucketPath = bucketTargeting.ControllingWorkspace().Path()
 	} else {
-		bucketPath = bucketTargeting.InputPath()
+		bucketPath = bucketTargeting.InputDir()
 	}
 	if bucketPath != "." {
 		inputBucket = storage.MapReadBucketCloser(
@@ -656,22 +656,22 @@ func getReadWriteBucketForOS(
 		return nil, nil, attemptToFixOSRootBucketPathErrors(fsRoot, err)
 	}
 	// osRootBucketTargeting returns the information on whether or not a controlling
-	// workspace was found based on the input path.
+	// workspace was found based on the inputDirPath.
 	//
 	// *** CONTROLLING WOKRSPACE FOUND ***
 	//
 	// In the case where a controlling workspace is found, we want to create a new bucket
 	// for the controlling workspace.
-	// If the input path is an absolute path, we want to use an absolute path:
+	// If the inputDirPath is an absolute path, we want to use an absolute path:
 	//
 	//    bucketPath := fsRoot + controllingWorkspace.Path()
 	//
-	// If the input path is a relative path, we want to use a relative path between the
+	// If the inputDirPath is a relative path, we want to use a relative path between the
 	// current working directory (pwd) and controlling workspace.
 	//
 	//    bucketPath := Rel(Rel(fsRoot, pwd), controllingWorkspace.Path())
 	//
-	// We do not need to remap the input path, target paths, and target exclude paths
+	// We do not need to remap the input dir, target paths, and target exclude paths
 	// returned by buftarget.BucketTargeting, because they are already relative to the
 	// controlling workpsace.
 	//
@@ -679,36 +679,36 @@ func getReadWriteBucketForOS(
 	//
 	// In the case where a controlling workpsace is not found, we have three outcomes for
 	// creating a new bucket.
-	// If the input path is an absolute path, we want to use an absolute path to the input
+	// If the inputDirPath is an absolute path, we want to use an absolute path to the input
 	// path:
 	//
-	//    bucketPath := Abs(inputPath)
+	//    bucketPath := Abs(inputDirPath)
 	//
-	// If the input path is a relative path, there are two possible outcomes: the input path,
-	// target paths, and target exclude paths are within the context of the working directory
-	// or outside of the context of the working directory.
+	// If the inputDirPath is a relative path, there are two possible outcomes: the input
+	// dir is within the context of the working directory or is outside of the context of
+	// the working directory.
 	//
-	// In the case where the input path, target paths, and target exclude paths are within
-	// the context of the working directory, we use pwd:
+	// In the case where the input dir, is within the context of the working directory, we
+	// use pwd:
 	//
 	//    bucketPath := Rel(fsRoot,pwd)
 	//
-	// In the case where the input path, target paths, and target exclude paths are outside
-	// the context of the working directory, we use the input path relative to the pwd:
+	// In the case where the input dir is outside the context of the working directory, we
+	// use the input dir relative to the pwd:
 	//
-	//    bucketPath := Rel(Rel(fsRoot,pwd), Rel(fsRoot, inputPath))
+	//    bucketPath := Rel(Rel(fsRoot,pwd), Rel(fsRoot, inputDirPath))
 	//
 	// For all cases where no controlling workspace was found, we need to remap the input
 	// path, target paths, and target exclude paths to the root of the new bucket.
 	var bucketPath string
-	var inputPath string
+	var inputDir string
 	bucketTargetPaths := make([]string, len(osRootBucketTargeting.TargetPaths()))
 	bucketTargetExcludePaths := make([]string, len(osRootBucketTargeting.TargetExcludePaths()))
 	if controllingWorkspace := osRootBucketTargeting.ControllingWorkspace(); controllingWorkspace != nil {
 		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
 			bucketPath = normalpath.Join(fsRoot, osRootBucketTargeting.ControllingWorkspace().Path())
 		} else {
-			// Relative input path
+			// Relative input dir
 			pwdFSRelPath, err := getPWDFSRelPath()
 			if err != nil {
 				return nil, nil, err
@@ -718,7 +718,7 @@ func getReadWriteBucketForOS(
 				return nil, nil, err
 			}
 		}
-		inputPath = osRootBucketTargeting.InputPath()
+		inputDir = osRootBucketTargeting.InputDir()
 		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
 		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 	} else {
@@ -726,7 +726,7 @@ func getReadWriteBucketForOS(
 		if filepath.IsAbs(normalpath.Unnormalize(inputDirPath)) {
 			bucketPath = inputDirPath
 		} else {
-			// Relative input path
+			// Relative input dir
 			pwdFSRelPath, err := getPWDFSRelPath()
 			if err != nil {
 				return nil, nil, err
@@ -735,19 +735,19 @@ func getReadWriteBucketForOS(
 				// Use current working directory
 				bucketPath = "."
 			} else {
-				// Relative input path outside of working directory context
+				// Relative input dir outside of working directory context
 				bucketPath, err = normalpath.Rel(pwdFSRelPath, fsRootInputSubDirPath)
 				if err != nil {
 					return nil, nil, err
 				}
 			}
 		}
-		// Map input path, target paths, and target exclude paths to the new bucket path.
+		// Map input dir, target paths, and target exclude paths to the new bucket path.
 		_, bucketPathFSRelPath, err := fsRootAndFSRelPathForPath(bucketPath)
 		if err != nil {
 			return nil, nil, err
 		}
-		inputPath, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.InputPath())
+		inputDir, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.InputDir())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -775,7 +775,7 @@ func getReadWriteBucketForOS(
 		ctx,
 		logger,
 		bucket,
-		inputPath,
+		inputDir,
 		bucketTargetPaths,
 		bucketTargetExcludePaths,
 		terminateFunc,

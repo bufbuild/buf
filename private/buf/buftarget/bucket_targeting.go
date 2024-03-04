@@ -28,8 +28,8 @@ type BucketTargeting interface {
 	// ControllingWorkpsace returns the information for the controlling workspace, if one was
 	// found. If not found, then this will be nil.
 	ControllingWorkspace() ControllingWorkspace
-	// InputPath returns the input path relative to the root of the bucket
-	InputPath() string
+	// InputDir returns the input directory relative to the root of the bucket
+	InputDir() string
 	// TargetPaths returns the target paths relative to the root of the bucket.
 	TargetPaths() []string
 	// TargetExcludePaths returns the target exclude paths relative to the root of the bucket.
@@ -38,20 +38,20 @@ type BucketTargeting interface {
 	isBucketTargeting()
 }
 
-// NewBucketTargeting returns new targeting information for the given bucket, input path,
+// NewBucketTargeting returns new targeting information for the given bucket, input dir,
 // target paths, and target exclude paths.
 //
-// The inputPath, targetPaths, and targetExcludePaths are expected to be relative to the
+// The inputDir, targetPaths, and targetExcludePaths are expected to be relative to the
 // root of the bucket.
 //
-// If a controlling workspace is found, the input path, target paths, and target exclude
+// If a controlling workspace is found, the input dir, target paths, and target exclude
 // paths are mapped as relative paths to the controlling workspace path.
-// Otherwise, the input path, target paths, and target exclude paths are returned as-is.
+// Otherwise, the input dir, target paths, and target exclude paths are returned as-is.
 func NewBucketTargeting(
 	ctx context.Context,
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
-	inputPath string,
+	inputDir string,
 	targetPaths []string,
 	targetExcludePaths []string,
 	terminateFunc TerminateFunc,
@@ -60,7 +60,7 @@ func NewBucketTargeting(
 		ctx,
 		logger,
 		bucket,
-		inputPath,
+		inputDir,
 		targetPaths,
 		targetExcludePaths,
 		terminateFunc,
@@ -75,7 +75,7 @@ var (
 
 type bucketTargeting struct {
 	controllingWorkspace ControllingWorkspace
-	inputPath            string
+	inputDir             string
 	targetPaths          []string
 	targetExcludePaths   []string
 }
@@ -84,8 +84,8 @@ func (b *bucketTargeting) ControllingWorkspace() ControllingWorkspace {
 	return b.controllingWorkspace
 }
 
-func (b *bucketTargeting) InputPath() string {
-	return b.inputPath
+func (b *bucketTargeting) InputDir() string {
+	return b.inputDir
 }
 
 func (b *bucketTargeting) TargetPaths() []string {
@@ -103,24 +103,24 @@ func newBucketTargeting(
 	ctx context.Context,
 	logger *zap.Logger,
 	bucket storage.ReadBucket,
-	inputPath string,
+	inputDir string,
 	targetPaths []string,
 	targetExcludePaths []string,
 	terminateFunc TerminateFunc,
 ) (*bucketTargeting, error) {
-	// First we map the controlling workspace for the inputPath.
-	controllingWorkspace, mappedInputPath, err := mapControllingWorkspaceAndPath(
+	// First we map the controlling workspace for the inputDir.
+	controllingWorkspace, mappedInputDir, err := mapControllingWorkspaceAndPath(
 		ctx,
 		logger,
 		bucket,
-		inputPath,
+		inputDir,
 		terminateFunc,
 	)
 	if err != nil {
 		return nil, err
 	}
 	// If no controlling workspace was found, we map the target paths and target exclude
-	// paths to the input path.
+	// paths to the input dir.
 	mappedTargetPaths := targetPaths
 	mappedTargetExcludePaths := targetExcludePaths
 	if controllingWorkspace != nil && controllingWorkspace.Path() != "." {
@@ -145,7 +145,7 @@ func newBucketTargeting(
 	}
 	return &bucketTargeting{
 		controllingWorkspace: controllingWorkspace,
-		inputPath:            mappedInputPath,
+		inputDir:             mappedInputDir,
 		targetPaths:          mappedTargetPaths,
 		targetExcludePaths:   mappedTargetExcludePaths,
 	}, nil
@@ -201,6 +201,6 @@ func mapControllingWorkspaceAndPath(
 		"buffetch no termination found",
 		zap.String("path", path),
 	)
-	// No controlling workspace is found, we simply return the input path
+	// No controlling workspace is found, we simply return the input dir
 	return nil, path, nil
 }

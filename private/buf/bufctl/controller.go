@@ -846,7 +846,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
 		bufworkspace.WithTargetSubDirPath(
-			bucketTargeting.InputPath(),
+			bucketTargeting.InputDir(),
 		),
 		bufworkspace.WithTargetPaths(
 			bucketTargeting.TargetPaths(),
