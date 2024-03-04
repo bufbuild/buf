@@ -16,11 +16,7 @@ package bufmoduleapi
 
 import (
 	"context"
-	"fmt"
-	"io/fs"
 
-	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
-	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -105,14 +101,14 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	indexedModuleRefs []slicesext.Indexed[bufmodule.ModuleRef],
 	digestType bufmodule.DigestType,
 ) ([]slicesext.Indexed[bufmodule.ModuleKey], error) {
-	protoCommits, err := a.getProtoCommitsForRegistryAndModuleRefs(ctx, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
+	univeralProtoCommits, err := getUniversalProtoCommitsForRegistryAndModuleRefs(ctx, a.clientProvider, registry, slicesext.IndexedToValues(indexedModuleRefs), digestType)
 	if err != nil {
 		return nil, err
 	}
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
-	for i, protoCommit := range protoCommits {
-		protoCommit := protoCommit
-		commitID, err := uuid.FromString(protoCommit.Id)
+	for i, universalProtoCommit := range universalProtoCommits {
+		universalProtoCommit := universalProtoCommit
+		commitID, err := uuid.FromString(universalProtoCommit.IDDC)
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +118,7 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 			commitID,
 			func() (bufmodule.Digest, error) {
 				// Do not call getModuleKeyForProtoCommit, we already have the owner and module names.
-				return ProtoToDigest(protoCommit.Digest)
+				return universalProtoCommit.Digest, nil
 			},
 		)
 		if err != nil {
@@ -134,52 +130,4 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 		}
 	}
 	return indexedModuleKeys, nil
-}
-
-func (a *moduleKeyProvider) getProtoCommitsForRegistryAndModuleRefs(
-	ctx context.Context,
-	registry string,
-	moduleRefs []bufmodule.ModuleRef,
-	digestType bufmodule.DigestType,
-) ([]*modulev1beta1.Commit, error) {
-	protoDigestType, err := digestTypeToProto(digestType)
-	if err != nil {
-		return nil, err
-	}
-	response, err := a.clientProvider.CommitServiceClient(registry).GetCommits(
-		ctx,
-		connect.NewRequest(
-			&modulev1beta1.GetCommitsRequest{
-				// TODO FUTURE: chunking
-				ResourceRefs: slicesext.Map(
-					moduleRefs,
-					func(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
-						return &modulev1beta1.ResourceRef{
-							Value: &modulev1beta1.ResourceRef_Name_{
-								Name: &modulev1beta1.ResourceRef_Name{
-									Owner:  moduleRef.ModuleFullName().Owner(),
-									Module: moduleRef.ModuleFullName().Name(),
-									Child: &modulev1beta1.ResourceRef_Name_Ref{
-										Ref: moduleRef.Ref(),
-									},
-								},
-							},
-						}
-					},
-				),
-				DigestType: protoDigestType,
-			},
-		),
-	)
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleRef out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
-	}
-	if len(response.Msg.Commits) != len(moduleRefs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(moduleRefs), len(response.Msg.Commits))
-	}
-	return response.Msg.Commits, nil
 }
