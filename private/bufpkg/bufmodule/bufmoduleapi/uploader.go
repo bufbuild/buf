@@ -132,9 +132,9 @@ func (a *uploader) Upload(
 
 	// While the API allows different labels per reference, we don't have a use case for this
 	// in the CLI, so all references will have the same labels. We just pre-compute them now.
-	protoScopedLabelRefs := slicesext.Map(
+	v1beta1ProtoScopedLabelRefs := slicesext.Map(
 		slicesext.ToUniqueSorted(uploadOptions.Labels()),
-		labelNameToProtoScopedLabelRef,
+		labelNameToV1Beta1ProtoScopedLabelRef,
 	)
 	remoteDeps, err := bufmodule.RemoteDepsForModules(contentModules)
 	if err != nil {
@@ -142,12 +142,12 @@ func (a *uploader) Upload(
 	}
 
 	// Maintains ordering, important for when we create bufmodule.Commit objects below.
-	protoLegacyFederationUploadRequestContents, err := slicesext.MapError(
+	v1beta1ProtoUploadRequestContents, err := slicesext.MapError(
 		contentModules,
 		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-			return getProtoLegacyFederationUploadRequestContent(
+			return getV1Beta1ProtoUploadRequestContent(
 				ctx,
-				protoScopedLabelRefs,
+				v1beta1ProtoScopedLabelRefs,
 				primaryRegistry,
 				module,
 			)
@@ -156,9 +156,9 @@ func (a *uploader) Upload(
 	if err != nil {
 		return nil, err
 	}
-	protoLegacyFederationDepRefs, err := slicesext.MapError(
+	v1beta1ProtoUploadRequestDepRefs, err := slicesext.MapError(
 		remoteDeps,
-		getProtoLegacyFederationUploadRequestDepRef,
+		remoteDepToV1Beta1ProtoUploadRequestDepRef,
 	)
 	if err != nil {
 		return nil, err
@@ -179,43 +179,46 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
-	var protoCommits []*modulev1.Commit
+	var universalProtoCommits []*universalProtoCommit
 	if len(remoteDepRegistries) > 0 && (len(remoteDepRegistries) > 1 || remoteDepRegistries[0] != primaryRegistry) {
 		// If we have dependencies on other registries, or we have multiple registries we depend on, we have
 		// to use legacy federation.
-		response, err := a.clientProvider.LegacyFederationUploadServiceClient(primaryRegistry).Upload(
+		response, err := a.clientProvider.V1Beta1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&modulev1beta1.UploadRequest{
-					Contents: protoLegacyFederationUploadRequestContents,
-					DepRefs:  protoLegacyFederationDepRefs,
+					Contents: v1beta1ProtoUploadRequestContents,
+					DepRefs:  v1beta1ProtoUploadRequestDepRefs,
 				},
 			),
 		)
 		if err != nil {
 			return nil, err
 		}
-		protoCommits = response.Msg.Commits
+		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1Beta1)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// If we only have a single registry, invoke the new API endpoint that does not allow
 		// for federation. Do this so that we can maintain federated API endpoint metrics.
 		//
 		// Maintains ordering, important for when we create bufmodule.Commit objects below.
-		protoUploadRequestContents := slicesext.Map(
-			protoLegacyFederationUploadRequestContents,
-			protoLegacyFederationUploadRequestContentToProtoUploadRequestContent,
+		v1ProtoUploadRequestContents := slicesext.Map(
+			v1beta1ProtoUploadRequestContents,
+			v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent,
 		)
 		protoDepCommitIds := slicesext.Map(
-			protoLegacyFederationDepRefs,
-			func(protoLegacyFederationDepRef *modulev1beta1.UploadRequest_DepRef) string {
-				return protoLegacyFederationDepRef.CommitId
+			v1beta1ProtoUploadRequestDepRefs,
+			func(v1beta1ProtoDepRef *modulev1beta1.UploadRequest_DepRef) string {
+				return v1beta1ProtoDepRef.CommitId
 			},
 		)
-		response, err := a.clientProvider.UploadServiceClient(primaryRegistry).Upload(
+		response, err := a.clientProvider.V1UploadServiceClient(primaryRegistry).Upload(
 			ctx,
 			connect.NewRequest(
 				&modulev1.UploadRequest{
-					Contents:     protoUploadRequestContents,
+					Contents:     v1ProtoUploadRequestContents,
 					DepCommitIds: protoDepCommitIds,
 				},
 			),
@@ -223,21 +226,24 @@ func (a *uploader) Upload(
 		if err != nil {
 			return nil, err
 		}
-		protoCommits = response.Msg.Commits
+		universalProtoCommits, err = slicesext.MapError(response.Msg.Commits, newUniversalProtoCommitForV1)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if len(protoCommits) != len(protoLegacyFederationUploadRequestContents) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(protoLegacyFederationUploadRequestContents), len(protoCommits))
+	if len(universalProtoCommits) != len(v1beta1ProtoUploadRequestContents) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1beta1ProtoUploadRequestContents), len(universalProtoCommits))
 	}
-	commits := make([]bufmodule.Commit, len(protoCommits))
-	for i, protoCommit := range protoCommits {
-		protoCommit := protoCommit
+	commits := make([]bufmodule.Commit, len(universalProtoCommits))
+	for i, universalProtoCommit := range universalProtoCommits {
+		universalProtoCommit := universalProtoCommit
 		// This is how we get the ModuleFullName without calling the ModuleService or OwnerService.
 		//
 		// We've maintained ordering throughout this function, so we can do this.
 		// The API returns Commits in the same order as the Contents.
 		moduleFullName := contentModules[i].ModuleFullName()
-		commitID, err := uuid.FromString(protoCommit.Id)
+		commitID, err := uuid.FromString(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +251,7 @@ func (a *uploader) Upload(
 			moduleFullName,
 			commitID,
 			func() (bufmodule.Digest, error) {
-				return ProtoToDigest(protoCommit.Digest)
+				return universalProtoCommit.Digest, nil
 			},
 		)
 		if err != nil {
@@ -254,7 +260,7 @@ func (a *uploader) Upload(
 		commits[i] = bufmodule.NewCommit(
 			moduleKey,
 			func() (time.Time, error) {
-				return protoCommit.CreateTime.AsTime(), nil
+				return universalProtoCommit.CreateTime, nil
 			},
 		)
 	}
@@ -384,7 +390,7 @@ func getV1Beta1ProtoUploadRequestContent(
 	}, nil
 }
 
-func getV1Beta1ProtoUploadRequestDepRef(
+func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 	remoteDep bufmodule.RemoteDep,
 ) (*modulev1beta1.UploadRequest_DepRef, error) {
 	if remoteDep.ModuleFullName() == nil {
