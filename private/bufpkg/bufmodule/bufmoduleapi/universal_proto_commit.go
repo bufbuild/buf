@@ -96,32 +96,14 @@ func getUniversalProtoCommitsForRegistryAndCommitIDs(
 ) ([]*universalProtoCommit, error) {
 	switch digestType {
 	case bufmodule.DigestTypeB4:
-		v1beta1ProtoResourceRefs := slicesext.Map(
-			commitIDs,
-			func(commitID uuid.UUID) *modulev1beta1.ResourceRef {
-				return &modulev1beta1.ResourceRef{
-					Value: &modulev1beta1.ResourceRef_Id{
-						Id: commitID.String(),
-					},
-				}
-			},
-		)
-		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ResourceRefs, digestType)
+		v1beta1ProtoResourceRefs := commitIDsToV1Beta1ProtoResourceRefs(commitIDs)
+		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
-		v1ProtoResourceRefs := slicesext.Map(
-			commitIDs,
-			func(commitID uuid.UUID) *modulev1.ResourceRef {
-				return &modulev1.ResourceRef{
-					Value: &modulev1.ResourceRef_Id{
-						Id: commitID.String(),
-					},
-				}
-			},
-		)
+		v1ProtoResourceRefs := commitIDsToV1ProtoResourceRefs(commitIDs)
 		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
@@ -144,44 +126,14 @@ func getUniversalProtoCommitsForRegistryAndModuleRefs(
 ) ([]*universalProtoCommit, error) {
 	switch digestType {
 	case bufmodule.DigestTypeB4:
-		v1beta1ProtoResourceRefs := slicesext.Map(
-			moduleRefs,
-			func(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
-				return &modulev1beta1.ResourceRef{
-					Value: &modulev1beta1.ResourceRef_Name_{
-						Name: &modulev1beta1.ResourceRef_Name{
-							Owner:  moduleRef.ModuleFullName().Owner(),
-							Module: moduleRef.ModuleFullName().Name(),
-							Child: &modulev1beta1.ResourceRef_Name_Ref{
-								Ref: moduleRef.Ref(),
-							},
-						},
-					},
-				}
-			},
-		)
+		v1Beta1ProtoResourceRefs := moduleRefsToV1VBeta1ProtoResourceRefs(moduleRefs)
 		v1beta1ProtoCommits, err := getV1Beta1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1beta1ProtoResourceRefs, digestType)
 		if err != nil {
 			return nil, err
 		}
 		return slicesext.MapError(v1beta1ProtoCommits, newUniversalProtoCommitForV1Beta1)
 	case bufmodule.DigestTypeB5:
-		v1ProtoResourceRefs := slicesext.Map(
-			moduleRefs,
-			func(moduleRef bufmodule.ModuleRef) *modulev1.ResourceRef {
-				return &modulev1.ResourceRef{
-					Value: &modulev1.ResourceRef_Name_{
-						Name: &modulev1.ResourceRef_Name{
-							Owner:  moduleRef.ModuleFullName().Owner(),
-							Module: moduleRef.ModuleFullName().Name(),
-							Child: &modulev1.ResourceRef_Name_Ref{
-								Ref: moduleRef.Ref(),
-							},
-						},
-					},
-				}
-			},
-		)
+		v1ProtoResourceRefs := moduleRefsToV1ProtoResourceRefs(moduleRefs)
 		v1ProtoCommits, err := getV1ProtoCommitsForRegistryAndResourceRefs(ctx, clientProvider, registry, v1ProtoResourceRefs)
 		if err != nil {
 			return nil, err
@@ -214,8 +166,8 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(commitIDs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(commitIDs), len(response.Msg.Commits))
+	if len(response.Msg.Commits) != len(v1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1ProtoResourceRefs), len(response.Msg.Commits))
 	}
 	return response.Msg.Commits, nil
 }
@@ -248,8 +200,8 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 		}
 		return nil, err
 	}
-	if len(response.Msg.Commits) != len(commitIDs) {
-		return nil, fmt.Errorf("expected %d Commits, got %d", len(commitIDs), len(response.Msg.Commits))
+	if len(response.Msg.Commits) != len(v1Beta1ProtoResourceRefs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1Beta1ProtoResourceRefs), len(response.Msg.Commits))
 	}
 	return response.Msg.Commits, nil
 }

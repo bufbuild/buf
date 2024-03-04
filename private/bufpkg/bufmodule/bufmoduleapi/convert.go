@@ -23,9 +23,9 @@ import (
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcas"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/gofrs/uuid/v5"
 )
 
 var (
@@ -202,36 +202,6 @@ func bucketToV1Beta1ProtoFiles(ctx context.Context, bucket storage.ReadBucket) (
 	return protoFiles, nil
 }
 
-func v1ProtoFilesToBucket(protoFiles []*modulev1.File) (storage.ReadBucket, error) {
-	pathToData := make(map[string][]byte, len(protoFiles))
-	for _, protoFile := range protoFiles {
-		pathToData[protoFile.Path] = protoFile.Content
-	}
-	return storagemem.NewReadBucket(pathToData)
-}
-
-func v1beta1ProtoFilesToBucket(protoFiles []*modulev1beta1.File) (storage.ReadBucket, error) {
-	pathToData := make(map[string][]byte, len(protoFiles))
-	for _, protoFile := range protoFiles {
-		pathToData[protoFile.Path] = protoFile.Content
-	}
-	return storagemem.NewReadBucket(pathToData)
-}
-
-func v1ProtoFileToObjectData(protoFile *modulev1.File) (bufmodule.ObjectData, error) {
-	if protoFile == nil {
-		return nil, nil
-	}
-	return bufmodule.NewObjectData(normalpath.Base(protoFile.Path), protoFile.Content)
-}
-
-func v1beta1ProtoFileToObjectData(protoFile *modulev1beta1.File) (bufmodule.ObjectData, error) {
-	if protoFile == nil {
-		return nil, nil
-	}
-	return bufmodule.NewObjectData(normalpath.Base(protoFile.Path), protoFile.Content)
-}
-
 func objectDataToV1ProtoFile(objectData bufmodule.ObjectData) *modulev1.File {
 	if objectData == nil {
 		return nil
@@ -266,6 +236,66 @@ func labelNameToV1Beta1ProtoScopedLabelRef(labelName string) *modulev1beta1.Scop
 			Name: labelName,
 		},
 	}
+}
+
+func commitIDToV1ProtoResourceRef(commitID uuid.UUID) *modulev1.ResourceRef {
+	return &modulev1.ResourceRef{
+		Value: &modulev1.ResourceRef_Id{
+			Id: commitID.String(),
+		},
+	}
+}
+
+func commitIDsToV1ProtoResourceRefs(commitIDs []uuid.UUID) []*modulev1.ResourceRef {
+	return slicesext.Map(commitIDs, commitIDToV1ProtoResourceRef)
+}
+
+func commitIDToV1Beta1ProtoResourceRef(commitID uuid.UUID) *modulev1beta1.ResourceRef {
+	return &modulev1beta1.ResourceRef{
+		Value: &modulev1beta1.ResourceRef_Id{
+			Id: commitID.String(),
+		},
+	}
+}
+
+func commitIDsToV1Beta1ProtoResourceRefs(commitIDs []uuid.UUID) []*modulev1beta1.ResourceRef {
+	return slicesext.Map(commitIDs, commitIDToV1Beta1ProtoResourceRef)
+}
+
+func moduleRefToV1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1.ResourceRef {
+	return &modulev1.ResourceRef{
+		Value: &modulev1.ResourceRef_Name_{
+			Name: &modulev1.ResourceRef_Name{
+				Owner:  moduleRef.ModuleFullName().Owner(),
+				Module: moduleRef.ModuleFullName().Name(),
+				Child: &modulev1.ResourceRef_Name_Ref{
+					Ref: moduleRef.Ref(),
+				},
+			},
+		},
+	}
+}
+
+func moduleRefsToV1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*modulev1.ResourceRef {
+	return slicesext.Map(moduleRefs, moduleRefToV1ProtoResourceRef)
+}
+
+func moduleRefToV1Beta1ProtoResourceRef(moduleRef bufmodule.ModuleRef) *modulev1beta1.ResourceRef {
+	return &modulev1beta1.ResourceRef{
+		Value: &modulev1beta1.ResourceRef_Name_{
+			Name: &modulev1beta1.ResourceRef_Name{
+				Owner:  moduleRef.ModuleFullName().Owner(),
+				Module: moduleRef.ModuleFullName().Name(),
+				Child: &modulev1beta1.ResourceRef_Name_Ref{
+					Ref: moduleRef.Ref(),
+				},
+			},
+		},
+	}
+}
+
+func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*modulev1beta1.ResourceRef {
+	return slicesext.Map(moduleRefs, moduleRefToV1Beta1ProtoResourceRef)
 }
 
 func v1ProtoGraphToV1Beta1ProtoGraph(
