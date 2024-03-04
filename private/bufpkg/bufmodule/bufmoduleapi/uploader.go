@@ -347,9 +347,9 @@ func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (stri
 	return registry, nil
 }
 
-func getProtoLegacyFederationUploadRequestContent(
+func getV1Beta1ProtoUploadRequestContent(
 	ctx context.Context,
-	protoScopedLabelRefs []*modulev1.ScopedLabelRef,
+	v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
 	primaryRegistry string,
 	module bufmodule.Module,
 ) (*modulev1beta1.UploadRequest_Content, error) {
@@ -364,22 +364,22 @@ func getProtoLegacyFederationUploadRequestContent(
 		return nil, syserror.Newf("attempting to upload content for registry other than %s in getProtoLegacyFederationUploadRequestContent", primaryRegistry)
 	}
 
-	protoFiles, err := bucketToProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
+	v1beta1ProtoFiles, err := bucketToV1Beta1ProtoFiles(ctx, bufmodule.ModuleReadBucketToStorageReadBucket(module))
 	if err != nil {
 		return nil, err
 	}
 
 	return &modulev1beta1.UploadRequest_Content{
-		ModuleRef: &modulev1.ModuleRef{
-			Value: &modulev1.ModuleRef_Name_{
-				Name: &modulev1.ModuleRef_Name{
+		ModuleRef: &modulev1beta1.ModuleRef{
+			Value: &modulev1beta1.ModuleRef_Name_{
+				Name: &modulev1beta1.ModuleRef_Name{
 					Owner:  module.ModuleFullName().Owner(),
 					Module: module.ModuleFullName().Name(),
 				},
 			},
 		},
-		Files:           protoFiles,
-		ScopedLabelRefs: protoScopedLabelRefs,
+		Files:           v1beta1ProtoFiles,
+		ScopedLabelRefs: v1beta1ProtoScopedLabelRefs,
 		// TODO FUTURE: vcs_commit
 	}, nil
 }
