@@ -31,9 +31,10 @@ import (
 func NewCommitProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.CommitServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1CommitServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1CommitServiceClientProvider
 	},
 ) bufmodule.CommitProvider {
 	return newCommitProvider(logger, clientProvider)
@@ -44,18 +45,20 @@ func NewCommitProvider(
 type commitProvider struct {
 	logger         *zap.Logger
 	clientProvider interface {
-		bufapi.CommitServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1CommitServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1CommitServiceClientProvider
 	}
 }
 
 func newCommitProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.CommitServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1CommitServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1CommitServiceClientProvider
 	},
 ) *commitProvider {
 	return &commitProvider{

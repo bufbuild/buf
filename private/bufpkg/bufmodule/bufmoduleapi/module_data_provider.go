@@ -37,11 +37,9 @@ import (
 func NewModuleDataProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.DownloadServiceClientProvider
-		bufapi.GraphServiceClientProvider
-		bufapi.LegacyFederationGraphServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1DownloadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) bufmodule.ModuleDataProvider {
@@ -53,8 +51,9 @@ func NewModuleDataProvider(
 type moduleDataProvider struct {
 	logger         *zap.Logger
 	clientProvider interface {
-		bufapi.DownloadServiceClientProvider
-		bufapi.ModuleServiceClientProvider
+		bufapi.V1DownloadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1Beta1DownloadServiceClientProvider
 	}
 	graphProvider bufmodule.GraphProvider
 }
@@ -62,9 +61,9 @@ type moduleDataProvider struct {
 func newModuleDataProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.DownloadServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1DownloadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1Beta1DownloadServiceClientProvider
 	},
 	graphProvider bufmodule.GraphProvider,
 ) *moduleDataProvider {

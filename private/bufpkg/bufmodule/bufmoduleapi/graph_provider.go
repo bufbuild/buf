@@ -34,10 +34,10 @@ import (
 func NewGraphProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.GraphServiceClientProvider
-		bufapi.LegacyFederationGraphServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1GraphServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1GraphServiceClientProvider
 	},
 	options ...GraphProviderOption,
 ) bufmodule.GraphProvider {
@@ -65,10 +65,10 @@ func GraphProviderWithPublicRegistry(publicRegistry string) GraphProviderOption 
 type graphProvider struct {
 	logger         *zap.Logger
 	clientProvider interface {
-		bufapi.GraphServiceClientProvider
-		bufapi.LegacyFederationGraphServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1GraphServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1GraphServiceClientProvider
 	}
 	publicRegistry string
 }
@@ -76,10 +76,10 @@ type graphProvider struct {
 func newGraphProvider(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.GraphServiceClientProvider
-		bufapi.LegacyFederationGraphServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.OwnerServiceClientProvider
+		bufapi.V1GraphServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1OwnerServiceClientProvider
+		bufapi.V1Beta1GraphServiceClientProvider
 	},
 	options ...GraphProviderOption,
 ) *graphProvider {
