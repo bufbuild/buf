@@ -200,7 +200,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		if err != nil {
 			return nil, err
 		}
-		return v1ProtoGraphToV1Beta1ProtoGraph(primaryRegistry, graph), nil
+		return v1ProtoGraphToV1Beta1ProtoGraph(primaryRegistry, graph)
 	}
 
 	registryCommitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
@@ -266,16 +266,7 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 		connect.NewRequest(
 			&modulev1.GetGraphRequest{
 				// TODO FUTURE: chunking
-				ResourceRefs: slicesext.Map(
-					commitIDs,
-					func(commitID uuid.UUID) *modulev1.ResourceRef {
-						return &modulev1.ResourceRef{
-							Value: &modulev1.ResourceRef_Id{
-								Id: commitID.String(),
-							},
-						}
-					},
-				),
+				ResourceRefs: commitIDsToV1ProtoResourceRefs(commitIDs),
 			},
 		),
 	)

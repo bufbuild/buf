@@ -43,6 +43,9 @@ var (
 		modulev1beta1.DigestType_DIGEST_TYPE_B4: bufmodule.DigestTypeB4,
 		modulev1beta1.DigestType_DIGEST_TYPE_B5: bufmodule.DigestTypeB5,
 	}
+	v1ProtoDigestTypeToV1Beta1ProtoDigestType = map[modulev1.DigestType]modulev1beta1.DigestType{
+		modulev1.DigestType_DIGEST_TYPE_B5: modulev1beta1.DigestType_DIGEST_TYPE_B5,
+	}
 )
 
 // DigestToV1Proto converts the given Digest to a proto Digest.
@@ -126,7 +129,7 @@ func digestTypeToV1Proto(digestType bufmodule.DigestType) (modulev1.DigestType, 
 func v1ProtoToDigestType(protoDigestType modulev1.DigestType) (bufmodule.DigestType, error) {
 	digestType, ok := v1ProtoDigestTypeToDigestType[protoDigestType]
 	if !ok {
-		return 0, fmt.Errorf("unknown modulev1beta.DigestType: %v", protoDigestType)
+		return 0, fmt.Errorf("unknown modulev1.DigestType: %v", protoDigestType)
 	}
 	return digestType, nil
 }
@@ -143,7 +146,7 @@ func digestTypeToV1Beta1Proto(digestType bufmodule.DigestType) (modulev1beta1.Di
 func v1beta1ProtoToDigestType(protoDigestType modulev1beta1.DigestType) (bufmodule.DigestType, error) {
 	digestType, ok := v1beta1ProtoDigestTypeToDigestType[protoDigestType]
 	if !ok {
-		return 0, fmt.Errorf("unknown modulev1beta1beta.DigestType: %v", protoDigestType)
+		return 0, fmt.Errorf("unknown modulev1beta1.DigestType: %v", protoDigestType)
 	}
 	return digestType, nil
 }
@@ -298,46 +301,89 @@ func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*m
 	return slicesext.Map(moduleRefs, moduleRefToV1Beta1ProtoResourceRef)
 }
 
+// We have to make sure all the below is updated if a field is added
+// TODO FUTURE: Can we automate this to make sure this is true? Yes, with exhaustruct. Set up in golangci-lint
+// for this file.
+
+func v1ProtoDigestToV1Beta1ProtoDigest(
+	v1ProtoDigest *modulev1.Digest,
+) (*modulev1beta1.Digest, error) {
+	if v1ProtoDigest == nil {
+		return nil, nil
+	}
+	v1beta1ProtoDigestType, ok := v1ProtoDigestTypeToV1Beta1ProtoDigestType[v1ProtoDigest.Type]
+	if !ok {
+		return nil, fmt.Errorf("unknown modulev1.DigestType: %v", v1ProtoDigest.Type)
+	}
+	return &modulev1beta1.Digest{
+		Type:  v1beta1ProtoDigestType,
+		Value: v1ProtoDigest.Value,
+	}, nil
+}
+
+func v1ProtoCommitToV1Beta1ProtoCommit(
+	v1ProtoCommit *modulev1.Commit,
+) (*modulev1beta1.Commit, error) {
+	if v1ProtoCommit == nil {
+		return nil, nil
+	}
+	v1beta1ProtoDigest, err := v1ProtoDigestToV1Beta1ProtoDigest(v1ProtoCommit.Digest)
+	if err != nil {
+		return nil, err
+	}
+	return &modulev1beta1.Commit{
+		Id:               v1ProtoCommit.Id,
+		CreateTime:       v1ProtoCommit.CreateTime,
+		OwnerId:          v1ProtoCommit.OwnerId,
+		ModuleId:         v1ProtoCommit.ModuleId,
+		Digest:           v1beta1ProtoDigest,
+		CreatedByUserId:  v1ProtoCommit.CreatedByUserId,
+		SourceControlUrl: v1ProtoCommit.SourceControlUrl,
+	}, nil
+}
+
 func v1ProtoGraphToV1Beta1ProtoGraph(
 	registry string,
-	protoGraph *modulev1.Graph,
-) *modulev1beta1.Graph {
+	v1ProtoGraph *modulev1.Graph,
+) (*modulev1beta1.Graph, error) {
 	v1beta1ProtoGraph := &modulev1beta1.Graph{
-		Commits: make([]*modulev1beta1.Graph_Commit, len(protoGraph.Commits)),
-		Edges:   make([]*modulev1beta1.Graph_Edge, len(protoGraph.Edges)),
+		Commits: make([]*modulev1beta1.Graph_Commit, len(v1ProtoGraph.Commits)),
+		Edges:   make([]*modulev1beta1.Graph_Edge, len(v1ProtoGraph.Edges)),
 	}
-	for i, protoCommit := range protoGraph.Commits {
+	for i, v1ProtoCommit := range v1ProtoGraph.Commits {
+		v1beta1ProtoCommit, err := v1ProtoCommitToV1Beta1ProtoCommit(v1ProtoCommit)
+		if err != nil {
+			return nil, err
+		}
 		v1beta1ProtoGraph.Commits[i] = &modulev1beta1.Graph_Commit{
-			Commit:   protoCommit,
+			Commit:   v1beta1ProtoCommit,
 			Registry: registry,
 		}
 	}
-	for i, protoEdge := range protoGraph.Edges {
+	for i, v1ProtoEdge := range v1ProtoGraph.Edges {
 		v1beta1ProtoGraph.Edges[i] = &modulev1beta1.Graph_Edge{
 			FromNode: &modulev1beta1.Graph_Node{
-				CommitId: protoEdge.FromNode.CommitId,
+				CommitId: v1ProtoEdge.FromNode.CommitId,
 				Registry: registry,
 			},
 			ToNode: &modulev1beta1.Graph_Node{
-				CommitId: protoEdge.ToNode.CommitId,
+				CommitId: v1ProtoEdge.ToNode.CommitId,
 				Registry: registry,
 			},
 		}
 	}
-	return v1beta1ProtoGraph
+	return v1beta1ProtoGraph, nil
 }
 
-// We have to make sure this is updated if a field is added?
-// TODO FUTURE: Can we automate this to make sure this is true?
-func v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent(
-	v1beta1ProtoUploadRequestContent *modulev1beta1.UploadRequest_Content,
-) *modulev1.UploadRequest_Content {
-	return &modulev1.UploadRequest_Content{
-		ModuleRef:        v1beta1ProtoUploadRequestContent.ModuleRef,
-		Files:            v1beta1ProtoUploadRequestContent.Files,
-		V1BufYamlFile:    v1beta1ProtoUploadRequestContent.V1BufYamlFile,
-		V1BufLockFile:    v1beta1ProtoUploadRequestContent.V1BufLockFile,
-		ScopedLabelRefs:  v1beta1ProtoUploadRequestContent.ScopedLabelRefs,
-		SourceControlUrl: v1beta1ProtoUploadRequestContent.SourceControlUrl,
-	}
-}
+//func v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent(
+//v1beta1ProtoUploadRequestContent *modulev1beta1.UploadRequest_Content,
+//) *modulev1.UploadRequest_Content {
+//return &modulev1.UploadRequest_Content{
+//ModuleRef:        v1beta1ProtoUploadRequestContent.ModuleRef,
+//Files:            v1beta1ProtoUploadRequestContent.Files,
+//V1BufYamlFile:    v1beta1ProtoUploadRequestContent.V1BufYamlFile,
+//V1BufLockFile:    v1beta1ProtoUploadRequestContent.V1BufLockFile,
+//ScopedLabelRefs:  v1beta1ProtoUploadRequestContent.ScopedLabelRefs,
+//SourceControlUrl: v1beta1ProtoUploadRequestContent.SourceControlUrl,
+//}
+//}
