@@ -15,103 +15,139 @@
 package bufapi
 
 import (
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/legacy/federation/v1beta1/federationv1beta1connect"
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1/modulev1connect"
 	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1beta1/modulev1beta1connect"
-	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1beta1/ownerv1beta1connect"
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/owner/v1/ownerv1connect"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
 )
 
 var (
-	// NopCommitServiceClientProvider is a CommitServiceClientProvider that provides unimplemented services for testing.
-	NopCommitServiceClientProvider CommitServiceClientProvider = nopClientProvider{}
-	// NopDownloadServiceClientProvider is a DownloadServiceClientProvider that provides unimplemented services for testing.
-	NopDownloadServiceClientProvider DownloadServiceClientProvider = nopClientProvider{}
-	// NopGraphServiceClientProvider is a GraphServiceClientProvider that provides unimplemented services for testing.
-	NopGraphServiceClientProvider GraphServiceClientProvider = nopClientProvider{}
-	// NopLabelServiceClientProvider is a LabelServiceClientProvider that provides unimplemented services for testing.
-	NopLabelServiceClientProvider LabelServiceClientProvider = nopClientProvider{}
-	// NopModuleServiceClientProvider is a ModuleServiceClientProvider that provides unimplemented services for testing.
-	NopModuleServiceClientProvider ModuleServiceClientProvider = nopClientProvider{}
-	// NopOrganizationServiceClientProvider is a OrganizationServiceClientProvider that provides unimplemented services for testing.
-	NopOrganizationServiceClientProvider OrganizationServiceClientProvider = nopClientProvider{}
-	// NopOwnerServiceClientProvider is a OwnerServiceClientProvider that provides unimplemented services for testing.
-	NopOwnerServiceClientProvider OwnerServiceClientProvider = nopClientProvider{}
-	// NopUploadServiceClientProvider is a UploadServiceClientProvider that provides unimplemented services for testing.
-	NopUploadServiceClientProvider UploadServiceClientProvider = nopClientProvider{}
-	// NopUserServiceClientProvider is a UserServiceClientProvider that provides unimplemented services for testing.
-	NopUserServiceClientProvider UserServiceClientProvider = nopClientProvider{}
+	// NopV1CommitServiceClientProvider is a V1CommitServiceClientProvider that provides unimplemented services for testing.
+	NopV1CommitServiceClientProvider V1CommitServiceClientProvider = nopClientProvider{}
+	// NopV1DownloadServiceClientProvider is a V1DownloadServiceClientProvider that provides unimplemented services for testing.
+	NopV1DownloadServiceClientProvider V1DownloadServiceClientProvider = nopClientProvider{}
+	// NopV1GraphServiceClientProvider is a V1GraphServiceClientProvider that provides unimplemented services for testing.
+	NopV1GraphServiceClientProvider V1GraphServiceClientProvider = nopClientProvider{}
+	// NopV1LabelServiceClientProvider is a V1LabelServiceClientProvider that provides unimplemented services for testing.
+	NopV1LabelServiceClientProvider V1LabelServiceClientProvider = nopClientProvider{}
+	// NopV1ModuleServiceClientProvider is a V1ModuleServiceClientProvider that provides unimplemented services for testing.
+	NopV1ModuleServiceClientProvider V1ModuleServiceClientProvider = nopClientProvider{}
+	// NopV1UploadServiceClientProvider is a V1UploadServiceClientProvider that provides unimplemented services for testing.
+	NopV1UploadServiceClientProvider V1UploadServiceClientProvider = nopClientProvider{}
+	// NopV1OrganizationServiceClientProvider is a V1OrganizationServiceClientProvider that provides unimplemented services for testing.
+	NopV1OrganizationServiceClientProvider V1OrganizationServiceClientProvider = nopClientProvider{}
+	// NopV1OwnerServiceClientProvider is a V1OwnerServiceClientProvider that provides unimplemented services for testing.
+	NopV1OwnerServiceClientProvider V1OwnerServiceClientProvider = nopClientProvider{}
+	// NopV1UserServiceClientProvider is a V1UserServiceClientProvider that provides unimplemented services for testing.
+	NopV1UserServiceClientProvider V1UserServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1CommitServiceClientProvider is a V1Beta1CommitServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1CommitServiceClientProvider V1Beta1CommitServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1DownloadServiceClientProvider is a V1Beta1DownloadServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1DownloadServiceClientProvider V1Beta1DownloadServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1GraphServiceClientProvider is a V1Beta1GraphServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1GraphServiceClientProvider V1Beta1GraphServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1LabelServiceClientProvider is a V1Beta1LabelServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1LabelServiceClientProvider V1Beta1LabelServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1ModuleServiceClientProvider is a V1Beta1ModuleServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1ModuleServiceClientProvider V1Beta1ModuleServiceClientProvider = nopClientProvider{}
+	// NopV1Beta1UploadServiceClientProvider is a V1Beta1UploadServiceClientProvider that provides unimplemented services for testing.
+	NopV1Beta1UploadServiceClientProvider V1Beta1UploadServiceClientProvider = nopClientProvider{}
 	// NopClientProvider is a ClientProvider that provides unimplemented services for testing.
 	NopClientProvider ClientProvider = nopClientProvider{}
 )
 
-// CommitServiceClientProvider provides CommitServiceClients.
-type CommitServiceClientProvider interface {
-	CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient
+// V1CommitServiceClientProvider provides CommitServiceClients.
+type V1CommitServiceClientProvider interface {
+	V1CommitServiceClient(registry string) modulev1connect.CommitServiceClient
 }
 
-// DownloadServiceClientProvider provides DownloadServiceClients.
-type DownloadServiceClientProvider interface {
-	DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient
+// V1DownloadServiceClientProvider provides DownloadServiceClients.
+type V1DownloadServiceClientProvider interface {
+	V1DownloadServiceClient(registry string) modulev1connect.DownloadServiceClient
 }
 
-// GraphServiceClientProvider provides GraphServiceClients.
-type GraphServiceClientProvider interface {
-	GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient
+// V1GraphServiceClientProvider provides GraphServiceClients.
+type V1GraphServiceClientProvider interface {
+	V1GraphServiceClient(registry string) modulev1connect.GraphServiceClient
 }
 
-// LabelServiceClientProvider provides LabelServiceClients.
-type LabelServiceClientProvider interface {
-	LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient
+// V1LabelServiceClientProvider provides LabelServiceClients.
+type V1LabelServiceClientProvider interface {
+	V1LabelServiceClient(registry string) modulev1connect.LabelServiceClient
 }
 
-// LegacyFederationGraphServiceClientProvider provides LegacyGraphServiceClients.
-type LegacyFederationGraphServiceClientProvider interface {
-	LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient
+// V1ModuleServiceClientProvider provides ModuleServiceClients.
+type V1ModuleServiceClientProvider interface {
+	V1ModuleServiceClient(registry string) modulev1connect.ModuleServiceClient
 }
 
-// LegacyFederationUploadServiceClientProvider provides LegacyUploadServiceClients.
-type LegacyFederationUploadServiceClientProvider interface {
-	LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient
+// V1UploadServiceClientProvider provides UploadServiceClients.
+type V1UploadServiceClientProvider interface {
+	V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient
 }
 
-// ModuleServiceClientProvider provides ModuleServiceClients.
-type ModuleServiceClientProvider interface {
-	ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient
+// V1OrganizationServiceClientProvider provides OrganizationServiceClients.
+type V1OrganizationServiceClientProvider interface {
+	V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient
 }
 
-// OrganizationServiceClientProvider provides OrganizationServiceClients.
-type OrganizationServiceClientProvider interface {
-	OrganizationServiceClient(registry string) ownerv1beta1connect.OrganizationServiceClient
+// V1OwnerServiceClientProvider provides OwnerServiceClients.
+type V1OwnerServiceClientProvider interface {
+	V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient
 }
 
-// OwnerServiceClientProvider provides OwnerServiceClients.
-type OwnerServiceClientProvider interface {
-	OwnerServiceClient(registry string) ownerv1beta1connect.OwnerServiceClient
+// V1UserServiceClientProvider provides UserServiceClients.
+type V1UserServiceClientProvider interface {
+	V1UserServiceClient(registry string) ownerv1connect.UserServiceClient
 }
 
-// UploadServiceClientProvider provides UploadServiceClients.
-type UploadServiceClientProvider interface {
-	UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient
+// V1Beta1CommitServiceClientProvider provides CommitServiceClients.
+type V1Beta1CommitServiceClientProvider interface {
+	V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient
 }
 
-// UserServiceClientProvider provides UserServiceClients.
-type UserServiceClientProvider interface {
-	UserServiceClient(registry string) ownerv1beta1connect.UserServiceClient
+// V1Beta1DownloadServiceClientProvider provides DownloadServiceClients.
+type V1Beta1DownloadServiceClientProvider interface {
+	V1Beta1DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient
+}
+
+// V1Beta1GraphServiceClientProvider provides GraphServiceClients.
+type V1Beta1GraphServiceClientProvider interface {
+	V1Beta1GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient
+}
+
+// V1Beta1LabelServiceClientProvider provides LabelServiceClients.
+type V1Beta1LabelServiceClientProvider interface {
+	V1Beta1LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient
+}
+
+// V1Beta1ModuleServiceClientProvider provides ModuleServiceClients.
+type V1Beta1ModuleServiceClientProvider interface {
+	V1Beta1ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient
+}
+
+// V1Beta1UploadServiceClientProvider provides UploadServiceClients.
+type V1Beta1UploadServiceClientProvider interface {
+	V1Beta1UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient
 }
 
 // ClientProvider provides API clients for BSR services.
 type ClientProvider interface {
-	CommitServiceClientProvider
-	DownloadServiceClientProvider
-	GraphServiceClientProvider
-	LabelServiceClientProvider
-	LegacyFederationGraphServiceClientProvider
-	LegacyFederationUploadServiceClientProvider
-	ModuleServiceClientProvider
-	OrganizationServiceClientProvider
-	OwnerServiceClientProvider
-	UploadServiceClientProvider
-	UserServiceClientProvider
+	V1CommitServiceClientProvider
+	V1DownloadServiceClientProvider
+	V1GraphServiceClientProvider
+	V1LabelServiceClientProvider
+	V1ModuleServiceClientProvider
+	V1UploadServiceClientProvider
+	V1OrganizationServiceClientProvider
+	V1OwnerServiceClientProvider
+	V1UserServiceClientProvider
+	V1Beta1CommitServiceClientProvider
+	V1Beta1DownloadServiceClientProvider
+	V1Beta1GraphServiceClientProvider
+	V1Beta1LabelServiceClientProvider
+	V1Beta1ModuleServiceClientProvider
+	V1Beta1UploadServiceClientProvider
 }
 
 // NewClientProvider returns a new ClientProvider.
@@ -131,7 +167,79 @@ func newClientProvider(clientConfig *connectclient.Config) *clientProvider {
 	}
 }
 
-func (c *clientProvider) CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {
+func (c *clientProvider) V1CommitServiceClient(registry string) modulev1connect.CommitServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewCommitServiceClient,
+	)
+}
+
+func (c *clientProvider) V1DownloadServiceClient(registry string) modulev1connect.DownloadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewDownloadServiceClient,
+	)
+}
+
+func (c *clientProvider) V1GraphServiceClient(registry string) modulev1connect.GraphServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewGraphServiceClient,
+	)
+}
+
+func (c *clientProvider) V1LabelServiceClient(registry string) modulev1connect.LabelServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewLabelServiceClient,
+	)
+}
+
+func (c *clientProvider) V1ModuleServiceClient(registry string) modulev1connect.ModuleServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewModuleServiceClient,
+	)
+}
+
+func (c *clientProvider) V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		modulev1connect.NewUploadServiceClient,
+	)
+}
+
+func (c *clientProvider) V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		ownerv1connect.NewOrganizationServiceClient,
+	)
+}
+
+func (c *clientProvider) V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		ownerv1connect.NewOwnerServiceClient,
+	)
+}
+
+func (c *clientProvider) V1UserServiceClient(registry string) ownerv1connect.UserServiceClient {
+	return connectclient.Make(
+		c.clientConfig,
+		registry,
+		ownerv1connect.NewUserServiceClient,
+	)
+}
+
+func (c *clientProvider) V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -139,7 +247,7 @@ func (c *clientProvider) CommitServiceClient(registry string) modulev1beta1conne
 	)
 }
 
-func (c *clientProvider) DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient {
+func (c *clientProvider) V1Beta1DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -147,7 +255,7 @@ func (c *clientProvider) DownloadServiceClient(registry string) modulev1beta1con
 	)
 }
 
-func (c *clientProvider) GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient {
+func (c *clientProvider) V1Beta1GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -155,7 +263,7 @@ func (c *clientProvider) GraphServiceClient(registry string) modulev1beta1connec
 	)
 }
 
-func (c *clientProvider) LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient {
+func (c *clientProvider) V1Beta1LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -163,23 +271,7 @@ func (c *clientProvider) LabelServiceClient(registry string) modulev1beta1connec
 	)
 }
 
-func (c *clientProvider) LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		federationv1beta1connect.NewGraphServiceClient,
-	)
-}
-
-func (c *clientProvider) LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		federationv1beta1connect.NewUploadServiceClient,
-	)
-}
-
-func (c *clientProvider) ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient {
+func (c *clientProvider) V1Beta1ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -187,23 +279,7 @@ func (c *clientProvider) ModuleServiceClient(registry string) modulev1beta1conne
 	)
 }
 
-func (c *clientProvider) OrganizationServiceClient(registry string) ownerv1beta1connect.OrganizationServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1beta1connect.NewOrganizationServiceClient,
-	)
-}
-
-func (c *clientProvider) OwnerServiceClient(registry string) ownerv1beta1connect.OwnerServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1beta1connect.NewOwnerServiceClient,
-	)
-}
-
-func (c *clientProvider) UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient {
+func (c *clientProvider) V1Beta1UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient {
 	return connectclient.Make(
 		c.clientConfig,
 		registry,
@@ -211,56 +287,64 @@ func (c *clientProvider) UploadServiceClient(registry string) modulev1beta1conne
 	)
 }
 
-func (c *clientProvider) UserServiceClient(registry string) ownerv1beta1connect.UserServiceClient {
-	return connectclient.Make(
-		c.clientConfig,
-		registry,
-		ownerv1beta1connect.NewUserServiceClient,
-	)
-}
-
 type nopClientProvider struct{}
 
-func (nopClientProvider) CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {
+func (nopClientProvider) V1CommitServiceClient(registry string) modulev1connect.CommitServiceClient {
+	return modulev1connect.UnimplementedCommitServiceHandler{}
+}
+
+func (nopClientProvider) V1DownloadServiceClient(registry string) modulev1connect.DownloadServiceClient {
+	return modulev1connect.UnimplementedDownloadServiceHandler{}
+}
+
+func (nopClientProvider) V1GraphServiceClient(registry string) modulev1connect.GraphServiceClient {
+	return modulev1connect.UnimplementedGraphServiceHandler{}
+}
+
+func (nopClientProvider) V1LabelServiceClient(registry string) modulev1connect.LabelServiceClient {
+	return modulev1connect.UnimplementedLabelServiceHandler{}
+}
+
+func (nopClientProvider) V1ModuleServiceClient(registry string) modulev1connect.ModuleServiceClient {
+	return modulev1connect.UnimplementedModuleServiceHandler{}
+}
+
+func (nopClientProvider) V1UploadServiceClient(registry string) modulev1connect.UploadServiceClient {
+	return modulev1connect.UnimplementedUploadServiceHandler{}
+}
+
+func (nopClientProvider) V1OrganizationServiceClient(registry string) ownerv1connect.OrganizationServiceClient {
+	return ownerv1connect.UnimplementedOrganizationServiceHandler{}
+}
+
+func (nopClientProvider) V1OwnerServiceClient(registry string) ownerv1connect.OwnerServiceClient {
+	return ownerv1connect.UnimplementedOwnerServiceHandler{}
+}
+
+func (nopClientProvider) V1UserServiceClient(registry string) ownerv1connect.UserServiceClient {
+	return ownerv1connect.UnimplementedUserServiceHandler{}
+}
+
+func (nopClientProvider) V1Beta1CommitServiceClient(registry string) modulev1beta1connect.CommitServiceClient {
 	return modulev1beta1connect.UnimplementedCommitServiceHandler{}
 }
 
-func (nopClientProvider) DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient {
+func (nopClientProvider) V1Beta1DownloadServiceClient(registry string) modulev1beta1connect.DownloadServiceClient {
 	return modulev1beta1connect.UnimplementedDownloadServiceHandler{}
 }
 
-func (nopClientProvider) GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient {
+func (nopClientProvider) V1Beta1GraphServiceClient(registry string) modulev1beta1connect.GraphServiceClient {
 	return modulev1beta1connect.UnimplementedGraphServiceHandler{}
 }
 
-func (nopClientProvider) LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient {
+func (nopClientProvider) V1Beta1LabelServiceClient(registry string) modulev1beta1connect.LabelServiceClient {
 	return modulev1beta1connect.UnimplementedLabelServiceHandler{}
 }
 
-func (nopClientProvider) LegacyFederationGraphServiceClient(registry string) federationv1beta1connect.GraphServiceClient {
-	return federationv1beta1connect.UnimplementedGraphServiceHandler{}
-}
-
-func (nopClientProvider) LegacyFederationUploadServiceClient(registry string) federationv1beta1connect.UploadServiceClient {
-	return federationv1beta1connect.UnimplementedUploadServiceHandler{}
-}
-
-func (nopClientProvider) ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient {
+func (nopClientProvider) V1Beta1ModuleServiceClient(registry string) modulev1beta1connect.ModuleServiceClient {
 	return modulev1beta1connect.UnimplementedModuleServiceHandler{}
 }
 
-func (nopClientProvider) OrganizationServiceClient(registry string) ownerv1beta1connect.OrganizationServiceClient {
-	return ownerv1beta1connect.UnimplementedOrganizationServiceHandler{}
-}
-
-func (nopClientProvider) OwnerServiceClient(registry string) ownerv1beta1connect.OwnerServiceClient {
-	return ownerv1beta1connect.UnimplementedOwnerServiceHandler{}
-}
-
-func (nopClientProvider) UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient {
+func (nopClientProvider) V1Beta1UploadServiceClient(registry string) modulev1beta1connect.UploadServiceClient {
 	return modulev1beta1connect.UnimplementedUploadServiceHandler{}
-}
-
-func (nopClientProvider) UserServiceClient(registry string) ownerv1beta1connect.UserServiceClient {
-	return ownerv1beta1connect.UnimplementedUserServiceHandler{}
 }
