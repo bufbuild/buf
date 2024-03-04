@@ -48,7 +48,7 @@ func getV1ProtoCommitsForRegistryAndCommitIDs(
 	registry string,
 	commitIDs []uuid.UUID,
 ) ([]*modulev1.Commit, error) {
-	response, err := clientProvider.CommitServiceClient(registry).GetCommits(
+	response, err := clientProvider.V1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetCommitsRequest{
@@ -105,7 +105,7 @@ func getV1Beta1ProtoCommitsForRegistryAndCommitIDs(
 	if err != nil {
 		return nil, err
 	}
-	response, err := clientProvider.CommitServiceClient(registry).GetCommits(
+	response, err := clientProvider.V1Beta1CommitServiceClient(registry).GetCommits(
 		ctx,
 		connect.NewRequest(
 			&modulev1beta1.GetCommitsRequest{
