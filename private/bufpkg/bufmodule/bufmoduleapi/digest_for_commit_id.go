@@ -19,7 +19,6 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -35,20 +34,9 @@ func DigestForCommitID(
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
 ) (bufmodule.Digest, error) {
-	switch digestType {
-	case bufmodule.DigestTypeB4:
-		v1beta1ProtoCommit, err := getV1Beta1ProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
-		if err != nil {
-			return nil, err
-		}
-		return V1Beta1ProtoToDigest(v1beta1ProtoCommit.Digest)
-	case bufmodule.DigestTypeB5:
-		v1ProtoCommit, err := getV1ProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
-		if err != nil {
-			return nil, err
-		}
-		return V1ProtoToDigest(v1ProtoCommit.Digest)
-	default:
-		return nil, syserror.Newf("unknown DigestType: %v", digestType)
+	universalProtoCommit, err := getUniversalProtoCommitForRegistryAndCommitID(ctx, clientProvider, registry, commitID, digestType)
+	if err != nil {
+		return nil, err
 	}
+	return universalProtoCommit.Digest, nil
 }

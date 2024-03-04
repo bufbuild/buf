@@ -35,7 +35,7 @@ type v1ProtoOwnerProvider struct {
 	protoOwnerCache cache.Cache[string, *ownerv1.Owner]
 }
 
-func newProtoOwnerProvider(
+func newV1ProtoOwnerProvider(
 	logger *zap.Logger,
 	clientProvider bufapi.V1OwnerServiceClientProvider,
 ) *v1ProtoOwnerProvider {

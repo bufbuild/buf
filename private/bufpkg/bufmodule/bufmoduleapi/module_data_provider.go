@@ -91,7 +91,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 
 	// We don't want to persist this across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
 
 	registryToIndexedModuleKeys := slicesext.ToIndexedValuesMap(
 		moduleKeys,
@@ -104,7 +104,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 		// registryModuleDatas are in the same order as indexedModuleKeys.
 		indexedRegistryModuleDatas, err := a.getIndexedModuleDatasForRegistryAndIndexedModuleKeys(
 			ctx,
-			protoModuleProvider,
+			v1ProtoModuleProvider,
 			registry,
 			indexedModuleKeys,
 			digestType,
@@ -120,7 +120,7 @@ func (a *moduleDataProvider) GetModuleDatasForModuleKeys(
 // Returns ModuleDatas in the same order as the input ModuleKeys
 func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
+	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
 	indexedModuleKeys []slicesext.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
@@ -140,7 +140,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 	}
 	commitIDToProtoContent, err := a.getCommitIDToProtoContentForRegistryAndIndexedModuleKeys(
 		ctx,
-		protoModuleProvider,
+		v1ProtoModuleProvider,
 		registry,
 		commitIDToIndexedModuleKey,
 		digestType,
@@ -211,7 +211,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 
 func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModuleKeys(
 	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
+	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
 	commitIDToIndexedModuleKey map[uuid.UUID]slicesext.Indexed[bufmodule.ModuleKey],
 	digestType bufmodule.DigestType,
@@ -268,7 +268,7 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 		}
 		if err := a.warnIfDeprecated(
 			ctx,
-			protoModuleProvider,
+			v1ProtoModuleProvider,
 			registry,
 			protoContent.Commit,
 			indexedModuleKey.Value,
@@ -287,12 +287,12 @@ func (a *moduleDataProvider) getCommitIDToProtoContentForRegistryAndIndexedModul
 // weird territory.
 func (a *moduleDataProvider) warnIfDeprecated(
 	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
+	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
 	protoCommit *modulev1beta1.Commit,
 	moduleKey bufmodule.ModuleKey,
 ) error {
-	protoModule, err := protoModuleProvider.getProtoModuleForModuleID(
+	protoModule, err := v1ProtoModuleProvider.getProtoModuleForModuleID(
 		ctx,
 		registry,
 		protoCommit.ModuleId,

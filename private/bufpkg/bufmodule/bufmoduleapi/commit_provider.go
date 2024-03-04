@@ -115,8 +115,8 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
-	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
+	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
 
 	registryToIndexedCommitKeys := slicesext.ToIndexedValuesMap(
 		commitKeys,
@@ -128,8 +128,8 @@ func (a *commitProvider) GetCommitsForCommitKeys(
 	for registry, indexedCommitKeys := range registryToIndexedCommitKeys {
 		registryIndexedCommits, err := a.getIndexedCommitsForRegistryAndIndexedCommitKeys(
 			ctx,
-			protoModuleProvider,
-			protoOwnerProvider,
+			v1ProtoModuleProvider,
+			v1ProtoOwnerProvider,
 			registry,
 			indexedCommitKeys,
 			digestType,
@@ -158,6 +158,13 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 		return nil, err
 	}
 	commitIDs := slicesext.MapKeysToSlice(commitIDToIndexedModuleKey)
+
+	switch digestType {
+	case bufmodule.DigestTypeB4:
+	case bufmodule.DigestTypeB5:
+	default:
+		return nil, syserror.Newf("unknown DigestType: %v", digestType)
+	}
 	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, a.clientProvider, registry, commitIDs, digestType)
 	if err != nil {
 		return nil, err
@@ -196,8 +203,8 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 
 func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 	ctx context.Context,
-	protoModuleProvider *protoModuleProvider,
-	protoOwnerProvider *protoOwnerProvider,
+	v1ProtoModuleProvider *v1ProtoModuleProvider,
+	v1ProtoOwnerProvider *v1ProtoOwnerProvider,
 	registry string,
 	indexedCommitKeys []slicesext.Indexed[bufmodule.CommitKey],
 	digestType bufmodule.DigestType,
@@ -229,8 +236,8 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 			}
 			moduleKey, err := getModuleKeyForProtoCommit(
 				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
+				v1ProtoModuleProvider,
+				v1ProtoOwnerProvider,
 				registry,
 				protoCommit,
 			)
