@@ -109,8 +109,8 @@ func (a *graphProvider) GetGraphForModuleKeys(
 
 	// We don't want to persist these across calls - this could grow over time and this cache
 	// isn't an LRU cache, and the information also may change over time.
-	protoModuleProvider := newProtoModuleProvider(a.logger, a.clientProvider)
-	protoOwnerProvider := newProtoOwnerProvider(a.logger, a.clientProvider)
+	v1ProtoModuleProvider := newV1ProtoModuleProvider(a.logger, a.clientProvider)
+	v1ProtoOwnerProvider := newV1ProtoOwnerProvider(a.logger, a.clientProvider)
 	protoLegacyFederationGraph, err := a.getProtoLegacyFederationGraphForModuleKeys(ctx, moduleKeys, digestType)
 	if err != nil {
 		return nil, err
@@ -137,8 +137,8 @@ func (a *graphProvider) GetGraphForModuleKeys(
 			// go out to the API and get the transitive dependency.
 			moduleKey, err = getModuleKeyForProtoCommit(
 				ctx,
-				protoModuleProvider,
-				protoOwnerProvider,
+				v1ProtoModuleProvider,
+				v1ProtoOwnerProvider,
 				registry,
 				protoLegacyFederationCommit.Commit,
 			)

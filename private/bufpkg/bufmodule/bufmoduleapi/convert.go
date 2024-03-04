@@ -272,7 +272,7 @@ func v1ProtoGraphToV1Beta1ProtoGraph(
 	registry string,
 	protoGraph *modulev1.Graph,
 ) *modulev1beta1.Graph {
-	v1Beta1ProtoGraph := &modulev1beta1.Graph{
+	v1beta1ProtoGraph := &modulev1beta1.Graph{
 		Commits: make([]*modulev1beta1.Graph_Commit, len(protoGraph.Commits)),
 		Edges:   make([]*modulev1beta1.Graph_Edge, len(protoGraph.Edges)),
 	}

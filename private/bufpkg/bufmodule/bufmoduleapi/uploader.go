@@ -368,14 +368,6 @@ func getProtoLegacyFederationUploadRequestContent(
 	if err != nil {
 		return nil, err
 	}
-	v1BufYAMLObjectData, err := module.V1Beta1OrV1BufYAMLObjectData()
-	if err != nil {
-		return nil, err
-	}
-	v1BufLockObjectData, err := module.V1Beta1OrV1BufLockObjectData()
-	if err != nil {
-		return nil, err
-	}
 
 	return &modulev1beta1.UploadRequest_Content{
 		ModuleRef: &modulev1.ModuleRef{
@@ -388,11 +380,6 @@ func getProtoLegacyFederationUploadRequestContent(
 		},
 		Files:           protoFiles,
 		ScopedLabelRefs: protoScopedLabelRefs,
-		// TODO: We may end up synthesizing v1 buf.yamls/buf.locks on bufmodule.Module,
-		// if we do, we should consider whether we should be sending them over, as the
-		// backend may come to rely on this.
-		V1BufYamlFile: objectDataToProtoFile(v1BufYAMLObjectData),
-		V1BufLockFile: objectDataToProtoFile(v1BufLockObjectData),
 		// TODO FUTURE: vcs_commit
 	}, nil
 }
