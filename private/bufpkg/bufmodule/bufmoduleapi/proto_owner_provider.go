@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	ownerv1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1beta1"
+	ownerv1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/owner/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/pkg/cache"
@@ -32,7 +32,7 @@ import (
 type protoOwnerProvider struct {
 	logger          *zap.Logger
 	clientProvider  bufapi.OwnerServiceClientProvider
-	protoOwnerCache cache.Cache[string, *ownerv1beta1.Owner]
+	protoOwnerCache cache.Cache[string, *ownerv1.Owner]
 }
 
 func newProtoOwnerProvider(
@@ -49,17 +49,17 @@ func (a *protoOwnerProvider) getProtoOwnerForOwnerID(
 	ctx context.Context,
 	registry string,
 	ownerID string,
-) (*ownerv1beta1.Owner, error) {
+) (*ownerv1.Owner, error) {
 	return a.protoOwnerCache.GetOrAdd(
 		registry+"/"+ownerID,
-		func() (*ownerv1beta1.Owner, error) {
+		func() (*ownerv1.Owner, error) {
 			response, err := a.clientProvider.OwnerServiceClient(registry).GetOwners(
 				ctx,
 				connect.NewRequest(
-					&ownerv1beta1.GetOwnersRequest{
-						OwnerRefs: []*ownerv1beta1.OwnerRef{
+					&ownerv1.GetOwnersRequest{
+						OwnerRefs: []*ownerv1.OwnerRef{
 							{
-								Value: &ownerv1beta1.OwnerRef_Id{
+								Value: &ownerv1.OwnerRef_Id{
 									Id: ownerID,
 								},
 							},

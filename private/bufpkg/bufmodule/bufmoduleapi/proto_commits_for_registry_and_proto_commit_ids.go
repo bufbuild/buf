@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
@@ -27,14 +28,13 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-func getProtoCommitForRegistryAndCommitID(
+func getV1ProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitID uuid.UUID,
-	digestType bufmodule.DigestType,
-) (*modulev1beta1.Commit, error) {
-	protoCommits, err := getProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID}, digestType)
+) (*modulev1.Commit, error) {
+	protoCommits, err := getV1ProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID})
 	if err != nil {
 		return nil, err
 	}
@@ -42,14 +42,66 @@ func getProtoCommitForRegistryAndCommitID(
 	return protoCommits[0], nil
 }
 
-func getProtoCommitsForRegistryAndCommitIDs(
+func getV1ProtoCommitsForRegistryAndCommitIDs(
+	ctx context.Context,
+	clientProvider bufapi.CommitServiceClientProvider,
+	registry string,
+	commitIDs []uuid.UUID,
+) ([]*modulev1.Commit, error) {
+	response, err := clientProvider.CommitServiceClient(registry).GetCommits(
+		ctx,
+		connect.NewRequest(
+			&modulev1.GetCommitsRequest{
+				// TODO FUTURE: chunking
+				ResourceRefs: slicesext.Map(
+					commitIDs,
+					func(commitID uuid.UUID) *modulev1.ResourceRef {
+						return &modulev1.ResourceRef{
+							Value: &modulev1.ResourceRef_Id{
+								Id: commitID.String(),
+							},
+						}
+					},
+				),
+			},
+		),
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
+			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
+		}
+		return nil, err
+	}
+	if len(response.Msg.Commits) != len(commitIDs) {
+		return nil, fmt.Errorf("expected %d Commits, got %d", len(commitIDs), len(response.Msg.Commits))
+	}
+	return response.Msg.Commits, nil
+}
+
+func getV1Beta1ProtoCommitForRegistryAndCommitID(
+	ctx context.Context,
+	clientProvider bufapi.CommitServiceClientProvider,
+	registry string,
+	commitID uuid.UUID,
+	digestType bufmodule.DigestType,
+) (*modulev1beta1.Commit, error) {
+	protoCommits, err := getV1Beta1ProtoCommitsForRegistryAndCommitIDs(ctx, clientProvider, registry, []uuid.UUID{commitID}, digestType)
+	if err != nil {
+		return nil, err
+	}
+	// We already do length checking in getProtoCommitsForRegistryAndCommitIDs.
+	return protoCommits[0], nil
+}
+
+func getV1Beta1ProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
 	clientProvider bufapi.CommitServiceClientProvider,
 	registry string,
 	commitIDs []uuid.UUID,
 	digestType bufmodule.DigestType,
 ) ([]*modulev1beta1.Commit, error) {
-	protoDigestType, err := digestTypeToProto(digestType)
+	protoDigestType, err := digestTypeToV1Beta1Proto(digestType)
 	if err != nil {
 		return nil, err
 	}
