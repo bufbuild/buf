@@ -106,7 +106,7 @@ func V1Beta1ProtoToDigest(protoDigest *modulev1beta1.Digest) (bufmodule.Digest, 
 
 // *** PRIVATE ***
 
-func moduleVisibilityToProto(moduleVisibility bufmodule.ModuleVisibility) (modulev1.ModuleVisibility, error) {
+func moduleVisibilityToV1Proto(moduleVisibility bufmodule.ModuleVisibility) (modulev1.ModuleVisibility, error) {
 	switch moduleVisibility {
 	case bufmodule.ModuleVisibilityPublic:
 		return modulev1.ModuleVisibility_MODULE_VISIBILITY_PUBLIC, nil

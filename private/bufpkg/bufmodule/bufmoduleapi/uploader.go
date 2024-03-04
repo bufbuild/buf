@@ -267,11 +267,11 @@ func (a *uploader) createContentModulesIfNotExist(
 	contentModules []bufmodule.Module,
 	createModuleVisibility bufmodule.ModuleVisibility,
 ) error {
-	protoCreateModuleVisibility, err := moduleVisibilityToProto(createModuleVisibility)
+	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
 	if err != nil {
 		return err
 	}
-	if _, err := a.clientProvider.ModuleServiceClient(primaryRegistry).CreateModules(
+	if _, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.CreateModulesRequest{
@@ -285,7 +285,7 @@ func (a *uploader) createContentModulesIfNotExist(
 								},
 							},
 							Name:       module.ModuleFullName().Name(),
-							Visibility: protoCreateModuleVisibility,
+							Visibility: v1ProtoCreateModuleVisibility,
 						}
 					},
 				),
@@ -302,7 +302,7 @@ func (a *uploader) validateContentModulesExist(
 	primaryRegistry string,
 	contentModules []bufmodule.Module,
 ) error {
-	_, err := a.clientProvider.ModuleServiceClient(primaryRegistry).GetModules(
+	_, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetModulesRequest{
@@ -384,7 +384,7 @@ func getProtoLegacyFederationUploadRequestContent(
 	}, nil
 }
 
-func getProtoLegacyFederationUploadRequestDepRef(
+func getV1Beta1ProtoUploadRequestDepRef(
 	remoteDep bufmodule.RemoteDep,
 ) (*modulev1beta1.UploadRequest_DepRef, error) {
 	if remoteDep.ModuleFullName() == nil {
