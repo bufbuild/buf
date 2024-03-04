@@ -30,7 +30,7 @@ import (
 
 func getV1ProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider bufapi.CommitServiceClientProvider,
+	clientProvider bufapi.V1CommitServiceClientProvider,
 	registry string,
 	commitID uuid.UUID,
 ) (*modulev1.Commit, error) {
@@ -44,7 +44,7 @@ func getV1ProtoCommitForRegistryAndCommitID(
 
 func getV1ProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider bufapi.CommitServiceClientProvider,
+	clientProvider bufapi.V1CommitServiceClientProvider,
 	registry string,
 	commitIDs []uuid.UUID,
 ) ([]*modulev1.Commit, error) {
@@ -81,7 +81,7 @@ func getV1ProtoCommitsForRegistryAndCommitIDs(
 
 func getV1Beta1ProtoCommitForRegistryAndCommitID(
 	ctx context.Context,
-	clientProvider bufapi.CommitServiceClientProvider,
+	clientProvider bufapi.V1Beta1CommitServiceClientProvider,
 	registry string,
 	commitID uuid.UUID,
 	digestType bufmodule.DigestType,
@@ -96,7 +96,7 @@ func getV1Beta1ProtoCommitForRegistryAndCommitID(
 
 func getV1Beta1ProtoCommitsForRegistryAndCommitIDs(
 	ctx context.Context,
-	clientProvider bufapi.CommitServiceClientProvider,
+	clientProvider bufapi.V1Beta1CommitServiceClientProvider,
 	registry string,
 	commitIDs []uuid.UUID,
 	digestType bufmodule.DigestType,
