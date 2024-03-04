@@ -206,7 +206,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		return nil, err
 	}
 	var v1BufYAMLObjectData bufmodule.ObjectData
-	// TODO: make this required
 	if externalModuleData.V1BufYAMLFile != "" {
 		// We do not want to use bufconfig.GetBufYAMLFileForPrefix as this validates the
 		// buf.yaml, and potentially calls out to i.e. resolve digests. We just want to raw data.
@@ -223,7 +222,6 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 		}
 	}
 	var v1BufLockObjectData bufmodule.ObjectData
-	// TODO: make this required
 	if externalModuleData.V1BufLockFile != "" {
 		// We do not want to use bufconfig.GetBufLockFileForPrefix as this validates the
 		// buf.lock, and potentially calls out to i.e. resolve digests. We just want to raw data.
@@ -257,11 +255,9 @@ func (p *moduleDataStore) getModuleDataForModuleKey(
 			return declaredDepModuleKeys, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
 			return v1BufYAMLObjectData, nil
 		},
 		func() (bufmodule.ObjectData, error) {
-			// TODO: This may be nil, because we allow it to be nil in putModuleData, this needs to be fixed.
 			return v1BufLockObjectData, nil
 		},
 	), nil
@@ -365,7 +361,6 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
-	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
 	if v1BufYAMLObjectData != nil {
 		v1BufYAMLFilePath := normalpath.Join(externalModuleDataV1BufYAMLDir, v1BufYAMLObjectData.Name())
 		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufYAMLFilePath, v1BufYAMLObjectData.Data()); err != nil {
@@ -378,7 +373,6 @@ func (p *moduleDataStore) putModuleData(
 	if err != nil {
 		return err
 	}
-	// TODO: This should always be non-nil! This is the case because of a TODO in bufmoduletesting.
 	if v1BufLockObjectData != nil {
 		v1BufLockFilePath := normalpath.Join(externalModuleDataV1BufLockDir, v1BufLockObjectData.Name())
 		if err := storage.PutPath(ctx, moduleCacheBucket, v1BufLockFilePath, v1BufLockObjectData.Data()); err != nil {
@@ -588,9 +582,6 @@ func (e externalModuleData) isValid() bool {
 	}
 	return e.Version == externalModuleDataVersion &&
 		len(e.FilesDir) > 0
-	// TODO: re-enable
-	//len(e.V1BufYAMLFile) > 0 &&
-	//len(e.V1BufLockFile) > 0
 }
 
 // externalModuleDataDep represents a dependency.
