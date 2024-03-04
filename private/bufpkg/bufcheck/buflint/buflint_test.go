@@ -1173,7 +1173,7 @@ func testLintWithOptions(
 		ctx,
 		zaptest.NewLogger(t),
 		readWriteBucket,
-		dirPath,
+		".", // the bucket is rooted at the input
 		nil,
 		nil,
 		buftarget.TerminateAtControllingWorkspace,

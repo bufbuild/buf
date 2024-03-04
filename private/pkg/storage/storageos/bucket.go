@@ -310,7 +310,10 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 }
 
 func (b *bucket) getExternalPrefix(prefix string) (string, error) {
-	prefix = normalpath.Normalize(prefix)
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
+	if err != nil {
+		return "", err
+	}
 	realClean, err := filepathext.RealClean(normalpath.Join(b.rootPath, prefix))
 	if err != nil {
 		return "", err

@@ -770,7 +770,7 @@ func testBreaking(
 		ctx,
 		logger,
 		previousReadWriteBucket,
-		previousDirPath,
+		".", // the bucket is rooted at the input
 		nil,
 		nil,
 		buftarget.TerminateAtControllingWorkspace,
@@ -785,7 +785,7 @@ func testBreaking(
 		ctx,
 		logger,
 		readWriteBucket,
-		dirPath,
+		".", // the bucket is rooted at the input
 		nil,
 		nil,
 		buftarget.TerminateAtControllingWorkspace,
