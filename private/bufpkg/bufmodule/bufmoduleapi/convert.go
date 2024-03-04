@@ -246,9 +246,9 @@ func moduleRefsToV1Beta1ProtoResourceRefs(moduleRefs []bufmodule.ModuleRef) []*m
 	return slicesext.Map(moduleRefs, moduleRefToV1Beta1ProtoResourceRef)
 }
 
-// We have to make sure all the below is updated if a field is added
-// TODO FUTURE: Can we automate this to make sure this is true? Yes, with exhaustruct. Set up in golangci-lint
-// for this file.
+// We have to make sure all the below is updated if a field is added.
+// This is enforced via exhaustruct using golangci-lint.
+// Search .golangci.yml for convert.go to see where this is enabled.
 
 func v1ProtoDigestToV1Beta1ProtoDigest(
 	v1ProtoDigest *modulev1.Digest,

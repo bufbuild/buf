@@ -46,6 +46,7 @@ linters:
     - dogsled
     - errcheck
     - execinquery
+    - exhaustruct
     - exportloopref
     - forbidigo
     - forcetypeassert
@@ -85,6 +86,11 @@ linters:
   disable-all: true
 issues:
   exclude-rules:
+    # We didn't turn on exhaustruct historically, but we really want to make sure it is turned on
+    # for this file, as we do conversion between v1beta1 and v1 registry-proto types.
+    - path-except: private/bufpkg/bufmodule/bufmoduleapi/convert.go
+      linters:
+        - exhaustruct
     - linters:
         - gosec
       # G101 checks for hardcoded credentials, and the variables named "*Password*
