@@ -35,9 +35,9 @@ import (
 func NewUploader(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.LegacyFederationUploadServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.UploadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1UploadServiceClientProvider
+		bufapi.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
 ) bufmodule.Uploader {
@@ -65,9 +65,9 @@ func UploaderWithPublicRegistry(publicRegistry string) UploaderOption {
 type uploader struct {
 	logger         *zap.Logger
 	clientProvider interface {
-		bufapi.LegacyFederationUploadServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.UploadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1UploadServiceClientProvider
+		bufapi.V1Beta1UploadServiceClientProvider
 	}
 	publicRegistry string
 }
@@ -75,9 +75,9 @@ type uploader struct {
 func newUploader(
 	logger *zap.Logger,
 	clientProvider interface {
-		bufapi.LegacyFederationUploadServiceClientProvider
-		bufapi.ModuleServiceClientProvider
-		bufapi.UploadServiceClientProvider
+		bufapi.V1ModuleServiceClientProvider
+		bufapi.V1UploadServiceClientProvider
+		bufapi.V1Beta1UploadServiceClientProvider
 	},
 	options ...UploaderOption,
 ) *uploader {
