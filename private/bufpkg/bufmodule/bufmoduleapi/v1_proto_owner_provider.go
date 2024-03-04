@@ -53,7 +53,7 @@ func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForOwnerID(
 	return a.protoOwnerCache.GetOrAdd(
 		registry+"/"+ownerID,
 		func() (*ownerv1.Owner, error) {
-			response, err := a.clientProvider.OwnerServiceClient(registry).GetOwners(
+			response, err := a.clientProvider.V1OwnerServiceClient(registry).GetOwners(
 				ctx,
 				connect.NewRequest(
 					&ownerv1.GetOwnersRequest{

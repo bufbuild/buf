@@ -346,6 +346,9 @@ func v1ProtoGraphToV1Beta1ProtoGraph(
 	registry string,
 	v1ProtoGraph *modulev1.Graph,
 ) (*modulev1beta1.Graph, error) {
+	if v1ProtoGraph == nil {
+		return nil, nil
+	}
 	v1beta1ProtoGraph := &modulev1beta1.Graph{
 		Commits: make([]*modulev1beta1.Graph_Commit, len(v1ProtoGraph.Commits)),
 		Edges:   make([]*modulev1beta1.Graph_Edge, len(v1ProtoGraph.Edges)),
@@ -375,15 +378,86 @@ func v1ProtoGraphToV1Beta1ProtoGraph(
 	return v1beta1ProtoGraph, nil
 }
 
-//func v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent(
-//v1beta1ProtoUploadRequestContent *modulev1beta1.UploadRequest_Content,
-//) *modulev1.UploadRequest_Content {
-//return &modulev1.UploadRequest_Content{
-//ModuleRef:        v1beta1ProtoUploadRequestContent.ModuleRef,
-//Files:            v1beta1ProtoUploadRequestContent.Files,
-//V1BufYamlFile:    v1beta1ProtoUploadRequestContent.V1BufYamlFile,
-//V1BufLockFile:    v1beta1ProtoUploadRequestContent.V1BufLockFile,
-//ScopedLabelRefs:  v1beta1ProtoUploadRequestContent.ScopedLabelRefs,
-//SourceControlUrl: v1beta1ProtoUploadRequestContent.SourceControlUrl,
-//}
-//}
+func v1beta1ProtoModuleRefToV1ProtoModuleRef(
+	v1beta1ProtoModuleRef *modulev1beta1.ModuleRef,
+) *modulev1.ModuleRef {
+	if v1beta1ProtoModuleRef == nil {
+		return nil
+	}
+	if id := v1beta1ProtoModuleRef.GetId(); id != "" {
+		return &modulev1.ModuleRef{
+			Value: &modulev1.ModuleRef_Id{
+				Id: id,
+			},
+		}
+	}
+	if name := v1beta1ProtoModuleRef.GetName(); name != nil {
+		return &modulev1.ModuleRef{
+			Value: &modulev1.ModuleRef_Name_{
+				Name: &modulev1.ModuleRef_Name{
+					Owner:  name.Owner,
+					Module: name.Module,
+				},
+			},
+		}
+	}
+	return nil
+}
+
+func v1beta1ProtoFileToV1ProtoFile(
+	v1beta1ProtoFile *modulev1beta1.File,
+) *modulev1.File {
+	if v1beta1ProtoFile == nil {
+		return nil
+	}
+	return &modulev1.File{
+		Path:    v1beta1ProtoFile.Path,
+		Content: v1beta1ProtoFile.Content,
+	}
+}
+
+func v1beta1ProtoFilesToV1ProtoFiles(
+	v1beta1ProtoFiles []*modulev1beta1.File,
+) []*modulev1.File {
+	return slicesext.Map(v1beta1ProtoFiles, v1beta1ProtoFileToV1ProtoFile)
+}
+
+func v1beta1ProtoScopedLabelRefToV1ProtoScopedLabelRef(
+	v1beta1ProtoScopedLabelRef *modulev1beta1.ScopedLabelRef,
+) *modulev1.ScopedLabelRef {
+	if v1beta1ProtoScopedLabelRef == nil {
+		return nil
+	}
+	if id := v1beta1ProtoScopedLabelRef.GetId(); id != "" {
+		return &modulev1.ScopedLabelRef{
+			Value: &modulev1.ScopedLabelRef_Id{
+				Id: id,
+			},
+		}
+	}
+	if name := v1beta1ProtoScopedLabelRef.GetName(); name != "" {
+		return &modulev1.ScopedLabelRef{
+			Value: &modulev1.ScopedLabelRef_Name{
+				Name: name,
+			},
+		}
+	}
+	return nil
+}
+
+func v1beta1ProtoScopedLabelRefsToV1ProtoScopedLabelRefs(
+	v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
+) []*modulev1.ScopedLabelRef {
+	return slicesext.Map(v1beta1ProtoScopedLabelRefs, v1beta1ProtoScopedLabelRefToV1ProtoScopedLabelRef)
+}
+
+func v1beta1ProtoUploadRequestContentToV1ProtoUploadRequestContent(
+	v1beta1ProtoUploadRequestContent *modulev1beta1.UploadRequest_Content,
+) *modulev1.UploadRequest_Content {
+	return &modulev1.UploadRequest_Content{
+		ModuleRef:        v1beta1ProtoModuleRefToV1ProtoModuleRef(v1beta1ProtoUploadRequestContent.ModuleRef),
+		Files:            v1beta1ProtoFilesToV1ProtoFiles(v1beta1ProtoUploadRequestContent.Files),
+		ScopedLabelRefs:  v1beta1ProtoScopedLabelRefsToV1ProtoScopedLabelRefs(v1beta1ProtoUploadRequestContent.ScopedLabelRefs),
+		SourceControlUrl: v1beta1ProtoUploadRequestContent.SourceControlUrl,
+	}
+}

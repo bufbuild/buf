@@ -39,7 +39,7 @@ func newV1ProtoModuleProvider(
 	logger *zap.Logger,
 	clientProvider bufapi.V1ModuleServiceClientProvider,
 ) *v1ProtoModuleProvider {
-	return &protoModuleProvider{
+	return &v1ProtoModuleProvider{
 		logger:         logger,
 		clientProvider: clientProvider,
 	}
