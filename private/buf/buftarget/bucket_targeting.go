@@ -127,16 +127,22 @@ func newBucketTargeting(
 		// If a controlling workspace was found, we map the paths to the controlling workspace
 		// because we'll be working with a workspace bucket.
 		for i, targetPath := range targetPaths {
-			targetPath := normalpath.Normalize(targetPath)
 			mappedTargetPath, err := normalpath.Rel(controllingWorkspace.Path(), targetPath)
+			if err != nil {
+				return nil, err
+			}
+			mappedTargetPath, err = normalpath.NormalizeAndValidate(mappedTargetPath)
 			if err != nil {
 				return nil, err
 			}
 			mappedTargetPaths[i] = mappedTargetPath
 		}
 		for i, targetExcludePath := range targetExcludePaths {
-			targetExcludePath := normalpath.Normalize(targetExcludePath)
 			mappedTargetExcludePath, err := normalpath.Rel(controllingWorkspace.Path(), targetExcludePath)
+			if err != nil {
+				return nil, err
+			}
+			mappedTargetExcludePath, err = normalpath.NormalizeAndValidate(mappedTargetExcludePath)
 			if err != nil {
 				return nil, err
 			}
