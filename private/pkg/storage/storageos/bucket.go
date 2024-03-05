@@ -140,7 +140,10 @@ func (b *bucket) Walk(
 					return err
 				}
 				// just in case
-				path = normalpath.Normalize(path)
+				path, err = normalpath.NormalizeAndValidate(path)
+				if err != nil {
+					return err
+				}
 				if err := f(
 					storageutil.NewObjectInfo(
 						path,
@@ -310,7 +313,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 }
 
 func (b *bucket) getExternalPrefix(prefix string) (string, error) {
-	prefix, err := normalpath.NormalizeAndValidate(prefix)
+	prefix, err := storageutil.ValidatePrefix(prefix)
 	if err != nil {
 		return "", err
 	}

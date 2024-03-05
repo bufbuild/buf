@@ -284,15 +284,24 @@ func newModule(
 		return nil, syserror.New("moduleFullName not present and commitID present when constructing a remote Module")
 	}
 
-	normalizeIfNotEmpty := func(path string) string {
+	normalizeAndValidateIfNotEmpty := func(path string) (string, error) {
 		if path == "" {
-			return path
+			return path, nil
 		}
-		return normalpath.Normalize(path)
+		return normalpath.NormalizeAndValidate(path)
 	}
-	targetPaths = slicesext.Map(targetPaths, normalizeIfNotEmpty)
-	targetExcludePaths = slicesext.Map(targetExcludePaths, normalizeIfNotEmpty)
-	protoFileTargetPath = normalizeIfNotEmpty(protoFileTargetPath)
+	targetPaths, err := slicesext.MapError(targetPaths, normalizeAndValidateIfNotEmpty)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
+	targetExcludePaths, err = slicesext.MapError(targetExcludePaths, normalizeAndValidateIfNotEmpty)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
+	protoFileTargetPath, err = normalizeAndValidateIfNotEmpty(protoFileTargetPath)
+	if err != nil {
+		return nil, syserror.Wrap(err)
+	}
 
 	module := &module{
 		ctx:                    ctx,
