@@ -440,7 +440,6 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 1, 19, 36, "FILE_SAME_CC_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 1, 20, 38, "FILE_SAME_JAVA_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 1, 21, 36, "FILE_SAME_PY_GENERIC_SERVICES"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 1, 22, 37, "FILE_SAME_PHP_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 1, 23, 33, "FILE_SAME_CC_ENABLE_ARENAS"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 1, 3, 11, "FILE_SAME_PACKAGE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 5, 29, "FILE_SAME_JAVA_PACKAGE"),
@@ -459,7 +458,6 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 19, 1, 19, 35, "FILE_SAME_CC_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 20, 1, 20, 37, "FILE_SAME_JAVA_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 21, 1, 21, 35, "FILE_SAME_PY_GENERIC_SERVICES"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 22, 1, 22, 36, "FILE_SAME_PHP_GENERIC_SERVICES"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 23, 1, 23, 33, "FILE_SAME_CC_ENABLE_ARENAS"),
 	)
 }

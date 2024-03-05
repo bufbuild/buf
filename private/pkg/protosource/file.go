@@ -143,7 +143,9 @@ func (f *file) PyGenericServices() bool {
 }
 
 func (f *file) PhpGenericServices() bool {
-	return f.fileDescriptor.GetOptions().GetPhpGenericServices()
+	// Support for PhpGenericServices was removed in
+	// https://github.com/protocolbuffers/protobuf/pull/15164
+	return false
 }
 
 func (f *file) CcEnableArenas() bool {
