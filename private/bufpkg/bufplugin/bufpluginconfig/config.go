@@ -87,12 +87,12 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty       = externalRegistryConfig.Go == nil
-		isNPMEmpty      = externalRegistryConfig.NPM == nil
-		isMavenEmpty    = externalRegistryConfig.Maven == nil
-		isSwiftEmpty    = externalRegistryConfig.Swift == nil
-		isPythonEmpty   = externalRegistryConfig.Python == nil
-		isArtifactEmpty = externalRegistryConfig.Artifact == nil
+		isGoEmpty      = externalRegistryConfig.Go == nil
+		isNPMEmpty     = externalRegistryConfig.NPM == nil
+		isMavenEmpty   = externalRegistryConfig.Maven == nil
+		isSwiftEmpty   = externalRegistryConfig.Swift == nil
+		isPythonEmpty  = externalRegistryConfig.Python == nil
+		isArchiveEmpty = externalRegistryConfig.Archive == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -101,7 +101,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isMavenEmpty,
 		isSwiftEmpty,
 		isPythonEmpty,
-		isArtifactEmpty,
+		isArchiveEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -163,14 +163,14 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 			Python:  pythonRegistryConfig,
 			Options: options,
 		}, nil
-	case !isArtifactEmpty:
-		artifactRegistryConfig, err := newArtifactRegistryConfig(externalRegistryConfig.Artifact)
+	case !isArchiveEmpty:
+		archiveRegistryConfig, err := newArchiveRegistryConfig(externalRegistryConfig.Archive)
 		if err != nil {
 			return nil, err
 		}
 		return &RegistryConfig{
-			Artifact: artifactRegistryConfig,
-			Options:  options,
+			Archive: archiveRegistryConfig,
+			Options: options,
 		}, nil
 	default:
 		return nil, errors.New("unknown registry configuration")
@@ -368,8 +368,8 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 	}, nil
 }
 
-func newArtifactRegistryConfig(externalArtifactRegistryConfig *ExternalArtifactRegistryConfig) (*ArtifactRegistryConfig, error) {
-	return &ArtifactRegistryConfig{}, nil
+func newArchiveRegistryConfig(externalArchiveRegistryConfig *ExternalArchiveRegistryConfig) (*ArchiveRegistryConfig, error) {
+	return &ArchiveRegistryConfig{}, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {

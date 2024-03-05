@@ -328,9 +328,9 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 	)
 }
 
-func TestParsePluginConfigArtifactYAML(t *testing.T) {
+func TestParsePluginConfigArchiveYAML(t *testing.T) {
 	t.Parallel()
-	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "artifact", "buf.plugin.yaml"))
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "archive", "buf.plugin.yaml"))
 	require.NoError(t, err)
 	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/pseudomuto-doc")
 	require.NoError(t, err)
@@ -344,7 +344,7 @@ func TestParsePluginConfigArtifactYAML(t *testing.T) {
 			SPDXLicenseID: "MIT",
 			LicenseURL:    "https://github.com/pseudomuto/protoc-gen-doc/blob/v1.5.1/LICENSE.md",
 			Registry: &RegistryConfig{
-				Artifact: &ArtifactRegistryConfig{},
+				Archive: &ArchiveRegistryConfig{},
 			},
 		},
 		pluginConfig,

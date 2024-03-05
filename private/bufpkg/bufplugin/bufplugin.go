@@ -78,8 +78,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
 		} else if plugin.Registry().Python != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
-		} else if plugin.Registry().Artifact != nil {
-			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_ARTIFACT
+		} else if plugin.Registry().Archive != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_ARCHIVE
 		}
 	}
 	return registryType
@@ -197,12 +197,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
-	} else if pluginRegistry.Artifact != nil {
-		artifactConfig, err := ArtifactRegistryConfigToProtoArtifactConfig(pluginRegistry.Artifact)
+	} else if pluginRegistry.Archive != nil {
+		archiveConfig, err := ArchiveRegistryConfigToProtoArchiveConfig(pluginRegistry.Archive)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_ArtifactConfig{ArtifactConfig: artifactConfig}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_ArchiveConfig{ArchiveConfig: archiveConfig}
 	}
 	return registryConfig, nil
 }
@@ -272,12 +272,12 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Python = pythonConfig
-	} else if protoArtifactConfig := config.GetArtifactConfig(); protoArtifactConfig != nil {
-		artifactConfig, err := ProtoArtifactConfigToArtifactRegistryConfig(protoArtifactConfig)
+	} else if protoArchiveConfig := config.GetArchiveConfig(); protoArchiveConfig != nil {
+		archiveConfig, err := ProtoArchiveConfigToArchiveRegistryConfig(protoArchiveConfig)
 		if err != nil {
 			return nil, err
 		}
-		registryConfig.Artifact = artifactConfig
+		registryConfig.Archive = archiveConfig
 	}
 	return registryConfig, nil
 }
@@ -320,12 +320,12 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 	return protoPythonConfig, nil
 }
 
-func ProtoArtifactConfigToArtifactRegistryConfig(protoArtifactConfig *registryv1alpha1.ArtifactConfig) (*bufpluginconfig.ArtifactRegistryConfig, error) {
-	return &bufpluginconfig.ArtifactRegistryConfig{}, nil
+func ProtoArchiveConfigToArchiveRegistryConfig(protoArchiveConfig *registryv1alpha1.ArchiveConfig) (*bufpluginconfig.ArchiveRegistryConfig, error) {
+	return &bufpluginconfig.ArchiveRegistryConfig{}, nil
 }
 
-func ArtifactRegistryConfigToProtoArtifactConfig(artifactConfig *bufpluginconfig.ArtifactRegistryConfig) (*registryv1alpha1.ArtifactConfig, error) {
-	return &registryv1alpha1.ArtifactConfig{}, nil
+func ArchiveRegistryConfigToProtoArchiveConfig(archiveConfig *bufpluginconfig.ArchiveRegistryConfig) (*registryv1alpha1.ArchiveConfig, error) {
+	return &registryv1alpha1.ArchiveConfig{}, nil
 }
 
 func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {
