@@ -78,6 +78,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
 		} else if plugin.Registry().Python != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
+		} else if plugin.Registry().Artifact != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_ARTIFACT
 		}
 	}
 	return registryType
@@ -195,6 +197,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
+	} else if pluginRegistry.Artifact != nil {
+		artifactConfig, err := ArtifactRegistryConfigToProtoArtifactConfig(pluginRegistry.Artifact)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_ArtifactConfig{ArtifactConfig: artifactConfig}
 	}
 	return registryConfig, nil
 }
@@ -264,6 +272,12 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Python = pythonConfig
+	} else if protoArtifactConfig := config.GetArtifactConfig(); protoArtifactConfig != nil {
+		artifactConfig, err := ProtoArtifactConfigToArtifactRegistryConfig(protoArtifactConfig)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Artifact = artifactConfig
 	}
 	return registryConfig, nil
 }
@@ -304,6 +318,14 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 		})
 	}
 	return protoPythonConfig, nil
+}
+
+func ProtoArtifactConfigToArtifactRegistryConfig(protoArtifactConfig *registryv1alpha1.ArtifactConfig) (*bufpluginconfig.ArtifactRegistryConfig, error) {
+	return &bufpluginconfig.ArtifactRegistryConfig{}, nil
+}
+
+func ArtifactRegistryConfigToProtoArtifactConfig(artifactConfig *bufpluginconfig.ArtifactRegistryConfig) (*registryv1alpha1.ArtifactConfig, error) {
+	return &registryv1alpha1.ArtifactConfig{}, nil
 }
 
 func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {

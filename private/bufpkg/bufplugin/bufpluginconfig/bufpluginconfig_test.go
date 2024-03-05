@@ -328,6 +328,29 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigArtifactYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "artifact", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/pseudomuto-doc")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:          pluginIdentity,
+			PluginVersion: "v1.5.1",
+			SourceURL:     "https://github.com/pseudomuto/protoc-gen-doc",
+			Description:   "Documentation generator plugin for Google Protocol Buffers.",
+			SPDXLicenseID: "MIT",
+			LicenseURL:    "https://github.com/pseudomuto/protoc-gen-doc/blob/v1.5.1/LICENSE.md",
+			Registry: &RegistryConfig{
+				Artifact: &ArtifactRegistryConfig{},
+			},
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))

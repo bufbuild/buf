@@ -87,11 +87,12 @@ type Config struct {
 //
 // Only one field will be set.
 type RegistryConfig struct {
-	Go     *GoRegistryConfig
-	NPM    *NPMRegistryConfig
-	Maven  *MavenRegistryConfig
-	Swift  *SwiftRegistryConfig
-	Python *PythonRegistryConfig
+	Go       *GoRegistryConfig
+	NPM      *NPMRegistryConfig
+	Maven    *MavenRegistryConfig
+	Swift    *SwiftRegistryConfig
+	Python   *PythonRegistryConfig
+	Artifact *ArtifactRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -241,6 +242,8 @@ type PythonRegistryConfig struct {
 	PackageType string
 }
 
+type ArtifactRegistryConfig struct{}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -366,12 +369,13 @@ type ExternalDependency struct {
 // ExternalRegistryConfig is the external configuration for the registry
 // of a plugin.
 type ExternalRegistryConfig struct {
-	Go     *ExternalGoRegistryConfig     `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM    *ExternalNPMRegistryConfig    `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Maven  *ExternalMavenRegistryConfig  `json:"maven,omitempty" yaml:"maven,omitempty"`
-	Swift  *ExternalSwiftRegistryConfig  `json:"swift,omitempty" yaml:"swift,omitempty"`
-	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
-	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Go       *ExternalGoRegistryConfig       `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM      *ExternalNPMRegistryConfig      `json:"npm,omitempty" yaml:"npm,omitempty"`
+	Maven    *ExternalMavenRegistryConfig    `json:"maven,omitempty" yaml:"maven,omitempty"`
+	Swift    *ExternalSwiftRegistryConfig    `json:"swift,omitempty" yaml:"swift,omitempty"`
+	Python   *ExternalPythonRegistryConfig   `json:"python,omitempty" yaml:"python,omitempty"`
+	Artifact *ExternalArtifactRegistryConfig `json:"artifact,omitempty" yaml:"artifact,omitempty"`
+	Opts     []string                        `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
 // ExternalGoRegistryConfig is the external registry configuration for a Go plugin.
@@ -488,6 +492,8 @@ type ExternalPythonRegistryConfig struct {
 	// Must be one of "runtime" or "stub-only".
 	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
 }
+
+type ExternalArtifactRegistryConfig struct{}
 
 type externalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`

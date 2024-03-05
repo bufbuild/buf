@@ -36,6 +36,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_MAVEN = 3;
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
+  PLUGIN_REGISTRY_TYPE_ARTIFACT = 6;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -224,6 +225,8 @@ message PythonConfig {
   PythonPackageType package_type = 3;
 }
 
+message ArtifactConfig {}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
@@ -232,9 +235,10 @@ message RegistryConfig {
     MavenConfig maven_config = 3;
     SwiftConfig swift_config = 4;
     PythonConfig python_config = 5;
+    ArtifactConfig artifact_config = 6;
   }
   // Reserved for future remote registry types.
-  reserved 6 to 9;
+  reserved 7 to 9;
   // The options to pass to the plugin. These will
   // be merged into a single, comma-separated string.
   repeated string options = 10;

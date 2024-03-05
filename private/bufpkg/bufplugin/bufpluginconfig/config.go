@@ -87,11 +87,12 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty     = externalRegistryConfig.Go == nil
-		isNPMEmpty    = externalRegistryConfig.NPM == nil
-		isMavenEmpty  = externalRegistryConfig.Maven == nil
-		isSwiftEmpty  = externalRegistryConfig.Swift == nil
-		isPythonEmpty = externalRegistryConfig.Python == nil
+		isGoEmpty       = externalRegistryConfig.Go == nil
+		isNPMEmpty      = externalRegistryConfig.NPM == nil
+		isMavenEmpty    = externalRegistryConfig.Maven == nil
+		isSwiftEmpty    = externalRegistryConfig.Swift == nil
+		isPythonEmpty   = externalRegistryConfig.Python == nil
+		isArtifactEmpty = externalRegistryConfig.Artifact == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -100,6 +101,7 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isMavenEmpty,
 		isSwiftEmpty,
 		isPythonEmpty,
+		isArtifactEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -160,6 +162,15 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		return &RegistryConfig{
 			Python:  pythonRegistryConfig,
 			Options: options,
+		}, nil
+	case !isArtifactEmpty:
+		artifactRegistryConfig, err := newArtifactRegistryConfig(externalRegistryConfig.Artifact)
+		if err != nil {
+			return nil, err
+		}
+		return &RegistryConfig{
+			Artifact: artifactRegistryConfig,
+			Options:  options,
 		}, nil
 	default:
 		return nil, errors.New("unknown registry configuration")
@@ -355,6 +366,10 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		RequiresPython: externalPythonRegistryConfig.RequiresPython,
 		PackageType:    externalPythonRegistryConfig.PackageType,
 	}, nil
+}
+
+func newArtifactRegistryConfig(externalArtifactRegistryConfig *ExternalArtifactRegistryConfig) (*ArtifactRegistryConfig, error) {
+	return &ArtifactRegistryConfig{}, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {
