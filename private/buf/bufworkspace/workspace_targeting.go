@@ -367,15 +367,16 @@ func fallbackWorkspaceTargeting(
 		logger,
 		bucket,
 		bucketTargeting.InputDirPath(),
-		false,
+		true,
 	)
 	if err != nil {
 		return nil, err
 	}
 	if inputDirV1Module != nil {
 		v1ModulePaths = append(v1ModulePaths, inputDirV1Module.Path())
-	} else {
-		// No v1 module found for the input, check the target paths if any exist
+	} else if config.protoFileTargetPath == "" {
+		// No v1 module found for the input dir, if the input was not a protoFileRef, then
+		// check the target paths to see if a workspace or v1 module exists.
 		var v1BufWorkYAML bufconfig.BufWorkYAMLFile
 		var v2BufYAMLFile bufconfig.BufYAMLFile
 		var controllingWorkspacePath string
