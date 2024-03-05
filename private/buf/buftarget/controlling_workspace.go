@@ -18,17 +18,24 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 )
 
+// ControllingWorkspace is the information for the ControllingWorkspace.
 type ControllingWorkspace interface {
-	// Path of the controlling workspace in the bucket.
+	// Path of the controlling workspace. This is a normalized path, relative to the root of
+	// the bucket the controlling workspace was found in. Semantically, this is where the v1
+	// buf.work.yaml or v2 buf.yaml workspace configuration is located.
 	Path() string
-	// Returns a buf.work.yaml file that was found. This is empty if we are retruning a buf.yaml.
+	// Returns a buf.work.yaml file that was found for the controlling workspace.
+	// This is empty if we are retruning a buf.yaml.
 	BufWorkYAMLFile() bufconfig.BufWorkYAMLFile
-	// Returns a buf.yaml that was found. This is empty if we are returning a buf.work.yaml.
+	// Returns a buf.yaml that was found for the controlling workspace.
+	// This is empty if we are returning a buf.work.yaml.
 	BufYAMLFile() bufconfig.BufYAMLFile
 
 	isControllingWorkspace()
 }
 
+// NewControllingWorkspace takes a path where the controlling workspace configuration is
+// located and a workspace configuration file for the controlling workspace.
 func NewControllingWorkspace(
 	path string,
 	bufWorkYAMLFile bufconfig.BufWorkYAMLFile,
