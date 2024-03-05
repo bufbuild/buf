@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/osext"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -571,6 +572,9 @@ func getReadBucketCloserForBucket(
 	targetExcludePaths []string,
 	terminateFunc buftarget.TerminateFunc,
 ) (ReadBucketCloser, buftarget.BucketTargeting, error) {
+	if err := validatePaths(inputSubDirPath, targetPaths, targetExcludePaths); err != nil {
+		return nil, nil, err
+	}
 	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
 		logger,
@@ -875,6 +879,29 @@ func attemptToFixOSRootBucketPathErrors(fsRoot string, err error) error {
 		}
 	}
 	return err
+}
+
+func validatePaths(
+	inputSubDirPath string,
+	targetPaths []string,
+	targetExcludePaths []string,
+) error {
+	if _, err := normalpath.NormalizeAndValidate(inputSubDirPath); err != nil {
+		return err
+	}
+	if _, err := slicesext.MapError(
+		targetPaths,
+		normalpath.NormalizeAndValidate,
+	); err != nil {
+		return err
+	}
+	if _, err := slicesext.MapError(
+		targetPaths,
+		normalpath.NormalizeAndValidate,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 type getFileOptions struct {

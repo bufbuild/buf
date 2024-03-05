@@ -166,7 +166,10 @@ func mapControllingWorkspaceAndPath(
 	path string,
 	terminateFunc TerminateFunc,
 ) (ControllingWorkspace, string, error) {
-	path = normalpath.Normalize(path)
+	path, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return nil, "", err
+	}
 	// If no terminateFunc is passed, we can simply assume that we are mapping the bucket at
 	// the path.
 	if terminateFunc == nil {

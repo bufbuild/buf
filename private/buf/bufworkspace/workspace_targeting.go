@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -75,6 +76,9 @@ func newWorkspaceTargeting(
 	overrideBufYAMLFile bufconfig.BufYAMLFile,
 	ignoreAndDisallowV1BufWorkYAMLs bool,
 ) (*workspaceTargeting, error) {
+	if err := validateBucketTargeting(bucketTargeting, config.protoFileTargetPath); err != nil {
+		return nil, err
+	}
 	if overrideBufYAMLFile != nil {
 		logger.Debug(
 			"targeting workspace with config override",
@@ -448,6 +452,58 @@ func fallbackWorkspaceTargeting(
 		v1ModulePaths,
 		nil,
 	)
+}
+
+func validateBucketTargeting(
+	bucketTargeting buftarget.BucketTargeting,
+	protoFilePath string,
+) error {
+	if protoFilePath != "" {
+		// We set the proto file path as a target path, which we handle in module targeting,
+		// so we expect len(bucketTargeting.TargetPaths()) to be exactly 1.
+		if len(bucketTargeting.TargetPaths()) != 1 || len(bucketTargeting.TargetExcludePaths()) > 0 {
+			// This is just a system error. We messed up and called both exclusive options.
+			return syserror.New("cannot set targetPaths/targetExcludePaths with protoFileTargetPaths")
+		}
+	}
+	// These are actual user errors. This is us verifying --path and --exclude-path.
+	// An argument could be made this should be at a higher level for user errors, and then
+	// if it gets to this point, this should be a system error.
+	//
+	// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
+	// applied to them. Which is another argument to do this at a higher level.
+	for _, targetPath := range bucketTargeting.TargetPaths() {
+		if targetPath == bucketTargeting.InputDir() {
+			return errors.New("given input is equal to a value of --path - this has no effect and is disallowed")
+		}
+		// We want this to be deterministic.  We don't have that many paths in almost all cases.
+		// This being n^2 shouldn't be a huge issue unless someone has a diabolical wrapping shell script.
+		// If this becomes a problem, there's optimizations we can do by turning targetExcludePaths into
+		// a map but keeping the index in targetExcludePaths around to prioritize what error
+		// message to print.
+		for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
+			if targetPath == targetExcludePath {
+				unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
+				return fmt.Errorf("cannot set the same path for both --path and --exclude-path: %s", unnormalizedTargetPath)
+			}
+			// This is new post-refactor. Before, we gave precedence to --path. While a change,
+			// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
+			if normalpath.EqualsOrContainsPath(targetExcludePath, targetPath, normalpath.Relative) {
+				// We clean and unnormalize the target paths to show in the error message
+				unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
+				unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
+				return fmt.Errorf(`excluded path "%s" contains targeted path "%s", which means all paths in "%s" will be excluded`, unnormalizedTargetExcludePath, unnormalizedTargetPath, unnormalizedTargetPath)
+			}
+		}
+	}
+	for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
+		if targetExcludePath == bucketTargeting.InputDir() {
+			unnormalizedTargetSubDirPath := filepath.Clean(normalpath.Unnormalize(bucketTargeting.InputDir()))
+			unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
+			return fmt.Errorf("given input %s is equal to a value of --exclude-path %s - this would exclude everything", unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
+		}
+	}
+	return nil
 }
 
 func getMappedModuleBucketAndModuleTargeting(

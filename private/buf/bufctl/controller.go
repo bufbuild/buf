@@ -845,13 +845,6 @@ func (c *controller) getWorkspaceForSourceRef(
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
 	options := []bufworkspace.WorkspaceBucketOption{
-		bufworkspace.WithTargetSubDirPath(
-			bucketTargeting.InputDir(),
-		),
-		bufworkspace.WithTargetPaths(
-			bucketTargeting.TargetPaths(),
-			bucketTargeting.TargetExcludePaths(),
-		),
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
