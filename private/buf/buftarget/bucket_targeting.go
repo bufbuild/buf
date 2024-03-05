@@ -69,34 +69,13 @@ func NewBucketTargeting(
 
 // *** PRIVATE ***
 
-var (
-	_ BucketTargeting = &bucketTargeting{}
-)
+var _ BucketTargeting = &bucketTargeting{}
 
 type bucketTargeting struct {
 	controllingWorkspace ControllingWorkspace
 	inputDir             string
 	targetPaths          []string
 	targetExcludePaths   []string
-}
-
-func (b *bucketTargeting) ControllingWorkspace() ControllingWorkspace {
-	return b.controllingWorkspace
-}
-
-func (b *bucketTargeting) InputDirPath() string {
-	return b.inputDir
-}
-
-func (b *bucketTargeting) TargetPaths() []string {
-	return b.targetPaths
-}
-
-func (b *bucketTargeting) TargetExcludePaths() []string {
-	return b.targetExcludePaths
-}
-
-func (b *bucketTargeting) isBucketTargeting() {
 }
 
 func newBucketTargeting(
@@ -156,6 +135,24 @@ func newBucketTargeting(
 		targetExcludePaths:   mappedTargetExcludePaths,
 	}, nil
 }
+
+func (b *bucketTargeting) ControllingWorkspace() ControllingWorkspace {
+	return b.controllingWorkspace
+}
+
+func (b *bucketTargeting) InputDirPath() string {
+	return b.inputDir
+}
+
+func (b *bucketTargeting) TargetPaths() []string {
+	return b.targetPaths
+}
+
+func (b *bucketTargeting) TargetExcludePaths() []string {
+	return b.targetExcludePaths
+}
+
+func (*bucketTargeting) isBucketTargeting() {}
 
 // mapControllingWorkspaceAndPath takes a bucket, path, and terminate func and returns the
 // controlling workspace and mapped path.

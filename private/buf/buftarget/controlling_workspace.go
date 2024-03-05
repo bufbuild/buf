@@ -25,6 +25,8 @@ type ControllingWorkspace interface {
 	BufWorkYAMLFile() bufconfig.BufWorkYAMLFile
 	// Returns a buf.yaml that was found. This is empty if we are returning a buf.work.yaml.
 	BufYAMLFile() bufconfig.BufYAMLFile
+
+	isControllingWorkspace()
 }
 
 func NewControllingWorkspace(
@@ -37,9 +39,7 @@ func NewControllingWorkspace(
 
 // *** PRIVATE ***
 
-var (
-	_ ControllingWorkspace = &controllingWorkspace{}
-)
+var _ ControllingWorkspace = &controllingWorkspace{}
 
 type controllingWorkspace struct {
 	path            string
@@ -70,3 +70,5 @@ func (c *controllingWorkspace) BufWorkYAMLFile() bufconfig.BufWorkYAMLFile {
 func (c *controllingWorkspace) BufYAMLFile() bufconfig.BufYAMLFile {
 	return c.bufYAMLFile
 }
+
+func (c *controllingWorkspace) isControllingWorkspace() {}
