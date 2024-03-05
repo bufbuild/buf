@@ -17,6 +17,7 @@ package bufimage
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"sort"
 	"strings"
 
@@ -799,7 +800,7 @@ func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
 	for _, imp := range imports {
 		importImageFileInfo, ok := pathToImageFileInfo[imp]
 		if !ok {
-			return fmt.Errorf("no ImageFileInfo for import %q", imp)
+			return fmt.Errorf("%s: import %q: %w", imageFileInfo.ExternalPath(), imp, fs.ErrNotExist)
 		}
 		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
 			return err
