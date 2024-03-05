@@ -36,6 +36,9 @@ func newUniversalProtoFileForV1(v1File *modulev1.File) *universalProtoFile {
 }
 
 func newUniversalProtoFileForV1Beta1(v1beta1File *modulev1beta1.File) *universalProtoFile {
+	if v1beta1File == nil {
+		return nil
+	}
 	return &universalProtoFile{
 		Path:    v1beta1File.Path,
 		Content: v1beta1File.Content,
