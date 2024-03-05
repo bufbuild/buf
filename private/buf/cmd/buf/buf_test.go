@@ -26,12 +26,15 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
@@ -1194,6 +1197,47 @@ breaking:
 	)
 }
 
+func TestLsFilesOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// It should be OK to have paths that overlap, and ls-files (and other commands)
+	// should output the union.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/paths/a/v3/a.proto
+testdata/paths/a/v3/foo/bar.proto
+testdata/paths/a/v3/foo/foo.proto`),
+		"ls-files",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+}
+
+func TestBuildOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// This may differ from LsFilesOverlappingPaths as we do a build of an image here.
+	// Building of images results in bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles being
+	// called, which is the original source of the issue that resulted in this test.
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{
+			`a/v3/a.proto`,
+			`a/v3/foo/bar.proto`,
+			`a/v3/foo/foo.proto`,
+		},
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+}
+
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -2311,6 +2355,23 @@ func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
 	)
+}
+
+// testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
+// listing the files from the image as if --format=import was set.
+func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {
+	buffer := bytes.NewBuffer(nil)
+	testRun(t, expectedExitCode, nil, buffer, append([]string{"build", "-o", "-"}, buildArgs...)...)
+	protoImage := &imagev1.Image{}
+	err := proto.Unmarshal(buffer.Bytes(), protoImage)
+	require.NoError(t, err)
+	image, err := bufimage.NewImageForProto(protoImage)
+	require.NoError(t, err)
+	var paths []string
+	for _, imageFile := range image.Files() {
+		paths = append(paths, imageFile.Path())
+	}
+	require.Equal(t, expectedFiles, paths)
 }
 
 func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
