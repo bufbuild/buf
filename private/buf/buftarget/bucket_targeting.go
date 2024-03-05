@@ -28,7 +28,7 @@ type BucketTargeting interface {
 	// ControllingWorkpsace returns the information for the controlling workspace, if one was
 	// found. If not found, then this will be nil.
 	ControllingWorkspace() ControllingWorkspace
-	// InputDir returns the input directory relative to the root of the bucket
+	// InputDirPath returns the input directory relative to the root of the bucket
 	InputDirPath() string
 	// TargetPaths returns the target paths relative to the root of the bucket.
 	TargetPaths() []string
