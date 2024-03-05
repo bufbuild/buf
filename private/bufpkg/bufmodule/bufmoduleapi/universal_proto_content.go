@@ -46,12 +46,22 @@ func newUniversalProtoContentForV1(v1ProtoContent *modulev1.DownloadResponse_Con
 }
 
 func newUniversalProtoContentForV1Beta1(v1beta1ProtoContent *modulev1beta1.DownloadResponse_Content) *universalProtoContent {
+	var (
+		v1BufYAMLFile *universalProtoFile
+		v1BufLockFile *universalProtoFile
+	)
+	if v1beta1ProtoContent.V1BufYamlFile != nil {
+		v1BufYAMLFile = newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile)
+	}
+	if v1beta1ProtoContent.V1BufLockFile != nil {
+		v1BufLockFile = newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufLockFile)
+	}
 	return &universalProtoContent{
 		CommitID:      v1beta1ProtoContent.Commit.Id,
 		ModuleID:      v1beta1ProtoContent.Commit.ModuleId,
 		Files:         slicesext.Map(v1beta1ProtoContent.Files, newUniversalProtoFileForV1Beta1),
-		V1BufYAMLFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile),
-		V1BufLockFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufLockFile),
+		V1BufYAMLFile: v1BufYAMLFile,
+		V1BufLockFile: v1BufLockFile,
 	}
 }
 
