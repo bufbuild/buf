@@ -29,7 +29,7 @@ type BucketTargeting interface {
 	// found. If not found, then this will be nil.
 	ControllingWorkspace() ControllingWorkspace
 	// InputDir returns the input directory relative to the root of the bucket
-	InputDir() string
+	InputDirPath() string
 	// TargetPaths returns the target paths relative to the root of the bucket.
 	TargetPaths() []string
 	// TargetExcludePaths returns the target exclude paths relative to the root of the bucket.
@@ -84,7 +84,7 @@ func (b *bucketTargeting) ControllingWorkspace() ControllingWorkspace {
 	return b.controllingWorkspace
 }
 
-func (b *bucketTargeting) InputDir() string {
+func (b *bucketTargeting) InputDirPath() string {
 	return b.inputDir
 }
 

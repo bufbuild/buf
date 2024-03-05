@@ -89,5 +89,5 @@ func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
 		return newWorkspaceDepManager(bucket, controllingWorkspace.Path(), true), nil
 	}
-	return newWorkspaceDepManager(bucket, bucketTargeting.InputDir(), false), nil
+	return newWorkspaceDepManager(bucket, bucketTargeting.InputDirPath(), false), nil
 }

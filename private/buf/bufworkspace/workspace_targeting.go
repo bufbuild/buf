@@ -82,7 +82,7 @@ func newWorkspaceTargeting(
 	if overrideBufYAMLFile != nil {
 		logger.Debug(
 			"targeting workspace with config override",
-			zap.String("input dir", bucketTargeting.InputDir()),
+			zap.String("input dir", bucketTargeting.InputDirPath()),
 		)
 		switch fileVersion := overrideBufYAMLFile.FileVersion(); fileVersion {
 		case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
@@ -91,7 +91,7 @@ func newWorkspaceTargeting(
 				config,
 				bucket,
 				bucketTargeting,
-				[]string{bucketTargeting.InputDir()},
+				[]string{bucketTargeting.InputDirPath()},
 				overrideBufYAMLFile,
 			)
 		case bufconfig.FileVersionV2:
@@ -105,7 +105,7 @@ func newWorkspaceTargeting(
 		if controllingWorkspace.BufYAMLFile() != nil {
 			logger.Debug(
 				"targeting workspace based on v2 buf.yaml",
-				zap.String("input dir", bucketTargeting.InputDir()),
+				zap.String("input dir", bucketTargeting.InputDirPath()),
 			)
 			return v2WorkspaceTargeting(ctx, config, bucket, bucketTargeting, controllingWorkspace.BufYAMLFile())
 		}
@@ -115,7 +115,7 @@ func newWorkspaceTargeting(
 				// This means that we attempted to target a v1 workspace at the buf.work.yaml, not
 				// an individual module within the v1 workspace defined in buf.work.yaml.
 				// This is disallowed.
-				if bucketTargeting.InputDir() == "." {
+				if bucketTargeting.InputDirPath() == "." {
 					return nil, errors.New(`Workspaces defined with buf.work.yaml cannot be updated or pushed, only
 the individual modules within a workspace can be updated or pushed. Workspaces
 defined with a v2 buf.yaml can be updated, see the migration documentation for more details.`)
@@ -124,14 +124,14 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 				// the workspace entirely, and just act as if the buf.work.yaml did not exist.
 				logger.Debug(
 					"targeting workspace, ignoring v1 buf.work.yaml, just building on module at target",
-					zap.String("input dir", bucketTargeting.InputDir()),
+					zap.String("input dir", bucketTargeting.InputDirPath()),
 				)
 				return v1WorkspaceTargeting(
 					ctx,
 					config,
 					bucket,
 					bucketTargeting,
-					[]string{bucketTargeting.InputDir()}, // Assume we are targeting only the module at the input dir
+					[]string{bucketTargeting.InputDirPath()}, // Assume we are targeting only the module at the input dir
 					nil,
 				)
 			}
@@ -147,7 +147,7 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 	}
 	logger.Debug(
 		"targeting workspace with no found buf.work.yaml or buf.yaml",
-		zap.String("input dir", bucketTargeting.InputDir()),
+		zap.String("input dir", bucketTargeting.InputDirPath()),
 	)
 	// We did not find any buf.work.yaml or buf.yaml, we invoke fallback logic.
 	return fallbackWorkspaceTargeting(
@@ -171,7 +171,7 @@ func v2WorkspaceTargeting(
 	// --exclude-path flags resulted in no targeted modules. This condition is represented
 	// by hadIsTentativelyTargetModule == true && hadIsTargetModule = false
 	//
-	// If hadIsTentativelyTargetModule is false, this means that our input bucketTargeting.InputDir() was not
+	// If hadIsTentativelyTargetModule is false, this means that our input bucketTargeting.InputDirPath() was not
 	// actually representative of any module that we detected in buf.work.yaml or v2 buf.yaml
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
@@ -183,14 +183,14 @@ func v2WorkspaceTargeting(
 		moduleDirPath := moduleConfig.DirPath()
 		moduleDirPaths = append(moduleDirPaths, moduleDirPath)
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		// bucketTargeting.InputDir() is the input targetSubDirPath. We only want to target modules that are inside
+		// bucketTargeting.InputDirPath() is the input targetSubDirPath. We only want to target modules that are inside
 		// this targetSubDirPath. Example: bufWorkYAMLDirPath is "foo", targetSubDirPath is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
 		// and "foo/bar/bat".
 		//
 		// This is new behavior - before, we required that you input an exact match for the module directory path,
 		// but now, we will take all the modules underneath this workspace.
-		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputDir(), moduleDirPath, normalpath.Relative)
+		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
 		// In the future, it would be nice to handle this more elegently.
@@ -224,7 +224,7 @@ func v2WorkspaceTargeting(
 		// Check if the input is overlapping within a module dir path. If so, return a nicer
 		// error. In the future, we want to remove special treatment for input dir, and it
 		// should be treated just like any target path.
-		return nil, checkForOverlap(bucketTargeting.InputDir(), moduleDirPaths)
+		return nil, checkForOverlap(bucketTargeting.InputDirPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -252,7 +252,7 @@ func v1WorkspaceTargeting(
 	// --exclude-path flags resulted in no targeted modules. This condition is represented
 	// by hadIsTentativelyTargetModule == true && hadIsTargetModule = false
 	//
-	// If hadIsTentativelyTargetModule is false, this means that our input bucketTargeting.InputDir() was not
+	// If hadIsTentativelyTargetModule is false, this means that our input bucketTargeting.InputDirPath() was not
 	// actually representative of any module that we detected in buf.work.yaml or v2 buf.yaml
 	// directories, and this is a system error - this should be verified before we reach this function.
 	var hadIsTentativelyTargetModule bool
@@ -286,14 +286,14 @@ func v1WorkspaceTargeting(
 			}
 		}
 		bucketIDToModuleConfig[moduleDirPath] = moduleConfig
-		// We only want to target modules that are inside the bucketTargeting.InputDir().
-		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.InputDir() is "foo/bar",
+		// We only want to target modules that are inside the bucketTargeting.InputDirPath().
+		// Example: bufWorkYAMLDirPath is "foo", bucketTargeting.InputDirPath() is "foo/bar",
 		// listed directories are "bar/baz", "bar/bat", "other". We want to include "foo/bar/baz"
 		// and "foo/bar/bat".
 		//
 		// This is new behavior - before, we required that you input an exact match for the module directory path,
 		// but now, we will take all the modules underneath this workspace.
-		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputDir(), moduleDirPath, normalpath.Relative)
+		isTentativelyTargetModule := normalpath.EqualsOrContainsPath(bucketTargeting.InputDirPath(), moduleDirPath, normalpath.Relative)
 		// We ignore this check for proto file refs, since the input is considered the directory
 		// of the proto file reference, which is unlikely to contain a module in its entirety.
 		// In the future, it would be nice to handle this more elegently.
@@ -327,7 +327,7 @@ func v1WorkspaceTargeting(
 		// Check if the input is overlapping within a module dir path. If so, return a nicer
 		// error. In the future, we want to remove special treatment for input dir, and it
 		// should be treated just like any target path.
-		return nil, checkForOverlap(bucketTargeting.InputDir(), moduleDirPaths)
+		return nil, checkForOverlap(bucketTargeting.InputDirPath(), moduleDirPaths)
 	}
 	if !hadIsTargetModule {
 		// It would be nice to have a better error message than this in the long term.
@@ -366,7 +366,7 @@ func fallbackWorkspaceTargeting(
 		ctx,
 		logger,
 		bucket,
-		bucketTargeting.InputDir(),
+		bucketTargeting.InputDirPath(),
 		false,
 	)
 	if err != nil {
@@ -442,7 +442,7 @@ func fallbackWorkspaceTargeting(
 	// If we still have no v1 module paths, then we go to the final fallback and set a v1
 	// module at the input dir.
 	if len(v1ModulePaths) == 0 {
-		v1ModulePaths = append(v1ModulePaths, bucketTargeting.InputDir())
+		v1ModulePaths = append(v1ModulePaths, bucketTargeting.InputDirPath())
 	}
 	return v1WorkspaceTargeting(
 		ctx,
@@ -473,7 +473,7 @@ func validateBucketTargeting(
 	// We don't use --path, --exclude-path here because these paths have had ExternalPathToPath
 	// applied to them. Which is another argument to do this at a higher level.
 	for _, targetPath := range bucketTargeting.TargetPaths() {
-		if targetPath == bucketTargeting.InputDir() {
+		if targetPath == bucketTargeting.InputDirPath() {
 			return errors.New("given input is equal to a value of --path - this has no effect and is disallowed")
 		}
 		// We want this to be deterministic.  We don't have that many paths in almost all cases.
@@ -497,8 +497,8 @@ func validateBucketTargeting(
 		}
 	}
 	for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
-		if targetExcludePath == bucketTargeting.InputDir() {
-			unnormalizedTargetSubDirPath := filepath.Clean(normalpath.Unnormalize(bucketTargeting.InputDir()))
+		if targetExcludePath == bucketTargeting.InputDirPath() {
+			unnormalizedTargetSubDirPath := filepath.Clean(normalpath.Unnormalize(bucketTargeting.InputDirPath()))
 			unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
 			return fmt.Errorf("given input %s is equal to a value of --exclude-path %s - this would exclude everything", unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
 		}
