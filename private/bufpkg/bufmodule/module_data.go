@@ -46,15 +46,13 @@ type ModuleData interface {
 
 	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.yaml ObjectData.
 	//
-	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
-	// synthesize a value for v2 buf.yamls.
+	// This may not be present. It will only be potentially present for v1 buf.yaml files.
 	//
 	// This is used for digest calculations. It is not used otherwise.
 	V1Beta1OrV1BufYAMLObjectData() (ObjectData, error)
 	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.lock ObjectData.
 	//
-	// This is always present, even if the Module was created from a v2 buf.yaml file. The BSR will
-	// synthesize a value for v2 buf.yamls.
+	// This may not be present. It will only be potentially present for v1 buf.lock files.
 	//
 	// This is used for digest calculations. It is not used otherwise.
 	V1Beta1OrV1BufLockObjectData() (ObjectData, error)

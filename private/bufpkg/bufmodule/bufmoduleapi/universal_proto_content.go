@@ -51,7 +51,7 @@ func newUniversalProtoContentForV1Beta1(v1beta1ProtoContent *modulev1beta1.Downl
 		ModuleID:      v1beta1ProtoContent.Commit.ModuleId,
 		Files:         slicesext.Map(v1beta1ProtoContent.Files, newUniversalProtoFileForV1Beta1),
 		V1BufYAMLFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile),
-		V1BufLockFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufYamlFile),
+		V1BufLockFile: newUniversalProtoFileForV1Beta1(v1beta1ProtoContent.V1BufLockFile),
 	}
 }
 
