@@ -2288,6 +2288,31 @@ func TestConvertRoundTrip(t *testing.T) {
 	})
 }
 
+func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
+	t.Parallel()
+	// We can build a simple proto file re that does not belong to any workspace or module
+	// based on the directory of the input.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "success", "simple.proto"),
+	)
+	// However, we should fail if there is any complexity (e.g. an import that cannot be
+	// resolved) since there is no workspace or module config to base this off of.
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		"", // no stdout
+		filepath.FromSlash(`testdata/protofileref/noworkspaceormodule/fail/import.proto:3:8:import "google/type/date.proto": file does not exist`),
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
+	)
+}
+
 func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
 	tempDir := t.TempDir()
 	baseArgs := []string{"mod", "init"}
