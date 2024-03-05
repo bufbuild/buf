@@ -389,9 +389,21 @@ func (b *moduleReadBucket) WalkFileInfos(
 	//
 	// Use targetPaths instead of targetPathMap to have a deterministic iteration order at this level.
 	if len(b.targetPaths) > 0 {
+		// Target paths may have overlapping files, for example if you do --path a --path a/b,
+		// you get the union of the files. We need to make sure that we only walk a given
+		// file path once.
+		seenPaths := make(map[string]struct{})
+		multiTargetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
+			path := objectInfo.Path()
+			if _, ok := seenPaths[path]; ok {
+				return nil
+			}
+			seenPaths[path] = struct{}{}
+			return targetFileWalkFunc(objectInfo)
+		}
 		for _, targetPath := range b.targetPaths {
 			// Still need to determine IsTargetFile as a file could be excluded with excludeTargetPaths.
-			if err := bucket.Walk(ctx, targetPath, targetFileWalkFunc); err != nil {
+			if err := bucket.Walk(ctx, targetPath, multiTargetFileWalkFunc); err != nil {
 				return err
 			}
 		}
