@@ -27,7 +27,7 @@ var (
 		nil,
 	)
 	defaultCheckConfigV2 = newCheckConfigNoValidate(
-		FileVersionV1,
+		FileVersionV2,
 		nil,
 		nil,
 		nil,
