@@ -58,7 +58,6 @@ var (
 		bufbreakingbuild.FileSameCcGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameJavaGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSamePyGenericServicesRuleBuilder,
-		bufbreakingbuild.FileSamePhpGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameCcEnableArenasRuleBuilder,
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
@@ -231,10 +230,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_PY_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
 			"FILE",
 			"PACKAGE",
 		},

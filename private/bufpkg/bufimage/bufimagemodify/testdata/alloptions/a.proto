@@ -15,5 +15,5 @@ option cc_generic_services = false;
 option java_generic_services = false;
 option java_multiple_files = false;
 option java_string_check_utf8 = false;
-option php_generic_services = false;
+//option php_generic_services = false;
 option py_generic_services = false;
