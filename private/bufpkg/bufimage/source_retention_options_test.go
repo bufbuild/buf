@@ -18,6 +18,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -384,18 +387,55 @@ func TestStripSourceOnlyOptionsFromFile(t *testing.T) {
 			},
 		},
 	}
+	t.Run("FileDescriptorProto", func(t *testing.T) {
+		t.Parallel()
+		actualStrippedFile, err := StripSourceRetentionOptionsFromFile(beforeFile)
+		require.NoError(t, err)
+		require.NotSame(t, actualStrippedFile, beforeFile)
+		require.Empty(t, cmp.Diff(afterFile, actualStrippedFile, protocmp.Transform()))
 
-	actualStrippedFile, err := stripSourceRetentionOptionsFromFile(beforeFile)
-	require.NoError(t, err)
-	require.NotSame(t, actualStrippedFile, beforeFile)
-	require.Empty(t, cmp.Diff(afterFile, actualStrippedFile, protocmp.Transform()))
+		// If we repeat the operation, we get back the same descriptor unchanged because
+		// it doesn't have any source-only options.
+		doubleStrippedFile, err := StripSourceRetentionOptionsFromFile(actualStrippedFile)
+		require.NoError(t, err)
+		require.Same(t, doubleStrippedFile, actualStrippedFile)
+		require.Empty(t, cmp.Diff(afterFile, doubleStrippedFile, protocmp.Transform()))
+	})
+	t.Run("ImageFile", func(t *testing.T) {
+		t.Parallel()
+		convertToImage := func(fileProto *descriptorpb.FileDescriptorProto) *imagev1.ImageFile {
+			moduleIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "foo", "bar")
+			require.NoError(t, err)
+			imageFile, err := NewImageFile(
+				fileProto,
+				moduleIdentity,
+				bufmoduletesting.TestCommit,
+				beforeFile.GetName(),
+				false,
+				false,
+				nil,
+			)
+			require.NoError(t, err)
+			return imageFileToProtoImageFile(imageFile)
+		}
 
-	// If we repeat the operation, we get back the same descriptor unchanged because
-	// it doesn't have any source-only options.
-	doubleStrippedFile, err := stripSourceRetentionOptionsFromFile(actualStrippedFile)
-	require.NoError(t, err)
-	require.Same(t, doubleStrippedFile, actualStrippedFile)
-	require.Empty(t, cmp.Diff(afterFile, doubleStrippedFile, protocmp.Transform()))
+		// This test is the same as one above, but we're using an
+		// ImageFile proto instead of a FileDescriptorProto.
+		beforeImageFile := convertToImage(beforeFile)
+		afterImageFile := convertToImage(afterFile)
+
+		actualStrippedFile, err := StripSourceRetentionOptionsFromFile(beforeImageFile)
+		require.NoError(t, err)
+		require.NotSame(t, actualStrippedFile, beforeImageFile)
+		require.Empty(t, cmp.Diff(afterImageFile, actualStrippedFile, protocmp.Transform()))
+
+		// If we repeat the operation, we get back the same descriptor unchanged because
+		// it doesn't have any source-only options.
+		doubleStrippedFile, err := StripSourceRetentionOptionsFromFile(actualStrippedFile)
+		require.NoError(t, err)
+		require.Same(t, doubleStrippedFile, actualStrippedFile)
+		require.Empty(t, cmp.Diff(afterImageFile, doubleStrippedFile, protocmp.Transform()))
+	})
 }
 
 func TestUpdateAll(t *testing.T) {

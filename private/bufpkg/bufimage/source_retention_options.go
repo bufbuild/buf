@@ -17,44 +17,55 @@ package bufimage
 import (
 	"fmt"
 
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func stripSourceRetentionOptionsFromFile(file *descriptorpb.FileDescriptorProto) (*descriptorpb.FileDescriptorProto, error) {
+// StripSourceRetentionOptionsFromFile returns a file descriptor proto that omits any
+// options that in file that are defined to be retained only in source. If file has no
+// such options, then it is returned as is. If it does have such options, a copy is
+// made; the given file will not be mutated.
+//
+// The given file must be either a *descriptorpb.FileDescriptorProto or a
+func StripSourceRetentionOptionsFromFile[F protodescriptor.FileDescriptor](
+	file F,
+) (F, error) {
+	var zero F
 	var dirty bool
-	newOpts, err := stripSourceRetentionOptions(file.Options)
+	newOpts, err := stripSourceRetentionOptions(file.GetOptions())
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
-	if newOpts != file.Options {
+	if newOpts != file.GetOptions() {
 		dirty = true
 	}
-	newMsgs, changed, err := updateAll(file.MessageType, stripSourceRetentionOptionsFromMessage)
+	newMsgs, changed, err := updateAll(file.GetMessageType(), stripSourceRetentionOptionsFromMessage)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if changed {
 		dirty = true
 	}
-	newEnums, changed, err := updateAll(file.EnumType, stripSourceRetentionOptionsFromEnum)
+	newEnums, changed, err := updateAll(file.GetEnumType(), stripSourceRetentionOptionsFromEnum)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if changed {
 		dirty = true
 	}
-	newExts, changed, err := updateAll(file.Extension, stripSourceRetentionOptionsFromField)
+	newExts, changed, err := updateAll(file.GetExtension(), stripSourceRetentionOptionsFromField)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if changed {
 		dirty = true
 	}
-	newSvcs, changed, err := updateAll(file.Service, stripSourceRetentionOptionsFromService)
+	newSvcs, changed, err := updateAll(file.GetService(), stripSourceRetentionOptionsFromService)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if changed {
 		dirty = true
@@ -66,13 +77,25 @@ func stripSourceRetentionOptionsFromFile(file *descriptorpb.FileDescriptorProto)
 
 	newFile, err := shallowCopy(file)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
-	newFile.Options = newOpts
-	newFile.MessageType = newMsgs
-	newFile.EnumType = newEnums
-	newFile.Extension = newExts
-	newFile.Service = newSvcs
+	switch newFile := any(newFile).(type) {
+	case *descriptorpb.FileDescriptorProto:
+		newFile.Options = newOpts
+		newFile.MessageType = newMsgs
+		newFile.EnumType = newEnums
+		newFile.Extension = newExts
+		newFile.Service = newSvcs
+	case *imagev1.ImageFile:
+		newFile.Options = newOpts
+		newFile.MessageType = newMsgs
+		newFile.EnumType = newEnums
+		newFile.Extension = newExts
+		newFile.Service = newSvcs
+	default:
+		return zero, fmt.Errorf("file should be a %T or %T but is instead a %T",
+			(*descriptorpb.FileDescriptorProto)(nil), (*imagev1.ImageFile)(nil), newFile)
+	}
 	return newFile, nil
 }
 

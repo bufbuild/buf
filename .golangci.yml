@@ -237,4 +237,4 @@ issues:
     # it's just test code.
     - linters:
         - forcetypeassert
-      path: private/bufpkg/bufimage/strip_source_only_test.go
+      path: private/bufpkg/bufimage/source_retention_options_test\.go
