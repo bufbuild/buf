@@ -310,7 +310,10 @@ func getBuildResult(
 ) *buildResult {
 	var errorsWithPos []reporter.ErrorWithPos
 	var warningErrorsWithPos []reporter.ErrorWithPos
-	sourceInfoMode := protocompile.SourceInfoStandard
+	// With "extra option locations", buf can include more comments
+	// for an option value than protoc can. In particular, this allows
+	// it to preserve comments inside of message literals.
+	sourceInfoMode := protocompile.SourceInfoExtraOptionLocations
 	if excludeSourceCodeInfo {
 		sourceInfoMode = protocompile.SourceInfoNone
 	}
