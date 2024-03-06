@@ -41,10 +41,10 @@ message Int32Test {
     // the next line should be annotated
     (buf.validate.field).sfixed64.gt = 10
   ];
-  // the entire option should be annotated. (45, 48) to (48, 4)
+  // annotating items inside an option value
   fixed32 invalid_bound_aggregate_syntax = 11 [(buf.validate.field).fixed32 = {
-    lt: 10
-    gte: 10
+    lt: 10 // this line should be annotated
+    gte: 10 // and this one, too
   }];
   // valid
   google.protobuf.Int32Value int32_value_match = 12 [
