@@ -78,6 +78,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
 		} else if plugin.Registry().Python != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
+		} else if plugin.Registry().Cargo != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO
 		}
 	}
 	return registryType
@@ -195,6 +197,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
+	} else if pluginRegistry.Cargo != nil {
+		cargoConfig, err := CargoRegistryConfigToProtoCargoConfig(pluginRegistry.Cargo)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CargoConfig{CargoConfig: cargoConfig}
 	}
 	return registryConfig, nil
 }
@@ -264,8 +272,44 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Python = pythonConfig
+	} else if protoCargoConfig := config.GetCargoConfig(); protoCargoConfig != nil {
+		cargoConfig, err := ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Cargo = cargoConfig
 	}
 	return registryConfig, nil
+}
+
+func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.CargoConfig) (*bufpluginconfig.CargoRegistryConfig, error) {
+	cargoConfig := &bufpluginconfig.CargoRegistryConfig{
+		RustVersion: protoCargoConfig.RustVersion,
+	}
+	for _, dependency := range protoCargoConfig.RuntimeLibraries {
+		cargoConfig.Deps = append(cargoConfig.Deps, bufpluginconfig.CargoRegistryDependency{
+			Name:               dependency.Name,
+			VersionRequirement: dependency.VersionRequirement,
+			DefaultFeatures:    dependency.DefaultFeatures,
+			Features:           dependency.Features,
+		})
+	}
+	return cargoConfig, nil
+}
+
+func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufpluginconfig.CargoRegistryConfig) (*registryv1alpha1.CargoConfig, error) {
+	protoCargoConfig := &registryv1alpha1.CargoConfig{
+		RustVersion: cargoConfig.RustVersion,
+	}
+	for _, dependency := range cargoConfig.Deps {
+		protoCargoConfig.RuntimeLibraries = append(protoCargoConfig.RuntimeLibraries, &registryv1alpha1.CargoConfig_RuntimeLibrary{
+			Name:               dependency.Name,
+			VersionRequirement: dependency.VersionRequirement,
+			DefaultFeatures:    dependency.DefaultFeatures,
+			Features:           dependency.Features,
+		})
+	}
+	return protoCargoConfig, nil
 }
 
 func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1.PythonConfig) (*bufpluginconfig.PythonRegistryConfig, error) {
