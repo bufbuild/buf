@@ -1,0 +1,9 @@
+version: v1
+name: buf.build/community/pseudomuto-doc
+plugin_version: v1.5.1
+source_url: https://github.com/pseudomuto/protoc-gen-doc
+description: Documentation generator plugin for Google Protocol Buffers.
+spdx_license_id: MIT
+license_url: https://github.com/pseudomuto/protoc-gen-doc/blob/v1.5.1/LICENSE.md
+registry:
+  archive: {}
