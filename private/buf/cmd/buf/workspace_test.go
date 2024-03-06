@@ -1121,26 +1121,17 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	// The target input cannot overlap with any of the directories defined
 	// in the workspace.
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdoutStderrNoWarn(
 		t,
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: failed to build input "proto/buf" because it is contained by directory "proto" listed in testdata/workspace/fail/overlap/buf.work.yaml`),
+		`Failure: failed to build input "proto/buf" because it is contained by module at path "proto" specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)
-	testRunStdoutStderrNoWarn(
-		t,
-		nil,
-		1,
-		``,
-		filepath.FromSlash(`Failure: failed to build input "other" because it contains directory "other/proto" listed in testdata/workspace/success/dir/buf.work.yaml`),
-		"build",
-		filepath.Join("testdata", "workspace", "success", "dir", "other"),
-	)
+	// This works because of our fallback logic, so we build the workspace at testdata/workspace/success/dir
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "workspace", "success", "dir", "other"))
 }
 
 func TestWorkspaceNoVersionFail(t *testing.T) {
@@ -1196,7 +1187,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input is equal to a value of --path - this has no effect and is disallowed`,
+		`Failure: given input is equal to a value of --path, this has no effect and is disallowed`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",
@@ -1207,7 +1198,7 @@ func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input is equal to a value of --path - this has no effect and is disallowed`,
+		`Failure: given input is equal to a value of --path, this has no effect and is disallowed`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"--path",
@@ -1222,7 +1213,7 @@ func TestWorkspaceWithWorkspaceExcludePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input . is equal to a value of --exclude-path . - this would exclude everything`,
+		`Failure: given input "." is equal to a value of --exclude-path ".", this would exclude everything`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--exclude-path",
@@ -1233,7 +1224,7 @@ func TestWorkspaceWithWorkspaceExcludePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: given input . is equal to a value of --exclude-path . - this would exclude everything`,
+		`Failure: given input "." is equal to a value of --exclude-path ".", this would exclude everything`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"--exclude-path",
@@ -1249,7 +1240,7 @@ func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: module "proto" was specified with --path - specify this module path directly as an input`,
+		`Failure: module "proto" was specified with --path, specify this module path directly as an input`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",
@@ -1260,7 +1251,7 @@ func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: module "proto" was specified with --path - specify this module path directly as an input`,
+		`Failure: module "proto" was specified with --path, specify this module path directly as an input`,
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "v2", "dir"),
 		"--path",
@@ -1383,7 +1374,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		1,
 		``,
 		filepath.FromSlash(fmt.Sprintf(
-			`Failure: %s/proto/rpc.proto: absolute paths cannot be used for this input type`,
+			`Failure: %s/proto/rpc.proto: expected to be relative`,
 			wd,
 		)),
 		"lint",
@@ -1402,7 +1393,7 @@ func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
 		1,
 		``,
 		filepath.FromSlash(fmt.Sprintf(
-			`Failure: %s/proto/rpc.proto: absolute paths cannot be used for this input type`,
+			`Failure: %s/proto/rpc.proto: expected to be relative`,
 			wd,
 		)),
 		"lint",

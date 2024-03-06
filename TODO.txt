@@ -12,15 +12,3 @@ NOTE: We are not allowing cross-workspace finding for include_package_files=true
 
 - Changed protoc-gen-buf-lint and protoc-gen-buf-breaking configuration, deprecated old configurations
 - Need to manually test protoc-gen-buf-breaking
-
-$ bothbuf build google/ads/admob/v1/admob_api.proto
-OLD
-OLD STDOUT:
-OLD EXIT CODE: 100
-OLD STDERR:
-google/ads/admob/v1/admob_api.proto:19:8:stat google/ads/admob/v1/admob_resources.proto: file does not exist
-NEW
-NEW STDOUT:
-NEW EXIT CODE: 100
-NEW STDERR:
-/Users/pedge/git/googleapis/google/ads/admob/v1/admob_api.proto:19:8:stat google/ads/admob/v1/admob_resources.proto: file does not exist

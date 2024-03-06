@@ -17,6 +17,8 @@ package bufworkspace
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -42,7 +44,7 @@ type WorkspaceDepManagerProvider interface {
 	GetWorkspaceDepManager(
 		ctx context.Context,
 		bucket storage.ReadWriteBucket,
-		options ...WorkspaceDepManagerOption,
+		bucketTargeting buftarget.BucketTargeting,
 	) (WorkspaceDepManager, error)
 }
 
@@ -77,29 +79,15 @@ func newWorkspaceDepManagerProvider(
 func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	ctx context.Context,
 	bucket storage.ReadWriteBucket,
-	options ...WorkspaceDepManagerOption,
+	bucketTargeting buftarget.BucketTargeting,
 ) (_ WorkspaceDepManager, retErr error) {
-	config, err := newWorkspaceDepManagerConfig(options)
-	if err != nil {
-		return nil, err
+	controllingWorkspace := bucketTargeting.ControllingWorkspace()
+	if controllingWorkspace == nil || controllingWorkspace.BufWorkYAMLFile() != nil {
+		return nil, syserror.New("no supported workspace found")
 	}
-	workspaceTargeting, err := newWorkspaceTargeting(
-		ctx,
-		w.logger,
-		bucket,
-		config.targetSubDirPath,
-		nil,
-		true, // Disallow buf.work.yamls when doing management of deps for v1
-	)
-	if err != nil {
-		return nil, err
+	bufYAMLFile := controllingWorkspace.BufYAMLFile()
+	if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+		return newWorkspaceDepManager(bucket, controllingWorkspace.Path(), true), nil
 	}
-	if workspaceTargeting.isV2() {
-		return newWorkspaceDepManager(bucket, workspaceTargeting.v2DirPath, true), nil
-	}
-	if len(workspaceTargeting.v1DirPaths) != 1 {
-		// This is because of disallowing buf.work.yamls
-		return nil, syserror.Newf("expected a single v1 dir path from workspace targeting but got %v", workspaceTargeting.v1DirPaths)
-	}
-	return newWorkspaceDepManager(bucket, workspaceTargeting.v1DirPaths[0], false), nil
+	return newWorkspaceDepManager(bucket, bucketTargeting.InputDirPath(), false), nil
 }

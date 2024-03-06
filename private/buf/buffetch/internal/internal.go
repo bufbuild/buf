@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -183,7 +184,7 @@ type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
 	Path() string
-	// IncludePackageFiles says to include the same package files TODO update comment
+	// IncludePackageFiles says to include the files from the same package files
 	IncludePackageFiles() bool
 	FileScheme() FileScheme
 	protoFileRef()
@@ -411,12 +412,6 @@ type BucketExtender interface {
 	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-
-	// PathForExternalPath takes a path external to the asset and converts it to
-	// a path that is relative to the asset.
-	//
-	// The returned path will be normalized and validated.
-	PathForExternalPath(externalPath string) (string, error)
 }
 
 // ReadBucketCloser is a bucket returned from GetReadBucketCloser.
@@ -443,23 +438,19 @@ type Reader interface {
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
 	// GetReadBucketCloser gets the bucket.
-	//
-	// If done for a ProtoFileRef, the Bucket will be for the enclosing module or workspace via
-	// terminateFileNames or protoFileTerminateFileNames. No filtering of the Bucket is performed, this is
-	// the responsibility of the caller.
 	GetReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetReadBucketCloserOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloser, buftarget.BucketTargeting, error)
 	// GetReadWriteBucket gets the bucket.
 	GetReadWriteBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		dirRef DirRef,
 		options ...GetReadWriteBucketOption,
-	) (ReadWriteBucket, error)
+	) (ReadWriteBucket, buftarget.BucketTargeting, error)
 	// GetModuleKey gets the ModuleKey.
 	GetModuleKey(
 		ctx context.Context,
@@ -829,21 +820,23 @@ func WithGetReadBucketCloserCopyToInMemory() GetReadBucketCloserOption {
 // See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
 // This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
 // to find the controlling workspace of an enclosing module or workspace.
-func WithGetReadBucketCloserTerminateFunc(terminateFunc TerminateFunc) GetReadBucketCloserOption {
+func WithGetReadBucketCloserTerminateFunc(terminateFunc buftarget.TerminateFunc) GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
 		getReadBucketCloserOptions.terminateFunc = terminateFunc
 	}
 }
 
-// WithGetReadBucketCloserProtoFileTerminateFunc is like WithGetReadBucketCloserTerminateFunc, but determines
-// where to stop searching for the enclosing module or workspace when given a ProtoFileRef.
-//
-// See bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef, which is the only thing that uses this.
-// This finds the enclosing module or workspace.
-// This is only used for ProtoFileRefs.
-func WithGetReadBucketCloserProtoFileTerminateFunc(protoFileTerminateFunc TerminateFunc) GetReadBucketCloserOption {
+// WithGetReadBucketCloserTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetPaths(targetPaths []string) GetReadBucketCloserOption {
 	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
-		getReadBucketCloserOptions.protoFileTerminateFunc = protoFileTerminateFunc
+		getReadBucketCloserOptions.targetPaths = targetPaths
+	}
+}
+
+// WithGetReadBucketCloserTargetExcludePaths sets the target exclude paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetExcludePaths(targetExcludePaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
@@ -857,24 +850,24 @@ type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
 // See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
 // This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
 // to find the controlling workspace of an enclosing module or workspace.
-func WithGetReadWriteBucketTerminateFunc(terminateFunc TerminateFunc) GetReadWriteBucketOption {
+func WithGetReadWriteBucketTerminateFunc(terminateFunc buftarget.TerminateFunc) GetReadWriteBucketOption {
 	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
 		getReadWriteBucketOptions.terminateFunc = terminateFunc
 	}
 }
 
-// TerminateFunc is a termination function.
-//
-// This function should return true if the search should terminate at the prefix, that is
-// the prefix should be where the bucket is mapped onto.
-//
-// The original subDirPath is also given to the TerminateFunc.
-type TerminateFunc func(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	prefix string,
-	originalSubDirPath string,
-) (terminate bool, err error)
+// WithGetReadWriteBucketTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadWriteBucketTargetPaths(targetPaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetPaths = targetPaths
+	}
+}
+
+func WithGetReadWriteBucketTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths
+	}
+}
 
 // PutFileOption is a PutFile option.
 type PutFileOption func(*putFileOptions)

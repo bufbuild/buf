@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -27,42 +28,32 @@ var _ ReadBucketCloser = &readBucketCloser{}
 type readBucketCloser struct {
 	storage.ReadBucketCloser
 
-	subDirPath          string
-	pathForExternalPath func(string) (string, error)
+	subDirPath string
 }
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	subDirPath string,
-	pathForExternalPath func(string) (string, error),
-) (*readBucketCloser, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
-	if err != nil {
-		return nil, err
-	}
+	bucketPath string,
+	bucketTargeting buftarget.BucketTargeting,
+) *readBucketCloser {
+	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.InputDirPath())
 	return &readBucketCloser{
-		ReadBucketCloser:    storageReadBucketCloser,
-		subDirPath:          normalizedSubDirPath,
-		pathForExternalPath: pathForExternalPath,
-	}, nil
+		ReadBucketCloser: storageReadBucketCloser,
+		subDirPath:       normalizedSubDirPath,
+	}
 }
 
 func newReadBucketCloserForReadWriteBucket(
 	readWriteBucket ReadWriteBucket,
 ) *readBucketCloser {
 	return &readBucketCloser{
-		ReadBucketCloser:    storage.NopReadBucketCloser(readWriteBucket),
-		subDirPath:          readWriteBucket.SubDirPath(),
-		pathForExternalPath: readWriteBucket.PathForExternalPath,
+		ReadBucketCloser: storage.NopReadBucketCloser(readWriteBucket),
+		subDirPath:       readWriteBucket.SubDirPath(),
 	}
 }
 
 func (r *readBucketCloser) SubDirPath() string {
 	return r.subDirPath
-}
-
-func (r *readBucketCloser) PathForExternalPath(externalPath string) (string, error) {
-	return r.pathForExternalPath(externalPath)
 }
 
 func (r *readBucketCloser) copyToInMemory(ctx context.Context) (*readBucketCloser, error) {
@@ -75,8 +66,7 @@ func (r *readBucketCloser) copyToInMemory(ctx context.Context) (*readBucketClose
 			ReadBucket: storageReadBucket,
 			closeFunc:  r.ReadBucketCloser.Close,
 		},
-		subDirPath:          r.subDirPath,
-		pathForExternalPath: r.pathForExternalPath,
+		subDirPath: r.subDirPath,
 	}, nil
 }
 

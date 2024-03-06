@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/dag/dagtest"
@@ -28,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestBasicV1(t *testing.T) {
@@ -60,12 +62,24 @@ func testBasic(t *testing.T, subDirPath string) {
 	bucket, err := storageosProvider.NewReadWriteBucket(normalpath.Join("testdata/basic", subDirPath))
 	require.NoError(t, err)
 
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		zaptest.NewLogger(t),
+		bucket,
+		"finance/portfolio/proto",
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NotNil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "finance/portfolio/proto", bucketTargeting.InputDirPath())
+	require.NoError(t, err)
+
 	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		bucket,
-		WithTargetSubDirPath(
-			"finance/portfolio/proto",
-		),
+		bucketTargeting,
 	)
 	require.NoError(t, err)
 	module := workspace.GetModuleForOpaqueID("buf.testing/acme/bond")
@@ -127,23 +141,29 @@ func testBasic(t *testing.T, subDirPath string) {
 	_, err = module.StatFileInfo(ctx, "LICENSE")
 	require.NoError(t, err)
 
-	//malformedDeps, err := MalformedDepsForWorkspace(workspace)
-	//require.NoError(t, err)
-	//require.Equal(t, 1, len(malformedDeps))
-	//malformedDep := malformedDeps[0]
-	//require.Equal(t, "buf.testing/acme/extension", malformedDep.ModuleFullName().String())
-	//require.Equal(t, MalformedDepTypeUndeclared, malformedDep.Type())
+	bucketTargeting, err = buftarget.NewBucketTargeting(
+		ctx,
+		zaptest.NewLogger(t),
+		bucket,
+		"common/money/proto",
+		[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, "common/money/proto", bucketTargeting.InputDirPath())
+	require.Equal(
+		t,
+		[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
+		bucketTargeting.TargetPaths(),
+	)
 
 	workspace, err = workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		bucket,
-		WithTargetSubDirPath(
-			"common/money/proto",
-		),
-		WithTargetPaths(
-			[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
-			nil,
-		),
+		bucketTargeting,
 	)
 	require.NoError(t, err)
 	module = workspace.GetModuleForOpaqueID("buf.testing/acme/money")
@@ -177,10 +197,24 @@ func TestUnusedDep(t *testing.T) {
 	storageosProvider := storageos.NewProvider()
 	bucket, err := storageosProvider.NewReadWriteBucket("testdata/basic/workspace_unused_dep")
 	require.NoError(t, err)
+	bucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		zaptest.NewLogger(t),
+		bucket,
+		".",
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, bucketTargeting.ControllingWorkspace())
+	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
+	require.Equal(t, ".", bucketTargeting.InputDirPath())
 
 	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		bucket,
+		bucketTargeting,
 	)
 	require.NoError(t, err)
 

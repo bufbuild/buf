@@ -26,12 +26,15 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var convertTestDataDir = filepath.Join("command", "convert", "testdata", "convert")
@@ -241,8 +244,6 @@ func TestFail6(t *testing.T) {
 
 func TestFail7(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -257,9 +258,10 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufctl.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
-		"", // stderr should be empty
+		"", // stdout is empty
+		// This is new behavior we introduced. When setting a config override, we no longer do
+		// a search for the controlling workspace. See bufctl/option.go for additional details.
+		filepath.FromSlash(`Failure: testdata/export/other/proto/unimported.proto: import "another.proto": file does not exist`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -275,7 +277,7 @@ testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, 
 		// during the refactor. This is actually more correct - pre-refactor, the CLI was acting
 		// as if the buf.yaml at testdata/fail/buf.yaml mattered in some way. In fact, it doesn't -
 		// you've said that you have overridden it entirely.
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "testdata/fail/buf".
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory ".".
 testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
@@ -336,8 +338,6 @@ func TestFail10(t *testing.T) {
 
 func TestFail11(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	testRunStdout(
 		t,
 		nil,
@@ -1197,6 +1197,47 @@ breaking:
 	)
 }
 
+func TestLsFilesOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// It should be OK to have paths that overlap, and ls-files (and other commands)
+	// should output the union.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/paths/a/v3/a.proto
+testdata/paths/a/v3/foo/bar.proto
+testdata/paths/a/v3/foo/foo.proto`),
+		"ls-files",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+}
+
+func TestBuildOverlappingPaths(t *testing.T) {
+	t.Parallel()
+	// This may differ from LsFilesOverlappingPaths as we do a build of an image here.
+	// Building of images results in bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles being
+	// called, which is the original source of the issue that resulted in this test.
+	testBuildLsFilesFormatImport(
+		t,
+		0,
+		[]string{
+			`a/v3/a.proto`,
+			`a/v3/foo/bar.proto`,
+			`a/v3/foo/foo.proto`,
+		},
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+}
+
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -1299,8 +1340,6 @@ func TestExportExcludeImports(t *testing.T) {
 
 func TestExportPaths(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1326,8 +1365,6 @@ func TestExportPaths(t *testing.T) {
 
 func TestExportPathsAndExcludes(t *testing.T) {
 	t.Parallel()
-	// TODO failing test
-	t.Skip()
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1489,7 +1526,7 @@ func TestBuildWithPaths(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"build",
 		filepath.Join("testdata", "paths"),
 		"--path",
@@ -1521,7 +1558,7 @@ func TestLintWithPaths(t *testing.T) {
 		"",
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		filepath.FromSlash(`Failure: excluded path "a/v3" contains targeted path "a/v3/foo", which means all paths in "a/v3/foo" will be excluded`),
+		filepath.FromSlash(`Failure: excluded path "testdata/paths/a/v3" contains targeted path "testdata/paths/a/v3/foo", which means all paths in "testdata/paths/a/v3/foo" will be excluded`),
 		"lint",
 		filepath.Join("testdata", "paths"),
 		"--path",
@@ -1985,7 +2022,7 @@ func TestFormatSingleFile(t *testing.T) {
 		"format",
 		filepath.Join("testdata", "format", "simple"),
 		"-o",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 	)
 	testRunStdout(
 		t,
@@ -1993,7 +2030,7 @@ func TestFormatSingleFile(t *testing.T) {
 		0,
 		``,
 		"format",
-		filepath.Join(tempDir, "simple.formatted.proto"),
+		filepath.Join(tempDir, "simple.formatted"),
 		"-d",
 	)
 }
@@ -2293,6 +2330,48 @@ func TestConvertRoundTrip(t *testing.T) {
 		)
 		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
 	})
+}
+
+func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
+	t.Parallel()
+	// We can build a simple proto file re that does not belong to any workspace or module
+	// based on the directory of the input.
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "success", "simple.proto"),
+	)
+	// However, we should fail if there is any complexity (e.g. an import that cannot be
+	// resolved) since there is no workspace or module config to base this off of.
+	testRunStdoutStderrNoWarn(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		"", // no stdout
+		filepath.FromSlash(`testdata/protofileref/noworkspaceormodule/fail/import.proto:3:8:import "`)+`google/type/date.proto": file does not exist`,
+		"build",
+		filepath.Join("testdata", "protofileref", "noworkspaceormodule", "fail", "import.proto"),
+	)
+}
+
+// testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
+// listing the files from the image as if --format=import was set.
+func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {
+	buffer := bytes.NewBuffer(nil)
+	testRun(t, expectedExitCode, nil, buffer, append([]string{"build", "-o", "-"}, buildArgs...)...)
+	protoImage := &imagev1.Image{}
+	err := proto.Unmarshal(buffer.Bytes(), protoImage)
+	require.NoError(t, err)
+	image, err := bufimage.NewImageForProto(protoImage)
+	require.NoError(t, err)
+	var paths []string
+	for _, imageFile := range image.Files() {
+		paths = append(paths, imageFile.Path())
+	}
+	require.Equal(t, expectedFiles, paths)
 }
 
 func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {

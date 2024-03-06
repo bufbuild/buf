@@ -97,7 +97,6 @@ func getModuleDeps(
 	if err := protoFileTracker.validate(); err != nil {
 		return nil, err
 	}
-
 	moduleDeps := make([]ModuleDep, 0, len(depOpaqueIDToModuleDep))
 	for _, moduleDep := range depOpaqueIDToModuleDep {
 		moduleDeps = append(moduleDeps, moduleDep)

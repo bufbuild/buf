@@ -331,7 +331,6 @@ func (b *moduleReadBucket) WalkFileInfos(
 	// Note that we must verify that at least one file in this ModuleReadBucket is
 	// a .proto file, per the documentation on Module.
 	protoFileTracker := newProtoFileTracker()
-	protoFileTracker.trackModule(b.module)
 
 	walkFileInfosOptions := newWalkFileInfosOptions()
 	for _, option := range options {
@@ -343,6 +342,10 @@ func (b *moduleReadBucket) WalkFileInfos(
 	}
 
 	if !walkFileInfosOptions.onlyTargetFiles {
+		// We only want to call trackModule if we are walking all the files, not just
+		// the target files. By not calling trackModule outside of this if statement,
+		// we will not produce NoProtoFilesErrors, per the documention on trackModule.
+		protoFileTracker.trackModule(b.module)
 		if err := bucket.Walk(
 			ctx,
 			"",
@@ -358,6 +361,11 @@ func (b *moduleReadBucket) WalkFileInfos(
 			return err
 		}
 		return protoFileTracker.validate()
+	}
+
+	// If we are walking all files, then we track the module if it is the target module
+	if b.module.IsTarget() {
+		protoFileTracker.trackModule(b.module)
 	}
 
 	targetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
@@ -381,9 +389,21 @@ func (b *moduleReadBucket) WalkFileInfos(
 	//
 	// Use targetPaths instead of targetPathMap to have a deterministic iteration order at this level.
 	if len(b.targetPaths) > 0 {
+		// Target paths may have overlapping files, for example if you do --path a --path a/b,
+		// you get the union of the files. We need to make sure that we only walk a given
+		// file path once.
+		seenPaths := make(map[string]struct{})
+		multiTargetFileWalkFunc := func(objectInfo storage.ObjectInfo) error {
+			path := objectInfo.Path()
+			if _, ok := seenPaths[path]; ok {
+				return nil
+			}
+			seenPaths[path] = struct{}{}
+			return targetFileWalkFunc(objectInfo)
+		}
 		for _, targetPath := range b.targetPaths {
 			// Still need to determine IsTargetFile as a file could be excluded with excludeTargetPaths.
-			if err := bucket.Walk(ctx, targetPath, targetFileWalkFunc); err != nil {
+			if err := bucket.Walk(ctx, targetPath, multiTargetFileWalkFunc); err != nil {
 				return err
 			}
 		}

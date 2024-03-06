@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -321,7 +322,7 @@ type SourceReader interface {
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
 		options ...GetReadBucketCloserOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloser, buftarget.BucketTargeting, error)
 }
 
 // GetReadBucketCloserOption is an option for a GetSourceReadBucketCloser call.
@@ -345,6 +346,22 @@ func GetReadBucketCloserWithNoSearch() GetReadBucketCloserOption {
 	}
 }
 
+// GetReadBucketCloserWithTargetPaths sets the targets paths for bucket targeting information
+// returned with the bucket.
+func GetReadBucketCloserWithTargetPaths(targetPaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetPaths = targetPaths
+	}
+}
+
+// GetReadBucketCloserWithTargetExcludePaths sets the target exclude paths for bucket targeting
+// information returned with the bucket.
+func GetReadBucketCloserWithTargetExcludePaths(targetExcludePaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
 // DirReader is a dir reader.
 type DirReader interface {
 	// GetDirReadWriteBucket gets the dir bucket.
@@ -353,7 +370,7 @@ type DirReader interface {
 		container app.EnvStdinContainer,
 		dirRef DirRef,
 		options ...GetReadWriteBucketOption,
-	) (ReadWriteBucket, error)
+	) (ReadWriteBucket, buftarget.BucketTargeting, error)
 }
 
 // GetReadWriteBucketOption is an option for a GetDirReadWriteBucket call.
@@ -366,6 +383,22 @@ type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
 func GetReadWriteBucketWithNoSearch() GetReadWriteBucketOption {
 	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
 		getReadWriteBucketOptions.noSearch = true
+	}
+}
+
+// GetReadWriteBucketWithTargetPaths sets the target paths for the bucket targeting information
+// returned with the bucket.
+func GetReadWriteBucketWithTargetPaths(targetPaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetPaths = targetPaths
+	}
+}
+
+// GetReadWriteBucketWithTargetExcludePaths sets the target exclude paths for the bucket
+// targeting information returned with the bucket.
+func GetReadWriteBucketWithTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
@@ -544,8 +577,10 @@ func GetInputConfigForString(
 }
 
 type getReadBucketCloserOptions struct {
-	noSearch       bool
-	copyToInMemory bool
+	noSearch           bool
+	copyToInMemory     bool
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
 func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
@@ -553,7 +588,9 @@ func newGetReadBucketCloserOptions() *getReadBucketCloserOptions {
 }
 
 type getReadWriteBucketOptions struct {
-	noSearch bool
+	noSearch           bool
+	targetPaths        []string
+	targetExcludePaths []string
 }
 
 func newGetReadWriteBucketOptions() *getReadWriteBucketOptions {

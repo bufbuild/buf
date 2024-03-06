@@ -408,7 +408,6 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
-			// This context ends up getting stored on the Module, is this a problem re: tracing?
 			return addedModule.ToModule(ctx, b.moduleDataProvider)
 		},
 	)

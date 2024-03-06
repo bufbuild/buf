@@ -39,6 +39,8 @@ const (
 	errorFormatFlagName       = "error-format"
 	includeImportsFlagName    = "include-imports"
 	includeImportableFlagName = "include-importable"
+	pathsFlagName             = "path"
+	excludePathsFlagName      = "exclude-path"
 	disableSymlinksFlagName   = "disable-symlinks"
 	asImportPathsFlagName     = "as-import-paths"
 
@@ -76,6 +78,8 @@ type flags struct {
 	Config            string
 	IncludeImports    bool
 	IncludeImportable bool
+	Paths             []string
+	ExcludePaths      []string
 	DisableSymlinks   bool
 	// Deprecated. This flag no longer has any effect as we don't build images anymore.
 	ErrorFormat string
@@ -91,6 +95,8 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
 		&f.Config,
@@ -166,6 +172,7 @@ func run(
 	imageFileInfos, err := controller.GetImportableImageFileInfos(
 		ctx,
 		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
 		bufctl.WithConfigOverride(flags.Config),
 	)
 	if err != nil {

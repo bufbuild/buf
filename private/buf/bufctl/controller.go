@@ -792,7 +792,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 		// TODO FUTURE: Feed flag names through to here.
 		return nil, fmt.Errorf("--exclude-path is not valid for use with .proto file references")
 	}
-	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+	readBucketCloser, bucketTargeting, err := c.buffetchReader.GetSourceReadBucketCloser(
 		ctx,
 		c.container,
 		protoFileRef,
@@ -804,19 +804,9 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	// The ProtoFilePath is still relative to the input bucket, not the bucket
-	// retrieved from buffetch. Treat the path just as we do with targetPaths
-	// and externalPaths in withPathsForBucketExtender.
-	protoFilePath, err := readBucketCloser.PathForExternalPath(protoFileRef.ProtoFilePath())
-	if err != nil {
-		return nil, err
-	}
 	options := []bufworkspace.WorkspaceBucketOption{
-		bufworkspace.WithTargetSubDirPath(
-			readBucketCloser.SubDirPath(),
-		),
 		bufworkspace.WithProtoFileTargetPath(
-			protoFilePath,
+			protoFileRef.ProtoFilePath(),
 			protoFileRef.IncludePackageFiles(),
 		),
 		bufworkspace.WithConfigOverride(
@@ -832,6 +822,7 @@ func (c *controller) getWorkspaceForProtoFileRef(
 	return c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
+		bucketTargeting,
 		options...,
 	)
 }
@@ -841,7 +832,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	sourceRef buffetch.SourceRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.Workspace, retErr error) {
-	readBucketCloser, err := c.buffetchReader.GetSourceReadBucketCloser(
+	readBucketCloser, bucketTargeting, err := c.buffetchReader.GetSourceReadBucketCloser(
 		ctx,
 		c.container,
 		sourceRef,
@@ -853,18 +844,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	functionOptions, err = functionOptions.withPathsForBucketExtender(readBucketCloser)
-	if err != nil {
-		return nil, err
-	}
 	options := []bufworkspace.WorkspaceBucketOption{
-		bufworkspace.WithTargetSubDirPath(
-			readBucketCloser.SubDirPath(),
-		),
-		bufworkspace.WithTargetPaths(
-			functionOptions.targetPaths,
-			functionOptions.targetExcludePaths,
-		),
 		bufworkspace.WithConfigOverride(
 			functionOptions.configOverride,
 		),
@@ -878,6 +858,7 @@ func (c *controller) getWorkspaceForSourceRef(
 	return c.workspaceProvider.GetWorkspaceForBucket(
 		ctx,
 		readBucketCloser,
+		bucketTargeting,
 		options...,
 	)
 }
@@ -887,7 +868,7 @@ func (c *controller) getWorkspaceDepManagerForDirRef(
 	dirRef buffetch.DirRef,
 	functionOptions *functionOptions,
 ) (_ bufworkspace.WorkspaceDepManager, retErr error) {
-	readWriteBucket, err := c.buffetchReader.GetDirReadWriteBucket(
+	readWriteBucket, bucketTargeting, err := c.buffetchReader.GetDirReadWriteBucket(
 		ctx,
 		c.container,
 		dirRef,
@@ -901,9 +882,7 @@ func (c *controller) getWorkspaceDepManagerForDirRef(
 	return c.workspaceDepManagerProvider.GetWorkspaceDepManager(
 		ctx,
 		readWriteBucket,
-		bufworkspace.WithTargetSubDirPath(
-			readWriteBucket.SubDirPath(),
-		),
+		bucketTargeting,
 	)
 }
 

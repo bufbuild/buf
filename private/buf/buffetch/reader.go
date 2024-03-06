@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -148,7 +148,7 @@ func (a *reader) GetSourceReadBucketCloser(
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
 	options ...GetReadBucketCloserOption,
-) (ReadBucketCloser, error) {
+) (ReadBucketCloser, buftarget.BucketTargeting, error) {
 	getReadBucketCloserOptions := newGetReadBucketCloserOptions()
 	for _, option := range options {
 		option(getReadBucketCloserOptions)
@@ -157,8 +157,7 @@ func (a *reader) GetSourceReadBucketCloser(
 	if !getReadBucketCloserOptions.noSearch {
 		internalGetReadBucketCloserOptions = append(
 			internalGetReadBucketCloserOptions,
-			internal.WithGetReadBucketCloserTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
-			internal.WithGetReadBucketCloserProtoFileTerminateFunc(bufconfig.TerminateAtEnclosingModuleOrWorkspaceForProtoFileRef),
+			internal.WithGetReadBucketCloserTerminateFunc(buftarget.TerminateAtControllingWorkspace),
 		)
 	}
 	if getReadBucketCloserOptions.copyToInMemory {
@@ -167,6 +166,14 @@ func (a *reader) GetSourceReadBucketCloser(
 			internal.WithGetReadBucketCloserCopyToInMemory(),
 		)
 	}
+	internalGetReadBucketCloserOptions = append(
+		internalGetReadBucketCloserOptions,
+		internal.WithGetReadBucketCloserTargetPaths(getReadBucketCloserOptions.targetPaths),
+	)
+	internalGetReadBucketCloserOptions = append(
+		internalGetReadBucketCloserOptions,
+		internal.WithGetReadBucketCloserTargetExcludePaths(getReadBucketCloserOptions.targetExcludePaths),
+	)
 	return a.internalReader.GetReadBucketCloser(
 		ctx,
 		container,
@@ -180,7 +187,7 @@ func (a *reader) GetDirReadWriteBucket(
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	options ...GetReadWriteBucketOption,
-) (ReadWriteBucket, error) {
+) (ReadWriteBucket, buftarget.BucketTargeting, error) {
 	getReadWriteBucketOptions := newGetReadWriteBucketOptions()
 	for _, option := range options {
 		option(getReadWriteBucketOptions)
@@ -189,9 +196,17 @@ func (a *reader) GetDirReadWriteBucket(
 	if !getReadWriteBucketOptions.noSearch {
 		internalGetReadWriteBucketOptions = append(
 			internalGetReadWriteBucketOptions,
-			internal.WithGetReadWriteBucketTerminateFunc(bufconfig.TerminateAtControllingWorkspace),
+			internal.WithGetReadWriteBucketTerminateFunc(buftarget.TerminateAtControllingWorkspace),
 		)
 	}
+	internalGetReadWriteBucketOptions = append(
+		internalGetReadWriteBucketOptions,
+		internal.WithGetReadWriteBucketTargetPaths(getReadWriteBucketOptions.targetPaths),
+	)
+	internalGetReadWriteBucketOptions = append(
+		internalGetReadWriteBucketOptions,
+		internal.WithGetReadWriteBucketTargetExcludePaths(getReadWriteBucketOptions.targetExcludePaths),
+	)
 	return a.internalReader.GetReadWriteBucket(
 		ctx,
 		container,

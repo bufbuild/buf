@@ -127,7 +127,7 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 		``,
 		// This is new post-refactor. Before, we gave precedence to --path. While a change,
 		// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
-		`Failure: excluded path "a\v3" contains targeted path "a\v3\foo", which means all paths in "a\v3\foo" will be excluded`,
+		`Failure: excluded path "testdata\paths\a\v3" contains targeted path "testdata\paths\a\v3\foo", which means all paths in "testdata\paths\a\v3\foo" will be excluded`,
 		"--output",
 		tempDirPath,
 		"--template",

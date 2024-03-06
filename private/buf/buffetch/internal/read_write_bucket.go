@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -24,30 +25,21 @@ var _ ReadWriteBucket = &readWriteBucket{}
 type readWriteBucket struct {
 	storage.ReadWriteBucket
 
-	subDirPath          string
-	pathForExternalPath func(string) (string, error)
+	subDirPath string
 }
 
 func newReadWriteBucket(
 	storageReadWriteBucket storage.ReadWriteBucket,
-	subDirPath string,
-	pathForExternalPath func(string) (string, error),
-) (*readWriteBucket, error) {
-	normalizedSubDirPath, err := normalpath.NormalizeAndValidate(subDirPath)
-	if err != nil {
-		return nil, err
-	}
+	bucketPath string,
+	bucketTargeting buftarget.BucketTargeting,
+) *readWriteBucket {
+	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.InputDirPath())
 	return &readWriteBucket{
-		ReadWriteBucket:     storageReadWriteBucket,
-		subDirPath:          normalizedSubDirPath,
-		pathForExternalPath: pathForExternalPath,
-	}, nil
+		ReadWriteBucket: storageReadWriteBucket,
+		subDirPath:      normalizedSubDirPath,
+	}
 }
 
 func (r *readWriteBucket) SubDirPath() string {
 	return r.subDirPath
-}
-
-func (r *readWriteBucket) PathForExternalPath(externalPath string) (string, error) {
-	return r.pathForExternalPath(externalPath)
 }
