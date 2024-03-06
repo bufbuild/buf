@@ -73,7 +73,7 @@ func testBasic(t *testing.T, subDirPath string) {
 	)
 	require.NotNil(t, bucketTargeting.ControllingWorkspace())
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
-	require.Equal(t, "finance/portfolio/proto", bucketTargeting.InputDirPath())
+	require.Equal(t, "finance/portfolio/proto", bucketTargeting.SubDirPath())
 	require.NoError(t, err)
 
 	workspace, err := workspaceProvider.GetWorkspaceForBucket(
@@ -153,7 +153,7 @@ func testBasic(t *testing.T, subDirPath string) {
 	require.NoError(t, err)
 	require.NotNil(t, bucketTargeting.ControllingWorkspace())
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
-	require.Equal(t, "common/money/proto", bucketTargeting.InputDirPath())
+	require.Equal(t, "common/money/proto", bucketTargeting.SubDirPath())
 	require.Equal(
 		t,
 		[]string{"common/money/proto/acme/money/v1/currency_code.proto"},
@@ -209,7 +209,7 @@ func TestUnusedDep(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, bucketTargeting.ControllingWorkspace())
 	require.Equal(t, ".", bucketTargeting.ControllingWorkspace().Path())
-	require.Equal(t, ".", bucketTargeting.InputDirPath())
+	require.Equal(t, ".", bucketTargeting.SubDirPath())
 
 	workspace, err := workspaceProvider.GetWorkspaceForBucket(
 		ctx,

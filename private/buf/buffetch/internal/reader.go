@@ -589,7 +589,7 @@ func getReadBucketCloserForBucket(
 	if bucketTargeting.ControllingWorkspace() != nil {
 		bucketPath = bucketTargeting.ControllingWorkspace().Path()
 	} else {
-		bucketPath = bucketTargeting.InputDirPath()
+		bucketPath = bucketTargeting.SubDirPath()
 	}
 	if bucketPath != "." {
 		inputBucket = storage.MapReadBucketCloser(
@@ -720,7 +720,7 @@ func getReadWriteBucketForOS(
 				return nil, nil, err
 			}
 		}
-		inputDir = osRootBucketTargeting.InputDirPath()
+		inputDir = osRootBucketTargeting.SubDirPath()
 		bucketTargetPaths = osRootBucketTargeting.TargetPaths()
 		bucketTargetExcludePaths = osRootBucketTargeting.TargetExcludePaths()
 	} else {
@@ -749,7 +749,7 @@ func getReadWriteBucketForOS(
 		if err != nil {
 			return nil, nil, err
 		}
-		inputDir, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.InputDirPath())
+		inputDir, err = normalpath.Rel(bucketPathFSRelPath, osRootBucketTargeting.SubDirPath())
 		if err != nil {
 			return nil, nil, err
 		}

@@ -20,7 +20,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/buftarget"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -82,12 +81,14 @@ func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	bucketTargeting buftarget.BucketTargeting,
 ) (_ WorkspaceDepManager, retErr error) {
 	controllingWorkspace := bucketTargeting.ControllingWorkspace()
-	if controllingWorkspace == nil || controllingWorkspace.BufWorkYAMLFile() != nil {
-		return nil, syserror.New("no supported workspace found")
+	if controllingWorkspace != nil && controllingWorkspace.BufYAMLFile() != nil {
+		// A v2 workspace was found, but we make sure
+		bufYAMLFile := controllingWorkspace.BufYAMLFile()
+		if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
+			return newWorkspaceDepManager(bucket, controllingWorkspace.Path(), true), nil
+		}
 	}
-	bufYAMLFile := controllingWorkspace.BufYAMLFile()
-	if bufYAMLFile.FileVersion() == bufconfig.FileVersionV2 {
-		return newWorkspaceDepManager(bucket, controllingWorkspace.Path(), true), nil
-	}
-	return newWorkspaceDepManager(bucket, bucketTargeting.InputDirPath(), false), nil
+	// Otherwise we simply ignore any buf.work.yaml that was found and attempt to build
+	// a v1 module at the SubDirPath
+	return newWorkspaceDepManager(bucket, bucketTargeting.SubDirPath(), false), nil
 }
