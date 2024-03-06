@@ -414,11 +414,10 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 	}
 	var bufLock bufconfig.BufLockFile
 	if migrateBuilder.hasSeenBufLockFile {
-		// TODO: enable when b5 is ready
-		//resolvedDepModuleKeys, err := m.upgradeModuleKeysToB5(ctx, resolvedDepModuleKeys)
-		//if err != nil {
-		//return nil, nil, err
-		//}
+		resolvedDepModuleKeys, err := m.upgradeModuleKeysToB5(ctx, resolvedDepModuleKeys)
+		if err != nil {
+			return nil, nil, err
+		}
 		bufLock, err = bufconfig.NewBufLockFile(
 			bufconfig.FileVersionV2,
 			resolvedDepModuleKeys,
@@ -434,8 +433,7 @@ func (m *migrator) getModuleToRefToCommit(
 	ctx context.Context,
 	moduleRefs []bufmodule.ModuleRef,
 ) (map[string]map[string]bufmodule.Commit, error) {
-	// TODO: Change to b5
-	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB4)
+	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB5)
 	if err != nil {
 		return nil, err
 	}
@@ -476,9 +474,6 @@ func (m *migrator) getCommitIDToCommit(
 	}
 	return commitIDToCommit, nil
 }
-
-// TODO: remove once we use this
-var _ = (*migrator).upgradeModuleKeysToB5
 
 func (m *migrator) upgradeModuleKeysToB5(
 	ctx context.Context,

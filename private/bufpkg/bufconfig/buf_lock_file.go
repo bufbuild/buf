@@ -308,7 +308,7 @@ func readBufLockFile(
 			for digestType, prefix := range deprecatedDigestTypeToPrefix {
 				if strings.HasPrefix(dep.Digest, prefix) {
 					// TODO: Add a message about downgrading the buf cli to a version that supports this.
-					return nil, fmt.Errorf(`%s digests are no longer supported as of TODO, run "buf mod update" to update your buf.lock`, digestType)
+					return nil, fmt.Errorf(`%s digests are no longer supported as of v1.31.0, run "buf mod update" to update your buf.lock`, digestType)
 				}
 			}
 			depModuleKey, err := bufmodule.NewModuleKey(

@@ -52,5 +52,5 @@ func GetModuleConfigForProtocPlugin(
 		}
 	}
 	// TODO: point to a webpage that explains this.
-	return nil, errors.New(`could not determine which module to pull configuration from. See TODO for more details.`)
+	return nil, errors.New(`could not determine which module to pull configuration from. See the docs for more details.`)
 }
