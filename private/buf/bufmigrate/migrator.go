@@ -666,20 +666,23 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	expectedIDs := slicesext.Map(
-		expectedRules,
-		func(rule bufcheck.Rule) string {
-			return rule.ID()
-		},
+
+	expectedIDs := filterFileSamePhpGenericServices(
+		slicesext.Map(
+			expectedRules,
+			func(rule bufcheck.Rule) string {
+				return rule.ID()
+			},
+		),
 	)
 	// First create a check config with the exact same UseIDsAndCategories. This
 	// is a simple translation. It may or may not be equivalent to the given check config.
 	simplyTranslatedCheckConfig, err := bufconfig.NewCheckConfig(
 		bufconfig.FileVersionV2,
-		checkConfig.UseIDsAndCategories(),
-		checkConfig.ExceptIDsAndCategories(),
+		filterFileSamePhpGenericServices(checkConfig.UseIDsAndCategories()),
+		filterFileSamePhpGenericServices(checkConfig.ExceptIDsAndCategories()),
 		checkConfig.IgnorePaths(),
-		checkConfig.IgnoreIDOrCategoryToPaths(),
+		filterFileSamePhpGenericServicesMap(checkConfig.IgnoreIDOrCategoryToPaths()),
 	)
 	if err != nil {
 		return nil, err
@@ -688,11 +691,13 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	simplyTranslatedIDs := slicesext.Map(
-		simplyTranslatedRules,
-		func(rule bufcheck.Rule) string {
-			return rule.ID()
-		},
+	simplyTranslatedIDs := filterFileSamePhpGenericServices(
+		slicesext.Map(
+			simplyTranslatedRules,
+			func(rule bufcheck.Rule) string {
+				return rule.ID()
+			},
+		),
 	)
 	if slicesext.ElementsEqual(expectedIDs, simplyTranslatedIDs) {
 		// If the simple translation is equivalent to before, use it.
@@ -722,4 +727,24 @@ func equivalentCheckConfigInV2(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
+}
+
+func filterFileSamePhpGenericServices(ids []string) []string {
+	return slicesext.Filter(
+		ids,
+		func(id string) bool {
+			return id != "FILE_SAME_PHP_GENERIC_SERVICES"
+		},
+	)
+}
+
+func filterFileSamePhpGenericServicesMap(m map[string][]string) map[string][]string {
+	c := make(map[string][]string)
+	for k, v := range c {
+		if k == "FILE_SAME_PHP_GENERIC_SERVICES" {
+			continue
+		}
+		c[k] = v
+	}
+	return c
 }
