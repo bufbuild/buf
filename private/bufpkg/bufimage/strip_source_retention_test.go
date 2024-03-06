@@ -100,7 +100,7 @@ func TestStripSourceOnlyOptions(t *testing.T) {
 	options.Set(extSourceRetention.TypeDescriptor(), protoreflect.ValueOfList(listVal))
 
 	optionsMsg := options.Interface()
-	actualOptionsAfterStrip, err := stripSourceOnlyOptions(optionsMsg)
+	actualOptionsAfterStrip, err := stripSourceRetentionOptions(optionsMsg)
 	require.NoError(t, err)
 
 	require.NotSame(t, actualOptionsAfterStrip, optionsMsg)
@@ -109,7 +109,7 @@ func TestStripSourceOnlyOptions(t *testing.T) {
 	// If we do it again, there are no changes to made (since source-only options were
 	// already stripped). So we should get back unmodified value.
 	optionsMsg = actualOptionsAfterStrip
-	actualOptionsAfterStrip, err = stripSourceOnlyOptions(optionsMsg)
+	actualOptionsAfterStrip, err = stripSourceRetentionOptions(optionsMsg)
 	require.NoError(t, err)
 
 	require.Same(t, actualOptionsAfterStrip, optionsMsg)
@@ -385,14 +385,14 @@ func TestStripSourceOnlyOptionsFromFile(t *testing.T) {
 		},
 	}
 
-	actualStrippedFile, err := stripSourceOnlyOptionsFromFile(beforeFile)
+	actualStrippedFile, err := stripSourceRetentionOptionsFromFile(beforeFile)
 	require.NoError(t, err)
 	require.NotSame(t, actualStrippedFile, beforeFile)
 	require.Empty(t, cmp.Diff(afterFile, actualStrippedFile, protocmp.Transform()))
 
 	// If we repeat the operation, we get back the same descriptor unchanged because
 	// it doesn't have any source-only options.
-	doubleStrippedFile, err := stripSourceOnlyOptionsFromFile(actualStrippedFile)
+	doubleStrippedFile, err := stripSourceRetentionOptionsFromFile(actualStrippedFile)
 	require.NoError(t, err)
 	require.Same(t, doubleStrippedFile, actualStrippedFile)
 	require.Empty(t, cmp.Diff(afterFile, doubleStrippedFile, protocmp.Transform()))

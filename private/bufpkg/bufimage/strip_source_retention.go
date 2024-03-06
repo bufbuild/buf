@@ -22,7 +22,61 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func stripSourceOnlyOptions[M proto.Message](options M) (M, error) {
+func stripSourceRetentionOptionsFromFile(file *descriptorpb.FileDescriptorProto) (*descriptorpb.FileDescriptorProto, error) {
+	var dirty bool
+	newOpts, err := stripSourceRetentionOptions(file.Options)
+	if err != nil {
+		return nil, err
+	}
+	if newOpts != file.Options {
+		dirty = true
+	}
+	newMsgs, changed, err := updateAll(file.MessageType, stripSourceRetentionOptionsFromMessage)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		dirty = true
+	}
+	newEnums, changed, err := updateAll(file.EnumType, stripSourceRetentionOptionsFromEnum)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		dirty = true
+	}
+	newExts, changed, err := updateAll(file.Extension, stripSourceRetentionOptionsFromField)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		dirty = true
+	}
+	newSvcs, changed, err := updateAll(file.Service, stripSourceRetentionOptionsFromService)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		dirty = true
+	}
+
+	if !dirty {
+		return file, nil
+	}
+
+	newFile, err := shallowCopy(file)
+	if err != nil {
+		return nil, err
+	}
+	newFile.Options = newOpts
+	newFile.MessageType = newMsgs
+	newFile.EnumType = newEnums
+	newFile.Extension = newExts
+	newFile.Service = newSvcs
+	return newFile, nil
+}
+
+func stripSourceRetentionOptions[M proto.Message](options M) (M, error) {
 	optionsRef := options.ProtoReflect()
 	// See if there are any options to strip.
 	var found bool
@@ -70,105 +124,51 @@ func stripSourceOnlyOptions[M proto.Message](options M) (M, error) {
 	return ret, nil
 }
 
-func stripSourceOnlyOptionsFromFile(file *descriptorpb.FileDescriptorProto) (*descriptorpb.FileDescriptorProto, error) {
+func stripSourceRetentionOptionsFromMessage(msg *descriptorpb.DescriptorProto) (*descriptorpb.DescriptorProto, error) {
 	var dirty bool
-	newOpts, err := stripSourceOnlyOptions(file.Options)
-	if err != nil {
-		return nil, err
-	}
-	if newOpts != file.Options {
-		dirty = true
-	}
-	newMsgs, changed, err := updateAll(file.MessageType, stripSourceOnlyOptionsFromMessage)
-	if err != nil {
-		return nil, err
-	}
-	if changed {
-		dirty = true
-	}
-	newEnums, changed, err := updateAll(file.EnumType, stripSourceOnlyOptionsFromEnum)
-	if err != nil {
-		return nil, err
-	}
-	if changed {
-		dirty = true
-	}
-	newExts, changed, err := updateAll(file.Extension, stripSourceOnlyOptionsFromField)
-	if err != nil {
-		return nil, err
-	}
-	if changed {
-		dirty = true
-	}
-	newSvcs, changed, err := updateAll(file.Service, stripSourceOnlyOptionsFromService)
-	if err != nil {
-		return nil, err
-	}
-	if changed {
-		dirty = true
-	}
-
-	if !dirty {
-		return file, nil
-	}
-
-	newFile, err := shallowCopy(file)
-	if err != nil {
-		return nil, err
-	}
-	newFile.Options = newOpts
-	newFile.MessageType = newMsgs
-	newFile.EnumType = newEnums
-	newFile.Extension = newExts
-	newFile.Service = newSvcs
-	return newFile, nil
-}
-
-func stripSourceOnlyOptionsFromMessage(msg *descriptorpb.DescriptorProto) (*descriptorpb.DescriptorProto, error) {
-	var dirty bool
-	newOpts, err := stripSourceOnlyOptions(msg.Options)
+	newOpts, err := stripSourceRetentionOptions(msg.Options)
 	if err != nil {
 		return nil, err
 	}
 	if newOpts != msg.Options {
 		dirty = true
 	}
-	newFields, changed, err := updateAll(msg.Field, stripSourceOnlyOptionsFromField)
+	newFields, changed, err := updateAll(msg.Field, stripSourceRetentionOptionsFromField)
 	if err != nil {
 		return nil, err
 	}
 	if changed {
 		dirty = true
 	}
-	newOneofs, changed, err := updateAll(msg.OneofDecl, stripSourceOnlyOptionsFromOneof)
+	newOneofs, changed, err := updateAll(msg.OneofDecl, stripSourceRetentionOptionsFromOneof)
 	if err != nil {
 		return nil, err
 	}
 	if changed {
 		dirty = true
 	}
-	newExtRanges, changed, err := updateAll(msg.ExtensionRange, stripSourceOnlyOptionsFromExtensionRange)
+	newExtRanges, changed, err := updateAll(msg.ExtensionRange, stripSourceRetentionOptionsFromExtensionRange)
 	if err != nil {
 		return nil, err
 	}
 	if changed {
 		dirty = true
 	}
-	newMsgs, changed, err := updateAll(msg.NestedType, stripSourceOnlyOptionsFromMessage)
+	newMsgs, changed, err := updateAll(msg.NestedType, stripSourceRetentionOptionsFromMessage)
 	if err != nil {
 		return nil, err
 	}
 	if changed {
 		dirty = true
 	}
-	newEnums, changed, err := updateAll(msg.EnumType, stripSourceOnlyOptionsFromEnum)
+	newEnums, changed, err := updateAll(msg.EnumType, stripSourceRetentionOptionsFromEnum)
 	if err != nil {
 		return nil, err
 	}
 	if changed {
 		dirty = true
 	}
-	newExts, changed, err := updateAll(msg.Extension, stripSourceOnlyOptionsFromField)
+	newExts, changed, err := updateAll(msg.Extension, stripSourceRetentionOptionsFromField)
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +194,8 @@ func stripSourceOnlyOptionsFromMessage(msg *descriptorpb.DescriptorProto) (*desc
 	return newMsg, nil
 }
 
-func stripSourceOnlyOptionsFromField(field *descriptorpb.FieldDescriptorProto) (*descriptorpb.FieldDescriptorProto, error) {
-	newOpts, err := stripSourceOnlyOptions(field.Options)
+func stripSourceRetentionOptionsFromField(field *descriptorpb.FieldDescriptorProto) (*descriptorpb.FieldDescriptorProto, error) {
+	newOpts, err := stripSourceRetentionOptions(field.Options)
 	if err != nil {
 		return nil, err
 	}
@@ -210,8 +210,8 @@ func stripSourceOnlyOptionsFromField(field *descriptorpb.FieldDescriptorProto) (
 	return newField, nil
 }
 
-func stripSourceOnlyOptionsFromOneof(oneof *descriptorpb.OneofDescriptorProto) (*descriptorpb.OneofDescriptorProto, error) {
-	newOpts, err := stripSourceOnlyOptions(oneof.Options)
+func stripSourceRetentionOptionsFromOneof(oneof *descriptorpb.OneofDescriptorProto) (*descriptorpb.OneofDescriptorProto, error) {
+	newOpts, err := stripSourceRetentionOptions(oneof.Options)
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +226,8 @@ func stripSourceOnlyOptionsFromOneof(oneof *descriptorpb.OneofDescriptorProto) (
 	return newOneof, nil
 }
 
-func stripSourceOnlyOptionsFromExtensionRange(extRange *descriptorpb.DescriptorProto_ExtensionRange) (*descriptorpb.DescriptorProto_ExtensionRange, error) {
-	newOpts, err := stripSourceOnlyOptions(extRange.Options)
+func stripSourceRetentionOptionsFromExtensionRange(extRange *descriptorpb.DescriptorProto_ExtensionRange) (*descriptorpb.DescriptorProto_ExtensionRange, error) {
+	newOpts, err := stripSourceRetentionOptions(extRange.Options)
 	if err != nil {
 		return nil, err
 	}
@@ -242,16 +242,16 @@ func stripSourceOnlyOptionsFromExtensionRange(extRange *descriptorpb.DescriptorP
 	return newExtRange, nil
 }
 
-func stripSourceOnlyOptionsFromEnum(enum *descriptorpb.EnumDescriptorProto) (*descriptorpb.EnumDescriptorProto, error) {
+func stripSourceRetentionOptionsFromEnum(enum *descriptorpb.EnumDescriptorProto) (*descriptorpb.EnumDescriptorProto, error) {
 	var dirty bool
-	newOpts, err := stripSourceOnlyOptions(enum.Options)
+	newOpts, err := stripSourceRetentionOptions(enum.Options)
 	if err != nil {
 		return nil, err
 	}
 	if newOpts != enum.Options {
 		dirty = true
 	}
-	newVals, changed, err := updateAll(enum.Value, stripSourceOnlyOptionsFromEnumValue)
+	newVals, changed, err := updateAll(enum.Value, stripSourceRetentionOptionsFromEnumValue)
 	if err != nil {
 		return nil, err
 	}
@@ -272,8 +272,8 @@ func stripSourceOnlyOptionsFromEnum(enum *descriptorpb.EnumDescriptorProto) (*de
 	return newEnum, nil
 }
 
-func stripSourceOnlyOptionsFromEnumValue(enumVal *descriptorpb.EnumValueDescriptorProto) (*descriptorpb.EnumValueDescriptorProto, error) {
-	newOpts, err := stripSourceOnlyOptions(enumVal.Options)
+func stripSourceRetentionOptionsFromEnumValue(enumVal *descriptorpb.EnumValueDescriptorProto) (*descriptorpb.EnumValueDescriptorProto, error) {
+	newOpts, err := stripSourceRetentionOptions(enumVal.Options)
 	if err != nil {
 		return nil, err
 	}
@@ -288,16 +288,16 @@ func stripSourceOnlyOptionsFromEnumValue(enumVal *descriptorpb.EnumValueDescript
 	return newEnumVal, nil
 }
 
-func stripSourceOnlyOptionsFromService(svc *descriptorpb.ServiceDescriptorProto) (*descriptorpb.ServiceDescriptorProto, error) {
+func stripSourceRetentionOptionsFromService(svc *descriptorpb.ServiceDescriptorProto) (*descriptorpb.ServiceDescriptorProto, error) {
 	var dirty bool
-	newOpts, err := stripSourceOnlyOptions(svc.Options)
+	newOpts, err := stripSourceRetentionOptions(svc.Options)
 	if err != nil {
 		return nil, err
 	}
 	if newOpts != svc.Options {
 		dirty = true
 	}
-	newMethods, changed, err := updateAll(svc.Method, stripSourceOnlyOptionsFromMethod)
+	newMethods, changed, err := updateAll(svc.Method, stripSourceRetentionOptionsFromMethod)
 	if err != nil {
 		return nil, err
 	}
@@ -318,8 +318,8 @@ func stripSourceOnlyOptionsFromService(svc *descriptorpb.ServiceDescriptorProto)
 	return newSvc, nil
 }
 
-func stripSourceOnlyOptionsFromMethod(method *descriptorpb.MethodDescriptorProto) (*descriptorpb.MethodDescriptorProto, error) {
-	newOpts, err := stripSourceOnlyOptions(method.Options)
+func stripSourceRetentionOptionsFromMethod(method *descriptorpb.MethodDescriptorProto) (*descriptorpb.MethodDescriptorProto, error) {
+	newOpts, err := stripSourceRetentionOptions(method.Options)
 	if err != nil {
 		return nil, err
 	}

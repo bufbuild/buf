@@ -426,7 +426,7 @@ func imageToCodeGeneratorRequest(
 	for i, imageFile := range imageFiles {
 		// ProtoFile should include runtime-retained options only. So strip source-only options.
 		var err error
-		request.ProtoFile[i], err = stripSourceOnlyOptionsFromFile(imageFile.FileDescriptorProto())
+		request.ProtoFile[i], err = stripSourceRetentionOptionsFromFile(imageFile.FileDescriptorProto())
 		if err != nil {
 			return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
 		}
