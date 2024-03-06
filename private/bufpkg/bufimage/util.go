@@ -424,12 +424,8 @@ func imageToCodeGeneratorRequest(
 		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
-		// ProtoFile should include runtime-retained options only. So strip source-only options.
-		var err error
-		request.ProtoFile[i], err = stripSourceRetentionOptionsFromFile(imageFile.FileDescriptorProto())
-		if err != nil {
-			return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
-		}
+		fileDescriptorProto := imageFile.FileDescriptorProto()
+		// ProtoFile should include only runtime-retained options for files to generate.
 		if isFileToGenerate(
 			imageFile,
 			alreadyUsedPaths,
@@ -438,10 +434,16 @@ func imageToCodeGeneratorRequest(
 			includeWellKnownTypes,
 		) {
 			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
-			// Source-only options are only made available for items in FileToGenerate.
-			// They are provided in SourceFileDescriptors.
-			request.SourceFileDescriptors = append(request.SourceFileDescriptors, imageFile.FileDescriptorProto())
+			// Source-retention options for items in FileToGenerate are provided in SourceFileDescriptors.
+			request.SourceFileDescriptors = append(request.SourceFileDescriptors, fileDescriptorProto)
+			// And the corresponding descriptor in ProtoFile will have source-retention options stripped.
+			var err error
+			fileDescriptorProto, err = stripSourceRetentionOptionsFromFile(fileDescriptorProto)
+			if err != nil {
+				return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
+			}
 		}
+		request.ProtoFile[i] = fileDescriptorProto
 	}
 	return request, nil
 }
