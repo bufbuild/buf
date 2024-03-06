@@ -90,5 +90,5 @@ func (w *workspaceDepManagerProvider) GetWorkspaceDepManager(
 	}
 	// Otherwise we simply ignore any buf.work.yaml that was found and attempt to build
 	// a v1 module at the SubDirPath
-	return newWorkspaceDepManager(bucket, bucketTargeting.InputDirPath(), false), nil
+	return newWorkspaceDepManager(bucket, bucketTargeting.SubDirPath(), false), nil
 }

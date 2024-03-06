@@ -1183,8 +1183,6 @@ func TestModInitBasic(t *testing.T) {
 	testModInit(
 		t,
 		`version: v2
-modules:
-  - path: .
 lint:
   use:
     - DEFAULT
