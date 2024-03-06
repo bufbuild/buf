@@ -487,7 +487,7 @@ func validateBucketTargeting(
 		for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
 			if targetPath == targetExcludePath {
 				unnormalizedTargetPath := filepath.Clean(normalpath.Unnormalize(targetPath))
-				return fmt.Errorf("cannot set the same path for both --path and --exclude-path: %q", unnormalizedTargetPath)
+				return fmt.Errorf(`cannot set the same path for both --path and --exclude-path: "%s"`, unnormalizedTargetPath)
 			}
 			// This is new post-refactor. Before, we gave precedence to --path. While a change,
 			// doing --path foo/bar --exclude-path foo seems like a bug rather than expected behavior to maintain.
@@ -503,7 +503,7 @@ func validateBucketTargeting(
 		if targetExcludePath == bucketTargeting.InputDirPath() {
 			unnormalizedTargetSubDirPath := filepath.Clean(normalpath.Unnormalize(bucketTargeting.InputDirPath()))
 			unnormalizedTargetExcludePath := filepath.Clean(normalpath.Unnormalize(targetExcludePath))
-			return fmt.Errorf("given input %q is equal to a value of --exclude-path %q, this would exclude everything", unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
+			return fmt.Errorf(`given input "%s" is equal to a value of --exclude-path "%s", this would exclude everything`, unnormalizedTargetSubDirPath, unnormalizedTargetExcludePath)
 		}
 	}
 	return nil
