@@ -138,9 +138,14 @@ func ValidateCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) error 
 	if err := ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return err
 	}
-	for _, fileDescriptorProto := range request.ProtoFile {
+	for i, fileDescriptorProto := range request.ProtoFile {
 		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return err
+			return fmt.Errorf("CodeGeneratorRequest.ProtoFile[%d]: %w", i, err)
+		}
+	}
+	for i, fileDescriptorProto := range request.SourceFileDescriptors {
+		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
+			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors[%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -158,10 +163,29 @@ func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.Co
 	if len(request.FileToGenerate) == 0 {
 		return errors.New("empty CodeGeneratorRequest.FileToGenerate")
 	}
-	// TODO: Should this validate that ProtoFile actually contains the files named by FileToGenerate?
-	//       Maybe also validate that len(SourceFileDescriptors) == len(FileToGenerate) and that
-	//       SourceFileDescriptors contains *exactly* the files named by FileToGenerate?
 	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
+		return err
+	}
+	if len(request.SourceFileDescriptors) != len(request.FileToGenerate) {
+		return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors has %d elements, but  CodeGeneratorRequest.FileToGenerate has %d",
+			len(request.SourceFileDescriptors), len(request.FileToGenerate))
+	}
+	for i := range request.FileToGenerate {
+		if request.SourceFileDescriptors[i].GetName() != request.FileToGenerate[i] {
+			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors[%d] does not match CodeGeneratorRequest.FileToGenerate[%d]: %q != %q",
+				i, i, request.SourceFileDescriptors[i].GetName(), request.FileToGenerate[i])
+		}
+	}
+	paths := make(map[string]*descriptorpb.FileDescriptorProto, len(request.ProtoFile))
+	for _, fileDescriptorProto := range request.ProtoFile {
+		path := fileDescriptorProto.GetName()
+		if _, alreadyExists := paths[path]; alreadyExists {
+			return fmt.Errorf("CodeGeneratorRequest.ProtoFile contains duplicate entry for %q", path)
+		}
+		paths[path] = fileDescriptorProto
+	}
+	alreadyChecked := make(map[string]struct{}, len(paths))
+	if err := validatePathsPresent("file to generate", paths, request.FileToGenerate, alreadyChecked); err != nil {
 		return err
 	}
 	return nil
@@ -279,4 +303,28 @@ func FieldDescriptorProtoLabelPrettyString(l descriptorpb.FieldDescriptorProto_L
 	default:
 		return strconv.Itoa(int(l))
 	}
+}
+
+func validatePathsPresent(
+	what string,
+	present map[string]*descriptorpb.FileDescriptorProto,
+	paths []string,
+	alreadyChecked map[string]struct{},
+) error {
+	for _, path := range paths {
+		if _, checked := alreadyChecked[path]; checked {
+			continue
+		}
+		alreadyChecked[path] = struct{}{}
+
+		fileDescriptorProto := present[path]
+		if fileDescriptorProto == nil {
+			return fmt.Errorf("CodeGeneratorRequest.ProtoFile is missing %s %q", what, path)
+		}
+
+		if err := validatePathsPresent("dependency", present, fileDescriptorProto.Dependency, alreadyChecked); err != nil {
+			return err
+		}
+	}
+	return nil
 }
