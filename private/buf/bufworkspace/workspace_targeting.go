@@ -684,8 +684,8 @@ func checkForControllingWorkspaceOrV1Module(
 func checkForOverlap(inputPath string, moduleDirPaths []string) error {
 	for _, moduleDirPath := range moduleDirPaths {
 		if normalpath.ContainsPath(moduleDirPath, inputPath, normalpath.Relative) {
-			return fmt.Errorf("failed to build input %q because it is contained by directory %q", inputPath, moduleDirPath)
+			return fmt.Errorf("failed to build input %q because it is contained by module at path %q specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path", inputPath, moduleDirPath)
 		}
 	}
-	return fmt.Errorf("input dir %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
+	return fmt.Errorf("input %q did not contain modules found in workspace %v", inputPath, moduleDirPaths)
 }

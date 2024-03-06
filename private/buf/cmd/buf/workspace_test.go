@@ -1126,7 +1126,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: failed to build input "proto/buf" because it is contained by directory "proto"`,
+		`Failure: failed to build input "proto/buf" because it is contained by module at path "proto" specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)

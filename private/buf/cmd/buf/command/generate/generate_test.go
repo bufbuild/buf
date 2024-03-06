@@ -224,7 +224,7 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path: testdata/paths/a/v1/a.proto`),
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path: "testdata/paths/a/v1/a.proto"`),
 		"--output",
 		tempDirPath,
 		"--template",
