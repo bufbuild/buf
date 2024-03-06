@@ -66,8 +66,6 @@ modules:
 `,
 		// expected output
 		`version: v2
-modules:
-  - path: .
 lint:
   use:
     - DEFAULT
@@ -162,6 +160,118 @@ modules:
     lint:
       use:
         - BASIC
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: .
+`,
+		// expected output
+		`version: v2
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+`,
+		// expected output
+		`version: v2
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: .
+`,
+		// expected output
+		`version: v2
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+name: buf.build/foo/bar
+`,
+		// expected output
+		`version: v2
+name: buf.build/foo/bar
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: .
+    name: buf.build/foo/bar
+`,
+		// expected output
+		`version: v2
+name: buf.build/foo/bar
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: .
+    name: buf.build/foo/bar
+`,
+		// expected output
+		`version: v2
+name: buf.build/foo/bar
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: .
+    excludes:
+	  - foo
+`,
+		// expected output
+		`version: v2
+modules:
+  - path: .
+    excludes:
+      - foo
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+modules:
+  - path: baz
+    name: buf.build/foo/baz
+  - path: bar
+    name: buf.build/foo/bar
+`,
+		// expected output
+		`version: v2
+modules:
+  - path: bar
+    name: buf.build/foo/bar
+  - path: baz
+    name: buf.build/foo/baz
 `,
 	)
 }

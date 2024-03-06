@@ -360,7 +360,14 @@ func readBufYAMLFile(
 		}
 		externalModules := externalBufYAMLFile.Modules
 		if len(externalModules) == 0 {
-			return nil, fmt.Errorf(`%v buf.yaml files must specify at least one module using the "modules" key`, fileVersion)
+			externalModules = []externalBufYAMLFileModuleV2{
+				{
+					Path: ".",
+					Name: externalBufYAMLFile.Name,
+				},
+			}
+		} else if externalBufYAMLFile.Name != "" {
+			return nil, errors.New("top-level name key cannot be specified if modules are specified, you must specify the name on each individual module, the top-level name key is only for the default case where you have one module at path \".\".")
 		}
 		// If a module does not have its own lint section, then we use this as the default.
 		defaultExternalLintConfig := externalBufYAMLFile.Lint
@@ -607,6 +614,11 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 				externalBufYAMLFile.Modules[i].Lint = externalBufYAMLFileLintV2{}
 				externalBufYAMLFile.Modules[i].Breaking = externalBufYAMLFileBreakingV1Beta1V1V2{}
 			}
+		}
+		if len(externalBufYAMLFile.Modules) == 1 && externalBufYAMLFile.Modules[0].Path == "." && len(externalBufYAMLFile.Modules[0].Excludes) == 0 {
+			// We know that lint and breaking will already be top-level from the above if statement.
+			externalBufYAMLFile.Name = externalBufYAMLFile.Modules[0].Name
+			externalBufYAMLFile.Modules = []externalBufYAMLFileModuleV2{}
 		}
 
 		data, err := encoding.MarshalYAML(&externalBufYAMLFile)
@@ -946,6 +958,7 @@ type externalBufYAMLFileV1Beta1V1 struct {
 // sure to deal with this when parsing what to set as defaults, or how to interpret categories.
 type externalBufYAMLFileV2 struct {
 	Version  string                                 `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Modules  []externalBufYAMLFileModuleV2          `json:"modules,omitempty" yaml:"modules,omitempty"`
 	Deps     []string                               `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Lint     externalBufYAMLFileLintV2              `json:"lint,omitempty" yaml:"lint,omitempty"`
