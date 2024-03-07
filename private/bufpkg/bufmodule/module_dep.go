@@ -221,6 +221,18 @@ func getModuleDepsRec(
 	}
 	parentOpaqueIDs[opaqueID] = struct{}{}
 	newOrderedParentOpaqueIDs := append(orderedParentOpaqueIDs, opaqueID)
+	// Triple-check to make sure newModuleDeps order is deterministic.
+	//
+	// We allow cycles in modules now, and once we see a module we will stop calling recursively,
+	// so we want to make sure that the order in which we hit modules is deterministic to
+	// make sure there are no downstream digest calculation problems (unlikely to be, but
+	// just being defensive here).
+	sort.Slice(
+		newModuleDeps,
+		func(i int, j int) bool {
+			return newModuleDeps[i].OpaqueID() < newModuleDeps[j].OpaqueID()
+		},
+	)
 	for _, newModuleDep := range newModuleDeps {
 		if err := getModuleDepsRec(
 			ctx,
