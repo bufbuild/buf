@@ -473,7 +473,7 @@ message LiteralValue {
     ArrayLiteral array_value = 8;
     MessageLiteral message_value = 9;
   }
-  string description = 10;
+  string comments = 10;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
