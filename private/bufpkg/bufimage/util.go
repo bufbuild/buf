@@ -24,6 +24,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/protocompile/options"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -414,7 +415,7 @@ func imageToCodeGeneratorRequest(
 	includeWellKnownTypes bool,
 	alreadyUsedPaths map[string]struct{},
 	nonImportPaths map[string]struct{},
-) *pluginpb.CodeGeneratorRequest {
+) (*pluginpb.CodeGeneratorRequest, error) {
 	imageFiles := image.Files()
 	request := &pluginpb.CodeGeneratorRequest{
 		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
@@ -424,7 +425,8 @@ func imageToCodeGeneratorRequest(
 		request.Parameter = proto.String(parameter)
 	}
 	for i, imageFile := range imageFiles {
-		request.ProtoFile[i] = imageFile.FileDescriptorProto()
+		fileDescriptorProto := imageFile.FileDescriptorProto()
+		// ProtoFile should include only runtime-retained options for files to generate.
 		if isFileToGenerate(
 			imageFile,
 			alreadyUsedPaths,
@@ -433,9 +435,18 @@ func imageToCodeGeneratorRequest(
 			includeWellKnownTypes,
 		) {
 			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
+			// Source-retention options for items in FileToGenerate are provided in SourceFileDescriptors.
+			request.SourceFileDescriptors = append(request.SourceFileDescriptors, fileDescriptorProto)
+			// And the corresponding descriptor in ProtoFile will have source-retention options stripped.
+			var err error
+			fileDescriptorProto, err = options.StripSourceRetentionOptionsFromFile(fileDescriptorProto)
+			if err != nil {
+				return nil, fmt.Errorf("failed to strip source-retention options for file %q when constructing a CodeGeneratorRequest: %w", imageFile.Path(), err)
+			}
 		}
+		request.ProtoFile[i] = fileDescriptorProto
 	}
-	return request
+	return request, nil
 }
 
 func isFileToGenerate(

@@ -138,9 +138,14 @@ func ValidateCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) error 
 	if err := ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return err
 	}
-	for _, fileDescriptorProto := range request.ProtoFile {
+	for i, fileDescriptorProto := range request.ProtoFile {
 		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return err
+			return fmt.Errorf("CodeGeneratorRequest.ProtoFile[%d]: %w", i, err)
+		}
+	}
+	for i, fileDescriptorProto := range request.SourceFileDescriptors {
+		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
+			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors[%d]: %w", i, err)
 		}
 	}
 	return nil
@@ -161,6 +166,9 @@ func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.Co
 	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
 		return err
 	}
+	// TODO: validate that there are no duplicates in file_to_generate, proto_file, and source_file_descriptors
+	//       validate that proto_file is in topological order and contains everything from file_to_generate
+	//       validate that source_file_descriptors, if present, matches file_to_generate
 	return nil
 }
 
