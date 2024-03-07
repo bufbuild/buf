@@ -297,18 +297,12 @@ func readBufLockFile(
 			getDigest := func() (bufmodule.Digest, error) {
 				return bufmodule.ParseDigest(dep.Digest)
 			}
-			if dep.Digest == "" {
+			if dep.Digest == "" || isDeprecatedExternalDigest(dep.Digest) {
 				if bufLockFileOptions.digestResolver == nil {
 					return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 				}
 				getDigest = func() (bufmodule.Digest, error) {
 					return bufLockFileOptions.digestResolver(ctx, dep.Remote, commitID)
-				}
-			}
-			for digestType, prefix := range deprecatedDigestTypeToPrefix {
-				if strings.HasPrefix(dep.Digest, prefix) {
-					// TODO: Add a message about downgrading the buf cli to a version that supports this.
-					return nil, fmt.Errorf(`%s digests are no longer supported as of v1.31.0, run "buf mod update" to update your buf.lock`, digestType)
 				}
 			}
 			depModuleKey, err := bufmodule.NewModuleKey(
@@ -343,11 +337,9 @@ func readBufLockFile(
 			if dep.Digest == "" {
 				return nil, fmt.Errorf("no digest specified for module %s", moduleFullName.String())
 			}
-			for digestType, prefix := range deprecatedDigestTypeToPrefix {
-				if strings.HasPrefix(dep.Digest, prefix) {
-					// TODO: Add a message about downgrading the buf cli to a version that supports this.
-					return nil, fmt.Errorf(`%s digests are no longer supported as of TODO, run "buf mod update" to update your buf.lock`, digestType)
-				}
+			if deprecatedDigestType := getDeprecatedDigestTypeForExternalDigest(dep.Digest); deprecatedDigestType != "" {
+				// TODO: Add a message about downgrading the buf cli to a version that supports this.
+				return nil, fmt.Errorf(`%s digests are no longer supported as of v1.31.0, run "buf mod update" to update your buf.lock`, deprecatedDigestType)
 			}
 			commitID, err := uuid.FromString(dep.Commit)
 			if err != nil {
@@ -435,6 +427,20 @@ func writeBufLockFile(
 		// This is a system error since we've already parsed.
 		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
+}
+
+func isDeprecatedExternalDigest(externalDigest string) bool {
+	return getDeprecatedDigestTypeForExternalDigest(externalDigest) != ""
+}
+
+// Returns "" if the digest is not using a deprecated digest type.
+func getDeprecatedDigestTypeForExternalDigest(externalDigest string) string {
+	for digestType, prefix := range deprecatedDigestTypeToPrefix {
+		if strings.HasPrefix(externalDigest, prefix) {
+			return digestType
+		}
+	}
+	return ""
 }
 
 func validateNoDuplicateModuleKeysByModuleFullName(moduleKeys []bufmodule.ModuleKey) error {
