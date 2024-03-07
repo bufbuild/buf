@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.30.0] - 2024-03-07
 
 - Update `buf generate` so it populates the recently-added
   [`source_file_descriptors`](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/compiler/plugin.proto#L96-L99)
@@ -1015,7 +1015,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.29.0...HEAD
+[v1.30.0]: https://github.com/bufbuild/buf/compare/v1.29.0...v1.30.0
 [v1.29.0]: https://github.com/bufbuild/buf/compare/v1.28.1...v1.29.0
 [v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0
