@@ -31,17 +31,18 @@ import (
 )
 
 const (
-	asFileDescriptorSetFlagName = "as-file-descriptor-set"
-	errorFormatFlagName         = "error-format"
-	excludeImportsFlagName      = "exclude-imports"
-	excludeSourceInfoFlagName   = "exclude-source-info"
-	pathsFlagName               = "path"
-	outputFlagName              = "output"
-	outputFlagShortName         = "o"
-	configFlagName              = "config"
-	excludePathsFlagName        = "exclude-path"
-	disableSymlinksFlagName     = "disable-symlinks"
-	typeFlagName                = "type"
+	asFileDescriptorSetFlagName           = "as-file-descriptor-set"
+	errorFormatFlagName                   = "error-format"
+	excludeImportsFlagName                = "exclude-imports"
+	excludeSourceInfoFlagName             = "exclude-source-info"
+	excludeSourceRetentionOptionsFlagName = "exclude-source-retention-options"
+	pathsFlagName                         = "path"
+	outputFlagName                        = "output"
+	outputFlagShortName                   = "o"
+	configFlagName                        = "config"
+	excludePathsFlagName                  = "exclude-path"
+	disableSymlinksFlagName               = "disable-symlinks"
+	typeFlagName                          = "type"
 )
 
 // NewCommand returns a new Command.
@@ -66,16 +67,17 @@ func NewCommand(
 }
 
 type flags struct {
-	AsFileDescriptorSet bool
-	ErrorFormat         string
-	ExcludeImports      bool
-	ExcludeSourceInfo   bool
-	Paths               []string
-	Output              string
-	Config              string
-	ExcludePaths        []string
-	DisableSymlinks     bool
-	Types               []string
+	AsFileDescriptorSet           bool
+	ErrorFormat                   string
+	ExcludeImports                bool
+	ExcludeSourceInfo             bool
+	ExcludeSourceRetentionOptions bool
+	Paths                         []string
+	Output                        string
+	Config                        string
+	ExcludePaths                  []string
+	DisableSymlinks               bool
+	Types                         []string
 	// special
 	InputHashtag string
 }
@@ -92,6 +94,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
+	flagSet.BoolVar(
+		&f.ExcludeSourceRetentionOptions,
+		excludeSourceRetentionOptionsFlagName,
+		false,
+		"Exclude options whose retention is source",
+	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -161,6 +169,12 @@ func run(
 	}
 	if len(flags.Types) > 0 {
 		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
+		if err != nil {
+			return err
+		}
+	}
+	if flags.ExcludeSourceRetentionOptions {
+		image, err = bufimageutil.StripSourceRetentionOptions(image)
 		if err != nil {
 			return err
 		}
