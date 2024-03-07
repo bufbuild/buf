@@ -441,7 +441,7 @@ func imageToCodeGeneratorRequest(
 			var err error
 			fileDescriptorProto, err = options.StripSourceRetentionOptionsFromFile(fileDescriptorProto)
 			if err != nil {
-				return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
+				return nil, fmt.Errorf("failed to strip source-retention options for file %q when constructing a CodeGeneratorRequest: %w", imageFile.Path(), err)
 			}
 		}
 		request.ProtoFile[i] = fileDescriptorProto
