@@ -17,7 +17,6 @@ package protodescriptor
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -167,54 +166,9 @@ func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.Co
 	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
 		return err
 	}
-	paths := make(map[string]*descriptorpb.FileDescriptorProto, len(request.ProtoFile))
-	for _, fileDescriptorProto := range request.ProtoFile {
-		path := fileDescriptorProto.GetName()
-		if _, alreadyExists := paths[path]; alreadyExists {
-			return fmt.Errorf("CodeGeneratorRequest.ProtoFile contains duplicate entry for %q", path)
-		}
-		paths[path] = fileDescriptorProto
-	}
-	alreadyChecked := make(map[string]struct{}, len(paths))
-	if err := validatePathsPresent("file to generate", paths, request.FileToGenerate, alreadyChecked); err != nil {
-		return err
-	}
-	filesToGenerate := make(map[string]struct{}, len(request.FileToGenerate))
-	for _, path := range request.FileToGenerate {
-		if _, alreadyExists := filesToGenerate[path]; alreadyExists {
-			return fmt.Errorf("CodeGeneratorRequest.FileToGenerate contains duplicate entry for %q", path)
-		}
-		filesToGenerate[path] = struct{}{}
-	}
-	if len(request.SourceFileDescriptors) > 0 {
-		// If request has SourceFileDescriptors, make sure they correctly
-		// correspond to items in FileToGenerate. Sadly, these are not necessarily
-		// in the same order as FileToGenerate, so checking they have the same
-		// contents involves some set arithmetic...
-		sourceFiles := make(map[string]struct{}, len(request.SourceFileDescriptors))
-		for _, fileDescriptorProto := range request.SourceFileDescriptors {
-			path := fileDescriptorProto.GetName()
-			if _, alreadyExists := sourceFiles[path]; alreadyExists {
-				return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors contains duplicate entry for %q", path)
-			}
-			sourceFiles[path] = struct{}{}
-		}
-		for path := range filesToGenerate {
-			if _, present := sourceFiles[path]; !present {
-				return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors is missing entry for file to generate %q", path)
-			}
-			delete(sourceFiles, path) // remove as we go so any remaining entries are extra
-		}
-		if len(sourceFiles) > 0 {
-			// SourceFileDescriptors contained superfluous files!
-			superfluousPaths := make([]string, 0, len(sourceFiles))
-			for path := range sourceFiles {
-				superfluousPaths = append(superfluousPaths, strconv.Quote(path))
-			}
-			sort.Strings(superfluousPaths)
-			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors contains incorrect entries for files not being generated: %v", superfluousPaths)
-		}
-	}
+	// TODO: validate that there are no duplicates in file_to_generate, proto_file, and source_file_descriptors
+	//       validate that proto_file is in topological order and contains everything from file_to_generate
+	//       validate that source_file_descriptors, if present, matches file_to_generate
 	return nil
 }
 
@@ -330,28 +284,4 @@ func FieldDescriptorProtoLabelPrettyString(l descriptorpb.FieldDescriptorProto_L
 	default:
 		return strconv.Itoa(int(l))
 	}
-}
-
-func validatePathsPresent(
-	what string,
-	present map[string]*descriptorpb.FileDescriptorProto,
-	paths []string,
-	alreadyChecked map[string]struct{},
-) error {
-	for _, path := range paths {
-		if _, checked := alreadyChecked[path]; checked {
-			continue
-		}
-		alreadyChecked[path] = struct{}{}
-
-		fileDescriptorProto := present[path]
-		if fileDescriptorProto == nil {
-			return fmt.Errorf("CodeGeneratorRequest.ProtoFile is missing %s %q", what, path)
-		}
-
-		if err := validatePathsPresent("dependency", present, fileDescriptorProto.Dependency, alreadyChecked); err != nil {
-			return err
-		}
-	}
-	return nil
 }
