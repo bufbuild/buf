@@ -24,6 +24,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/protocompile/options"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -438,7 +439,7 @@ func imageToCodeGeneratorRequest(
 			request.SourceFileDescriptors = append(request.SourceFileDescriptors, fileDescriptorProto)
 			// And the corresponding descriptor in ProtoFile will have source-retention options stripped.
 			var err error
-			fileDescriptorProto, err = StripSourceRetentionOptionsFromFile(fileDescriptorProto)
+			fileDescriptorProto, err = options.StripSourceRetentionOptionsFromFile(fileDescriptorProto)
 			if err != nil {
 				return nil, fmt.Errorf("failed to process %q for code generator request: %w", imageFile.Path(), err)
 			}
