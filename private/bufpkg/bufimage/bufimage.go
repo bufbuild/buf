@@ -630,7 +630,7 @@ func ImageToCodeGeneratorRequest(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 	includeWellKnownTypes bool,
-) *pluginpb.CodeGeneratorRequest {
+) (*pluginpb.CodeGeneratorRequest, error) {
 	return imageToCodeGeneratorRequest(
 		image,
 		parameter,
@@ -655,7 +655,7 @@ func ImagesToCodeGeneratorRequests(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 	includeWellKnownTypes bool,
-) []*pluginpb.CodeGeneratorRequest {
+) ([]*pluginpb.CodeGeneratorRequest, error) {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	// alreadyUsedPaths is a map of paths that have already been added to an image.
 	//
@@ -689,7 +689,8 @@ func ImagesToCodeGeneratorRequests(
 		}
 	}
 	for i, image := range images {
-		requests[i] = imageToCodeGeneratorRequest(
+		var err error
+		requests[i], err = imageToCodeGeneratorRequest(
 			image,
 			parameter,
 			compilerVersion,
@@ -698,8 +699,11 @@ func ImagesToCodeGeneratorRequests(
 			alreadyUsedPaths,
 			nonImportPaths,
 		)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return requests
+	return requests, nil
 }
 
 type newImageForProtoOptions struct {

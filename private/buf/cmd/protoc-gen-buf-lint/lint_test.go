@@ -344,5 +344,7 @@ func testBuildCodeGeneratorRequest(
 	}
 	image, err := bufimage.NewImage(imageFiles)
 	require.NoError(t, err)
-	return bufimage.ImageToCodeGeneratorRequest(image, parameter, nil, false, false)
+	codeGenReq, err := bufimage.ImageToCodeGeneratorRequest(image, parameter, nil, false, false)
+	require.NoError(t, err)
+	return codeGenReq
 }

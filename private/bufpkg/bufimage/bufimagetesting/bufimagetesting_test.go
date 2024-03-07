@@ -470,7 +470,7 @@ func TestBasic(t *testing.T) {
 	newProtoImage, err := bufimage.ImageToProtoImage(newImage)
 	require.NoError(t, err)
 	diff := cmp.Diff(protoImage, newProtoImage, protocmp.Transform())
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
@@ -483,7 +483,7 @@ func TestBasic(t *testing.T) {
 		},
 	}
 	diff = cmp.Diff(fileDescriptorSet, bufimage.ImageToFileDescriptorSet(image), protocmp.Transform())
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 	codeGeneratorRequest := &pluginpb.CodeGeneratorRequest{
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
@@ -502,21 +502,32 @@ func TestBasic(t *testing.T) {
 			"b/b.proto",
 			"d/d.proto/d.proto",
 		},
+		SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+		},
 	}
+	actualRequest, err := bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, false)
+	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequest,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, false),
+		actualRequest,
 		protocmp.Transform(),
 	)
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 
 	// verify that includeWellKnownTypes is a no-op if includeImports is false
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, true)
+	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequest,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, true),
+		actualRequest,
 		protocmp.Transform(),
 	)
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 
 	codeGeneratorRequestIncludeImports := &pluginpb.CodeGeneratorRequest{
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
@@ -538,13 +549,23 @@ func TestBasic(t *testing.T) {
 			"b/b.proto",
 			"d/d.proto/d.proto",
 		},
+		SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+		},
 	}
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, false)
+	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequestIncludeImports,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, false),
+		actualRequest,
 		protocmp.Transform(),
 	)
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 	newImage, err = bufimage.NewImageForCodeGeneratorRequest(codeGeneratorRequest)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -580,13 +601,24 @@ func TestBasic(t *testing.T) {
 			"b/b.proto",
 			"d/d.proto/d.proto",
 		},
+		SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+		},
 	}
+	actualRequest, err = bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, true)
+	require.NoError(t, err)
 	diff = cmp.Diff(
 		codeGeneratorRequestIncludeImportsAndWellKnownTypes,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, true),
+		actualRequest,
 		protocmp.Transform(),
 	)
-	require.Equal(t, "", diff)
+	require.Empty(t, diff)
 	// imagesByDir and multiple Image tests
 	imagesByDir, err := bufimage.ImageByDir(image)
 	require.NoError(t, err)
@@ -634,6 +666,10 @@ func TestBasic(t *testing.T) {
 				"a/a.proto",
 				"a/b.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			},
 		},
 		{
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
@@ -649,6 +685,10 @@ func TestBasic(t *testing.T) {
 				"b/a.proto",
 				"b/b.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			},
 		},
 		{
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
@@ -659,13 +699,17 @@ func TestBasic(t *testing.T) {
 			FileToGenerate: []string{
 				"d/d.proto/d.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+			},
 		},
 	}
-	requestsFromImages := bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false)
+	requestsFromImages, err := bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false)
+	require.NoError(t, err)
 	require.Equal(t, len(codeGeneratorRequests), len(requestsFromImages))
 	for i := range codeGeneratorRequests {
 		diff = cmp.Diff(codeGeneratorRequests[i], requestsFromImages[i], protocmp.Transform())
-		require.Equal(t, "", diff)
+		require.Empty(t, diff)
 	}
 	codeGeneratorRequestsIncludeImports := []*pluginpb.CodeGeneratorRequest{
 		{
@@ -681,6 +725,11 @@ func TestBasic(t *testing.T) {
 				"import.proto",
 				"a/b.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			},
 		},
 		{
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
@@ -696,6 +745,10 @@ func TestBasic(t *testing.T) {
 				"b/a.proto",
 				"b/b.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			},
 		},
 		{
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
@@ -706,13 +759,17 @@ func TestBasic(t *testing.T) {
 			FileToGenerate: []string{
 				"d/d.proto/d.proto",
 			},
+			SourceFileDescriptors: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+			},
 		},
 	}
-	requestsFromImages = bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false)
+	requestsFromImages, err = bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false)
+	require.NoError(t, err)
 	require.Equal(t, len(codeGeneratorRequestsIncludeImports), len(requestsFromImages))
 	for i := range codeGeneratorRequestsIncludeImports {
 		diff = cmp.Diff(codeGeneratorRequestsIncludeImports[i], requestsFromImages[i], protocmp.Transform())
-		require.Equal(t, "", diff)
+		require.Empty(t, diff)
 	}
 }
 

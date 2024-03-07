@@ -14,6 +14,12 @@
 - Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
 - Deprecate `buf mod open`.
 - Delete `buf beta migrate-v1beta1`.
+- Update `buf generate` so it populates the recently-added
+  [`source_file_descriptors`](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/compiler/plugin.proto#L96-L99)
+  field of the `CodeGeneratorRequest` message. This provides the plugin with access to options
+  that are configured to only be retained in source and not at runtime (via
+  [field option](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/descriptor.proto#L693-L702)).
+  Descriptors in the `proto_file` field will not include any options configured this way.
 
 ## [v1.29.0] - 2024-01-24
 
