@@ -7,7 +7,11 @@
   field of the `CodeGeneratorRequest` message. This provides the plugin with access to options
   that are configured to only be retained in source and not at runtime (via
   [field option](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/descriptor.proto#L693-L702)).
-  Descriptors in the `proto_file` field will not include any options configured this way.
+  Descriptors in the `proto_file` field will not include any options configured this way
+  for the files named in `file_to_generate` field.
+- Add `--exclude-source-retention-options` flag to `buf build`, which
+  causes options configured to only be retained in source to be stripped
+  from the output descriptors.
 
 ## [v1.29.0] - 2024-01-24
 
