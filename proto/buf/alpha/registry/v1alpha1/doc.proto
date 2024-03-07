@@ -153,13 +153,13 @@ message GetPackageDocumentationResponse {
 // PackageDocumentation provides the name, description, and top level types defined in the package.
 message PackageDocumentation {
   string name = 1;
-  // description contains the package-level comment documentation.
+  // comments contains the package-level comment documentation.
   // There is currently no convention for this.
   //
   // This is derived from the leading comments at the top level of the package.
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 2;
+  string comments = 2;
   // services contains all the services defined in the package in alphabetical order.
   repeated Service services = 3;
   // enums contains all the enums defined in the package in alphabetical order.
@@ -188,11 +188,11 @@ message Service {
   string nested_name = 2;
   // full_name includes the package name and nested types for a given type definition.
   string full_name = 3;
-  // description is derived from the leading comments of a given service.
+  // comments is derived from the leading comments of a given service.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 4;
+  string comments = 4;
   // file_path is the normalized path of the file containing the service.
   // This is used for navigating to the source code for the service.
   string file_path = 5;
@@ -218,11 +218,11 @@ message ServiceOptions {
 // Method provides information for the documentation for a method of a given service.
 message Method {
   string name = 1;
-  // description is derived from the leading comments of a given method.
+  // comments is derived from the leading comments of a given method.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 2;
+  string comments = 2;
   MethodRequestResponse request = 3;
   MethodRequestResponse response = 4;
   // implicitly_deprecated is true if its enclosing file or parent element is deprecated.
@@ -265,11 +265,11 @@ message Enum {
   string nested_name = 2;
   // full_name includes the package name and nested types for a given type definition.
   string full_name = 3;
-  // description is derived from the leading comments of a given Enum.
+  // comments is derived from the leading comments of a given Enum.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 4;
+  string comments = 4;
   // file_path is the normalized path of the file containing the enum.
   string file_path = 5;
   Location location = 6;
@@ -296,11 +296,11 @@ message EnumOptions {
 message EnumValue {
   string name = 1;
   int32 number = 2;
-  // description is derived from the leading comments of a given enum value.
+  // comments is derived from the leading comments of a given enum value.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 3;
+  string comments = 3;
   // All options that are present on the enum. This is a super-set of
   // enum_value_options and uses a dynamic representation so it can also
   // accommodate custom options with arbitrary types.
@@ -334,11 +334,11 @@ message Message {
   string nested_name = 2;
   // full_name includes the package name and nested types for a given type definition.
   string full_name = 3;
-  // description is derived from the leading comments of a given message.
+  // comments is derived from the leading comments of a given message.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 4;
+  string comments = 4;
   // file_path is the normalized path of the file containing the message.
   string file_path = 5;
   bool is_map_entry = 6;
@@ -383,11 +383,11 @@ message Oneof {
 // Field provides information for the documentation of a message field.
 message Field {
   string name = 1;
-  // description is derived from the leading comments of a given message field.
+  // comments is derived from the leading comments of a given message field.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 2;
+  string comments = 2;
   string label = 3;
   // string representation of the nested name of the field type, which includes nested definitions.
   string nested_type = 4;
@@ -473,6 +473,7 @@ message LiteralValue {
     ArrayLiteral array_value = 8;
     MessageLiteral message_value = 9;
   }
+  string comments = 10;
 }
 
 // MapEntry provides the key and value types for the MapEntry type for a map field.
@@ -492,11 +493,11 @@ message MapEntry {
 message FileExtension {
   // extension_type is the string representation of the type being extended.
   string extension_type = 1;
-  // description is derived from the leading comments of a given message field.
+  // comments is derived from the leading comments of a given message field.
   //
   // Paragraph newlines (double new lines) are respected, however single newlines are not.
   // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
-  string description = 2;
+  string comments = 2;
   // file_path is the normalized path of the file containing the message.
   string file_path = 3;
   Location location = 4;
