@@ -38,6 +38,7 @@ func OnceValue[T any](f func() T) func() T {
 			}
 		}()
 		result = f()
+		f = nil
 		valid = true
 	}
 	return func() T {
@@ -71,6 +72,7 @@ func OnceValues[T1, T2 any](f func() (T1, T2)) func() (T1, T2) {
 			}
 		}()
 		r1, r2 = f()
+		f = nil
 		valid = true
 	}
 	return func() (T1, T2) {
@@ -105,6 +107,7 @@ func OnceValues3[T1, T2, T3 any](f func() (T1, T2, T3)) func() (T1, T2, T3) {
 			}
 		}()
 		r1, r2, r3 = f()
+		f = nil
 		valid = true
 	}
 	return func() (T1, T2, T3) {
