@@ -203,7 +203,7 @@
 ## [v1.14.0] - 2023-02-09
 
 - Replace `buf generate --include-types` with `buf generate --type` for consistency. `--include-types`
-  is now deprecated but continues to work, consistent with our compability guarantee.
+  is now deprecated but continues to work, consistent with our compatibility guarantee.
 - Include type references in `google.protobuf.Any` messages in option values
   when filtering on type, e.g. with `buf build --type` or `buf generate --type`.
 - Allow specifying a specific `protoc` path in `buf.gen.yaml` when using `protoc`'s built-in plugins

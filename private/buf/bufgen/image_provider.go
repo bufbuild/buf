@@ -25,7 +25,7 @@ import (
 // when generating with a local plugin. Each plugin is
 // in control of its own Strategy - we cache the
 // imagesByDir so that we only have to build it once for
-// all of the plugins that configure the the Directory
+// all of the plugins that configure the Directory
 // strategy.
 type imageProvider struct {
 	image       bufimage.Image
