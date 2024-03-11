@@ -331,28 +331,6 @@ func (a *uploader) validateContentModulesExist(
 	return err
 }
 
-func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (string, error) {
-	var registry string
-	for _, module := range contentModules {
-		moduleFullName := module.ModuleFullName()
-		if moduleFullName == nil {
-			return "", newRequireModuleFullNameOnUploadError(module)
-		}
-		moduleRegistry := moduleFullName.Registry()
-		if registry != "" && moduleRegistry != registry {
-			// We don't allow the upload of content across multiple registries, but in the legacy federation
-			// case, we DO allow for depending on other registries.
-			return "", fmt.Errorf(
-				"cannot upload content for multiple registries at once: %s, %s",
-				registry,
-				moduleRegistry,
-			)
-		}
-		registry = moduleRegistry
-	}
-	return registry, nil
-}
-
 func getV1Beta1ProtoUploadRequestContent(
 	ctx context.Context,
 	v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,

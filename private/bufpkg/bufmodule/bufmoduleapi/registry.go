@@ -48,20 +48,10 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry stri
 	if len(s) == 0 {
 		return "", "", syserror.New("must have at least one value in getPrimarySecondaryRegistry")
 	}
-	registryMap, err := slicesext.ToValuesMapError(
-		s,
-		func(e T) (string, error) {
-			moduleFullName := e.ModuleFullName()
-			if moduleFullName == nil {
-				return "", syserror.New("expected non-nil ModuleFullName in getPrimarySecondaryRegistry")
-			}
-			return moduleFullName.Registry(), nil
-		},
-	)
+	registries, err := getRegistries(s)
 	if err != nil {
 		return "", "", err
 	}
-	registries := slicesext.MapKeysToSortedSlice(registryMap)
 	switch len(registries) {
 	case 0:
 		return "", "", syserror.New("no registries detected in getPrimarySecondaryRegistry")
@@ -78,6 +68,48 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry stri
 	default:
 		return "", "", fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(registries, ", "))
 	}
+}
+
+func getRegistries[T hasModuleFullName](s []T) ([]string, error) {
+	registryMap, err := slicesext.ToValuesMapError(
+		s,
+		func(e T) (string, error) {
+			moduleFullName := e.ModuleFullName()
+			if moduleFullName == nil {
+				return "", syserror.Newf("no ModuleFullName for %v", e)
+			}
+			return moduleFullName.Registry(), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return slicesext.MapKeysToSortedSlice(registryMap), nil
+}
+
+// getSingleRegistryForContentModules returns the single registry for the content modules in Upload.
+//
+// Returns error if there is more than one module.
+func getSingleRegistryForContentModules(contentModules []bufmodule.Module) (string, error) {
+	var registry string
+	for _, module := range contentModules {
+		moduleFullName := module.ModuleFullName()
+		if moduleFullName == nil {
+			return "", newRequireModuleFullNameOnUploadError(module)
+		}
+		moduleRegistry := moduleFullName.Registry()
+		if registry != "" && moduleRegistry != registry {
+			// We don't allow the upload of content across multiple registries, but in the legacy federation
+			// case, we DO allow for depending on other registries.
+			return "", fmt.Errorf(
+				"cannot upload content for multiple registries at once: %s, %s",
+				registry,
+				moduleRegistry,
+			)
+		}
+		registry = moduleRegistry
+	}
+	return registry, nil
 }
 
 func validateDepRegistries(primaryRegistry string, depRegistries []string, publicRegistry string) error {
