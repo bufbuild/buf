@@ -83,7 +83,6 @@ func newModuleForProto(
 		}
 	}
 	return newModule(
-		ctx,
 		readWriteBucket,
 		allDependenciesRefs, // Since proto has no distinction between direct/transitive dependencies, we'll need to set them all as direct, otherwise the build will fail.
 		dependencyModulePins,
@@ -183,7 +182,6 @@ func newModuleForBucket(
 		moduleIdentity = moduleConfig.ModuleIdentity
 	}
 	return newModule(
-		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		moduleConfig.Build.DependencyModuleReferences, // straight copy from the buf.yaml file
 		dependencyModulePins,
@@ -220,7 +218,6 @@ func newModuleForFileSet(
 
 // this should only be called by other newModule constructors
 func newModule(
-	ctx context.Context,
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
 	declaredDirectDependencies []bufmoduleref.ModuleReference,

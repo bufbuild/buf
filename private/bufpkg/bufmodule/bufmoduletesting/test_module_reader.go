@@ -32,7 +32,7 @@ func newTestModuleReader(moduleIdentityStringToModule map[string]bufmodule.Modul
 	}
 }
 
-func (r *testModuleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
+func (r *testModuleReader) GetModule(_ context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
 	module, ok := r.moduleIdentityStringToModule[modulePin.IdentityString()]
 	if !ok {
 		return nil, &fs.PathError{Op: "read", Path: modulePin.String(), Err: fs.ErrNotExist}
