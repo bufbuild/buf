@@ -152,7 +152,7 @@ func (g *Graph[Key]) WalkEdges(f func(Key, Key) error) error {
 	case 0:
 		// If we have no source nodes, we have a cycle in the graph. To print the cycle,
 		// we walk starting at all keys We will hit a cycle in this process, however just to check our
-		// assumptions, we also verify the the walk returns a CycleError, and if not,
+		// assumptions, we also verify the walk returns a CycleError, and if not,
 		// return a system error.
 		allVisited := make(map[Key]struct{})
 		for _, key := range g.keys {
