@@ -16,7 +16,6 @@ package bufmoduleapi
 
 import (
 	"context"
-	"io/fs"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
@@ -231,11 +230,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
+		return nil, maybeNewNotFoundError(err)
 	}
 
 	for _, commit := range response.Msg.Graph.Commits {
@@ -271,11 +266,7 @@ func (a *graphProvider) getV1ProtoGraphForRegistryAndModuleKeys(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
+		return nil, maybeNewNotFoundError(err)
 	}
 	return response.Msg.Graph, nil
 }

@@ -17,7 +17,6 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
@@ -160,11 +159,7 @@ func getV1ProtoCommitsForRegistryAndResourceRefs(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
+		return nil, maybeNewNotFoundError(err)
 	}
 	if len(response.Msg.Commits) != len(v1ProtoResourceRefs) {
 		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1ProtoResourceRefs), len(response.Msg.Commits))
@@ -194,11 +189,7 @@ func getV1Beta1ProtoCommitsForRegistryAndResourceRefs(
 		),
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeNotFound {
-			// Kind of an abuse of fs.PathError. Is there a way to get a specific ModuleKey out of this?
-			return nil, &fs.PathError{Op: "read", Path: err.Error(), Err: fs.ErrNotExist}
-		}
-		return nil, err
+		return nil, maybeNewNotFoundError(err)
 	}
 	if len(response.Msg.Commits) != len(v1beta1ProtoResourceRefs) {
 		return nil, fmt.Errorf("expected %d Commits, got %d", len(v1beta1ProtoResourceRefs), len(response.Msg.Commits))
