@@ -1073,11 +1073,19 @@ func (c *controller) buildTargetImageWithConfigs(
 
 // warnUnconfiguredTransitiveImports will print a warning whenever a file imports another file that
 // is not in a local Module, or is not in the declared list of dependencies in your buf.yaml.
+//
+// If all the Modules in the Workspace are remote Modules, no warnings are printed.
 func (c *controller) warnUnconfiguredTransitiveImports(
 	ctx context.Context,
 	workspace bufworkspace.Workspace,
 	image bufimage.Image,
 ) error {
+	// First, figure out if we have a local module. If we don't, just return - the Workspace
+	// was purely built from remote Modules, and therefore buf.yaml configured dependencies
+	// do not apply.
+	if slicesext.Count(workspace.Modules(), bufmodule.Module.IsLocal) == 0 {
+		return nil
+	}
 	// Construct a struct map of all the ModuleFullName strings of the configured buf.yaml
 	// Module dependencies, and the local Modules. These are considered OK to depend on
 	// for non-imports in the Image.
