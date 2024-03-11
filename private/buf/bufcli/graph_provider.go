@@ -38,6 +38,8 @@ func newGraphProvider(
 		container.Logger(),
 		clientProvider,
 		// OK if empty
+		bufmoduleapi.GraphProviderWithLegacyFederationRegistry(container.Env(legacyFederationRegistryEnvKey)),
+		// OK if empty
 		bufmoduleapi.GraphProviderWithPublicRegistry(container.Env(publicRegistryEnvKey)),
 	)
 }

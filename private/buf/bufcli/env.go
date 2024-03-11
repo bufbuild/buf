@@ -40,6 +40,9 @@ const (
 
 	// This should only be used for testing. This is not part of Buf's API, and should
 	// never be documented or part of Buf's contract.
+	legacyFederationRegistryEnvKey = "BUF_TESTING_LEGACY_FEDERATION_REGISTRY"
+	// This should only be used for testing. This is not part of Buf's API, and should
+	// never be documented or part of Buf's contract.
 	publicRegistryEnvKey = "BUF_TESTING_PUBLIC_REGISTRY"
 )
 

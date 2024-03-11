@@ -46,6 +46,17 @@ func NewGraphProvider(
 // GraphProviderOption is an option for a new GraphProvider.
 type GraphProviderOption func(*graphProvider)
 
+// GraphProviderWithLegacyFederationRegistry returns a new GraphProviderOption that specifies
+// the hostname of an additional registry that is allowed to use legacy federation. This should
+// only be used in testing.
+func GraphProviderWithLegacyFederationRegistry(legacyFederationRegistry string) GraphProviderOption {
+	return func(graphProvider *graphProvider) {
+		if legacyFederationRegistry != "" {
+			graphProvider.legacyFederationRegistry = legacyFederationRegistry
+		}
+	}
+}
+
 // GraphProviderWithPublicRegistry returns a new GraphProviderOption that specifies
 // the hostname of the public registry. By default this is "buf.build", however in testing,
 // this may be something else. This is needed to discern which which registry to make calls
@@ -69,7 +80,8 @@ type graphProvider struct {
 		bufapi.V1OwnerServiceClientProvider
 		bufapi.V1Beta1GraphServiceClientProvider
 	}
-	publicRegistry string
+	legacyFederationRegistry string
+	publicRegistry           string
 }
 
 func newGraphProvider(
