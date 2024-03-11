@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datalegacyfederation"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -70,6 +71,28 @@ func getPrimarySecondaryRegistry[T hasModuleFullName](s []T, publicRegistry stri
 	}
 }
 
+func isLegacyFederationAllowed[T hasModuleFullName](s []T, additionalLegacyFederationRegistry string) (bool, error) {
+	registries, err := getRegistries(s)
+	if err != nil {
+		return false, err
+	}
+	for _, registry := range registries {
+		exists, err := datalegacyfederation.Exists(registry)
+		if err != nil {
+			return false, err
+		}
+		if exists {
+			return true, nil
+		}
+		// Checking that additionalLegacyFederationRegistry != "" just as a defensive measure, even though
+		// nothing in registries should be empty.
+		if additionalLegacyFederationRegistry != "" && registry == additionalLegacyFederationRegistry {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func getRegistries[T hasModuleFullName](s []T) ([]string, error) {
 	registryMap, err := slicesext.ToValuesMapError(
 		s,
@@ -78,7 +101,11 @@ func getRegistries[T hasModuleFullName](s []T) ([]string, error) {
 			if moduleFullName == nil {
 				return "", syserror.Newf("no ModuleFullName for %v", e)
 			}
-			return moduleFullName.Registry(), nil
+			registry := moduleFullName.Registry()
+			if registry == "" {
+				return "", syserror.Newf("no registry for %v", e)
+			}
+			return registry, nil
 		},
 	)
 	if err != nil {

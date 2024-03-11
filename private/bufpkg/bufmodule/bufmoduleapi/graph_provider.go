@@ -204,9 +204,11 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if secondaryRegistry == "" && digestType == bufmodule.DigestTypeB5 {
-		// If we only have a single registry, invoke the new API endpoint that does not allow
-		// for federation. Do this so that we can maintain federated API endpoint metrics.
+	legacyFederationAllowed, err := isLegacyFederationAllowed(moduleKeys, a.legacyFederationRegistry)
+	if err != nil {
+		return nil, err
+	}
+	if legacyFederationAllowed {
 		graph, err := a.getV1ProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys)
 		if err != nil {
 			return nil, err
