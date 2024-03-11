@@ -13,6 +13,7 @@ private/buf/bufwkt/cmd/wkt-go-data/wkt-go-data
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 private/buf/cmd/buf/command/alpha/protoc/test.txt
+private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data/buf-legacyfederation-go-data
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless/buf-commit-id-from-dashless
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless/buf-commit-id-to-dashless
 private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
