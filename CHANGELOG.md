@@ -14,12 +14,19 @@
 - Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
 - Deprecate `buf mod open`.
 - Delete `buf beta migrate-v1beta1`.
+
+## [v1.30.0] - 2024-03-07
+
 - Update `buf generate` so it populates the recently-added
   [`source_file_descriptors`](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/compiler/plugin.proto#L96-L99)
   field of the `CodeGeneratorRequest` message. This provides the plugin with access to options
   that are configured to only be retained in source and not at runtime (via
   [field option](https://github.com/protocolbuffers/protobuf/blob/v24.0/src/google/protobuf/descriptor.proto#L693-L702)).
-  Descriptors in the `proto_file` field will not include any options configured this way.
+  Descriptors in the `proto_file` field will not include any options configured this way
+  for the files named in `file_to_generate` field.
+- Add `--exclude-source-retention-options` flag to `buf build`, which
+  causes options configured to only be retained in source to be stripped
+  from the output descriptors.
 
 ## [v1.29.0] - 2024-01-24
 
@@ -207,7 +214,7 @@
 ## [v1.14.0] - 2023-02-09
 
 - Replace `buf generate --include-types` with `buf generate --type` for consistency. `--include-types`
-  is now deprecated but continues to work, consistent with our compability guarantee.
+  is now deprecated but continues to work, consistent with our compatibility guarantee.
 - Include type references in `google.protobuf.Any` messages in option values
   when filtering on type, e.g. with `buf build --type` or `buf generate --type`.
 - Allow specifying a specific `protoc` path in `buf.gen.yaml` when using `protoc`'s built-in plugins
@@ -1023,7 +1030,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.29.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.30.0...HEAD
+[v1.30.0]: https://github.com/bufbuild/buf/compare/v1.29.0...v1.30.0
 [v1.29.0]: https://github.com/bufbuild/buf/compare/v1.28.1...v1.29.0
 [v1.28.1]: https://github.com/bufbuild/buf/compare/v1.28.0...v1.28.1
 [v1.28.0]: https://github.com/bufbuild/buf/compare/v1.27.2...v1.28.0

@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/protocompile/options"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -357,6 +358,21 @@ func ImageFilteredByTypesWithOptions(image bufimage.Image, types []string, opts 
 		}
 	}
 	return bufimage.NewImage(includedFiles)
+}
+
+// StripSourceRetentionOptions strips any options with a retention of "source" from
+// the descriptors in the given image. The image is not mutated but instead a new
+// image is returned. The returned image may share state with the original.
+func StripSourceRetentionOptions(image bufimage.Image) (bufimage.Image, error) {
+	updatedFiles := make([]bufimage.ImageFile, len(image.Files()))
+	for i, inputFile := range image.Files() {
+		updatedFile, err := stripSourceRetentionOptionsFromFile(inputFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to strip source-retention options from file %q: %w", inputFile.Path(), err)
+		}
+		updatedFiles[i] = updatedFile
+	}
+	return bufimage.NewImage(updatedFiles)
 }
 
 // trimMessageDescriptors removes (nested) messages and nested enums from a slice
@@ -903,4 +919,21 @@ func newImageFilterOptions() *imageFilterOptions {
 		includeKnownExtensions: true,
 		allowImportedTypes:     false,
 	}
+}
+
+func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage.ImageFile, error) {
+	updatedFileDescriptor, err := options.StripSourceRetentionOptionsFromFile(imageFile.FileDescriptorProto())
+	if err != nil {
+		return nil, err
+	}
+	return bufimage.NewImageFile(
+		updatedFileDescriptor,
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
+		imageFile.ExternalPath(),
+		imageFile.LocalPath(),
+		imageFile.IsImport(),
+		imageFile.IsSyntaxUnspecified(),
+		imageFile.UnusedDependencyIndexes(),
+	)
 }
