@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1
-	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240311033153-f5cf5cc401ff.1
-	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240311033153-f5cf5cc401ff.1
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240311165645-148855da0f07.1
+	buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240311165645-148855da0f07.1
 	connectrpc.com/connect v1.15.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.9.0
@@ -83,6 +83,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240304212257-790db918fca8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240304212257-790db918fca8 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240311173647-c811ad7063a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240311173647-c811ad7063a7 // indirect
 )
