@@ -5,7 +5,6 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	private/buf/bufwkt/cmd/wkt-go-data \
-	private/bufpkg/bufmodule/bufmodulecache/cmd/buf-modulecycle-go-data \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-from-dashless \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-commit-id-to-dashless \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
@@ -44,8 +43,6 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
-MODULE_CYCLE_FILE_PATH ?=
-
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
 include make/go/dep_minisign.mk
@@ -72,18 +69,13 @@ bandeps: installbandeps
 postlonglint:: bandeps
 
 .PHONY: godata
-godata: installspdx-go-data installwkt-go-data installbuf-modulecycle-go-data $(PROTOC)
+godata: installspdx-go-data installwkt-go-data $(PROTOC)
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
 	rm -rf private/gen/data/dataspdx
 	mkdir -p private/gen/data/dataspdx
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
-ifdef MODULE_CYCLE_FILE_PATH
-	rm -rf private/gen/data/datamodulecycle
-	mkdir -p private/gen/data/datamodulecycle
-	cat "$(MODULE_CYCLE_FILE_PATH)" | buf-modulecycle-go-data --package datamodulecycle > private/gen/data/datamodulecycle/datamodulecycle.gen.go
-endif
 
 prepostgenerate:: godata
 

@@ -22,7 +22,6 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/gen/data/datamodulecycle"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -126,19 +125,7 @@ func getModuleDepsRec(
 ) error {
 	opaqueID := module.OpaqueID()
 	if _, ok := parentOpaqueIDs[opaqueID]; ok {
-		// We assume all Modules that were in the cycle were stored in datamodulecycle, so any
-		// one of them is fine.
-		moduleFullName := module.ModuleFullName()
-		if moduleFullName == nil {
-			return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
-		}
-		exists, err := datamodulecycle.Exists(moduleFullName.String())
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
-		}
+		return &ModuleCycleError{OpaqueIDs: append(orderedParentOpaqueIDs, opaqueID)}
 	}
 	if _, ok := visitedOpaqueIDs[opaqueID]; ok {
 		return nil
@@ -221,12 +208,7 @@ func getModuleDepsRec(
 	}
 	parentOpaqueIDs[opaqueID] = struct{}{}
 	newOrderedParentOpaqueIDs := append(orderedParentOpaqueIDs, opaqueID)
-	// Triple-check to make sure newModuleDeps order is deterministic.
-	//
-	// We allow cycles in modules now, and once we see a module we will stop calling recursively,
-	// so we want to make sure that the order in which we hit modules is deterministic to
-	// make sure there are no downstream digest calculation problems (unlikely to be, but
-	// just being defensive here).
+	// Triple-check to make sure newModuleDeps order is deterministic. This is just defensive.
 	sort.Slice(
 		newModuleDeps,
 		func(i int, j int) bool {
