@@ -16,6 +16,7 @@ package bufmoduleapi
 
 import (
 	"context"
+	"fmt"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	modulev1beta1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1beta1"
@@ -208,13 +209,29 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 	if err != nil {
 		return nil, err
 	}
-	if legacyFederationAllowed {
+	if !legacyFederationAllowed && digestType == bufmodule.DigestTypeB5 {
+		// We can error out early before calling the backend if we already detect that there is more than one registry involved.
+		//
+		// Note that just because there is no secondary registry does not mean that there is not more than one registry involved,
+		// it is possible to have dependencies on other registries. However, if legacy federation is not allowed, we can detect
+		// that we're in an error state if we already have a secondary registry from the input.
+		if secondaryRegistry != "" {
+			return nil, fmt.Errorf(
+				"attempting to perform a BSR operation for more than two registries: %s, %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.",
+				primaryRegistry,
+				secondaryRegistry,
+			)
+		}
+		// Legacy federation is not allowed, and we are using b5. Call the v1 API.
 		graph, err := a.getV1ProtoGraphForRegistryAndModuleKeys(ctx, primaryRegistry, moduleKeys)
 		if err != nil {
 			return nil, err
 		}
 		return v1ProtoGraphToV1Beta1ProtoGraph(primaryRegistry, graph)
 	}
+
+	// Legacy federation is allowed, or we are using b4. We may have dependencies on modules from other registries, or we
+	// are using a digest type not supported by the v1 API. Fall back to the v1beta1 API.
 
 	registryCommitIDs := slicesext.Map(moduleKeys, bufmodule.ModuleKeyToRegistryCommitID)
 	v1beta1ProtoDigestType, err := digestTypeToV1Beta1Proto(digestType)
