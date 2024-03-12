@@ -673,16 +673,19 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		}
 	case PluginConfigTypeLocal:
 		binaryName := "protoc-gen-" + generatePluginConfig.Name()
+		// First, check if this is a binary.
 		_, err := exec.LookPath(binaryName)
 		if err == nil || errors.Is(err, exec.ErrDot) {
 			externalPluginConfigV2.Binary = binaryName
 			break
 		}
+		// If not, check if it is a protoc plugin.
 		if _, isProtocBuiltin := ProtocProxyPluginNames[generatePluginConfig.Name()]; isProtocBuiltin {
 			externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
 			break
 		}
-		return externalGeneratePluginConfigV2{}, fmt.Errorf("plugin %s is not found locally and %s is not built-in to protoc", binaryName, generatePluginConfig.Name())
+		// Otherwise, assume this is a binary.
+		externalPluginConfigV2.Binary = binaryName
 	}
 	return externalPluginConfigV2, nil
 }
