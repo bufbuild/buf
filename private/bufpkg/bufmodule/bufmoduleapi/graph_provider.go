@@ -264,20 +264,6 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 		return nil, maybeNewNotFoundError(err)
 	}
 
-	for _, commit := range response.Msg.Graph.Commits {
-		if err := validateRegistryIsPrimaryOrSecondary(commit.Registry, primaryRegistry, secondaryRegistry); err != nil {
-			return nil, err
-		}
-	}
-	for _, edge := range response.Msg.Graph.Edges {
-		if err := validateRegistryIsPrimaryOrSecondary(edge.FromNode.Registry, primaryRegistry, secondaryRegistry); err != nil {
-			return nil, err
-		}
-		if err := validateRegistryIsPrimaryOrSecondary(edge.ToNode.Registry, primaryRegistry, secondaryRegistry); err != nil {
-			return nil, err
-		}
-	}
-
 	return response.Msg.Graph, nil
 }
 

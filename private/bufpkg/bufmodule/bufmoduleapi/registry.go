@@ -158,11 +158,3 @@ func validateDepRegistries(primaryRegistry string, depRegistries []string, publi
 		return fmt.Errorf("attempting to perform a BSR operation for more than two registries: %s. You may be attempting to use dependencies between registries - this is not allowed outside of a few early customers.", strings.Join(depRegistries, ", "))
 	}
 }
-
-func validateRegistryIsPrimaryOrSecondary(registry string, primaryRegistry string, secondaryRegistry string) error {
-	if registry != primaryRegistry && registry != secondaryRegistry {
-		// Could borderline be a system error, regardless we should enforce this so this doesn't propagate.
-		return fmt.Errorf("expected to only have return values in registries %s and %s but found value in %s", primaryRegistry, secondaryRegistry, registry)
-	}
-	return nil
-}
