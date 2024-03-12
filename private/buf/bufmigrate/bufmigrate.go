@@ -89,12 +89,15 @@ func NewMigrator(
 
 // MigrateAll uses bufconfig.WalkFileInfos to discover all known module, workspace, and buf.gen.yaml
 // paths in the Bucket, and migrates them.
+//
+// ignoreDirPaths should be normalized and relative to the root of the bucket, if specified.
 func MigrateAll(
 	ctx context.Context,
 	migrator Migrator,
 	bucket storage.ReadWriteBucket,
+	ignoreDirPaths []string,
 ) error {
-	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket)
+	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket, ignoreDirPaths)
 	if err != nil {
 		return err
 	}
@@ -103,13 +106,16 @@ func MigrateAll(
 
 // DiffAll uses bufconfig.WalkFileInfos to discover all known module, workspace, and buf.gen.yaml
 // paths in the Bucket, and diffs them.
+//
+// ignoreDirPaths should be normalized and relative to the root of the bucket, if specified.
 func DiffAll(
 	ctx context.Context,
 	migrator Migrator,
 	bucket storage.ReadBucket,
 	writer io.Writer,
+	ignoreDirPaths []string,
 ) error {
-	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket)
+	workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, err := getWorkspaceModuleBufGenYAMLPaths(ctx, bucket, ignoreDirPaths)
 	if err != nil {
 		return err
 	}
@@ -121,12 +127,26 @@ func DiffAll(
 func getWorkspaceModuleBufGenYAMLPaths(
 	ctx context.Context,
 	bucket storage.ReadBucket,
+	ignoreDirPaths []string,
 ) (workspaceDirPaths []string, moduleDirPaths []string, bufGenYAMLFilePaths []string, retErr error) {
+	ignoreDirPathMap := make(map[string]struct{}, len(ignoreDirPaths))
+	for _, ignoreDirPath := range ignoreDirPaths {
+		ignoreDirPath, err := normalpath.NormalizeAndValidate(ignoreDirPath)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		ignoreDirPathMap[ignoreDirPath] = struct{}{}
+	}
 	if err := bufconfig.WalkFileInfos(
 		ctx,
 		bucket,
 		func(path string, fileInfo bufconfig.FileInfo) error {
 			dirPath := normalpath.Dir(path)
+			if len(ignoreDirPathMap) > 0 {
+				if normalpath.MapHasEqualOrContainingPath(ignoreDirPathMap, dirPath, normalpath.Relative) {
+					return nil
+				}
+			}
 			fileType := fileInfo.FileType()
 			fileVersion := fileInfo.FileVersion()
 			switch fileType {

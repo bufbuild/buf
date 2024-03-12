@@ -34,6 +34,15 @@ const (
 	diffFlagShortName            = "d"
 )
 
+// ignoreDirPaths are paths we ignore when calling MigrateAll or DiffAll.
+//
+// This is just a hardcoded list for the 99% case. If users actually want to migrate files in one
+// of these locations, they can use the flags, but typically we do not want to pick these up.
+var ignoreDirPaths = []string{
+	".git",
+	".github",
+}
+
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
@@ -130,6 +139,7 @@ func run(
 				migrator,
 				bucket,
 				container.Stdout(),
+				ignoreDirPaths,
 			)
 		}
 		return migrator.Diff(
@@ -146,6 +156,7 @@ func run(
 			ctx,
 			migrator,
 			bucket,
+			ignoreDirPaths,
 		)
 	}
 	return migrator.Migrate(

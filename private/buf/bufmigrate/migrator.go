@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/fs"
 	"sort"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
@@ -64,6 +65,7 @@ func (m *migrator) Migrate(
 	moduleDirPaths []string,
 	bufGenYAMLFilePaths []string,
 ) error {
+	m.logPaths(workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	migrateBuilder, err := m.getMigrateBuilder(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	if err != nil {
 		return err
@@ -79,11 +81,28 @@ func (m *migrator) Diff(
 	moduleDirPaths []string,
 	bufGenYAMLFilePaths []string,
 ) error {
+	m.logPaths(workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	migrateBuilder, err := m.getMigrateBuilder(ctx, bucket, workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths)
 	if err != nil {
 		return err
 	}
 	return m.diff(ctx, writer, migrateBuilder)
+}
+
+func (m *migrator) logPaths(
+	workspaceDirPaths []string,
+	moduleDirPaths []string,
+	bufGenYAMLFilePaths []string,
+) {
+	if len(workspaceDirPaths) > 0 {
+		m.logger.Sugar().Debugf("workspace directory paths:\n%s", strings.Join(workspaceDirPaths, "\n"))
+	}
+	if len(moduleDirPaths) > 0 {
+		m.logger.Sugar().Debugf("module directory paths:\n%s", strings.Join(moduleDirPaths, "\n"))
+	}
+	if len(bufGenYAMLFilePaths) > 0 {
+		m.logger.Sugar().Debugf("buf.gen.yaml file paths:\n%s", strings.Join(bufGenYAMLFilePaths, "\n"))
+	}
 }
 
 func (m *migrator) getMigrateBuilder(
