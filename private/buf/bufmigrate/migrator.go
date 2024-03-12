@@ -395,6 +395,10 @@ func (m *migrator) buildBufYAMLAndBufLockFiles(
 		}
 		var bufLock bufconfig.BufLockFile
 		if migrateBuilder.hasSeenBufLockFile {
+			resolvedLockEntries, err := m.upgradeModuleKeysToB5(ctx, resolvedLockEntries)
+			if err != nil {
+				return nil, nil, err
+			}
 			bufLock, err = bufconfig.NewBufLockFile(
 				bufconfig.FileVersionV2,
 				resolvedLockEntries,
