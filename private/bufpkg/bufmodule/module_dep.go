@@ -22,6 +22,7 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
@@ -166,12 +167,14 @@ func getModuleDepsRec(
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
 			for _, imp := range fastscanResult.Imports {
+				// Do not include as a dependency. If someone checks in the WKT, and one of their dependencies also
+				// imports a WKT (as is common), this algorithm will treat the original module as a dependency of
+				// the dependency, resulting in a module cycle.
+				if datawkt.Exists(imp.Path) {
+					continue
+				}
 				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp.Path)
 				if err != nil {
-					if errors.Is(err, errIsWKT) {
-						// Do not include as a dependency.
-						continue
-					}
 					if errors.Is(err, fs.ErrNotExist) {
 						// We specifically handle ImportNotExistErrors with exit code 100 in buf.go.
 						//

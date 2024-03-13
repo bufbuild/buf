@@ -75,7 +75,9 @@ type ModuleSet interface {
 
 	// getModuleForFilePath gets the Module for the File path of a File within the ModuleSet.
 	//
-	// This should only be used by Modules, and only for dependency calculations.
+	// This should only be used by Modules, and only for dependency calculations. Any used of this outside
+	// of getModuleDeps will result in nasty bugs down the line - we effectively ignore WKTs in this function,
+	// but WKTs may be included in one of the Modules as files.
 	//
 	// returns errIsWKT if the filePath is a WKT.
 	// returns an error with fs.ErrNotExist if the file is not found.
