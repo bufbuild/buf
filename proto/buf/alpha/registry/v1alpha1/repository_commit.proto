@@ -51,6 +51,8 @@ message RepositoryCommit {
   int64 tag_count = 12;
   // Number of git commits with associated with the BSR commit.
   int64 git_commits_count = 13;
+  // The b5 digest of the commit.
+  string b5_digest = 14;
 }
 
 // RepositoryCommitService is the Repository commit service.
