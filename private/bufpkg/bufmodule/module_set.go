@@ -17,7 +17,6 @@ package bufmodule
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io/fs"
 	"sort"
 
@@ -386,7 +385,10 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	default:
 		// This actually could happen, and we will want to make this error message as clear as possible.
 		// The addition of opaqueID should give us clearer error messages than we have today.
-		return nil, fmt.Errorf("%s is contained in multiple modules: %v", filePath, slicesext.MapKeysToSortedSlice(matchingOpaqueIDs))
+		return nil, &DuplicateProtoPathError{
+			ProtoPath: filePath,
+			OpaqueIDs: slicesext.MapKeysToSortedSlice(matchingOpaqueIDs),
+		}
 	}
 }
 
