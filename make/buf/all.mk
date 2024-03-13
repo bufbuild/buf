@@ -184,6 +184,11 @@ endif
 	$(SED_I) "s/golang:1\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: '1\.[0-9][0-9].x'/go-version: '$(GOVERSION).x'/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
 
+.PHONY: bufimageutilupdateexpectations
+bufimageutilupdateexpectations:
+	# You may need to run this after updating protoc versions
+	BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS=1 go test -parallel 1 ./private/bufpkg/bufimage/bufimageutil
+
 .PHONY: newtodos
 newtodos:
 	@bash make/buf/scripts/newtodos.bash | grep -v FUTURE

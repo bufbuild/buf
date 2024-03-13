@@ -96,10 +96,10 @@ message FeatureSet {
   }
   enum Utf8Validation {
     UTF8_VALIDATION_UNKNOWN = 0;
-    NONE = 1;
     VERIFY = 2;
+    NONE = 3;
   }
-  extensions 1000, 1001, 9995 to 9999;
+  extensions 1000, 1001, 1002, 9995 to 9999, 10000;
   reserved 999;
 }
 message FileOptions {
@@ -120,7 +120,6 @@ message FileOptions {
   optional string swift_prefix = 39;
   optional string php_class_prefix = 40;
   optional string php_namespace = 41;
-  optional bool php_generic_services = 42 [default = false];
   optional string php_metadata_namespace = 44;
   optional string ruby_package = 45;
   optional FeatureSet features = 50;
@@ -131,7 +130,7 @@ message FileOptions {
     LITE_RUNTIME = 3;
   }
   extensions 1000 to max;
-  reserved 38;
+  reserved 38, 42;
 }
 message MethodOptions {
   optional bool deprecated = 33 [default = false];

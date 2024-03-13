@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"sort"
 	"testing"
 
@@ -42,9 +43,10 @@ import (
 )
 
 // IF YOU HAVE ANY FAILING TESTS IN HERE, ESPECIALLY AFTER A PROTOC UPGRADE,
-// SWITCH THIS TO TRUE, TURN OFF PARALLEL TESTING, RE-RUN THE TESTS AND THEN SWITCH BACK TO FALSE.
-// go test -parallel 1 ./privage/pkg/bufimage/bufimageutil
-const shouldUpdateExpectations = false
+// RUN THE FOLLOWING:
+// make bufimageutilupdateexpectations
+
+var shouldUpdateExpectations = os.Getenv("BUFBUILD_BUF_BUFIMAGEUTIL_SHOULD_UPDATE_EXPECTATIONS")
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
@@ -302,7 +304,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 }
 
 func checkExpectation(t *testing.T, ctx context.Context, actual []byte, bucket storage.ReadWriteBucket, expectedFile string) {
-	if shouldUpdateExpectations {
+	if shouldUpdateExpectations != "" {
 		writer, err := bucket.Put(ctx, expectedFile)
 		require.NoError(t, err)
 		_, err = writer.Write(actual)

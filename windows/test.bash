@@ -2,9 +2,9 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="25.0"
-PROTOC_GEN_GO_VERSION="v1.32.0"
-CONNECT_VERSION="v1.14.0"
+PROTOC_VERSION="26.0"
+PROTOC_GEN_GO_VERSION="v1.33.0"
+CONNECT_VERSION="v1.15.0"
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
