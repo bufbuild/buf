@@ -272,6 +272,8 @@ message PayloadRepositoryCommitPushed {
   string draft_name = 6;
   // manifest_digest is the module's manifest digest.
   string manifest_digest = 7;
+  // b5_digest is the module's b5 digest.
+  string b5_digest = 8;
 }
 
 message PayloadRepositoryContributorAdded {
