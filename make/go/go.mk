@@ -84,14 +84,14 @@ godeps: deps
 .PHONY: gofmtmodtidy
 gofmtmodtidy:
 	@echo gofmt -s -w ALL_GO_FILES
-	@gofmt -s -w $(shell find . -name '*.go')
+	@gofmt -s -w .
 	go mod tidy -v
 
 format:: gofmtmodtidy
 
 .PHONY: checknonolint
 checknonolint:
-	@if grep '//nolint' $(shell find . -name '*.go'); then \
+	@if grep -r --include "*.go" '//nolint'; then \
 		echo '//nolint directives found, surface ignores in .golangci.yml instead' >&2; \
 		exit 1; \
 	fi
