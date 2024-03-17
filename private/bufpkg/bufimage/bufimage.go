@@ -461,9 +461,6 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 // The input Files are expected to be in correct DAG order!
 // TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, options ...NewImageForProtoOption) (Image, error) {
-	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
-		return nil, err
-	}
 	protoImageFiles := make([]*imagev1.ImageFile, len(request.GetProtoFile()))
 	for i, fileDescriptorProto := range request.GetProtoFile() {
 		// we filter whether something is an import or not in ImageWithOnlyPaths

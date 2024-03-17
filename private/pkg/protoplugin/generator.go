@@ -21,18 +21,19 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/protoplugin"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
 	logger  *zap.Logger
-	handler Handler
+	handler protoplugin.Handler
 }
 
 func newGenerator(
 	logger *zap.Logger,
-	handler Handler,
+	handler protoplugin.Handler,
 ) *generator {
 	return &generator{
 		logger:  logger,

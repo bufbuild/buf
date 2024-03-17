@@ -22,13 +22,11 @@ package protoplugin
 import (
 	"context"
 	"fmt"
-	"io"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/protoplugin"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -42,71 +40,6 @@ const (
 	// entire generated files.
 	averageInsertionPointSize = 1024
 )
-
-// ResponseBuilder builds CodeGeneratorResponses.
-type ResponseBuilder interface {
-	// AddFile adds the file to the response.
-	//
-	// Returns error if nil or the name is empty.
-	// Warns to stderr if the name is already added or the name is not normalized.
-	AddFile(*pluginpb.CodeGeneratorResponse_File) error
-	// AddError adds the error message to the response.
-	//
-	// If there is an existing error message, this will be concatenated with a newline.
-	// If message is empty, a message "error" will be added.
-	AddError(message string)
-	// SetFeatureProto3Optional sets the proto3 optional feature.
-	SetFeatureProto3Optional()
-	// toResponse returns the resulting CodeGeneratorResponse. This must
-	// only be called after all writing has been completed.
-	toResponse() *pluginpb.CodeGeneratorResponse
-}
-
-// Handler is a protoc plugin handler.
-type Handler interface {
-	// Handle handles the plugin.
-	//
-	// This function can assume the request is valid.
-	// This should only return error on system error.
-	// Plugin generation errors should be added with AddError.
-	// See https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L100
-	Handle(
-		ctx context.Context,
-		container app.EnvStderrContainer,
-		responseWriter ResponseBuilder,
-		request *pluginpb.CodeGeneratorRequest,
-	) error
-}
-
-// HandlerFunc is a handler function.
-type HandlerFunc func(
-	context.Context,
-	app.EnvStderrContainer,
-	ResponseBuilder,
-	*pluginpb.CodeGeneratorRequest,
-) error
-
-// Handle implements Handler.
-func (h HandlerFunc) Handle(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
-) error {
-	return h(ctx, container, responseWriter, request)
-}
-
-// Main runs the plugin using app.Main and the Handler.
-func Main(ctx context.Context, handler Handler) {
-	app.Main(ctx, newRunFunc(handler))
-}
-
-// Run runs the plugin using app.Main and the Handler.
-//
-// The exit code can be determined using app.GetExitCode.
-func Run(ctx context.Context, container app.Container, handler Handler) error {
-	return app.Run(ctx, container, newRunFunc(handler))
-}
 
 // Generator executes the Handler using protoc's plugin execution logic.
 //
@@ -128,7 +61,7 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
-	handler Handler,
+	handler protoplugin.Handler,
 ) Generator {
 	return newGenerator(logger, handler)
 }
@@ -214,41 +147,4 @@ func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 		}
 	}
 	return nil
-}
-
-// newRunFunc returns a new RunFunc for app.Main and app.Run.
-func newRunFunc(handler Handler) func(context.Context, app.Container) error {
-	return func(ctx context.Context, container app.Container) error {
-		input, err := io.ReadAll(container.Stdin())
-		if err != nil {
-			return err
-		}
-		request := &pluginpb.CodeGeneratorRequest{}
-		// We do not know the FileDescriptorSet before unmarshaling this
-		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(input, request); err != nil {
-			return err
-		}
-		if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
-			return err
-		}
-		responseWriter := newResponseBuilder(container)
-		if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
-			return err
-		}
-		response := responseWriter.toResponse()
-		if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
-			return err
-		}
-		data, err := protoencoding.NewWireMarshaler().Marshal(response)
-		if err != nil {
-			return err
-		}
-		_, err = container.Stdout().Write(data)
-		return err
-	}
-}
-
-// NewResponseBuilder returns a new ResponseBuilder.
-func NewResponseBuilder(container app.StderrContainer) ResponseBuilder {
-	return newResponseBuilder(container)
 }
