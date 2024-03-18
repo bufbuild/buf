@@ -17,23 +17,22 @@ package main
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func main() {
-	protoplugin.Main(context.Background(), protoplugin.HandlerFunc(handle))
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter protoplugin.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	_ context.Context,
+	_ protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	_ protoplugin.Request,
 ) error {
-	if err := responseWriter.AddFile(
+	responseWriter.AddCodeGeneratorResponseFiles(
 		&pluginpb.CodeGeneratorResponse_File{
 			Name:           proto.String("test.txt"),
 			InsertionPoint: proto.String("example"),
@@ -44,10 +43,6 @@ func handle(
 			// And don't forget the windows newline literal (\r\n).
 		`),
 		},
-	); err != nil {
-		return err
-	}
-	if err := responseWriter.AddFile(
 		&pluginpb.CodeGeneratorResponse_File{
 			Name:           proto.String("test.txt"),
 			InsertionPoint: proto.String("other"),
@@ -55,8 +50,6 @@ func handle(
 			// Include this comment on the 'other' insertion point.
 		`),
 		},
-	); err != nil {
-		return err
-	}
+	)
 	return nil
 }
