@@ -26,48 +26,29 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
-	"google.golang.org/protobuf/types/pluginpb"
+	"github.com/bufbuild/protoplugin"
 )
 
 const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	protoplugin.Main(
-		context.Background(),
-		protoplugin.HandlerFunc(
-			func(
-				ctx context.Context,
-				container app.EnvStderrContainer,
-				responseWriter protoplugin.ResponseBuilder,
-				request *pluginpb.CodeGeneratorRequest,
-			) error {
-				return handle(
-					ctx,
-					container,
-					responseWriter,
-					request,
-				)
-			},
-		),
-	)
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter protoplugin.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
-		[]byte(request.GetParameter()),
+		[]byte(request.Parameter()),
 		externalConfig,
 	); err != nil {
 		return err
@@ -78,7 +59,7 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := zaputil.NewLoggerForFlagValues(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := zaputil.NewLoggerForFlagValues(pluginEnv.Stderr, externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		return err
 	}
@@ -93,7 +74,7 @@ func handle(
 	// unused imports that the compiler reports. But with a plugin, we get descriptors
 	// that are already built and no access to any possible associated compiler warnings.
 	// So we have to analyze the files to compute the unused imports.
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request, bufimage.WithUnusedImportsComputation())
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest(), bufimage.WithUnusedImportsComputation())
 	if err != nil {
 		return err
 	}
@@ -121,7 +102,7 @@ func handle(
 					return err
 				}
 			}
-			responseWriter.AddError(strings.TrimSpace(buffer.String()))
+			responseWriter.SetError(strings.TrimSpace(buffer.String()))
 			return nil
 		}
 		return err

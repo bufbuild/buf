@@ -31,11 +31,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
-	"google.golang.org/protobuf/types/pluginpb"
+	"github.com/bufbuild/protoplugin"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -45,36 +46,19 @@ const (
 
 // Main is the main.
 func Main() {
-	protoplugin.Main(
-		context.Background(),
-		protoplugin.HandlerFunc(
-			func(
-				ctx context.Context,
-				container app.EnvStderrContainer,
-				responseWriter protoplugin.ResponseBuilder,
-				request *pluginpb.CodeGeneratorRequest,
-			) error {
-				return handle(
-					ctx,
-					container,
-					responseWriter,
-					request,
-				)
-			},
-		),
-	)
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
-	envStderrContainer app.EnvStderrContainer,
-	responseWriter protoplugin.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
-		[]byte(request.GetParameter()),
+		[]byte(request.Parameter()),
 		externalConfig,
 	); err != nil {
 		return err
@@ -84,7 +68,7 @@ func handle(
 		return errors.New(`"against_input" is required`)
 	}
 	container, err := newAppextContainer(
-		envStderrContainer,
+		pluginEnv,
 		externalConfig.LogLevel,
 		externalConfig.LogFormat,
 	)
@@ -97,9 +81,14 @@ func handle(
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	files := request.FileToGenerate
-	if !externalConfig.LimitToInputFiles {
-		files = nil
+	var targetPaths []string
+	if externalConfig.LimitToInputFiles {
+		targetPaths = slicesext.Map(
+			request.FileDescriptorProtosToGenerate(),
+			func(fileDescriptorProto *descriptorpb.FileDescriptorProto) string {
+				return fileDescriptorProto.GetName()
+			},
+		)
 	}
 	controller, err := bufcli.NewController(
 		container,
@@ -112,7 +101,7 @@ func handle(
 		ctx,
 		externalConfig.AgainstInput,
 		// limit to the input files if specified
-		bufctl.WithTargetPaths(files, nil),
+		bufctl.WithTargetPaths(targetPaths, nil),
 	)
 	if err != nil {
 		return err
@@ -127,7 +116,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request.CodeGeneratorRequest())
 	if err != nil {
 		return err
 	}
@@ -147,7 +136,7 @@ func handle(
 			); err != nil {
 				return err
 			}
-			responseWriter.AddError(strings.TrimSpace(buffer.String()))
+			responseWriter.SetError(strings.TrimSpace(buffer.String()))
 			return nil
 		}
 		return err
@@ -169,20 +158,24 @@ type externalConfig struct {
 }
 
 func newAppextContainer(
-	envStderrContainer app.EnvStderrContainer,
+	pluginEnv protoplugin.PluginEnv,
 	logLevel string,
 	logFormat string,
 ) (appext.Container, error) {
 	logger, err := zaputil.NewLoggerForFlagValues(
-		envStderrContainer.Stderr(),
+		pluginEnv.Stderr,
 		logLevel,
 		logFormat,
 	)
 	if err != nil {
 		return nil, err
 	}
+	appContainer, err := newAppContainer(pluginEnv)
+	if err != nil {
+		return nil, err
+	}
 	return appext.NewContainer(
-		newAppContainer(envStderrContainer),
+		appContainer,
 		appName,
 		logger,
 		verbose.NopPrinter,
@@ -190,20 +183,26 @@ func newAppextContainer(
 }
 
 type appContainer struct {
-	app.EnvStderrContainer
+	app.EnvContainer
+	app.StderrContainer
 	app.StdinContainer
 	app.StdoutContainer
 	app.ArgContainer
 }
 
-func newAppContainer(envStderrContainer app.EnvStderrContainer) *appContainer {
+func newAppContainer(pluginEnv protoplugin.PluginEnv) (*appContainer, error) {
+	envContainer, err := app.NewEnvContainerForEnviron(pluginEnv.Environ)
+	if err != nil {
+		return nil, err
+	}
 	return &appContainer{
-		EnvStderrContainer: envStderrContainer,
+		EnvContainer:    envContainer,
+		StderrContainer: app.NewStderrContainer(pluginEnv.Stderr),
 		// cannot read against input from stdin, this is for the CodeGeneratorRequest
 		StdinContainer: app.NewStdinContainer(nil),
 		// cannot write output to stdout, this is for the CodeGeneratorResponse
 		StdoutContainer: app.NewStdoutContainer(nil),
 		// no args
 		ArgContainer: app.NewArgContainer(),
-	}
+	}, nil
 }
