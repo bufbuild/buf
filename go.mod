@@ -9,6 +9,7 @@ require (
 	connectrpc.com/connect v1.15.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.9.0
+	github.com/bufbuild/protoplugin v0.0.0-20240318153824-eeb4e72439df
 	github.com/bufbuild/protovalidate-go v0.6.0
 	github.com/bufbuild/protoyaml-go v0.1.8
 	github.com/docker/docker v25.0.4+incompatible
@@ -49,7 +50,6 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
-	github.com/bufbuild/protoplugin v0.0.0-20240318153824-eeb4e72439df // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
