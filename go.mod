@@ -1,8 +1,6 @@
 module github.com/bufbuild/buf
 
-go 1.21
-
-toolchain go1.22.1
+go 1.20
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1
@@ -51,7 +49,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
-	github.com/bufbuild/protoplugin v0.0.0-20240317212733-3936c517373c // indirect
+	github.com/bufbuild/protoplugin v0.0.0-20240318150527-47202a244e13 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect

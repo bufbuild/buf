@@ -18,6 +18,8 @@ github.com/bufbuild/protocompile v0.9.0 h1:DI8qLG5PEO0Mu1Oj51YFPqtx6I3qYXUAhJVJ/
 github.com/bufbuild/protocompile v0.9.0/go.mod h1:s89m1O8CqSYpyE/YaSGtg1r1YFMF5nLTwh4vlj6O444=
 github.com/bufbuild/protoplugin v0.0.0-20240317212733-3936c517373c h1:+9jhsY2wmpsffA70PShkMXAIxMN6UXKGhUFZZeNn0ro=
 github.com/bufbuild/protoplugin v0.0.0-20240317212733-3936c517373c/go.mod h1:Zu+M3SPJtDumEhIyPS1urXvNdU3GaSyOEddWdczHUCk=
+github.com/bufbuild/protoplugin v0.0.0-20240318150527-47202a244e13 h1:M3rlcat+jTkFvzR9lN3Dqrm5OjiqrSkw1flwuF7oRIM=
+github.com/bufbuild/protoplugin v0.0.0-20240318150527-47202a244e13/go.mod h1:x9aJ5IuWuJIKJKSyEa7WS7knVx2s2rv0MzcvYEyDRtM=
 github.com/bufbuild/protovalidate-go v0.6.0 h1:Jgs1kFuZ2LHvvdj8SpCLA1W/+pXS8QSM3F/E2l3InPY=
 github.com/bufbuild/protovalidate-go v0.6.0/go.mod h1:1LamgoYHZ2NdIQH0XGczGTc6Z8YrTHjcJVmiBaar4t4=
 github.com/bufbuild/protoyaml-go v0.1.8 h1:X9QDLfl9uEllh4gsXUGqPanZYCOKzd92uniRtW2OnAQ=
