@@ -6,7 +6,7 @@ DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
 
 # Ensure the following environment variables are set:
-#: ${GH_TOKEN} # However, if you are already logged in for GitHub CLI locally, you can remove this line when running it locally.
+: ${GH_TOKEN} # However, if you are already logged in for GitHub CLI locally, you can remove this line when running it locally.
 
 make upgrade
 
