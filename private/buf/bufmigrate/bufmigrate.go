@@ -16,6 +16,7 @@ package bufmigrate
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -137,11 +138,12 @@ func getWorkspaceModuleBufGenYAMLPaths(
 		}
 		ignoreDirPathMap[ignoreDirPath] = struct{}{}
 	}
+	var dirPath string
 	if err := bufconfig.WalkFileInfos(
 		ctx,
 		bucket,
 		func(path string, fileInfo bufconfig.FileInfo) error {
-			dirPath := normalpath.Dir(path)
+			dirPath = normalpath.Dir(path)
 			if len(ignoreDirPathMap) > 0 {
 				if normalpath.MapHasEqualOrContainingPath(ignoreDirPathMap, dirPath, normalpath.Relative) {
 					return nil
@@ -190,7 +192,7 @@ func getWorkspaceModuleBufGenYAMLPaths(
 			}
 		},
 	); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("unable to parse %q: %w", dirPath, err)
 	}
 	return workspaceDirPaths, moduleDirPaths, bufGenYAMLFilePaths, nil
 }
