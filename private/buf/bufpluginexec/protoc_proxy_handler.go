@@ -77,6 +77,14 @@ func (h *protocProxyHandler) Handle(
 	)
 	defer span.End()
 
+	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
+	//
+	// This is used via the FileDescriptorSet below.
+	request, err := request.WithSourceRetentionOptions()
+	if err != nil {
+		return err
+	}
+
 	protocVersion, err := h.getProtocVersion(ctx, pluginEnv)
 	if err != nil {
 		return err
@@ -91,7 +99,6 @@ func (h *protocProxyHandler) Handle(
 		return errors.New("js moved to a separate plugin hosted at https://github.com/protocolbuffers/protobuf-javascript in v21, you must install this plugin")
 	}
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
-		// TODO: What to do about source-retention options?
 		File: request.AllFileDescriptorProtos(),
 	}
 	fileDescriptorSetData, err := protoencoding.NewWireMarshaler().Marshal(fileDescriptorSet)
