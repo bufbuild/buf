@@ -87,12 +87,12 @@ func (r *runner) decrement() {
 func (*runner) isRunner() {}
 
 type execOptions struct {
-	args   []string
-	env    map[string]string
-	stdin  io.Reader
-	stdout io.Writer
-	stderr io.Writer
-	dir    string
+	args    []string
+	environ []string
+	stdin   io.Reader
+	stdout  io.Writer
+	stderr  io.Writer
+	dir     string
 }
 
 func newExecOptions() *execOptions {
@@ -102,10 +102,10 @@ func newExecOptions() *execOptions {
 func (e *execOptions) ApplyToCmd(cmd *exec.Cmd) {
 	// If the user did not specify env vars, we want to make sure
 	// the command has access to none, as the default is the current env.
-	if len(e.env) == 0 {
+	if len(e.environ) == 0 {
 		cmd.Env = emptyEnv
 	} else {
-		cmd.Env = envSlice(e.env)
+		cmd.Env = e.environ
 	}
 	// If the user did not specify any stdin, we want to make sure
 	// the command has access to none, as the default is the default stdin.

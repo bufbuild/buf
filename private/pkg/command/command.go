@@ -68,9 +68,23 @@ func RunWithArgs(args ...string) RunOption {
 //
 // The default is to use the single environment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty environment with the exec package.
+//
+// If this and RunWithEnviron are specified, the last option specified wins.
 func RunWithEnv(env map[string]string) RunOption {
 	return func(execOptions *execOptions) {
-		execOptions.env = env
+		execOptions.environ = envSlice(env)
+	}
+}
+
+// RunWithEnviron returns a new RunOption that sets the environment variables.
+//
+// The default is to use the single environment variable __EMPTY_ENV__=1 as we
+// cannot explicitly set an empty environment with the exec package.
+//
+// If this and RunWithEnv are specified, the last option specified wins.
+func RunWithEnviron(environ []string) RunOption {
+	return func(execOptions *execOptions) {
+		execOptions.environ = environ
 	}
 }
 
@@ -127,9 +141,23 @@ func StartWithArgs(args ...string) StartOption {
 //
 // The default is to use the single environment variable __EMPTY_ENV__=1 as we
 // cannot explicitly set an empty environment with the exec package.
+//
+// If this and StartWithEnviron are specified, the last option specified wins.
 func StartWithEnv(env map[string]string) StartOption {
 	return func(execOptions *execOptions) {
-		execOptions.env = env
+		execOptions.environ = envSlice(env)
+	}
+}
+
+// StartWithEnviron returns a new RunOption that sets the environment variables.
+//
+// The default is to use the single environment variable __EMPTY_ENV__=1 as we
+// cannot explicitly set an empty environment with the exec package.
+//
+// If this and StartWithEnv are specified, the last option specified wins.
+func StartWithEnviron(environ []string) StartOption {
+	return func(execOptions *execOptions) {
+		execOptions.environ = environ
 	}
 }
 

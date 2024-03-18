@@ -20,7 +20,6 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -73,7 +72,7 @@ func (h *binaryHandler) Handle(
 	responseBuffer := bytes.NewBuffer(nil)
 	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
 	runOptions := []command.RunOption{
-		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),

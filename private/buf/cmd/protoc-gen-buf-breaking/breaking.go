@@ -31,12 +31,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/bufbuild/protoplugin"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -83,12 +81,7 @@ func handle(
 	defer cancel()
 	var targetPaths []string
 	if externalConfig.LimitToInputFiles {
-		targetPaths = slicesext.Map(
-			request.FileDescriptorProtosToGenerate(),
-			func(fileDescriptorProto *descriptorpb.FileDescriptorProto) string {
-				return fileDescriptorProto.GetName()
-			},
-		)
+		targetPaths = request.CodeGeneratorRequest().GetFileToGenerate()
 	}
 	controller, err := bufcli.NewController(
 		container,
