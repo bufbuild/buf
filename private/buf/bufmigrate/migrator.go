@@ -17,6 +17,7 @@ package bufmigrate
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"sort"
@@ -456,6 +457,10 @@ func (m *migrator) getModuleToRefToCommit(
 	ctx context.Context,
 	moduleRefs []bufmodule.ModuleRef,
 ) (map[string]map[string]bufmodule.Commit, error) {
+	// We need to dedupe all the module refs of the configured dependencies, since in `v1`
+	// workspaces, each module will have their own configured dependencies, which may be
+	// duplicated across modules.
+	moduleRefs = dedupeStringerSlice(moduleRefs)
 	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB5)
 	if err != nil {
 		return nil, err
@@ -486,6 +491,10 @@ func (m *migrator) getCommitIDToCommit(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) (map[uuid.UUID]bufmodule.Commit, error) {
+	// We need to dedupe all the module keys of the configured dependencies, since in `v1`
+	// workspaces, each module will have their own configured dependencies, which may be
+	// duplicated across modules.
+	moduleKeys = dedupeStringerSlice(moduleKeys)
 	commits, err := m.commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
@@ -765,4 +774,18 @@ func filterFileSamePhpGenericServicesMap(m map[string][]string) map[string][]str
 		c[k] = v
 	}
 	return c
+}
+
+// This is a helper function used to deduplicate ModuleKey and ModuleRef, both of
+// which implement fmt.Stringer.
+func dedupeStringerSlice[S ~[]T, T fmt.Stringer](s S) []T {
+	seenStrings := make(map[string]struct{})
+	var dedupedSlice []T
+	for _, t := range s {
+		if _, ok := seenStrings[t.String()]; !ok {
+			dedupedSlice = append(dedupedSlice, t)
+			seenStrings[t.String()] = struct{}{}
+		}
+	}
+	return dedupedSlice
 }
