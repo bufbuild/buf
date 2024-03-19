@@ -37,7 +37,7 @@ LICENSE_HEADER_YEAR_RANGE := 2020-2024
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 PROTOVALIDATE_VERSION := v0.6.0
 # Comment out to use released buf
-#BUF_GO_INSTALL_PATH := ./cmd/buf
+BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
