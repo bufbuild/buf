@@ -389,6 +389,35 @@ func Duplicates[T comparable](s []T) []T {
 	return duplicates
 }
 
+// Deduplicate returns the unique values of s.
+func Deduplicate[V comparable](s []V) []V {
+	seen := make(map[V]struct{})
+	result := make([]V, 0)
+	for _, e := range s {
+		if _, ok := seen[e]; !ok {
+			result = append(result, e)
+			seen[e] = struct{}{}
+		}
+	}
+	return result
+}
+
+// Deduplicate returns the unique values of s when transformed with f.
+//
+// Earlier occurrences of a value are returned and later occurrences are dropped.
+func DeduplicateAny[K comparable, V any](s []V, f func(V) K) []V {
+	seen := make(map[K]struct{})
+	result := make([]V, 0)
+	for _, e := range s {
+		k := f(e)
+		if _, ok := seen[k]; !ok {
+			result = append(result, e)
+			seen[k] = struct{}{}
+		}
+	}
+	return result
+}
+
 // ToChunks splits s into chunks of the given chunk size.
 //
 // If s is nil or empty, returns empty.
