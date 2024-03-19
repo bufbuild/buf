@@ -27,13 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
-	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -77,9 +77,9 @@ func newGenerator(
 //
 // All of the plugins, both local and remote, are called concurrently. Each
 // plugin returns a single CodeGeneratorResponse, which are cached in-memory in
-// the protopluginos.ResponseWriter. Once all of the CodeGeneratorResponses
+// the bufprotopluginos.ResponseWriter. Once all of the CodeGeneratorResponses
 // are written in-memory, we flush them to the OS filesystem by closing the
-// protopluginos.ResponseWriter.
+// bufprotopluginos.ResponseWriter.
 //
 // This behavior is equivalent to protoc, which only writes out the content
 // for each of the plugins if all of the plugins are successful.
@@ -139,10 +139,10 @@ func (g *generator) generateCode(
 		return err
 	}
 	// Apply the CodeGeneratorResponses in the order they were specified.
-	responseWriter := protopluginos.NewResponseWriter(
+	responseWriter := bufprotopluginos.NewResponseWriter(
 		g.logger,
 		g.storageosProvider,
-		protopluginos.ResponseWriterWithCreateOutDirIfNotExists(),
+		bufprotopluginos.ResponseWriterWithCreateOutDirIfNotExists(),
 	)
 	for i, pluginConfig := range pluginConfigs {
 		out := pluginConfig.Out()
@@ -424,7 +424,7 @@ func validateResponses(
 	if len(responses) != len(pluginConfigs) {
 		return fmt.Errorf("unexpected number of responses: expected %d but got %d", len(pluginConfigs), len(responses))
 	}
-	pluginResponses := make([]*protoplugin.PluginResponse, 0, len(responses))
+	pluginResponses := make([]*bufprotoplugin.PluginResponse, 0, len(responses))
 	for i, response := range responses {
 		pluginConfig := pluginConfigs[i]
 		if response == nil {
@@ -432,14 +432,14 @@ func validateResponses(
 		}
 		pluginResponses = append(
 			pluginResponses,
-			protoplugin.NewPluginResponse(
+			bufprotoplugin.NewPluginResponse(
 				response,
 				pluginConfig.Name(),
 				pluginConfig.Out(),
 			),
 		)
 	}
-	if err := protoplugin.ValidatePluginResponses(pluginResponses); err != nil {
+	if err := bufprotoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 		return err
 	}
 	return nil

@@ -20,12 +20,11 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/protoplugin"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -53,9 +52,9 @@ func newBinaryHandler(
 
 func (h *binaryHandler) Handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter protoplugin.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) (retErr error) {
 	ctx, span := h.tracer.Start(
 		ctx,
@@ -66,14 +65,14 @@ func (h *binaryHandler) Handle(
 	)
 	defer span.End()
 
-	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
+	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	if err != nil {
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
-	stderrWriteCloser := newStderrWriteCloser(container.Stderr(), h.pluginPath)
+	stderrWriteCloser := newStderrWriteCloser(pluginEnv.Stderr, h.pluginPath)
 	runOptions := []command.RunOption{
-		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdin(bytes.NewReader(requestData)),
 		command.RunWithStdout(responseBuffer),
 		command.RunWithStderr(stderrWriteCloser),
@@ -92,24 +91,11 @@ func (h *binaryHandler) Handle(
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
 		return err
 	}
-	response, err = normalizeCodeGeneratorResponse(response)
-	if err != nil {
-		return err
-	}
-	if response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL) != 0 {
-		responseWriter.SetFeatureProto3Optional()
-	}
-	for _, file := range response.File {
-		if err := responseWriter.AddFile(file); err != nil {
-			return err
-		}
-	}
-	// plugin.proto specifies that only non-empty errors are considered errors.
-	// This is also consistent with protoc's behavior.
-	// Ref: https://github.com/protocolbuffers/protobuf/blob/069f989b483e63005f87ab309de130677718bbec/src/google/protobuf/compiler/plugin.proto#L100-L108.
-	if response.GetError() != "" {
-		responseWriter.AddError(response.GetError())
-	}
+	responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
+	responseWriter.SetSupportedFeatures(response.GetSupportedFeatures())
+	responseWriter.SetMinimumEdition(response.GetMinimumEdition())
+	responseWriter.SetMaximumEdition(response.GetMaximumEdition())
+	responseWriter.SetError(response.GetError())
 	return nil
 }
 

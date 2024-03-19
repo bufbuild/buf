@@ -27,14 +27,13 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioext"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/protoplugin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -65,9 +64,9 @@ func newProtocProxyHandler(
 
 func (h *protocProxyHandler) Handle(
 	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter protoplugin.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginEnv protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	request protoplugin.Request,
 ) (retErr error) {
 	ctx, span := h.tracer.Start(
 		ctx,
@@ -78,7 +77,15 @@ func (h *protocProxyHandler) Handle(
 	)
 	defer span.End()
 
-	protocVersion, err := h.getProtocVersion(ctx, container)
+	// We should send the complete FileDescriptorSet with source-retention options to --descriptor_set_in.
+	//
+	// This is used via the FileDescriptorSet below.
+	request, err := request.WithSourceRetentionOptions()
+	if err != nil {
+		return err
+	}
+
+	protocVersion, err := h.getProtocVersion(ctx, pluginEnv)
 	if err != nil {
 		return err
 	}
@@ -92,7 +99,7 @@ func (h *protocProxyHandler) Handle(
 		return errors.New("js moved to a separate plugin hosted at https://github.com/protocolbuffers/protobuf-javascript in v21, you must install this plugin")
 	}
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
-		File: request.ProtoFile,
+		File: request.AllFileDescriptorProtos(),
 	}
 	fileDescriptorSetData, err := protoencoding.NewWireMarshaler().Marshal(fileDescriptorSet)
 	if err != nil {
@@ -128,7 +135,7 @@ func (h *protocProxyHandler) Handle(
 			"--experimental_allow_proto3_optional",
 		)
 	}
-	if parameter := request.GetParameter(); parameter != "" {
+	if parameter := request.Parameter(); parameter != "" {
 		args = append(
 			args,
 			fmt.Sprintf("--%s_opt=%s", h.pluginName, parameter),
@@ -136,7 +143,7 @@ func (h *protocProxyHandler) Handle(
 	}
 	args = append(
 		args,
-		request.FileToGenerate...,
+		request.CodeGeneratorRequest().GetFileToGenerate()...,
 	)
 	stdin := ioext.DiscardReader
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
@@ -146,9 +153,9 @@ func (h *protocProxyHandler) Handle(
 		ctx,
 		h.protocPath,
 		command.RunWithArgs(args...),
-		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdin(stdin),
-		command.RunWithStderr(container.Stderr()),
+		command.RunWithStderr(pluginEnv.Stderr),
 	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
@@ -171,26 +178,22 @@ func (h *protocProxyHandler) Handle(
 			if err != nil {
 				return err
 			}
-			return responseWriter.AddFile(
-				&pluginpb.CodeGeneratorResponse_File{
-					Name:    proto.String(readObject.Path()),
-					Content: proto.String(string(data)),
-				},
-			)
+			responseWriter.AddFile(readObject.Path(), string(data))
+			return nil
 		},
 	)
 }
 
 func (h *protocProxyHandler) getProtocVersion(
 	ctx context.Context,
-	container app.EnvContainer,
+	pluginEnv protoplugin.PluginEnv,
 ) (*pluginpb.Version, error) {
 	stdoutBuffer := bytes.NewBuffer(nil)
 	if err := h.runner.Run(
 		ctx,
 		h.protocPath,
 		command.RunWithArgs("--version"),
-		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithEnviron(pluginEnv.Environ),
 		command.RunWithStdout(stdoutBuffer),
 	); err != nil {
 		// TODO: strip binary path as well?

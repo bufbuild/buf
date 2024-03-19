@@ -12,27 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protoplugin
+package bufprotoplugin
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"github.com/bufbuild/protoplugin"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
 	logger  *zap.Logger
-	handler Handler
+	handler protoplugin.Handler
 }
 
 func newGenerator(
 	logger *zap.Logger,
-	handler Handler,
+	handler protoplugin.Handler,
 ) *generator {
 	return &generator{
 		logger:  logger,
@@ -43,17 +44,32 @@ func newGenerator(
 func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	requests []*pluginpb.CodeGeneratorRequest,
+	codeGeneratorRequests []*pluginpb.CodeGeneratorRequest,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	responseBuilder := newResponseBuilder(container)
-	jobs := make([]func(context.Context) error, len(requests))
-	for i, request := range requests {
-		request := request
+	protopluginResponseWriter := protoplugin.NewResponseWriter(
+		protoplugin.ResponseWriterWithLenientValidation(
+			func(err error) {
+				_, _ = fmt.Fprintln(container.Stderr(), err.Error())
+			},
+		),
+	)
+	jobs := make([]func(context.Context) error, len(codeGeneratorRequests))
+	for i, codeGeneratorRequest := range codeGeneratorRequests {
+		codeGeneratorRequest := codeGeneratorRequest
 		jobs[i] = func(ctx context.Context) error {
-			if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
+			protopluginRequest, err := protoplugin.NewRequest(codeGeneratorRequest)
+			if err != nil {
 				return err
 			}
-			return g.handler.Handle(ctx, container, responseBuilder, request)
+			return g.handler.Handle(
+				ctx,
+				protoplugin.PluginEnv{
+					Environ: app.Environ(container),
+					Stderr:  container.Stderr(),
+				},
+				protopluginResponseWriter,
+				protopluginRequest,
+			)
 		}
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -61,12 +77,12 @@ func (g *generator) Generate(
 	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
 		return nil, err
 	}
-	response := responseBuilder.toResponse()
-	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
+	codeGeneratorResponse, err := protopluginResponseWriter.ToCodeGeneratorResponse()
+	if err != nil {
 		return nil, err
 	}
-	if errString := response.GetError(); errString != "" {
+	if errString := codeGeneratorResponse.GetError(); errString != "" {
 		return nil, errors.New(errString)
 	}
-	return response, nil
+	return codeGeneratorResponse, nil
 }
