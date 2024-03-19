@@ -108,7 +108,7 @@ func run(
 		ctx,
 		protostatstorage.NewFileWalker(
 			bufmodule.ModuleReadBucketToStorageReadBucket(
-				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(
+				bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(
 					workspace,
 				),
 			),
