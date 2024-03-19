@@ -119,4 +119,29 @@ message Foo {
       expression: "this * this"
     }
   ];
+  // Valid CEL expressions for repeated fields.
+  repeated string allow_cidr = 14 [(buf.validate.field).repeated = {
+    min_items: 1,
+    items: {
+      cel: [
+        {
+          id: "ip_prefix",
+          message: "value must be IPv4 prefix",
+          expression: "this.isIpPrefix(4, true)",
+        }
+      ],
+    },
+  }];
+  // Valid CEL expressions for map fields.
+  map<string, bool> allow_cidr_map = 15 [(buf.validate.field).map = {
+    keys: {
+      cel: [
+        {
+          id: "ip_prefix",
+          message: "key must be IPv4 prefix",
+          expression: "this.isIpPrefix(4, true)",
+        }
+      ],
+    },
+  }];
 }
