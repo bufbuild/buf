@@ -86,7 +86,7 @@ func checkCELForField(
 	celEnv, err = celEnv.Extend(
 		append(
 			celext.RequiredCELEnvOptions(fieldDescriptor),
-			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, false)),
+			cel.Variable("this", celext.ProtoFieldToCELType(fieldDescriptor, false, fieldDescriptor.IsList())),
 		)...,
 	)
 	if err != nil {
