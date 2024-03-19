@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protopluginos does OS-specific generation.
-package protopluginos
+// Package bufprotopluginos does OS-specific generation.
+package bufprotopluginos
 
 import (
 	"context"

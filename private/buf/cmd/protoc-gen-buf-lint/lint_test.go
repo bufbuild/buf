@@ -25,9 +25,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/protoplugin"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -244,19 +244,19 @@ func testRunLint(
 		protoplugin.HandlerFunc(
 			func(
 				ctx context.Context,
-				container app.EnvStderrContainer,
-				responseWriter protoplugin.ResponseBuilder,
-				request *pluginpb.CodeGeneratorRequest,
+				pluginEnv protoplugin.PluginEnv,
+				responseWriter protoplugin.ResponseWriter,
+				request protoplugin.Request,
 			) error {
 				return handle(
 					ctx,
-					container,
+					pluginEnv,
 					responseWriter,
 					request,
 				)
 			},
 		),
-		testBuildCodeGeneratorRequest(
+		testBuildRequest(
 			t,
 			runner,
 			root,
@@ -272,11 +272,11 @@ func testRunLint(
 func testRunHandlerFunc(
 	t *testing.T,
 	handler protoplugin.Handler,
-	request *pluginpb.CodeGeneratorRequest,
+	request protoplugin.Request,
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
+	requestData, err := protoencoding.NewWireMarshaler().Marshal(request.CodeGeneratorRequest())
 	require.NoError(t, err)
 	stdin := bytes.NewReader(requestData)
 	stdout := bytes.NewBuffer(nil)
@@ -285,12 +285,13 @@ func testRunHandlerFunc(
 	exitCode := app.GetExitCode(
 		protoplugin.Run(
 			context.Background(),
-			app.NewContainer(
-				nil,
-				stdin,
-				stdout,
-				stderr,
-			),
+			protoplugin.Env{
+				Args:    nil,
+				Stdin:   stdin,
+				Stdout:  stdout,
+				Stderr:  stderr,
+				Environ: nil,
+			},
 			handler,
 		),
 	)
@@ -305,14 +306,14 @@ func testRunHandlerFunc(
 	}
 }
 
-func testBuildCodeGeneratorRequest(
+func testBuildRequest(
 	t *testing.T,
 	runner command.Runner,
 	root string,
 	realFilePaths []string,
 	parameter string,
 	fileToGenerate []string,
-) *pluginpb.CodeGeneratorRequest {
+) protoplugin.Request {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		runner,
@@ -346,5 +347,7 @@ func testBuildCodeGeneratorRequest(
 	require.NoError(t, err)
 	codeGenReq, err := bufimage.ImageToCodeGeneratorRequest(image, parameter, nil, false, false)
 	require.NoError(t, err)
-	return codeGenReq
+	request, err := protoplugin.NewRequest(codeGenReq)
+	require.NoError(t, err)
+	return request
 }

@@ -55,6 +55,11 @@ func NewEnvContainer(m map[string]string) EnvContainer {
 	return newEnvContainer(m)
 }
 
+// NewEnvContainerForEnviron returns a new EnvContainer for the environ slice.
+func NewEnvContainerForEnviron(environ []string) (EnvContainer, error) {
+	return newEnvContainerForEnviron(environ)
+}
+
 // NewEnvContainerForOS returns a new EnvContainer for the operating system.
 func NewEnvContainerForOS() (EnvContainer, error) {
 	return newEnvContainerForEnviron(os.Environ())

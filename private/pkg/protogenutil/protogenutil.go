@@ -23,11 +23,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
+	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // NewHandler returns a new protoplugin.Handler for the protogen.Plugin function.
@@ -39,13 +37,13 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) protop
 	return protoplugin.HandlerFunc(
 		func(
 			ctx context.Context,
-			container app.EnvStderrContainer,
-			responseWriter protoplugin.ResponseBuilder,
-			request *pluginpb.CodeGeneratorRequest,
+			pluginEnv protoplugin.PluginEnv,
+			responseWriter protoplugin.ResponseWriter,
+			request protoplugin.Request,
 		) error {
 			plugin, err := protogen.Options{
 				ParamFunc: handlerOptions.optionHandler,
-			}.New(request)
+			}.New(request.CodeGeneratorRequest())
 			if err != nil {
 				return err
 			}
@@ -53,17 +51,8 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) protop
 				plugin.Error(err)
 			}
 			response := plugin.Response()
-			for _, file := range response.File {
-				if err := responseWriter.AddFile(file); err != nil {
-					return err
-				}
-			}
-			// plugin.proto specifies that only non-empty errors are considered errors.
-			// This is also consistent with protoc's behavior.
-			// Ref: https://github.com/protocolbuffers/protobuf/blob/069f989b483e63005f87ab309de130677718bbec/src/google/protobuf/compiler/plugin.proto#L100-L108.
-			if response.GetError() != "" {
-				responseWriter.AddError(response.GetError())
-			}
+			responseWriter.AddCodeGeneratorResponseFiles(response.GetFile()...)
+			responseWriter.SetError(response.GetError())
 			responseWriter.SetFeatureProto3Optional()
 			return nil
 		},

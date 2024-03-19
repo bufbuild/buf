@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
@@ -129,67 +128,6 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 	}
 	if err := ValidateProtoPaths("FileDescriptor.Dependency", fileDescriptor.GetDependency()); err != nil {
 		return err
-	}
-	return nil
-}
-
-// ValidateCodeGeneratorRequest validates the CodeGeneratorRequest.
-func ValidateCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) error {
-	if err := ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
-		return err
-	}
-	for i, fileDescriptorProto := range request.ProtoFile {
-		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return fmt.Errorf("CodeGeneratorRequest.ProtoFile[%d]: %w", i, err)
-		}
-	}
-	for i, fileDescriptorProto := range request.SourceFileDescriptors {
-		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
-			return fmt.Errorf("CodeGeneratorRequest.SourceFileDescriptors[%d]: %w", i, err)
-		}
-	}
-	return nil
-}
-
-// ValidateCodeGeneratorRequestExceptFileDescriptorProtos validates the CodeGeneratorRequest
-// minus the FileDescriptorProtos.
-func ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.CodeGeneratorRequest) error {
-	if request == nil {
-		return errors.New("nil CodeGeneratorRequest")
-	}
-	if len(request.ProtoFile) == 0 {
-		return errors.New("empty CodeGeneratorRequest.ProtoFile")
-	}
-	if len(request.FileToGenerate) == 0 {
-		return errors.New("empty CodeGeneratorRequest.FileToGenerate")
-	}
-	if err := ValidateProtoPaths("CodeGeneratorRequest.FileToGenerate", request.FileToGenerate); err != nil {
-		return err
-	}
-	// TODO: validate that there are no duplicates in file_to_generate, proto_file, and source_file_descriptors
-	//       validate that proto_file is in topological order and contains everything from file_to_generate
-	//       validate that source_file_descriptors, if present, matches file_to_generate
-	return nil
-}
-
-// ValidateCodeGeneratorResponse validates the CodeGeneratorResponse.
-//
-// This validates that names are set.
-//
-// It is actually OK per the plugin.proto specs to not have the name set, and
-// if this is empty, the content should be combined with the previous file.
-// However, for our handlers, we do not support this, and for our
-// binary handlers, we combine CodeGeneratorResponse.File contents.
-//
-// https://github.com/protocolbuffers/protobuf/blob/b99994d994e399174fe688a5efbcb6d91f36952a/src/google/protobuf/compiler/plugin.proto#L127
-func ValidateCodeGeneratorResponse(response *pluginpb.CodeGeneratorResponse) error {
-	if response == nil {
-		return errors.New("nil CodeGeneratorResponse")
-	}
-	for _, file := range response.File {
-		if file.GetName() == "" {
-			return errors.New("empty CodeGeneratorResponse.File.Name")
-		}
 	}
 	return nil
 }

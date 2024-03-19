@@ -28,12 +28,12 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginos"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
-	"github.com/bufbuild/buf/private/pkg/protoplugin/protopluginos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
@@ -183,7 +183,7 @@ func run(
 				return err
 			}
 		}
-		pluginResponses := make([]*protoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
+		pluginResponses := make([]*bufprotoplugin.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
 			if !ok {
@@ -203,12 +203,12 @@ func run(
 			if err != nil {
 				return err
 			}
-			pluginResponses = append(pluginResponses, protoplugin.NewPluginResponse(response, pluginName, pluginInfo.Out))
+			pluginResponses = append(pluginResponses, bufprotoplugin.NewPluginResponse(response, pluginName, pluginInfo.Out))
 		}
-		if err := protoplugin.ValidatePluginResponses(pluginResponses); err != nil {
+		if err := bufprotoplugin.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
 		}
-		responseWriter := protopluginos.NewResponseWriter(
+		responseWriter := bufprotopluginos.NewResponseWriter(
 			logger,
 			storageosProvider,
 		)

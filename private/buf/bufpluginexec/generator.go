@@ -17,9 +17,9 @@ package bufpluginexec
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/protoplugin"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
@@ -72,7 +72,7 @@ func (g *generator) Generate(
 	if err != nil {
 		return nil, err
 	}
-	return protoplugin.NewGenerator(
+	return bufprotoplugin.NewGenerator(
 		g.logger,
 		handler,
 	).Generate(
