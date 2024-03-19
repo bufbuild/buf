@@ -17,7 +17,6 @@ package bufmigrate
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"sort"
@@ -457,10 +456,14 @@ func (m *migrator) getModuleToRefToCommit(
 	ctx context.Context,
 	moduleRefs []bufmodule.ModuleRef,
 ) (map[string]map[string]bufmodule.Commit, error) {
-	// We need to dedupe all the module refs of the configured dependencies, since in `v1`
-	// workspaces, each module will have their own configured dependencies, which may be
-	// duplicated across modules.
-	moduleRefs = dedupeStringerSlice(moduleRefs)
+	// The module refs that are collected by migrateBuilder is across all modules being
+	// migrated, so there may be duplicates. ModuleKeyProvider errors on duplicate module
+	// refs because it is expensive to make multiple calls to resolve the same module ref,
+	// so we deduplicate the module refs we are passing here.
+	moduleRefs = slicesext.DeduplicateAny(
+		moduleRefs,
+		func(moduleRef bufmodule.ModuleRef) string { return moduleRef.String() },
+	)
 	moduleKeys, err := m.moduleKeyProvider.GetModuleKeysForModuleRefs(ctx, moduleRefs, bufmodule.DigestTypeB5)
 	if err != nil {
 		return nil, err
@@ -491,10 +494,14 @@ func (m *migrator) getCommitIDToCommit(
 	ctx context.Context,
 	moduleKeys []bufmodule.ModuleKey,
 ) (map[uuid.UUID]bufmodule.Commit, error) {
-	// We need to dedupe all the module keys of the configured dependencies, since in `v1`
-	// workspaces, each module will have their own configured dependencies, which may be
-	// duplicated across modules.
-	moduleKeys = dedupeStringerSlice(moduleKeys)
+	// The module keys that are collected by migrateBuilder is across all modules being
+	// migrated, so there may be duplicates. CommitProvider errors on duplicate module
+	// keys because it is expensive to make multiple calls to resolve the same module key,
+	// so we deduplicate the module keys we are passing here.
+	moduleKeys = slicesext.DeduplicateAny(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) string { return moduleKey.String() },
+	)
 	commits, err := m.commitProvider.GetCommitsForModuleKeys(ctx, moduleKeys)
 	if err != nil {
 		return nil, err
@@ -774,18 +781,4 @@ func filterFileSamePhpGenericServicesMap(m map[string][]string) map[string][]str
 		c[k] = v
 	}
 	return c
-}
-
-// This is a helper function used to deduplicate ModuleKey and ModuleRef, both of
-// which implement fmt.Stringer.
-func dedupeStringerSlice[S ~[]T, T fmt.Stringer](s S) []T {
-	seenStrings := make(map[string]struct{})
-	var dedupedSlice []T
-	for _, t := range s {
-		if _, ok := seenStrings[t.String()]; !ok {
-			dedupedSlice = append(dedupedSlice, t)
-			seenStrings[t.String()] = struct{}{}
-		}
-	}
-	return dedupedSlice
 }
