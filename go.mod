@@ -15,7 +15,7 @@ require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.19.0
+	github.com/google/go-containerregistry v0.19.1
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect v1.15.6
 	github.com/klauspost/compress v1.17.7
