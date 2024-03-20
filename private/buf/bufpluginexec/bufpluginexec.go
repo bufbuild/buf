@@ -149,7 +149,7 @@ func NewHandler(
 		}
 	}
 	return nil, fmt.Errorf(
-		"could not find protoc plugin for name %s - please make sure protoc-gen-%s is installed and present on your $PATH",
+		"could not find protoc plugin for name %s - please make sure %s is installed and present on your $PATH",
 		pluginName,
 		pluginName,
 	)
