@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -770,9 +769,9 @@ func overrideRulesForPerFileOverridesV1(
 
 func newExternalManagedConfigV2FromGenerateManagedConfig(
 	managedConfig GenerateManagedConfig,
-) externalGenerateManagedConfigV2 {
+) (externalGenerateManagedConfigV2, error) {
 	if managedConfig == nil {
-		return externalGenerateManagedConfigV2{}
+		return externalGenerateManagedConfigV2{}, nil
 	}
 	var externalDisables []externalManagedDisableConfigV2
 	for _, disable := range managedConfig.Disables() {
@@ -805,6 +804,13 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		if override.FieldOption() != FieldOptionUnspecified {
 			fieldOptionName = override.FieldOption().String()
 		}
+		if fileOptionName != "" && fieldOptionName != "" {
+			return externalGenerateManagedConfigV2{}, fmt.Errorf("field option %s and file option %s set on the same override", fileOptionName, fieldOptionName)
+		}
+		value, err := getOverrideValue(fileOptionName, fieldOptionName, override.Value())
+		if err != nil {
+			return externalGenerateManagedConfigV2{}, err
+		}
 		externalOverrides = append(
 			externalOverrides,
 			externalManagedOverrideConfigV2{
@@ -813,7 +819,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 				Module:      override.ModuleFullName(),
 				Path:        override.Path(),
 				Field:       override.FieldName(),
-				Value:       getOverrideValue(override.Value()),
+				Value:       value,
 			},
 		)
 	}
@@ -821,21 +827,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		Enabled:  managedConfig.Enabled(),
 		Disable:  externalDisables,
 		Override: externalOverrides,
-	}
-}
-
-// If the file or field option override value is one of the supported enum types,
-// then we want to write out the string representation of the enum value, not
-// the corresponding int32.
-// Otherwise we just return the value.
-func getOverrideValue(value interface{}) interface{} {
-	if optimizeModeValue, ok := value.(descriptorpb.FileOptions_OptimizeMode); ok {
-		return optimizeModeValue.String()
-	}
-	if jsTypeValue, ok := value.(descriptorpb.FieldOptions_JSType); ok {
-		return jsTypeValue.String()
-	}
-	return value
+	}, nil
 }
 
 func validatePath(path string) error {

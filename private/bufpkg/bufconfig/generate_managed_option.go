@@ -224,3 +224,58 @@ func parseOverrideValueJSType(override interface{}) (interface{}, error) {
 	}
 	return descriptorpb.FieldOptions_JSType(jsTypeEnum), nil
 }
+
+// If the file or field option override value is one of the supported enum types,
+// then we want to write out the string representation of the enum value, not
+// the corresponding int32.
+// Otherwise we just return the value.
+func getOverrideValue(fileOptionName string, fieldOptionName string, value interface{}) (interface{}, error) {
+	var optionName string
+	if fileOptionName != "" {
+		optionName = fileOptionName
+		fileOption, err := parseFileOption(fileOptionName)
+		if err != nil {
+			return nil, err
+		}
+		switch fileOption {
+		case
+			FileOptionJavaPackage,
+			FileOptionJavaPackagePrefix,
+			FileOptionJavaPackageSuffix,
+			FileOptionJavaOuterClassname,
+			FileOptionJavaMultipleFiles,
+			FileOptionJavaStringCheckUtf8,
+			FileOptionGoPackage,
+			FileOptionGoPackagePrefix,
+			FileOptionCcEnableArenas,
+			FileOptionObjcClassPrefix,
+			FileOptionCsharpNamespace,
+			FileOptionCsharpNamespacePrefix,
+			FileOptionPhpNamespace,
+			FileOptionPhpMetadataNamespace,
+			FileOptionPhpMetadataNamespaceSuffix,
+			FileOptionRubyPackage,
+			FileOptionRubyPackageSuffix:
+			return value, nil
+
+		case FileOptionOptimizeFor:
+			if optimizeModeValue, ok := value.(descriptorpb.FileOptions_OptimizeMode); ok {
+				return optimizeModeValue.String(), nil
+			}
+		}
+	}
+	if fieldOptionName != "" {
+		optionName = fieldOptionName
+		fieldOption, err := parseFieldOption(fieldOptionName)
+		if err != nil {
+			return nil, err
+		}
+		switch fieldOption {
+		case FieldOptionJSType:
+			if jsTypeValue, ok := value.(descriptorpb.FieldOptions_JSType); ok {
+				return jsTypeValue.String(), nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("unable to get override value for %s: %v", optionName, value)
+}
