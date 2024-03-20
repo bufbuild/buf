@@ -16,10 +16,10 @@ if ! [[ $(git status --porcelain) ]]; then
 fi 
 
 DATE=$(date +"%Y-%m-%d")
-BRANCH="upgrade/${DATE}"
+BRANCH="make-upgrade/${DATE}"
 git switch -C "${BRANCH}"
 git add .
-git commit -m "Upgrade dependencies ${DATE}"
+git commit -m "Make upgrade"
 git push --set-upstream origin "${BRANCH}"
-PR_URL=$(gh pr create --title "Upgrade dependencies ${DATE}" --body "Make sure to review the changes and merge it if everything looks good." --base main --head "${BRANCH}")
+PR_URL=$(gh pr create --title "Make upgrade" --body "Make sure to review the changes and merge if everything looks good." --base main --head "${BRANCH}")
 echo "Pull request created: ${PR_URL}"
