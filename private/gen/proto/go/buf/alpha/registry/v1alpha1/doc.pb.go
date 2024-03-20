@@ -95,7 +95,8 @@ type GetSourceDirectoryInfoRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
 func (x *GetSourceDirectoryInfoRequest) Reset() {
@@ -273,7 +274,8 @@ type GetSourceFileRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// the normalized path to the requested file, relative to the root of the module.
 	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
 }
@@ -395,7 +397,8 @@ type GetModulePackagesRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
 func (x *GetModulePackagesRequest) Reset() {
@@ -571,7 +574,8 @@ type GetModuleDocumentationRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
 func (x *GetModuleDocumentationRequest) Reset() {
@@ -767,7 +771,8 @@ type GetPackageDocumentationRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// this is the fully qualified package name.
 	PackageName string `protobuf:"bytes,4,opt,name=package_name,json=packageName,proto3" json:"package_name,omitempty"`
 }

@@ -115,7 +115,7 @@ message ListRepositoryTagsResponse {
 message ListRepositoryTagsForReferenceRequest {
   // The ID of the repository whose tags should be listed.
   string repository_id = 1;
-  // The name of the reference.
+  // Optional reference (if unspecified, will use the repository's default_branch).
   string reference = 2;
   uint32 page_size = 3;
   // The first page is returned if this is empty.
