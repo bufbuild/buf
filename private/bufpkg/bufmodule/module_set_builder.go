@@ -306,14 +306,14 @@ func (b *moduleSetBuilder) AddLocalModule(
 		return b.addError(syserror.New("cannot set commitID without ModuleFullName when calling AddLocalModule"))
 	}
 	if !isTarget && (len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
-		return b.addError(syserror.New("cannot set TargetPaths for a non-target Module when calling AddLocalModule"))
+		return b.addError(syserror.Newf("cannot set TargetPaths for a non-target Module when calling AddLocalModule, bucketID=%q, targetPaths=%v, targetExcludePaths=%v", bucketID, localModuleOptions.targetPaths, localModuleOptions.targetExcludePaths))
 	}
 	if !isTarget && localModuleOptions.protoFileTargetPath != "" {
-		return b.addError(syserror.New("cannot set ProtoFileTargetPath for a non-target Module when calling AddLocalModule"))
+		return b.addError(syserror.Newf("cannot set ProtoFileTargetPath for a non-target Module when calling AddLocalModule, bucketID=%q, protoFileTargetPath=%q", bucketID, localModuleOptions.protoFileTargetPath))
 	}
 	if localModuleOptions.protoFileTargetPath != "" &&
 		(len(localModuleOptions.targetPaths) > 0 || len(localModuleOptions.targetExcludePaths) > 0) {
-		return b.addError(syserror.New("cannot set TargetPaths and ProtoFileTargetPath when calling AddLocalModule"))
+		return b.addError(syserror.Newf("cannot set TargetPaths and ProtoFileTargetPath when calling AddLocalModule, bucketID=%q, protoFileTargetPath=%q, targetPaths=%v, targetExcludePaths=%v", bucketID, localModuleOptions.protoFileTargetPath, localModuleOptions.targetPaths, localModuleOptions.targetExcludePaths))
 	}
 	if localModuleOptions.protoFileTargetPath != "" &&
 		normalpath.Ext(localModuleOptions.protoFileTargetPath) != ".proto" {
