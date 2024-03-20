@@ -104,22 +104,33 @@ func newModuleTargeting(
 				moduleTargetPaths = append(moduleTargetPaths, moduleTargetPath)
 			}
 		}
-		// We use the bucketTargeting.TargetExcludePaths() instead of the workspace config target
-		// exclude paths since those are stripped of the path to the module.
-		for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
-			if targetExcludePath == moduleDirPath {
-				// We're just going to be realists in our error messages here.
-				// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
-				// if we were really clever, we'd go back and just remove this as a module path if it was specified.
-				// This really should be allowed - how else do you exclude from a workspace?
-				return nil, fmt.Errorf("module %q was specified with --exclude-path, this flag cannot be used to specify module directories", targetExcludePath)
-			}
-			if normalpath.ContainsPath(moduleDirPath, targetExcludePath, normalpath.Relative) {
-				moduleTargetExcludePath, err := normalpath.Rel(moduleDirPath, targetExcludePath)
-				if err != nil {
-					return nil, err
+		// If this is not a target module, then exclude-paths should not apply to the module.
+		//
+		// Otherwise, you will run into scenarios like this:
+		//
+		// buf build --exclude-path googleapis/google --path books/acme
+		// Failure: cannot set TargetPaths for a non-target Module when calling AddLocalModule, bucketID="googleapis", targetPaths=[], targetExcludePaths=[google]
+		//
+		// This syserror is valid: LocalModuleWithTargetPaths should only be called for target modules. If we pass --exclude-path for a non-target module (which in the above
+		// example, googleapis is not targeted because --path books/acme only targeted books), then it should be as if --exclude-path pointed to a non-existent file or directory.
+		if isTargetModule {
+			// We use the bucketTargeting.TargetExcludePaths() instead of the workspace config target
+			// exclude paths since those are stripped of the path to the module.
+			for _, targetExcludePath := range bucketTargeting.TargetExcludePaths() {
+				if targetExcludePath == moduleDirPath {
+					// We're just going to be realists in our error messages here.
+					// TODO FUTURE: Do we error here currently? If so, this error remains. For extra credit in the future,
+					// if we were really clever, we'd go back and just remove this as a module path if it was specified.
+					// This really should be allowed - how else do you exclude from a workspace?
+					return nil, fmt.Errorf("module %q was specified with --exclude-path, this flag cannot be used to specify module directories", targetExcludePath)
 				}
-				moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
+				if normalpath.ContainsPath(moduleDirPath, targetExcludePath, normalpath.Relative) {
+					moduleTargetExcludePath, err := normalpath.Rel(moduleDirPath, targetExcludePath)
+					if err != nil {
+						return nil, err
+					}
+					moduleTargetExcludePaths = append(moduleTargetExcludePaths, moduleTargetExcludePath)
+				}
 			}
 		}
 		moduleTargetPaths, err = slicesext.MapError(
