@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // GenerateManagedConfig is a managed mode configuration.
@@ -812,7 +813,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 				Module:      override.ModuleFullName(),
 				Path:        override.Path(),
 				Field:       override.FieldName(),
-				Value:       override.Value(),
+				Value:       getOverrideValue(override.Value()),
 			},
 		)
 	}
@@ -821,6 +822,20 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		Disable:  externalDisables,
 		Override: externalOverrides,
 	}
+}
+
+// If the file or field option override value is one of the supported enum types,
+// then we want to write out the string representation of the enum value, not
+// the corresponding int32.
+// Otherwise we just return the value.
+func getOverrideValue(value interface{}) interface{} {
+	if optimizeModeValue, ok := value.(descriptorpb.FileOptions_OptimizeMode); ok {
+		return optimizeModeValue.String()
+	}
+	if jsTypeValue, ok := value.(descriptorpb.FieldOptions_JSType); ok {
+		return jsTypeValue.String()
+	}
+	return value
 }
 
 func validatePath(path string) error {
