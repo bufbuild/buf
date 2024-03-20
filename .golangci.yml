@@ -224,6 +224,11 @@ issues:
       path: private/pkg/osext/osext.go
       text: "os.Chdir"
     - linters:
+        - gochecknoinits
+      # protoencoding calls detrand.Disable via go:linkname and and init function. See the comments
+      # in the file for more details.
+      path: private/pkg/protoencoding/detrand.go
+    - linters:
         - errcheck
       # headers.go has casts with values from contexts that should fail if there
       # is no error, but it would be very unidiomatic to return an error from
