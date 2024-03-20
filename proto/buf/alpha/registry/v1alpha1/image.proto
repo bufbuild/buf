@@ -48,6 +48,7 @@ enum ImageMask {
 message GetImageRequest {
   string owner = 1;
   string repository = 2;
+  // Optional reference (if unspecified, will use the repository's default_branch).
   string reference = 3;
 
   // Exclude files from imported buf modules in this image.

@@ -589,7 +589,7 @@ type ListRepositoryTagsForReferenceRequest struct {
 
 	// The ID of the repository whose tags should be listed.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The name of the reference.
+	// Optional reference (if unspecified, will use the repository's default_branch).
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
 	PageSize  uint32 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// The first page is returned if this is empty.
