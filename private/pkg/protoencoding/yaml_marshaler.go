@@ -48,9 +48,5 @@ func (m *yamlMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		UseEnumNumbers:  m.useEnumNumbers,
 		EmitUnpopulated: m.emitUnpopulated,
 	}
-	data, err := options.Marshal(message)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return options.Marshal(message)
 }

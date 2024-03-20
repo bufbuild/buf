@@ -15,9 +15,6 @@
 package protoencoding
 
 import (
-	"bytes"
-	"encoding/json"
-
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -49,28 +46,7 @@ func (m *jsonMarshaler) Marshal(message proto.Message) ([]byte, error) {
 		UseProtoNames:   m.useProtoNames,
 		UseEnumNumbers:  m.useEnumNumbers,
 		EmitUnpopulated: m.emitUnpopulated,
+		Indent:          m.indent,
 	}
-	data, err := options.Marshal(message)
-	if err != nil {
-		return nil, err
-	}
-	// This is needed due to the instability of protojson output.
-	//
-	// https://github.com/golang/protobuf/issues/1121
-	// https://go-review.googlesource.com/c/protobuf/+/151340
-	// https://developers.google.com/protocol-buffers/docs/reference/go/faq#unstable-json
-	//
-	// We may need to do a full encoding/json encode/decode in the future if protojson
-	// produces non-deterministic output.
-	buffer := bytes.NewBuffer(nil)
-	if m.indent != "" {
-		if err := json.Indent(buffer, data, "", m.indent); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := json.Compact(buffer, data); err != nil {
-			return nil, err
-		}
-	}
-	return buffer.Bytes(), nil
+	return options.Marshal(message)
 }
