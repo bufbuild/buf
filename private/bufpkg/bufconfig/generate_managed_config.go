@@ -804,9 +804,6 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		if override.FieldOption() != FieldOptionUnspecified {
 			fieldOptionName = override.FieldOption().String()
 		}
-		if fileOptionName != "" && fieldOptionName != "" {
-			return externalGenerateManagedConfigV2{}, fmt.Errorf("field option %s and file option %s set on the same override", fileOptionName, fieldOptionName)
-		}
 		value, err := getOverrideValue(fileOptionName, fieldOptionName, override.Value())
 		if err != nil {
 			return externalGenerateManagedConfigV2{}, err

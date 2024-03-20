@@ -231,6 +231,9 @@ func parseOverrideValueJSType(override interface{}) (interface{}, error) {
 // Otherwise we just return the value.
 func getOverrideValue(fileOptionName string, fieldOptionName string, value interface{}) (interface{}, error) {
 	var optionName string
+	if fileOptionName != "" && fieldOptionName != "" {
+		return externalGenerateManagedConfigV2{}, fmt.Errorf("field option %s and file option %s set on the same override", fileOptionName, fieldOptionName)
+	}
 	if fileOptionName != "" {
 		optionName = fileOptionName
 		fileOption, err := parseFileOption(fileOptionName)
