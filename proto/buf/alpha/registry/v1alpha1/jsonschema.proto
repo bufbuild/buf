@@ -29,6 +29,7 @@ service JSONSchemaService {
 message GetJSONSchemaRequest {
   string owner = 1;
   string repository = 2;
+  // Optional reference (if unspecified, will use the repository's default_branch).
   string reference = 3;
 
   // A fully qualified name of the type to generate a JSONSchema for, e.g.

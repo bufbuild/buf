@@ -2445,7 +2445,7 @@ type GetRepositoryDependencyDOTStringRequest struct {
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The name of the BSR repository.
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	// The name of the reference.
+	// Optional reference (if unspecified, will use the repository's default_branch).
 	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
