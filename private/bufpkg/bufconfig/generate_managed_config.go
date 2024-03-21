@@ -769,9 +769,9 @@ func overrideRulesForPerFileOverridesV1(
 
 func newExternalManagedConfigV2FromGenerateManagedConfig(
 	managedConfig GenerateManagedConfig,
-) externalGenerateManagedConfigV2 {
+) (externalGenerateManagedConfigV2, error) {
 	if managedConfig == nil {
-		return externalGenerateManagedConfigV2{}
+		return externalGenerateManagedConfigV2{}, nil
 	}
 	var externalDisables []externalManagedDisableConfigV2
 	for _, disable := range managedConfig.Disables() {
@@ -804,6 +804,10 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		if override.FieldOption() != FieldOptionUnspecified {
 			fieldOptionName = override.FieldOption().String()
 		}
+		value, err := getOverrideValue(fileOptionName, fieldOptionName, override.Value())
+		if err != nil {
+			return externalGenerateManagedConfigV2{}, err
+		}
 		externalOverrides = append(
 			externalOverrides,
 			externalManagedOverrideConfigV2{
@@ -812,7 +816,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 				Module:      override.ModuleFullName(),
 				Path:        override.Path(),
 				Field:       override.FieldName(),
-				Value:       override.Value(),
+				Value:       value,
 			},
 		)
 	}
@@ -820,7 +824,7 @@ func newExternalManagedConfigV2FromGenerateManagedConfig(
 		Enabled:  managedConfig.Enabled(),
 		Disable:  externalDisables,
 		Override: externalOverrides,
-	}
+	}, nil
 }
 
 func validatePath(path string) error {

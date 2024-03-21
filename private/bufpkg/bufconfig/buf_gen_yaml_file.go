@@ -243,9 +243,12 @@ func writeBufGenYAMLFile(writer io.Writer, bufGenYAMLFile BufGenYAMLFile) error 
 	if err != nil {
 		return err
 	}
-	externalManagedConfigV2 := newExternalManagedConfigV2FromGenerateManagedConfig(
+	externalManagedConfigV2, err := newExternalManagedConfigV2FromGenerateManagedConfig(
 		bufGenYAMLFile.GenerateConfig().GenerateManagedConfig(),
 	)
+	if err != nil {
+		return err
+	}
 	externalInputConfigsV2, err := slicesext.MapError(
 		bufGenYAMLFile.InputConfigs(),
 		newExternalInputConfigV2FromInputConfig,
