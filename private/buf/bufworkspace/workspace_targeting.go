@@ -146,10 +146,10 @@ defined with a v2 buf.yaml can be updated, see the migration documentation for m
 		}
 	}
 	logger.Debug(
-		"targeting workspace with no found buf.work.yaml or buf.yaml",
+		"targeting workspace with no found buf.work.yaml or v2 buf.yaml",
 		zap.String("subDirPath", bucketTargeting.SubDirPath()),
 	)
-	// We did not find any buf.work.yaml or buf.yaml, we invoke fallback logic.
+	// We did not find any buf.work.yaml or v2 buf.yaml, we invoke fallback logic.
 	return fallbackWorkspaceTargeting(
 		ctx,
 		logger,
