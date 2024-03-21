@@ -116,19 +116,13 @@ func run(
 		registryv1alpha1connect.NewRepositoryCommitServiceClient,
 	)
 
-	reference := moduleRef.Ref()
-	if reference == "" {
-		// This will go away when we call the new API.
-		reference = "main"
-	}
-
 	resp, err := service.ListRepositoryCommitsByReference(
 		ctx,
 		connect.NewRequest(
 			&registryv1alpha1.ListRepositoryCommitsByReferenceRequest{
 				RepositoryOwner: moduleRef.ModuleFullName().Owner(),
 				RepositoryName:  moduleRef.ModuleFullName().Name(),
-				Reference:       reference,
+				Reference:       moduleRef.Ref(),
 				PageSize:        flags.PageSize,
 				PageToken:       flags.PageToken,
 				Reverse:         flags.Reverse,

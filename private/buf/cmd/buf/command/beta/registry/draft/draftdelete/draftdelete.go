@@ -78,9 +78,6 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	if moduleRef.Ref() == "main" {
-		return appcmd.NewInvalidArgumentErrorf("%q is not a valid draft name", "main")
-	}
 	if moduleRef.Ref() == "" {
 		return appcmd.NewInvalidArgumentError("a valid draft name need to be specified")
 	}

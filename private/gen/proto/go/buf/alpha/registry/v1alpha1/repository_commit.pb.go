@@ -354,7 +354,8 @@ type ListRepositoryCommitsByReferenceRequest struct {
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the repository reference belongs to.
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The reference used to resolve repository commits. Can be a tag or commit.
+	// The optional reference used to resolve repository commits. Can be a tag or commit.
+	// If unspecified, will use the repository's default_branch.
 	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	PageSize  uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
@@ -499,7 +500,8 @@ type GetRepositoryCommitByReferenceRequest struct {
 	RepositoryOwner string `protobuf:"bytes,1,opt,name=repository_owner,json=repositoryOwner,proto3" json:"repository_owner,omitempty"`
 	// The name of the repository which the reference belongs to.
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The reference that should be resolved to a commit. Can be a tag or commit.
+	// The optional reference that should be resolved to a commit. Can be a tag or commit.
+	// If unspecified, will use the repository's default_branch.
 	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
