@@ -33,7 +33,6 @@ type readBucketCloser struct {
 
 func newReadBucketCloser(
 	storageReadBucketCloser storage.ReadBucketCloser,
-	bucketPath string,
 	bucketTargeting buftarget.BucketTargeting,
 ) *readBucketCloser {
 	normalizedSubDirPath := normalpath.Normalize(bucketTargeting.SubDirPath())

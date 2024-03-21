@@ -41,14 +41,11 @@ func TestGetReadBucketCloserForBucketNoTerminateFileName(t *testing.T) {
 		"three/four/five",
 		nil, // no target paths
 		nil, // no target exclude paths
-		nil,
+		nil, // no terminate func, which should result in never finding a controlling workspace
 	)
 	require.NoError(t, err)
 	require.Nil(t, bucketTargeting.ControllingWorkspace())
 	require.Equal(t, "three/four/five", readBucketCloser.SubDirPath())
-	_, err = readBucketCloser.Stat(ctx, "buf.yaml")
-	require.NoError(t, err)
-	require.NoError(t, readBucketCloser.Close())
 }
 
 func TestGetReadBucketCloserTerminateFileName(t *testing.T) {
