@@ -2355,6 +2355,25 @@ func TestProtoFileNoWorkspaceOrModule(t *testing.T) {
 	)
 }
 
+func TestModuleArchiveDir(t *testing.T) {
+	// Archive that defines module at input path
+	t.Parallel()
+	zipDir := createZipFromDir(
+		t,
+		filepath.Join("testdata", "failarchive"),
+		"archive.zip",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=fail"),
+	)
+}
+
 // testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
 // listing the files from the image as if --format=import was set.
 func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {
