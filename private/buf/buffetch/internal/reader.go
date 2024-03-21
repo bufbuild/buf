@@ -585,26 +585,28 @@ func getReadBucketCloserForBucket(
 	if err != nil {
 		return nil, nil, err
 	}
-	var bucketPath string
-	if bucketTargeting.ControllingWorkspace() != nil {
+	// If a controlling workspace is found, then we map the bucket on the controlling
+	// workspace path. We only need to remap the bucket in the case where a controlling
+	// workspace is found. In the case where no controlling workspace is found, bufworkspace
+	// will handle the SubDirPath through workspace targeting given the bucket and BucketTargeting.
+	//
+	// We return the same bucket targeting information, since BucketTargeting
+	// maps the target paths and target exclude paths to the controlling workspace path when
+	// one is found.
+	bucketPath := "."
+	if bucketTargeting.ControllingWorkspace() != nil && bucketTargeting.ControllingWorkspace().Path() != "." {
 		bucketPath = bucketTargeting.ControllingWorkspace().Path()
-	} else {
-		bucketPath = bucketTargeting.SubDirPath()
-	}
-	if bucketPath != "." {
 		inputBucket = storage.MapReadBucketCloser(
 			inputBucket,
 			storage.MapOnPrefix(bucketPath),
 		)
-		// We return the same bucket targeting information, since we are using mappers to remap
-		// paths with the controlling workspace as the prefix when using the bucket.
 	}
 	logger.Debug(
 		"buffetch creating new bucket",
 		zap.String("bucketPath", bucketPath),
 		zap.Strings("targetPaths", bucketTargeting.TargetPaths()),
 	)
-	readBucketCloser := newReadBucketCloser(inputBucket, bucketPath, bucketTargeting)
+	readBucketCloser := newReadBucketCloser(inputBucket, bucketTargeting)
 	return readBucketCloser, bucketTargeting, nil
 }
 
