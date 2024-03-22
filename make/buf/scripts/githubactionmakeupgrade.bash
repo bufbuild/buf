@@ -13,13 +13,13 @@ make upgrade
 if ! [[ $(git status --porcelain) ]]; then
   echo "No changes detected. Exiting."
   exit 0
-fi 
+fi
 
 DATE=$(date +"%Y-%m-%d")
-BRANCH="make-upgrade/${DATE}"
+BRANCH="make-upgrade-${DATE}"
 git switch -C "${BRANCH}"
 git add .
 git commit -m "Make upgrade"
 git push --set-upstream origin "${BRANCH}"
-PR_URL=$(gh pr create --title "Make upgrade" --body "Make sure to review the changes and merge if everything looks good." --base main --head "${BRANCH}")
+PR_URL=$(gh pr create --title "Make upgrade" --body "Created on ${DATE}." --base main --head "${BRANCH}")
 echo "Pull request created: ${PR_URL}"
