@@ -76,7 +76,7 @@ type CheckConfig interface {
 	//     ignore:
 	//       - .
 	//
-	// We could make it so that ignore == moduleDirPath is only allowed for v1, however
+	// We could make it so that ignore == moduleDirPath is only allowed for v2, however
 	// this feels like overkill, so we're just going to keep this consistent for v1
 	// and v2.
 	Disabled() bool
