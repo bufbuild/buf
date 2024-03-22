@@ -53,6 +53,9 @@ func (h *handler) Check(
 	config bufconfig.LintConfig,
 	image bufimage.Image,
 ) error {
+	if config.Disabled() {
+		return nil
+	}
 	files, err := bufprotosource.NewFiles(ctx, image)
 	if err != nil {
 		return err

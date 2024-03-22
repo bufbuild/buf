@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadWriteBufYAMLFileRoundTrip(t *testing.T) {
@@ -276,30 +277,139 @@ modules:
 	)
 }
 
+func TestBufYAMLFileLintDisabled(t *testing.T) {
+	t.Parallel()
+
+	bufYAMLFile := testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+`,
+	)
+	moduleConfig0 := bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 := bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.LintConfig().Disabled())
+	require.False(t, moduleConfig1.LintConfig().Disabled())
+
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+lint:
+  ignore:
+    - vendor
+`,
+	)
+	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.LintConfig().Disabled())
+	require.True(t, moduleConfig1.LintConfig().Disabled())
+
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+    lint:
+      ignore:
+        - vendor
+`,
+	)
+	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.LintConfig().Disabled())
+	require.True(t, moduleConfig1.LintConfig().Disabled())
+}
+
+func TestBufYAMLFileBreakingDisabled(t *testing.T) {
+	t.Parallel()
+
+	bufYAMLFile := testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+`,
+	)
+	moduleConfig0 := bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 := bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.BreakingConfig().Disabled())
+	require.False(t, moduleConfig1.BreakingConfig().Disabled())
+
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+breaking:
+  ignore:
+    - vendor
+`,
+	)
+	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.BreakingConfig().Disabled())
+	require.True(t, moduleConfig1.BreakingConfig().Disabled())
+
+	bufYAMLFile = testReadBufYAMLFile(
+		t,
+		`version: v2
+modules:
+  - path: proto
+  - path: vendor
+    breaking:
+      ignore:
+        - vendor
+`,
+	)
+	moduleConfig0 = bufYAMLFile.ModuleConfigs()[0]
+	moduleConfig1 = bufYAMLFile.ModuleConfigs()[1]
+	require.Equal(t, moduleConfig0.DirPath(), "proto")
+	require.Equal(t, moduleConfig1.DirPath(), "vendor")
+	require.False(t, moduleConfig0.BreakingConfig().Disabled())
+	require.True(t, moduleConfig1.BreakingConfig().Disabled())
+}
+
 func testReadWriteBufYAMLFileRoundTrip(
 	t *testing.T,
 	inputBufYAMLFileData string,
 	expectedOutputBufYAMLFileData string,
 ) {
-	inputBufYAMLFileData = testCleanYAMLData(inputBufYAMLFileData)
-	expectedOutputBufYAMLFileData = testCleanYAMLData(expectedOutputBufYAMLFileData)
+	bufYAMLFile := testReadBufYAMLFile(t, inputBufYAMLFileData)
+	buffer := bytes.NewBuffer(nil)
+	err := WriteBufYAMLFile(buffer, bufYAMLFile)
+	require.NoError(t, err)
+	outputBufYAMLData := testCleanYAMLData(buffer.String())
+	assert.Equal(t, testCleanYAMLData(expectedOutputBufYAMLFileData), outputBufYAMLData, "output:\n%s", outputBufYAMLData)
+}
 
+func testReadBufYAMLFile(
+	t *testing.T,
+	inputBufYAMLFileData string,
+) BufYAMLFile {
 	bufYAMLFile, err := ReadBufYAMLFile(
-		strings.NewReader(inputBufYAMLFileData),
+		strings.NewReader(testCleanYAMLData(inputBufYAMLFileData)),
 		DefaultBufYAMLFileName,
 	)
-	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
-	buffer := bytes.NewBuffer(nil)
-	err = WriteBufYAMLFile(buffer, bufYAMLFile)
-	assert.NoError(t, err)
-	if err != nil {
-		return
-	}
-	outputBufYAMLData := testCleanYAMLData(buffer.String())
-	assert.Equal(t, expectedOutputBufYAMLFileData, outputBufYAMLData, "output:\n%s", outputBufYAMLData)
+	require.NoError(t, err)
+	return bufYAMLFile
 }
 
 func testCleanYAMLData(data string) string {

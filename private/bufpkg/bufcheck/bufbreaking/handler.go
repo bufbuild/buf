@@ -50,6 +50,9 @@ func (h *handler) Check(
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) error {
+	if config.Disabled() {
+		return nil
+	}
 	previousFiles, err := bufprotosource.NewFiles(ctx, previousImage)
 	if err != nil {
 		return err

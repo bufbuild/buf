@@ -139,7 +139,7 @@ func run(
 			".": {},
 		},
 		bufconfig.NewLintConfig(
-			bufconfig.NewCheckConfigForUseIDsAndCategories(
+			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
 				[]string{"DEFAULT"},
 			),
@@ -152,7 +152,7 @@ func run(
 			true,
 		),
 		bufconfig.NewBreakingConfig(
-			bufconfig.NewCheckConfigForUseIDsAndCategories(
+			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,
 				[]string{"FILE"},
 			),

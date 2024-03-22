@@ -19,14 +19,14 @@ import (
 )
 
 var (
-	defaultCheckConfigV1 = newCheckConfigNoValidate(
+	defaultCheckConfigV1 = newEnabledCheckConfigNoValidate(
 		FileVersionV1,
 		nil,
 		nil,
 		nil,
 		nil,
 	)
-	defaultCheckConfigV2 = newCheckConfigNoValidate(
+	defaultCheckConfigV2 = newEnabledCheckConfigNoValidate(
 		FileVersionV2,
 		nil,
 		nil,
@@ -45,6 +45,41 @@ type CheckConfig interface {
 	// of the IDs and categories.
 	FileVersion() FileVersion
 
+	// Disabled says whether or not the given check should be entirely disabled.
+	//
+	// This happens if an ignore path matches a module directory, which is valid
+	// in cases such as:
+	//
+	//   version: v2
+	//   modules:
+	//     - path: proto
+	//     - path: vendor
+	//   lint:
+	//     ignore:
+	//       - vendor
+	//
+	// Or:
+	//
+	//   version: v2
+	//   modules:
+	//     - path: proto
+	//     - path: vendor
+	//       lint:
+	//         ignore:
+	//           - vendor
+	//
+	// We no longer produce an error in this case. Instead, we set Disabled(), and
+	// do not run checks. This means that the following is no longer an error:
+	//
+	//   version: v1
+	//   lint:
+	//     ignore:
+	//       - .
+	//
+	// We could make it so that ignore == moduleDirPath is only allowed for v2, however
+	// this feels like overkill, so we're just going to keep this consistent for v1
+	// and v2.
+	Disabled() bool
 	// Sorted.
 	UseIDsAndCategories() []string
 	// Sorted
@@ -61,15 +96,15 @@ type CheckConfig interface {
 	isCheckConfig()
 }
 
-// NewCheckConfig returns a new CheckConfig.
-func NewCheckConfig(
+// NewEnabledCheckConfig returns a new enabled CheckConfig.
+func NewEnabledCheckConfig(
 	fileVersion FileVersion,
 	use []string,
 	except []string,
 	ignore []string,
 	ignoreOnly map[string][]string,
 ) (CheckConfig, error) {
-	return newCheckConfig(
+	return newEnabledCheckConfig(
 		fileVersion,
 		use,
 		except,
@@ -78,12 +113,12 @@ func NewCheckConfig(
 	)
 }
 
-// NewCheckConfig returns a new CheckConfig for only the use IDs and categories.
-func NewCheckConfigForUseIDsAndCategories(
+// NewEnabledCheckConfig returns a new enabled CheckConfig for only the use IDs and categories.
+func NewEnabledCheckConfigForUseIDsAndCategories(
 	fileVersion FileVersion,
 	use []string,
 ) CheckConfig {
-	return newCheckConfigNoValidate(
+	return newEnabledCheckConfigNoValidate(
 		fileVersion,
 		slicesext.ToUniqueSorted(use),
 		nil,
@@ -96,13 +131,14 @@ func NewCheckConfigForUseIDsAndCategories(
 
 type checkConfig struct {
 	fileVersion FileVersion
+	disabled    bool
 	use         []string
 	except      []string
 	ignore      []string
 	ignoreOnly  map[string][]string
 }
 
-func newCheckConfig(
+func newEnabledCheckConfig(
 	fileVersion FileVersion,
 	use []string,
 	except []string,
@@ -127,10 +163,10 @@ func newCheckConfig(
 	}
 	ignoreOnly = newIgnoreOnly
 
-	return newCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly), nil
+	return newEnabledCheckConfigNoValidate(fileVersion, use, except, ignore, ignoreOnly), nil
 }
 
-func newCheckConfigNoValidate(
+func newEnabledCheckConfigNoValidate(
 	fileVersion FileVersion,
 	use []string,
 	except []string,
@@ -139,11 +175,23 @@ func newCheckConfigNoValidate(
 ) *checkConfig {
 	return &checkConfig{
 		fileVersion: fileVersion,
+		disabled:    false,
 		use:         use,
 		except:      except,
 		ignore:      ignore,
 		ignoreOnly:  ignoreOnly,
 	}
+}
+
+func newDisabledCheckConfig(fileVersion FileVersion) *checkConfig {
+	return &checkConfig{
+		fileVersion: fileVersion,
+		disabled:    true,
+	}
+}
+
+func (c *checkConfig) Disabled() bool {
+	return c.disabled
 }
 
 func (c *checkConfig) FileVersion() FileVersion {
