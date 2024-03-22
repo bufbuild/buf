@@ -724,13 +724,13 @@ func getLintConfigForExternalLintV1Beta1V1(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
 	for idOrCategory, paths := range externalLint.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
@@ -765,13 +765,13 @@ func getLintConfigForExternalLintV2(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
 	for idOrCategory, paths := range externalLint.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
@@ -806,13 +806,13 @@ func getBreakingConfigForExternalBreaking(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (BreakingConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths(externalBreaking.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	ignore, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore", externalBreaking.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 	if err != nil {
 		return nil, err
 	}
 	ignoreOnly := make(map[string][]string)
 	for idOrCategory, paths := range externalBreaking.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths(paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
@@ -847,6 +847,7 @@ func getBreakingConfigForExternalBreaking(
 //     If requirePathsToBeContainedWithinModuleDirPath is true, return error.
 //   - Otherwise, adds the path relative to the given module directory path to the returned slice.
 func getRelPathsForLintOrBreakingExternalPaths(
+	fieldName string,
 	paths []string,
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
@@ -856,17 +857,17 @@ func getRelPathsForLintOrBreakingExternalPaths(
 		path, err := normalpath.NormalizeAndValidate(path)
 		if err != nil {
 			// user error
-			return nil, fmt.Errorf("invalid path: %w", err)
+			return nil, fmt.Errorf("%s: invalid path: %w", fieldName, err)
 		}
 		if path == moduleDirPath {
 			// user error
-			return nil, fmt.Errorf("path %q is equal to module directory %q", path, moduleDirPath)
+			return nil, fmt.Errorf("%s: path %q is equal to module directory %q", fieldName, path, moduleDirPath)
 		}
 		if !normalpath.EqualsOrContainsPath(moduleDirPath, path, normalpath.Relative) {
 			if !requirePathsToBeContainedWithinModuleDirPath {
 				continue
 			}
-			return nil, fmt.Errorf("path %q is not contained within module directory %q", path, moduleDirPath)
+			return nil, fmt.Errorf("%s: path %q is not contained within module directory %q", fieldName, path, moduleDirPath)
 		}
 		relPath, err := normalpath.Rel(moduleDirPath, path)
 		if err != nil {
