@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
 )
@@ -126,7 +127,7 @@ Overrides --%s`,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or image to check against. Must be one of format %s`,
+			`The source, module, or image to check against. If not set, defaults to checking against the latest commit on the BSR for each module named in buf.yaml. Must be one of format %s`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -143,9 +144,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	if err := bufcli.ValidateRequiredFlag(againstFlagName, flags.Against); err != nil {
-		return err
-	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
@@ -178,15 +176,40 @@ func run(
 			return err
 		}
 	}
-	againstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
-		ctx,
-		flags.Against,
-		bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
-		bufctl.WithImageExcludeImports(flags.ExcludeImports),
-		bufctl.WithConfigOverride(flags.AgainstConfig),
-	)
-	if err != nil {
-		return err
+	var againstImageWithConfigs []bufctl.ImageWithConfig
+	if flags.Against == "" {
+		for _, imageWithConfig := range imageWithConfigs {
+			moduleFullName := imageWithConfig.ModuleFullName()
+			if moduleFullName == nil {
+				return fmt.Errorf("--%s not set, and defaulted to checking against the latest commit on the BSR for each module in the input. This requires the name key to be present in buf.yaml for each module. The name key was not present for one or more modules in the input. Either specify an explicit target with --%s, or specify a name for each buf.yaml that has a corresponding module on the BSR", againstFlagName, againstFlagName)
+			}
+			iAgainstImageWithConfigs, err := controller.GetTargetImageWithConfigs(
+				ctx,
+				moduleFullName.String(),
+				// TODO: turn externalPaths into paths somehow, otherwise --path doesn't work in a lot of cases
+				bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
+				bufctl.WithImageExcludeImports(flags.ExcludeImports),
+				bufctl.WithConfigOverride(flags.AgainstConfig),
+			)
+			if err != nil {
+				return err
+			}
+			if len(iAgainstImageWithConfigs) != 1 {
+				return syserror.Newf("expected 1 ImageWithConfig, got %d", len(iAgainstImageWithConfigs))
+			}
+			againstImageWithConfigs = append(againstImageWithConfigs, iAgainstImageWithConfigs[0])
+		}
+	} else {
+		againstImageWithConfigs, err = controller.GetTargetImageWithConfigs(
+			ctx,
+			flags.Against,
+			bufctl.WithTargetPaths(externalPaths, flags.ExcludePaths),
+			bufctl.WithImageExcludeImports(flags.ExcludeImports),
+			bufctl.WithConfigOverride(flags.AgainstConfig),
+		)
+		if err != nil {
+			return err
+		}
 	}
 	if len(imageWithConfigs) != len(againstImageWithConfigs) {
 		// If workspaces are being used as input, the number

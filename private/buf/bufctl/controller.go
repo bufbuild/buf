@@ -56,6 +56,9 @@ import (
 // ImageWithConfig pairs an Image with lint and breaking configuration.
 type ImageWithConfig interface {
 	bufimage.Image
+
+	// May be nil.
+	ModuleFullName() bufmodule.ModuleFullName
 	LintConfig() bufconfig.LintConfig
 	BreakingConfig() bufconfig.BreakingConfig
 
@@ -412,6 +415,7 @@ func (c *controller) GetTargetImageWithConfigs(
 		return []ImageWithConfig{
 			newImageWithConfig(
 				image,
+				nil,
 				lintConfig,
 				breakingConfig,
 			),
@@ -1058,6 +1062,7 @@ func (c *controller) buildTargetImageWithConfigs(
 			imageWithConfigs,
 			newImageWithConfig(
 				image,
+				module.ModuleFullName(),
 				workspace.GetLintConfigForOpaqueID(module.OpaqueID()),
 				workspace.GetBreakingConfigForOpaqueID(module.OpaqueID()),
 			),
