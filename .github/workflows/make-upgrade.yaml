@@ -1,6 +1,8 @@
 name: Make upgrade
-on: [workflow_dispatch]
-# TODO: schedule this to run weekly or after dependabot update merges
+on:
+  schedule:
+    # Run every Monday at 10am UTC
+    - cron: '0 10 * * 1'
 env:
   APP_ID: 251311
 jobs:
@@ -18,12 +20,9 @@ jobs:
         with:
           token: ${{ steps.app_token.outputs.token }}
       - name: Set up Git name and email
-        # TODO: replace with bot's name and email
-        # git config user.name 'github-actions[bot]'
-        # git config user.email 'github-actions[bot]@users.noreply.github.com'
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
       - name: Make upgrade
         run: bash ./make/buf/scripts/githubactionmakeupgrade.bash
         env:
