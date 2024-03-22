@@ -112,7 +112,8 @@ message ListRepositoryCommitsByReferenceRequest {
   string repository_owner = 1;
   // The name of the repository which the repository reference belongs to.
   string repository_name = 2;
-  // The reference used to resolve repository commits. Can be a tag or commit.
+  // The optional reference used to resolve repository commits. Can be a tag or commit.
+  // If unspecified, will use the repository's default_branch.
   string reference = 3;
   uint32 page_size = 4;
   string page_token = 5;
@@ -129,7 +130,8 @@ message GetRepositoryCommitByReferenceRequest {
   string repository_owner = 1;
   // The name of the repository which the reference belongs to.
   string repository_name = 2;
-  // The reference that should be resolved to a commit. Can be a tag or commit.
+  // The optional reference that should be resolved to a commit. Can be a tag or commit.
+  // If unspecified, will use the repository's default_branch.
   string reference = 3;
 }
 

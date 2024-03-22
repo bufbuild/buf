@@ -41,7 +41,8 @@ type GetJSONSchemaRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// A fully qualified name of the type to generate a JSONSchema for, e.g.
 	// "pkg.foo.Bar". The type needs to resolve in the referenced module or any of
 	// its dependencies. Currently only messages types are supported.

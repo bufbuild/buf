@@ -102,7 +102,8 @@ type GetImageRequest struct {
 
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+	// Optional reference (if unspecified, will use the repository's default_branch).
+	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Exclude files from imported buf modules in this image.
 	ExcludeImports bool `protobuf:"varint,4,opt,name=exclude_imports,json=excludeImports,proto3" json:"exclude_imports,omitempty"`
 	// Exclude source_code_info fields from each ImageFile.
