@@ -26,6 +26,21 @@
   entry: buf format -w --exit-code
   types: [proto]
   pass_filenames: false
+- id: buf-dep-update
+  name: buf dep update
+  language: golang
+  language_version: 1.22.1
+  entry: buf dep update
+  files: '(buf\.lock|buf\.yaml)'
+  pass_filenames: false
+- id: buf-dep-prune
+  name: buf dep prune
+  language: golang
+  language_version: 1.22.1
+  entry: buf dep prune
+  files: '(buf\.lock|buf\.yaml)'
+  pass_filenames: false
+  # Deprecated: use buf-dep-update instead.
 - id: buf-mod-update
   name: buf mod update
   language: golang
@@ -33,6 +48,7 @@
   entry: buf mod update
   files: '(buf\.lock|buf\.yaml)'
   pass_filenames: false
+  # Deprecated: use buf-dep-prune instead.
 - id: buf-mod-prune
   name: buf mod prune
   language: golang
