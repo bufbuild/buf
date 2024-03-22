@@ -2374,6 +2374,18 @@ fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "
 	)
 }
 
+func TestLintDisabledForModuleInWorkspace(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/lint_ignore_disabled/proto/a.proto:3:9:Message name "foo" should be PascalCase, such as "Foo".`),
+		"lint",
+		filepath.Join("testdata", "lint_ignore_disabled"),
+	)
+}
+
 // testBuildLsFilesFormatImport does effectively an ls-files, but via doing a build of an Image, and then
 // listing the files from the image as if --format=import was set.
 func testBuildLsFilesFormatImport(t *testing.T, expectedExitCode int, expectedFiles []string, buildArgs ...string) {

@@ -724,29 +724,38 @@ func getLintConfigForExternalLintV1Beta1V1(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	var checkConfig CheckConfig
+	disabled, err := isLintOrBreakingDisabledBasedOnIgnores("lint.ignore", externalLint.Ignore, moduleDirPath)
 	if err != nil {
 		return nil, err
 	}
-	ignoreOnly := make(map[string][]string)
-	for idOrCategory, paths := range externalLint.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	if disabled {
+		checkConfig = newDisabledCheckConfig(fileVersion)
+	} else {
+		ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
-		if len(relPaths) > 0 {
-			ignoreOnly[idOrCategory] = relPaths
+		ignoreOnly := make(map[string][]string)
+		for idOrCategory, paths := range externalLint.IgnoreOnly {
+			relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+			if err != nil {
+				return nil, err
+			}
+			if len(relPaths) > 0 {
+				ignoreOnly[idOrCategory] = relPaths
+			}
 		}
-	}
-	checkConfig, err := newCheckConfig(
-		fileVersion,
-		externalLint.Use,
-		externalLint.Except,
-		ignore,
-		ignoreOnly,
-	)
-	if err != nil {
-		return nil, err
+		checkConfig, err = newEnabledCheckConfig(
+			fileVersion,
+			externalLint.Use,
+			externalLint.Except,
+			ignore,
+			ignoreOnly,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return newLintConfig(
 		checkConfig,
@@ -765,29 +774,38 @@ func getLintConfigForExternalLintV2(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (LintConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	var checkConfig CheckConfig
+	disabled, err := isLintOrBreakingDisabledBasedOnIgnores("lint.ignore", externalLint.Ignore, moduleDirPath)
 	if err != nil {
 		return nil, err
 	}
-	ignoreOnly := make(map[string][]string)
-	for idOrCategory, paths := range externalLint.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	if disabled {
+		checkConfig = newDisabledCheckConfig(fileVersion)
+	} else {
+		ignore, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore", externalLint.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
-		if len(relPaths) > 0 {
-			ignoreOnly[idOrCategory] = relPaths
+		ignoreOnly := make(map[string][]string)
+		for idOrCategory, paths := range externalLint.IgnoreOnly {
+			relPaths, err := getRelPathsForLintOrBreakingExternalPaths("lint.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+			if err != nil {
+				return nil, err
+			}
+			if len(relPaths) > 0 {
+				ignoreOnly[idOrCategory] = relPaths
+			}
 		}
-	}
-	checkConfig, err := newCheckConfig(
-		fileVersion,
-		externalLint.Use,
-		externalLint.Except,
-		ignore,
-		ignoreOnly,
-	)
-	if err != nil {
-		return nil, err
+		checkConfig, err = newEnabledCheckConfig(
+			fileVersion,
+			externalLint.Use,
+			externalLint.Except,
+			ignore,
+			ignoreOnly,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return newLintConfig(
 		checkConfig,
@@ -806,34 +824,65 @@ func getBreakingConfigForExternalBreaking(
 	moduleDirPath string,
 	requirePathsToBeContainedWithinModuleDirPath bool,
 ) (BreakingConfig, error) {
-	ignore, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore", externalBreaking.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	var checkConfig CheckConfig
+	disabled, err := isLintOrBreakingDisabledBasedOnIgnores("breaking.ignore", externalBreaking.Ignore, moduleDirPath)
 	if err != nil {
 		return nil, err
 	}
-	ignoreOnly := make(map[string][]string)
-	for idOrCategory, paths := range externalBreaking.IgnoreOnly {
-		relPaths, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+	if disabled {
+		checkConfig = newDisabledCheckConfig(fileVersion)
+	} else {
+		ignore, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore", externalBreaking.Ignore, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
 		if err != nil {
 			return nil, err
 		}
-		if len(relPaths) > 0 {
-			ignoreOnly[idOrCategory] = relPaths
+		ignoreOnly := make(map[string][]string)
+		for idOrCategory, paths := range externalBreaking.IgnoreOnly {
+			relPaths, err := getRelPathsForLintOrBreakingExternalPaths("breaking.ignore_only", paths, moduleDirPath, requirePathsToBeContainedWithinModuleDirPath)
+			if err != nil {
+				return nil, err
+			}
+			if len(relPaths) > 0 {
+				ignoreOnly[idOrCategory] = relPaths
+			}
 		}
-	}
-	checkConfig, err := newCheckConfig(
-		fileVersion,
-		externalBreaking.Use,
-		externalBreaking.Except,
-		ignore,
-		ignoreOnly,
-	)
-	if err != nil {
-		return nil, err
+		checkConfig, err = newEnabledCheckConfig(
+			fileVersion,
+			externalBreaking.Use,
+			externalBreaking.Except,
+			ignore,
+			ignoreOnly,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return newBreakingConfig(
 		checkConfig,
 		externalBreaking.IgnoreUnstablePackages,
 	), nil
+}
+
+// isLintOrBreakingDisabledBasedOnIgnores returns true if lint or breaking should be entirely disabled
+// based on an ignore path equaling moduleDirPath.
+//
+// See comments on CheckConfig.Disabled() for why this is a scenario we want to support.
+func isLintOrBreakingDisabledBasedOnIgnores(
+	fieldName string,
+	ignores []string,
+	moduleDirPath string,
+) (bool, error) {
+	for _, ignore := range ignores {
+		ignore, err := normalpath.NormalizeAndValidate(ignore)
+		if err != nil {
+			// user error
+			return false, fmt.Errorf("%s: invalid path: %w", fieldName, err)
+		}
+		if ignore == moduleDirPath {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // getRelPathsForLintOrBreakingExternalPaths performs the following operation for either
@@ -846,6 +895,8 @@ func getBreakingConfigForExternalBreaking(
 //     are transforming a path from the default workspace-wide lint or breaking config. We want to skip these paths.
 //     If requirePathsToBeContainedWithinModuleDirPath is true, return error.
 //   - Otherwise, adds the path relative to the given module directory path to the returned slice.
+//
+// isLintOrBreakingDisabledBasedOnIgnores should be called before this function.
 func getRelPathsForLintOrBreakingExternalPaths(
 	fieldName string,
 	paths []string,
@@ -858,10 +909,6 @@ func getRelPathsForLintOrBreakingExternalPaths(
 		if err != nil {
 			// user error
 			return nil, fmt.Errorf("%s: invalid path: %w", fieldName, err)
-		}
-		if path == moduleDirPath {
-			// user error
-			return nil, fmt.Errorf("%s: path %q is equal to module directory %q", fieldName, path, moduleDirPath)
 		}
 		if !normalpath.EqualsOrContainsPath(moduleDirPath, path, normalpath.Relative) {
 			if !requirePathsToBeContainedWithinModuleDirPath {

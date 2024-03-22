@@ -711,7 +711,7 @@ func equivalentCheckConfigInV2(
 	)
 	// First create a check config with the exact same UseIDsAndCategories. This
 	// is a simple translation. It may or may not be equivalent to the given check config.
-	simplyTranslatedCheckConfig, err := bufconfig.NewCheckConfig(
+	simplyTranslatedCheckConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
 		filterFileSamePhpGenericServices(checkConfig.UseIDsAndCategories()),
 		filterFileSamePhpGenericServices(checkConfig.ExceptIDsAndCategories()),
@@ -754,7 +754,7 @@ func equivalentCheckConfigInV2(
 			return !ok
 		},
 	)
-	return bufconfig.NewCheckConfig(
+	return bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
 		append(checkConfig.UseIDsAndCategories(), missingIDs...),
 		append(checkConfig.ExceptIDsAndCategories(), extraIDs...),

@@ -183,7 +183,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				".": {},
 			},
 			bufconfig.NewLintConfig(
-				bufconfig.NewCheckConfigForUseIDsAndCategories(
+				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
 				),
@@ -195,7 +195,7 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 				false,
 			),
 			bufconfig.NewBreakingConfig(
-				bufconfig.NewCheckConfigForUseIDsAndCategories(
+				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,
 					nil,
 				),
