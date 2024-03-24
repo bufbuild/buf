@@ -63,8 +63,6 @@ func ParseModuleRef(moduleRefString string) (ModuleRef, error) {
 
 // *** PRIVATE ***
 
-// TODO: deal with Main, there were special rules for this previously.
-
 type moduleRef struct {
 	moduleFullName ModuleFullName
 	ref            string

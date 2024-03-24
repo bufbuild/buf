@@ -167,7 +167,7 @@ type BufLockFileOption func(*bufLockFileOptions)
 // on digests being present, but we are able to backfill them via the CommitService. By having this option, this allows
 // us to do this backfill when reading buf.lock files created by any version of the buf CLI.
 //
-// TODO: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
+// TODO FUTURE: use this for all reads of buf.locks, including migrate, prune, update, etc. This really almost should not
 // be an option.
 func BufLockFileWithDigestResolver(
 	digestResolver func(ctx context.Context, remote string, commitID uuid.UUID) (bufmodule.Digest, error),
