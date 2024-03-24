@@ -4,6 +4,7 @@
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
 $(call _conditional_include,$(MAKEGO)/dep_golangci_lint.mk)
+$(call _conditional_include,$(MAKEGO)/dep_yq.mk)
 # Must be set
 $(call _assert_var,GO_MODULE)
 $(call _assert_var,GOLANGCI_LINT)
@@ -22,6 +23,8 @@ GO_MOD_VERSION ?= 1.20
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
 SKIP_GOLANGCI_LINT ?=
+# Settable
+DISALLOW_NOLINT ?=
 
 # Runtime
 GOPKGS ?= $(GO_ALL_REPO_PKGS)
@@ -38,6 +41,7 @@ GO_TEST_FLAGS := -count=1
 else
 GO_TEST_FLAGS :=
 endif
+
 
 .DEFAULT_GOAL := shortall
 
@@ -89,12 +93,16 @@ gofmtmodtidy:
 
 format:: gofmtmodtidy
 
-.PHONY: checknonolint
-checknonolint:
+.PHONY: checknolintlint
+checknolintlint: $(YQ)
+ifneq ($(DISALLOW_NOLINT),)
 	@if grep -r --include "*.go" '//nolint'; then \
 		echo '//nolint directives found, surface ignores in .golangci.yml instead' >&2; \
 		exit 1; \
 	fi
+else
+	bash $(MAKEGO)/scripts/checknolintlint.bash
+endif
 
 .PHONY: golangcilint
 golangcilint: $(GOLANGCI_LINT)
@@ -113,7 +121,7 @@ postlonglint::
 .PHONY: shortlint
 shortlint: ## Run all linters but exclude long-running linters.
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) checknonolint golangcilint postlint
+	@$(MAKE) checknolintlint golangcilint postlint
 
 .PHONY: lint
 lint: ## Run all linters.

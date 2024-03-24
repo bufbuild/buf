@@ -220,7 +220,7 @@ upgradenopost:
 copyfrommakego:
 	@rm -rf $(TMP)/makego
 	@mkdir -p $(TMP)
-	git clone $(MAKEGO_REMOTE) $(TMP)/makego
+	git clone --depth 1 $(MAKEGO_REMOTE) $(TMP)/makego
 	rm -rf $(MAKEGO)
 	cp -R $(TMP)/makego/make/go $(MAKEGO)
 	@rm -rf $(TMP)/makego

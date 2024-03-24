@@ -44,6 +44,8 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
+DISALLOW_NOLINT := true
+
 LEGACY_FEDERATION_FILE_PATH ?=
 
 include make/go/bootstrap.mk
