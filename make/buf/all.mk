@@ -40,6 +40,8 @@ BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 BUF_FORMAT_INPUT := .
 
+DISALLOW_NOLINT := true
+
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
 include make/go/dep_minisign.mk

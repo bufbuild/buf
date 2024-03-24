@@ -1,5 +1,5 @@
 run:
-  skip-dirs-use-default: false
+  exclude-dirs-use-default: false
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -30,6 +30,11 @@ linters-settings:
         alias: modulev1
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1
         alias: registryv1alpha1
+  nolintlint:
+    allow-unused: false
+    allow-no-explanation: []
+    require-explanation: true
+    require-specific: true
 linters:
   enable:
     - asciicheck
