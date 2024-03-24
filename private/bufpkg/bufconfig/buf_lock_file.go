@@ -339,7 +339,7 @@ func readBufLockFile(
 			}
 			if deprecatedDigestType := getDeprecatedDigestTypeForExternalDigest(dep.Digest); deprecatedDigestType != "" {
 				// TODO: Add a message about downgrading the buf cli to a version that supports this.
-				return nil, fmt.Errorf(`%s digests are no longer supported as of v1.31.0, run "buf mod update" to update your buf.lock`, deprecatedDigestType)
+				return nil, fmt.Errorf(`%s digests are no longer supported as of v1.32.0, run "buf mod update" to update your buf.lock`, deprecatedDigestType)
 			}
 			commitID, err := uuid.FromString(dep.Commit)
 			if err != nil {
