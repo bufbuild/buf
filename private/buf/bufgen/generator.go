@@ -184,6 +184,9 @@ func (g *generator) execPlugins(
 	for i, pluginConfig := range pluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
+		// We're using this as a proxy for Type() == PluginConfigTypeRemote.
+		//
+		// We should be using the enum here.
 		remote := currentPluginConfig.RemoteHost()
 		if remote != "" {
 			remotePluginConfigTable[remote] = append(

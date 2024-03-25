@@ -47,7 +47,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "java",
 						out:              "java/out",
 						// one string because it's one string in the config
@@ -74,7 +74,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "java",
 						out:              "java/out",
 						opts:             []string{"a"},
@@ -101,7 +101,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeBinary,
+						pluginConfigType: PluginConfigTypeLocal,
 						name:             "go",
 						out:              "go/out",
 						path:             []string{"go", "run", "goplugin"},
@@ -129,7 +129,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeBinary,
+						pluginConfigType: PluginConfigTypeLocal,
 						name:             "go",
 						out:              "go/out",
 						path:             []string{"go", "run", "goplugin"},
@@ -155,7 +155,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeBinary,
+						pluginConfigType: PluginConfigTypeLocal,
 						name:             "go2",
 						out:              "go2/out",
 						path:             []string{"protoc-gen-go"},
@@ -179,7 +179,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 				managedConfig: &generateManagedConfig{enabled: false},
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeBinary,
+						pluginConfigType: PluginConfigTypeLocal,
 						name:             "go2",
 						out:              "go2/out",
 						path:             []string{"protoc-gen-go"},
@@ -302,7 +302,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -341,7 +341,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -420,7 +420,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -476,7 +476,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -527,7 +527,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -577,7 +577,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
@@ -633,7 +633,7 @@ func TestParseConfigFromExternalV1(t *testing.T) {
 			expectedConfig: &generateConfig{
 				pluginConfigs: []GeneratePluginConfig{
 					&pluginConfig{
-						pluginConfigType: PluginConfigTypeLocal,
+						pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 						name:             "go",
 						out:              "go/out",
 					},
