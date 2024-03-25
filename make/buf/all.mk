@@ -19,7 +19,8 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/spdx/cmd/spdx-go-data
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
-	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer
+	private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
+	private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
 GO_MOD_VERSION := 1.20
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \

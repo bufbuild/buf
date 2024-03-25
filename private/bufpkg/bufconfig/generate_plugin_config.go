@@ -53,15 +53,15 @@ type PluginConfigType int
 const (
 	// PluginConfigTypeRemote is the remote plugin config type.
 	PluginConfigTypeRemote PluginConfigType = iota + 1
-	// PluginConfigTypeBinary is the binary plugin config type.
-	PluginConfigTypeBinary
+	// PluginConfigTypeLocal is the local plugin config type.
+	PluginConfigTypeLocal
 	// PluginConfigTypeProtocBuiltin is the protoc built-in plugin config type.
 	PluginConfigTypeProtocBuiltin
-	// PluginConfigTypeLocal is the local plugin config type. This type indicates
-	// it is to be determined whether the plugin is binary or protoc built-in.
+	// PluginConfigTypeLocalOrProtocBuiltin is a special plugin config type. This type indicates
+	// it is to be determined whether the plugin is local or protoc built-in.
 	// We defer further classification to the plugin executor. In v2 the exact
 	// plugin config type is always specified and it will never be just local.
-	PluginConfigTypeLocal
+	PluginConfigTypeLocalOrProtocBuiltin
 )
 
 var (
@@ -104,7 +104,7 @@ type GeneratePluginConfig interface {
 	Strategy() GenerateStrategy
 	// Path returns the path, including arguments, to invoke the binary plugin.
 	//
-	// This is not empty only when the plugin is binary.
+	// This is not empty only when the plugin is local.
 	Path() []string
 	// ProtocPath returns a path to protoc.
 	//
@@ -141,8 +141,8 @@ func NewRemotePluginConfig(
 	)
 }
 
-// NewLocalPluginConfig returns a new GeneratePluginConfig for a local plugin.
-func NewLocalPluginConfig(
+// NewLocalOrProtocBuiltinPluginConfig returns a new GeneratePluginConfig for a local or protoc builtin plugin.
+func NewLocalOrProtocBuiltinPluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -150,7 +150,7 @@ func NewLocalPluginConfig(
 	includeWKT bool,
 	strategy *GenerateStrategy,
 ) (GeneratePluginConfig, error) {
-	return newLocalPluginConfig(
+	return newLocalOrProtocBuiltinPluginConfig(
 		name,
 		out,
 		opt,
@@ -160,8 +160,8 @@ func NewLocalPluginConfig(
 	)
 }
 
-// NewBinaryPluginConfig returns a new GeneratePluginConfig for a binary plugin.
-func NewBinaryPluginConfig(
+// NewLocalPluginConfig returns a new GeneratePluginConfig for a local plugin.
+func NewLocalPluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -170,7 +170,7 @@ func NewBinaryPluginConfig(
 	strategy *GenerateStrategy,
 	path []string,
 ) (GeneratePluginConfig, error) {
-	return newBinaryPluginConfig(
+	return newLocalPluginConfig(
 		name,
 		out,
 		opt,
@@ -258,7 +258,7 @@ func newPluginConfigFromExternalV1Beta1(
 		return nil, err
 	}
 	if externalConfig.Path != "" {
-		return newBinaryPluginConfig(
+		return newLocalPluginConfig(
 			externalConfig.Name,
 			externalConfig.Out,
 			opt,
@@ -268,7 +268,7 @@ func newPluginConfigFromExternalV1Beta1(
 			[]string{externalConfig.Path},
 		)
 	}
-	return newLocalPluginConfig(
+	return newLocalOrProtocBuiltinPluginConfig(
 		externalConfig.Name,
 		externalConfig.Out,
 		opt,
@@ -347,7 +347,7 @@ func newPluginConfigFromExternalV1(
 	// At this point the plugin must be local, regardless whehter it's specified
 	// by key 'plugin' or 'name'.
 	if len(path) > 0 {
-		return newBinaryPluginConfig(
+		return newLocalPluginConfig(
 			pluginIdentifier,
 			externalConfig.Out,
 			opt,
@@ -368,9 +368,9 @@ func newPluginConfigFromExternalV1(
 			externalConfig.ProtocPath,
 		)
 	}
-	// It could be either binary or protoc built-in. We defer to the plugin executor
-	// to decide whether the plugin is protoc-builtin or binary.
-	return newLocalPluginConfig(
+	// It could be either local or protoc built-in. We defer to the plugin executor
+	// to decide whether the plugin is protoc-builtin or local.
+	return newLocalOrProtocBuiltinPluginConfig(
 		pluginIdentifier,
 		externalConfig.Out,
 		opt,
@@ -387,17 +387,17 @@ func newPluginConfigFromExternalV2(
 	if externalConfig.Remote != nil {
 		pluginTypeCount++
 	}
-	if externalConfig.Binary != nil {
+	if externalConfig.Local != nil {
 		pluginTypeCount++
 	}
 	if externalConfig.ProtocBuiltin != nil {
 		pluginTypeCount++
 	}
 	if pluginTypeCount == 0 {
-		return nil, errors.New("must specify one of remote, binary and protoc_builtin")
+		return nil, errors.New("must specify one of remote, local or protoc_builtin")
 	}
 	if pluginTypeCount > 1 {
-		return nil, errors.New("only one of remote, binary and protoc_builtin")
+		return nil, errors.New("only one of remote, local or protoc_builtin")
 	}
 	var strategy string
 	if externalConfig.Strategy != nil {
@@ -431,19 +431,19 @@ func newPluginConfigFromExternalV2(
 			externalConfig.IncludeWKT,
 			revision,
 		)
-	case externalConfig.Binary != nil:
-		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Binary)
+	case externalConfig.Local != nil:
+		path, err := encoding.InterfaceSliceOrStringToStringSlice(externalConfig.Local)
 		if err != nil {
 			return nil, err
 		}
-		binaryPluginName := strings.Join(path, " ")
+		localPluginName := strings.Join(path, " ")
 		if externalConfig.Revision != nil {
-			return nil, fmt.Errorf("cannot specify revision for binary plugin %s", binaryPluginName)
+			return nil, fmt.Errorf("cannot specify revision for local plugin %s", localPluginName)
 		}
 		if externalConfig.ProtocPath != nil {
-			return nil, fmt.Errorf("cannot specify protoc_path for binary plugin %s", binaryPluginName)
+			return nil, fmt.Errorf("cannot specify protoc_path for local plugin %s", localPluginName)
 		}
-		return newBinaryPluginConfig(
+		return newLocalPluginConfig(
 			strings.Join(path, " "),
 			externalConfig.Out,
 			opt,
@@ -504,7 +504,7 @@ func newRemotePluginConfig(
 	}, nil
 }
 
-func newLocalPluginConfig(
+func newLocalOrProtocBuiltinPluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -516,7 +516,7 @@ func newLocalPluginConfig(
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
 	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeLocal,
+		pluginConfigType: PluginConfigTypeLocalOrProtocBuiltin,
 		name:             name,
 		strategy:         strategy,
 		out:              out,
@@ -526,7 +526,7 @@ func newLocalPluginConfig(
 	}, nil
 }
 
-func newBinaryPluginConfig(
+func newLocalPluginConfig(
 	name string,
 	out string,
 	opt []string,
@@ -542,7 +542,7 @@ func newBinaryPluginConfig(
 		return nil, errors.New("cannot include well-known types without including imports")
 	}
 	return &pluginConfig{
-		pluginConfigType: PluginConfigTypeBinary,
+		pluginConfigType: PluginConfigTypeLocal,
 		name:             name,
 		path:             path,
 		strategy:         strategy,
@@ -658,25 +658,25 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 		if revision := generatePluginConfig.Revision(); revision != 0 {
 			externalPluginConfigV2.Revision = &revision
 		}
-	case PluginConfigTypeBinary:
+	case PluginConfigTypeLocal:
 		path := generatePluginConfig.Path()
 		switch {
 		case len(path) == 1:
-			externalPluginConfigV2.Binary = path[0]
+			externalPluginConfigV2.Local = path[0]
 		case len(path) > 1:
-			externalPluginConfigV2.Binary = path
+			externalPluginConfigV2.Local = path
 		}
 	case PluginConfigTypeProtocBuiltin:
 		externalPluginConfigV2.ProtocBuiltin = toPointer(generatePluginConfig.Name())
 		if protocPath := generatePluginConfig.ProtocPath(); protocPath != "" {
 			externalPluginConfigV2.ProtocPath = &protocPath
 		}
-	case PluginConfigTypeLocal:
+	case PluginConfigTypeLocalOrProtocBuiltin:
 		binaryName := "protoc-gen-" + generatePluginConfig.Name()
 		// First, check if this is a binary.
 		_, err := exec.LookPath(binaryName)
 		if err == nil || errors.Is(err, exec.ErrDot) {
-			externalPluginConfigV2.Binary = binaryName
+			externalPluginConfigV2.Local = binaryName
 			break
 		}
 		// If not, check if it is a protoc plugin.
@@ -685,7 +685,7 @@ func newExternalGeneratePluginConfigV2FromPluginConfig(
 			break
 		}
 		// Otherwise, assume this is a binary.
-		externalPluginConfigV2.Binary = binaryName
+		externalPluginConfigV2.Local = binaryName
 	}
 	return externalPluginConfigV2, nil
 }

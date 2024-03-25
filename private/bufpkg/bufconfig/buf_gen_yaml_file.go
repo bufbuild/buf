@@ -495,8 +495,10 @@ type externalGeneratePluginConfigV2 struct {
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Revision is only valid with Remote set.
 	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
-	// Binary is the binary path, which can be one string or multiple strings.
-	Binary interface{} `json:"binary,omitempty" yaml:"binary,omitempty"`
+	// Local is the local path (either relative or absolute) to a binary or other runnable program which
+	// implements the protoc plugin interface. This can be one string (the program) or multiple (remaining
+	// strings are arguments to the program).
+	Local interface{} `json:"local,omitempty" yaml:"local,omitempty"`
 	// ProtocBuiltin is the protoc built-in plugin name, in the form of 'java' instead of 'protoc-gen-java'.
 	ProtocBuiltin *string `json:"protoc_builtin,omitempty" yaml:"protoc_builtin,omitempty"`
 	// ProtocPath is only valid with ProtocBuiltin
