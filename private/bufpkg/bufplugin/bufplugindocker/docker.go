@@ -27,6 +27,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/docker/docker/api/types"
+	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
@@ -163,7 +164,7 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	if err != nil {
 		return nil, err
 	}
-	pushReader, err := d.cli.ImagePush(ctx, image, types.ImagePushOptions{
+	pushReader, err := d.cli.ImagePush(ctx, image, imagetypes.PushOptions{
 		RegistryAuth: registryAuth,
 	})
 	if err != nil {
@@ -202,7 +203,7 @@ func (d *dockerAPIClient) Delete(ctx context.Context, image string) (*DeleteResp
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}
-	_, err := d.cli.ImageRemove(ctx, image, types.ImageRemoveOptions{})
+	_, err := d.cli.ImageRemove(ctx, image, imagetypes.RemoveOptions{})
 	if err != nil {
 		return nil, err
 	}
