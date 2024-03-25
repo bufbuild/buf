@@ -529,7 +529,10 @@ func (c *controller) PutImage(
 	for _, option := range options {
 		option(functionOptions)
 	}
-	messageRef, err := c.buffetchRefParser.GetMessageRef(ctx, imageOutput)
+	// Must be messageRefParser NOT c.buffetchRefParser as a NewMessageRefParser
+	// defaults to a defaultMessageEncoding and not dir.
+	messageRefParser := buffetch.NewMessageRefParser(c.logger)
+	messageRef, err := messageRefParser.GetMessageRef(ctx, imageOutput)
 	if err != nil {
 		return err
 	}
@@ -582,6 +585,8 @@ func (c *controller) GetMessage(
 	for _, option := range options {
 		option(functionOptions)
 	}
+	// Must be messageRefParser NOT c.buffetchRefParser as a NewMessageRefParser
+	// defaults to a defaultMessageEncoding and not dir.
 	messageRefParser := buffetch.NewMessageRefParser(
 		c.logger,
 		buffetch.MessageRefParserWithDefaultMessageEncoding(
@@ -669,6 +674,8 @@ func (c *controller) PutMessage(
 	for _, option := range options {
 		option(functionOptions)
 	}
+	// Must be messageRefParser NOT c.buffetchRefParser as a NewMessageRefParser
+	// defaults to a defaultMessageEncoding and not dir.
 	messageRefParser := buffetch.NewMessageRefParser(
 		c.logger,
 		buffetch.MessageRefParserWithDefaultMessageEncoding(
