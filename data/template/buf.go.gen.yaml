@@ -5,7 +5,7 @@ managed:
     - file_option: go_package_prefix
       value: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
-  - binary: protoc-gen-go
+  - local: protoc-gen-go
     out: private/gen/proto/go
     opt: paths=source_relative
 inputs:
