@@ -1,5 +1,3 @@
-run:
-  exclude-dirs-use-default: false
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -85,6 +83,7 @@ linters:
     - whitespace
   disable-all: true
 issues:
+  exclude-dirs-use-default: false
   exclude-rules:
     - linters:
         - forbidigo
