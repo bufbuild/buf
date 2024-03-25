@@ -78,6 +78,7 @@ var (
 		"pyi":    {},
 		"ruby":   {},
 		"kotlin": {},
+		"rust":   {},
 	}
 )
 

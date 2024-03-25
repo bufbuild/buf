@@ -135,6 +135,21 @@ func getKotlinSupportedAsBuiltin(version *pluginpb.Version) bool {
 	return true
 }
 
+// Is rust supported as a builtin plugin?
+func getRustSupportedAsBuiltin(version *pluginpb.Version) bool {
+	if version.GetSuffix() == "buf" {
+		return true
+	}
+	if version.GetMajor() < 5 {
+		return false
+	}
+	if version.GetMajor() == 5 {
+		return version.GetMinor() > 25
+	}
+	// version.GetMajor() > 5
+	return true
+}
+
 // Is js supported as a builtin plugin?
 func getJSSupportedAsBuiltin(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
