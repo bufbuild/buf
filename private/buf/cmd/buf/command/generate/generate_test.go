@@ -309,6 +309,17 @@ inputs:
 		"--template",
 		filepath.Join("testdata", "v2", "local_plugin", "buf.exclude.paths.gen.yaml"),
 	)
+	// --type overrides template
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--type",
+		"b.v1.Bar",
+	)
 }
 
 func TestOutputFlag(t *testing.T) {

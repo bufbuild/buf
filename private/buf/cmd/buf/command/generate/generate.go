@@ -406,14 +406,8 @@ func getInputImages(
 	includeTypesOverride []string,
 ) ([]bufimage.Image, error) {
 	// If input is specified on the command line, we use that. If input is not
-	// specified on the command line, but the config has no inputs or any flags
-	// for the input are specified, use the default input.
-	isInputSpecified := inputSpecified != "" ||
-		len(bufGenYAMLFile.InputConfigs()) == 0 ||
-		len(targetPathsOverride) > 0 ||
-		len(excludePathsOverride) > 0 ||
-		len(includeTypesOverride) > 0
-	if isInputSpecified {
+	// specified on the command line, use the default input.
+	if inputSpecified != "" || len(bufGenYAMLFile.InputConfigs()) == 0 {
 		input := "."
 		if inputSpecified != "" {
 			input = inputSpecified
@@ -440,10 +434,19 @@ func getInputImages(
 	var inputImages []bufimage.Image
 	for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
 		targetPaths := inputConfig.TargetPaths()
+		if len(targetPathsOverride) > 0 {
+			targetPaths = targetPathsOverride
+		}
 		excludePaths := inputConfig.ExcludePaths()
+		if len(excludePathsOverride) > 0 {
+			excludePaths = excludePathsOverride
+		}
 		// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
 		// because it is always nil.
 		includeTypes := inputConfig.IncludeTypes()
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
 		inputImage, err := controller.GetImageForInputConfig(
 			ctx,
 			inputConfig,

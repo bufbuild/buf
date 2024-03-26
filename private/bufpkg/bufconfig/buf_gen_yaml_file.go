@@ -491,7 +491,7 @@ type externalBufGenYAMLFileV2 struct {
 
 // externalGeneratePluginConfigV2 represents a single plugin config in a v2 buf.gen.yaml file.
 type externalGeneratePluginConfigV2 struct {
-	// Exactly one of Remote, Binary and ProtocBuiltin is required.
+	// Exactly one of Remote, Local and ProtocBuiltin is required.
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Revision is only valid with Remote set.
 	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
