@@ -386,5 +386,5 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 
 func newRequireModuleFullNameOnUploadError(module bufmodule.Module) error {
 	// This error will likely actually go back to users.
-	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push.", module.OpaqueID())
+	return fmt.Errorf("A name must be specified in buf.yaml for module %s for push. All modules that are being pushed, and all of their dependencies that are part of the workspace, must have a name.", module.OpaqueID())
 }

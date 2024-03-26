@@ -65,6 +65,16 @@ func TestGetKotlinSupportedAsBuiltin(t *testing.T) {
 	assert.False(t, getKotlinSupportedAsBuiltin(newVersion(3, 14, 1, "")))
 }
 
+func TestGetRustSupportedAsBuiltin(t *testing.T) {
+	t.Parallel()
+	assert.True(t, getRustSupportedAsBuiltin(newVersion(3, 11, 1, "buf")))
+	assert.True(t, getRustSupportedAsBuiltin(newVersion(4, 23, 0, "")))
+	assert.True(t, getRustSupportedAsBuiltin(newVersion(21, 1, 0, "")))
+	assert.True(t, getRustSupportedAsBuiltin(newVersion(21, 1, 0, "buf")))
+	assert.False(t, getRustSupportedAsBuiltin(newVersion(4, 22, 1, "")))
+	assert.False(t, getRustSupportedAsBuiltin(newVersion(3, 14, 1, "")))
+}
+
 func TestGetJSSupportedAsBuiltin(t *testing.T) {
 	t.Parallel()
 	assert.False(t, getJSSupportedAsBuiltin(newVersion(2, 11, 1, "")))

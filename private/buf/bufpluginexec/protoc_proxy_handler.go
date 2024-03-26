@@ -92,6 +92,9 @@ func (h *protocProxyHandler) Handle(
 	if h.pluginName == "kotlin" && !getKotlinSupportedAsBuiltin(protocVersion) {
 		return fmt.Errorf("kotlin is not supported for protoc version %s", versionString(protocVersion))
 	}
+	if h.pluginName == "rust" && !getRustSupportedAsBuiltin(protocVersion) {
+		return fmt.Errorf("rust is not supported for protoc version %s", versionString(protocVersion))
+	}
 	// When we create protocProxyHandlers in NewHandler, we always prefer protoc-gen-.* plugins
 	// over builtin plugins, so we only get here if we did not find protoc-gen-js, so this
 	// is an error

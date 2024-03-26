@@ -1,9 +1,9 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1 h1:0nWhrRcnkgw1kwJ7xibIO8bqfOA7pBzBjGCDBxIHch8=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1/go.mod h1:Tgn5bgL220vkFOI0KPStlcClPeOJzAv4uT+V8JXGUnw=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240319001036-1c87dc9555ae.1 h1:9cBylLGyeK5MbigQg7OpnSov7O89gvJZ7OxT8ImFx2Y=
-buf.build/gen/go/bufbuild/registry/connectrpc/go v1.15.0-20240319001036-1c87dc9555ae.1/go.mod h1:S6eEXfgP/AwnAfPyBk4tlgaW+LUDpvLqU/iTbbBn728=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240319001036-1c87dc9555ae.1 h1:7F45a9nqWhIXs/Hcid9H9x4gNntbfH4PYagrq/jX9Tk=
-buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240319001036-1c87dc9555ae.1/go.mod h1:Cw3zAf/W6/Y6BxHo6RWlVCE9FeNnbcL8Fq45qalol2I=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.0-20240325235833-1d87523a12b4.1 h1:Nx8Lc0TjEJbQPA9n2LDvRM+fS4xxWrRa6DyTmew8sLo=
+buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.0-20240325235833-1d87523a12b4.1/go.mod h1:KOIGy5GmhAfaByS0gqokHG3QaaxnffffEDVW7BFjrdc=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240325235833-1d87523a12b4.1 h1:+sfI7WD7YNPMHNKy7lKoeCndAx1/HdBTQVYdJS/IsZA=
+buf.build/gen/go/bufbuild/registry/protocolbuffers/go v1.33.0-20240325235833-1d87523a12b4.1/go.mod h1:Cw3zAf/W6/Y6BxHo6RWlVCE9FeNnbcL8Fq45qalol2I=
 connectrpc.com/connect v1.16.0 h1:rdtfQjZ0OyFkWPTegBNcH7cwquGAN1WzyJy80oFNibg=
 connectrpc.com/connect v1.16.0/go.mod h1:XpZAduBQUySsb4/KO5JffORVkDI4B6/EYPi7N8xpNZw=
 connectrpc.com/otelconnect v0.7.0 h1:ZH55ZZtcJOTKWWLy3qmL4Pam4RzRWBJFOqTPyAqCXkY=
