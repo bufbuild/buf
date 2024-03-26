@@ -346,9 +346,9 @@ type inputConfig struct {
 }
 
 func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputConfig, error) {
+	// We only allow one of these to be set.
 	inputConfig := &inputConfig{}
 	var inputConfigTypes []InputConfigType
-	var options []string
 	if externalConfig.Module != nil {
 		inputConfigTypes = append(inputConfigTypes, InputConfigTypeModule)
 		inputConfig.location = *externalConfig.Module
@@ -389,6 +389,20 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		inputConfigTypes = append(inputConfigTypes, InputConfigTypeGitRepo)
 		inputConfig.location = *externalConfig.GitRepo
 	}
+	if len(inputConfigTypes) == 0 {
+		return nil, fmt.Errorf("must specify one of %s", allInputConfigTypeString)
+	}
+	if len(inputConfigTypes) > 1 {
+		return nil, fmt.Errorf("exactly one of %s must be specified", allInputConfigTypeString)
+	}
+	inputConfigType := inputConfigTypes[0]
+	inputConfig.inputConfigType = inputConfigType
+	// Types, TargetPaths, and ExcludePaths.
+	inputConfig.includeTypes = externalConfig.Types
+	inputConfig.targetPaths = externalConfig.TargetPaths
+	inputConfig.excludePaths = externalConfig.ExcludePaths
+	// Options depending on input format.
+	var options []string
 	if externalConfig.Compression != nil {
 		options = append(options, compressionKey)
 		inputConfig.compression = *externalConfig.Compression
@@ -425,13 +439,6 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		options = append(options, includePackageFilesKey)
 		inputConfig.includePackageFiles = *externalConfig.IncludePackageFiles
 	}
-	if len(inputConfigTypes) == 0 {
-		return nil, fmt.Errorf("must specify one of %s", allInputConfigTypeString)
-	}
-	if len(inputConfigTypes) > 1 {
-		return nil, fmt.Errorf("exactly one of %s must be specified", allInputConfigTypeString)
-	}
-	inputConfigType := inputConfigTypes[0]
 	allowedOptions, ok := allowedOptionsForInputConfigType[inputConfigType]
 	if !ok {
 		return nil, syserror.Newf("unable to find allowed options for InputConfigType %v", inputConfigType)
@@ -441,10 +448,6 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 			return nil, fmt.Errorf("option %s is not allowed for InputConfigType %v", option, inputConfigType)
 		}
 	}
-	inputConfig.inputConfigType = inputConfigType
-	inputConfig.includeTypes = externalConfig.Types
-	inputConfig.targetPaths = externalConfig.TargetPaths
-	inputConfig.excludePaths = externalConfig.ExcludePaths
 	return inputConfig, nil
 }
 
