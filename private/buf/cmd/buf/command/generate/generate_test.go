@@ -169,7 +169,7 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 	require.Empty(t, string(diff))
 }
 
-func TestGenerateV2LocalPluginTypes(t *testing.T) {
+func TestGenerateV2LocalPluginTypesWithInput(t *testing.T) {
 	t.Parallel()
 
 	tempDirPath := t.TempDir()
@@ -183,6 +183,37 @@ func TestGenerateV2LocalPluginTypes(t *testing.T) {
 		"--template",
 		template,
 		input,
+	)
+
+	expected, err := storagemem.NewReadBucket(
+		map[string][]byte{
+			filepath.Join("gen", "types.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+		},
+	)
+	require.NoError(t, err)
+	actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func TestGenerateV2LocalPluginTypes(t *testing.T) {
+	t.Parallel()
+
+	tempDirPath := t.TempDir()
+	template := filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml")
+
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		template,
 	)
 
 	expected, err := storagemem.NewReadBucket(
