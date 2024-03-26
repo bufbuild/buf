@@ -157,6 +157,8 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 			filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Bar
     - a.v1.Foo
+`),
+			filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
     - b.v1.Bar
     - b.v1.Foo
 `),
@@ -260,7 +262,7 @@ func TestGenerateV2LocalPluginTypesWithTemplateAsArg(t *testing.T) {
 	}
 
 	testRunTypeArgs(t, map[string][]byte{
-		filepath.Join("gen", "types.yaml"): []byte(`messages:
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Foo
 `),
 	},
@@ -273,9 +275,9 @@ inputs:
   - directory: ./testdata/v2/local_plugin
     types:
       - a.v1.Foo`,
-		)
+	)
 	testRunTypeArgs(t, map[string][]byte{
-		filepath.Join("gen", "types.yaml"): []byte(`messages:
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Foo
 `),
 	},
