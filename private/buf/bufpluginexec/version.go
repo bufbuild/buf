@@ -140,13 +140,13 @@ func getRustSupportedAsBuiltin(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return true
 	}
-	if version.GetMajor() < 5 {
+	if version.GetMajor() < 4 {
 		return false
 	}
-	if version.GetMajor() == 5 {
-		return version.GetMinor() > 25
+	if version.GetMajor() == 4 {
+		return version.GetMinor() > 22
 	}
-	// version.GetMajor() > 5
+	// version.GetMajor() 4 5
 	return true
 }
 
