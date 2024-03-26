@@ -157,6 +157,8 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 			filepath.Join("gen", "types.yaml"): []byte(`messages:
     - a.v1.Bar
     - a.v1.Foo
+    - b.v1.Bar
+    - b.v1.Foo
 `),
 		},
 	)
@@ -190,6 +192,8 @@ func TestGenerateV2LocalPluginTypesWithInput(t *testing.T) {
 			filepath.Join("gen", "types.yaml"): []byte(`messages:
     - a.v1.Bar
     - a.v1.Foo
+    - b.v1.Bar
+    - b.v1.Foo
 `),
 		},
 	)
@@ -230,6 +234,61 @@ func TestGenerateV2LocalPluginTypes(t *testing.T) {
 	diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
+}
+
+func TestGenerateV2LocalPluginTypesWithTemplateAsArg(t *testing.T) {
+	t.Parallel()
+
+	testRunTypeArgs := func(t *testing.T, expect map[string][]byte, args ...string) {
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			append([]string{
+				"--output",
+				tempDirPath,
+			}, args...)...,
+		)
+		expected, err := storagemem.NewReadBucket(expect)
+		require.NoError(t, err)
+		require.NoError(t, err)
+		actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+		require.NoError(t, err)
+
+		diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
+		require.NoError(t, err)
+		require.Empty(t, string(diff))
+	}
+
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "types.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		`version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+inputs:
+  - directory: ./testdata/v2/local_plugin
+    types:
+      - a.v1.Foo`,
+		)
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "types.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		`version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+inputs:
+  - directory: ./testdata/v2/local_plugin
+    types:
+      - a.v1.Foo`,
+	)
 }
 
 func TestOutputFlag(t *testing.T) {
