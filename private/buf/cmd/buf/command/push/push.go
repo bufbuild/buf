@@ -164,31 +164,32 @@ func run(
 		return err
 	}
 
-	var lines []string
-	var linesErr error
 	if workspace.IsV2() {
-		lines = slicesext.Map(
-			commits,
-			func(commit bufmodule.Commit) string {
-				return commit.ModuleKey().String()
-			},
+		_, err := container.Stdout().Write(
+			[]byte(
+				strings.Join(
+					slicesext.Map(
+						commits,
+						func(commit bufmodule.Commit) string {
+							return commit.ModuleKey().String()
+						},
+					),
+					"\n",
+				) + "\n",
+			),
 		)
-	} else {
-		if len(commits) > 1 {
-			linesErr = syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
-		}
-		lines = slicesext.Map(
-			commits,
-			// Printing dashless for historical reasons.
-			func(commit bufmodule.Commit) string {
-				return uuidutil.ToDashless(commit.ModuleKey().CommitID())
-			},
-		)
-	}
-	if _, err := container.Stdout().Write([]byte(strings.Join(lines, "\n") + "\n")); err != nil {
 		return err
 	}
-	return linesErr
+	// v1 workspace, fallback to old behavior for backwards compatibility.
+	switch len(commits) {
+	case 0:
+		return nil
+	case 1:
+		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
+		return err
+	default:
+		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")
+	}
 }
 
 func getBuildableWorkspace(
