@@ -16,11 +16,15 @@ package main
 
 import (
 	"context"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/bufbuild/protoplugin"
 	"gopkg.in/yaml.v3"
 )
+
+const fileExt = ".top-level-type-names.yaml"
 
 func main() {
 	protoplugin.Main(protoplugin.HandlerFunc(handle))
@@ -36,8 +40,8 @@ func handle(
 	if err != nil {
 		return err
 	}
-	externalFile := &externalFile{}
 	for _, fileDescriptor := range fileDescriptors {
+		externalFile := &externalFile{}
 		enumDescriptors := fileDescriptor.Enums()
 		for i := 0; i < enumDescriptors.Len(); i++ {
 			externalFile.Enums = append(externalFile.Enums, string(enumDescriptors.Get(i).FullName()))
@@ -50,15 +54,18 @@ func handle(
 		for i := 0; i < serviceDescriptors.Len(); i++ {
 			externalFile.Services = append(externalFile.Services, string(serviceDescriptors.Get(i).FullName()))
 		}
+		sort.Strings(externalFile.Enums)
+		sort.Strings(externalFile.Messages)
+		sort.Strings(externalFile.Services)
+		data, err := yaml.Marshal(externalFile)
+		if err != nil {
+			return err
+		}
+		responseWriter.AddFile(
+			strings.TrimSuffix(fileDescriptor.Path(), filepath.Ext(filepath.FromSlash(fileDescriptor.Path())))+fileExt,
+			string(data),
+		)
 	}
-	sort.Strings(externalFile.Enums)
-	sort.Strings(externalFile.Messages)
-	sort.Strings(externalFile.Services)
-	data, err := yaml.Marshal(externalFile)
-	if err != nil {
-		return err
-	}
-	responseWriter.AddFile("types.yaml", string(data))
 	return nil
 }
 
