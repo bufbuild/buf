@@ -320,33 +320,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	var bufGenYAMLFile bufconfig.BufGenYAMLFile
-	templatePathExtension := filepath.Ext(flags.Template)
-	switch {
-	case flags.Template == "":
-		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
-		if err != nil {
-			return err
-		}
-		bufGenYAMLFile, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
-		if err != nil {
-			return err
-		}
-	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
-		// We should not read from a bucket at "." because this path can jump context.
-		configFile, err := os.Open(flags.Template)
-		if err != nil {
-			return err
-		}
-		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configFile)
-		if err != nil {
-			return err
-		}
-	default:
-		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
-		if err != nil {
-			return err
-		}
+	bufGenYAMLFile, err := readBufGenYAMLFile(ctx, storageosProvider, flags.Template)
+	if err != nil {
+		return err
 	}
 	images, err := getInputImages(
 		ctx,
@@ -390,6 +366,33 @@ func run(
 		images,
 		generateOptions...,
 	)
+}
+
+func readBufGenYAMLFile(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	templatePath string,
+) (bufconfig.BufGenYAMLFile, error) {
+	templatePathExtension := filepath.Ext(templatePath)
+	switch {
+	case templatePath == "":
+		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
+		if err != nil {
+			return nil, err
+		}
+		return bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
+		// TODO: validate this.
+		// We should not read from a bucket at "." because this path can jump context.
+		configFile, err := os.Open(templatePath)
+		if err != nil {
+			return nil, err
+		}
+		defer configFile.Close()
+		return bufconfig.ReadBufGenYAMLFile(configFile)
+	default:
+		return bufconfig.ReadBufGenYAMLFile(strings.NewReader(templatePath))
+	}
 }
 
 func getInputImages(
