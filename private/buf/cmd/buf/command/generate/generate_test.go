@@ -154,7 +154,7 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 
 	expected, err := storagemem.NewReadBucket(
 		map[string][]byte{
-			filepath.Join("gen", "types.yaml"): []byte(`messages:
+			filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
     - a.v1.Bar
     - a.v1.Foo
 `),
