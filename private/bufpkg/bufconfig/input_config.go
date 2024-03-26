@@ -425,10 +425,6 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		options = append(options, includePackageFilesKey)
 		inputConfig.includePackageFiles = *externalConfig.IncludePackageFiles
 	}
-	// TODO(ed): check other options.
-	if externalConfig.Types != nil {
-		inputConfig.includeTypes = externalConfig.Types
-	}
 	if len(inputConfigTypes) == 0 {
 		return nil, fmt.Errorf("must specify one of %s", allInputConfigTypeString)
 	}
@@ -446,6 +442,9 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		}
 	}
 	inputConfig.inputConfigType = inputConfigType
+	inputConfig.includeTypes = externalConfig.Types
+	inputConfig.targetPaths = externalConfig.TargetPaths
+	inputConfig.excludePaths = externalConfig.ExcludePaths
 	return inputConfig, nil
 }
 
