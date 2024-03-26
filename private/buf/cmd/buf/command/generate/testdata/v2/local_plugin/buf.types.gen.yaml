@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+inputs:
+  - module: testdata/v2/local_plugin
+    types:
+      - a.v1.Foo
