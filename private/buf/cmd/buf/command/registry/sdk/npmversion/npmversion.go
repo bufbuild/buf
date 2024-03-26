@@ -77,7 +77,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnAlphaCommand(ctx, container)
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -115,7 +114,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write([]byte(packageVersion.Msg.Version)); err != nil {
+	if _, err := container.Stdout().Write([]byte(packageVersion.Msg.Version + "\n")); err != nil {
 		return err
 	}
 	return nil

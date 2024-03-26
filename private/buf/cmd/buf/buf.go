@@ -25,11 +25,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/goversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/mavenversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/npmversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/pythonversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/package/swiftversion"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -81,6 +76,11 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/goversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/mavenversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/npmversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/pythonversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/swiftversion"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -170,6 +170,17 @@ func NewRootCommand(name string) *appcmd.Command {
 					registrylogin.NewCommand("login", builder),
 					registrylogout.NewCommand("logout", builder),
 					registrycc.NewCommand("cc", builder, ``, false),
+					{
+						Use:   "sdk",
+						Short: "Manage Generated SDKs",
+						SubCommands: []*appcmd.Command{
+							goversion.NewCommand("go-version", builder),
+							mavenversion.NewCommand("maven-version", builder),
+							npmversion.NewCommand("npm-version", builder),
+							swiftversion.NewCommand("swift-version", builder),
+							pythonversion.NewCommand("python-version", builder),
+						},
+					},
 				},
 			},
 			{
@@ -269,17 +280,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
-						},
-					},
-					{
-						Use:   "sdk",
-						Short: "Manage Generated SDKs",
-						SubCommands: []*appcmd.Command{
-							goversion.NewCommand("go-version", builder),
-							mavenversion.NewCommand("maven-version", builder),
-							npmversion.NewCommand("npm-version", builder),
-							swiftversion.NewCommand("swift-version", builder),
-							pythonversion.NewCommand("python-version", builder),
 						},
 					},
 				},

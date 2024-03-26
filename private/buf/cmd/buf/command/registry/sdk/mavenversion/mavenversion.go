@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package swiftversion
+package mavenversion
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 const (
 	pluginFlagName = "plugin"
 	moduleFlagName = "module"
-	registryName   = "swift"
+	registryName   = "maven"
 )
 
 // NewCommand returns a new Command
@@ -45,7 +45,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: bufcli.PackageVersionShortDescription(registryName),
-		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/connectrpc/swift"),
+		Long:  bufcli.PackageVersionLongDescription(registryName, name, "buf.build/connectrpc/kotlin"),
 		Args:  appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
@@ -77,7 +77,6 @@ func run(
 	container appext.Container,
 	flags *flags,
 ) error {
-	bufcli.WarnAlphaCommand(ctx, container)
 	clientConfig, err := bufcli.NewConnectClientConfig(container)
 	if err != nil {
 		return err
@@ -98,8 +97,8 @@ func run(
 		moduleRef.ModuleFullName().Registry(),
 		registryv1alpha1connect.NewResolveServiceClient,
 	)
-	packageVersion, err := resolver.GetSwiftVersion(ctx, connect.NewRequest(
-		&registryv1alpha1.GetSwiftVersionRequest{
+	packageVersion, err := resolver.GetMavenVersion(ctx, connect.NewRequest(
+		&registryv1alpha1.GetMavenVersionRequest{
 			ModuleReference: &registryv1alpha1.LocalModuleReference{
 				Owner:      moduleRef.ModuleFullName().Owner(),
 				Repository: moduleRef.ModuleFullName().Name(),
@@ -115,7 +114,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if _, err := container.Stdout().Write([]byte(packageVersion.Msg.Version)); err != nil {
+	if _, err := container.Stdout().Write([]byte(packageVersion.Msg.Version + "\n")); err != nil {
 		return err
 	}
 	return nil
