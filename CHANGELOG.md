@@ -14,6 +14,7 @@
 - Move `buf mod {clear-cache,cc}` to `buf registry cc`. `buf mod {clear-cache,cc}` is now deprecated.
 - Deprecate `buf mod open`.
 - Delete `buf beta migrate-v1beta1`.
+- Promote `buf alpha sdk <go-version|maven-version|npm-version|swift-version|python-version>` to `buf registry sdk version`.
 
 ## [v1.30.0] - 2024-03-07
 
