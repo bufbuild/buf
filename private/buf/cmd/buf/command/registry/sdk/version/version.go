@@ -45,16 +45,16 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " --module=<buf.build/owner/repository[:ref]> --plugin=<buf.build/owner/plugin[:version]>",
 		Short: "Resolve module and plugin reference to a specific Generated SDK version",
-		Long: `This command returns the version of the Generated SDK within it's languages package ecosystem.
+		Long: `This command returns the version of the Generated SDK for the given module and plugin.
 Examples:
 
-Get the version of the eliza module and the go plugin for use with the Golang module proxy.
+Get the version of the eliza module and the go plugin for use with the Go module proxy.
     $ buf registry sdk version --module=buf.build/connectrpc/eliza --plugin=buf.build/protocolbuffers/go
-        v1.7.0-20230609151053-e682db0d9918.1
+    v1.33.0-20230913231627-233fca715f49.1
 
 Use a specific module version and plugin version.
-    $ buf registry sdk version --module=buf.build/connectrpc/eliza:233fca715f49425581ec0a1b660be886 --plugin=buf.build/protocolbuffers/go:v1.4.0
-        v1.0.0-20230609151053-e682db0d9918.1`,
+    $ buf registry sdk version --module=buf.build/connectrpc/eliza:233fca715f49425581ec0a1b660be886 --plugin=buf.build/protocolbuffers/go:v1.32.0
+    v1.32.0-20230913231627-233fca715f49.1`,
 		Args: appcmd.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
