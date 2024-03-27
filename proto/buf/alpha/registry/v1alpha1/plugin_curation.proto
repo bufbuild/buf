@@ -30,13 +30,15 @@ enum CuratedPluginVisibility {
 
 // The supported plugin registries for curated plugins.
 enum PluginRegistryType {
+  reserved 6;
+  reserved "PLUGIN_REGISTRY_TYPE_ARCHIVE";
+
   PLUGIN_REGISTRY_TYPE_UNSPECIFIED = 0;
   PLUGIN_REGISTRY_TYPE_GO = 1;
   PLUGIN_REGISTRY_TYPE_NPM = 2;
   PLUGIN_REGISTRY_TYPE_MAVEN = 3;
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
-  PLUGIN_REGISTRY_TYPE_ARCHIVE = 6;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
