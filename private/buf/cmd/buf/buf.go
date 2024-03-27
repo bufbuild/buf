@@ -76,11 +76,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrycc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/goversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/mavenversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/npmversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/pythonversion"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/swiftversion"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/sdk/version"
 	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -174,11 +170,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "sdk",
 						Short: "Manage Generated SDKs",
 						SubCommands: []*appcmd.Command{
-							goversion.NewCommand("go-version", builder),
-							mavenversion.NewCommand("maven-version", builder),
-							npmversion.NewCommand("npm-version", builder),
-							swiftversion.NewCommand("swift-version", builder),
-							pythonversion.NewCommand("python-version", builder),
+							version.NewCommand("version", builder),
 						},
 					},
 				},
