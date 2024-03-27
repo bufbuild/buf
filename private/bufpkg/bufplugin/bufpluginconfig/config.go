@@ -87,12 +87,11 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 
 func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*RegistryConfig, error) {
 	var (
-		isGoEmpty      = externalRegistryConfig.Go == nil
-		isNPMEmpty     = externalRegistryConfig.NPM == nil
-		isMavenEmpty   = externalRegistryConfig.Maven == nil
-		isSwiftEmpty   = externalRegistryConfig.Swift == nil
-		isPythonEmpty  = externalRegistryConfig.Python == nil
-		isArchiveEmpty = externalRegistryConfig.Archive == nil
+		isGoEmpty     = externalRegistryConfig.Go == nil
+		isNPMEmpty    = externalRegistryConfig.NPM == nil
+		isMavenEmpty  = externalRegistryConfig.Maven == nil
+		isSwiftEmpty  = externalRegistryConfig.Swift == nil
+		isPythonEmpty = externalRegistryConfig.Python == nil
 	)
 	var registryCount int
 	for _, isEmpty := range []bool{
@@ -101,7 +100,6 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		isMavenEmpty,
 		isSwiftEmpty,
 		isPythonEmpty,
-		isArchiveEmpty,
 	} {
 		if !isEmpty {
 			registryCount++
@@ -161,15 +159,6 @@ func newRegistryConfig(externalRegistryConfig ExternalRegistryConfig) (*Registry
 		}
 		return &RegistryConfig{
 			Python:  pythonRegistryConfig,
-			Options: options,
-		}, nil
-	case !isArchiveEmpty:
-		archiveRegistryConfig, err := newArchiveRegistryConfig(externalRegistryConfig.Archive)
-		if err != nil {
-			return nil, err
-		}
-		return &RegistryConfig{
-			Archive: archiveRegistryConfig,
 			Options: options,
 		}, nil
 	default:
@@ -366,10 +355,6 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 		RequiresPython: externalPythonRegistryConfig.RequiresPython,
 		PackageType:    externalPythonRegistryConfig.PackageType,
 	}, nil
-}
-
-func newArchiveRegistryConfig(externalArchiveRegistryConfig *ExternalArchiveRegistryConfig) (*ArchiveRegistryConfig, error) {
-	return &ArchiveRegistryConfig{}, nil
 }
 
 func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufpluginref.PluginIdentity, error) {
