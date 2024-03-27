@@ -92,8 +92,8 @@ func NewOptionsInvalidValueForKeyError(key string, value string) error {
 }
 
 // NewOptionsInvalidForFormatError is a fetch error.
-func NewOptionsInvalidForFormatError(format string, s string) error {
-	return fmt.Errorf("invalid options for format %q: %q", format, s)
+func NewOptionsInvalidForFormatError(format string, inputName string, issue string) error {
+	return fmt.Errorf("invalid options for input %q for format %q: %s", inputName, format, issue)
 }
 
 // NewOptionsCouldNotParseStripComponentsError is a fetch error.

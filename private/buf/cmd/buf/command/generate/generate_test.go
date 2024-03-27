@@ -158,6 +158,10 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
     - a.v1.Bar
     - a.v1.Foo
 `),
+			filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
 		},
 	)
 	require.NoError(t, err)
@@ -167,6 +171,155 @@ func TestGenerateV2LocalPluginBasic(t *testing.T) {
 	diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
+}
+
+func TestGenerateV2LocalPluginTypes(t *testing.T) {
+	t.Parallel()
+	testRunTypeArgs := func(t *testing.T, expect map[string][]byte, args ...string) {
+		t.Helper()
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			append([]string{
+				"--output",
+				tempDirPath,
+			}, args...)...,
+		)
+		expected, err := storagemem.NewReadBucket(expect)
+		require.NoError(t, err)
+		require.NoError(t, err)
+		actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+		require.NoError(t, err)
+
+		diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
+		require.NoError(t, err)
+		require.Empty(t, string(diff))
+	}
+
+	// buf.basic.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.basic.gen.yaml"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// buf.types.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+	)
+	// input specified
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		filepath.Join("testdata", "v2", "local_plugin"), // input
+	)
+	// --template as CLI flag
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		`version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+inputs:
+  - directory: ./testdata/v2/local_plugin
+    types:
+      - a.v1.Foo`,
+	)
+	// --type
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--type",
+		"b.v1.Bar",
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// --path
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--path",
+		filepath.Join("testdata", "v2", "local_plugin", "b"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// --exclude-path
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "v2", "local_plugin", "b", "v1"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// buf.paths.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.paths.gen.yaml"),
+	)
+	// buf.exclude.paths.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.exclude.paths.gen.yaml"),
+	)
+	// --type overrides template
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--type",
+		"b.v1.Bar",
+	)
 }
 
 func TestOutputFlag(t *testing.T) {
