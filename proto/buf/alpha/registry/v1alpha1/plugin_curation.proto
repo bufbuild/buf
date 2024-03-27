@@ -227,8 +227,6 @@ message PythonConfig {
   PythonPackageType package_type = 3;
 }
 
-message ArchiveConfig {}
-
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
@@ -237,7 +235,6 @@ message RegistryConfig {
     MavenConfig maven_config = 3;
     SwiftConfig swift_config = 4;
     PythonConfig python_config = 5;
-    ArchiveConfig archive_config = 6;
   }
   // Reserved for future remote registry types.
   reserved 7 to 9;
