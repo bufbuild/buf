@@ -65,6 +65,9 @@ Use a specific module version and plugin version.
 	}
 }
 
+// TODO FUTURE: Add a --format flag, supports text (current behavior) and json, json will output information
+// such as resolved module commit, plugin version and revision, package-ecosystem, and full version.
+
 type flags struct {
 	Plugin string
 	Module string
@@ -220,17 +223,3 @@ func run(
 	}
 	return nil
 }
-
-// TODO: Enable this
-type external struct {
-	//Plugin string
-	//Module string
-	ModuleCommitID   string
-	PluginVersion    string
-	PluginRevision   string
-	PackageEcosystem string
-	Version          string
-}
-
-// TODO: remove
-var _ = external{}
