@@ -1320,17 +1320,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main"),
+		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main", "git options set"),
 		"path/to/foo.tar.gz#branch=main",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1", "archive options set"),
 		"path/to/some/foo#strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none", "compression set"),
 		"path/to/some/foo#compression=none",
 	)
 	testGetParsedRefError(
