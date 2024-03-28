@@ -237,15 +237,7 @@ func (a *refParser) getRawRefForInputConfig(
 		return nil, syserror.Newf("unknown InputConfigType: %v", inputConfig.Type())
 	}
 	// This cannot be set ahead of time, it can only happen after all options are read.
-	if rawRef.Format == "git" {
-		if rawRef.GitDepth == 0 {
-			// Default to 1
-			rawRef.GitDepth = 1
-			if rawRef.GitRef != "" {
-				// Default to 50 when using ref
-				rawRef.GitDepth = 50
-			}
-		}
+	if inputConfig.Type() == bufconfig.InputConfigTypeGitRepo {
 		// TODO FUTURE: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
 		if inputConfig.Depth() != nil {
 			if *inputConfig.Depth() == 0 {
@@ -257,6 +249,14 @@ func (a *refParser) getRawRefForInputConfig(
 		rawRef.GitTag = inputConfig.Tag()
 		rawRef.GitRef = inputConfig.Ref()
 		rawRef.GitRecurseSubmodules = inputConfig.RecurseSubmodules()
+		if rawRef.GitDepth == 0 {
+			// Default to 1
+			rawRef.GitDepth = 1
+			if rawRef.GitRef != "" {
+				// Default to 50 when using ref
+				rawRef.GitDepth = 50
+			}
+		}
 	}
 	var err error
 	if compression := inputConfig.Compression(); compression != "" {
