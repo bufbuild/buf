@@ -266,6 +266,7 @@ func (a *refParser) getRawRefForInputConfig(
 		}
 	}
 	rawRef.IncludePackageFiles = inputConfig.IncludePackageFiles()
+	rawRef.ArchiveStripComponents = inputConfig.StripComponents()
 	rawRef.SubDirPath, err = parseSubDirPath(inputConfig.SubDir())
 	if err != nil {
 		return nil, err
