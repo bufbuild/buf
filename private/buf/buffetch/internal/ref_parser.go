@@ -137,8 +137,8 @@ func (a *refParser) getRawRef(
 			rawRef.CompressionType = compressionType
 		case "branch":
 			rawRef.GitBranch = value
-		case "tag":
-			rawRef.GitTag = value
+		case "tag", "commit":
+			rawRef.GitCommitOrTag = value
 		case "ref":
 			rawRef.GitRef = value
 		case "depth":
@@ -248,7 +248,7 @@ func (a *refParser) getRawRefForInputConfig(
 		return nil, err
 	}
 	rawRef.GitBranch = inputConfig.Branch()
-	rawRef.GitTag = inputConfig.Tag()
+	rawRef.GitCommitOrTag = inputConfig.CommitOrTag()
 	if err := a.validateRawRef(inputConfig.Location(), rawRef); err != nil {
 		return nil, err
 	}
@@ -333,14 +333,14 @@ func (a *refParser) validateRawRef(
 	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
 	_, singleOK := a.singleFormatToInfo[rawRef.Format]
 	if gitOK {
-		if rawRef.GitBranch != "" && rawRef.GitTag != "" {
-			return NewCannotSpecifyGitBranchAndTagError()
+		if rawRef.GitBranch != "" && rawRef.GitCommitOrTag != "" {
+			return NewCannotSpecifyGitBranchAndCommitOrTagError()
 		}
-		if rawRef.GitRef != "" && rawRef.GitTag != "" {
-			return NewCannotSpecifyTagWithRefError()
+		if rawRef.GitRef != "" && rawRef.GitCommitOrTag != "" {
+			return NewCannotSpecifyCommitOrTagWithRefError()
 		}
 	} else {
-		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
+		if rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
 			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
 		}
 	}
@@ -502,7 +502,7 @@ func getDirRef(
 func getGitRef(
 	rawRef *RawRef,
 ) (ParsedGitRef, error) {
-	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag, rawRef.GitRef)
+	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitCommitOrTag, rawRef.GitRef)
 	if err != nil {
 		return nil, err
 	}
@@ -525,17 +525,17 @@ func getModuleRef(
 	)
 }
 
-func getGitRefName(path string, branch string, tag string, ref string) (git.Name, error) {
-	if branch == "" && tag == "" && ref == "" {
+func getGitRefName(path string, branch string, commitOrTag string, ref string) (git.Name, error) {
+	if branch == "" && commitOrTag == "" && ref == "" {
 		return nil, nil
 	}
-	if branch != "" && tag != "" {
+	if branch != "" && commitOrTag != "" {
 		// already did this in getRawRef but just in case
-		return nil, NewCannotSpecifyGitBranchAndTagError()
+		return nil, NewCannotSpecifyGitBranchAndCommitOrTagError()
 	}
-	if ref != "" && tag != "" {
+	if ref != "" && commitOrTag != "" {
 		// already did this in getRawRef but just in case
-		return nil, NewCannotSpecifyTagWithRefError()
+		return nil, NewCannotSpecifyCommitOrTagWithRefError()
 	}
 	if ref != "" && branch != "" {
 		return git.NewRefNameWithBranch(ref, branch), nil
@@ -546,7 +546,7 @@ func getGitRefName(path string, branch string, tag string, ref string) (git.Name
 	if branch != "" {
 		return git.NewBranchName(branch), nil
 	}
-	return git.NewTagName(tag), nil
+	return git.NewTagName(commitOrTag), nil
 }
 
 func getProtoFileRef(rawRef *RawRef) (ParsedProtoFileRef, error) {

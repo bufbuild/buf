@@ -62,6 +62,7 @@ func (i InputConfigType) String() string {
 const (
 	compressionKey         = "compression"
 	branchKey              = "branch"
+	commitKey              = "commit"
 	tagKey                 = "tag"
 	refKey                 = "ref"
 	depthKey               = "depth"
@@ -75,6 +76,7 @@ var (
 	allowedOptionsForFormat = map[InputConfigType](map[string]struct{}){
 		InputConfigTypeGitRepo: {
 			branchKey:            {},
+			commitKey:            {},
 			tagKey:               {},
 			refKey:               {},
 			depthKey:             {},
@@ -142,11 +144,11 @@ type InputConfig interface {
 	SubDir() string
 	// Branch returns the git branch to checkout out, not empty only if format is git.
 	Branch() string
-	// Tag returns the git tag to checkout, not empty only if format is git.
-	Tag() string
+	// CommitOrTag returns the git tag to checkout, not empty only if format is git.
+	CommitOrTag() string
 	// Ref returns the git ref to checkout, not empty only if format is git.
 	Ref() string
-	// Ref returns the depth to clone the git repo with, not empty only if format is git.
+	// Depth returns the depth to clone the git repo with, not empty only if format is git.
 	Depth() *uint32
 	// RecurseSubmodules returns whether to clone submodules recursively. Not empty
 	// only if input if git.
@@ -182,7 +184,7 @@ func NewGitRepoInputConfig(
 		location:          location,
 		subDir:            subDir,
 		branch:            branch,
-		tag:               tag,
+		commitOrTag:       tag,
 		ref:               ref,
 		depth:             depth,
 		recurseSubmodules: recurseSubModules,
@@ -335,7 +337,7 @@ type inputConfig struct {
 	stripComponents     uint32
 	subDir              string
 	branch              string
-	tag                 string
+	commitOrTag         string
 	ref                 string
 	depth               *uint32
 	recurseSubmodules   bool
@@ -405,9 +407,16 @@ func newInputConfigFromExternalV2(externalConfig externalInputConfigV2) (InputCo
 		options = append(options, branchKey)
 		inputConfig.branch = *externalConfig.Branch
 	}
+	if externalConfig.Commit != nil && externalConfig.Tag != nil {
+		return nil, fmt.Errorf("commit and tag options cannot be used at the same time; use one or the other")
+	}
+	if externalConfig.Commit != nil {
+		options = append(options, commitKey)
+		inputConfig.commitOrTag = *externalConfig.Commit
+	}
 	if externalConfig.Tag != nil {
 		options = append(options, tagKey)
-		inputConfig.tag = *externalConfig.Tag
+		inputConfig.commitOrTag = *externalConfig.Tag
 	}
 	if externalConfig.Ref != nil {
 		options = append(options, refKey)
@@ -468,8 +477,8 @@ func (i *inputConfig) Branch() string {
 	return i.branch
 }
 
-func (i *inputConfig) Tag() string {
-	return i.tag
+func (i *inputConfig) CommitOrTag() string {
+	return i.commitOrTag
 }
 
 func (i *inputConfig) Ref() string {
@@ -536,8 +545,8 @@ func newExternalInputConfigV2FromInputConfig(
 	if inputConfig.Ref() != "" {
 		externalInputConfigV2.Ref = toPointer(inputConfig.Ref())
 	}
-	if inputConfig.Tag() != "" {
-		externalInputConfigV2.Tag = toPointer(inputConfig.Tag())
+	if inputConfig.CommitOrTag() != "" {
+		externalInputConfigV2.Commit = toPointer(inputConfig.CommitOrTag())
 	}
 	externalInputConfigV2.Depth = inputConfig.Depth()
 	if inputConfig.RecurseSubmodules() {

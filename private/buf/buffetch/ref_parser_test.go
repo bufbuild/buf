@@ -1260,17 +1260,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndCommitOrTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndCommitOrTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar,ref=baz",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyTagWithRefError(),
+		internal.NewCannotSpecifyCommitOrTagWithRefError(),
 		"path/to/foo#format=git,tag=foo,ref=bar",
 	)
 	testGetParsedRefError(
