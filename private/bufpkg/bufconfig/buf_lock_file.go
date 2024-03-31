@@ -289,7 +289,6 @@ func readBufLockFile(
 			if dep.Commit == "" {
 				return nil, fmt.Errorf("no commit specified for module %s", moduleFullName.String())
 			}
-			// v1beta1 and v1 buf.locks used dashless commit IDs
 			commitID, err := uuidutil.FromDashless(dep.Commit)
 			if err != nil {
 				return nil, err
@@ -341,7 +340,7 @@ func readBufLockFile(
 				// TODO: Add a message about downgrading the buf cli to a version that supports this.
 				return nil, fmt.Errorf(`%s digests are no longer supported as of v1.32.0, run "buf mod update" to update your buf.lock`, deprecatedDigestType)
 			}
-			commitID, err := uuid.FromString(dep.Commit)
+			commitID, err := uuidutil.FromDashless(dep.Commit)
 			if err != nil {
 				return nil, err
 			}
@@ -383,12 +382,11 @@ func writeBufLockFile(
 			if err != nil {
 				return err
 			}
-			externalCommitID := uuidutil.ToDashless(depModuleKey.CommitID())
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV1Beta1V1{
 				Remote:     depModuleKey.ModuleFullName().Registry(),
 				Owner:      depModuleKey.ModuleFullName().Owner(),
 				Repository: depModuleKey.ModuleFullName().Name(),
-				Commit:     externalCommitID,
+				Commit:     uuidutil.ToDashless(depModuleKey.CommitID()),
 				Digest:     digest.String(),
 			}
 		}
@@ -412,7 +410,7 @@ func writeBufLockFile(
 			}
 			externalBufLockFile.Deps[i] = externalBufLockFileDepV2{
 				Name:   depModuleKey.ModuleFullName().String(),
-				Commit: depModuleKey.CommitID().String(),
+				Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
 				Digest: digest.String(),
 			}
 		}
@@ -511,10 +509,11 @@ type externalBufLockFileV1Beta1V1 struct {
 // externalBufLockFileDepV1Beta1V1 represents a single dep within a v1 or v1beta1 buf.lock file,
 // which have the same shape.
 type externalBufLockFileDepV1Beta1V1 struct {
-	Remote     string    `json:"remote,omitempty" yaml:"remote,omitempty"`
-	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`
-	Repository string    `json:"repository,omitempty" yaml:"repository,omitempty"`
-	Branch     string    `json:"branch,omitempty" yaml:"branch,omitempty"`
+	Remote     string `json:"remote,omitempty" yaml:"remote,omitempty"`
+	Owner      string `json:"owner,omitempty" yaml:"owner,omitempty"`
+	Repository string `json:"repository,omitempty" yaml:"repository,omitempty"`
+	Branch     string `json:"branch,omitempty" yaml:"branch,omitempty"`
+	// Dashless
 	Commit     string    `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
@@ -528,7 +527,8 @@ type externalBufLockFileV2 struct {
 
 // externalBufLockFileDepV2 represents a single dep within a v2 buf.lock file.
 type externalBufLockFileDepV2 struct {
-	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Dashless
 	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }
