@@ -51,7 +51,7 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/people:fc7d5401-24fd-42db-9251-1c19a60a1d98***
+		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/people:fc7d540124fd42db92511c19a60a1d98***
 	Expected digest: "b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465"
 	Downloaded data digest: "b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053"`,
 		func(use string) map[string]string {
@@ -72,7 +72,7 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/students:6c776ed5-bee5-4462-b06d-31fb7f7c16b8***
+		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/students:6c776ed5bee54462b06d31fb7f7c16b8***
 	Expected digest: "b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70"
 	Downloaded data digest: "b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c"`,
 		func(use string) map[string]string {
