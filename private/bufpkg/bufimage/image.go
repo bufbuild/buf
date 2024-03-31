@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -51,7 +52,11 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 				if existing.commitID != file.CommitID() {
 					return nil, fmt.Errorf(
 						"files with different commits for the same module %s: %s:%s and %s:%s",
-						moduleFullNameString, existing.filePath, existing.commitID, path, file.CommitID(),
+						moduleFullNameString,
+						existing.filePath,
+						uuidutil.ToDashless(existing.commitID),
+						path,
+						uuidutil.ToDashless(file.CommitID()),
 					)
 				}
 			} else {

@@ -301,7 +301,6 @@ func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.Fi
 }
 
 func imageFileToProtoImageFile(imageFile ImageFile) (*imagev1.ImageFile, error) {
-	// Need to use dashless for historical reasons.
 	var protoCommitID string
 	if !imageFile.CommitID().IsNil() {
 		protoCommitID = uuidutil.ToDashless(imageFile.CommitID())
@@ -322,7 +321,8 @@ func fileDescriptorProtoToProtoImageFile(
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
 	moduleFullName bufmodule.ModuleFullName,
-	moduleCommitID string,
+	// Dashless
+	moduleProtoCommitID string,
 ) *imagev1.ImageFile {
 	var protoModuleInfo *imagev1.ModuleInfo
 	if moduleFullName != nil {
@@ -333,8 +333,8 @@ func fileDescriptorProtoToProtoImageFile(
 				Repository: proto.String(moduleFullName.Name()),
 			},
 		}
-		if moduleCommitID != "" {
-			protoModuleInfo.Commit = proto.String(moduleCommitID)
+		if moduleProtoCommitID != "" {
+			protoModuleInfo.Commit = proto.String(moduleProtoCommitID)
 		}
 	}
 	if len(unusedDependencyIndexes) == 0 {
