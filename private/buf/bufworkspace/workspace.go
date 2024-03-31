@@ -88,7 +88,7 @@ type Workspace interface {
 	//
 	// THIS SHOULD ONLY BE USED IN EXTREMELY LIMITED SITUATIONS. The codebase should generally
 	// handle v1 vs v2 transparently. Right now, this is only approved to be used in push
-	// when we want to know whether we need to print out dashless CommitIDs. Any other usages
+	// when we want to know whether we need to print out only CommitIDs. Any other usages
 	// need to be evaluated.
 	IsV2() bool
 
