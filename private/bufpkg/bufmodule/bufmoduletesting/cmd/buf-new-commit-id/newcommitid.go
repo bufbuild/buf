@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -26,8 +25,7 @@ import (
 )
 
 const (
-	name         = "buf-new-commit-id"
-	typeFlagName = "type"
+	name = "buf-new-commit-id"
 )
 
 func main() {
@@ -44,8 +42,6 @@ func newCommand() *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Produce a new commit ID for testing.",
-		Long: fmt.Sprintf(`If --%s v1 is specified, a dashless commit ID is produced.
-If --%s v2 is specified, a dashful commit ID is produced.`, typeFlagName, typeFlagName),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
@@ -56,22 +52,13 @@ If --%s v2 is specified, a dashful commit ID is produced.`, typeFlagName, typeFl
 	}
 }
 
-type flags struct {
-	Type string
-}
+type flags struct{}
 
 func newFlags() *flags {
 	return &flags{}
 }
 
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Type,
-		typeFlagName,
-		"v2",
-		"The commit ID type, either v1 or v2.",
-	)
-}
+func (f *flags) Bind(flagSet *pflag.FlagSet) {}
 
 func run(
 	ctx context.Context,
@@ -82,15 +69,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	var commitIDString string
-	switch flags.Type {
-	case "v1":
-		commitIDString = uuidutil.ToDashless(commitID)
-	case "v2":
-		commitIDString = commitID.String()
-	default:
-		return appcmd.NewInvalidArgumentErrorf("invalid value for --%s: %q", typeFlagName, flags.Type)
-	}
-	_, err = container.Stdout().Write([]byte(commitIDString + "\n"))
+	_, err = container.Stdout().Write([]byte(uuidutil.ToDashless(commitID) + "\n"))
 	return err
 }

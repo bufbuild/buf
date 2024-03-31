@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -305,9 +306,9 @@ func getCommitStoreDirPath(
 
 // Returns the file path within the directory.
 //
-// This is "commitID.json", e.g. the commit "12345" will return "12345.json".
+// This is "dashlessCommitID.json", e.g. the commit "12345-abcde" will return "12345abcde.json".
 func getCommitStoreFilePath(commitKey bufmodule.CommitKey) string {
-	return commitKey.CommitID().String() + ".json"
+	return uuidutil.ToDashless(commitKey.CommitID()) + ".json"
 }
 
 // externalCommit is the store representation of a Commit.

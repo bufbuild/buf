@@ -246,11 +246,11 @@ func (o *omniProvider) GetCommitsForCommitKeys(
 	for i, commitKey := range commitKeys {
 		module := o.GetModuleForCommitID(commitKey.CommitID())
 		if module == nil {
-			return nil, &fs.PathError{Op: "read", Path: commitKey.CommitID().String(), Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: uuidutil.ToDashless(commitKey.CommitID()), Err: fs.ErrNotExist}
 		}
 		createTime, ok := o.commitIDToCreateTime[commitKey.CommitID()]
 		if !ok {
-			return nil, &fs.PathError{Op: "read", Path: commitKey.CommitID().String(), Err: fs.ErrNotExist}
+			return nil, &fs.PathError{Op: "read", Path: uuidutil.ToDashless(commitKey.CommitID()), Err: fs.ErrNotExist}
 		}
 		moduleKey, err := bufmodule.ModuleToModuleKey(module, commitKey.DigestType())
 		if err != nil {
