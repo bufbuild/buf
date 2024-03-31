@@ -21,12 +21,13 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
 
 // CommitKey provides identifying information for a Commit when calling the CommitProvider.
 type CommitKey interface {
-	// String returns "digestType/registry:commitID".
+	// String returns "digestType/registry:dashlessCommitID".
 	fmt.Stringer
 
 	// Registry returns the registry of the Commit.
@@ -35,7 +36,7 @@ type CommitKey interface {
 	Registry() string
 	// CommitID returns the ID of the Commit.
 	//
-	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
+	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
 	// Always present, that is CommitID().IsNil() will always be false.
 	CommitID() uuid.UUID
@@ -127,7 +128,7 @@ func (m *commitKey) DigestType() DigestType {
 }
 
 func (m *commitKey) String() string {
-	return m.digestType.String() + "/" + m.registry + ":" + m.commitID.String()
+	return m.digestType.String() + "/" + m.registry + ":" + uuidutil.ToDashless(m.commitID)
 }
 
 func (*commitKey) isCommitKey() {}

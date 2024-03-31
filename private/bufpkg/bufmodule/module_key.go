@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syncext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -31,7 +32,7 @@ import (
 // They also match to what we store in buf.lock files. ModuleKeys can be used to get Modules
 // via a ModuleProvider.
 type ModuleKey interface {
-	// String returns "registry/owner/name:commitID".
+	// String returns "registry/owner/name:dashlessCommitID".
 	fmt.Stringer
 
 	// ModuleFullName returns the full name of the Module.
@@ -40,7 +41,7 @@ type ModuleKey interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the ID of the Commit.
 	//
-	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
+	// It is up to the caller to convert this to a dashless ID when necessary.
 	//
 	// Always present, that is CommitID().IsNil() will always be false.
 	CommitID() uuid.UUID
@@ -157,7 +158,7 @@ func (m *moduleKey) Digest() (Digest, error) {
 }
 
 func (m *moduleKey) String() string {
-	return m.moduleFullName.String() + ":" + m.commitID.String()
+	return m.moduleFullName.String() + ":" + uuidutil.ToDashless(m.commitID)
 }
 
 func (*moduleKey) isModuleKey() {}

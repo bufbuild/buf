@@ -30,6 +30,8 @@ type ModuleRef interface {
 	ModuleFullName() ModuleFullName
 	// Ref returns the reference within the Module.
 	//
+	// May be a label or dashless commitID.
+	//
 	// May be empty, in which case this references the commit of the default label of the Module.
 	Ref() string
 

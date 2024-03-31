@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -285,7 +286,7 @@ func newModuleSet(
 		if !commitID.IsNil() {
 			if _, ok := commitIDToModule[commitID]; ok {
 				// This should never happen.
-				return nil, syserror.Newf("duplicate CommitID %v when constructing ModuleSet", commitID)
+				return nil, syserror.Newf("duplicate CommitID %q when constructing ModuleSet", uuidutil.ToDashless(commitID))
 			}
 			commitIDToModule[commitID] = module
 		}
