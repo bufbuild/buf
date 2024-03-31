@@ -17,5 +17,5 @@ buf-digest \
 To make new commit IDs:
 
 ```
-buf-new-commit-id --type v1
+buf-new-commit-id
 ```
