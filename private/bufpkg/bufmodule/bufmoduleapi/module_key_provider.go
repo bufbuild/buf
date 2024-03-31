@@ -20,7 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapi"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -108,7 +108,7 @@ func (a *moduleKeyProvider) getIndexedModuleKeysForRegistryAndIndexedModuleRefs(
 	indexedModuleKeys := make([]slicesext.Indexed[bufmodule.ModuleKey], len(indexedModuleRefs))
 	for i, universalProtoCommit := range universalProtoCommits {
 		universalProtoCommit := universalProtoCommit
-		commitID, err := uuid.FromString(universalProtoCommit.ID)
+		commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
 		}

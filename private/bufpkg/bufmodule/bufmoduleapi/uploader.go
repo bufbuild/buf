@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -243,7 +243,7 @@ func (a *uploader) Upload(
 		// We've maintained ordering throughout this function, so we can do this.
 		// The API returns Commits in the same order as the Contents.
 		moduleFullName := contentModules[i].ModuleFullName()
-		commitID, err := uuid.FromString(universalProtoCommit.ID)
+		commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -379,7 +379,7 @@ func remoteDepToV1Beta1ProtoUploadRequestDepRef(
 		return nil, syserror.Newf("did not have a commit ID for a remote module dependency %q", remoteDep.OpaqueID())
 	}
 	return &modulev1beta1.UploadRequest_DepRef{
-		CommitId: depCommitID.String(),
+		CommitId: uuidutil.ToDashless(depCommitID),
 		Registry: remoteDep.ModuleFullName().Registry(),
 	}, nil
 }

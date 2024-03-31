@@ -586,7 +586,8 @@ func (e externalModuleData) isValid() bool {
 
 // externalModuleDataDep represents a dependency.
 type externalModuleDataDep struct {
-	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Dashless
 	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }

@@ -29,7 +29,9 @@ import (
 )
 
 type universalProtoContent struct {
-	CommitID      string
+	// Dashless
+	CommitID string
+	// Dashless
 	ModuleID      string
 	Files         []*universalProtoFile
 	V1BufYAMLFile *universalProtoFile

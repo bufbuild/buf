@@ -45,13 +45,14 @@ func newV1ProtoOwnerProvider(
 	}
 }
 
-func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForOwnerID(
+func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForProtoOwnerID(
 	ctx context.Context,
 	registry string,
-	ownerID string,
+	// Dashless
+	protoOwnerID string,
 ) (*ownerv1.Owner, error) {
 	return a.protoOwnerCache.GetOrAdd(
-		registry+"/"+ownerID,
+		registry+"/"+protoOwnerID,
 		func() (*ownerv1.Owner, error) {
 			response, err := a.clientProvider.V1OwnerServiceClient(registry).GetOwners(
 				ctx,
@@ -60,7 +61,7 @@ func (a *v1ProtoOwnerProvider) getV1ProtoOwnerForOwnerID(
 						OwnerRefs: []*ownerv1.OwnerRef{
 							{
 								Value: &ownerv1.OwnerRef_Id{
-									Id: ownerID,
+									Id: protoOwnerID,
 								},
 							},
 						},

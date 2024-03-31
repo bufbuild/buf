@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
@@ -179,7 +180,7 @@ func (a *moduleDataProvider) getIndexedModuleDatasForRegistryAndIndexedModuleKey
 			}
 			indexedModuleKey, ok := commitIDToIndexedModuleKey[moduleKey.CommitID()]
 			if !ok {
-				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", moduleKey.CommitID())
+				return syserror.Newf("could not find indexed ModuleKey for commit ID %q", uuidutil.ToDashless(moduleKey.CommitID()))
 			}
 			indexedModuleData := slicesext.Indexed[bufmodule.ModuleData]{
 				Value: bufmodule.NewModuleData(
@@ -228,7 +229,7 @@ func (a *moduleDataProvider) getCommitIDToUniversalProtoContentForRegistryAndInd
 	commitIDToUniversalProtoContent, err := slicesext.ToUniqueValuesMapError(
 		universalProtoContents,
 		func(universalProtoContent *universalProtoContent) (uuid.UUID, error) {
-			return uuid.FromString(universalProtoContent.CommitID)
+			return uuidutil.FromDashless(universalProtoContent.CommitID)
 		},
 	)
 	if err != nil {
@@ -262,10 +263,11 @@ func (a *moduleDataProvider) warnIfDeprecated(
 	ctx context.Context,
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	registry string,
+	// Dashless
 	protoModuleID string,
 	moduleKey bufmodule.ModuleKey,
 ) error {
-	v1ProtoModule, err := v1ProtoModuleProvider.getV1ProtoModuleForModuleID(
+	v1ProtoModule, err := v1ProtoModuleProvider.getV1ProtoModuleForProtoModuleID(
 		ctx,
 		registry,
 		protoModuleID,
