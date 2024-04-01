@@ -522,35 +522,41 @@ func NewProtoFileWriter(
 // The Path will be the only value set when the RawRefProcessor is invoked, and is not normalized.
 // After the RawRefProcessor is called, options will be parsed.
 type RawRef struct {
-	// Will always be set
-	// Not normalized yet
+	// Will always be set.
+	// Not normalized yet.
 	Path string
-	// Will always be set
-	// Set via RawRefProcessor if not explicitly set
+	// Will always be set.
+	// Set via RawRefProcessor if not explicitly set.
 	Format string
-	// Only set for single, archive formats
-	// Cannot be set for zip archives
+	// Only set for single, archive formats.
+	// Cannot be set for zip archives.
 	CompressionType CompressionType
-	// Only set for archive, git formats
+	// Only set for archive, git formats.
 	SubDirPath string
-	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
+	// Only set for git formats.
+	// Only one of GitBranch and GitCommitOrTag will be set.
 	GitBranch string
+	// Only set for git formats.
+	// Only one of GitBranch and GitCommitOrTag will be set.
+	// Should indicate a full commit hash or tag name.
+	// This is defined as anything that can be given to "git fetch".
+	GitCommitOrTag string
 	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
-	GitTag string
-	// Only set for git formats
-	// Specifies an exact git reference to use with git checkout.
-	// Can be used on its own or with GitBranch. Not allowed with GitTag.
-	// This is defined as anything that can be given to git checkout.
+	// Specifies a git reference to use with "git checkout".
+	// Can be used on its own or with GitBranch. Not allowed with GitCommitOrTag.
+	// This is defined as anything that can be given to "git checkout".
+	// Differs from GitCommitOrTag in that it can be a short hash, or even a
+	// relative commit, such as "HEAD^2".
 	GitRef string
-	// Only set for git formats
+	// Only set for git formats.
 	GitRecurseSubmodules bool
 	// Only set for git formats.
 	// The depth to use when cloning a repository. Only allowed when GitRef
-	// is set. Defaults to 50 if unset.
+	// is set. Defaults to 50 if unset. It must be deep enough that the
+	// requested GitRef will be included when cloning the requested branch
+	// (or the repo's default branch if GitBranch is empty).
 	GitDepth uint32
-	// Only set for archive formats
+	// Only set for archive formats.
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.
 	// Sets whether or not to include the files in the rest of the package
