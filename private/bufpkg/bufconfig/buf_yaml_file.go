@@ -545,7 +545,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			}
 		default:
 			// Unreachable - we're in a v1/v1beta1 case statement above.
-			return syserror.Newf("expected v1 or v1beta, got FileVersion: %v", fileVersion)
+			return syserror.Newf("expected v1 or v1beta1, got FileVersion: %v", fileVersion)
 		}
 		externalBufYAMLFile.Lint = getExternalLintV1Beta1V1ForLintConfig(moduleConfig.LintConfig(), ".")
 		externalBufYAMLFile.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), ".")
