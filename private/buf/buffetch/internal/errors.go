@@ -38,14 +38,14 @@ func NewFormatCannotBeDeterminedError(value string) error {
 	return fmt.Errorf("format cannot be determined from %q", value)
 }
 
-// NewCannotSpecifyGitBranchAndTagError is a fetch error.
-func NewCannotSpecifyGitBranchAndTagError() error {
-	return errors.New(`must specify only one of "branch", "tag"`)
+// NewCannotSpecifyGitBranchAndCommitOrTagError is a fetch error.
+func NewCannotSpecifyGitBranchAndCommitOrTagError() error {
+	return errors.New(`must specify only one of "branch", "commit", or "tag"`)
 }
 
-// NewCannotSpecifyTagWithRefError is a fetch error.
-func NewCannotSpecifyTagWithRefError() error {
-	return errors.New(`cannot specify "tag" with "ref"`)
+// NewCannotSpecifyCommitOrTagWithRefError is a fetch error.
+func NewCannotSpecifyCommitOrTagWithRefError() error {
+	return errors.New(`cannot specify "commit" or "tag" with "ref"`)
 }
 
 // NewDepthParseError is a fetch error.
