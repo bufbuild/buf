@@ -320,33 +320,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	var bufGenYAMLFile bufconfig.BufGenYAMLFile
-	templatePathExtension := filepath.Ext(flags.Template)
-	switch {
-	case flags.Template == "":
-		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
-		if err != nil {
-			return err
-		}
-		bufGenYAMLFile, err = bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
-		if err != nil {
-			return err
-		}
-	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
-		// We should not read from a bucket at "." because this path can jump context.
-		configFile, err := os.Open(flags.Template)
-		if err != nil {
-			return err
-		}
-		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(configFile)
-		if err != nil {
-			return err
-		}
-	default:
-		bufGenYAMLFile, err = bufconfig.ReadBufGenYAMLFile(strings.NewReader(flags.Template))
-		if err != nil {
-			return err
-		}
+	bufGenYAMLFile, err := readBufGenYAMLFile(ctx, storageosProvider, flags.Template)
+	if err != nil {
+		return err
 	}
 	images, err := getInputImages(
 		ctx,
@@ -392,6 +368,32 @@ func run(
 	)
 }
 
+func readBufGenYAMLFile(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	templatePath string,
+) (bufconfig.BufGenYAMLFile, error) {
+	templatePathExtension := filepath.Ext(templatePath)
+	switch {
+	case templatePath == "":
+		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
+		if err != nil {
+			return nil, err
+		}
+		return bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
+		// We should not read from a bucket at "." because this path can jump context.
+		configFile, err := os.Open(templatePath)
+		if err != nil {
+			return nil, err
+		}
+		defer configFile.Close()
+		return bufconfig.ReadBufGenYAMLFile(configFile)
+	default:
+		return bufconfig.ReadBufGenYAMLFile(strings.NewReader(templatePath))
+	}
+}
+
 func getInputImages(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -403,9 +405,8 @@ func getInputImages(
 	excludePathsOverride []string,
 	includeTypesOverride []string,
 ) ([]bufimage.Image, error) {
-	var inputImages []bufimage.Image
 	// If input is specified on the command line, we use that. If input is not
-	// specified on the command line, but the config has no inputs, use the default input.
+	// specified on the command line, use the default input.
 	if inputSpecified != "" || len(bufGenYAMLFile.InputConfigs()) == 0 {
 		input := "."
 		if inputSpecified != "" {
@@ -428,35 +429,35 @@ func getInputImages(
 		if err != nil {
 			return nil, err
 		}
-		inputImages = []bufimage.Image{inputImage}
-	} else {
-		for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
-			targetPaths := inputConfig.TargetPaths()
-			if len(targetPathsOverride) > 0 {
-				targetPaths = targetPathsOverride
-			}
-			excludePaths := inputConfig.ExcludePaths()
-			if len(excludePathsOverride) > 0 {
-				excludePaths = excludePathsOverride
-			}
-			// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
-			// because it is always nil.
-			includeTypes := inputConfig.IncludeTypes()
-			if len(includeTypesOverride) > 0 {
-				includeTypes = includeTypesOverride
-			}
-			inputImage, err := controller.GetImageForInputConfig(
-				ctx,
-				inputConfig,
-				bufctl.WithConfigOverride(moduleConfigOverride),
-				bufctl.WithTargetPaths(targetPaths, excludePaths),
-				bufctl.WithImageTypes(includeTypes),
-			)
-			if err != nil {
-				return nil, err
-			}
-			inputImages = append(inputImages, inputImage)
+		return []bufimage.Image{inputImage}, nil
+	}
+	var inputImages []bufimage.Image
+	for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
+		targetPaths := inputConfig.TargetPaths()
+		if len(targetPathsOverride) > 0 {
+			targetPaths = targetPathsOverride
 		}
+		excludePaths := inputConfig.ExcludePaths()
+		if len(excludePathsOverride) > 0 {
+			excludePaths = excludePathsOverride
+		}
+		// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
+		// because it is always nil.
+		includeTypes := inputConfig.IncludeTypes()
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImageForInputConfig(
+			ctx,
+			inputConfig,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(targetPaths, excludePaths),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		inputImages = append(inputImages, inputImage)
 	}
 	return inputImages, nil
 }
