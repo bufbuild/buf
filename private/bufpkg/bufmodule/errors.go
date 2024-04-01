@@ -242,7 +242,7 @@ func (m *DigestMismatchError) Error() string {
 	_, _ = builder.WriteString("\n")
 	if m.ExpectedDigest != nil && m.ActualDigest != nil {
 		_, _ = builder.WriteString("\t")
-		_, _ = builder.WriteString(`Expected digest: "`)
+		_, _ = builder.WriteString(`Expected digest (from buf.lock): "`)
 		_, _ = builder.WriteString(m.ExpectedDigest.String())
 		_, _ = builder.WriteString(`"`)
 		_, _ = builder.WriteString("\n")
@@ -253,6 +253,9 @@ func (m *DigestMismatchError) Error() string {
 		_, _ = builder.WriteString("\n")
 	}
 	_, _ = builder.WriteString("\t")
-	_, _ = builder.WriteString(`This may either be a result of an attack, or a result of your local cache being corrupted. To clear your local cache, run "buf registry cc".`)
+	_, _ = builder.WriteString(`This may be the result of a hand-edited or corrupted buf.lock file, a corrupted local cache, and/or an attack.`)
+	_, _ = builder.WriteString("\n")
+	_, _ = builder.WriteString("\t")
+	_, _ = builder.WriteString(`To clear your local cache, run "buf registry cc".`)
 	return builder.String()
 }
