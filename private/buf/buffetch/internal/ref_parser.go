@@ -346,13 +346,8 @@ func (a *refParser) validateRawRef(
 			return NewCannotSpecifyCommitOrTagWithRefError()
 		}
 	} else {
-<<<<<<< HEAD
-		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "git options set")
-=======
 		if rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
->>>>>>> bufmod
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "git options set")
 		}
 	}
 	// not an archive format
