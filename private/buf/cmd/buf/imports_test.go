@@ -103,8 +103,8 @@ func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
-		appFailureError(digestMismatchError).Error(),
 		1,
+		appFailureError(digestMismatchError).Error(),
 		func(use string) map[string]string {
 			return map[string]string{
 				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),
