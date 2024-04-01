@@ -348,7 +348,7 @@ func wrapError(err error) error {
 		err = app.WrapError(bufctl.ExitCodeFileAnnotation, importNotExistError)
 	}
 
-	return fmt.Errorf("Failure: %w", err)
+	return appFailureError(err)
 }
 
 // isEmptyUnknownError returns true if the given
@@ -371,4 +371,8 @@ func wrappedTLSError(err error) error {
 		return tlsErr
 	}
 	return nil
+}
+
+func appFailureError(err error) error {
+	return fmt.Errorf("Failure: %w", err)
 }

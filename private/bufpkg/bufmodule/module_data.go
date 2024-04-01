@@ -16,7 +16,6 @@ package bufmodule
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/syncext"
@@ -166,12 +165,11 @@ func newModuleData(
 				}
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
-				return fmt.Errorf(
-					"***Digest verification failed for module %s***\n\tExpected digest: %q\n\tDownloaded data digest: %q",
-					moduleKey.String(),
-					expectedDigest.String(),
-					actualDigest.String(),
-				)
+				return &DigestMismatchError{
+					ModuleKey:      moduleKey,
+					ExpectedDigest: expectedDigest,
+					ActualDigest:   actualDigest,
+				}
 			}
 			return nil
 		},
