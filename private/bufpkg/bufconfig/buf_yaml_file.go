@@ -507,7 +507,13 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Name = moduleFullName.String()
 		}
 		rootToExcludes := moduleConfig.RootToExcludes()
+		if len(rootToExcludes) != 1 && fileVersion == FileVersionV1 {
+			return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
+		}
 		excludes, ok := rootToExcludes["."]
+		if !ok && fileVersion == FileVersionV1 {
+			return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+		}
 		// If "." -> empty, do not add anything.
 		if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
 			roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
@@ -518,6 +524,8 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 						externalBufYAMLFile.Build.Roots,
 						root,
 					)
+				} else if root != "." {
+					return syserror.Newf(`buf v1 RootToExcludes only allows root ".", found: %q`, root)
 				}
 				for _, exclude := range rootToExcludes[root] {
 					// Excludes are defined to be sorted.
