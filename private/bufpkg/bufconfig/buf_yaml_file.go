@@ -496,7 +496,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		externalBufYAMLFile := externalBufYAMLFileV1Beta1V1{
 			Version: fileVersion.String(),
 		}
-		// Alredy sorted.
+		// Already sorted.
 		externalBufYAMLFile.Deps = slicesext.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufmodule.ModuleRef) string {
@@ -512,10 +512,13 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
 			roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
 			for _, root := range roots {
-				externalBufYAMLFile.Build.Roots = append(
-					externalBufYAMLFile.Build.Roots,
-					root,
-				)
+				// Roots only valid for v1beta1
+				if fileVersion == FileVersionV1Beta1 {
+					externalBufYAMLFile.Build.Roots = append(
+						externalBufYAMLFile.Build.Roots,
+						root,
+					)
+				}
 				for _, exclude := range rootToExcludes[root] {
 					// Excludes are defined to be sorted.
 					externalBufYAMLFile.Build.Excludes = append(
