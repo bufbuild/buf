@@ -15,7 +15,6 @@
 package bufmodule
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/syncext"
@@ -90,12 +89,12 @@ func newCommit(
 					return nil, err
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
-					return nil, fmt.Errorf(
-						"***Digest verification failed for commit %s***\n\tExpected digest: %q\n\tDownloaded commit digest: %q",
-						originalModuleKey.String(),
-						commitOptions.expectedDigest.String(),
-						moduleKeyDigest.String(),
-					)
+					return nil, &DigestMismatchError{
+						ModuleFullName: originalModuleKey.ModuleFullName(),
+						CommitID:       originalModuleKey.CommitID(),
+						ExpectedDigest: commitOptions.expectedDigest,
+						ActualDigest:   moduleKeyDigest,
+					}
 				}
 				return moduleKeyDigest, nil
 			},
