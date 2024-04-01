@@ -21,8 +21,11 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidNoImports(t *testing.T) {
@@ -47,13 +50,27 @@ func TestValidImportFromCache(t *testing.T) {
 
 func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 	t.Parallel()
+
+	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "people")
+	require.NoError(t, err)
+	commitID, err := uuidutil.FromDashless("fc7d540124fd42db92511c19a60a1d98")
+	require.NoError(t, err)
+	expectedDigest, err := bufmodule.ParseDigest("b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465")
+	require.NoError(t, err)
+	actualDigest, err := bufmodule.ParseDigest("b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053")
+	require.NoError(t, err)
+	digestMismatchError := &bufmodule.DigestMismatchError{
+		ModuleFullName: moduleFullName,
+		CommitID:       commitID,
+		ExpectedDigest: expectedDigest,
+		ActualDigest:   actualDigest,
+	}
+
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/people:fc7d540124fd42db92511c19a60a1d98***
-	Expected digest: "b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465"
-	Downloaded data digest: "b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053"`,
+		appFailureError(digestMismatchError).Error(),
 		func(use string) map[string]string {
 			return map[string]string{
 				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
@@ -68,13 +85,26 @@ func TestValidImportFromCorruptedCacheFile(t *testing.T) {
 
 func TestValidImportFromCorruptedCacheDep(t *testing.T) {
 	t.Parallel()
+	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "students")
+	require.NoError(t, err)
+	commitID, err := uuidutil.FromDashless("6c776ed5bee54462b06d31fb7f7c16b8")
+	require.NoError(t, err)
+	expectedDigest, err := bufmodule.ParseDigest("b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70")
+	require.NoError(t, err)
+	actualDigest, err := bufmodule.ParseDigest("b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c")
+	require.NoError(t, err)
+	digestMismatchError := &bufmodule.DigestMismatchError{
+		ModuleFullName: moduleFullName,
+		CommitID:       commitID,
+		ExpectedDigest: expectedDigest,
+		ActualDigest:   actualDigest,
+	}
+
 	appcmdtesting.RunCommandExitCodeStderr(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		1,
-		`Failure: ***Digest verification failed for module bufbuild.test/bufbot/students:6c776ed5bee54462b06d31fb7f7c16b8***
-	Expected digest: "b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70"
-	Downloaded data digest: "b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c"`,
+		appFailureError(digestMismatchError).Error(),
 		func(use string) map[string]string {
 			return map[string]string{
 				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),

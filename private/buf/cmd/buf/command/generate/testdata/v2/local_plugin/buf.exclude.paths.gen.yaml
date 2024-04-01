@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+    strategy: all
+inputs:
+  - directory: testdata/v2/local_plugin
+    exclude_paths:
+      - testdata/v2/local_plugin/a

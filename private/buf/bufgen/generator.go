@@ -204,7 +204,7 @@ func (g *generator) execPlugins(
 				}
 				includeWellKnownTypes := currentPluginConfig.IncludeWKT()
 				if includeWellKnownTypesOverride != nil {
-					includeImports = *includeWellKnownTypesOverride
+					includeWellKnownTypes = *includeWellKnownTypesOverride
 				}
 				response, err := g.execLocalPlugin(
 					ctx,
@@ -339,14 +339,14 @@ func (g *generator) execRemotePluginsV2(
 		if includeImportsOverride != nil {
 			includeImports = *includeImportsOverride
 		}
-		includeWellKnwonTypes := pluginConfig.PluginConfig.IncludeWKT()
+		includeWellKnownTypes := pluginConfig.PluginConfig.IncludeWKT()
 		if includeWellKnownTypesOverride != nil {
-			includeImports = *includeWellKnownTypesOverride
+			includeWellKnownTypes = *includeWellKnownTypesOverride
 		}
 		request, err := getPluginGenerationRequest(
 			pluginConfig.PluginConfig,
 			includeImports,
-			includeWellKnwonTypes,
+			includeWellKnownTypes,
 		)
 		if err != nil {
 			return nil, err

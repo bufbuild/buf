@@ -491,7 +491,7 @@ type externalBufGenYAMLFileV2 struct {
 
 // externalGeneratePluginConfigV2 represents a single plugin config in a v2 buf.gen.yaml file.
 type externalGeneratePluginConfigV2 struct {
-	// Exactly one of Remote, Binary and ProtocBuiltin is required.
+	// Exactly one of Remote, Local and ProtocBuiltin is required.
 	Remote *string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Revision is only valid with Remote set.
 	Revision *int `json:"revision,omitempty" yaml:"revision,omitempty"`
@@ -570,7 +570,7 @@ type externalInputConfigV2 struct {
 	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
 	Subdir              *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
 	Branch              *string `json:"branch,omitempty" yaml:"branch,omitempty"`
-	Commit              *string `json:"commit,omitempty" yaml:"tag,omitempty"`
+	Commit              *string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Tag                 *string `json:"tag,omitempty" yaml:"tag,omitempty"`
 	Ref                 *string `json:"ref,omitempty" yaml:"ref,omitempty"`
 	Depth               *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`

@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
 )
 
@@ -232,35 +233,40 @@ func (a *refParser) getRawRefForInputConfig(
 		rawRef.Format = "txtpb"
 	case bufconfig.InputConfigTypeYAMLImage:
 		rawRef.Format = "yaml"
+	default:
+		return nil, syserror.Newf("unknown InputConfigType: %v", inputConfig.Type())
 	}
 	// This cannot be set ahead of time, it can only happen after all options are read.
-	if rawRef.GitDepth == 0 {
-		// Default to 1
-		rawRef.GitDepth = 1
-		if rawRef.GitRef != "" {
-			// Default to 50 when using ref
-			rawRef.GitDepth = 50
+	if inputConfig.Type() == bufconfig.InputConfigTypeGitRepo {
+		// TODO FUTURE: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
+		if inputConfig.Depth() != nil {
+			if *inputConfig.Depth() == 0 {
+				return nil, NewDepthZeroError()
+			}
+			rawRef.GitDepth = *inputConfig.Depth()
+		}
+		rawRef.GitBranch = inputConfig.Branch()
+		rawRef.GitCommitOrTag = inputConfig.CommitOrTag()
+		rawRef.GitRef = inputConfig.Ref()
+		rawRef.GitRecurseSubmodules = inputConfig.RecurseSubmodules()
+		if rawRef.GitDepth == 0 {
+			// Default to 1
+			rawRef.GitDepth = 1
+			if rawRef.GitRef != "" {
+				// Default to 50 when using ref
+				rawRef.GitDepth = 50
+			}
 		}
 	}
 	var err error
-	rawRef.CompressionType, err = parseCompressionType(inputConfig.Compression())
-	if err != nil {
-		return nil, err
-	}
-	rawRef.GitBranch = inputConfig.Branch()
-	rawRef.GitCommitOrTag = inputConfig.CommitOrTag()
-	if err := a.validateRawRef(inputConfig.Location(), rawRef); err != nil {
-		return nil, err
-	}
-	rawRef.GitRef = inputConfig.Ref()
-	// TODO FUTURE: might change rawRef.Depth into a pointer or use some other way to handle the case where 0 is specified
-	if inputConfig.Depth() != nil {
-		if *inputConfig.Depth() == 0 {
-			return nil, NewDepthZeroError()
+	if compression := inputConfig.Compression(); compression != "" {
+		rawRef.CompressionType, err = parseCompressionType(compression)
+		if err != nil {
+			return nil, err
 		}
 	}
-	rawRef.GitRecurseSubmodules = inputConfig.RecurseSubmodules()
 	rawRef.IncludePackageFiles = inputConfig.IncludePackageFiles()
+	rawRef.ArchiveStripComponents = inputConfig.StripComponents()
 	rawRef.SubDirPath, err = parseSubDirPath(inputConfig.SubDir())
 	if err != nil {
 		return nil, err
@@ -341,13 +347,13 @@ func (a *refParser) validateRawRef(
 		}
 	} else {
 		if rawRef.GitBranch != "" || rawRef.GitCommitOrTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "git options set")
 		}
 	}
 	// not an archive format
 	if !archiveOK {
 		if rawRef.ArchiveStripComponents > 0 {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "archive options set")
 		}
 	} else {
 		if archiveFormatInfo.archiveType == ArchiveTypeZip && rawRef.CompressionType != 0 {
@@ -356,12 +362,12 @@ func (a *refParser) validateRawRef(
 	}
 	if !singleOK && !archiveOK {
 		if rawRef.CompressionType != 0 {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "compression set")
 		}
 	}
 	if !archiveOK && !gitOK {
 		if rawRef.SubDirPath != "" {
-			return NewOptionsInvalidForFormatError(rawRef.Format, displayName)
+			return NewOptionsInvalidForFormatError(rawRef.Format, displayName, "subdir set")
 		}
 	}
 	return nil
