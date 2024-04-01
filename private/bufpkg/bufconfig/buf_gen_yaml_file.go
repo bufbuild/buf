@@ -570,7 +570,7 @@ type externalInputConfigV2 struct {
 	StripComponents     *uint32 `json:"strip_components,omitempty" yaml:"strip_components,omitempty"`
 	Subdir              *string `json:"subdir,omitempty" yaml:"subdir,omitempty"`
 	Branch              *string `json:"branch,omitempty" yaml:"branch,omitempty"`
-	Commit              *string `json:"commit,omitempty" yaml:"tag,omitempty"`
+	Commit              *string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Tag                 *string `json:"tag,omitempty" yaml:"tag,omitempty"`
 	Ref                 *string `json:"ref,omitempty" yaml:"ref,omitempty"`
 	Depth               *uint32 `json:"depth,omitempty" yaml:"depth,omitempty"`
