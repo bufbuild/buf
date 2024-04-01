@@ -166,7 +166,8 @@ func newModuleData(
 			}
 			if !DigestEqual(expectedDigest, actualDigest) {
 				return &DigestMismatchError{
-					ModuleKey:      moduleKey,
+					ModuleFullName: moduleKey.ModuleFullName(),
+					CommitID:       moduleKey.CommitID(),
 					ExpectedDigest: expectedDigest,
 					ActualDigest:   actualDigest,
 				}

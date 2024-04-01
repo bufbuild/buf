@@ -230,7 +230,7 @@ func (m *DigestMismatchError) Error() string {
 	var builder strings.Builder
 	_, _ = builder.WriteString(`*** Digest verification failed`)
 	if m.ModuleFullName != nil {
-		_, _ = builder.WriteString(`for "`)
+		_, _ = builder.WriteString(` for "`)
 		_, _ = builder.WriteString(m.ModuleFullName.String())
 		if !m.CommitID.IsNil() {
 			_, _ = builder.WriteString(`:`)
@@ -239,16 +239,20 @@ func (m *DigestMismatchError) Error() string {
 		_, _ = builder.WriteString(`"`)
 	}
 	_, _ = builder.WriteString(` ***`)
-	_, _ = builder.WriteString("\n\n")
+	_, _ = builder.WriteString("\n")
 	if m.ExpectedDigest != nil && m.ActualDigest != nil {
+		_, _ = builder.WriteString("\t")
 		_, _ = builder.WriteString(`Expected digest: "`)
 		_, _ = builder.WriteString(m.ExpectedDigest.String())
 		_, _ = builder.WriteString(`"`)
 		_, _ = builder.WriteString("\n")
+		_, _ = builder.WriteString("\t")
 		_, _ = builder.WriteString(`Actual digest: "`)
+		_, _ = builder.WriteString(m.ActualDigest.String())
 		_, _ = builder.WriteString(`"`)
-		_, _ = builder.WriteString("\n\n")
+		_, _ = builder.WriteString("\n")
 	}
+	_, _ = builder.WriteString("\t")
 	_, _ = builder.WriteString(`This may either be a result of an attack, or a result of your local cache being corrupted. To clear your local cache, run "buf registry cc".`)
 	return builder.String()
 }

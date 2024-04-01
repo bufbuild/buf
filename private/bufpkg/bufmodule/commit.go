@@ -90,7 +90,8 @@ func newCommit(
 				}
 				if !DigestEqual(commitOptions.expectedDigest, moduleKeyDigest) {
 					return nil, &DigestMismatchError{
-						ModuleKey:      originalModuleKey,
+						ModuleFullName: originalModuleKey.ModuleFullName(),
+						CommitID:       originalModuleKey.CommitID(),
 						ExpectedDigest: commitOptions.expectedDigest,
 						ActualDigest:   moduleKeyDigest,
 					}
