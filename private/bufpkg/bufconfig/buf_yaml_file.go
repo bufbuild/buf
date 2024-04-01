@@ -507,35 +507,45 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 			externalBufYAMLFile.Name = moduleFullName.String()
 		}
 		rootToExcludes := moduleConfig.RootToExcludes()
-		if len(rootToExcludes) != 1 && fileVersion == FileVersionV1 {
-			return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
-		}
 		excludes, ok := rootToExcludes["."]
-		if !ok && fileVersion == FileVersionV1 {
-			return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
-		}
-		// If "." -> empty, do not add anything.
-		if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
-			roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
-			for _, root := range roots {
-				// Roots only valid for v1beta1
-				if fileVersion == FileVersionV1Beta1 {
+		switch fileVersion {
+		case FileVersionV1:
+			if len(rootToExcludes) != 1 {
+				return syserror.Newf("had rootToExcludes length %d for NewModuleConfig with FileVersion %v", len(rootToExcludes), fileVersion)
+			}
+			if !ok {
+				return syserror.Newf("had rootToExcludes without key \".\" for NewModuleConfig with FileVersion %v", fileVersion)
+			}
+			for _, exclude := range excludes {
+				// Excludes are defined to be sorted.
+				externalBufYAMLFile.Build.Excludes = append(
+					externalBufYAMLFile.Build.Excludes,
+					// Remember, in buf.yaml files, excludes are not relative to roots.
+					normalpath.Join(".", exclude),
+				)
+			}
+		case FileVersionV1Beta1:
+			// If "." -> empty, do not add anything.
+			if len(rootToExcludes) != 1 || !(ok && len(excludes) == 0) {
+				roots := slicesext.MapKeysToSortedSlice(rootToExcludes)
+				for _, root := range roots {
 					externalBufYAMLFile.Build.Roots = append(
 						externalBufYAMLFile.Build.Roots,
 						root,
 					)
-				} else if root != "." {
-					return syserror.Newf(`buf v1 RootToExcludes only allows root ".", found: %q`, root)
-				}
-				for _, exclude := range rootToExcludes[root] {
-					// Excludes are defined to be sorted.
-					externalBufYAMLFile.Build.Excludes = append(
-						externalBufYAMLFile.Build.Excludes,
-						// Remember, in buf.yaml files, excludes are not relative to roots.
-						normalpath.Join(root, exclude),
-					)
+					for _, exclude := range rootToExcludes[root] {
+						// Excludes are defined to be sorted.
+						externalBufYAMLFile.Build.Excludes = append(
+							externalBufYAMLFile.Build.Excludes,
+							// Remember, in buf.yaml files, excludes are not relative to roots.
+							normalpath.Join(root, exclude),
+						)
+					}
 				}
 			}
+		default:
+			// Unreachable - we're in a v1/v1beta1 case statement above.
+			return syserror.Newf("expected v1 or v1beta, got FileVersion: %v", fileVersion)
 		}
 		externalBufYAMLFile.Lint = getExternalLintV1Beta1V1ForLintConfig(moduleConfig.LintConfig(), ".")
 		externalBufYAMLFile.Breaking = getExternalBreakingForBreakingConfig(moduleConfig.BreakingConfig(), ".")
@@ -549,7 +559,7 @@ func writeBufYAMLFile(writer io.Writer, bufYAMLFile BufYAMLFile) error {
 		externalBufYAMLFile := externalBufYAMLFileV2{
 			Version: fileVersion.String(),
 		}
-		// Alredy sorted.
+		// Already sorted.
 		externalBufYAMLFile.Deps = slicesext.Map(
 			bufYAMLFile.ConfiguredDepModuleRefs(),
 			func(moduleRef bufmodule.ModuleRef) string {
