@@ -144,7 +144,7 @@ type InputConfig interface {
 	SubDir() string
 	// Branch returns the git branch to checkout out, not empty only if format is git.
 	Branch() string
-	// CommitOrTag returns the git tag to checkout, not empty only if format is git.
+	// CommitOrTag returns the full commit hash or tag to checkout, not empty only if format is git.
 	CommitOrTag() string
 	// Ref returns the git ref to checkout, not empty only if format is git.
 	Ref() string
@@ -171,7 +171,7 @@ func NewGitRepoInputConfig(
 	location string,
 	subDir string,
 	branch string,
-	tag string,
+	commitOrTag string,
 	ref string,
 	depth *uint32,
 	recurseSubModules bool,
@@ -184,7 +184,7 @@ func NewGitRepoInputConfig(
 		location:          location,
 		subDir:            subDir,
 		branch:            branch,
-		commitOrTag:       tag,
+		commitOrTag:       commitOrTag,
 		ref:               ref,
 		depth:             depth,
 		recurseSubmodules: recurseSubModules,
