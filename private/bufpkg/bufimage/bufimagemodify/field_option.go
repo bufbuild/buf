@@ -53,13 +53,9 @@ func modifyJsType(
 	if len(overrideRules) == 0 {
 		return nil
 	}
-	for _, disable := range config.Disables() {
-		// If the entire file is disabled, skip.
-		if fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName()) &&
-			disable.FieldName() == "" &&
-			(disable.FieldOption() == bufconfig.FieldOptionUnspecified || disable.FieldOption() == bufconfig.FieldOptionJSType) {
-			return nil
-		}
+	// If the entire file is disabled, skip.
+	if isFieldOptionDisabledForFile(imageFile, bufconfig.FieldOptionJSType, config, "") {
+		return nil
 	}
 	if datawkt.Exists(imageFile.Path()) {
 		return nil
@@ -75,13 +71,9 @@ func modifyJsType(
 			if !ok {
 				return nil
 			}
-			for _, disable := range config.Disables() {
-				// If the entire file is disabled, skip.
-				if fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName()) &&
-					(disable.FieldName() == "" || disable.FieldName() == string(fullName)) &&
-					(disable.FieldOption() == bufconfig.FieldOptionUnspecified || disable.FieldOption() == bufconfig.FieldOptionJSType) {
-					return nil
-				}
+			// If the field is disabled, skip.
+			if isFieldOptionDisabledForFile(imageFile, bufconfig.FieldOptionJSType, config, fullName) {
+				return nil
 			}
 			var jsType *descriptorpb.FieldOptions_JSType
 			for _, override := range config.Overrides() {
@@ -131,4 +123,28 @@ func isJsTypePermittedForType(fieldType descriptorpb.FieldDescriptorProto_Type) 
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_SINT64 ||
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_FIXED64 ||
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_SFIXED64
+}
+
+func isFieldOptionDisabledForFile(
+	imageFile bufimage.ImageFile,
+	fieldOption bufconfig.FieldOption,
+	config bufconfig.GenerateManagedConfig,
+	fullName protoreflect.FullName,
+) (isDisabled bool) {
+	for _, disableRule := range config.Disables() {
+		if disableRule.FileOption() != bufconfig.FileOptionUnspecified {
+			continue // FileOption specified, not a matching rule.
+		}
+		if disableRule.FieldOption() != bufconfig.FieldOptionUnspecified && disableRule.FieldOption() != fieldOption {
+			continue // FieldOption specified, does not match option.
+		}
+		if disableRule.FieldName() != "" && disableRule.FieldName() != string(fullName) {
+			continue // FieldName specified, does not match field.
+		}
+		if !fileMatchConfig(imageFile, disableRule.Path(), disableRule.ModuleFullName()) {
+			continue
+		}
+		return true
+	}
+	return false
 }
