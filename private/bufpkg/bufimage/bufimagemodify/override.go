@@ -235,6 +235,9 @@ func isFileOptionDisabledForFile(
 		if disableRule.FileOption() != bufconfig.FileOptionUnspecified && disableRule.FileOption() != fileOption {
 			continue
 		}
+		if disableRule.FieldOption() != bufconfig.FieldOptionUnspecified {
+			continue // FieldOption specified, not a matching FileOption
+		}
 		if !fileMatchConfig(imageFile, disableRule.Path(), disableRule.ModuleFullName()) {
 			continue
 		}
