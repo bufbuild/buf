@@ -20,8 +20,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
+	"buf.build/gen/go/bufbuild/registry/connectrpc/go/buf/registry/module/v1/modulev1connect"
+	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -29,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/zaputil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.akshayshah.org/memhttp/memhttptest"
 )
 
 type testMachine struct{}
@@ -146,4 +150,22 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	})(context.Background(), connect.NewRequest(&bytes.Buffer{}))
 	assert.Error(t, err)
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
+}
+
+func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {
+	t.Parallel()
+	mux := http.NewServeMux()
+	mux.Handle(modulev1connect.NewCommitServiceHandler(&modulev1connect.UnimplementedCommitServiceHandler{}))
+	server := memhttptest.New(t, mux)
+	client := modulev1connect.NewCommitServiceClient(
+		server.Client(),
+		server.URL(),
+		connect.WithInterceptors(NewAugmentedConnectErrorInterceptor()),
+	)
+	_, err := client.GetCommits(context.Background(), connect.NewRequest(&modulev1.GetCommitsRequest{}))
+	assert.Error(t, err)
+	var augmentedConnectError *AugmentedConnectError
+	assert.ErrorAs(t, err, &augmentedConnectError)
+	assert.Equal(t, "example.com", augmentedConnectError.Addr())
+	assert.Equal(t, "/buf.registry.module.v1.CommitService/GetCommits", augmentedConnectError.Procedure())
 }

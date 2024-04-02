@@ -47,3 +47,31 @@ func AsAuthError(err error) (*AuthError, bool) {
 	ok := errors.As(err, &authErr)
 	return authErr, ok
 }
+
+// AugmentedConnectError wraps an error, providing the Procedure and Addr of
+// the request for introspection in callers.
+type AugmentedConnectError struct {
+	cause     error
+	procedure string
+	addr      string
+}
+
+// Error implements the error interface and returns the error message.
+func (e *AugmentedConnectError) Error() string {
+	return e.cause.Error()
+}
+
+// Unwrap returns the underlying error.
+func (e *AugmentedConnectError) Unwrap() error {
+	return e.cause
+}
+
+// Procedure returns the connect.AnyRequest's Spec().Procedure.
+func (e *AugmentedConnectError) Procedure() string {
+	return e.procedure
+}
+
+// Addr returns the connect.AnyRequest's Peer().Addr.
+func (e *AugmentedConnectError) Addr() string {
+	return e.addr
+}

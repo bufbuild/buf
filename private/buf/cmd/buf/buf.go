@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 
 	"connectrpc.com/connect"
@@ -304,6 +305,19 @@ func wrapError(err error) error {
 		return err
 	}
 	if isConnectError {
+		var augmentedConnectError *bufconnect.AugmentedConnectError
+		isAugmentedConnectErr := errors.As(err, &augmentedConnectError)
+		if isPossibleNewCLIOldBSRError(connectErr) && isAugmentedConnectErr {
+			return fmt.Errorf("Failure: %[1]s for https://%[2]s%[3]s\n"+
+				"This version of the buf CLI may require APIs that have not yet been deployed to https://%[2]s\n"+
+				"To resolve this failure, you can either:\n"+
+				"- Try using an older version of the buf CLI\n"+
+				"- Contact the site admin for https://%[2]s to upgrade the instance",
+				connectErr,
+				augmentedConnectError.Addr(),
+				augmentedConnectError.Procedure(),
+			)
+		}
 		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
@@ -318,7 +332,7 @@ func wrapError(err error) error {
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so,
-			// get the address usedso that we can display a more helpful error message.
+			// get the address used so that we can display a more helpful error message.
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
 				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, dnsError.Name)
 			}
@@ -375,4 +389,20 @@ func wrappedTLSError(err error) error {
 
 func appFailureError(err error) error {
 	return fmt.Errorf("Failure: %w", err)
+}
+
+// isPossibleNewCLIOldBSRError determines if an error might be from a newer
+// version of the CLI interacting with an older version of the BSR.
+func isPossibleNewCLIOldBSRError(connectErr *connect.Error) bool {
+	switch connectErr.Code() {
+	case connect.CodeUnknown:
+		// Older versions of the BSR return errors of this shape
+		// for unrecognized services.
+		return connectErr.Message() == fmt.Sprintf("%d %s", http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+	case connect.CodeUnimplemented:
+		// RPC was known, but unimplemented in the BSR version.
+		return true
+	default:
+		return false
+	}
 }
