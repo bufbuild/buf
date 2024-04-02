@@ -56,6 +56,22 @@ lint:
 
 	testReadWriteBufYAMLFileRoundTrip(
 		t,
+		//input
+		`version: v1
+build:
+  excludes:
+    - tests
+`,
+		// expected output
+		`version: v1
+build:
+  excludes:
+    - tests
+`,
+	)
+
+	testReadWriteBufYAMLFileRoundTrip(
+		t,
 		// input
 		`version: v2
 lint:
