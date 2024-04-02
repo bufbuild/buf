@@ -46,16 +46,26 @@ func modifyJsType(
 	overrideRules := slicesext.Filter(
 		config.Overrides(),
 		func(override bufconfig.ManagedOverrideRule) bool {
-			return override.FieldOption() == bufconfig.FieldOptionJSType
+			return override.FieldOption() == bufconfig.FieldOptionJSType &&
+				fileMatchConfig(imageFile, override.Path(), override.ModuleFullName())
 		},
 	)
 	// Unless specified, js type is not modified.
 	if len(overrideRules) == 0 {
 		return nil
 	}
+	disableRules := slicesext.Filter(
+		config.Disables(),
+		func(disable bufconfig.ManagedDisableRule) bool {
+			return (disable.FieldOption() == bufconfig.FieldOptionJSType ||
+				(disable.FieldOption() == bufconfig.FieldOptionUnspecified &&
+					disable.FileOption() == bufconfig.FileOptionUnspecified)) &&
+				fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName())
+		},
+	)
 	// If the entire file is disabled, skip.
-	for _, disableRule := range config.Disables() {
-		if isFieldOptionDisabledForFile(disableRule, imageFile, bufconfig.FieldOptionJSType) {
+	for _, disableRule := range disableRules {
+		if disableRule.FieldName() == "" {
 			return nil
 		}
 	}
@@ -74,16 +84,14 @@ func modifyJsType(
 				return nil
 			}
 			// If the field is disabled, skip.
-			for _, disableRule := range config.Disables() {
-				if isFieldOptionDisabledForField(disableRule, imageFile, bufconfig.FieldOptionJSType, fullName) {
+			for _, disableRule := range disableRules {
+				if disableRule.FieldName() == string(fullName) {
 					return nil
 				}
 			}
 			var jsType *descriptorpb.FieldOptions_JSType
-			for _, override := range config.Overrides() {
-				if fileMatchConfig(imageFile, override.Path(), override.ModuleFullName()) &&
-					(override.FieldName() == "" || override.FieldName() == string(fullName)) &&
-					override.FieldOption() == bufconfig.FieldOptionJSType {
+			for _, override := range overrideRules {
+				if override.FieldName() == "" || override.FieldName() == string(fullName) {
 					jsTypeValue, ok := override.Value().(descriptorpb.FieldOptions_JSType)
 					if !ok {
 						return fmt.Errorf("invalid js_type override value of type %T", override.Value())
@@ -127,33 +135,4 @@ func isJsTypePermittedForType(fieldType descriptorpb.FieldDescriptorProto_Type) 
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_SINT64 ||
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_FIXED64 ||
 		fieldType == descriptorpb.FieldDescriptorProto_TYPE_SFIXED64
-}
-
-func isFieldOptionDisabledForFile(
-	disableRule bufconfig.ManagedDisableRule,
-	imageFile bufimage.ImageFile,
-	fieldOption bufconfig.FieldOption,
-) bool {
-	if disableRule.FileOption() != bufconfig.FileOptionUnspecified {
-		return false // FileOption specified, not a matching rule.
-	}
-	if disableRule.FieldOption() != bufconfig.FieldOptionUnspecified && disableRule.FieldOption() != fieldOption {
-		return false // FieldOption specified, does not match option.
-	}
-	if !fileMatchConfig(imageFile, disableRule.Path(), disableRule.ModuleFullName()) {
-		return false
-	}
-	return true
-}
-
-func isFieldOptionDisabledForField(
-	disableRule bufconfig.ManagedDisableRule,
-	imageFile bufimage.ImageFile,
-	fieldOption bufconfig.FieldOption,
-	fullName protoreflect.FullName,
-) bool {
-	if disableRule.FieldName() != "" && disableRule.FieldName() != string(fullName) {
-		return false // FieldName specified, does not match field.
-	}
-	return isFieldOptionDisabledForFile(disableRule, imageFile, fieldOption)
 }
