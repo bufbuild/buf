@@ -46,18 +46,26 @@ func modifyJsType(
 	overrideRules := slicesext.Filter(
 		config.Overrides(),
 		func(override bufconfig.ManagedOverrideRule) bool {
-			return override.FieldOption() == bufconfig.FieldOptionJSType
+			return override.FieldOption() == bufconfig.FieldOptionJSType &&
+				fileMatchConfig(imageFile, override.Path(), override.ModuleFullName())
 		},
 	)
 	// Unless specified, js type is not modified.
 	if len(overrideRules) == 0 {
 		return nil
 	}
-	for _, disable := range config.Disables() {
-		// If the entire file is disabled, skip.
-		if fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName()) &&
-			disable.FieldName() == "" &&
-			(disable.FieldOption() == bufconfig.FieldOptionUnspecified || disable.FieldOption() == bufconfig.FieldOptionJSType) {
+	disableRules := slicesext.Filter(
+		config.Disables(),
+		func(disable bufconfig.ManagedDisableRule) bool {
+			return (disable.FieldOption() == bufconfig.FieldOptionJSType ||
+				(disable.FieldOption() == bufconfig.FieldOptionUnspecified &&
+					disable.FileOption() == bufconfig.FileOptionUnspecified)) &&
+				fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName())
+		},
+	)
+	// If the entire file is disabled, skip.
+	for _, disableRule := range disableRules {
+		if disableRule.FieldName() == "" {
 			return nil
 		}
 	}
@@ -75,19 +83,15 @@ func modifyJsType(
 			if !ok {
 				return nil
 			}
-			for _, disable := range config.Disables() {
-				// If the entire file is disabled, skip.
-				if fileMatchConfig(imageFile, disable.Path(), disable.ModuleFullName()) &&
-					(disable.FieldName() == "" || disable.FieldName() == string(fullName)) &&
-					(disable.FieldOption() == bufconfig.FieldOptionUnspecified || disable.FieldOption() == bufconfig.FieldOptionJSType) {
+			// If the field is disabled, skip.
+			for _, disableRule := range disableRules {
+				if disableRule.FieldName() == string(fullName) {
 					return nil
 				}
 			}
 			var jsType *descriptorpb.FieldOptions_JSType
-			for _, override := range config.Overrides() {
-				if fileMatchConfig(imageFile, override.Path(), override.ModuleFullName()) &&
-					(override.FieldName() == "" || override.FieldName() == string(fullName)) &&
-					override.FieldOption() == bufconfig.FieldOptionJSType {
+			for _, override := range overrideRules {
+				if override.FieldName() == "" || override.FieldName() == string(fullName) {
 					jsTypeValue, ok := override.Value().(descriptorpb.FieldOptions_JSType)
 					if !ok {
 						return fmt.Errorf("invalid js_type override value of type %T", override.Value())
