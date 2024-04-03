@@ -77,8 +77,8 @@ type Module interface {
 	ModuleFullName() ModuleFullName
 	// CommitID returns the BSR ID of the Commit.
 	//
-	// A CommitID is always a dashful UUID, i.e. this is a proper UUID.
-	// In situations where a dashless UUID is needed, it is up to the caller to do so (i.e. with v1 buf.locks).
+	// It is up to the caller to convert this to a dashless ID when necessary.
+	//
 	// May be empty, that is CommitID().IsNil() may be true.
 	// Callers should not rely on this value being present.
 	//

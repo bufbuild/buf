@@ -30,8 +30,11 @@ import (
 )
 
 type universalProtoCommit struct {
-	ID         string
-	OwnerID    string
+	// Dashless
+	ID string
+	// Dashless
+	OwnerID string
+	// Dashless
 	ModuleID   string
 	CreateTime time.Time
 	Digest     bufmodule.Digest

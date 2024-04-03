@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -139,7 +139,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	for _, v1beta1ProtoGraphCommit := range v1beta1ProtoGraph.Commits {
 		v1beta1ProtoCommit := v1beta1ProtoGraphCommit.Commit
 		registry := v1beta1ProtoGraphCommit.Registry
-		commitID, err := uuid.FromString(v1beta1ProtoCommit.Id)
+		commitID, err := uuidutil.FromDashless(v1beta1ProtoCommit.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -168,7 +168,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 	}
 	for _, v1beta1ProtoEdge := range v1beta1ProtoGraph.Edges {
 		fromRegistry := v1beta1ProtoEdge.FromNode.Registry
-		fromCommitID, err := uuid.FromString(v1beta1ProtoEdge.FromNode.CommitId)
+		fromCommitID, err := uuidutil.FromDashless(v1beta1ProtoEdge.FromNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +180,7 @@ func (a *graphProvider) GetGraphForModuleKeys(
 			return nil, syserror.Newf("did not have RegistryCommitID %v in registryCommitIDToModuleKey", fromRegistryCommitID)
 		}
 		toRegistry := v1beta1ProtoEdge.ToNode.Registry
-		toCommitID, err := uuid.FromString(v1beta1ProtoEdge.ToNode.CommitId)
+		toCommitID, err := uuidutil.FromDashless(v1beta1ProtoEdge.ToNode.CommitId)
 		if err != nil {
 			return nil, err
 		}
@@ -249,7 +249,7 @@ func (a *graphProvider) getV1Beta1ProtoGraphForModuleKeys(
 						return &modulev1beta1.GetGraphRequest_ResourceRef{
 							ResourceRef: &modulev1beta1.ResourceRef{
 								Value: &modulev1beta1.ResourceRef_Id{
-									Id: registryCommitID.CommitID.String(),
+									Id: uuidutil.ToDashless(registryCommitID.CommitID),
 								},
 							},
 							Registry: registryCommitID.Registry,

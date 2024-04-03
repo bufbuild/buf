@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -338,7 +338,7 @@ func (p *moduleDataStore) putModuleData(
 		}
 		externalModuleData.Deps[i] = externalModuleDataDep{
 			Name:   depModuleKey.ModuleFullName().String(),
-			Commit: depModuleKey.CommitID().String(),
+			Commit: uuidutil.ToDashless(depModuleKey.CommitID()),
 			Digest: digest.String(),
 		}
 	}
@@ -487,9 +487,9 @@ func (p *moduleDataStore) logDebugModuleKey(moduleKey bufmodule.ModuleKey, messa
 
 // Returns the module's path within the store if storing individual files.
 //
-// This is "digestType/registry/owner/name/${COMMIT_ID}",
-// e.g. the module "buf.build/acme/weather" with commit "12345" and digest
-// type "b5" will return "b5/buf.build/acme/weather/12345".
+// This is "digestType/registry/owner/name/dashlessCommitID",
+// e.g. the module "buf.build/acme/weather" with commit "12345-abcde" and digest
+// type "b5" will return "b5/buf.build/acme/weather/12345abcde".
 func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	digest, err := moduleKey.Digest()
 	if err != nil {
@@ -500,15 +500,15 @@ func getModuleDataStoreDirPath(moduleKey bufmodule.ModuleKey) (string, error) {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID().String(),
+		uuidutil.ToDashless(moduleKey.CommitID()),
 	), nil
 }
 
 // Returns the module's path within the store if storing tar files.
 //
-// This is "registry/owner/name/${COMMIT_ID}.tar",
-// e.g. the module "buf.build/acme/weather" with commit "12345" and digest
-// type "b5" will return "b5/buf.build/acme/weather/12345.tar".
+// This is "registry/owner/name/dashlessCommitID.tar",
+// e.g. the module "buf.build/acme/weather" with commit "12345-abcde" and digest
+// type "b5" will return "b5/buf.build/acme/weather/12345abcde.tar".
 func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) (string, error) {
 	digest, err := moduleKey.Digest()
 	if err != nil {
@@ -519,7 +519,7 @@ func getModuleDataStoreTarPath(moduleKey bufmodule.ModuleKey) (string, error) {
 		moduleKey.ModuleFullName().Registry(),
 		moduleKey.ModuleFullName().Owner(),
 		moduleKey.ModuleFullName().Name(),
-		moduleKey.CommitID().String()+".tar",
+		uuidutil.ToDashless(moduleKey.CommitID())+".tar",
 	), nil
 }
 
@@ -541,7 +541,7 @@ func getDeclaredDepModuleKeyForExternalModuleDataDep(dep externalModuleDataDep) 
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := uuid.FromString(dep.Commit)
+	commitID, err := uuidutil.FromDashless(dep.Commit)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +586,8 @@ func (e externalModuleData) isValid() bool {
 
 // externalModuleDataDep represents a dependency.
 type externalModuleDataDep struct {
-	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Dashless
 	Commit string `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest string `json:"digest,omitempty" yaml:"digest,omitempty"`
 }

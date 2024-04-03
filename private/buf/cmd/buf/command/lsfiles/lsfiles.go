@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
@@ -253,8 +254,9 @@ type externalImageFileInfo struct {
 	Path       string `json:"path" yaml:"path"`
 	ImportPath string `json:"import_path" yaml:"import_path"`
 	Module     string `json:"module" yaml:"module"`
-	Commit     string `json:"commit" yaml:"commit"`
-	IsImport   bool   `json:"is_import" yaml:"is_import"`
+	// Dashless
+	Commit   string `json:"commit" yaml:"commit"`
+	IsImport bool   `json:"is_import" yaml:"is_import"`
 }
 
 func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalImageFileInfo {
@@ -264,7 +266,7 @@ func newExternalImageFileInfo(imageFileInfo bufimage.ImageFileInfo) *externalIma
 	}
 	var commit string
 	if commitID := imageFileInfo.CommitID(); !commitID.IsNil() {
-		commit = commitID.String()
+		commit = uuidutil.ToDashless(commitID)
 	}
 	return &externalImageFileInfo{
 		Path: imageFileInfo.LocalPath(),

@@ -429,7 +429,6 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 					}
 					// we only want to set this if there is a module name
 					if protoCommitID := protoModuleInfo.GetCommit(); protoCommitID != "" {
-						// Need to use dashless for historical reasons.
 						commitID, err = uuidutil.FromDashless(protoCommitID)
 						if err != nil {
 							return nil, err

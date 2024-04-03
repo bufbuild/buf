@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
@@ -164,7 +165,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedModuleKeys(
 	return slicesext.MapError(
 		universalProtoCommits,
 		func(universalProtoCommit *universalProtoCommit) (slicesext.Indexed[bufmodule.Commit], error) {
-			commitID, err := uuid.FromString(universalProtoCommit.ID)
+			commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 			if err != nil {
 				return slicesext.Indexed[bufmodule.Commit]{}, err
 			}
@@ -215,7 +216,7 @@ func (a *commitProvider) getIndexedCommitsForRegistryAndIndexedCommitKeys(
 	return slicesext.MapError(
 		universalProtoCommits,
 		func(universalProtoCommit *universalProtoCommit) (slicesext.Indexed[bufmodule.Commit], error) {
-			commitID, err := uuid.FromString(universalProtoCommit.ID)
+			commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 			if err != nil {
 				return slicesext.Indexed[bufmodule.Commit]{}, err
 			}

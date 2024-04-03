@@ -16,6 +16,7 @@ package bufmodulestore
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +26,7 @@ func logDebugModuleKey(logger *zap.Logger, moduleKey bufmodule.ModuleKey, messag
 			append(
 				[]zap.Field{
 					zap.String("moduleFullName", moduleKey.ModuleFullName().String()),
-					zap.String("commitID", moduleKey.CommitID().String()),
+					zap.String("commitID", uuidutil.ToDashless(moduleKey.CommitID())),
 				},
 				fields...,
 			)...,
@@ -40,7 +41,7 @@ func logDebugCommitKey(logger *zap.Logger, commitKey bufmodule.CommitKey, messag
 				[]zap.Field{
 					zap.String("digestType", commitKey.DigestType().String()),
 					zap.String("registry", commitKey.Registry()),
-					zap.String("commitID", commitKey.CommitID().String()),
+					zap.String("commitID", uuidutil.ToDashless(commitKey.CommitID())),
 				},
 				fields...,
 			)...,

@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
@@ -138,7 +139,7 @@ func run(
 func moduleToString(module bufmodule.Module) string {
 	if moduleFullName := module.ModuleFullName(); moduleFullName != nil {
 		if commitID := module.CommitID(); !commitID.IsNil() {
-			return moduleFullName.String() + ":" + commitID.String()
+			return moduleFullName.String() + ":" + uuidutil.ToDashless(commitID)
 		}
 		return moduleFullName.String()
 	}

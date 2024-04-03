@@ -7,13 +7,12 @@ cd "${DIR}"
 
 B4_DATE_DIGEST="$(buf-digest --digest-type shake256 bsr/buf.testing/acme/date bsr/buf.testing/acme/extension | grep date | cut -f 2 -d ' ')"
 B4_EXTENSION_DIGEST="$(buf-digest --digest-type shake256 bsr/buf.testing/acme/date bsr/buf.testing/acme/extension | grep extension | cut -f 2 -d ' ')"
-B4_DATE_COMMIT_ID="ffded0b4cf6b47cab74da08d291a3c2f"
-B4_EXTENSION_COMMIT_ID="b8488077ea6d4f6d9562a337b98259c8"
 
 B5_DATE_DIGEST="$(buf-digest --digest-type b5 bsr/buf.testing/acme/date bsr/buf.testing/acme/extension | grep date | cut -f 2 -d ' ')"
 B5_EXTENSION_DIGEST="$(buf-digest --digest-type b5 bsr/buf.testing/acme/date bsr/buf.testing/acme/extension | grep extension | cut -f 2 -d ' ')"
-B5_DATE_COMMIT_ID="ffded0b4-cf6b-47ca-b74d-a08d291a3c2f"
-B5_EXTENSION_COMMIT_ID="b8488077-ea6d-4f6d-9562-a337b98259c8"
+
+DATE_COMMIT_ID="ffded0b4cf6b47cab74da08d291a3c2f"
+EXTENSION_COMMIT_ID="b8488077ea6d4f6d9562a337b98259c8"
 
 rm -f workspacev1/finance/bond/proto/buf.lock
 cat <<EOF > workspacev1/finance/bond/proto/buf.lock
@@ -22,12 +21,12 @@ deps:
   - remote: buf.testing
     owner: acme
     repository: date
-    commit: ${B4_DATE_COMMIT_ID}
+    commit: ${DATE_COMMIT_ID}
     digest: ${B4_DATE_DIGEST}
   - remote: buf.testing
     owner: acme
     repository: extension
-    commit: ${B4_EXTENSION_COMMIT_ID}
+    commit: ${EXTENSION_COMMIT_ID}
     digest: ${B4_EXTENSION_DIGEST}
 EOF
 
@@ -39,10 +38,10 @@ cat <<EOF > workspacev2/buf.lock
 version: v2
 deps:
   - name: buf.testing/acme/date
-    commit: ${B5_DATE_COMMIT_ID}
+    commit: ${DATE_COMMIT_ID}
     digest: ${B5_DATE_DIGEST}
   - name: buf.testing/acme/extension
-    commit: ${B5_EXTENSION_COMMIT_ID}
+    commit: ${EXTENSION_COMMIT_ID}
     digest: ${B5_EXTENSION_DIGEST}
 EOF
 

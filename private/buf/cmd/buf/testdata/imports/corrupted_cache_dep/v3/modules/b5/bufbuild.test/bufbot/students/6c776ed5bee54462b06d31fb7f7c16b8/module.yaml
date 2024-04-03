@@ -1,0 +1,9 @@
+version: v1
+deps:
+  - name: bufbuild.test/bufbot/people
+    commit: fc7d540124fd42db92511c19a60a1d98
+    # Last character changed from 5 to 4 to corrupt digest.
+    digest: b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631464
+files_dir: files
+v1_buf_yaml_file: v1_buf_yaml/buf.yaml
+v1_buf_lock_file: v1_buf_lock/buf.lock

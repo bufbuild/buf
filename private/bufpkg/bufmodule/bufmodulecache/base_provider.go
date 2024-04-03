@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 	"go.uber.org/zap"
 )
@@ -89,7 +90,7 @@ func (p *baseProvider[K, V]) getValuesForKeys(ctx context.Context, keys []K) ([]
 			commitID := p.valueToCommitID(value)
 			indexedKey, ok := commitIDToIndexedKey[commitID]
 			if !ok {
-				return slicesext.Indexed[V]{}, syserror.Newf("did not get value from store with commitID %q", commitID)
+				return slicesext.Indexed[V]{}, syserror.Newf("did not get value from store with commitID %q", uuidutil.ToDashless(commitID))
 			}
 			return slicesext.Indexed[V]{
 				Value: value,

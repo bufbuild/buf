@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
 
@@ -189,7 +190,7 @@ func labelNameToV1Beta1ProtoScopedLabelRef(labelName string) *modulev1beta1.Scop
 func commitIDToV1ProtoResourceRef(commitID uuid.UUID) *modulev1.ResourceRef {
 	return &modulev1.ResourceRef{
 		Value: &modulev1.ResourceRef_Id{
-			Id: commitID.String(),
+			Id: uuidutil.ToDashless(commitID),
 		},
 	}
 }
@@ -201,7 +202,7 @@ func commitIDsToV1ProtoResourceRefs(commitIDs []uuid.UUID) []*modulev1.ResourceR
 func commitIDToV1Beta1ProtoResourceRef(commitID uuid.UUID) *modulev1beta1.ResourceRef {
 	return &modulev1beta1.ResourceRef{
 		Value: &modulev1beta1.ResourceRef_Id{
-			Id: commitID.String(),
+			Id: uuidutil.ToDashless(commitID),
 		},
 	}
 }

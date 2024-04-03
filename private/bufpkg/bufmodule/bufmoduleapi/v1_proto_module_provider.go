@@ -45,13 +45,14 @@ func newV1ProtoModuleProvider(
 	}
 }
 
-func (a *v1ProtoModuleProvider) getV1ProtoModuleForModuleID(
+func (a *v1ProtoModuleProvider) getV1ProtoModuleForProtoModuleID(
 	ctx context.Context,
 	registry string,
-	moduleID string,
+	// Dashless
+	protoModuleID string,
 ) (*modulev1.Module, error) {
 	return a.protoModuleCache.GetOrAdd(
-		registry+"/"+moduleID,
+		registry+"/"+protoModuleID,
 		func() (*modulev1.Module, error) {
 			response, err := a.clientProvider.V1ModuleServiceClient(registry).GetModules(
 				ctx,
@@ -60,7 +61,7 @@ func (a *v1ProtoModuleProvider) getV1ProtoModuleForModuleID(
 						ModuleRefs: []*modulev1.ModuleRef{
 							{
 								Value: &modulev1.ModuleRef_Id{
-									Id: moduleID,
+									Id: protoModuleID,
 								},
 							},
 						},

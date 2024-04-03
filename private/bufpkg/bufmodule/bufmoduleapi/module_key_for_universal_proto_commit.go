@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/gofrs/uuid/v5"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
 func getModuleKeyForUniversalProtoCommit(
@@ -40,7 +40,7 @@ func getModuleKeyForUniversalProtoCommit(
 	if err != nil {
 		return nil, err
 	}
-	commitID, err := uuid.FromString(universalProtoCommit.ID)
+	commitID, err := uuidutil.FromDashless(universalProtoCommit.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +58,12 @@ func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 	v1ProtoModuleProvider *v1ProtoModuleProvider,
 	v1ProtoOwnerProvider *v1ProtoOwnerProvider,
 	registry string,
+	// Dashless
 	protoOwnerID string,
+	// Dashless
 	protoModuleID string,
 ) (bufmodule.ModuleFullName, error) {
-	v1ProtoModule, err := v1ProtoModuleProvider.getV1ProtoModuleForModuleID(
+	v1ProtoModule, err := v1ProtoModuleProvider.getV1ProtoModuleForProtoModuleID(
 		ctx,
 		registry,
 		protoModuleID,
@@ -69,7 +71,7 @@ func getModuleFullNameForRegistryProtoOwnerIDProtoModuleID(
 	if err != nil {
 		return nil, err
 	}
-	v1ProtoOwner, err := v1ProtoOwnerProvider.getV1ProtoOwnerForOwnerID(
+	v1ProtoOwner, err := v1ProtoOwnerProvider.getV1ProtoOwnerForProtoOwnerID(
 		ctx,
 		registry,
 		protoOwnerID,
