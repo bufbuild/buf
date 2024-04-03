@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix issue where `buf lint` incorrectly reports an error for `(buf.validate.field).repeated`
+  is set for a repeated validation rule.
 
 ## [v1.30.0] - 2024-03-07
 
