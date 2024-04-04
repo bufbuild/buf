@@ -463,7 +463,7 @@ func newManagedConfigFromExternalV2(
 			continue
 		}
 		if externalOverrideConfig.Field != "" {
-			return nil, errors.New("field must not be set for file_option")
+			return nil, errors.New("must not set field for a file_option override")
 		}
 		fileOption, err := parseFileOption(externalOverrideConfig.FileOption)
 		if err != nil {
