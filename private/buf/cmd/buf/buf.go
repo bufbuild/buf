@@ -398,6 +398,8 @@ func isPossibleNewCLIOldBSRError(connectErr *connect.Error) bool {
 	case connect.CodeUnknown:
 		// Older versions of the BSR return errors of this shape
 		// for unrecognized services.
+		// NOTE: This handling can be removed once all BSR instances
+		// are upgraded past v1.7.0.
 		return connectErr.Message() == fmt.Sprintf("%d %s", http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 	case connect.CodeUnimplemented:
 		// RPC was known, but unimplemented in the BSR version.
