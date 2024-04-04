@@ -295,6 +295,18 @@ plugins:
 `),
 	)
 	require.ErrorContains(t, err, "must not set field for a file_option override")
+
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+managed:
+  disable:
+    - file_option: csharp_namespace
+      field_option: jstype
+plugins:
+  - local: protoc-gen-csharp
+`),
+	)
+	require.ErrorContains(t, err, "at most one of file_option and field_option can be specified")
 }
 
 func testReadBufGenYAMLFile(
