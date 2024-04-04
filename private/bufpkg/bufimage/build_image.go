@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	_ "unsafe" // to support go:linkname below
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -32,6 +33,14 @@ import (
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
+
+// This enables editions support in protocompile. Buf doesn't yet support editions, but rejecting
+// such files happens elsewhere (in github.com/bufbuilder/buf/private/pkg/protodescriptor). We
+// need the compiler's support enabled so that we can start implementing and testing editions
+// support in the CLI, before we enable that support for users.
+//
+//go:linkname allowEditionsInCompiler github.com/bufbuild/protocompile/internal.AllowEditions
+var allowEditionsInCompiler = true
 
 func buildImage(
 	ctx context.Context,

@@ -18,11 +18,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
+
+// false until buf CLI can fully and correctly support editions
+var allowEditions = false
 
 // FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
 //
@@ -129,6 +133,11 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 	if err := ValidateProtoPaths("FileDescriptor.Dependency", fileDescriptor.GetDependency()); err != nil {
 		return err
 	}
+	// TODO: Remove this once the CLI is a-okay to work with editions.
+	if fileDescriptor.GetSyntax() == "editions" && !allowEditions {
+		return fmt.Errorf("%s uses edition %s, but editions are not yet supported in buf",
+			fileDescriptor.GetName(), strings.TrimPrefix(fileDescriptor.GetEdition().String(), "EDITION_"))
+	}
 	return nil
 }
 
@@ -222,4 +231,16 @@ func FieldDescriptorProtoLabelPrettyString(l descriptorpb.FieldDescriptorProto_L
 	default:
 		return strconv.Itoa(int(l))
 	}
+}
+
+// AllowEditionsForTesting enables support for Protobuf editions, which should only
+// be done for testing until buf fully supports editions correctly (at which point
+// this function will be removed).
+//
+// This function and the internal flag it touches are not thread-safe. So this
+// should be used as early as possible, before any other use of this package. It
+// should typically be called from a TestMain function for a package whose tests
+// need to verify editions-specific behavior.
+func AllowEditionsForTesting() {
+	allowEditions = true
 }
