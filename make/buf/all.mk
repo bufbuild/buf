@@ -46,6 +46,7 @@ BUF_FORMAT_INPUT := .
 DISALLOW_NOLINT := true
 
 LEGACY_FEDERATION_FILE_PATH ?=
+OFFLINE ?=
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
@@ -77,9 +78,11 @@ godata: installspdx-go-data installwkt-go-data installbuf-legacyfederation-go-da
 	rm -rf private/gen/data/datawkt
 	mkdir -p private/gen/data/datawkt
 	wkt-go-data "$(CACHE_INCLUDE)" --package datawkt --protobuf-version "$(PROTOC_VERSION)" > private/gen/data/datawkt/datawkt.gen.go
+ifndef OFFLINE
 	rm -rf private/gen/data/dataspdx
 	mkdir -p private/gen/data/dataspdx
 	spdx-go-data --package dataspdx > private/gen/data/dataspdx/dataspdx.gen.go
+endif
 ifdef LEGACY_FEDERATION_FILE_PATH
 	rm -rf private/gen/data/datalegacyfederation
 	mkdir -p private/gen/data/datalegacyfederation
@@ -124,7 +127,9 @@ bufgeneratecleango:
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
+ifndef OFFLINE
 	rm -rf private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+endif
 
 bufgenerateclean:: \
 	bufgeneratecleango \
@@ -137,9 +142,11 @@ bufgeneratego:
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
+ifndef OFFLINE
 	$(BUF_BIN) export \
 		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
 		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+endif
 
 bufgeneratesteps:: \
 	bufgeneratego \
