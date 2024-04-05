@@ -14,9 +14,11 @@
 
 package bufconfig
 
+import "github.com/bufbuild/buf/private/pkg/syserror"
+
 var (
 	// DefaultLintConfigV1 is the default lint config for v1.
-	DefaultLintConfigV1 LintConfig = NewLintConfig(
+	DefaultLintConfigV1 LintConfig = newLintConfigNoValidate(
 		defaultCheckConfigV1,
 		"",
 		false,
@@ -28,7 +30,7 @@ var (
 	)
 
 	// DefaultLintConfigV2 is the default lint config for v2.
-	DefaultLintConfigV2 LintConfig = NewLintConfig(
+	DefaultLintConfigV2 LintConfig = newLintConfigNoValidate(
 		defaultCheckConfigV2,
 		"",
 		false,
@@ -50,6 +52,7 @@ type LintConfig interface {
 	RPCAllowGoogleProtobufEmptyResponses() bool
 	ServiceSuffix() string
 	AllowCommentIgnores() bool
+	// Will always be empty for FileVersionV1Beta1 and FileVersionV1.
 	Plugins() []LintPluginConfig
 
 	isLintConfig()
@@ -65,7 +68,7 @@ func NewLintConfig(
 	serviceSuffix string,
 	allowCommentIgnores bool,
 	plugins []LintPluginConfig,
-) LintConfig {
+) (LintConfig, error) {
 	return newLintConfig(
 		checkConfig,
 		enumZeroValueSuffix,
@@ -85,7 +88,7 @@ type lintConfig struct {
 
 	enumZeroValueSuffix                  string
 	rpcAllowSameRequestResponse          bool
-	rpcAllowGoogleProtobuEmptyRequests   bool
+	rpcAllowGoogleProtobufEmptyRequests  bool
 	rpcAllowGoogleProtobufEmptyResponses bool
 	serviceSuffix                        string
 	allowCommentIgnores                  bool
@@ -96,7 +99,38 @@ func newLintConfig(
 	checkConfig CheckConfig,
 	enumZeroValueSuffix string,
 	rpcAllowSameRequestResponse bool,
-	rpcAllowGoogleProtobuEmptyRequests bool,
+	rpcAllowGoogleProtobufEmptyRequests bool,
+	rpcAllowGoogleProtobufEmptyResponses bool,
+	serviceSuffix string,
+	allowCommentIgnores bool,
+	plugins []LintPluginConfig,
+) (*lintConfig, error) {
+	if len(plugins) > 0 {
+		switch fileVersion := checkConfig.FileVersion(); fileVersion {
+		case FileVersionV1Beta1, FileVersionV1:
+			return nil, syserror.Newf("got LintPluginConfigs %v for FileVersion %v", plugins, fileVersion)
+		case FileVersionV2:
+		default:
+			return nil, syserror.Newf("unknown FileVersion: %v", fileVersion)
+		}
+	}
+	return newLintConfigNoValidate(
+		checkConfig,
+		enumZeroValueSuffix,
+		rpcAllowSameRequestResponse,
+		rpcAllowGoogleProtobufEmptyRequests,
+		rpcAllowGoogleProtobufEmptyResponses,
+		serviceSuffix,
+		allowCommentIgnores,
+		plugins,
+	), nil
+}
+
+func newLintConfigNoValidate(
+	checkConfig CheckConfig,
+	enumZeroValueSuffix string,
+	rpcAllowSameRequestResponse bool,
+	rpcAllowGoogleProtobufEmptyRequests bool,
 	rpcAllowGoogleProtobufEmptyResponses bool,
 	serviceSuffix string,
 	allowCommentIgnores bool,
@@ -106,7 +140,7 @@ func newLintConfig(
 		CheckConfig:                          checkConfig,
 		enumZeroValueSuffix:                  enumZeroValueSuffix,
 		rpcAllowSameRequestResponse:          rpcAllowSameRequestResponse,
-		rpcAllowGoogleProtobuEmptyRequests:   rpcAllowGoogleProtobuEmptyRequests,
+		rpcAllowGoogleProtobufEmptyRequests:  rpcAllowGoogleProtobufEmptyRequests,
 		rpcAllowGoogleProtobufEmptyResponses: rpcAllowGoogleProtobufEmptyResponses,
 		serviceSuffix:                        serviceSuffix,
 		allowCommentIgnores:                  allowCommentIgnores,
@@ -123,7 +157,7 @@ func (l *lintConfig) RPCAllowSameRequestResponse() bool {
 }
 
 func (l *lintConfig) RPCAllowGoogleProtobufEmptyRequests() bool {
-	return l.rpcAllowGoogleProtobuEmptyRequests
+	return l.rpcAllowGoogleProtobufEmptyRequests
 }
 
 func (l *lintConfig) RPCAllowGoogleProtobufEmptyResponses() bool {

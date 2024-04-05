@@ -786,7 +786,8 @@ func getLintConfigForExternalLintV1Beta1V1(
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
 		externalLint.AllowCommentIgnores,
-	), nil
+		nil,
+	)
 }
 
 func getLintConfigForExternalLintV2(
@@ -828,6 +829,28 @@ func getLintConfigForExternalLintV2(
 			return nil, err
 		}
 	}
+	var lintPluginConfigs []LintPluginConfig
+	for _, externalPlugin := range externalLint.Plugins {
+		var path string
+		var args []string
+		switch t := externalPlugin.(type) {
+		case string:
+			path = t
+		case []string:
+			if len(t) == 0 {
+				return nil, errors.New("lint.plugins had a value that was an empty list")
+			}
+			path = t[0]
+			args = t[1:]
+		default:
+			return nil, fmt.Errorf("lint.plugins values must be either a single string or lists or strings but got a %T", externalPlugin)
+		}
+		lintPluginConfig, err := NewLintPluginConfig(path, args)
+		if err != nil {
+			return nil, err
+		}
+		lintPluginConfigs = append(lintPluginConfigs, lintPluginConfig)
+	}
 	return newLintConfig(
 		checkConfig,
 		externalLint.EnumZeroValueSuffix,
@@ -836,7 +859,8 @@ func getLintConfigForExternalLintV2(
 		externalLint.RPCAllowGoogleProtobufEmptyResponses,
 		externalLint.ServiceSuffix,
 		!externalLint.DisallowCommentIgnores,
-	), nil
+		lintPluginConfigs,
+	)
 }
 
 func getBreakingConfigForExternalBreaking(
@@ -965,6 +989,7 @@ func getExternalLintV1Beta1V1ForLintConfig(lintConfig LintConfig, moduleDirPath 
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.AllowCommentIgnores = lintConfig.AllowCommentIgnores()
+	// Plugins always empty for FileVersionV1Beta1 and FileVersionV1.
 	return externalLint
 }
 
@@ -987,6 +1012,15 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	externalLint.RPCAllowGoogleProtobufEmptyResponses = lintConfig.RPCAllowGoogleProtobufEmptyResponses()
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.DisallowCommentIgnores = !lintConfig.AllowCommentIgnores()
+	for _, lintPluginConfig := range lintConfig.Plugins() {
+		var plugin interface{}
+		if args := lintPluginConfig.Args(); len(args) > 0 {
+			plugin = append([]string{lintPluginConfig.Path()}, args...)
+		} else {
+			plugin = lintPluginConfig.Path()
+		}
+		externalLint.Plugins = append(externalLint.Plugins, plugin)
+	}
 	return externalLint
 }
 
@@ -1104,6 +1138,8 @@ type externalBufYAMLFileLintV2 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	DisallowCommentIgnores               bool                `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
+	// Either a []string or [][]string.
+	Plugins []interface{} `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 func (el externalBufYAMLFileLintV2) isEmpty() bool {
