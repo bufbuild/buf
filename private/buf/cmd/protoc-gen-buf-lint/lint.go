@@ -26,6 +26,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/zaputil"
@@ -78,8 +80,9 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if err := buflint.NewHandler(logger, tracing.NopTracer).Check(
+	if err := buflint.NewHandler(logger, command.NewRunner(), tracing.NopTracer).Check(
 		ctx,
+		app.NewStderrContainer(pluginEnv.Stderr),
 		moduleConfig.LintConfig(),
 		image,
 	); err != nil {

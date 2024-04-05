@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
@@ -134,9 +135,11 @@ func run(
 	for _, imageWithConfig := range imageWithConfigs {
 		if err := buflint.NewHandler(
 			container.Logger(),
+			command.NewRunner(),
 			tracing.NewTracer(container.Tracer()),
 		).Check(
 			ctx,
+			container,
 			imageWithConfig.LintConfig(),
 			imageWithConfig,
 		); err != nil {

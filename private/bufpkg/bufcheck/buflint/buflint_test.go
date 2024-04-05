@@ -17,6 +17,7 @@ package buflint_test
 import (
 	"context"
 	"errors"
+	"io"
 	"path/filepath"
 	"testing"
 	"time"
@@ -28,6 +29,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -1218,9 +1221,10 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer)
+	handler := buflint.NewHandler(zap.NewNop(), command.NewRunner(), tracing.NopTracer)
 	err = handler.Check(
 		ctx,
+		app.NewStderrContainer(io.Discard),
 		lintConfig,
 		image,
 	)
