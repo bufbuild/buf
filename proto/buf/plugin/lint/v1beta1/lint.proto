@@ -1,0 +1,71 @@
+// Copyright 2020-2024 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.plugin.lint.v1beta1;
+
+import "google/protobuf/descriptor.proto";
+
+message File {
+  google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  bool is_import = 2;
+}
+
+message Annotation {
+  // The name of the file that produced an annotation.
+  //
+  // This matches the name field in the corresponding FileDescriptorProto.
+  //
+  // If there is no correponding file for the annotation, this will be empty.
+  string file_name = 1;
+  // The starting line of the annotation.
+  //
+  // If the starting line is not known, this will be 0.
+  // It is not valid to have a non-zero value of start_line without a file_name.
+  uint32 start_line = 2;
+  // The starting column of the annotation.
+  //
+  // If the starting column is not known, this will be 0.
+  // It is not valid to have a non-zero value of start_column without a file_name.
+  uint32 start_column = 3;
+  // The ending line of the annotation.
+  //
+  // If the ending line is not known, this will be 0.
+  // If end_line is 0 and start_line is non-zero, it is assumed that the end_line
+  // is the same as the start_line.
+  // It is not valid to have a non-zero value of end_line without a start_line.
+  // It is not valid to have a non-zero value of end_line without a file_name.
+  uint32 end_line = 4;
+  // The ending column of the annotation.
+  //
+  // If the ending column is not known, this will be 0.
+  // It is not valid to have a non-zero value of end_column without a file_name.
+  // It is not valid to have a non-zero value of end_column without a start_column.
+  uint32 end_column = 5;
+  // The ID of the check that failed.
+  //
+  // This must only consist of capital letters from A-Z and underscores.
+  string id = 6;
+  // A user-displayable message that explains the check failure.
+  string message = 7;
+}
+
+message LintRequest {
+  repeated File files = 1;
+}
+
+message LintResponse {
+  repeated Annotation annotations = 1;
+}
