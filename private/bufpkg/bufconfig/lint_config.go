@@ -24,6 +24,7 @@ var (
 		false,
 		"",
 		false,
+		nil,
 	)
 
 	// DefaultLintConfigV2 is the default lint config for v2.
@@ -35,6 +36,7 @@ var (
 		false,
 		"",
 		false,
+		nil,
 	)
 )
 
@@ -48,6 +50,7 @@ type LintConfig interface {
 	RPCAllowGoogleProtobufEmptyResponses() bool
 	ServiceSuffix() string
 	AllowCommentIgnores() bool
+	Plugins() []LintPluginConfig
 
 	isLintConfig()
 }
@@ -61,6 +64,7 @@ func NewLintConfig(
 	rpcAllowGoogleProtobufEmptyResponses bool,
 	serviceSuffix string,
 	allowCommentIgnores bool,
+	plugins []LintPluginConfig,
 ) LintConfig {
 	return newLintConfig(
 		checkConfig,
@@ -70,6 +74,7 @@ func NewLintConfig(
 		rpcAllowGoogleProtobufEmptyResponses,
 		serviceSuffix,
 		allowCommentIgnores,
+		plugins,
 	)
 }
 
@@ -84,6 +89,7 @@ type lintConfig struct {
 	rpcAllowGoogleProtobufEmptyResponses bool
 	serviceSuffix                        string
 	allowCommentIgnores                  bool
+	plugins                              []LintPluginConfig
 }
 
 func newLintConfig(
@@ -94,6 +100,7 @@ func newLintConfig(
 	rpcAllowGoogleProtobufEmptyResponses bool,
 	serviceSuffix string,
 	allowCommentIgnores bool,
+	plugins []LintPluginConfig,
 ) *lintConfig {
 	return &lintConfig{
 		CheckConfig:                          checkConfig,
@@ -103,6 +110,7 @@ func newLintConfig(
 		rpcAllowGoogleProtobufEmptyResponses: rpcAllowGoogleProtobufEmptyResponses,
 		serviceSuffix:                        serviceSuffix,
 		allowCommentIgnores:                  allowCommentIgnores,
+		plugins:                              plugins,
 	}
 }
 
@@ -128,6 +136,10 @@ func (l *lintConfig) ServiceSuffix() string {
 
 func (l *lintConfig) AllowCommentIgnores() bool {
 	return l.allowCommentIgnores
+}
+
+func (l *lintConfig) Plugins() []LintPluginConfig {
+	return l.plugins
 }
 
 func (*lintConfig) isLintConfig() {}
