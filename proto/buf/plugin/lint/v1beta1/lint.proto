@@ -62,10 +62,11 @@ message Annotation {
   string message = 7;
 }
 
-message LintRequest {
+message Request {
   repeated File files = 1;
 }
 
-message LintResponse {
+message Response {
   repeated Annotation annotations = 1;
+  string error = 2;
 }

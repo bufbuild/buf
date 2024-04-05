@@ -13,3 +13,71 @@
 // limitations under the License.
 
 package buflintplugin
+
+import (
+	"context"
+	"io"
+
+	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
+
+type Env struct {
+	Stderr io.Writer
+}
+
+type Annotation struct {
+	FileName    string
+	StartLine   int
+	StartColumn int
+	EndLine     int
+	EndColumn   int
+	ID          string
+	Message     string
+}
+
+func (a *Annotation) ToProtoAnnotation() *lintv1beta1.Annotation {
+	return nil
+}
+
+func NewAnnotation(protoAnnotation *lintv1beta1.Annotation) *Annotation {
+	return nil
+}
+
+func NewAnnotationForDescriptor(descriptor protoreflect.Descriptor, id string, message string) *Annotation {
+	return nil
+}
+
+type File interface {
+	protoreflect.FileDescriptor
+
+	isFile()
+}
+
+type ResponseWriter interface {
+	AddAnnotations(...*Annotation)
+	ToProtoResponse() (*lintv1beta1.Response, error)
+}
+
+func NewResponseWriter() ResponseWriter {
+	return nil
+}
+
+type Request interface {
+	LintFile() []File
+	AllFiles() []File
+	ProtoRequest() *lintv1beta1.Request
+}
+
+func NewRequest(protoRequest *lintv1beta1.Request) (Request, error) {
+	return nil, nil
+}
+
+type Handler interface {
+	Handle(
+		context.Context,
+		Env,
+		ResponseWriter,
+		Request,
+	) error
+}
