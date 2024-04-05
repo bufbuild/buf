@@ -9,4 +9,6 @@ plugins:
     out: private/gen/proto/go
     opt: paths=source_relative
 inputs:
-  - directory: proto
+  - module: buf.build/grpc/grpc
+    types:
+      - grpc.reflection.v1.ServerReflection

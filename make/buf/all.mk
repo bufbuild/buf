@@ -121,9 +121,16 @@ postprepostgenerate:: privateusage
 bufgeneratedeps:: \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_CONNECT_GO)
 
-.PHONY: bufgeneratecleango
-bufgeneratecleango:
-	rm -rf private/gen/proto
+.PHONY: bufgeneratecleangobuf
+bufgeneratecleangobuf:
+	rm -rf private/gen/proto/connect/buf
+	rm -rf private/gen/proto/go/buf
+
+.PHONY: bufgeneratecleangogrpc
+bufgeneratecleangogrpc:
+ifndef OFFLINE
+	rm -rf private/gen/proto/go/grpc
+endif
 
 .PHONY: bufgeneratecleanbuflinttestdata
 bufgeneratecleanbuflinttestdata:
@@ -132,13 +139,20 @@ ifndef OFFLINE
 endif
 
 bufgenerateclean:: \
-	bufgeneratecleango \
+	bufgeneratecleangobuf \
+	bufgeneratecleangogrpc \
 	bufgeneratecleanbuflinttestdata
 
-.PHONY: bufgeneratego
-bufgeneratego:
+.PHONY: bufgenerategobuf
+bufgenerategobuf:
 	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
+
+.PHONY: bufgenerategogrpc
+bufgenerategogrpc:
+ifndef OFFLINE
+	$(BUF_BIN) generate --template data/template/buf.go-grpc.gen.yaml
+endif
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
@@ -149,7 +163,8 @@ ifndef OFFLINE
 endif
 
 bufgeneratesteps:: \
-	bufgeneratego \
+	bufgenerategobuf \
+	bufgenerategogrpc \
 	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
