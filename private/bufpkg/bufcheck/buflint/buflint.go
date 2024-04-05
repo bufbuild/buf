@@ -32,6 +32,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -53,14 +55,19 @@ type Handler interface {
 	// An error of type bufanalysis.FileAnnotationSet will be returned on breaking failure.
 	Check(
 		ctx context.Context,
+		container app.StderrContainer,
 		config bufconfig.LintConfig,
 		image bufimage.Image,
 	) error
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
-	return newHandler(logger, tracer)
+func NewHandler(
+	logger *zap.Logger,
+	runner command.Runner,
+	tracer tracing.Tracer,
+) Handler {
+	return newHandler(logger, runner, tracer)
 }
 
 // RulesForConfig returns the rules for a given config.
