@@ -78,7 +78,11 @@ func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1beta1.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1beta1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +93,11 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +108,11 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV2() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv2.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv2.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +236,7 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 	return s
 }
 
-func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.LintConfig {
+func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.LintConfig, error) {
 	return bufconfig.NewLintConfig(
 		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
@@ -236,5 +248,6 @@ func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.Li
 		false,
 		"",
 		false,
+		nil,
 	)
 }

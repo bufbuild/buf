@@ -176,24 +176,29 @@ func (m *migrateBuilder) addModule(ctx context.Context, moduleDirPath string) (r
 		if err != nil {
 			return err
 		}
+		emptyLintConfig, err := bufconfig.NewLintConfig(
+			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
+				bufconfig.FileVersionV2,
+				nil,
+			),
+			"",
+			false,
+			false,
+			false,
+			"",
+			false,
+			nil,
+		)
+		if err != nil {
+			return err
+		}
 		emptyModuleConfig, err := bufconfig.NewModuleConfig(
 			moduleRootRelativeToDestination,
 			nil,
 			map[string][]string{
 				".": {},
 			},
-			bufconfig.NewLintConfig(
-				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-					bufconfig.FileVersionV2,
-					nil,
-				),
-				"",
-				false,
-				false,
-				false,
-				"",
-				false,
-			),
+			emptyLintConfig,
 			bufconfig.NewBreakingConfig(
 				bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 					bufconfig.FileVersionV2,

@@ -132,25 +132,30 @@ func run(
 		}
 	}
 
+	lintConfig, err := bufconfig.NewLintConfig(
+		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
+			fileVersion,
+			[]string{"DEFAULT"},
+		),
+		"",
+		false,
+		false,
+		false,
+		"",
+		// We actually want comment ignores enabled by default
+		true,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
 	moduleConfig, err := bufconfig.NewModuleConfig(
 		".",
 		moduleFullName,
 		map[string][]string{
 			".": {},
 		},
-		bufconfig.NewLintConfig(
-			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
-				fileVersion,
-				[]string{"DEFAULT"},
-			),
-			"",
-			false,
-			false,
-			false,
-			"",
-			// We actually want comment ignores enabled by default
-			true,
-		),
+		lintConfig,
 		bufconfig.NewBreakingConfig(
 			bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 				fileVersion,

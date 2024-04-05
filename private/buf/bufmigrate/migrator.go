@@ -642,7 +642,7 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		lintConfig,
 		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
-			lintConfig := bufconfig.NewLintConfig(
+			lintConfig, err := bufconfig.NewLintConfig(
 				checkConfig,
 				lintConfig.EnumZeroValueSuffix(),
 				lintConfig.RPCAllowSameRequestResponse(),
@@ -650,7 +650,11 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 				lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 				lintConfig.ServiceSuffix(),
 				lintConfig.AllowCommentIgnores(),
+				lintConfig.Plugins(),
 			)
+			if err != nil {
+				return nil, err
+			}
 			return buflint.RulesForConfig(lintConfig)
 		},
 	)
@@ -665,7 +669,8 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 		lintConfig.RPCAllowGoogleProtobufEmptyResponses(),
 		lintConfig.ServiceSuffix(),
 		lintConfig.AllowCommentIgnores(),
-	), nil
+		lintConfig.Plugins(),
+	)
 }
 
 func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
