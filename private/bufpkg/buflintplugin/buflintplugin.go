@@ -16,6 +16,7 @@ package buflintplugin
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
@@ -37,14 +38,17 @@ type Annotation struct {
 }
 
 func (a *Annotation) ToProtoAnnotation() *lintv1beta1.Annotation {
+	panic("TODO")
 	return nil
 }
 
 func NewAnnotation(protoAnnotation *lintv1beta1.Annotation) *Annotation {
+	panic("TODO")
 	return nil
 }
 
 func NewAnnotationForDescriptor(descriptor protoreflect.Descriptor, id string, message string) *Annotation {
+	panic("TODO")
 	return nil
 }
 
@@ -60,17 +64,18 @@ type ResponseWriter interface {
 }
 
 func NewResponseWriter() ResponseWriter {
+	panic("TODO")
 	return nil
 }
 
 type Request interface {
-	LintFile() []File
+	LintFiles() []File
 	AllFiles() []File
 	ProtoRequest() *lintv1beta1.Request
 }
 
 func NewRequest(protoRequest *lintv1beta1.Request) (Request, error) {
-	return nil, nil
+	return nil, errors.New("TODO")
 }
 
 type Handler interface {
@@ -80,4 +85,28 @@ type Handler interface {
 		ResponseWriter,
 		Request,
 	) error
+}
+
+type HandlerFunc func(
+	context.Context,
+	Env,
+	ResponseWriter,
+	Request,
+) error
+
+func (h HandlerFunc) Handle(
+	ctx context.Context,
+	env Env,
+	responseWriter ResponseWriter,
+	request Request,
+) error {
+	return h(ctx, env, responseWriter, request)
+}
+
+func Main(handler Handler) {
+	panic("TODO")
+}
+
+func Run(ctx context.Context, env Env, handler Handler) error {
+	return errors.New("TODO")
 }

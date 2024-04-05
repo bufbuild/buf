@@ -5,6 +5,7 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	private/buf/bufwkt/cmd/wkt-go-data \
+	private/bufpkg/buflintplugin/cmd/buf-lint-timestamp-suffix \
 	private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest \
 	private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id \
