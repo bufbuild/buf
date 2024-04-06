@@ -509,7 +509,7 @@ type externalGeneratePluginConfigV2 struct {
 	Opt            interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	IncludeImports bool        `json:"include_imports,omitempty" yaml:"include_imports,omitempty"`
 	IncludeWKT     bool        `json:"include_wkt,omitempty" yaml:"include_wkt,omitempty"`
-	// Strategy is only valid with ProtoBuiltin and Binary.
+	// Strategy is only valid with ProtoBuiltin and Local.
 	Strategy *string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 

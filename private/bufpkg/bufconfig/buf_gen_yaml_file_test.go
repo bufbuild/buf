@@ -67,6 +67,45 @@ plugins:
 		t,
 		// input
 		`version: v2
+plugins:
+  - local: ["go", "run", "google.golang.org/protobuf/cmd/protoc-gen-go"]
+    out: gen/proto
+`,
+		// expected output
+		`version: v2
+plugins:
+  - local:
+      - go
+      - run
+      - google.golang.org/protobuf/cmd/protoc-gen-go
+    out: gen/proto
+`,
+	)
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
+plugins:
+  - local:
+      - go
+      - run
+      - google.golang.org/protobuf/cmd/protoc-gen-go
+    out: gen/proto
+`,
+		// expected output
+		`version: v2
+plugins:
+  - local:
+      - go
+      - run
+      - google.golang.org/protobuf/cmd/protoc-gen-go
+    out: gen/proto
+`,
+	)
+	testReadWriteBufGenYAMLFileRoundTrip(
+		t,
+		// input
+		`version: v2
 managed:
   disable:
     - module: buf.build/googleapis/googleapis
@@ -307,6 +346,99 @@ plugins:
 `),
 	)
 	require.ErrorContains(t, err, "at most one of file_option and field_option can be specified")
+}
+
+func TestBufGenYAMLFilePluginConfigErrors(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - local: protoc-gen-go
+    revision: 1
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "cannot specify revision for local plugin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - protoc_builtin: cpp
+    revision: 1
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "cannot specify revision for protoc built-in plugin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    protoc_path: /path/to/protoc
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "cannot specify protoc_path for remote plugin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - local: protoc-gen-go
+    protoc_path: /path/to/protoc
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "cannot specify protoc_path for local plugin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - revision: 1
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "must specify one of remote, local or protoc_builtin")
+	// Test that out is required.
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - local: protoc-gen-go
+`),
+	)
+	require.ErrorContains(t, err, "must specify out")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    strategy: directory
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "cannot specify strategy for remote plugin")
+
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    local: protoc-gen-go
+    out: .
+`))
+	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    protoc_builtin: cpp
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
+	_, err = ReadBufGenYAMLFile(
+		strings.NewReader(`version: v2
+plugins:
+  - local: protoc-gen-go
+    protoc_builtin: cpp
+    out: .
+`),
+	)
+	require.ErrorContains(t, err, "only one of remote, local or protoc_builtin")
 }
 
 func testReadBufGenYAMLFile(
