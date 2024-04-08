@@ -21,8 +21,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 )
@@ -297,16 +296,16 @@ func newPluginConfigFromExternalV1(
 	switch {
 	case externalConfig.Plugin != "":
 		pluginIdentifier = externalConfig.Plugin
-		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+		if _, _, _, _, err := bufremotepluginref.V1ParsePluginVersionPath(pluginIdentifier); err == nil {
 			// A remote alpha plugin name is not a valid remote plugin reference.
 			return nil, fmt.Errorf("invalid remote plugin reference: %s", pluginIdentifier)
 		}
 	case externalConfig.Name != "":
 		pluginIdentifier = externalConfig.Name
-		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(pluginIdentifier); err == nil {
+		if _, _, _, _, err := bufremotepluginref.V1ParsePluginVersionPath(pluginIdentifier); err == nil {
 			return nil, fmt.Errorf("invalid plugin name %s, did you mean to use a remote plugin?", pluginIdentifier)
 		}
-		if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+		if bufremotepluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 			// A remote alpha plugin name is not a valid local plugin name.
 			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
 		}
@@ -326,7 +325,7 @@ func newPluginConfigFromExternalV1(
 	if err != nil {
 		return nil, err
 	}
-	if externalConfig.Plugin != "" && bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
+	if externalConfig.Plugin != "" && bufremotepluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
 		if externalConfig.Path != nil {
 			return nil, fmt.Errorf("cannot specify path for remote plugin %s", externalConfig.Plugin)
 		}
@@ -707,10 +706,10 @@ func parseStrategy(s string) (*GenerateStrategy, error) {
 }
 
 func parseRemoteHostName(fullName string) (string, error) {
-	if identity, err := bufpluginref.PluginIdentityForString(fullName); err == nil {
+	if identity, err := bufremotepluginref.PluginIdentityForString(fullName); err == nil {
 		return identity.Remote(), nil
 	}
-	reference, err := bufpluginref.PluginReferenceForString(fullName, 0)
+	reference, err := bufremotepluginref.PluginReferenceForString(fullName, 0)
 	if err == nil {
 		return reference.Remote(), nil
 	}

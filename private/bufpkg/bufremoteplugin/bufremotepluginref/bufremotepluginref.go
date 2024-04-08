@@ -15,8 +15,15 @@
 package bufremotepluginref
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+)
+
+const (
+	// V1PluginsPathName is the path prefix used to signify that
+	// a name belongs to a plugin in V1.
+	V1PluginsPathName = "plugins"
 )
 
 // PluginIdentity is a plugin identity.
@@ -118,6 +125,39 @@ func IsPluginReferenceOrIdentity(plugin string) bool {
 		return true
 	}
 	return false
+}
+
+// V1ParsePluginPath parses a string in the format <buf.build/owner/plugins/name>
+// into remote, owner and name.
+func V1ParsePluginPath(pluginPath string) (remote string, owner string, name string, _ error) {
+	if pluginPath == "" {
+		return "", "", "", errors.New("you must specify a plugin path")
+	}
+	components := strings.Split(pluginPath, "/")
+	if len(components) != 4 || components[2] != V1PluginsPathName {
+		return "", "", "", fmt.Errorf("%s is not a valid plugin path", pluginPath)
+	}
+	return components[0], components[1], components[3], nil
+}
+
+// V1ParsePluginVersionPath parses a string in the format <buf.build/owner/plugins/name[:version]>
+// into remote, owner, name and version for V1. The version is empty if not specified.
+//
+// TODO: Double-check this.
+func V1ParsePluginVersionPath(pluginVersionPath string) (remote string, owner string, name string, version string, _ error) {
+	remote, owner, name, err := V1ParsePluginPath(pluginVersionPath)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	components := strings.Split(name, ":")
+	switch len(components) {
+	case 2:
+		return remote, owner, components[0], components[1], nil
+	case 1:
+		return remote, owner, name, "", nil
+	default:
+		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
+	}
 }
 
 func parsePluginIdentityComponents(path string) (remote string, owner string, plugin string, err error) {
