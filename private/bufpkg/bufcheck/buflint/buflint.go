@@ -33,7 +33,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
@@ -64,10 +63,10 @@ type Handler interface {
 // NewHandler returns a new Handler.
 func NewHandler(
 	logger *zap.Logger,
-	runner command.Runner,
 	tracer tracing.Tracer,
+	pluginHandler bufpluginimage.Handler,
 ) Handler {
-	return newHandler(logger, runner, tracer)
+	return newHandler(logger, tracer, pluginHandler)
 }
 
 // RulesForConfig returns the rules for a given config.

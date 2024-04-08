@@ -23,28 +23,28 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	pluginv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
 type handler struct {
 	logger        *zap.Logger
-	commandRunner command.Runner
 	tracer        tracing.Tracer
+	pluginHandler bufpluginimage.Handler
 	runner        *internal.Runner
 }
 
-func newHandler(logger *zap.Logger, commandRunner command.Runner, tracer tracing.Tracer) *handler {
+func newHandler(
+	logger *zap.Logger,
+	tracer tracing.Tracer,
+	pluginHandler bufpluginimage.Handler,
+) *handler {
 	return &handler{
 		logger:        logger,
-		commandRunner: commandRunner,
 		tracer:        tracer,
+		pluginHandler: pluginHandler,
 		// linting allows for comment ignores
 		// note that comment ignores still need to be enabled within the config
 		// for a given check, this just says that comment ignores are allowed
@@ -74,82 +74,33 @@ func (h *handler) Check(
 	if err != nil {
 		return err
 	}
-	var fileAnnotationSet bufanalysis.FileAnnotationSet
+	var internalFileAnnotationSet bufanalysis.FileAnnotationSet
 	if err := h.runner.Check(ctx, internalConfig, nil, files); err != nil {
 		// If an error other than a FileAnnotationSet, return now.
-		if !errors.As(err, &fileAnnotationSet) {
+		if !errors.As(err, &internalFileAnnotationSet) {
 			return err
 		}
 	}
-	lintPluginConfigs := config.Plugins()
-	if len(lintPluginConfigs) == 0 {
-		return fileAnnotationSet
+	var pluginFileAnnotationsSet bufanalysis.FileAnnotationSet
+	if err := h.pluginHandler.Check(ctx, container, config, image); err != nil {
+		// If an error other than a FileAnnotationSet, return now.
+		if !errors.As(err, &pluginFileAnnotationSet) {
+			return err
+		}
 	}
-	env := bufplugin.Env{
-		Stderr: container.Stderr(),
-	}
-	request, err := bufplugin.NewRequest(imageToProtoLintRequest(image))
-	if err != nil {
-		return err
-	}
-	responseWriter := bufplugin.NewResponseWriter()
-	var pluginFileAnnotations []bufanalysis.FileAnnotation
-	// Otherwise, also check plugins.
-	for _, lintPluginConfig := range lintPluginConfigs {
-		handler := bufpluginexec.NewHandler(
-			h.commandRunner,
-			lintPluginConfig.Path(),
-			lintPluginConfig.Args(),
+	switch {
+	case internalFileAnnotationSet != nil && pluginFileAnnotationSet != nil:
+		return bufanalysis.NewFileAnnotationSet(
+			append(
+				internalFileAnnotationSet.FileAnnotations(),
+				pluginFileAnnotationSet.FileAnnotations()...,
+			)...,
 		)
-		if err := handler.Handle(ctx, env, responseWriter, request); err != nil {
-			// Always an error not related to annotations based on how we designed API for now.
-			return err
-		}
-		// TODO: This breaks down the whole Handler model, since this has an error on it
-		// and we've said that this error is handled and returned by Handler.
-		protoLintResponse, err := responseWriter.ToProtoResponse()
-		if err != nil {
-			return err
-		}
-		for _, protoAnnotation := range protoLintResponse.GetAnnotations() {
-			fileAnnotation, err := protoLintAnnotationToFileAnnotation(protoAnnotation)
-			if err != nil {
-				return err
-			}
-			pluginFileAnnotations = append(pluginFileAnnotations, fileAnnotation)
-		}
+	case internalFileAnnotationSet == nil && pluginFileAnnotationSet == nil:
+		return nil
+	case internalFileAnnotationSet != nil:
+		return internalFileAnnotationSet
+	default:
+		return pluginFileAnnotationSet
 	}
-	if len(pluginFileAnnotations) == 0 {
-		return fileAnnotationSet
-	}
-	if fileAnnotationSet == nil {
-		return bufanalysis.NewFileAnnotationSet(pluginFileAnnotations...)
-	}
-	return bufanalysis.NewFileAnnotationSet(
-		append(
-			fileAnnotationSet.FileAnnotations(),
-			pluginFileAnnotations...,
-		)...,
-	)
-}
-
-func imageToProtoLintRequest(image bufimage.Image) *pluginv1beta1.Request {
-	var protoLintFiles []*pluginv1beta1.File
-	for _, imageFile := range image.Files() {
-		protoLintFiles = append(
-			protoLintFiles,
-			&pluginv1beta1.File{
-				FileDescriptorProto: imageFile.FileDescriptorProto(),
-				IsImport:            imageFile.IsImport(),
-			},
-		)
-	}
-	return &pluginv1beta1.Request{
-		Files: protoLintFiles,
-	}
-}
-
-func protoLintAnnotationToFileAnnotation(protoLintAnnotation *pluginv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
-	// TODO: keep a map of path to external path for the input on the request, recreate
-	return nil, errors.New("TODO")
 }
