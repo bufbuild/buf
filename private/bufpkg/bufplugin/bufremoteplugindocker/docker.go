@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufprotoplugindocker
+package bufremoteplugindocker
 
 import (
 	"bufio"
@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
 	"github.com/docker/docker/api/types"
 	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -56,7 +56,7 @@ type Client interface {
 	// Delete removes the Docker image from local Docker Engine.
 	Delete(ctx context.Context, image string) (*DeleteResponse, error)
 	// Tag creates a Docker image tag from an existing image and plugin config.
-	Tag(ctx context.Context, image string, config *bufprotopluginconfig.Config) (*TagResponse, error)
+	Tag(ctx context.Context, image string, config *bufremotepluginconfig.Config) (*TagResponse, error)
 	// Inspect inspects an image and returns the image id.
 	Inspect(ctx context.Context, image string) (*InspectResponse, error)
 	// Close releases any resources used by the underlying Docker client.
@@ -80,7 +80,7 @@ type PushResponse struct {
 // TagResponse returns details of a successful image tag call.
 type TagResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag.
-	// It is created from the bufprotopluginconfig.Config's Name.IdentityString() and a unique id.
+	// It is created from the bufremotepluginconfig.Config's Name.IdentityString() and a unique id.
 	Image string
 }
 
@@ -144,7 +144,7 @@ func (d *dockerAPIClient) Load(ctx context.Context, image io.Reader) (_ *LoadRes
 	return &LoadResponse{ImageID: imageID}, nil
 }
 
-func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufprotopluginconfig.Config) (*TagResponse, error) {
+func (d *dockerAPIClient) Tag(ctx context.Context, image string, config *bufremotepluginconfig.Config) (*TagResponse, error) {
 	if err := d.negotiateVersion(ctx); err != nil {
 		return nil, err
 	}

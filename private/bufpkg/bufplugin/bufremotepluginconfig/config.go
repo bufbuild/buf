@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufprotopluginconfig
+package bufremotepluginconfig
 
 import (
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginref"
 	"github.com/bufbuild/buf/private/gen/data/dataspdx"
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
@@ -41,7 +41,7 @@ func newConfig(externalConfig ExternalConfig, options []ConfigOption) (*Config, 
 	if !semver.IsValid(pluginVersion) {
 		return nil, fmt.Errorf("plugin_version %q must be a valid semantic version", externalConfig.PluginVersion)
 	}
-	var dependencies []bufprotopluginref.PluginReference
+	var dependencies []bufremotepluginref.PluginReference
 	if len(externalConfig.Deps) > 0 {
 		existingDeps := make(map[string]struct{})
 		for _, dependency := range externalConfig.Deps {
@@ -357,23 +357,23 @@ func newPythonRegistryConfig(externalPythonRegistryConfig *ExternalPythonRegistr
 	}, nil
 }
 
-func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufprotopluginref.PluginIdentity, error) {
-	identity, err := bufprotopluginref.PluginIdentityForString(identityStr)
+func pluginIdentityForStringWithOverrideRemote(identityStr string, overrideRemote string) (bufremotepluginref.PluginIdentity, error) {
+	identity, err := bufremotepluginref.PluginIdentityForString(identityStr)
 	if err != nil {
 		return nil, err
 	}
 	if len(overrideRemote) == 0 {
 		return identity, nil
 	}
-	return bufprotopluginref.NewPluginIdentity(overrideRemote, identity.Owner(), identity.Plugin())
+	return bufremotepluginref.NewPluginIdentity(overrideRemote, identity.Owner(), identity.Plugin())
 }
 
 func pluginReferenceForStringWithOverrideRemote(
 	referenceStr string,
 	revision int,
 	overrideRemote string,
-) (bufprotopluginref.PluginReference, error) {
-	reference, err := bufprotopluginref.PluginReferenceForString(referenceStr, revision)
+) (bufremotepluginref.PluginReference, error) {
+	reference, err := bufremotepluginref.PluginReferenceForString(referenceStr, revision)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func pluginReferenceForStringWithOverrideRemote(
 	if err != nil {
 		return nil, err
 	}
-	return bufprotopluginref.NewPluginReference(overrideIdentity, reference.Version(), reference.Revision())
+	return bufremotepluginref.NewPluginReference(overrideIdentity, reference.Version(), reference.Revision())
 }
 
 func mavenExternalDependencyToDependencyConfig(dependency string) (MavenDependencyConfig, error) {

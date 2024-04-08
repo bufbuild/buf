@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufprotoplugin
+package bufremoteplugin
 
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin/bufremotepluginconfig"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,13 +26,13 @@ import (
 func TestPluginToProtoPluginRegistryType(t *testing.T) {
 	t.Parallel()
 	assertPluginToPluginRegistryType(t, nil, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_UNSPECIFIED)
-	assertPluginToPluginRegistryType(t, &bufprotopluginconfig.RegistryConfig{Go: &bufprotopluginconfig.GoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO)
-	assertPluginToPluginRegistryType(t, &bufprotopluginconfig.RegistryConfig{NPM: &bufprotopluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
-	assertPluginToPluginRegistryType(t, &bufprotopluginconfig.RegistryConfig{Maven: &bufprotopluginconfig.MavenRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN)
-	assertPluginToPluginRegistryType(t, &bufprotopluginconfig.RegistryConfig{Swift: &bufprotopluginconfig.SwiftRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Go: &bufremotepluginconfig.GoRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_GO)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{NPM: &bufremotepluginconfig.NPMRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_NPM)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Maven: &bufremotepluginconfig.MavenRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_MAVEN)
+	assertPluginToPluginRegistryType(t, &bufremotepluginconfig.RegistryConfig{Swift: &bufremotepluginconfig.SwiftRegistryConfig{}}, registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT)
 }
 
-func assertPluginToPluginRegistryType(t testing.TB, config *bufprotopluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
+func assertPluginToPluginRegistryType(t testing.TB, config *bufremotepluginconfig.RegistryConfig, registryType registryv1alpha1.PluginRegistryType) {
 	plugin, err := NewPlugin("v1.0.0", nil, config, "sha256:digest", "", "")
 	require.Nil(t, err)
 	assert.Equal(t, registryType, PluginToProtoPluginRegistryType(plugin))
@@ -41,14 +41,14 @@ func assertPluginToPluginRegistryType(t testing.TB, config *bufprotopluginconfig
 func TestPluginRegistryRoundTrip(t *testing.T) {
 	t.Parallel()
 	assertPluginRegistryRoundTrip(t, nil)
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Go: &bufprotopluginconfig.GoRegistryConfig{},
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{})
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Go: &bufremotepluginconfig.GoRegistryConfig{},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Go: &bufprotopluginconfig.GoRegistryConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Go: &bufremotepluginconfig.GoRegistryConfig{
 			MinVersion: "1.18",
-			Deps: []*bufprotopluginconfig.GoRegistryDependencyConfig{
+			Deps: []*bufremotepluginconfig.GoRegistryDependencyConfig{
 				{
 					Module:  "connectrpc.com/connect",
 					Version: "v0.1.1",
@@ -56,16 +56,16 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		NPM: &bufprotopluginconfig.NPMRegistryConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		NPM: &bufremotepluginconfig.NPMRegistryConfig{
 			ImportStyle: "commonjs",
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		NPM: &bufprotopluginconfig.NPMRegistryConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		NPM: &bufremotepluginconfig.NPMRegistryConfig{
 			ImportStyle:             "module",
 			RewriteImportPathSuffix: "connectweb.js",
-			Deps: []*bufprotopluginconfig.NPMRegistryDependencyConfig{
+			Deps: []*bufremotepluginconfig.NPMRegistryDependencyConfig{
 				{
 					Package: "@bufbuild/protobuf",
 					Version: "^0.0.4",
@@ -73,10 +73,10 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Go: &bufprotopluginconfig.GoRegistryConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Go: &bufremotepluginconfig.GoRegistryConfig{
 			MinVersion: "1.18",
-			Deps: []*bufprotopluginconfig.GoRegistryDependencyConfig{
+			Deps: []*bufremotepluginconfig.GoRegistryDependencyConfig{
 				{
 					Module:  "connectrpc.com/connect",
 					Version: "v0.4.0",
@@ -87,26 +87,26 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			"separate_package": "true",
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Maven: &bufprotopluginconfig.MavenRegistryConfig{},
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Maven: &bufremotepluginconfig.MavenRegistryConfig{},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Maven: &bufprotopluginconfig.MavenRegistryConfig{
-			Compiler: bufprotopluginconfig.MavenCompilerConfig{
-				Java: bufprotopluginconfig.MavenCompilerJavaConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Maven: &bufremotepluginconfig.MavenRegistryConfig{
+			Compiler: bufremotepluginconfig.MavenCompilerConfig{
+				Java: bufremotepluginconfig.MavenCompilerJavaConfig{
 					Encoding: "UTF-8",
 					Release:  7,
 					Source:   8,
 					Target:   9,
 				},
-				Kotlin: bufprotopluginconfig.MavenCompilerKotlinConfig{
+				Kotlin: bufremotepluginconfig.MavenCompilerKotlinConfig{
 					APIVersion:      "7",
 					JVMTarget:       "8",
 					LanguageVersion: "9",
 					Version:         "1.8.0",
 				},
 			},
-			Deps: []bufprotopluginconfig.MavenDependencyConfig{
+			Deps: []bufremotepluginconfig.MavenDependencyConfig{
 				{
 					GroupID:    "io.grpc",
 					ArtifactID: "grpc-core",
@@ -125,10 +125,10 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 					Extension:  "exe",
 				},
 			},
-			AdditionalRuntimes: []bufprotopluginconfig.MavenRuntimeConfig{
+			AdditionalRuntimes: []bufremotepluginconfig.MavenRuntimeConfig{
 				{
 					Name: "lite",
-					Deps: []bufprotopluginconfig.MavenDependencyConfig{
+					Deps: []bufremotepluginconfig.MavenDependencyConfig{
 						{
 							GroupID:    "io.grpc",
 							ArtifactID: "grpc-core",
@@ -152,19 +152,19 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Swift: &bufprotopluginconfig.SwiftRegistryConfig{},
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Swift: &bufremotepluginconfig.SwiftRegistryConfig{},
 	})
-	assertPluginRegistryRoundTrip(t, &bufprotopluginconfig.RegistryConfig{
-		Swift: &bufprotopluginconfig.SwiftRegistryConfig{
-			Dependencies: []bufprotopluginconfig.SwiftRegistryDependencyConfig{
+	assertPluginRegistryRoundTrip(t, &bufremotepluginconfig.RegistryConfig{
+		Swift: &bufremotepluginconfig.SwiftRegistryConfig{
+			Dependencies: []bufremotepluginconfig.SwiftRegistryDependencyConfig{
 				{
 					Source:        "https://github.com/apple/swift-protobuf.git",
 					Package:       "swift-protobuf",
 					Version:       "1.12.0",
 					Products:      []string{"SwiftProtobuf"},
 					SwiftVersions: []string{".v5"},
-					Platforms: bufprotopluginconfig.SwiftRegistryDependencyPlatformConfig{
+					Platforms: bufremotepluginconfig.SwiftRegistryDependencyPlatformConfig{
 						MacOS:   "v10_15",
 						IOS:     "v10_15",
 						TVOS:    "v10_15",
@@ -176,7 +176,7 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 	})
 }
 
-func assertPluginRegistryRoundTrip(t testing.TB, config *bufprotopluginconfig.RegistryConfig) {
+func assertPluginRegistryRoundTrip(t testing.TB, config *bufremotepluginconfig.RegistryConfig) {
 	protoRegistryConfig, err := PluginRegistryToProtoRegistryConfig(config)
 	require.NoError(t, err)
 	registryConfig, err := ProtoRegistryConfigToPluginRegistry(protoRegistryConfig)

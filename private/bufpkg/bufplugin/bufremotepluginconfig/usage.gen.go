@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufprotoplugindocker contains utilities for building Buf plugins using the Docker API.
-package bufprotoplugindocker
+// Generated. DO NOT EDIT.
 
-// ImagePath is the default location for the Docker image archive in a plugin zip file.
-const ImagePath = "image.tar"
+package bufremotepluginconfig
+
+import _ "github.com/bufbuild/buf/private/usage"
