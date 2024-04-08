@@ -833,17 +833,17 @@ func getLintConfigForExternalLintV2(
 	for _, externalPlugin := range externalLint.Plugins {
 		var path string
 		var args []string
-		switch t := externalPlugin.(type) {
+		switch t := externalPlugin.Local.(type) {
 		case string:
 			path = t
 		case []string:
 			if len(t) == 0 {
-				return nil, errors.New("lint.plugins had a value that was an empty list")
+				return nil, errors.New("lint.plugins.local had a value that was an empty list")
 			}
 			path = t[0]
 			args = t[1:]
 		default:
-			return nil, fmt.Errorf("lint.plugins values must be either a single string or lists or strings but got a %T", externalPlugin)
+			return nil, fmt.Errorf("lint.plugins.local values must be either a single string or lists or strings but got a %T", externalPlugin)
 		}
 		lintPluginConfig, err := NewLintPluginConfig(path, args)
 		if err != nil {
@@ -1013,11 +1013,11 @@ func getExternalLintV2ForLintConfig(lintConfig LintConfig, moduleDirPath string)
 	externalLint.ServiceSuffix = lintConfig.ServiceSuffix()
 	externalLint.DisallowCommentIgnores = !lintConfig.AllowCommentIgnores()
 	for _, lintPluginConfig := range lintConfig.Plugins() {
-		var plugin interface{}
+		var plugin externalBufYAMLFileLintPluginV2
 		if args := lintPluginConfig.Args(); len(args) > 0 {
-			plugin = append([]string{lintPluginConfig.Path()}, args...)
+			plugin.Local = append([]string{lintPluginConfig.Path()}, args...)
 		} else {
-			plugin = lintPluginConfig.Path()
+			plugin.Local = lintPluginConfig.Path()
 		}
 		externalLint.Plugins = append(externalLint.Plugins, plugin)
 	}
@@ -1131,15 +1131,14 @@ type externalBufYAMLFileLintV2 struct {
 	// Ignore are the paths to ignore.
 	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
 	/// IgnoreOnly are the ID/category to paths to ignore.
-	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
-	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
-	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
-	RPCAllowGoogleProtobufEmptyRequests  bool                `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
-	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
-	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
-	DisallowCommentIgnores               bool                `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
-	// Either a []string or [][]string.
-	Plugins []interface{} `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	IgnoreOnly                           map[string][]string               `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	EnumZeroValueSuffix                  string                            `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
+	RPCAllowSameRequestResponse          bool                              `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
+	RPCAllowGoogleProtobufEmptyRequests  bool                              `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	RPCAllowGoogleProtobufEmptyResponses bool                              `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
+	ServiceSuffix                        string                            `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	DisallowCommentIgnores               bool                              `json:"disallow_comment_ignores,omitempty" yaml:"disallow_comment_ignores,omitempty"`
+	Plugins                              []externalBufYAMLFileLintPluginV2 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
 }
 
 func (el externalBufYAMLFileLintV2) isEmpty() bool {
@@ -1152,7 +1151,13 @@ func (el externalBufYAMLFileLintV2) isEmpty() bool {
 		!el.RPCAllowGoogleProtobufEmptyRequests &&
 		!el.RPCAllowGoogleProtobufEmptyResponses &&
 		el.ServiceSuffix == "" &&
-		!el.DisallowCommentIgnores
+		!el.DisallowCommentIgnores &&
+		len(el.Plugins) == 0
+}
+
+type externalBufYAMLFileLintPluginV2 struct {
+	// Either a string or []string
+	Local interface{} `json:"local,omitempty" yaml:"local,omitempty"`
 }
 
 // externalBufYAMLFileBreakingV1Beta1V1V2 represents breaking configuation within a v1beta1, v1,

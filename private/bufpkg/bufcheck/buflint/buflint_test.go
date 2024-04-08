@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -1221,7 +1222,7 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop(), command.NewRunner(), tracing.NopTracer)
+	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer, bufpluginimage.NewHandler(zap.NewNop(), command.NewRunner()))
 	err = handler.Check(
 		ctx,
 		app.NewStderrContainer(io.Discard),

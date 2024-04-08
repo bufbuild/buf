@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -81,7 +82,7 @@ func (h *handler) Check(
 			return err
 		}
 	}
-	var pluginFileAnnotationsSet bufanalysis.FileAnnotationSet
+	var pluginFileAnnotationSet bufanalysis.FileAnnotationSet
 	if err := h.pluginHandler.Check(ctx, container, config, image); err != nil {
 		// If an error other than a FileAnnotationSet, return now.
 		if !errors.As(err, &pluginFileAnnotationSet) {
