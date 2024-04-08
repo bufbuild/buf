@@ -38,13 +38,27 @@ type Annotation struct {
 }
 
 func (a *Annotation) ToProtoAnnotation() *pluginv1beta1.Annotation {
-	panic("TODO")
-	return nil
+	return &pluginv1beta1.Annotation{
+		FileName:    a.FileName,
+		StartLine:   uint32(a.StartLine),
+		StartColumn: uint32(a.StartColumn),
+		EndLine:     uint32(a.EndLine),
+		EndColumn:   uint32(a.EndColumn),
+		Id:          a.ID,
+		Message:     a.Message,
+	}
 }
 
 func NewAnnotation(protoAnnotation *pluginv1beta1.Annotation) *Annotation {
-	panic("TODO")
-	return nil
+	return &Annotation{
+		FileName:    protoAnnotation.FileName,
+		StartLine:   int(protoAnnotation.StartLine),
+		StartColumn: int(protoAnnotation.StartColumn),
+		EndLine:     int(protoAnnotation.EndLine),
+		EndColumn:   int(protoAnnotation.EndColumn),
+		ID:          protoAnnotation.Id,
+		Message:     protoAnnotation.Message,
+	}
 }
 
 func NewAnnotationForDescriptor(descriptor protoreflect.Descriptor, id string, message string) *Annotation {
@@ -58,55 +72,59 @@ type File interface {
 	isFile()
 }
 
-type ResponseWriter interface {
+type LintResponseWriter interface {
 	AddAnnotations(...*Annotation)
-	ToProtoResponse() (*pluginv1beta1.Response, error)
+	ToProtoLintResponse() (*pluginv1beta1.LintResponse, error)
+
+	isLintResponseWriter()
 }
 
-func NewResponseWriter() ResponseWriter {
+func NewLintResponseWriter() LintResponseWriter {
 	panic("TODO")
 	return nil
 }
 
-type Request interface {
+type LintRequest interface {
 	LintFiles() []File
 	AllFiles() []File
-	ProtoRequest() *pluginv1beta1.Request
+	ProtoLintRequest() *pluginv1beta1.LintRequest
+
+	isLintRequest()
 }
 
-func NewRequest(protoRequest *pluginv1beta1.Request) (Request, error) {
+func NewLintRequest(protoLintRequest *pluginv1beta1.LintRequest) (LintRequest, error) {
 	return nil, errors.New("TODO")
 }
 
-type Handler interface {
+type LintHandler interface {
 	Handle(
 		context.Context,
 		Env,
-		ResponseWriter,
-		Request,
+		LintResponseWriter,
+		LintRequest,
 	) error
 }
 
-type HandlerFunc func(
+type LintHandlerFunc func(
 	context.Context,
 	Env,
-	ResponseWriter,
-	Request,
+	LintResponseWriter,
+	LintRequest,
 ) error
 
-func (h HandlerFunc) Handle(
+func (l LintHandlerFunc) Handle(
 	ctx context.Context,
 	env Env,
-	responseWriter ResponseWriter,
-	request Request,
+	responseWriter LintResponseWriter,
+	request LintRequest,
 ) error {
-	return h(ctx, env, responseWriter, request)
+	return l(ctx, env, responseWriter, request)
 }
 
-func Main(handler Handler) {
+func LintMain(handler LintHandler) {
 	panic("TODO")
 }
 
-func Run(ctx context.Context, env Env, handler Handler) error {
+func LintRun(ctx context.Context, env Env, handler LintHandler) error {
 	return errors.New("TODO")
 }

@@ -19,10 +19,10 @@ import (
 	"github.com/bufbuild/buf/private/pkg/command"
 )
 
-func NewHandler(
+func NewLintHandler(
 	runner command.Runner,
 	pluginPath string,
 	pluginArgs []string,
-) bufplugin.Handler {
-	return newHandler(runner, pluginPath, pluginArgs)
+) bufplugin.LintHandler {
+	return newLintHandler(runner, pluginPath, pluginArgs)
 }

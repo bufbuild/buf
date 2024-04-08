@@ -25,14 +25,14 @@ import (
 const id = "TIMESTAMP_SUFFIX"
 
 func main() {
-	bufplugin.Main(bufplugin.HandlerFunc(handle))
+	bufplugin.LintMain(bufplugin.LintHandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
 	env bufplugin.Env,
-	responseWriter bufplugin.ResponseWriter,
-	request bufplugin.Request,
+	responseWriter bufplugin.LintResponseWriter,
+	request bufplugin.LintRequest,
 ) error {
 	for _, file := range request.LintFiles() {
 		messages := file.Messages()
@@ -46,7 +46,7 @@ func handle(
 }
 
 func handleMessageDescriptor(
-	responseWriter bufplugin.ResponseWriter,
+	responseWriter bufplugin.LintResponseWriter,
 	messageDescriptor protoreflect.MessageDescriptor,
 ) error {
 	fields := messageDescriptor.Fields()
@@ -66,7 +66,7 @@ func handleMessageDescriptor(
 }
 
 func handleFieldDescriptor(
-	responseWriter bufplugin.ResponseWriter,
+	responseWriter bufplugin.LintResponseWriter,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	messageDescriptor := fieldDescriptor.Message()
