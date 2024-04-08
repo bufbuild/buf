@@ -58,6 +58,9 @@ type AugmentedConnectError struct {
 
 // Error implements the error interface and returns the error message.
 func (e *AugmentedConnectError) Error() string {
+	if e.cause == nil {
+		return "unknown error"
+	}
 	return e.cause.Error()
 }
 
