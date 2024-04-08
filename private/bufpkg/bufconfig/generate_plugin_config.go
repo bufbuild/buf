@@ -400,6 +400,9 @@ func newPluginConfigFromExternalV2(
 	if pluginTypeCount > 1 {
 		return nil, errors.New("only one of remote, local or protoc_builtin")
 	}
+	if externalConfig.Out == "" {
+		return nil, errors.New("must specify out")
+	}
 	var strategy string
 	if externalConfig.Strategy != nil {
 		strategy = *externalConfig.Strategy
