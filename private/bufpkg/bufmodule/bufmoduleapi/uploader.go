@@ -113,14 +113,21 @@ func (a *uploader) Upload(
 
 	var modules []*modulev1.Module
 	if uploadOptions.CreateIfNotExist() {
-		modules, err = a.createContentModulesIfNotExist(
-			ctx,
-			primaryRegistry,
-			contentModules,
-			uploadOptions.CreateModuleVisibility(),
-		)
-		if err != nil {
-			return nil, err
+		// We must attempt to create each module one at a time, since CreateModules is atomic.
+		// For example, if contentModules contains 3 modules, a, b, and c, where a and b both
+		// already exist, calling CreateModules on all 3 at once will result in an `AlreadyExists`
+		// and `c` will not be created.
+		for _, contentModule := range contentModules {
+			modulesResponse, err := a.createContentModuleIfNotExist(
+				ctx,
+				primaryRegistry,
+				contentModule,
+				uploadOptions.CreateModuleVisibility(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			modules = append(modules, modulesResponse...)
 		}
 	} else {
 		modules, err = a.validateContentModulesExist(
@@ -318,10 +325,10 @@ func (a *uploader) Upload(
 	return commits, nil
 }
 
-func (a *uploader) createContentModulesIfNotExist(
+func (a *uploader) createContentModuleIfNotExist(
 	ctx context.Context,
 	primaryRegistry string,
-	contentModules []bufmodule.Module,
+	contentModule bufmodule.Module,
 	createModuleVisibility bufmodule.ModuleVisibility,
 ) ([]*modulev1.Module, error) {
 	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
@@ -332,20 +339,17 @@ func (a *uploader) createContentModulesIfNotExist(
 		ctx,
 		connect.NewRequest(
 			&modulev1.CreateModulesRequest{
-				Values: slicesext.Map(
-					contentModules,
-					func(module bufmodule.Module) *modulev1.CreateModulesRequest_Value {
-						return &modulev1.CreateModulesRequest_Value{
-							OwnerRef: &ownerv1.OwnerRef{
-								Value: &ownerv1.OwnerRef_Name{
-									Name: module.ModuleFullName().Owner(),
-								},
+				Values: []*modulev1.CreateModulesRequest_Value{
+					{
+						OwnerRef: &ownerv1.OwnerRef{
+							Value: &ownerv1.OwnerRef_Name{
+								Name: contentModule.ModuleFullName().Owner(),
 							},
-							Name:       module.ModuleFullName().Name(),
-							Visibility: v1ProtoCreateModuleVisibility,
-						}
+						},
+						Name:       contentModule.ModuleFullName().Name(),
+						Visibility: v1ProtoCreateModuleVisibility,
 					},
-				),
+				},
 			},
 		),
 	)
@@ -354,11 +358,10 @@ func (a *uploader) createContentModulesIfNotExist(
 	}
 	// If a module already existed, then we
 	if connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return a.validateContentModulesExist(ctx, primaryRegistry, contentModules)
+		return a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
 	}
 	// Otherwise we return the modules we created
 	return response.Msg.Modules, nil
-
 }
 
 func (a *uploader) validateContentModulesExist(

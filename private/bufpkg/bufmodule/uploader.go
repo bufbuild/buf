@@ -160,7 +160,6 @@ func (u *uploadOptions) CreateModuleVisibility() ModuleVisibility {
 func (u *uploadOptions) validate() error {
 	if u.createIfNotExist && u.createModuleVisibility == 0 {
 		return errors.New("must set a valid ModuleVisibility if CreateIfNotExist was specified")
-
 	}
 	// We validate that only one of labels, tags, and branchOrDraft is set.
 	// This is enforced at the flag level, so if more than one is set, we return a syserror.
