@@ -19,7 +19,7 @@ import (
 	"errors"
 	"io"
 
-	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
+	pluginv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/v1beta1"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -37,12 +37,12 @@ type Annotation struct {
 	Message     string
 }
 
-func (a *Annotation) ToProtoAnnotation() *lintv1beta1.Annotation {
+func (a *Annotation) ToProtoAnnotation() *pluginv1beta1.Annotation {
 	panic("TODO")
 	return nil
 }
 
-func NewAnnotation(protoAnnotation *lintv1beta1.Annotation) *Annotation {
+func NewAnnotation(protoAnnotation *pluginv1beta1.Annotation) *Annotation {
 	panic("TODO")
 	return nil
 }
@@ -60,7 +60,7 @@ type File interface {
 
 type ResponseWriter interface {
 	AddAnnotations(...*Annotation)
-	ToProtoResponse() (*lintv1beta1.Response, error)
+	ToProtoResponse() (*pluginv1beta1.Response, error)
 }
 
 func NewResponseWriter() ResponseWriter {
@@ -71,10 +71,10 @@ func NewResponseWriter() ResponseWriter {
 type Request interface {
 	LintFiles() []File
 	AllFiles() []File
-	ProtoRequest() *lintv1beta1.Request
+	ProtoRequest() *pluginv1beta1.Request
 }
 
-func NewRequest(protoRequest *lintv1beta1.Request) (Request, error) {
+func NewRequest(protoRequest *pluginv1beta1.Request) (Request, error) {
 	return nil, errors.New("TODO")
 }
 

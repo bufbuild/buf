@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
-	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
+	pluginv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -65,7 +65,7 @@ func (h *handler) Handle(
 	); err != nil {
 		return err
 	}
-	protoResponse := &lintv1beta1.Response{}
+	protoResponse := &pluginv1beta1.Response{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(protoResponseBuffer.Bytes(), protoResponse); err != nil {
 		return err
 	}
