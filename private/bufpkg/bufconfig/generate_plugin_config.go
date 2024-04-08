@@ -275,8 +275,6 @@ func newPluginConfigFromExternalV1Beta1(
 func newPluginConfigFromExternalV1(
 	externalConfig externalGeneratePluginConfigV1,
 ) (GeneratePluginConfig, error) {
-	// In v1 config, only plugin and name are allowed, since remote alpha plugin
-	// has been deprecated.
 	if externalConfig.Plugin == "" && externalConfig.Name == "" {
 		return nil, fmt.Errorf("one of plugin or name is required")
 	}
@@ -290,7 +288,7 @@ func newPluginConfigFromExternalV1(
 	case externalConfig.Name != "":
 		pluginIdentifier = externalConfig.Name
 		if bufpluginref.IsPluginReferenceOrIdentity(pluginIdentifier) {
-			// A remote alpha plugin name is not a valid local plugin name.
+			// A plugin reference is not a valid local plugin name.
 			return nil, fmt.Errorf("invalid local plugin name: %s", pluginIdentifier)
 		}
 	}
