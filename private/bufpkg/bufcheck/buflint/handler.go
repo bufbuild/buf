@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
+	pluginv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -133,23 +133,23 @@ func (h *handler) Check(
 	)
 }
 
-func imageToProtoLintRequest(image bufimage.Image) *lintv1beta1.Request {
-	var protoLintFiles []*lintv1beta1.File
+func imageToProtoLintRequest(image bufimage.Image) *pluginv1beta1.Request {
+	var protoLintFiles []*pluginv1beta1.File
 	for _, imageFile := range image.Files() {
 		protoLintFiles = append(
 			protoLintFiles,
-			&lintv1beta1.File{
+			&pluginv1beta1.File{
 				FileDescriptorProto: imageFile.FileDescriptorProto(),
 				IsImport:            imageFile.IsImport(),
 			},
 		)
 	}
-	return &lintv1beta1.Request{
+	return &pluginv1beta1.Request{
 		Files: protoLintFiles,
 	}
 }
 
-func protoLintAnnotationToFileAnnotation(protoLintAnnotation *lintv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
+func protoLintAnnotationToFileAnnotation(protoLintAnnotation *pluginv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
 	// TODO: keep a map of path to external path for the input on the request, recreate
 	return nil, errors.New("TODO")
 }
