@@ -62,8 +62,23 @@ func NewAnnotation(protoAnnotation *pluginv1beta1.Annotation) *Annotation {
 }
 
 func NewAnnotationForDescriptor(descriptor protoreflect.Descriptor, id string, message string) *Annotation {
+	annotation := &Annotation{
+		ID:      id,
+		Message: message,
+	}
+	fileDescriptor := descriptor.ParentFile()
+	if fileDescriptor == nil {
+		// ParentFile is documented to maybe be nil for some reason.
+		return annotation
+	}
+	annotation.FileName = fileDescriptor.Path()
+	sourceLocation := fileDescriptor.SourceLocations().ByDescriptor(descriptor)
+	// TODO: The protoreflect API is a disaster. It says that "If there is no SourceLocation,
+	// the zero value is returned", but equality is not easy because SourceLocation contains
+	// a slice. This is just a mess. Also need to reconcile the zero-indexing.
+	_ = sourceLocation
 	panic("TODO")
-	return nil
+	return annotation
 }
 
 type File interface {
