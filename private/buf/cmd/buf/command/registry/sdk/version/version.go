@@ -93,7 +93,7 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf(err.Error())
 	}
-	pluginIdentity, pluginVersion, err := bufpluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
+	pluginIdentity, pluginVersion, err := bufremotepluginref.ParsePluginIdentityOptionalVersion(flags.Plugin)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf(err.Error())
 	}
