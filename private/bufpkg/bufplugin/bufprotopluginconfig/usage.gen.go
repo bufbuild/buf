@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufplugindocker
+package bufprotopluginconfig
 
 import _ "github.com/bufbuild/buf/private/usage"

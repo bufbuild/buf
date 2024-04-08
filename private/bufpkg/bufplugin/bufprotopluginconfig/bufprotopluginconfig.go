@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufpluginconfig defines the buf.plugin.yaml file.
-package bufpluginconfig
+// package bufprotopluginconfig defines the buf.plugin.yaml file.
+package bufprotopluginconfig
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -47,7 +47,7 @@ var (
 // Config is the plugin config.
 type Config struct {
 	// Name is the name of the plugin (e.g. 'buf.build/protocolbuffers/go').
-	Name bufpluginref.PluginIdentity
+	Name bufprotopluginref.PluginIdentity
 	// PluginVersion is the version of the plugin's implementation
 	// (e.g. the protoc-gen-connect-go implementation is v0.2.0).
 	//
@@ -65,7 +65,7 @@ type Config struct {
 	//
 	// An example of a dependency might be a 'protoc-gen-go-grpc' plugin
 	// which depends on the 'protoc-gen-go' generated code.
-	Dependencies []bufpluginref.PluginReference
+	Dependencies []bufprotopluginref.PluginReference
 	// OutputLanguages is a list of output languages the plugin supports.
 	OutputLanguages []string
 	// Registry is the registry configuration, which lets the user specify

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufpluginconfig
+package bufprotopluginconfig
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotoplugin/bufprotopluginref"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,9 +36,9 @@ func TestGetConfigForBucket(t *testing.T) {
 	require.NoError(t, err)
 	pluginConfig, err := GetConfigForBucket(context.Background(), readWriteBucket)
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
+	pluginDependency, err := bufprotopluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -47,7 +47,7 @@ func TestGetConfigForBucket(t *testing.T) {
 			PluginVersion: "v1.2.0",
 			SourceURL:     "https://github.com/grpc/grpc-go",
 			Description:   "Generates Go language bindings of services in protobuf definition files for gRPC.",
-			Dependencies: []bufpluginref.PluginReference{
+			Dependencies: []bufprotopluginref.PluginReference{
 				pluginDependency,
 			},
 			OutputLanguages: []string{"go"},
@@ -77,9 +77,9 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "go", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/library/go-grpc")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
+	pluginDependency, err := bufprotopluginref.PluginReferenceForString("buf.build/library/go:v1.28.0", 1)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -88,7 +88,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			PluginVersion: "v1.2.0",
 			SourceURL:     "https://github.com/grpc/grpc-go",
 			Description:   "Generates Go language bindings of services in protobuf definition files for gRPC.",
-			Dependencies: []bufpluginref.PluginReference{
+			Dependencies: []bufprotopluginref.PluginReference{
 				pluginDependency,
 			},
 			OutputLanguages: []string{"go"},
@@ -118,9 +118,9 @@ func TestParsePluginConfigGoYAMLOverrideRemote(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "go", "buf.plugin.yaml"), WithOverrideRemote("buf.mydomain.com"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.mydomain.com/library/go-grpc")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.mydomain.com/library/go-grpc")
 	require.NoError(t, err)
-	pluginDependency, err := bufpluginref.PluginReferenceForString("buf.mydomain.com/library/go:v1.28.0", 1)
+	pluginDependency, err := bufprotopluginref.PluginReferenceForString("buf.mydomain.com/library/go:v1.28.0", 1)
 	require.NoError(t, err)
 	assert.Equal(t, pluginIdentity, pluginConfig.Name)
 	require.Len(t, pluginConfig.Dependencies, 1)
@@ -131,7 +131,7 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "npm", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/js")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/protocolbuffers/js")
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -164,15 +164,15 @@ func TestParsePluginConfigMavenYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "maven", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/grpc/java")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/grpc/java")
 	require.NoError(t, err)
-	pluginDep, err := bufpluginref.PluginReferenceForString("buf.build/protocolbuffers/java:v22.2", 0)
+	pluginDep, err := bufprotopluginref.PluginReferenceForString("buf.build/protocolbuffers/java:v22.2", 0)
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
 			Name:            pluginIdentity,
-			Dependencies:    []bufpluginref.PluginReference{pluginDep},
+			Dependencies:    []bufprotopluginref.PluginReference{pluginDep},
 			PluginVersion:   "v1.0.0",
 			OutputLanguages: []string{"java"},
 			Registry: &RegistryConfig{
@@ -259,9 +259,9 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "swift", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/connectrpc/swift")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/connectrpc/swift")
 	require.NoError(t, err)
-	pluginDep, err := bufpluginref.PluginReferenceForString("buf.build/apple/swift:v1.23.0", 0)
+	pluginDep, err := bufprotopluginref.PluginReferenceForString("buf.build/apple/swift:v1.23.0", 0)
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -270,7 +270,7 @@ func TestParsePluginConfigSwiftYAML(t *testing.T) {
 			PluginVersion:   "v0.8.0",
 			SourceURL:       "https://github.com/connectrpc/connect-swift",
 			Description:     "Idiomatic gRPC & Connect RPCs for Swift.",
-			Dependencies:    []bufpluginref.PluginReference{pluginDep},
+			Dependencies:    []bufprotopluginref.PluginReference{pluginDep},
 			OutputLanguages: []string{"swift"},
 			Registry: &RegistryConfig{
 				Swift: &SwiftRegistryConfig{
@@ -301,7 +301,7 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "python", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/nipunn1313-mypy")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/community/nipunn1313-mypy")
 	require.NoError(t, err)
 	require.Equal(
 		t,
@@ -332,7 +332,7 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/java")
+	pluginIdentity, err := bufprotopluginref.PluginIdentityForString("buf.build/protocolbuffers/java")
 	require.NoError(t, err)
 	require.Equal(
 		t,
