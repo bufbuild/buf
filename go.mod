@@ -3,11 +3,11 @@ module github.com/bufbuild/buf
 go 1.20
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240221180331-f05a6f4403ce.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1
 	connectrpc.com/connect v1.16.0
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.9.0
-	github.com/bufbuild/protovalidate-go v0.6.0
+	github.com/bufbuild/protovalidate-go v0.6.1
 	github.com/bufbuild/protoyaml-go v0.1.8
 	github.com/docker/docker v26.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.0.12
@@ -82,6 +82,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240325203815-454cdb8f5daa // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240325203815-454cdb8f5daa // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240401170217-c3f982113cda // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
 )
