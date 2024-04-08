@@ -15,6 +15,6 @@
 //go:build !darwin
 // +build !darwin
 
-package bufpluginexec
+package bufprotopluginexec
 
 const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`

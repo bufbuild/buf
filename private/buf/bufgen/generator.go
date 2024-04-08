@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	connect "connectrpc.com/connect"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
@@ -46,7 +46,7 @@ type generator struct {
 	logger              *zap.Logger
 	tracer              tracing.Tracer
 	storageosProvider   storageos.Provider
-	pluginexecGenerator bufpluginexec.Generator
+	pluginexecGenerator bufprotopluginexec.Generator
 	clientConfig        *connectclient.Config
 }
 
@@ -61,7 +61,7 @@ func newGenerator(
 		logger:              logger,
 		tracer:              tracer,
 		storageosProvider:   storageosProvider,
-		pluginexecGenerator: bufpluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
+		pluginexecGenerator: bufprotopluginexec.NewGenerator(logger, tracer, storageosProvider, runner),
 		clientConfig:        clientConfig,
 	}
 }
@@ -305,8 +305,8 @@ func (g *generator) execLocalPlugin(
 		container,
 		pluginConfig.Name(),
 		requests,
-		bufpluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
-		bufpluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
+		bufprotopluginexec.GenerateWithPluginPath(pluginConfig.Path()...),
+		bufprotopluginexec.GenerateWithProtocPath(pluginConfig.ProtocPath()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.Name(), err)

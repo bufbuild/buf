@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
-	"github.com/bufbuild/buf/private/buf/bufpluginexec"
+	"github.com/bufbuild/buf/private/buf/bufprotopluginexec"
 	"github.com/bufbuild/buf/private/buf/bufprotoc"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -74,9 +74,9 @@ Additional flags:
 		NormalizeFlag: flagsBuilder.Normalize,
 		Version: fmt.Sprintf(
 			"%v.%v.%v-buf",
-			bufpluginexec.DefaultVersion.GetMajor(),
-			bufpluginexec.DefaultVersion.GetMinor(),
-			bufpluginexec.DefaultVersion.GetPatch(),
+			bufprotopluginexec.DefaultVersion.GetMajor(),
+			bufprotopluginexec.DefaultVersion.GetMinor(),
+			bufprotopluginexec.DefaultVersion.GetPatch(),
 		),
 	}
 }
