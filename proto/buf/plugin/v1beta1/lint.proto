@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package buf.plugin.lint.v1beta1;
+package buf.plugin.v1beta1;
 
 import "google/protobuf/descriptor.proto";
 
@@ -62,11 +62,31 @@ message Annotation {
   string message = 7;
 }
 
-message Request {
+service LintService {
+  rpc Lint(LintRequest) returns (LintResponse) {
+      option idempotency_level = NO_SIDE_EFFECTS;
+  };
+}
+
+service BreakingService {
+  rpc Breaking(BreakingRequest) returns (BreakingResponse) {
+      option idempotency_level = NO_SIDE_EFFECTS;
+  };
+}
+
+message LintRequest {
   repeated File files = 1;
 }
 
-message Response {
+message LintResponse {
   repeated Annotation annotations = 1;
-  string error = 2;
+}
+
+message BreakingRequest {
+  repeated File files = 1;
+  repeated File against_files = 2;
+}
+
+message BreakingResponse {
+  repeated Annotation annotations = 1;
 }
