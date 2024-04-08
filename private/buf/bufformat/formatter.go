@@ -447,7 +447,7 @@ func (f *formatter) writeLastCompactOption(optionNode *ast.OptionNode) {
 	f.writeLineEnd(optionNode.Val)
 }
 
-// writeOptionValue writes the option prefix, which makes up all of the
+// writeOptionPrefix writes the option prefix, which makes up all of the
 // option's definition, excluding the final token(s).
 //
 // For example,
@@ -1246,7 +1246,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 	)
 }
 
-// writeCompositeForArrayLiteral writes the composite node in a way that's suitable
+// writeCompositeValueForArrayLiteral writes the composite node in a way that's suitable
 // for array literals. In general, signed integers and compound strings should have their
 // comments written in-line because they are one of many components in a single line.
 //

@@ -61,7 +61,7 @@ func newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, 
 	}, nil
 }
 
-// validateOverlap returns a non-nil error if any of the directories overlap
+// validateConfigurationOverlap returns a non-nil error if any of the directories overlap
 // with each other. The given directories are expected to be sorted.
 func validateConfigurationOverlap(directories []string, workspaceID string) error {
 	for i := 0; i < len(directories); i++ {
