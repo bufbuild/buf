@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package lintv1beta1
+package pluginv1beta1connect
 
 import _ "github.com/bufbuild/buf/private/usage"

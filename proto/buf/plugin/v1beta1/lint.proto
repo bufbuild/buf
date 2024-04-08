@@ -64,14 +64,14 @@ message Annotation {
 
 service LintService {
   rpc Lint(LintRequest) returns (LintResponse) {
-      option idempotency_level = NO_SIDE_EFFECTS;
-  };
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 service BreakingService {
   rpc Breaking(BreakingRequest) returns (BreakingResponse) {
-      option idempotency_level = NO_SIDE_EFFECTS;
-  };
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 message LintRequest {
