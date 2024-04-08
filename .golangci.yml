@@ -191,7 +191,7 @@ issues:
     - linters:
         - forbidigo
       # we want to use errgroup here
-      path: private/bufpkg/bufplugin/bufplugindocker/docker.go
+      path: private/bufpkg/bufremoteplugin/bufremoteplugindocker/docker.go
       text: "use of `errgroup"
     - linters:
         - forbidigo
