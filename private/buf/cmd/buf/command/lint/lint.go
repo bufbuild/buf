@@ -137,7 +137,7 @@ func run(
 		if err := buflint.NewHandler(
 			container.Logger(),
 			tracing.NewTracer(container.Tracer()),
-			bufpluginimage.NewHandler(
+			bufpluginimage.NewLintHandler(
 				container.Logger(),
 				command.NewRunner(),
 			),

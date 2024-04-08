@@ -16,7 +16,6 @@ package bufpluginimage
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -29,7 +28,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Handler interface {
+type LintHandler interface {
 	Check(
 		ctx context.Context,
 		container app.StderrContainer,
@@ -38,31 +37,31 @@ type Handler interface {
 	) error
 }
 
-func NewHandler(
+func NewLintHandler(
 	logger *zap.Logger,
 	runner command.Runner,
-) Handler {
-	return newHandler(logger, runner)
+) LintHandler {
+	return newLintHandler(logger, runner)
 }
 
 // *** PRIVATE ***
 
-type handler struct {
+type lintHandler struct {
 	logger *zap.Logger
 	runner command.Runner
 }
 
-func newHandler(
+func newLintHandler(
 	logger *zap.Logger,
 	runner command.Runner,
-) *handler {
-	return &handler{
+) *lintHandler {
+	return &lintHandler{
 		logger: logger,
 		runner: runner,
 	}
 }
 
-func (h *handler) Check(
+func (l *lintHandler) Check(
 	ctx context.Context,
 	container app.StderrContainer,
 	config bufconfig.LintConfig,
@@ -78,15 +77,20 @@ func (h *handler) Check(
 	env := bufplugin.Env{
 		Stderr: container.Stderr(),
 	}
-	request, err := bufplugin.NewLintRequest(imageToProtoLintRequest(image))
+	request, err := bufplugin.NewLintRequest(
+		&pluginv1beta1.LintRequest{
+			Files: imageToProtoFiles(image),
+		},
+	)
 	if err != nil {
 		return err
 	}
+	pathToExternalPath := getPathToExternalPathForImage(image)
 	responseWriter := bufplugin.NewLintResponseWriter()
 	var fileAnnotations []bufanalysis.FileAnnotation
 	for _, lintPluginConfig := range lintPluginConfigs {
 		handler := bufpluginexec.NewLintHandler(
-			h.runner,
+			l.runner,
 			lintPluginConfig.Path(),
 			lintPluginConfig.Args(),
 		)
@@ -98,7 +102,7 @@ func (h *handler) Check(
 			return err
 		}
 		for _, protoAnnotation := range protoLintResponse.GetAnnotations() {
-			fileAnnotation, err := protoAnnotationToFileAnnotation(protoAnnotation)
+			fileAnnotation, err := protoAnnotationToFileAnnotation(pathToExternalPath, protoAnnotation)
 			if err != nil {
 				return err
 			}
@@ -111,7 +115,7 @@ func (h *handler) Check(
 	return nil
 }
 
-func imageToProtoLintRequest(image bufimage.Image) *pluginv1beta1.LintRequest {
+func imageToProtoFiles(image bufimage.Image) []*pluginv1beta1.File {
 	var protoFiles []*pluginv1beta1.File
 	for _, imageFile := range image.Files() {
 		protoFiles = append(
@@ -122,12 +126,65 @@ func imageToProtoLintRequest(image bufimage.Image) *pluginv1beta1.LintRequest {
 			},
 		)
 	}
-	return &pluginv1beta1.LintRequest{
-		Files: protoFiles,
+	return protoFiles
+}
+
+func getPathToExternalPathForImage(image bufimage.Image) map[string]string {
+	pathToExternalPath := make(map[string]string)
+	for _, imageFile := range image.Files() {
+		pathToExternalPath[imageFile.Path()] = imageFile.ExternalPath()
+	}
+	return pathToExternalPath
+}
+
+func protoAnnotationToFileAnnotation(
+	pathToExternalPath map[string]string,
+	protoAnnotation *pluginv1beta1.Annotation,
+) (bufanalysis.FileAnnotation, error) {
+	var fileInfo *fileInfo
+	var startLine int
+	var startColumn int
+	var endLine int
+	var endColumn int
+	if fileName := protoAnnotation.GetFileName(); fileName != "" {
+		fileInfo = newFileInfo(fileName, pathToExternalPath[fileName])
+		// TODO: Reconcile differences in semantics with bufanalysis.FileAnnotation
+		// TODO: Why are we not using bufplugin.Annotation if we have it?
+		startLine = int(protoAnnotation.GetStartLine())
+		endLine = int(protoAnnotation.GetEndLine())
+		startColumn = int(protoAnnotation.GetStartColumn())
+		endColumn = int(protoAnnotation.GetEndColumn())
+	}
+	return bufanalysis.NewFileAnnotation(
+		fileInfo,
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
+		protoAnnotation.Id,
+		protoAnnotation.Message,
+	), nil
+}
+
+type fileInfo struct {
+	path         string
+	externalPath string
+}
+
+func newFileInfo(path string, externalPath string) *fileInfo {
+	return &fileInfo{
+		path:         path,
+		externalPath: externalPath,
 	}
 }
 
-func protoAnnotationToFileAnnotation(protoAnnotation *pluginv1beta1.Annotation) (bufanalysis.FileAnnotation, error) {
-	// TODO: keep a map of path to external path for the input on the request, recreate
-	return nil, errors.New("TODO")
+func (f *fileInfo) Path() string {
+	return f.path
+}
+
+func (f *fileInfo) ExternalPath() string {
+	if f.externalPath != "" {
+		return f.externalPath
+	}
+	return f.path
 }

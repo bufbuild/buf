@@ -1222,7 +1222,14 @@ func testLintWithOptions(
 
 	lintConfig := workspace.GetLintConfigForOpaqueID(opaqueID)
 	require.NotNil(t, lintConfig)
-	handler := buflint.NewHandler(zap.NewNop(), tracing.NopTracer, bufpluginimage.NewHandler(zap.NewNop(), command.NewRunner()))
+	handler := buflint.NewHandler(
+		zap.NewNop(),
+		tracing.NopTracer,
+		bufpluginimage.NewLintHandler(
+			zap.NewNop(),
+			command.NewRunner(),
+		),
+	)
 	err = handler.Check(
 		ctx,
 		app.NewStderrContainer(io.Discard),

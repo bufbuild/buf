@@ -84,7 +84,7 @@ func handle(
 	if err := buflint.NewHandler(
 		logger,
 		tracing.NopTracer,
-		bufpluginimage.NewHandler(
+		bufpluginimage.NewLintHandler(
 			logger,
 			command.NewRunner(),
 		),

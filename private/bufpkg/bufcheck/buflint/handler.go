@@ -31,21 +31,21 @@ import (
 )
 
 type handler struct {
-	logger        *zap.Logger
-	tracer        tracing.Tracer
-	pluginHandler bufpluginimage.Handler
-	runner        *internal.Runner
+	logger            *zap.Logger
+	tracer            tracing.Tracer
+	pluginLintHandler bufpluginimage.LintHandler
+	runner            *internal.Runner
 }
 
 func newHandler(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	pluginHandler bufpluginimage.Handler,
+	pluginLintHandler bufpluginimage.LintHandler,
 ) *handler {
 	return &handler{
-		logger:        logger,
-		tracer:        tracer,
-		pluginHandler: pluginHandler,
+		logger:            logger,
+		tracer:            tracer,
+		pluginLintHandler: pluginLintHandler,
 		// linting allows for comment ignores
 		// note that comment ignores still need to be enabled within the config
 		// for a given check, this just says that comment ignores are allowed
@@ -83,7 +83,7 @@ func (h *handler) Check(
 		}
 	}
 	var pluginFileAnnotationSet bufanalysis.FileAnnotationSet
-	if err := h.pluginHandler.Check(ctx, container, config, image); err != nil {
+	if err := h.pluginLintHandler.Check(ctx, container, config, image); err != nil {
 		// If an error other than a FileAnnotationSet, return now.
 		if !errors.As(err, &pluginFileAnnotationSet) {
 			return err

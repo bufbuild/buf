@@ -65,9 +65,9 @@ type Handler interface {
 func NewHandler(
 	logger *zap.Logger,
 	tracer tracing.Tracer,
-	pluginHandler bufpluginimage.Handler,
+	pluginLintHandler bufpluginimage.LintHandler,
 ) Handler {
-	return newHandler(logger, tracer, pluginHandler)
+	return newHandler(logger, tracer, pluginLintHandler)
 }
 
 // RulesForConfig returns the rules for a given config.
