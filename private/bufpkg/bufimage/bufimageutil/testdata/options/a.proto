@@ -9,7 +9,7 @@ message Foo {
 	option (message_foo).foo = "str";
 	option (message_baz) = "str";
 
-	optional string foo = 1 [
+	optional uint64 foo = 1 [
 		(field_foo).foo = "str",
 		(field_baz) = "str",
 		jstype = JS_STRING
