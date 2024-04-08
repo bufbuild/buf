@@ -18,21 +18,21 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/buflintplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const id = "TIMESTAMP_SUFFIX"
 
 func main() {
-	buflintplugin.Main(buflintplugin.HandlerFunc(handle))
+	bufplugin.Main(bufplugin.HandlerFunc(handle))
 }
 
 func handle(
 	ctx context.Context,
-	env buflintplugin.Env,
-	responseWriter buflintplugin.ResponseWriter,
-	request buflintplugin.Request,
+	env bufplugin.Env,
+	responseWriter bufplugin.ResponseWriter,
+	request bufplugin.Request,
 ) error {
 	for _, file := range request.LintFiles() {
 		messages := file.Messages()
@@ -46,7 +46,7 @@ func handle(
 }
 
 func handleMessageDescriptor(
-	responseWriter buflintplugin.ResponseWriter,
+	responseWriter bufplugin.ResponseWriter,
 	messageDescriptor protoreflect.MessageDescriptor,
 ) error {
 	fields := messageDescriptor.Fields()
@@ -66,7 +66,7 @@ func handleMessageDescriptor(
 }
 
 func handleFieldDescriptor(
-	responseWriter buflintplugin.ResponseWriter,
+	responseWriter bufplugin.ResponseWriter,
 	fieldDescriptor protoreflect.FieldDescriptor,
 ) error {
 	messageDescriptor := fieldDescriptor.Message()
@@ -82,8 +82,8 @@ func handleFieldDescriptor(
 	return nil
 }
 
-func newAnnotation(descriptor protoreflect.Descriptor) *buflintplugin.Annotation {
-	return buflintplugin.NewAnnotationForDescriptor(
+func newAnnotation(descriptor protoreflect.Descriptor) *bufplugin.Annotation {
+	return bufplugin.NewAnnotationForDescriptor(
 		descriptor,
 		id,
 		"Fields of type google.protobuf.Timestamp must end in _time.",

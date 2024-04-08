@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package buflintplugin
+package bufplugin
 
 import _ "github.com/bufbuild/buf/private/usage"

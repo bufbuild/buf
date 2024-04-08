@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflintpluginexec
+package bufpluginexec
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/buflintplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/command"
 )
 
@@ -23,6 +23,6 @@ func NewHandler(
 	runner command.Runner,
 	pluginPath string,
 	pluginArgs []string,
-) buflintplugin.Handler {
+) bufplugin.Handler {
 	return newHandler(runner, pluginPath, pluginArgs)
 }

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflintpluginexec
+package bufpluginexec
 
 import (
 	"bytes"
 	"context"
 	"errors"
 
-	"github.com/bufbuild/buf/private/bufpkg/buflintplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -46,9 +46,9 @@ func newHandler(
 
 func (h *handler) Handle(
 	ctx context.Context,
-	env buflintplugin.Env,
-	responseWriter buflintplugin.ResponseWriter,
-	request buflintplugin.Request,
+	env bufplugin.Env,
+	responseWriter bufplugin.ResponseWriter,
+	request bufplugin.Request,
 ) (retErr error) {
 	protoRequestData, err := protoencoding.NewWireMarshaler().Marshal(request.ProtoRequest())
 	if err != nil {
@@ -72,6 +72,6 @@ func (h *handler) Handle(
 	if errMessage := protoResponse.GetError(); errMessage != "" {
 		return errors.New(errMessage)
 	}
-	responseWriter.AddAnnotations(slicesext.Map(protoResponse.GetAnnotations(), buflintplugin.NewAnnotation)...)
+	responseWriter.AddAnnotations(slicesext.Map(protoResponse.GetAnnotations(), bufplugin.NewAnnotation)...)
 	return nil
 }

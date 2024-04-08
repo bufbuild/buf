@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/buflintplugin"
-	"github.com/bufbuild/buf/private/bufpkg/buflintplugin/buflintpluginexec"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginexec"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	lintv1beta1 "github.com/bufbuild/buf/private/gen/proto/go/buf/plugin/lint/v1beta1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -85,18 +85,18 @@ func (h *handler) Check(
 	if len(lintPluginConfigs) == 0 {
 		return fileAnnotationSet
 	}
-	env := buflintplugin.Env{
+	env := bufplugin.Env{
 		Stderr: container.Stderr(),
 	}
-	request, err := buflintplugin.NewRequest(imageToProtoLintRequest(image))
+	request, err := bufplugin.NewRequest(imageToProtoLintRequest(image))
 	if err != nil {
 		return err
 	}
-	responseWriter := buflintplugin.NewResponseWriter()
+	responseWriter := bufplugin.NewResponseWriter()
 	var pluginFileAnnotations []bufanalysis.FileAnnotation
 	// Otherwise, also check plugins.
 	for _, lintPluginConfig := range lintPluginConfigs {
-		handler := buflintpluginexec.NewHandler(
+		handler := bufpluginexec.NewHandler(
 			h.commandRunner,
 			lintPluginConfig.Path(),
 			lintPluginConfig.Args(),

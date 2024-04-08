@@ -14,7 +14,7 @@
 /private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /private/buf/cmd/buf/command/alpha/protoc/test.txt
 /private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml/protoc-gen-top-level-type-names-yaml
-/private/bufpkg/buflintplugin/cmd/buf-lint-timestamp-suffix/buf-lint-timestamp-suffix
+/private/bufpkg/bufplugin/cmd/buf-lint-timestamp-suffix/buf-lint-timestamp-suffix
 /private/bufpkg/bufmodule/bufmoduleapi/cmd/buf-legacyfederation-go-data/buf-legacyfederation-go-data
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-digest/buf-digest
 /private/bufpkg/bufmodule/bufmoduletesting/cmd/buf-new-commit-id/buf-new-commit-id
