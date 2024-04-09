@@ -105,7 +105,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.IncludeDeprecated,
 		includeDeprecatedFlagName,
 		false,
-		`Also print deprecated rules.`,
+		fmt.Sprintf(
+			`Also print deprecated rules. Has no effect if --%s is not set.`,
+			allFlagName,
+		),
 	)
 	flagSet.StringVar(
 		&f.Format,

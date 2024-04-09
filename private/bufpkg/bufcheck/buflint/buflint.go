@@ -65,9 +65,11 @@ func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
 
 // RulesForConfig returns the rules for a given config.
 //
+// Does NOT include deprecated rules.
+//
 // Should only be used for printing.
 func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(config, false)
+	internalConfig, err := internalConfigForConfig(config, true)
 	if err != nil {
 		return nil, err
 	}

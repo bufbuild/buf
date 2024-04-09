@@ -29,8 +29,11 @@ func RunTestVersionSpec(t *testing.T, versionSpec *internal.VersionSpec) {
 }
 
 func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec) {
-	_, err := internal.ConfigBuilder{}.NewConfig(versionSpec, true)
+	config, err := internal.ConfigBuilder{}.NewConfig(versionSpec, true)
 	assert.NoError(t, err)
+	for _, rule := range config.Rules {
+		assert.False(t, rule.Deprecated())
+	}
 	_, err = internal.ConfigBuilder{}.NewConfig(versionSpec, false)
 	assert.NoError(t, err)
 }
