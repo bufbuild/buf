@@ -254,7 +254,6 @@ type File interface {
 	CcGenericServices() bool
 	JavaGenericServices() bool
 	PyGenericServices() bool
-	PhpGenericServices() bool
 	CcEnableArenas() bool
 
 	SyntaxLocation() Location
@@ -276,7 +275,6 @@ type File interface {
 	CcGenericServicesLocation() Location
 	JavaGenericServicesLocation() Location
 	PyGenericServicesLocation() Location
-	PhpGenericServicesLocation() Location
 	CcEnableArenasLocation() Location
 
 	// FileDescriptor returns the backing FileDescriptor for this File.

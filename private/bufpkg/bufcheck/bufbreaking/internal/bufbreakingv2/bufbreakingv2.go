@@ -15,8 +15,6 @@
 // Package bufbreakingv2 contains the VersionSpec for v2.
 //
 // It uses bufbreakingcheck and bufbreakingbuild.
-//
-// The only change from v1 was that the FILE_SAME_PHP_GENERIC_SERVICES rule was removed.
 package bufbreakingv2
 
 import (

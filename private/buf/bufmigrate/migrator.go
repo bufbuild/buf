@@ -701,22 +701,21 @@ func equivalentCheckConfigInV2(
 		return nil, err
 	}
 
-	expectedIDs := filterFileSamePhpGenericServices(
-		slicesext.Map(
-			expectedRules,
-			func(rule bufcheck.Rule) string {
-				return rule.ID()
-			},
-		),
+	expectedIDs := slicesext.Map(
+		expectedRules,
+		func(rule bufcheck.Rule) string {
+			return rule.ID()
+		},
 	)
+
 	// First create a check config with the exact same UseIDsAndCategories. This
 	// is a simple translation. It may or may not be equivalent to the given check config.
 	simplyTranslatedCheckConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		filterFileSamePhpGenericServices(checkConfig.UseIDsAndCategories()),
-		filterFileSamePhpGenericServices(checkConfig.ExceptIDsAndCategories()),
+		checkConfig.UseIDsAndCategories(),
+		checkConfig.ExceptIDsAndCategories(),
 		checkConfig.IgnorePaths(),
-		filterFileSamePhpGenericServicesMap(checkConfig.IgnoreIDOrCategoryToPaths()),
+		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
 	if err != nil {
 		return nil, err
@@ -725,13 +724,11 @@ func equivalentCheckConfigInV2(
 	if err != nil {
 		return nil, err
 	}
-	simplyTranslatedIDs := filterFileSamePhpGenericServices(
-		slicesext.Map(
-			simplyTranslatedRules,
-			func(rule bufcheck.Rule) string {
-				return rule.ID()
-			},
-		),
+	simplyTranslatedIDs := slicesext.Map(
+		simplyTranslatedRules,
+		func(rule bufcheck.Rule) string {
+			return rule.ID()
+		},
 	)
 	if slicesext.ElementsEqual(expectedIDs, simplyTranslatedIDs) {
 		// If the simple translation is equivalent to before, use it.
@@ -761,24 +758,4 @@ func equivalentCheckConfigInV2(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
-}
-
-func filterFileSamePhpGenericServices(ids []string) []string {
-	return slicesext.Filter(
-		ids,
-		func(id string) bool {
-			return id != "FILE_SAME_PHP_GENERIC_SERVICES"
-		},
-	)
-}
-
-func filterFileSamePhpGenericServicesMap(m map[string][]string) map[string][]string {
-	c := make(map[string][]string)
-	for k, v := range c {
-		if k == "FILE_SAME_PHP_GENERIC_SERVICES" {
-			continue
-		}
-		c[k] = v
-	}
-	return c
 }

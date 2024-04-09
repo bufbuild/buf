@@ -54,24 +54,17 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 // AllIDsForVersionSpec returns all ids for the VersionSpec.
 //
 // Sorted lexographically.
-func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
-	m := make(map[string]struct{})
-	for id := range versionSpec.IDToCategories {
-		m[id] = struct{}{}
+func AllIDsForVersionSpec(versionSpec *VersionSpec, includeDeprecated bool) ([]string, error) {
+	idToRuleBuilder, err := getIDToRuleBuilder(versionSpec.RuleBuilders)
+	if err != nil {
+		return nil, err
 	}
-	return slicesext.MapKeysToSortedSlice(m)
-}
-
-// AllCategoriesAndIDsForVersionSpec returns all categories and rules for the VersionSpec.
-//
-// Sorted lexographically.
-func AllCategoriesAndIDsForVersionSpec(versionSpec *VersionSpec) []string {
 	m := make(map[string]struct{})
-	for id, categories := range versionSpec.IDToCategories {
-		m[id] = struct{}{}
-		for _, category := range categories {
-			m[category] = struct{}{}
+	for id, ruleBuilder := range idToRuleBuilder {
+		if !includeDeprecated && ruleBuilder.Deprecated() {
+			continue
 		}
+		m[id] = struct{}{}
 	}
-	return slicesext.MapKeysToSortedSlice(m)
+	return slicesext.MapKeysToSortedSlice(m), nil
 }

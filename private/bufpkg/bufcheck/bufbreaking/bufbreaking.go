@@ -57,9 +57,11 @@ func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
 
 // RulesForConfig returns the rules for a given config.
 //
+// Does NOT include deprecated rules.
+//
 // Should only be used for printing.
 func RulesForConfig(config bufconfig.BreakingConfig) ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(config)
+	internalConfig, err := internalConfigForConfig(config, true)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +72,11 @@ func RulesForConfig(config bufconfig.BreakingConfig) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv1beta1.VersionSpec))
+	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv1beta1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(breakingConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +87,11 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv1.VersionSpec))
+	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(breakingConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -92,35 +102,18 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV2() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newBreakingConfigForVersionSpec(bufbreakingv2.VersionSpec))
+	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv2.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(breakingConfig, false)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1Beta1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv1beta1.VersionSpec)
-}
-
-// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv1.VersionSpec)
-}
-
-// GetAllRulesAndCategoriesV2 returns all rules and categories for v2 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV2() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv2.VersionSpec)
-}
-
-func internalConfigForConfig(config bufconfig.BreakingConfig) (*internal.Config, error) {
+func internalConfigForConfig(config bufconfig.BreakingConfig, transformDeprecated bool) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
 	switch fileVersion := config.FileVersion(); fileVersion {
 	case bufconfig.FileVersionV1Beta1:
@@ -140,6 +133,7 @@ func internalConfigForConfig(config bufconfig.BreakingConfig) (*internal.Config,
 		IgnoreUnstablePackages:        config.IgnoreUnstablePackages(),
 	}.NewConfig(
 		versionSpec,
+		transformDeprecated,
 	)
 }
 
@@ -154,12 +148,16 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 	return s
 }
 
-func newBreakingConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.BreakingConfig {
+func newBreakingConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.BreakingConfig, error) {
+	ids, err := internal.AllIDsForVersionSpec(versionSpec, true)
+	if err != nil {
+		return nil, err
+	}
 	return bufconfig.NewBreakingConfig(
 		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
-			internal.AllIDsForVersionSpec(versionSpec),
+			ids,
 		),
 		false,
-	)
+	), nil
 }

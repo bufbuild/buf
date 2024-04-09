@@ -652,7 +652,6 @@ FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
 FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
 FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
 FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
@@ -763,7 +762,6 @@ FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
-FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
 FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
 FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
 FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
@@ -807,6 +805,68 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		"--version",
 		"v1beta1",
 	)
+}
+
+func TestLsBreakingRulesDeprecated(t *testing.T) {
+	t.Parallel()
+
+	stdout := bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	// Test the non-all version too. Should never have deprecated rules.
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+
+	stdout = bytes.NewBuffer(nil)
+	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 }
 
 func TestLsFiles(t *testing.T) {

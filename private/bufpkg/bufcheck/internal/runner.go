@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/multierr"
@@ -70,6 +71,12 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufp
 	rules := config.Rules
 	if len(rules) == 0 {
 		return nil
+	}
+	for _, rule := range config.Rules {
+		if rule.Deprecated() {
+			// IgnoreIDToRootPaths relies on us only using the non-deprecated rules.
+			return syserror.Newf("Rule %q was send to internal.Runner.Check even though it was deprecated", rule.ID())
+		}
 	}
 	ctx, span := r.tracer.Start(
 		ctx,

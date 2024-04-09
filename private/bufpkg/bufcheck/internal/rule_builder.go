@@ -21,25 +21,29 @@ import (
 
 // RuleBuilder is a rule builder.
 type RuleBuilder struct {
-	id         string
-	newPurpose func(ConfigBuilder) (string, error)
-	newCheck   func(ConfigBuilder) (CheckFunc, error)
+	id             string
+	newPurpose     func(ConfigBuilder) (string, error)
+	deprecated     bool
+	replacementIDs []string
+	newCheck       func(ConfigBuilder) (CheckFunc, error)
 }
 
-// NewRuleBuilder returns a new RuleBuilder.
+// NewRuleBuilder returns a new undeprecated RuleBuilder.
 func NewRuleBuilder(
 	id string,
 	newPurpose func(ConfigBuilder) (string, error),
 	newCheck func(ConfigBuilder) (CheckFunc, error),
 ) *RuleBuilder {
 	return &RuleBuilder{
-		id:         id,
-		newPurpose: newPurpose,
-		newCheck:   newCheck,
+		id:             id,
+		newPurpose:     newPurpose,
+		deprecated:     false,
+		replacementIDs: nil,
+		newCheck:       newCheck,
 	}
 }
 
-// NewNopRuleBuilder returns a new RuleBuilder for the direct
+// NewNopRuleBuilder returns a new undeprecated RuleBuilder for the direct
 // purpose and CheckFunc.
 func NewNopRuleBuilder(
 	id string,
@@ -51,6 +55,23 @@ func NewNopRuleBuilder(
 		newNopPurpose(purpose),
 		newNopCheckFunc(checkFunc),
 	)
+}
+
+// NewDeprecatedRuleBuilder returns a new RuleBuilder for a deprecated Rule.
+//
+// replacementIDs may be nil or empty.
+func NewDeprecatedRuleBuilder(
+	id string,
+	purpose string,
+	replacementIDs []string,
+) *RuleBuilder {
+	return &RuleBuilder{
+		id:             id,
+		newPurpose:     newNopPurpose(purpose),
+		deprecated:     true,
+		replacementIDs: replacementIDs,
+		newCheck:       newNopCheckFunc(newNopCheck),
+	}
 }
 
 // NewRule returns a new Rule.
@@ -72,6 +93,8 @@ func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) 
 		c.id,
 		categories,
 		purpose,
+		c.deprecated,
+		c.replacementIDs,
 		check,
 	), nil
 }
@@ -79,6 +102,16 @@ func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) 
 // ID returns the id.
 func (c *RuleBuilder) ID() string {
 	return c.id
+}
+
+// Deprecated returns whether or not the Rule was deprecated.
+func (c *RuleBuilder) Deprecated() bool {
+	return c.deprecated
+}
+
+// ReplacementIDs returns the replacement IDs.
+func (c *RuleBuilder) ReplacementIDs() []string {
+	return c.replacementIDs
 }
 
 func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
@@ -93,4 +126,8 @@ func newNopCheckFunc(
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil
 	}
+}
+
+func newNopCheck(string, IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return nil, nil
 }
