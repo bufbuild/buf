@@ -53,7 +53,7 @@ func NewLSCommand(
 		Use:        name,
 		Short:      fmt.Sprintf("List %s rules", ruleType),
 		Args:       appcmd.NoArgs,
-		Deprecated: fmt.Sprintf(`use "buf config %s" instead. However, "buf mod %s will continue to work."`, name, name),
+		Deprecated: fmt.Sprintf(`use "buf config %s" instead. However, "buf mod %s" will continue to work.`, name, name),
 		Hidden:     true,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appext.Container) error {

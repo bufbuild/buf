@@ -234,6 +234,10 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
+		"FILE_SAME_PHP_GENERIC_SERVICES": {
+			"FILE",
+			"PACKAGE",
+		},
 		"FILE_SAME_CC_ENABLE_ARENAS": {
 			"FILE",
 			"PACKAGE",

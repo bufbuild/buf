@@ -67,7 +67,7 @@ func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
 //
 // Should only be used for printing.
 func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(config)
+	internalConfig, err := internalConfigForConfig(config, false)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	internalConfig, err := internalConfigForConfig(lintConfig)
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	internalConfig, err := internalConfigForConfig(lintConfig)
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func GetAllRulesV2() ([]bufcheck.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	internalConfig, err := internalConfigForConfig(lintConfig)
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ lint:
 	return err
 }
 
-func internalConfigForConfig(config bufconfig.LintConfig) (*internal.Config, error) {
+func internalConfigForConfig(config bufconfig.LintConfig, transformDeprecated bool) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
 	switch fileVersion := config.FileVersion(); fileVersion {
 	case bufconfig.FileVersionV1Beta1:
@@ -201,6 +201,7 @@ func internalConfigForConfig(config bufconfig.LintConfig) (*internal.Config, err
 		ServiceSuffix:                        config.ServiceSuffix(),
 	}.NewConfig(
 		versionSpec,
+		transformDeprecated,
 	)
 }
 
@@ -216,14 +217,14 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 }
 
 func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.LintConfig, error) {
-	undeprecatedIDs, err := internal.AllUndeprecatedIDsForVersionSpec(versionSpec)
+	ids, err := internal.AllIDsForVersionSpec(versionSpec, true)
 	if err != nil {
 		return nil, err
 	}
 	return bufconfig.NewLintConfig(
 		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
-			undeprecatedIDs,
+			ids,
 		),
 		"",
 		false,

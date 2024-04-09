@@ -38,15 +38,9 @@ type Config struct {
 	//
 	// Rules will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	//
-	// No Rule in a Config will be Deprecated when this is built via a ConfigBuilder (which
-	// is safe for Runners to assume) . These will all be filtered and replaced
-	// with the equivalent Rules via ReplacementIDs.
 	Rules []*Rule
 
-	IgnoreRootPaths map[string]struct{}
-	// Will not contain any Deprecated IDs. These will all be filtered and replaced
-	// with the equivalent Rules IDs via ReplacementIDs when this is built via a ConfigBuilder.
+	IgnoreRootPaths     map[string]struct{}
 	IgnoreIDToRootPaths map[string]map[string]struct{}
 
 	AllowCommentIgnores    bool
@@ -75,11 +69,13 @@ type ConfigBuilder struct {
 }
 
 // NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig(versionSpec *VersionSpec) (*Config, error) {
-	return newConfig(b, versionSpec)
+//
+// TransformDeprecated should always be true if building a Config for a Runner.
+func (b ConfigBuilder) NewConfig(versionSpec *VersionSpec, transformDeprecated bool) (*Config, error) {
+	return newConfig(b, versionSpec, transformDeprecated)
 }
 
-func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, error) {
+func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec, transformDeprecated bool) (*Config, error) {
 	configBuilder.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Use)
 	configBuilder.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Except)
 	if len(configBuilder.Use) == 0 {
@@ -96,6 +92,7 @@ func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, 
 		configBuilder,
 		versionSpec.RuleBuilders,
 		versionSpec.IDToCategories,
+		transformDeprecated,
 	)
 }
 
@@ -103,6 +100,7 @@ func newConfigForRuleBuilders(
 	configBuilder ConfigBuilder,
 	ruleBuilders []*RuleBuilder,
 	idToCategories map[string][]string,
+	transformDeprecated bool,
 ) (*Config, error) {
 	// this checks that there are not duplicate IDs for a given revision
 	// which would be a system error
@@ -119,12 +117,16 @@ func newConfigForRuleBuilders(
 	if err != nil {
 		return nil, err
 	}
-	useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
+	if transformDeprecated {
+		useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
+	}
 	exceptIDMap, err := transformToIDMap(configBuilder.Except, idToCategories, categoryToIDs)
 	if err != nil {
 		return nil, err
 	}
-	exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
+	if transformDeprecated {
+		exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
+	}
 
 	// this removes duplicates
 	// we already know that a given rule with the same ID is equivalent
@@ -166,7 +168,9 @@ func newConfigForRuleBuilders(
 	if err != nil {
 		return nil, err
 	}
-	ignoreIDToRootPathsUnnormalized = transformIDsToUndeprecated(ignoreIDToRootPathsUnnormalized, deprecatedIDToReplacementIDs)
+	if transformDeprecated {
+		ignoreIDToRootPathsUnnormalized = transformIDsToUndeprecated(ignoreIDToRootPathsUnnormalized, deprecatedIDToReplacementIDs)
+	}
 	ignoreIDToRootPaths := make(map[string]map[string]struct{})
 	for id, rootPaths := range ignoreIDToRootPathsUnnormalized {
 		for rootPath := range rootPaths {

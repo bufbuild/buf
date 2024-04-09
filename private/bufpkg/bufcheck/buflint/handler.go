@@ -60,7 +60,7 @@ func (h *handler) Check(
 	if err != nil {
 		return err
 	}
-	internalConfig, err := internalConfigForConfig(config)
+	internalConfig, err := internalConfigForConfig(config, true)
 	if err != nil {
 		return err
 	}

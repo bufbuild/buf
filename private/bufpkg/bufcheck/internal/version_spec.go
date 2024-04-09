@@ -51,17 +51,17 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 	return categories
 }
 
-// AllUndeprecatedIDsForVersionSpec returns all ids for the VersionSpec.
+// AllIDsForVersionSpec returns all ids for the VersionSpec.
 //
 // Sorted lexographically.
-func AllUndeprecatedIDsForVersionSpec(versionSpec *VersionSpec) ([]string, error) {
+func AllIDsForVersionSpec(versionSpec *VersionSpec, includeDeprecated bool) ([]string, error) {
 	idToRuleBuilder, err := getIDToRuleBuilder(versionSpec.RuleBuilders)
 	if err != nil {
 		return nil, err
 	}
 	m := make(map[string]struct{})
 	for id, ruleBuilder := range idToRuleBuilder {
-		if ruleBuilder.Deprecated() {
+		if !includeDeprecated && ruleBuilder.Deprecated() {
 			continue
 		}
 		m[id] = struct{}{}

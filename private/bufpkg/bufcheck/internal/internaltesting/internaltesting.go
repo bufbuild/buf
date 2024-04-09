@@ -29,7 +29,9 @@ func RunTestVersionSpec(t *testing.T, versionSpec *internal.VersionSpec) {
 }
 
 func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec) {
-	_, err := internal.ConfigBuilder{}.NewConfig(versionSpec)
+	_, err := internal.ConfigBuilder{}.NewConfig(versionSpec, true)
+	assert.NoError(t, err)
+	_, err = internal.ConfigBuilder{}.NewConfig(versionSpec, false)
 	assert.NoError(t, err)
 }
 
