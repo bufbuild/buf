@@ -275,11 +275,8 @@ func validateLabelFlags(flags *flags) error {
 	return validateLabelFlagValues(flags)
 }
 
-// We need to validate the combination of flags that set labels:
-//   - do not allow mixing of `--label` and `--tag` flags
-//   - do not allow mixing of `--label` and `--branch`/`--draft` flags
-//   - do not allow mixing of `--tag` and `--branch`/`--draft` flags
-//   - do not allow mixing of `--draft` and `--branch` flags
+// We do not allow overlaps between `--label`, `--tag`, `--branch`, and `--draft` flags
+// when calling push. Only one type of flag is allowed to be used at a time when pushing.
 func validateLabelFlagCombinations(flags *flags) error {
 	if len(flags.Labels) > 0 && len(flags.Tags) > 0 {
 		return appcmd.NewInvalidArgumentErrorf("--%s and --%s (-%s) cannot be used together.", labelFlagName, tagFlagName, tagFlagShortName)

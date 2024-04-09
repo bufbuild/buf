@@ -84,6 +84,8 @@ func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility) UploadO
 // This is used by Uploader implementations.
 type UploadOptions interface {
 	// Labels returns the unique and sorted set of labels to add.
+	// Labels are set using the `--label` flag when calling `buf push` and represent the
+	// labels that are set when uploading module content.
 	Labels() []string
 	// CreateIfNotExist says to create Modules if they do not exist on the registry.
 	CreateIfNotExist() bool
@@ -92,14 +94,23 @@ type UploadOptions interface {
 	// Will always be present if CreateIfNotExist() is true.
 	CreateModuleVisibility() ModuleVisibility
 	// Tags returns unique and sorted set of tags to be added as labels.
+	// Tags are set using the `--tag` flag when calling `buf push`, and represent labels
+	// that are set **in addition to** the default label when uploading module content.
 	//
-	// We disallow the setting of `--tag` when uploading a workspace (e.g. a ModuleSet with
-	// 1+ target Modules), so we need to separate this out to handle in Upload.
+	// The `--tag` flag is a legacy flag that we are continuing supporting. We need to
+	// handle tags differently from labels when uploading because we need to resolve the
+	// default label and we disallow the setting for `--tag` when uploading >1 module content.
 	Tags() []string
 	// BranchOrDraft returns a branch/draft to be set as a label.
+	// A branch or draft is a single label that we set when uploading module content.
+	// A branch is set using the `--branch` flag and a draft is set using the `--draft` flag.
+	// Drafts are the successor to branches, and both are now superceded by labels. The
+	// `--branch` flag and `--draft` flag only take a single value each. They cannot be used
+	// in combination with one another or with `--label` or `--tag`.
 	//
-	// We disallow the setting of `--branch`/`--draft` when uploading a workspace (e.g. a
-	// ModuleSet with 1+ target Modules), so we need to separate this out to handle in Upload.
+	// The `--branch` and `--draft` flags are legacy flags that we are continuing to support.
+	// We need to handle branch/draft differently from labels when uploading because we
+	// disallow the setting of `--branch` and `--draft` when uploading >1 module content.
 	BranchOrDraft() string
 
 	isUploadOptions()

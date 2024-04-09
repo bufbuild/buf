@@ -113,10 +113,9 @@ func (a *uploader) Upload(
 
 	var modules []*modulev1.Module
 	if uploadOptions.CreateIfNotExist() {
-		// We must attempt to create each module one at a time, since CreateModules is atomic.
-		// For example, if contentModules contains 3 modules, a, b, and c, where a and b both
-		// already exist, calling CreateModules on all 3 at once will result in an `AlreadyExists`
-		// and `c` will not be created.
+		// We must attempt to create each module one at a time, since CreateModules will return
+		// an `AlreadyExists` if any of the modules we are attempting to create already exists,
+		// and no new modules will be created.
 		for _, contentModule := range contentModules {
 			modulesResponse, err := a.createContentModuleIfNotExist(
 				ctx,
@@ -166,8 +165,8 @@ func (a *uploader) Upload(
 		}
 	}
 	if uploadOptions.BranchOrDraft() != "" {
-		if len(contentModules) > 1 {
-			return nil, fmt.Errorf("--branch and --draft are disallowed for use when pushing a workspace with more than one module")
+		if len(contentModules) != 1 {
+			return nil, fmt.Errorf("--branch and --draft are disallowed for use when pushing a workspace that does not have exactly one module")
 		}
 		// We know that there is only one module we are uploading contents for.
 		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
@@ -184,8 +183,8 @@ func (a *uploader) Upload(
 		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
 	}
 	if len(uploadOptions.Tags()) > 0 {
-		if len(contentModules) > 1 {
-			return nil, fmt.Errorf("--tag is disallowed for use when pushing a workspace with more than one module")
+		if len(contentModules) != 1 {
+			return nil, fmt.Errorf("--tag is disallowed for use when pushing a workspace that does not have exactly one module")
 		}
 		v1beta1ProtoScopedLabelRefs := slicesext.Map(
 			uploadOptions.Tags(),
