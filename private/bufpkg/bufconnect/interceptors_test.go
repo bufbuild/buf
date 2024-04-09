@@ -147,3 +147,33 @@ func TestCLIWarningInterceptorFromError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, fmt.Sprintf("WARN\t%s\n", warningMessage), buf.String())
 }
+
+type testRequest[T any] struct {
+	*connect.Request[T]
+}
+
+func (r testRequest[_]) Spec() connect.Spec {
+	return connect.Spec{
+		Procedure: "/service/method",
+	}
+}
+func (r testRequest[_]) Peer() connect.Peer {
+	return connect.Peer{
+		Addr: "example.com",
+	}
+}
+
+func TestNewAugmentedConnectErrorInterceptor(t *testing.T) {
+	t.Parallel()
+	_, err := NewAugmentedConnectErrorInterceptor()(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		err := connect.NewError(connect.CodeUnknown, errors.New("405 Method Not Allowed"))
+		return nil, err
+	})(context.Background(), testRequest[bytes.Buffer]{Request: connect.NewRequest(&bytes.Buffer{})})
+	assert.Error(t, err)
+	var augmentedConnectError *AugmentedConnectError
+	assert.ErrorAs(t, err, &augmentedConnectError)
+	assert.Equal(t, "example.com", augmentedConnectError.Addr())
+	assert.Equal(t, "/service/method", augmentedConnectError.Procedure())
+	var unwrappedError *connect.Error
+	assert.ErrorAs(t, errors.Unwrap(err), &unwrappedError)
+}

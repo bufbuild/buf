@@ -29,6 +29,28 @@ const (
 	tokenEnvKey = "BUF_TOKEN"
 )
 
+// NewAugmentedConnectErrorInterceptor returns a new Connect Interceptor that wraps
+// [connect.Error]s in an [AugmentedConnectError].
+func NewAugmentedConnectErrorInterceptor() connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			resp, err := next(ctx, req)
+			if err != nil {
+				if connectErr := new(connect.Error); errors.As(err, &connectErr) {
+					err = &AugmentedConnectError{
+						// Using the original err to avoid throwing information away.
+						cause:     err,
+						procedure: req.Spec().Procedure,
+						addr:      req.Peer().Addr,
+					}
+				}
+			}
+			return resp, err
+		}
+	}
+	return interceptor
+}
+
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {

@@ -310,8 +310,6 @@ type externalGeneratePluginConfigV1 struct {
 	Plugin string `json:"plugin,omitempty" yaml:"plugin,omitempty"`
 	// Name is the key for a local plugin.
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-	// Remote is the key for alpha remote plugin name, which is deprecated now.
-	Remote string `json:"remote,omitempty" yaml:"remote,omitempty"`
 	// Out is required.
 	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
 	Revision int    `json:"revision,omitempty" yaml:"revision,omitempty"`

@@ -78,6 +78,7 @@ func newConnectClientConfigWithOptions(container appext.Container, opts ...conne
 		}),
 		connectclient.WithInterceptors(
 			[]connect.Interceptor{
+				bufconnect.NewAugmentedConnectErrorInterceptor(),
 				bufconnect.NewSetCLIVersionInterceptor(Version),
 				bufconnect.NewCLIWarningInterceptor(container),
 				otelconnectInterceptor,
