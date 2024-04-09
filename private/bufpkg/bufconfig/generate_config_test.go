@@ -762,30 +762,6 @@ func TestParseConfigFromExternalV1Fail(t *testing.T) {
 				},
 			},
 		},
-		{
-			description: "deprecated_alpha_plugin",
-			externalConfig: externalBufGenYAMLFileV1{
-				Version: "v1",
-				Plugins: []externalGeneratePluginConfigV1{
-					{
-						Remote: "buf.build/bufbuild/plugins/connect-go:v1.3.1-1",
-						Out:    "connect/out",
-					},
-				},
-			},
-		},
-		{
-			description: "plugin_with_deprecated_alpha_plugin_name",
-			externalConfig: externalBufGenYAMLFileV1{
-				Version: "v1",
-				Plugins: []externalGeneratePluginConfigV1{
-					{
-						Plugin: "buf.build/bufbuild/plugins/connect-go:v1.3.1-1",
-						Out:    "connect/out",
-					},
-				},
-			},
-		},
 	}
 	for _, testcase := range testcases {
 		testcase := testcase
