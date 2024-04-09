@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
 )
 
@@ -186,7 +187,7 @@ func run(
 	case 0:
 		return nil
 	case 1:
-		_, err := container.Stdout().Write([]byte(commits[0].ModuleKey().CommitID().String() + "\n"))
+		_, err := container.Stdout().Write([]byte(uuidutil.ToDashless(commits[0].ModuleKey().CommitID()) + "\n"))
 		return err
 	default:
 		return syserror.Newf("Received multiple commits back for a v1 module. We should only ever have created a single commit for a v1 module.")

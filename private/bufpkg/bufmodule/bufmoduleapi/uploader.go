@@ -353,14 +353,14 @@ func (a *uploader) createContentModuleIfNotExist(
 			},
 		),
 	)
-	if err != nil && connect.CodeOf(err) != connect.CodeAlreadyExists {
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
+			// If a module already existed, then we check validate its contents.
+			return a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
+		}
 		return nil, err
 	}
-	// If a module already existed, then we
-	if connect.CodeOf(err) == connect.CodeAlreadyExists {
-		return a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
-	}
-	// Otherwise we return the modules we created
+	// Otherwise we return the module we created
 	return response.Msg.Modules, nil
 }
 
