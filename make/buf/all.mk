@@ -1,5 +1,9 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-GO_GET_PKGS := $(GO_GET_PKGS) go.opentelemetry.io/otel@v1.24.0
+# TODO: Upgrade otel v1.24.0 when we no longer need to support Golang <1.21
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	go.opentelemetry.io/otel@v1.24.0 \
+	go.opentelemetry.io/otel/sdk@v1.24.0 \
+	go.opentelemetry.io/otel/trace@v1.24.0
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
