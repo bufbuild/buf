@@ -181,8 +181,7 @@ func readBufWorkYAMLFile(
 		return nil, err
 	}
 	if fileVersion != FileVersionV1 {
-		// This is effectively a system error.
-		return nil, syserror.Wrap(newUnsupportedFileVersionError("", fileVersion))
+		return nil, newUnsupportedFileVersionError(objectData.Name(), fileVersion)
 	}
 	var externalBufWorkYAMLFile externalBufWorkYAMLFileV1
 	if err := getUnmarshalStrict(allowJSON)(data, &externalBufWorkYAMLFile); err != nil {
