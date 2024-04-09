@@ -58,6 +58,7 @@ var (
 		bufbreakingbuild.FileSameCcGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameJavaGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSamePyGenericServicesRuleBuilder,
+		bufbreakingbuild.FileSamePhpGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameCcEnableArenasRuleBuilder,
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,

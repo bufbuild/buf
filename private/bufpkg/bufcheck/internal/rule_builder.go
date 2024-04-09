@@ -28,39 +28,50 @@ type RuleBuilder struct {
 	newCheck       func(ConfigBuilder) (CheckFunc, error)
 }
 
-// NewRuleBuilder returns a new RuleBuilder.
+// NewRuleBuilder returns a new undeprecated RuleBuilder.
 func NewRuleBuilder(
 	id string,
 	newPurpose func(ConfigBuilder) (string, error),
-	deprecated bool,
-	replacementIDs []string,
 	newCheck func(ConfigBuilder) (CheckFunc, error),
 ) *RuleBuilder {
 	return &RuleBuilder{
 		id:             id,
 		newPurpose:     newPurpose,
-		deprecated:     deprecated,
-		replacementIDs: replacementIDs,
+		deprecated:     false,
+		replacementIDs: nil,
 		newCheck:       newCheck,
 	}
 }
 
-// NewNopRuleBuilder returns a new RuleBuilder for the direct
+// NewNopRuleBuilder returns a new undeprecated RuleBuilder for the direct
 // purpose and CheckFunc.
 func NewNopRuleBuilder(
 	id string,
 	purpose string,
-	deprecated bool,
-	replacementIDs []string,
 	checkFunc CheckFunc,
 ) *RuleBuilder {
 	return NewRuleBuilder(
 		id,
 		newNopPurpose(purpose),
-		deprecated,
-		replacementIDs,
 		newNopCheckFunc(checkFunc),
 	)
+}
+
+// NewDeprecatedRuleBuilder returns a new RuleBuilder for a deprecated Rule.
+//
+// replacementIDs may be nil or empty.
+func NewDeprecatedRuleBuilder(
+	id string,
+	purpose string,
+	replacementIDs []string,
+) *RuleBuilder {
+	return &RuleBuilder{
+		id:             id,
+		newPurpose:     newNopPurpose(purpose),
+		deprecated:     true,
+		replacementIDs: replacementIDs,
+		newCheck:       newNopCheckFunc(newNopCheck),
+	}
 }
 
 // NewRule returns a new Rule.
@@ -115,4 +126,8 @@ func newNopCheckFunc(
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil
 	}
+}
+
+func newNopCheck(string, IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return nil, nil
 }

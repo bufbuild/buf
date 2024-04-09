@@ -32,7 +32,6 @@ var (
 	ccGenericServicesPathKey    = getPathKey([]int32{8, 16})
 	javaGenericServicesPathKey  = getPathKey([]int32{8, 17})
 	pyGenericServicesPathKey    = getPathKey([]int32{8, 18})
-	phpGenericServicesPathKey   = getPathKey([]int32{8, 42})
 	ccEnableArenasPathKey       = getPathKey([]int32{8, 31})
 	syntaxPathKey               = getPathKey([]int32{12})
 )

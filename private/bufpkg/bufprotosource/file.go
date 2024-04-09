@@ -143,12 +143,6 @@ func (f *file) PyGenericServices() bool {
 	return f.fileDescriptor.GetOptions().GetPyGenericServices()
 }
 
-func (f *file) PhpGenericServices() bool {
-	// Support for PhpGenericServices was removed in
-	// https://github.com/protocolbuffers/protobuf/pull/15164
-	return false
-}
-
 func (f *file) CcEnableArenas() bool {
 	return f.fileDescriptor.GetOptions().GetCcEnableArenas()
 }
@@ -219,10 +213,6 @@ func (f *file) JavaGenericServicesLocation() Location {
 
 func (f *file) PyGenericServicesLocation() Location {
 	return f.getLocationByPathKey(pyGenericServicesPathKey)
-}
-
-func (f *file) PhpGenericServicesLocation() Location {
-	return f.getLocationByPathKey(phpGenericServicesPathKey)
 }
 
 func (f *file) CcEnableArenasLocation() Location {
