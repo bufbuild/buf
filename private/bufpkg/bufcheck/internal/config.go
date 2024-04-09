@@ -30,14 +30,23 @@ const (
 )
 
 // Config is the check config.
+//
+// This should only be built via a ConfigBuilder. If we were exposing this API publicly, we would
+// enforce this.
 type Config struct {
 	// Rules are the rules to run.
 	//
 	// Rules will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
+	//
+	// No Rule in a Config will be Deprecated when this is built via a ConfigBuilder (which
+	// is safe for Runners to assume) . These will all be filtered and replaced
+	// with the equivalent Rules via ReplacementIDs.
 	Rules []*Rule
 
-	IgnoreRootPaths     map[string]struct{}
+	IgnoreRootPaths map[string]struct{}
+	// Will not contain any Deprecated IDs. These will all be filtered and replaced
+	// with the equivalent Rules IDs via ReplacementIDs when this is built via a ConfigBuilder.
 	IgnoreIDToRootPaths map[string]map[string]struct{}
 
 	AllowCommentIgnores    bool
@@ -46,10 +55,13 @@ type Config struct {
 
 // ConfigBuilder is a config builder.
 type ConfigBuilder struct {
-	Use    []string
+	// May contain deprecated IDs.
+	Use []string
+	// May contain deprecated IDs.
 	Except []string
 
-	IgnoreRootPaths               []string
+	IgnoreRootPaths []string
+	// May contain deprecated IDs.
 	IgnoreIDOrCategoryToRootPaths map[string][]string
 
 	AllowCommentIgnores    bool
@@ -96,17 +108,23 @@ func newConfigForRuleBuilders(
 	// which would be a system error
 	idToRuleBuilder, err := getIDToRuleBuilder(ruleBuilders)
 	if err != nil {
-		return nil, syserror.Wrap(err)
+		return nil, err
+	}
+	deprecatedIDToReplacementIDs, err := getDeprecatedIDToReplacementIDs(idToRuleBuilder)
+	if err != nil {
+		return nil, err
 	}
 	categoryToIDs := getCategoryToIDs(idToCategories)
 	useIDMap, err := transformToIDMap(configBuilder.Use, idToCategories, categoryToIDs)
 	if err != nil {
 		return nil, err
 	}
+	useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
 	exceptIDMap, err := transformToIDMap(configBuilder.Except, idToCategories, categoryToIDs)
 	if err != nil {
 		return nil, err
 	}
+	exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
 
 	// this removes duplicates
 	// we already know that a given rule with the same ID is equivalent
@@ -148,6 +166,7 @@ func newConfigForRuleBuilders(
 	if err != nil {
 		return nil, err
 	}
+	ignoreIDToRootPathsUnnormalized = transformIDsToUndeprecated(ignoreIDToRootPathsUnnormalized, deprecatedIDToReplacementIDs)
 	ignoreIDToRootPaths := make(map[string]map[string]struct{})
 	for id, rootPaths := range ignoreIDToRootPathsUnnormalized {
 		for rootPath := range rootPaths {
@@ -192,6 +211,22 @@ func newConfigForRuleBuilders(
 		AllowCommentIgnores:    configBuilder.AllowCommentIgnores,
 		IgnoreUnstablePackages: configBuilder.IgnoreUnstablePackages,
 	}, nil
+}
+
+func transformIDsToUndeprecated[T any](idToValue map[string]T, deprecatedIDToReplacementIDs map[string][]string) map[string]T {
+	undeprecatedIDToValue := make(map[string]T, len(idToValue))
+	for id, value := range idToValue {
+		replacementIDs, ok := deprecatedIDToReplacementIDs[id]
+		if ok {
+			// May iterate over empty.
+			for _, replacementID := range replacementIDs {
+				undeprecatedIDToValue[replacementID] = value
+			}
+		} else {
+			undeprecatedIDToValue[id] = value
+		}
+	}
+	return undeprecatedIDToValue
 }
 
 func transformToIDMap(idsOrCategories []string, idToCategories map[string][]string, categoryToIDs map[string][]string) (map[string]struct{}, error) {
@@ -261,13 +296,33 @@ func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
 	return categoryToIDs
 }
 
+// []string{} as a value represents that the ID is deprecated but has no replacements.
+func getDeprecatedIDToReplacementIDs(idToRuleBuilder map[string]*RuleBuilder) (map[string][]string, error) {
+	m := make(map[string][]string)
+	for _, ruleBuilder := range idToRuleBuilder {
+		if ruleBuilder.Deprecated() {
+			replacementIDs := ruleBuilder.ReplacementIDs()
+			if replacementIDs == nil {
+				replacementIDs = []string{}
+			}
+			for _, replacementID := range replacementIDs {
+				if _, ok := idToRuleBuilder[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule given as a replacement ID: %q", replacementID)
+				}
+			}
+			m[ruleBuilder.ID()] = replacementIDs
+		}
+	}
+	return m, nil
+}
+
 func getIDToRuleBuilder(ruleBuilders []*RuleBuilder) (map[string]*RuleBuilder, error) {
 	m := make(map[string]*RuleBuilder)
 	for _, ruleBuilder := range ruleBuilders {
-		if _, ok := m[ruleBuilder.id]; ok {
-			return nil, fmt.Errorf("duplicate rule ID: %q", ruleBuilder.id)
+		if _, ok := m[ruleBuilder.ID()]; ok {
+			return nil, syserror.Newf("duplicate rule ID: %q", ruleBuilder.ID())
 		}
-		m[ruleBuilder.id] = ruleBuilder
+		m[ruleBuilder.ID()] = ruleBuilder
 	}
 	return m, nil
 }
@@ -276,9 +331,9 @@ func getRuleBuilderCategories(
 	ruleBuilder *RuleBuilder,
 	idToCategories map[string][]string,
 ) ([]string, error) {
-	categories, ok := idToCategories[ruleBuilder.id]
+	categories, ok := idToCategories[ruleBuilder.ID()]
 	if !ok {
-		return nil, fmt.Errorf("%q is not configured for categories", ruleBuilder.id)
+		return nil, syserror.Newf("%q is not configured for categories", ruleBuilder.ID())
 	}
 	// it is ok for categories to be empty, however the map must contain an entry
 	// or otherwise this is a system error

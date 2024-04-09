@@ -78,7 +78,11 @@ func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1beta1.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1beta1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +93,11 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv1.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -100,32 +108,15 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV2() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(newLintConfigForVersionSpec(buflintv2.VersionSpec))
+	lintConfig, err := newLintConfigForVersionSpec(buflintv2.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
-}
-
-// GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1Beta1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1beta1.VersionSpec)
-}
-
-// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1.VersionSpec)
-}
-
-// GetAllRulesAndCategoriesV2 returns all rules and categories for v2 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV2() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(buflintv2.VersionSpec)
 }
 
 // PrintFileAnnotationSetConfigIgnoreYAMLV1 prints the FileAnnotationSet to the Writer
@@ -224,11 +215,15 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 	return s
 }
 
-func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.LintConfig {
+func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.LintConfig, error) {
+	undeprecatedIDs, err := internal.AllUndeprecatedIDsForVersionSpec(versionSpec)
+	if err != nil {
+		return nil, err
+	}
 	return bufconfig.NewLintConfig(
 		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
 			versionSpec.FileVersion,
-			internal.AllIDsForVersionSpec(versionSpec),
+			undeprecatedIDs,
 		),
 		"",
 		false,
@@ -236,5 +231,5 @@ func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) bufconfig.Li
 		false,
 		"",
 		false,
-	)
+	), nil
 }

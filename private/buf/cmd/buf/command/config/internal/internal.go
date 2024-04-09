@@ -33,11 +33,12 @@ import (
 )
 
 const (
-	configuredOnlyFlagName = "configured-only"
-	configFlagName         = "config"
-	formatFlagName         = "format"
-	versionFlagName        = "version"
-	modulePathFlagName     = "module-path"
+	configuredOnlyFlagName    = "configured-only"
+	configFlagName            = "config"
+	includeDeprecatedFlagName = "include-deprecated"
+	formatFlagName            = "format"
+	versionFlagName           = "version"
+	modulePathFlagName        = "module-path"
 )
 
 // NewLSCommand returns a new ls Command.
@@ -74,11 +75,12 @@ func NewLSCommand(
 }
 
 type flags struct {
-	ConfiguredOnly bool
-	Config         string
-	Format         string
-	Version        string
-	ModulePath     string
+	ConfiguredOnly    bool
+	Config            string
+	IncludeDeprecated bool
+	Format            string
+	Version           string
+	ModulePath        string
 }
 
 func newFlags() *flags {
@@ -100,6 +102,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			`The buf.yaml file or data to use for configuration. --%s must be set`,
 			configuredOnlyFlagName,
 		),
+	)
+	flagSet.BoolVar(
+		&f.IncludeDeprecated,
+		includeDeprecatedFlagName,
+		false,
+		`Also print deprecated rules.`,
 	)
 	flagSet.StringVar(
 		&f.Format,
@@ -242,6 +250,7 @@ func lsRun(
 		container.Stdout(),
 		rules,
 		flags.Format,
+		flags.IncludeDeprecated,
 	)
 }
 

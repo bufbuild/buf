@@ -32,10 +32,11 @@ import (
 )
 
 const (
-	allFlagName     = "all"
-	configFlagName  = "config"
-	formatFlagName  = "format"
-	versionFlagName = "version"
+	allFlagName               = "all"
+	configFlagName            = "config"
+	includeDeprecatedFlagName = "include-deprecated"
+	formatFlagName            = "format"
+	versionFlagName           = "version"
 )
 
 // NewLSCommand returns a new ls Command.
@@ -72,10 +73,11 @@ func NewLSCommand(
 }
 
 type flags struct {
-	All     bool
-	Config  string
-	Format  string
-	Version string
+	All               bool
+	Config            string
+	IncludeDeprecated bool
+	Format            string
+	Version           string
 }
 
 func newFlags() *flags {
@@ -98,6 +100,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			allFlagName,
 			versionFlagName,
 		),
+	)
+	flagSet.BoolVar(
+		&f.IncludeDeprecated,
+		includeDeprecatedFlagName,
+		false,
+		`Also print deprecated rules.`,
 	)
 	flagSet.StringVar(
 		&f.Format,
@@ -200,5 +208,6 @@ func lsRun(
 		container.Stdout(),
 		rules,
 		flags.Format,
+		flags.IncludeDeprecated,
 	)
 }

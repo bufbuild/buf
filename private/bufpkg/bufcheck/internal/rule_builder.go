@@ -21,21 +21,27 @@ import (
 
 // RuleBuilder is a rule builder.
 type RuleBuilder struct {
-	id         string
-	newPurpose func(ConfigBuilder) (string, error)
-	newCheck   func(ConfigBuilder) (CheckFunc, error)
+	id             string
+	newPurpose     func(ConfigBuilder) (string, error)
+	deprecated     bool
+	replacementIDs []string
+	newCheck       func(ConfigBuilder) (CheckFunc, error)
 }
 
 // NewRuleBuilder returns a new RuleBuilder.
 func NewRuleBuilder(
 	id string,
 	newPurpose func(ConfigBuilder) (string, error),
+	deprecated bool,
+	replacementIDs []string,
 	newCheck func(ConfigBuilder) (CheckFunc, error),
 ) *RuleBuilder {
 	return &RuleBuilder{
-		id:         id,
-		newPurpose: newPurpose,
-		newCheck:   newCheck,
+		id:             id,
+		newPurpose:     newPurpose,
+		deprecated:     deprecated,
+		replacementIDs: replacementIDs,
+		newCheck:       newCheck,
 	}
 }
 
@@ -44,11 +50,15 @@ func NewRuleBuilder(
 func NewNopRuleBuilder(
 	id string,
 	purpose string,
+	deprecated bool,
+	replacementIDs []string,
 	checkFunc CheckFunc,
 ) *RuleBuilder {
 	return NewRuleBuilder(
 		id,
 		newNopPurpose(purpose),
+		deprecated,
+		replacementIDs,
 		newNopCheckFunc(checkFunc),
 	)
 }
@@ -72,6 +82,8 @@ func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) 
 		c.id,
 		categories,
 		purpose,
+		c.deprecated,
+		c.replacementIDs,
 		check,
 	), nil
 }
@@ -79,6 +91,16 @@ func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) 
 // ID returns the id.
 func (c *RuleBuilder) ID() string {
 	return c.id
+}
+
+// Deprecated returns whether or not the Rule was deprecated.
+func (c *RuleBuilder) Deprecated() bool {
+	return c.deprecated
+}
+
+// ReplacementIDs returns the replacement IDs.
+func (c *RuleBuilder) ReplacementIDs() []string {
+	return c.replacementIDs
 }
 
 func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
