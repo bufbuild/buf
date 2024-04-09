@@ -1,5 +1,5 @@
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
-#GO_GET_PKGS := $(GO_GET_PKGS)
+GO_GET_PKGS := $(GO_GET_PKGS) go.opentelemetry.io/otel@v1.24.0
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
