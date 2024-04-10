@@ -288,7 +288,7 @@ func getImage(
 			return nil, err
 		}
 	}
-	return newImage(imageFiles, false, newResolverFromBuildResult(sortedFileDescriptors))
+	return newImage(imageFiles, false, newResolverForBuildResult(sortedFileDescriptors))
 }
 
 func getImageFilesRec(
@@ -427,18 +427,18 @@ func newBuildImageOptions() *buildImageOptions {
 	return &buildImageOptions{}
 }
 
-// resolverFromBuildResult implements protoencoding.Resolver and is backed
+// resolverForBuildResult implements protoencoding.Resolver and is backed
 // by a linker.Resolver which is the result of a protocompile operation.
 // The linker.Resolver provides all necessary methods except FindEnumByName.
-type resolverFromBuildResult struct {
+type resolverForBuildResult struct {
 	linker.Resolver
 }
 
-func newResolverFromBuildResult(result linker.Files) protoencoding.Resolver {
-	return &resolverFromBuildResult{Resolver: result.AsResolver()}
+func newResolverForBuildResult(result linker.Files) protoencoding.Resolver {
+	return &resolverForBuildResult{Resolver: result.AsResolver()}
 }
 
-func (r *resolverFromBuildResult) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+func (r *resolverForBuildResult) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
 	descriptor, err := r.Resolver.FindDescriptorByName(enum)
 	if err != nil {
 		return nil, err
