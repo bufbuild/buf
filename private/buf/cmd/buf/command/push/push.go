@@ -93,7 +93,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindCreateVisibility(flagSet, &f.CreateVisibility, createVisibilityFlagName, createFlagName)
 	flagSet.StringSliceVar(
-		&f.Tags,
+		&f.Labels,
 		labelFlagName,
 		nil,
 		"Associate the label with the modules pushed. Can be used multiple times.",
@@ -149,8 +149,9 @@ func run(
 		return err
 	}
 
-	uploadOptions := []bufmodule.UploadOption{
-		bufmodule.UploadWithLabels(combineLabelLikeFlags(flags)...),
+	var uploadOptions []bufmodule.UploadOption
+	if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
+		uploadOptions = append(uploadOptions, labelUploadOption)
 	}
 	if flags.Create {
 		createModuleVisiblity, err := bufmodule.ParseModuleVisibility(flags.CreateVisibility)
@@ -159,6 +160,7 @@ func run(
 		}
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity))
 	}
+
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
 	if err != nil {
 		return err
@@ -267,6 +269,37 @@ func validateCreateFlags(flags *flags) error {
 }
 
 func validateLabelFlags(flags *flags) error {
+	if err := validateLabelFlagCombinations(flags); err != nil {
+		return err
+	}
+	return validateLabelFlagValues(flags)
+}
+
+// We do not allow overlaps between `--label`, `--tag`, `--branch`, and `--draft` flags
+// when calling push. Only one type of flag is allowed to be used at a time when pushing.
+func validateLabelFlagCombinations(flags *flags) error {
+	if len(flags.Labels) > 0 && len(flags.Tags) > 0 {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s (-%s) cannot be used together.", labelFlagName, tagFlagName, tagFlagShortName)
+	}
+	if len(flags.Labels) > 0 && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", labelFlagName, branchFlagName)
+	}
+	if len(flags.Labels) > 0 && flags.Draft != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", labelFlagName, draftFlagName)
+	}
+	if len(flags.Tags) > 0 && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
+	}
+	if len(flags.Tags) > 0 && flags.Draft != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
+	}
+	if flags.Draft != "" && flags.Branch != "" {
+		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+	}
+	return nil
+}
+
+func validateLabelFlagValues(flags *flags) error {
 	for _, label := range flags.Labels {
 		if label == "" {
 			return appcmd.NewInvalidArgumentErrorf("--%s requires a non-empty string", labelFlagName)
@@ -280,13 +313,21 @@ func validateLabelFlags(flags *flags) error {
 	return nil
 }
 
-func combineLabelLikeFlags(flags *flags) []string {
-	labels := append(slicesext.Copy(flags.Labels), flags.Tags...)
+func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
+	// We do not allow the mixing of flags, so post-validation, we only expect one of the
+	// flags to be set. And so we return the corresponding bufmodule.UploadOption if any
+	// flags are set.
 	if flags.Draft != "" {
-		labels = append(labels, flags.Draft)
+		return bufmodule.UploadWithBranchOrDraft(flags.Draft)
 	}
 	if flags.Branch != "" {
-		labels = append(labels, flags.Branch)
+		return bufmodule.UploadWithBranchOrDraft(flags.Branch)
 	}
-	return slicesext.ToUniqueSorted(labels)
+	if len(flags.Tags) > 0 {
+		return bufmodule.UploadWithTags(slicesext.ToUniqueSorted(flags.Tags)...)
+	}
+	if len(flags.Labels) > 0 {
+		return bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...)
+	}
+	return nil
 }

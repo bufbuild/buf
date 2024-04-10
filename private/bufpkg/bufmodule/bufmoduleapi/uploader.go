@@ -111,51 +111,108 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
+	var modules []*modulev1.Module
 	if uploadOptions.CreateIfNotExist() {
-		if err := a.createContentModulesIfNotExist(
-			ctx,
-			primaryRegistry,
-			contentModules,
-			uploadOptions.CreateModuleVisibility(),
-		); err != nil {
-			return nil, err
+		// We must attempt to create each module one at a time, since CreateModules will return
+		// an `AlreadyExists` if any of the modules we are attempting to create already exists,
+		// and no new modules will be created.
+		for _, contentModule := range contentModules {
+			modulesResponse, err := a.createContentModuleIfNotExist(
+				ctx,
+				primaryRegistry,
+				contentModule,
+				uploadOptions.CreateModuleVisibility(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			modules = append(modules, modulesResponse...)
 		}
 	} else {
-		if err := a.validateContentModulesExist(
+		modules, err = a.validateContentModulesExist(
 			ctx,
 			primaryRegistry,
 			contentModules,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	// While the API allows different labels per reference, we don't have a use case for this
-	// in the CLI, so all references will have the same labels. We just pre-compute them now.
-	v1beta1ProtoScopedLabelRefs := slicesext.Map(
-		slicesext.ToUniqueSorted(uploadOptions.Labels()),
-		labelNameToV1Beta1ProtoScopedLabelRef,
-	)
+	var v1beta1ProtoUploadRequestContents []*modulev1beta1.UploadRequest_Content
+	if len(uploadOptions.Labels()) > 0 {
+		// While the API allows different labels per reference, we don't expose this through
+		// the use of the `--label` flag, so all references will have the same labels.
+		// We just pre-compute them now.
+		v1beta1ProtoScopedLabelRefs := slicesext.Map(
+			uploadOptions.Labels(),
+			labelNameToV1Beta1ProtoScopedLabelRef,
+		)
+		// Maintains ordering, important for when we create bufmodule.Commit objects below.
+		v1beta1ProtoUploadRequestContents, err = slicesext.MapError(
+			contentModules,
+			func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
+				return getV1Beta1ProtoUploadRequestContent(
+					ctx,
+					v1beta1ProtoScopedLabelRefs,
+					primaryRegistry,
+					module,
+				)
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if uploadOptions.BranchOrDraft() != "" {
+		if len(contentModules) != 1 {
+			return nil, fmt.Errorf("--branch and --draft are disallowed for use when pushing a workspace that does not have exactly one module")
+		}
+		// We know that there is only one module we are uploading contents for.
+		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
+			ctx,
+			[]*modulev1beta1.ScopedLabelRef{
+				labelNameToV1Beta1ProtoScopedLabelRef(uploadOptions.BranchOrDraft()),
+			},
+			primaryRegistry,
+			contentModules[0],
+		)
+		if err != nil {
+			return nil, err
+		}
+		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
+	}
+	if len(uploadOptions.Tags()) > 0 {
+		if len(contentModules) != 1 {
+			return nil, fmt.Errorf("--tag is disallowed for use when pushing a workspace that does not have exactly one module")
+		}
+		v1beta1ProtoScopedLabelRefs := slicesext.Map(
+			uploadOptions.Tags(),
+			labelNameToV1Beta1ProtoScopedLabelRef,
+		)
+		// Add the default label to this
+		v1beta1ProtoScopedLabelRefs = append(
+			v1beta1ProtoScopedLabelRefs,
+			labelNameToV1Beta1ProtoScopedLabelRef(modules[0].DefaultLabelName),
+		)
+		// We know that there is only one module we are uploading contents for.
+		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
+			ctx,
+			v1beta1ProtoScopedLabelRefs,
+			primaryRegistry,
+			contentModules[0],
+		)
+		if err != nil {
+			return nil, err
+		}
+		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
+	}
+
 	remoteDeps, err := bufmodule.RemoteDepsForModules(contentModules)
 	if err != nil {
 		return nil, err
 	}
 
-	// Maintains ordering, important for when we create bufmodule.Commit objects below.
-	v1beta1ProtoUploadRequestContents, err := slicesext.MapError(
-		contentModules,
-		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-			return getV1Beta1ProtoUploadRequestContent(
-				ctx,
-				v1beta1ProtoScopedLabelRefs,
-				primaryRegistry,
-				module,
-			)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 	v1beta1ProtoUploadRequestDepRefs, err := slicesext.MapError(
 		remoteDeps,
 		remoteDepToV1Beta1ProtoUploadRequestDepRef,
@@ -267,48 +324,51 @@ func (a *uploader) Upload(
 	return commits, nil
 }
 
-func (a *uploader) createContentModulesIfNotExist(
+func (a *uploader) createContentModuleIfNotExist(
 	ctx context.Context,
 	primaryRegistry string,
-	contentModules []bufmodule.Module,
+	contentModule bufmodule.Module,
 	createModuleVisibility bufmodule.ModuleVisibility,
-) error {
+) ([]*modulev1.Module, error) {
 	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if _, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
+	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).CreateModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.CreateModulesRequest{
-				Values: slicesext.Map(
-					contentModules,
-					func(module bufmodule.Module) *modulev1.CreateModulesRequest_Value {
-						return &modulev1.CreateModulesRequest_Value{
-							OwnerRef: &ownerv1.OwnerRef{
-								Value: &ownerv1.OwnerRef_Name{
-									Name: module.ModuleFullName().Owner(),
-								},
+				Values: []*modulev1.CreateModulesRequest_Value{
+					{
+						OwnerRef: &ownerv1.OwnerRef{
+							Value: &ownerv1.OwnerRef_Name{
+								Name: contentModule.ModuleFullName().Owner(),
 							},
-							Name:       module.ModuleFullName().Name(),
-							Visibility: v1ProtoCreateModuleVisibility,
-						}
+						},
+						Name:       contentModule.ModuleFullName().Name(),
+						Visibility: v1ProtoCreateModuleVisibility,
 					},
-				),
+				},
 			},
 		),
-	); err != nil && connect.CodeOf(err) != connect.CodeAlreadyExists {
-		return err
+	)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
+			// If a module already existed, then we check validate its contents.
+			return a.validateContentModulesExist(ctx, primaryRegistry, []bufmodule.Module{contentModule})
+		}
+		return nil, err
 	}
-	return nil
+	// Otherwise we return the module we created
+	return response.Msg.Modules, nil
 }
 
 func (a *uploader) validateContentModulesExist(
 	ctx context.Context,
 	primaryRegistry string,
 	contentModules []bufmodule.Module,
-) error {
-	_, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
+) ([]*modulev1.Module, error) {
+	response, err := a.clientProvider.V1ModuleServiceClient(primaryRegistry).GetModules(
 		ctx,
 		connect.NewRequest(
 			&modulev1.GetModulesRequest{
@@ -328,7 +388,10 @@ func (a *uploader) validateContentModulesExist(
 			},
 		),
 	)
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return response.Msg.Modules, nil
 }
 
 func getV1Beta1ProtoUploadRequestContent(
