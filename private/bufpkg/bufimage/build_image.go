@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotocompile"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/bufbuild/buf/private/pkg/tracing"
@@ -287,7 +288,7 @@ func getImage(
 			return nil, err
 		}
 	}
-	return newImage(imageFiles, false, &resolverFromBuildResult{sortedFileDescriptors.AsResolver()})
+	return newImage(imageFiles, false, newResolverFromBuildResult(sortedFileDescriptors))
 }
 
 func getImageFilesRec(
@@ -426,8 +427,15 @@ func newBuildImageOptions() *buildImageOptions {
 	return &buildImageOptions{}
 }
 
+// resolverFromBuildResult implements protoencoding.Resolver and is backed
+// by a linker.Resolver which is the result of a protocompile operation.
+// The linker.Resolver provides all necessary methods except FindEnumByName.
 type resolverFromBuildResult struct {
 	linker.Resolver
+}
+
+func newResolverFromBuildResult(result linker.Files) protoencoding.Resolver {
+	return &resolverFromBuildResult{Resolver: result.AsResolver()}
 }
 
 func (r *resolverFromBuildResult) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
@@ -437,7 +445,7 @@ func (r *resolverFromBuildResult) FindEnumByName(enum protoreflect.FullName) (pr
 	}
 	enumDescriptor, ok := descriptor.(protoreflect.EnumDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("%s is not an enum", enum)
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.EnumDescriptor", enum, descriptor)
 	}
 	return dynamicpb.NewEnumType(enumDescriptor), nil
 }
