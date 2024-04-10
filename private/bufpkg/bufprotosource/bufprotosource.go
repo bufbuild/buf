@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -1054,63 +1053,6 @@ func TagRangeString(tagRange TagRange) string {
 	return fmt.Sprintf("[%d,%d]", start, end)
 }
 
-// FreeMessageRangeString returns the string representation of the free ranges for the message.
-func FreeMessageRangeString(message Message) string {
-	freeRanges := FreeMessageRanges(message)
-	if len(freeRanges) == 0 {
-		return ""
-	}
-	suffixes := make([]string, len(freeRanges))
-	for i, freeRange := range freeRanges {
-		suffixes[i] = freeMessageRangeStringSuffix(freeRange)
-	}
-	return fmt.Sprintf(
-		"%- 35s free: %s",
-		freeRanges[0].Message().FullName(),
-		strings.Join(suffixes, " "),
-	)
-}
-
-// FreeMessageRanges returns the free message ranges for the given message.
-//
-// Not recursive.
-func FreeMessageRanges(message Message) []MessageRange {
-	used := append(
-		message.ReservedMessageRanges(),
-		message.ExtensionMessageRanges()...,
-	)
-	for _, field := range message.Fields() {
-		used = append(
-			used,
-			newFreeMessageRange(message, field.Number(), field.Number()),
-		)
-	}
-	sort.Slice(used, func(i, j int) bool {
-		return used[i].Start() < used[j].Start()
-	})
-	// now compute the inverse (unused ranges)
-	unused := make([]MessageRange, 0, len(used)+1)
-	last := 0
-	for _, r := range used {
-		if r.Start() <= last+1 {
-			last = r.End()
-			continue
-		}
-		unused = append(
-			unused,
-			newFreeMessageRange(message, last+1, r.Start()-1),
-		)
-		last = r.End()
-	}
-	if last < messageRangeInclusiveMax {
-		unused = append(
-			unused,
-			newFreeMessageRange(message, last+1, messageRangeInclusiveMax),
-		)
-	}
-	return unused
-}
-
 // CheckTagRangeIsSubset checks if supersetRanges is a superset of subsetRanges.
 // If so, it returns true and nil. If not, it returns false with a slice of failing ranges from subsetRanges.
 func CheckTagRangeIsSubset(supersetRanges []TagRange, subsetRanges []TagRange) (bool, []TagRange) {
@@ -1193,18 +1135,6 @@ func sortTagRanges(ranges []TagRange) []TagRange {
 	})
 
 	return rangesCopy
-}
-
-func freeMessageRangeStringSuffix(freeRange MessageRange) string {
-	start := freeRange.Start()
-	end := freeRange.End()
-	if start == end {
-		return fmt.Sprintf("%d", start)
-	}
-	if freeRange.Max() {
-		return fmt.Sprintf("%d-INF", start)
-	}
-	return fmt.Sprintf("%d-%d", start, end)
 }
 
 func mapFiles(files []File, getKey func(File) string) (map[string][]File, error) {

@@ -41,22 +41,6 @@ func newMessageRange(
 	}
 }
 
-func newFreeMessageRange(message Message, start int, endInclusive int) MessageRange {
-	return newMessageRange(
-		newLocationDescriptor(
-			newDescriptor(
-				message.File(),
-				nil,
-			),
-			nil,
-		),
-		message,
-		start,
-		// we expect exclusive for newMessageRange
-		endInclusive+1,
-	)
-}
-
 func (r *messageRange) Message() Message {
 	return r.message
 }
