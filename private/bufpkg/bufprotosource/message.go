@@ -14,6 +14,8 @@
 
 package bufprotosource
 
+import "google.golang.org/protobuf/reflect/protoreflect"
+
 type message struct {
 	namedDescriptor
 	optionExtensionDescriptor
@@ -172,4 +174,8 @@ func (m *message) addReservedName(reservedName ReservedName) {
 
 func (m *message) addExtensionRange(extensionRange ExtensionRange) {
 	m.extensionRanges = append(m.extensionRanges, extensionRange)
+}
+
+func (m *message) AsDescriptor() (protoreflect.MessageDescriptor, error) {
+	return asDescriptor[protoreflect.MessageDescriptor](&m.descriptor, m.FullName(), "a message")
 }

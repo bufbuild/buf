@@ -14,6 +14,8 @@
 
 package bufprotosource
 
+import "google.golang.org/protobuf/reflect/protoreflect"
+
 type enum struct {
 	namedDescriptor
 	optionExtensionDescriptor
@@ -86,6 +88,10 @@ func (e *enum) ReservedNames() []ReservedName {
 
 func (e *enum) Parent() Message {
 	return e.parent
+}
+
+func (e *enum) AsDescriptor() (protoreflect.EnumDescriptor, error) {
+	return asDescriptor[protoreflect.EnumDescriptor](&e.descriptor, e.FullName(), "an enum")
 }
 
 func (e *enum) addValue(value EnumValue) {

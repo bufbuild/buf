@@ -358,6 +358,11 @@ type Enum interface {
 
 	// Will return nil if this is a top-level Enum
 	Parent() Message
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.EnumDescriptor, error)
 }
 
 // EnumValue is an enum value descriptor.
@@ -398,6 +403,11 @@ type Message interface {
 	Deprecated() bool
 	MessageSetWireFormatLocation() Location
 	NoStandardDescriptorAccessorLocation() Location
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.MessageDescriptor, error)
 }
 
 // Field is a field descriptor.
@@ -435,6 +445,11 @@ type Field interface {
 	CTypeLocation() Location
 	PackedLocation() Location
 	ExtendeeLocation() Location
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.FieldDescriptor, error)
 }
 
 // Oneof is a oneof descriptor.
@@ -444,6 +459,11 @@ type Oneof interface {
 
 	Message() Message
 	Fields() []Field
+
+	// AsDescriptor returns a [protoreflect.Descriptor] that
+	// corresponds to this message. This should only be needed
+	// for reflection usages.
+	AsDescriptor() (protoreflect.OneofDescriptor, error)
 }
 
 // Service is a service descriptor.
@@ -471,11 +491,6 @@ type Method interface {
 	Deprecated() bool
 	IdempotencyLevel() descriptorpb.MethodOptions_IdempotencyLevel
 	IdempotencyLevelLocation() Location
-}
-
-// NewFile returns a new File.
-func NewFile(imageFile bufimage.ImageFile) (File, error) {
-	return newFile(imageFile)
 }
 
 // NewFiles converts the input Image into Files.

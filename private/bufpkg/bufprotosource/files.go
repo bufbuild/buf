@@ -38,7 +38,7 @@ func newFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
 	if defaultChunkSizeThreshold != 0 && chunkSize < defaultChunkSizeThreshold {
 		files := make([]File, 0, len(indexedImageFiles))
 		for _, indexedImageFile := range indexedImageFiles {
-			file, err := NewFile(indexedImageFile.Value)
+			file, err := newFile(indexedImageFile.Value, image.Resolver())
 			if err != nil {
 				return nil, err
 			}
@@ -56,7 +56,7 @@ func newFiles(ctx context.Context, image bufimage.Image) ([]File, error) {
 		jobs[i] = func(ctx context.Context) error {
 			iIndexedFiles := make([]slicesext.Indexed[File], 0, len(indexedImageFileChunk))
 			for _, indexedImageFile := range indexedImageFileChunk {
-				file, err := NewFile(indexedImageFile.Value)
+				file, err := newFile(indexedImageFile.Value, image.Resolver())
 				if err != nil {
 					return err
 				}
