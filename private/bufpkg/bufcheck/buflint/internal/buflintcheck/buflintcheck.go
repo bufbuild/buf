@@ -268,12 +268,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue bufprotosource.EnumValue, s
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field bufprotosource.Field) error {
-	message := field.ParentMessage()
-	if message == nil {
-		// just a sanity check
-		return errors.New("field.Message() was nil")
-	}
-	if message.IsMapEntry() {
+	if message := field.ParentMessage(); message != nil && message.IsMapEntry() {
 		// this check should always pass anyways but just in case
 		return nil
 	}
@@ -630,10 +625,19 @@ func checkPackageVersionSuffix(add addFunc, file bufprotosource.File) error {
 }
 
 // CheckProtovalidate is a check function.
-var CheckProtovalidate = newFilesWithImportsCheckFunc(checkProtovalidate)
+var CheckProtovalidate = combine(
+	newMessageCheckFunc(checkProtovalidateMessage),
+	newFieldCheckFunc(checkProtovalidateField),
+	// NOTE: Oneofs also have protovalidate support, but they
+	//       only have a "required" field, so nothing to lint.
+)
 
-func checkProtovalidate(add addFunc, files []bufprotosource.File) error {
-	return buflintvalidate.Check(add, files)
+func checkProtovalidateMessage(add addFunc, message bufprotosource.Message) error {
+	return buflintvalidate.CheckMessage(add, message)
+}
+
+func checkProtovalidateField(add addFunc, field bufprotosource.Field) error {
+	return buflintvalidate.CheckField(add, field)
 }
 
 // CheckRPCNoClientStreaming is a check function.

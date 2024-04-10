@@ -14,13 +14,19 @@
 
 package bufprotosource
 
+import (
+	"fmt"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
+)
+
 type descriptor struct {
-	file          File
+	file          *file
 	locationStore *locationStore
 }
 
 func newDescriptor(
-	file File,
+	file *file,
 	locationStore *locationStore,
 ) descriptor {
 	return descriptor{
@@ -45,4 +51,17 @@ func (d *descriptor) getLocationByPathKey(pathKey string) Location {
 		return nil
 	}
 	return d.locationStore.getLocationByPathKey(pathKey)
+}
+
+func asDescriptor[T protoreflect.Descriptor](d *descriptor, fullName string, kind string) (T, error) {
+	var zero T
+	desc, err := d.file.resolver.FindDescriptorByName(protoreflect.FullName(fullName))
+	if err != nil {
+		return zero, err
+	}
+	typedDesc, ok := desc.(T)
+	if !ok {
+		return zero, fmt.Errorf("%s is a %T, which is not %s", fullName, desc, kind)
+	}
+	return typedDesc, nil
 }

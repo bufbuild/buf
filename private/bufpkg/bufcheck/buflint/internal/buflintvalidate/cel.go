@@ -23,9 +23,7 @@ import (
 	"github.com/bufbuild/protovalidate-go/celext"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
-	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -204,38 +202,6 @@ func checkCEL(
 			)
 		}
 	}
-}
-
-func getReflectMessageDescriptor(resolver protodesc.Resolver, message bufprotosource.Message) (protoreflect.MessageDescriptor, error) {
-	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(message.FullName()))
-	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("unable to resolve MessageDescriptor: %s", message.FullName())
-	}
-	if err != nil {
-		return nil, err
-	}
-	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
-	if !ok {
-		// this should not happen
-		return nil, fmt.Errorf("%s is not a message", descriptor.FullName())
-	}
-	return messageDescriptor, nil
-}
-
-func getReflectFieldDescriptor(resolver protodesc.Resolver, field bufprotosource.Field) (protoreflect.FieldDescriptor, error) {
-	descriptor, err := resolver.FindDescriptorByName(protoreflect.FullName(field.FullName()))
-	if err == protoregistry.NotFound {
-		return nil, fmt.Errorf("unable to resolve FieldDescriptor: %s", field.FullName())
-	}
-	if err != nil {
-		return nil, err
-	}
-	fieldDescriptor, ok := descriptor.(protoreflect.FieldDescriptor)
-	if !ok {
-		// this should never happen
-		return nil, fmt.Errorf("%s is not a field", descriptor.FullName())
-	}
-	return fieldDescriptor, nil
 }
 
 // this depends on the undocumented behavior of cel-go's error message

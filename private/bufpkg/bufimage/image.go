@@ -18,8 +18,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var _ Image = &image{}
@@ -27,9 +29,10 @@ var _ Image = &image{}
 type image struct {
 	files           []ImageFile
 	pathToImageFile map[string]ImageFile
+	resolver        protoencoding.Resolver
 }
 
-func newImage(files []ImageFile, reorder bool) (*image, error) {
+func newImage(files []ImageFile, reorder bool, resolver protoencoding.Resolver) (*image, error) {
 	if len(files) == 0 {
 		return nil, errors.New("image contains no files")
 	}
@@ -70,9 +73,17 @@ func newImage(files []ImageFile, reorder bool) (*image, error) {
 	if reorder {
 		files = orderImageFiles(files, pathToImageFile)
 	}
+	if resolver == nil {
+		fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(files))
+		for i := range files {
+			fileDescriptorProtos[i] = files[i].FileDescriptorProto()
+		}
+		resolver = protoencoding.NewLazyResolver(fileDescriptorProtos...)
+	}
 	return &image{
 		files:           files,
 		pathToImageFile: pathToImageFile,
+		resolver:        resolver,
 	}, nil
 }
 
@@ -94,6 +105,10 @@ func (i *image) Files() []ImageFile {
 
 func (i *image) GetFile(path string) ImageFile {
 	return i.pathToImageFile[path]
+}
+
+func (i *image) Resolver() protoencoding.Resolver {
+	return i.resolver
 }
 
 func (*image) isImage() {}

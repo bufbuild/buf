@@ -14,6 +14,8 @@
 
 package bufprotosource
 
+import "google.golang.org/protobuf/reflect/protoreflect"
+
 type oneof struct {
 	namedDescriptor
 	optionExtensionDescriptor
@@ -44,4 +46,8 @@ func (o *oneof) Fields() []Field {
 
 func (o *oneof) addField(field Field) {
 	o.fields = append(o.fields, field)
+}
+
+func (o *oneof) AsDescriptor() (protoreflect.OneofDescriptor, error) {
+	return asDescriptor[protoreflect.OneofDescriptor](&o.descriptor, o.FullName(), "a oneof")
 }
