@@ -145,14 +145,13 @@ var (
 	typeOneofDescriptor        = fieldConstraintsDescriptor.Oneofs().ByName("type")
 )
 
-// checkForField validates that protovalidate rules defined for this field are
+// checkField validates that protovalidate rules defined for this field are
 // valid, not including CEL expressions.
-func checkForField(
+func checkField(
 	add func(bufprotosource.Descriptor, bufprotosource.Location, []bufprotosource.Location, string, ...interface{}),
-	descriptorResolver protodesc.Resolver,
 	field bufprotosource.Field,
 ) error {
-	fieldDescriptor, err := getReflectFieldDescriptor(descriptorResolver, field)
+	fieldDescriptor, err := field.AsDescriptor()
 	if err != nil {
 		return err
 	}
