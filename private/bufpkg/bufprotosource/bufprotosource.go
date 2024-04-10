@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protosource defines minimal interfaces for Protobuf descriptor types.
+// Package bufprotosource defines minimal interfaces for Protobuf descriptor types.
 //
 // This is done so that the backing package can be swapped out easily.
 //

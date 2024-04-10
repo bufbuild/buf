@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 func init() {
@@ -199,12 +200,8 @@ func getBuildResult(
 		maybeAddSyntaxUnspecified(syntaxUnspecifiedFilenames, warningErrorWithPos)
 		maybeAddUnusedImport(filenameToUnusedDependencyFilenames, warningErrorWithPos)
 	}
-	fileDescriptors := make([]protoreflect.FileDescriptor, len(compiledFiles))
-	for i := range compiledFiles {
-		fileDescriptors[i] = compiledFiles[i]
-	}
 	return newBuildResult(
-		fileDescriptors,
+		compiledFiles,
 		syntaxUnspecifiedFilenames,
 		filenameToUnusedDependencyFilenames,
 		nil,
@@ -215,13 +212,13 @@ func getBuildResult(
 // relative to input order after concurrent builds. This mimics the output
 // order of protoc.
 func checkAndSortFileDescriptors(
-	fileDescriptors []protoreflect.FileDescriptor,
+	fileDescriptors linker.Files,
 	rootRelFilePaths []string,
-) ([]protoreflect.FileDescriptor, error) {
+) (linker.Files, error) {
 	if len(fileDescriptors) != len(rootRelFilePaths) {
 		return nil, fmt.Errorf("rootRelFilePath length was %d but FileDescriptor length was %d", len(rootRelFilePaths), len(fileDescriptors))
 	}
-	nameToFileDescriptor := make(map[string]protoreflect.FileDescriptor, len(fileDescriptors))
+	nameToFileDescriptor := make(map[string]linker.File, len(fileDescriptors))
 	for _, fileDescriptor := range fileDescriptors {
 		name := fileDescriptor.Path()
 		if name == "" {
@@ -235,7 +232,7 @@ func checkAndSortFileDescriptors(
 	// We now know that all FileDescriptors had unique names and the number of FileDescriptors
 	// is equal to the number of rootRelFilePaths. We also verified earlier that rootRelFilePaths
 	// has only unique values. Now we can put them in order.
-	sortedFileDescriptors := make([]protoreflect.FileDescriptor, 0, len(fileDescriptors))
+	sortedFileDescriptors := make(linker.Files, 0, len(fileDescriptors))
 	for _, rootRelFilePath := range rootRelFilePaths {
 		fileDescriptor, ok := nameToFileDescriptor[rootRelFilePath]
 		if !ok {
@@ -253,7 +250,7 @@ func checkAndSortFileDescriptors(
 func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
-	sortedFileDescriptors []protoreflect.FileDescriptor,
+	sortedFileDescriptors linker.Files,
 	parserAccessorHandler *parserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
@@ -290,7 +287,7 @@ func getImage(
 			return nil, err
 		}
 	}
-	return NewImage(imageFiles)
+	return newImage(imageFiles, false, &resolverFromBuildResult{sortedFileDescriptors.AsResolver()})
 }
 
 func getImageFilesRec(
@@ -400,14 +397,14 @@ func maybeAddUnusedImport(
 }
 
 type buildResult struct {
-	FileDescriptors                     []protoreflect.FileDescriptor
+	FileDescriptors                     linker.Files
 	SyntaxUnspecifiedFilenames          map[string]struct{}
 	FilenameToUnusedDependencyFilenames map[string]map[string]struct{}
 	Err                                 error
 }
 
 func newBuildResult(
-	fileDescriptors []protoreflect.FileDescriptor,
+	fileDescriptors linker.Files,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
 	err error,
@@ -427,4 +424,20 @@ type buildImageOptions struct {
 
 func newBuildImageOptions() *buildImageOptions {
 	return &buildImageOptions{}
+}
+
+type resolverFromBuildResult struct {
+	linker.Resolver
+}
+
+func (r *resolverFromBuildResult) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+	descriptor, err := r.Resolver.FindDescriptorByName(enum)
+	if err != nil {
+		return nil, err
+	}
+	enumDescriptor, ok := descriptor.(protoreflect.EnumDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("%s is not an enum", enum)
+	}
+	return dynamicpb.NewEnumType(enumDescriptor), nil
 }
