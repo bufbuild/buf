@@ -339,6 +339,7 @@ func (b *moduleSetBuilder) AddLocalModule(
 		localModuleOptions.targetExcludePaths,
 		localModuleOptions.protoFileTargetPath,
 		localModuleOptions.includePackageFiles,
+		nil,
 	)
 	if err != nil {
 		return b.addError(err)
@@ -408,7 +409,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
-			return addedModule.ToModule(ctx, b.moduleDataProvider)
+			return addedModule.ToModule(ctx, b.moduleDataProvider, b.commitProvider)
 		},
 	)
 	if err != nil {

@@ -97,10 +97,11 @@ func (a *addedModule) OpaqueID() string {
 // ToModule converts the addedModule to a Module.
 //
 // If the addedModule is a local Module, this is just returned.
-// If the addedModule is a remote Module, the ModuleDataProvider is queried to get the Module.
+// If the addedModule is a remote Module, the ModuleDataProvider and CommitProvider are queried to get the Module.
 func (a *addedModule) ToModule(
 	ctx context.Context,
 	moduleDataProvider ModuleDataProvider,
+	commitProvider CommitProvider,
 ) (Module, error) {
 	// If the addedModule is a local Module, just return it.
 	if a.localModule != nil {
@@ -160,6 +161,28 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
+	getB5DigestForRemoteModule := func() (Digest, error) {
+		moduleKeyDigest, err := a.remoteModuleKey.Digest()
+		if err != nil {
+			return nil, err
+		}
+		if moduleKeyDigest.Type() == DigestTypeB5 {
+			return moduleKeyDigest, nil
+		}
+		// Our module key was created with a b4 digest - we have to look up the b5 digest for the commit.
+		commitKey, err := NewCommitKey(a.remoteModuleKey.ModuleFullName().Registry(), a.remoteModuleKey.CommitID(), DigestTypeB5)
+		if err != nil {
+			return nil, err
+		}
+		commits, err := commitProvider.GetCommitsForCommitKeys(ctx, []CommitKey{commitKey})
+		if err != nil {
+			return nil, err
+		}
+		if len(commits) != 1 {
+			return nil, syserror.Newf("expected 1 commit, got %d", len(commits))
+		}
+		return commits[0].ModuleKey().Digest()
+	}
 	return newModule(
 		ctx,
 		getBucket,
@@ -174,6 +197,7 @@ func (a *addedModule) ToModule(
 		a.remoteTargetExcludePaths,
 		"",
 		false,
+		getB5DigestForRemoteModule,
 	)
 }
 

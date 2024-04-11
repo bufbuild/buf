@@ -244,6 +244,8 @@ type module struct {
 	getV1BufYAMLObjectData func() (ObjectData, error)
 	getV1BufLockObjectData func() (ObjectData, error)
 
+	getB5DigestForRemoteModule func() (Digest, error)
+
 	moduleSet ModuleSet
 
 	digestTypeToGetDigest map[DigestType]func() (Digest, error)
@@ -266,6 +268,7 @@ func newModule(
 	targetExcludePaths []string,
 	protoFileTargetPath string,
 	includePackageFiles bool,
+	getB5DigestForRemoteModule func() (Digest, error),
 ) (*module, error) {
 	// TODO FUTURE: get these validations into a common place
 	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
@@ -304,15 +307,16 @@ func newModule(
 	}
 
 	module := &module{
-		ctx:                    ctx,
-		getBucket:              syncOnceValuesGetBucketWithStorageMatcherApplied,
-		bucketID:               bucketID,
-		moduleFullName:         moduleFullName,
-		commitID:               commitID,
-		isTarget:               isTarget,
-		isLocal:                isLocal,
-		getV1BufYAMLObjectData: syncext.OnceValues(getV1BufYAMLObjectData),
-		getV1BufLockObjectData: syncext.OnceValues(getV1BufLockObjectData),
+		ctx:                        ctx,
+		getBucket:                  syncOnceValuesGetBucketWithStorageMatcherApplied,
+		bucketID:                   bucketID,
+		moduleFullName:             moduleFullName,
+		commitID:                   commitID,
+		isTarget:                   isTarget,
+		isLocal:                    isLocal,
+		getV1BufYAMLObjectData:     syncext.OnceValues(getV1BufYAMLObjectData),
+		getV1BufLockObjectData:     syncext.OnceValues(getV1BufLockObjectData),
+		getB5DigestForRemoteModule: syncext.OnceValues(getB5DigestForRemoteModule),
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -441,6 +445,9 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 			}
 			return getB4Digest(module.ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 		case DigestTypeB5:
+			if !module.isLocal {
+				return module.getB5DigestForRemoteModule()
+			}
 			moduleDeps, err := module.ModuleDeps()
 			if err != nil {
 				return nil, err
