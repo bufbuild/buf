@@ -42,7 +42,7 @@ require (
 	golang.org/x/sync v0.6.0
 	golang.org/x/term v0.18.0
 	golang.org/x/tools v0.19.0
-	google.golang.org/protobuf v1.33.1-0.20240319125436-3039476726e4
+	google.golang.org/protobuf v1.33.1-0.20240408130810-98873a205002
 	gopkg.in/yaml.v3 v3.0.1
 )
 
