@@ -282,7 +282,10 @@ func (a *addedModule) ToModule(
 		}
 		switch digestType {
 		case DigestTypeB4:
-			// Convert B4 ModuleKeys to B5 by fetching the commits from the commit provider.
+			// The declared ModuleKey dependencies for a commit may be stored in v1 buf.lock file,
+			// in which case they will use B4 digests. B4 digests aren't allowed to be used as
+			// input to the B5 digest calculation, so we perform a call to convert all ModuleKeys
+			// from B4 to B5 by using the commit provider.
 			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
 			for i, declaredDepModuleKey := range declaredDepModuleKeys {
 				commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
