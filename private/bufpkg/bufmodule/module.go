@@ -393,15 +393,16 @@ func (m *module) ModuleSet() ModuleSet {
 func (m *module) withIsTarget(isTarget bool) (Module, error) {
 	// We don't just call newModule directly as we don't want to double syncext.OnceValues stuff.
 	newModule := &module{
-		ctx:                    m.ctx,
-		getBucket:              m.getBucket,
-		bucketID:               m.bucketID,
-		moduleFullName:         m.moduleFullName,
-		commitID:               m.commitID,
-		isTarget:               isTarget,
-		isLocal:                m.isLocal,
-		getV1BufYAMLObjectData: m.getV1BufYAMLObjectData,
-		getV1BufLockObjectData: m.getV1BufLockObjectData,
+		ctx:                        m.ctx,
+		getBucket:                  m.getBucket,
+		bucketID:                   m.bucketID,
+		moduleFullName:             m.moduleFullName,
+		commitID:                   m.commitID,
+		isTarget:                   isTarget,
+		isLocal:                    m.isLocal,
+		getV1BufYAMLObjectData:     m.getV1BufYAMLObjectData,
+		getV1BufLockObjectData:     m.getV1BufLockObjectData,
+		getDeclaredDepModuleKeysB5: m.getDeclaredDepModuleKeysB5,
 	}
 	moduleReadBucket, ok := m.ModuleReadBucket.(*moduleReadBucket)
 	if !ok {
