@@ -161,6 +161,101 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
+	// Imagine the following scenario:
+	//
+	//   module-a (local)
+	//     README.md
+	//     a.proto
+	//     b.proto
+	//   module-b:c1
+	//     README.md
+	//     c.proto
+	//     d.proto
+	//   module-b:c2
+	//     README.md
+	//     c.proto
+	//     d.proto
+	//   module-c:c1
+	//     e.proto
+	//     f.proto
+	//   module-c:c2
+	//     e.proto
+	//     f.proto
+	//     g.proto
+	//
+	// Then, you have this dependency graph:
+	//
+	// module-a -> module-b:c1, module-c:c2
+	// module-b:c1 -> module-c:c1
+	//
+	// Note that module-b depends on an earlier commit of module-c than module-a does.
+	//
+	// If we were to just use the dependencies in the ModuleSet to compute the digest, the following
+	// would happen as a calculation:
+	//
+	//   DIGEST(module-a) = digest(
+	//     // module-a contents
+	//     README.md,
+	//     a.proto,
+	//     b.proto,
+	//     // module-b:c1 digest
+	//     DIGEST(
+	//       README.md,
+	//       c.proto,
+	//       d.proto,
+	//       // module-c:c2 digest
+	//       DIGEST(
+	//         README.md,
+	//         e.proto,
+	//         f.proto,
+	//         g.proto,
+	//       ),
+	//     ),
+	//     // module-c:c2 digest
+	//     DIGEST(
+	//         README.md,
+	//         e.proto,
+	//         f.proto,
+	//         g.proto,
+	//     ),
+	//   )
+	//
+	// Note that to compute the digest of module-b:c1, we would actually use the digest of
+	// module-c:c2, as opposed to module-c:c1, since within the ModuleSet, we would resolve
+	// to use module-c:c2 instead of module-c:c1.
+	//
+	// We should be using module-c:c1 to compute the digest of module-b:c1:
+	//
+	//   DIGEST(module-a) = digest(
+	//     // module-a contents
+	//     README.md,
+	//     a.proto,
+	//     b.proto,
+	//     // module-b:c1 digest
+	//     DIGEST(
+	//       README.md,
+	//       c.proto,
+	//       d.proto,
+	//       // module-c:c1 digest
+	//       DIGEST(
+	//         README.md,
+	//         e.proto,
+	//         f.proto,
+	//       ),
+	//     ),
+	//     // module-c:c2 digest
+	//     DIGEST(
+	//         README.md,
+	//         e.proto,
+	//         f.proto,
+	//         g.proto,
+	//     ),
+	//   )
+	//
+	// To accomplish this, we need to take the dependencies of the declared ModuleKeys (ie what
+	// the Module actually says is in its buf.lock). This function enables us to do that for
+	// digest calculations. Within the Module, we say that if we get a remote Module, use the
+	// declared ModuleKeys instead of whatever Module we have resolved to for a given ModuleFullName.
 	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
 		moduleData, err := getModuleData()
 		if err != nil {
@@ -223,11 +318,11 @@ func (a *addedModule) ToModule(
 		false,
 		getV1BufYAMLObjectData,
 		getV1BufLockObjectData,
+		getDeclaredDepModuleKeysB5,
 		a.remoteTargetPaths,
 		a.remoteTargetExcludePaths,
 		"",
 		false,
-		getDeclaredDepModuleKeysB5,
 	)
 }
 

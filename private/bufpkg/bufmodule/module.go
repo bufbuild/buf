@@ -234,16 +234,15 @@ func ModuleDirectModuleDeps(module Module) ([]ModuleDep, error) {
 type module struct {
 	ModuleReadBucket
 
-	ctx                    context.Context
-	getBucket              func() (storage.ReadBucket, error)
-	bucketID               string
-	moduleFullName         ModuleFullName
-	commitID               uuid.UUID
-	isTarget               bool
-	isLocal                bool
-	getV1BufYAMLObjectData func() (ObjectData, error)
-	getV1BufLockObjectData func() (ObjectData, error)
-
+	ctx                        context.Context
+	getBucket                  func() (storage.ReadBucket, error)
+	bucketID                   string
+	moduleFullName             ModuleFullName
+	commitID                   uuid.UUID
+	isTarget                   bool
+	isLocal                    bool
+	getV1BufYAMLObjectData     func() (ObjectData, error)
+	getV1BufLockObjectData     func() (ObjectData, error)
 	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error)
 
 	moduleSet ModuleSet
@@ -264,11 +263,11 @@ func newModule(
 	isLocal bool,
 	getV1BufYAMLObjectData func() (ObjectData, error),
 	getV1BufLockObjectData func() (ObjectData, error),
+	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error),
 	targetPaths []string,
 	targetExcludePaths []string,
 	protoFileTargetPath string,
 	includePackageFiles bool,
-	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error),
 ) (*module, error) {
 	// TODO FUTURE: get these validations into a common place
 	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
