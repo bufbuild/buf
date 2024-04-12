@@ -335,6 +335,11 @@ func (b *moduleSetBuilder) AddLocalModule(
 		true,
 		func() (ObjectData, error) { return localModuleOptions.v1BufYAMLObjectData, nil },
 		func() (ObjectData, error) { return localModuleOptions.v1BufLockObjectData, nil },
+		func() ([]ModuleKey, error) {
+			// See comment in added_module.go when we construct remote Modules for why
+			// we have this function in the first place.
+			return nil, syserror.Newf("getDeclaredDepModuleKeysB5 should never be called for a local Module")
+		},
 		localModuleOptions.targetPaths,
 		localModuleOptions.targetExcludePaths,
 		localModuleOptions.protoFileTargetPath,
@@ -408,7 +413,7 @@ func (b *moduleSetBuilder) Build() (_ ModuleSet, retErr error) {
 	modules, err := slicesext.MapError(
 		addedModules,
 		func(addedModule *addedModule) (Module, error) {
-			return addedModule.ToModule(ctx, b.moduleDataProvider)
+			return addedModule.ToModule(ctx, b.moduleDataProvider, b.commitProvider)
 		},
 	)
 	if err != nil {
