@@ -161,27 +161,57 @@ func (a *addedModule) ToModule(
 		}
 		return moduleData.V1Beta1OrV1BufLockObjectData()
 	}
-	getB5DigestForRemoteModule := func() (Digest, error) {
-		moduleKeyDigest, err := a.remoteModuleKey.Digest()
+	getDeclaredDepModuleKeysB5 := func() ([]ModuleKey, error) {
+		moduleData, err := getModuleData()
 		if err != nil {
 			return nil, err
 		}
-		if moduleKeyDigest.Type() == DigestTypeB5 {
-			return moduleKeyDigest, nil
-		}
-		// Our module key was created with a b4 digest - we have to look up the b5 digest for the commit.
-		commitKey, err := NewCommitKey(a.remoteModuleKey.ModuleFullName().Registry(), a.remoteModuleKey.CommitID(), DigestTypeB5)
+		declaredDepModuleKeys, err := moduleData.DeclaredDepModuleKeys()
 		if err != nil {
 			return nil, err
 		}
-		commits, err := commitProvider.GetCommitsForCommitKeys(ctx, []CommitKey{commitKey})
-		if err != nil {
-			return nil, err
+		if len(declaredDepModuleKeys) == 0 {
+			return nil, nil
 		}
-		if len(commits) != 1 {
-			return nil, syserror.Newf("expected 1 commit, got %d", len(commits))
+		var digestType DigestType
+		for i, moduleKey := range declaredDepModuleKeys {
+			digest, err := moduleKey.Digest()
+			if err != nil {
+				return nil, err
+			}
+			if i == 0 {
+				digestType = digest.Type()
+			} else if digestType != digest.Type() {
+				return nil, syserror.Newf("multiple digest types found in DeclaredDepModuleKeys: %v, %v", digestType, digest.Type())
+			}
 		}
-		return commits[0].ModuleKey().Digest()
+		switch digestType {
+		case DigestTypeB4:
+			// Convert B4 ModuleKeys to B5 by fetching the commits from the commit provider.
+			commitKeysToFetch := make([]CommitKey, len(declaredDepModuleKeys))
+			for i, declaredDepModuleKey := range declaredDepModuleKeys {
+				commitKey, err := NewCommitKey(declaredDepModuleKey.ModuleFullName().Registry(), declaredDepModuleKey.CommitID(), DigestTypeB5)
+				if err != nil {
+					return nil, err
+				}
+				commitKeysToFetch[i] = commitKey
+			}
+			commits, err := commitProvider.GetCommitsForCommitKeys(ctx, commitKeysToFetch)
+			if err != nil {
+				return nil, err
+			}
+			if len(commits) != len(commitKeysToFetch) {
+				return nil, syserror.Newf("expected %d commit(s), got %d", commitKeysToFetch, len(commits))
+			}
+			return slicesext.Map(commits, func(commit Commit) ModuleKey {
+				return commit.ModuleKey()
+			}), nil
+		case DigestTypeB5:
+			// No need to fetch b5 digests - we've already got them stored in the module's declared dependencies.
+			return declaredDepModuleKeys, nil
+		default:
+			return nil, syserror.Newf("unsupported digest type: %v", digestType)
+		}
 	}
 	return newModule(
 		ctx,
@@ -197,7 +227,7 @@ func (a *addedModule) ToModule(
 		a.remoteTargetExcludePaths,
 		"",
 		false,
-		getB5DigestForRemoteModule,
+		getDeclaredDepModuleKeysB5,
 	)
 }
 

@@ -49,7 +49,7 @@ type ModuleData interface {
 	//
 	// This is used for digest calculations. It is not used otherwise.
 	V1Beta1OrV1BufYAMLObjectData() (ObjectData, error)
-	// V1Beta1OrV1BufYAMLObjectData gets the v1beta1 or v1 buf.lock ObjectData.
+	// V1Beta1OrV1BufLockObjectData gets the v1beta1 or v1 buf.lock ObjectData.
 	//
 	// This may not be present. It will only be potentially present for v1 buf.lock files.
 	//

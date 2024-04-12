@@ -244,7 +244,7 @@ type module struct {
 	getV1BufYAMLObjectData func() (ObjectData, error)
 	getV1BufLockObjectData func() (ObjectData, error)
 
-	getB5DigestForRemoteModule func() (Digest, error)
+	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error)
 
 	moduleSet ModuleSet
 
@@ -268,7 +268,7 @@ func newModule(
 	targetExcludePaths []string,
 	protoFileTargetPath string,
 	includePackageFiles bool,
-	getB5DigestForRemoteModule func() (Digest, error),
+	getDeclaredDepModuleKeysB5 func() ([]ModuleKey, error),
 ) (*module, error) {
 	// TODO FUTURE: get these validations into a common place
 	if protoFileTargetPath != "" && (len(targetPaths) > 0 || len(targetExcludePaths) > 0) {
@@ -316,7 +316,7 @@ func newModule(
 		isLocal:                    isLocal,
 		getV1BufYAMLObjectData:     syncext.OnceValues(getV1BufYAMLObjectData),
 		getV1BufLockObjectData:     syncext.OnceValues(getV1BufLockObjectData),
-		getB5DigestForRemoteModule: syncext.OnceValues(getB5DigestForRemoteModule),
+		getDeclaredDepModuleKeysB5: syncext.OnceValues(getDeclaredDepModuleKeysB5),
 	}
 	moduleReadBucket, err := newModuleReadBucketForModule(
 		ctx,
@@ -445,12 +445,33 @@ func newGetDigestFuncForModuleAndDigestType(module *module, digestType DigestTyp
 			}
 			return getB4Digest(module.ctx, bucket, v1BufYAMLObjectData, v1BufLockObjectData)
 		case DigestTypeB5:
-			if !module.isLocal {
-				return module.getB5DigestForRemoteModule()
-			}
 			moduleDeps, err := module.ModuleDeps()
 			if err != nil {
 				return nil, err
+			}
+			// For remote modules to have consistent B5 digests, they must not change the digests of their
+			// dependencies based on the local workspace. Use the pruned b5 module keys from
+			// ModuleData.DeclaredDepModuleKeys to calculate the digest.
+			if !module.isLocal {
+				declaredDepModuleKeys, err := module.getDeclaredDepModuleKeysB5()
+				if err != nil {
+					return nil, err
+				}
+				moduleDepFullNames := make(map[string]struct{}, len(moduleDeps))
+				for _, dep := range moduleDeps {
+					fullName := dep.ModuleFullName()
+					if fullName == nil {
+						return nil, syserror.Newf("remote module dependencies should have full names")
+					}
+					moduleDepFullNames[fullName.String()] = struct{}{}
+				}
+				prunedDepModuleKeys := make([]ModuleKey, 0, len(declaredDepModuleKeys))
+				for _, dep := range declaredDepModuleKeys {
+					if _, ok := moduleDepFullNames[dep.ModuleFullName().String()]; ok {
+						prunedDepModuleKeys = append(prunedDepModuleKeys, dep)
+					}
+				}
+				return getB5DigestForBucketAndDepModuleKeys(module.ctx, bucket, prunedDepModuleKeys)
 			}
 			return getB5DigestForBucketAndModuleDeps(module.ctx, bucket, moduleDeps)
 		default:
