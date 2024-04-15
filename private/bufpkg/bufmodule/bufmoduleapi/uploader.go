@@ -430,20 +430,15 @@ func getV1Beta1ProtoUploadRequestContent(
 }
 
 func validateModuleDefaultLabels(modules []*modulev1.Module) error {
-	var moduleName string
-	var defaultLabelName string
+	var defaultLabelNames map[string]struct{}
 	for _, module := range modules {
-		if defaultLabelName != "" && module.DefaultLabelName != defaultLabelName {
-			return fmt.Errorf(
-				"different default label names found, %s has default label %q and %s has default label %q",
-				moduleName,
-				defaultLabelName,
-				module.Name,
-				module.DefaultLabelName,
-			)
-		}
-		moduleName = module.Name
-		defaultLabelName = module.DefaultLabelName
+		defaultLabelNames[module.DefaultLabelName] = struct{}{}
+	}
+	if len(defaultLabelNames) > 1 {
+		return fmt.Errorf(
+			"different default label names across modules found: %s",
+			slicesext.MapKeysToSlice(defaultLabelNames),
+		)
 	}
 	return nil
 }
