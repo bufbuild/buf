@@ -1,15 +1,10 @@
-version: v2
+# This template is for go only for OSS types.
+version: v1
 managed:
   enabled: true
-  override:
-    - file_option: go_package_prefix
-      value: github.com/bufbuild/buf/private/gen/proto/go
+  go_package_prefix:
+    default: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
-  - local: protoc-gen-go
+  - name: go
     out: private/gen/proto/go
     opt: paths=source_relative
-inputs:
-  - directory: proto
-  - module: buf.build/grpc/grpc
-    types:
-      - grpc.reflection.v1.ServerReflection

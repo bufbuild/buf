@@ -1,12 +1,12 @@
-version: v2
+# This template generates connect-go and helper client-side packages.
+# This is for situations where the client-side is OSS.
+version: v1
 managed:
   enabled: true
-  override:
-    - file_option: go_package_prefix
-      value: github.com/bufbuild/buf/private/gen/proto/go
+  go_package_prefix:
+    default: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
-  - local: protoc-gen-connect-go
+  - name: connect-go
     out: private/gen/proto/connect
-    opt: paths=source_relative
-inputs:
-  - directory: proto
+    opt:
+      - paths=source_relative
