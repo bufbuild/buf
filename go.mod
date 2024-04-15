@@ -8,8 +8,8 @@ require (
 	connectrpc.com/otelconnect v0.7.0
 	github.com/bufbuild/protocompile v0.9.0
 	github.com/bufbuild/protovalidate-go v0.6.1
-	github.com/bufbuild/protoyaml-go v0.1.8
-	github.com/docker/docker v26.0.0+incompatible
+	github.com/bufbuild/protoyaml-go v0.1.9
+	github.com/docker/docker v26.0.1+incompatible
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid/v5 v5.1.0
@@ -53,7 +53,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v26.0.0+incompatible // indirect
+	github.com/docker/cli v26.0.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.1 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -86,7 +86,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.2.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240401170217-c3f982113cda // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
-	google.golang.org/grpc v1.63.2 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240412170617-26222e5d3d56 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240412170617-26222e5d3d56 // indirect
 )
