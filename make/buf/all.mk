@@ -137,19 +137,22 @@ bufgenerateclean:: \
 	bufgeneratecleango \
 	bufgeneratecleanbuflinttestdata
 
-.PHONY: bufgeneratego
-bufgeneratego:
-	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
-	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
+.PHONY: bufgenerateprotogo
+bufgenerateprotogo:
+	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate buf.build/grpc/grpc --type grpc.reflection.v1.ServerReflection --template data/template/buf.go.gen.yaml
+
+.PHONY: bufgenerateprotogoclient
+bufgenerateprotogoclient:
+	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:
-	$(BUF_BIN) export \
-		buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) \
-		--output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
+	$(BUF_BIN) export buf.build/bufbuild/protovalidate:$(PROTOVALIDATE_VERSION) --output private/bufpkg/bufcheck/buflint/testdata/protovalidate/vendor/protovalidate
 
 bufgeneratesteps:: \
-	bufgeneratego \
+	bufgenerateprotogo \
+	bufgenerateprotogoclient \
 	bufgeneratebuflinttestdata
 
 .PHONY: bufrelease
