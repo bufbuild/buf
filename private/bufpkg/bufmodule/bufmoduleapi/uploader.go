@@ -430,7 +430,7 @@ func getV1Beta1ProtoUploadRequestContent(
 }
 
 func validateModuleDefaultLabels(modules []*modulev1.Module) error {
-	var defaultLabelNames map[string]struct{}
+	defaultLabelNames := make(map[string]struct{})
 	for _, module := range modules {
 		defaultLabelNames[module.DefaultLabelName] = struct{}{}
 	}
