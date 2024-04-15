@@ -111,6 +111,7 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
+	// This must be in the same order as contentModules.
 	var modules []*modulev1.Module
 	if uploadOptions.CreateIfNotExist() {
 		// We must attempt to create each module one at a time, since CreateModules will return
@@ -130,6 +131,8 @@ func (a *uploader) Upload(
 			modules[i] = module
 		}
 	} else {
+		// The modules retrieved by GetModules retains the same order as the request, so
+		// this matches the order of contentModules.
 		modules, err = a.validateContentModulesExist(
 			ctx,
 			primaryRegistry,
@@ -141,47 +144,30 @@ func (a *uploader) Upload(
 	}
 
 	var v1beta1ProtoUploadRequestContents []*modulev1beta1.UploadRequest_Content
-	if uploadOptions.BranchOrDraft() != "" {
-		if len(contentModules) != 1 {
-			return nil, fmt.Errorf("--branch and --draft are disallowed for use when pushing a workspace that does not have exactly one module")
+	if len(uploadOptions.Tags()) > 0 {
+		if err := validateModuleDefaultLabels(modules); err != nil {
+			return nil, fmt.Errorf(
+				"the use of `--tag` is disallowed for workspaces with modules with different default labels: %w",
+				err,
+			)
 		}
-		// We know that there is only one module we are uploading contents for.
-		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
-			ctx,
-			[]*modulev1beta1.ScopedLabelRef{
-				labelNameToV1Beta1ProtoScopedLabelRef(uploadOptions.BranchOrDraft()),
-			},
-			primaryRegistry,
-			contentModules[0],
-		)
-		if err != nil {
-			return nil, err
+		for i, contentModule := range contentModules {
+			labelNames := append(uploadOptions.Tags(), modules[i].DefaultLabelName)
+			v1beta1ProtoScopedLabelRefs := slicesext.Map(
+				labelNames,
+				labelNameToV1Beta1ProtoScopedLabelRef,
+			)
+			v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
+				ctx,
+				v1beta1ProtoScopedLabelRefs,
+				primaryRegistry,
+				contentModule,
+			)
+			if err != nil {
+				return nil, err
+			}
+			v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
 		}
-		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
-	} else if len(uploadOptions.Tags()) > 0 {
-		if len(contentModules) != 1 {
-			return nil, fmt.Errorf("--tag is disallowed for use when pushing a workspace that does not have exactly one module")
-		}
-		v1beta1ProtoScopedLabelRefs := slicesext.Map(
-			uploadOptions.Tags(),
-			labelNameToV1Beta1ProtoScopedLabelRef,
-		)
-		// Add the default label to this
-		v1beta1ProtoScopedLabelRefs = append(
-			v1beta1ProtoScopedLabelRefs,
-			labelNameToV1Beta1ProtoScopedLabelRef(modules[0].DefaultLabelName),
-		)
-		// We know that there is only one module we are uploading contents for.
-		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
-			ctx,
-			v1beta1ProtoScopedLabelRefs,
-			primaryRegistry,
-			contentModules[0],
-		)
-		if err != nil {
-			return nil, err
-		}
-		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
 	} else {
 		// While the API allows different labels per reference, we don't expose this through
 		// the use of the `--label` flag, so all references will have the same labels.
@@ -441,6 +427,25 @@ func getV1Beta1ProtoUploadRequestContent(
 		ScopedLabelRefs: v1beta1ProtoScopedLabelRefs,
 		// TODO FUTURE: vcs_commit
 	}, nil
+}
+
+func validateModuleDefaultLabels(modules []*modulev1.Module) error {
+	var moduleName string
+	var defaultLabelName string
+	for _, module := range modules {
+		if defaultLabelName != "" && module.DefaultLabelName != defaultLabelName {
+			return fmt.Errorf(
+				"different default label names found, %s has default label %q and %s has default label %q",
+				moduleName,
+				defaultLabelName,
+				module.Name,
+				module.DefaultLabelName,
+			)
+		}
+		moduleName = module.Name
+		defaultLabelName = module.DefaultLabelName
+	}
+	return nil
 }
 
 func remoteDepToV1Beta1ProtoUploadRequestDepRef(

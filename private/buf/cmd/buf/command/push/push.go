@@ -278,23 +278,21 @@ func validateLabelFlags(flags *flags) error {
 // We do not allow overlaps between `--label`, `--tag`, `--branch`, and `--draft` flags
 // when calling push. Only one type of flag is allowed to be used at a time when pushing.
 func validateLabelFlagCombinations(flags *flags) error {
-	if len(flags.Labels) > 0 && len(flags.Tags) > 0 {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s (-%s) cannot be used together.", labelFlagName, tagFlagName, tagFlagShortName)
+	var usedFlags []string
+	if len(flags.Labels) > 0 {
+		usedFlags = append(usedFlags, labelFlagName)
 	}
-	if len(flags.Labels) > 0 && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", labelFlagName, branchFlagName)
+	if len(flags.Tags) > 0 {
+		usedFlags = append(usedFlags, tagFlagName)
 	}
-	if len(flags.Labels) > 0 && flags.Draft != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", labelFlagName, draftFlagName)
+	if flags.Branch != "" {
+		usedFlags = append(usedFlags, branchFlagName)
 	}
-	if len(flags.Tags) > 0 && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, branchFlagName)
+	if flags.Draft != "" {
+		usedFlags = append(usedFlags, draftFlagName)
 	}
-	if len(flags.Tags) > 0 && flags.Draft != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s (-%s) and --%s cannot be used together.", tagFlagName, tagFlagShortName, draftFlagName)
-	}
-	if flags.Draft != "" && flags.Branch != "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s and --%s cannot be used together.", draftFlagName, branchFlagName)
+	if len(usedFlags) > 1 {
+		return appcmd.NewInvalidArgumentErrorf("These flags cannot be used in combination with one another: %s", usedFlags)
 	}
 	return nil
 }
@@ -317,17 +315,19 @@ func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
 	// We do not allow the mixing of flags, so post-validation, we only expect one of the
 	// flags to be set. And so we return the corresponding bufmodule.UploadOption if any
 	// flags are set.
-	if flags.Draft != "" {
-		return bufmodule.UploadWithBranchOrDraft(flags.Draft)
-	}
-	if flags.Branch != "" {
-		return bufmodule.UploadWithBranchOrDraft(flags.Branch)
+	if len(flags.Labels) > 0 {
+		return bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...)
 	}
 	if len(flags.Tags) > 0 {
 		return bufmodule.UploadWithTags(slicesext.ToUniqueSorted(flags.Tags)...)
 	}
-	if len(flags.Labels) > 0 {
-		return bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...)
+	if flags.Branch != "" {
+		// We upload to a single label, the branch name.
+		return bufmodule.UploadWithLabels(flags.Branch)
+	}
+	if flags.Draft != "" {
+		// We upload to a single label, the draft name.
+		return bufmodule.UploadWithLabels(flags.Draft)
 	}
 	return nil
 }

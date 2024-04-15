@@ -39,7 +39,7 @@ type UploadOption func(*uploadOptions)
 // UploadWithLabels returns a new UploadOption that adds the given labels.
 //
 // This can be called multiple times. The unique result set of labels will be used.
-// We only ever allow one of labels, tags, or branchOrDraft set.
+// We only ever allow one of labels or tags to be set.
 func UploadWithLabels(labels ...string) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.labels = append(uploadOptions.labels, labels...)
@@ -47,26 +47,13 @@ func UploadWithLabels(labels ...string) UploadOption {
 }
 
 // UploadWithTags returns a new UploadOption that adds the given tags. This is handled
-// separately from labels because we disallow the use of the `--tag` flag when uploading a
-// workspace (e.g. a ModuleSet with 1+ target Modules).
+// separately from labels because we need to resolve the default label(s) when uploading.
 //
 // This can be called multiple times. The unique result set of tags will be used.
-// We only ever allow one of labels, tags, or branchOrDraft set.
+// We only ever allow one of labels or tags to be set.
 func UploadWithTags(tags ...string) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.tags = append(uploadOptions.tags, tags...)
-	}
-}
-
-// UploadWithBranchOrDraft returns a new UploadOption that adds a branch/draft. This is
-// handled separately from labels because we disallow the use of `--branch`/`--draft` when
-// uploading a workspace (e.g. a ModuleSet with 1+ target Modules).
-//
-// If this is called multiple times, the last value is used.
-// We only ever allow one of labels, tags, or branchOrDraft set.
-func UploadWithBranchOrDraft(branchOrDraft string) UploadOption {
-	return func(uploadOptions *uploadOptions) {
-		uploadOptions.branchOrDraft = branchOrDraft
 	}
 }
 
@@ -99,19 +86,11 @@ type UploadOptions interface {
 	//
 	// The `--tag` flag is a legacy flag that we are continuing supporting. We need to
 	// handle tags differently from labels when uploading because we need to resolve the
-	// default label and we disallow the setting for `--tag` when uploading >1 module content.
-	Tags() []string
-	// BranchOrDraft returns a branch/draft to be set as a label.
-	// A branch or draft is a single label that we set when uploading module content.
-	// A branch is set using the `--branch` flag and a draft is set using the `--draft` flag.
-	// Drafts are the successor to branches, and both are now superceded by labels. The
-	// `--branch` flag and `--draft` flag only take a single value each. They cannot be used
-	// in combination with one another or with `--label` or `--tag`.
+	// default label for each module.
 	//
-	// The `--branch` and `--draft` flags are legacy flags that we are continuing to support.
-	// We need to handle branch/draft differently from labels when uploading because we
-	// disallow the setting of `--branch` and `--draft` when uploading >1 module content.
-	BranchOrDraft() string
+	// We disallow the use of `--tag` when the modules we are uploading to do not all have
+	// the same default label.
+	Tags() []string
 
 	isUploadOptions()
 }
@@ -139,7 +118,6 @@ func (nopUploader) Upload(context.Context, ModuleSet, ...UploadOption) ([]Commit
 type uploadOptions struct {
 	labels                 []string
 	tags                   []string
-	branchOrDraft          string
 	createIfNotExist       bool
 	createModuleVisibility ModuleVisibility
 }
@@ -156,10 +134,6 @@ func (u *uploadOptions) Tags() []string {
 	return slicesext.ToUniqueSorted(u.tags)
 }
 
-func (u *uploadOptions) BranchOrDraft() string {
-	return u.branchOrDraft
-}
-
 func (u *uploadOptions) CreateIfNotExist() bool {
 	return u.createIfNotExist
 }
@@ -172,12 +146,10 @@ func (u *uploadOptions) validate() error {
 	if u.createIfNotExist && u.createModuleVisibility == 0 {
 		return errors.New("must set a valid ModuleVisibility if CreateIfNotExist was specified")
 	}
-	// We validate that only one of labels, tags, and branchOrDraft is set.
+	// We validate that only one of labels or tags is set.
 	// This is enforced at the flag level, so if more than one is set, we return a syserror.
-	if len(u.labels) > 0 && len(u.tags) > 0 ||
-		len(u.labels) > 0 && u.branchOrDraft != "" ||
-		len(u.tags) > 0 && u.branchOrDraft != "" {
-		return syserror.New("more than one of labels, tags, or branch/draft has been set")
+	if len(u.labels) > 0 && len(u.tags) > 0 {
+		return syserror.New("cannot set both labels and tags")
 	}
 	return nil
 }
