@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
@@ -145,10 +146,24 @@ func (a *uploader) Upload(
 
 	var v1beta1ProtoUploadRequestContents []*modulev1beta1.UploadRequest_Content
 	if len(uploadOptions.Tags()) > 0 {
-		if err := validateModuleDefaultLabels(modules); err != nil {
+		contentModuleSortedDefaultLabels := slicesext.ToUniqueSorted(
+			slicesext.Map(
+				modules,
+				func(module *modulev1.Module) string {
+					return module.DefaultLabelName
+				},
+			),
+		)
+		if len(contentModuleSortedDefaultLabels) > 1 {
 			return nil, fmt.Errorf(
-				"the use of `--tag` is disallowed for workspaces with modules with different default labels: %w",
-				err,
+				`--tag was used, but modules %q had multiple default tags %q. If multiple modules are being pushed and --tag is used, all modules must have the same default label.`,
+				strings.Join(slicesext.Map(
+					contentModules,
+					func(module bufmodule.Module) string {
+						return module.ModuleFullName().String()
+					},
+				), ", "),
+				strings.Join(contentModuleSortedDefaultLabels, ", "),
 			)
 		}
 		for i, contentModule := range contentModules {
@@ -427,20 +442,6 @@ func getV1Beta1ProtoUploadRequestContent(
 		ScopedLabelRefs: v1beta1ProtoScopedLabelRefs,
 		// TODO FUTURE: vcs_commit
 	}, nil
-}
-
-func validateModuleDefaultLabels(modules []*modulev1.Module) error {
-	defaultLabelNames := make(map[string]struct{})
-	for _, module := range modules {
-		defaultLabelNames[module.DefaultLabelName] = struct{}{}
-	}
-	if len(defaultLabelNames) > 1 {
-		return fmt.Errorf(
-			"different default label names across modules found: %s",
-			slicesext.MapKeysToSlice(defaultLabelNames),
-		)
-	}
-	return nil
 }
 
 func remoteDepToV1Beta1ProtoUploadRequestDepRef(
