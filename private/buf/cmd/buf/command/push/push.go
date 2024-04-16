@@ -292,7 +292,14 @@ func validateLabelFlagCombinations(flags *flags) error {
 		usedFlags = append(usedFlags, draftFlagName)
 	}
 	if len(usedFlags) > 1 {
-		return appcmd.NewInvalidArgumentErrorf("These flags cannot be used in combination with one another: %s", usedFlags)
+		usedFlagsErrStr := strings.Join(
+			slicesext.Map(
+				usedFlags,
+				func(flag string) string { return fmt.Sprintf("--%s", flag) },
+			),
+			", ",
+		)
+		return appcmd.NewInvalidArgumentErrorf("These flags cannot be used in combination with one another: %s", usedFlagsErrStr)
 	}
 	return nil
 }
