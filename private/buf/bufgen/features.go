@@ -91,7 +91,6 @@ func checkRequiredFeatures(
 	configs []bufconfig.GeneratePluginConfig,
 ) error {
 	var errorDetails bytes.Buffer
-	var failedPlugins []string
 	for responseIndex, response := range responses {
 		if response == nil || response.GetError() != "" {
 			// plugin failed, nothing to check
@@ -170,10 +169,6 @@ func checkRequiredFeatures(
 					"    %s\n",
 					strings.Join(files, ","))
 			}
-		}
-
-		if len(failedFeatures) > 0 || len(failedEditions) > 0 {
-			failedPlugins = append(failedPlugins, pluginName)
 		}
 	}
 	if errorDetails.Len() > 0 {
