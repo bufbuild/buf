@@ -221,7 +221,9 @@ message UpdateUserSettingsRequest {
 
 message UpdateUserSettingsResponse {}
 
-message GetUserPluginPreferencesRequest {}
+message GetUserPluginPreferencesRequest {
+  reserved "user_id";
+}
 
 message GetUserPluginPreferencesResponse {
   UserPluginPreference preference = 1;
