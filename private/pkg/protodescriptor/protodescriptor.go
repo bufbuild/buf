@@ -138,6 +138,14 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 		return fmt.Errorf("%s uses edition %s, but editions are not yet supported in buf",
 			fileDescriptor.GetName(), strings.TrimPrefix(fileDescriptor.GetEdition().String(), "EDITION_"))
 	}
+	if fileDescriptor.GetSyntax() == "editions" && fileDescriptor.GetEdition() != descriptorpb.Edition_EDITION_2023 {
+		// Currently, we could only support edition 2023.
+		// TODO: For maximum safety, we probably want to ask protocompile if it supports
+		//       the edition, too. It's a little unlikely that we'd update buf CLI to
+		//       support an edition before protocompile, but just in case.
+		return fmt.Errorf("%s uses unsupported edition %s",
+			fileDescriptor.GetName(), strings.TrimPrefix(fileDescriptor.GetEdition().String(), "EDITION_"))
+	}
 	return nil
 }
 
