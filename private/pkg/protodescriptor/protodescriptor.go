@@ -144,7 +144,7 @@ func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
 		//       the edition, too. It's a little unlikely that we'd update buf CLI to
 		//       support an edition before protocompile, but just in case.
 		return fmt.Errorf("%s uses unsupported edition %s",
-			fileDescriptor.GetName(), strings.TrimPrefix(fileDescriptor.GetEdition().String(), "EDITION_"))
+			fileDescriptor.GetName(), fileDescriptor.GetEdition())
 	}
 	return nil
 }

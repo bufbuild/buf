@@ -285,5 +285,5 @@ issues:
     - linters:
         - gochecknoinits
       # must use init to safely enable editions support for testing
-      # (temporary)
+      # TODO: this is temporary; remove it when editions support is ready
       path: private/buf/bufgen/features_test.go

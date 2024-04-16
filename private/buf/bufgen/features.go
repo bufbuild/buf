@@ -15,41 +15,43 @@
 package bufgen
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// Map of all known features to functions that can check whether a given file
+// uses said feature.
+var featureToFeatureChecker = map[pluginpb.CodeGeneratorResponse_Feature]featureChecker{
+	pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL:   fileHasProto3Optional,
+	pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: fileHasEditions,
+}
+
 // requiredFeatures maps a feature to the set of files in an image that
 // make use of that feature.
 type requiredFeatures struct {
-	flags                  map[pluginpb.CodeGeneratorResponse_Feature][]string
-	editions               map[descriptorpb.Edition][]string
-	minEdition, maxEdition descriptorpb.Edition
+	featureToFilename map[pluginpb.CodeGeneratorResponse_Feature][]string
+	editionToFilename map[descriptorpb.Edition][]string
+	minEdition        descriptorpb.Edition
+	maxEdition        descriptorpb.Edition
 }
 
 func newRequiredFeatures() *requiredFeatures {
 	return &requiredFeatures{
-		flags:    map[pluginpb.CodeGeneratorResponse_Feature][]string{},
-		editions: map[descriptorpb.Edition][]string{},
+		featureToFilename: map[pluginpb.CodeGeneratorResponse_Feature][]string{},
+		editionToFilename: map[descriptorpb.Edition][]string{},
 	}
 }
 
 type featureChecker func(options *descriptorpb.FileDescriptorProto) bool
-
-// Map of all known features to functions that can check whether a given file
-// uses said feature.
-var allFeatures = map[pluginpb.CodeGeneratorResponse_Feature]featureChecker{
-	pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL:   fileHasProto3Optional,
-	pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: fileHasEditions,
-}
 
 // computeRequiredFeatures returns a map of required features to the files in
 // the image that require that feature. After plugins are invoked, the plugins'
@@ -62,9 +64,9 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 			continue
 		}
 		// Collect all required feature enum values.
-		for feature, checker := range allFeatures {
+		for feature, checker := range featureToFeatureChecker {
 			if checker(imageFile.FileDescriptorProto()) {
-				features.flags[feature] = append(features.flags[feature], imageFile.Path())
+				features.featureToFilename[feature] = append(features.featureToFilename[feature], imageFile.Path())
 			}
 		}
 		// We also collect the range of required editions.
@@ -72,7 +74,7 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 			continue
 		}
 		edition := imageFile.FileDescriptorProto().GetEdition()
-		features.editions[edition] = append(features.editions[edition], imageFile.Path())
+		features.editionToFilename[edition] = append(features.editionToFilename[edition], imageFile.Path())
 		if features.minEdition == 0 || edition < features.minEdition {
 			features.minEdition = edition
 		}
@@ -84,11 +86,11 @@ func computeRequiredFeatures(image bufimage.Image) *requiredFeatures {
 }
 
 func checkRequiredFeatures(
-	container app.StderrContainer,
 	required *requiredFeatures,
 	responses []*pluginpb.CodeGeneratorResponse,
 	configs []bufconfig.GeneratePluginConfig,
 ) error {
+	var errorDetails bytes.Buffer
 	var failedPlugins []string
 	for responseIndex, response := range responses {
 		if response == nil || response.GetError() != "" {
@@ -100,19 +102,19 @@ func checkRequiredFeatures(
 		var failedFeatures []pluginpb.CodeGeneratorResponse_Feature
 		var failedEditions []descriptorpb.Edition
 		supported := response.GetSupportedFeatures() // bit mask of features the plugin supports
-		for feature, files := range required.flags {
+		for feature, files := range required.featureToFilename {
 			featureMask := uint64(feature)
 			if supported&featureMask != featureMask {
 				// doh! Supported features don't include this one
-				failed.flags[feature] = files
+				failed.featureToFilename[feature] = files
 				failedFeatures = append(failedFeatures, feature)
 			}
 		}
-		if supported&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 && len(required.editions) > 0 {
+		if supported&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 && len(required.editionToFilename) > 0 {
 			// Plugin supports editions, and files include editions. So make sure
 			// the plugin supports precisely the right editions.
-			requiredEditions := make([]descriptorpb.Edition, 0, len(required.editions))
-			for edition := range required.editions {
+			requiredEditions := make([]descriptorpb.Edition, 0, len(required.editionToFilename))
+			for edition := range required.editionToFilename {
 				requiredEditions = append(requiredEditions, edition)
 			}
 			sort.Slice(requiredEditions, func(i, j int) bool {
@@ -121,7 +123,7 @@ func checkRequiredFeatures(
 			for _, requiredEdition := range requiredEditions {
 				if int32(requiredEdition) < response.GetMinimumEdition() ||
 					int32(requiredEdition) > response.GetMaximumEdition() {
-					failed.editions[requiredEdition] = required.editions[requiredEdition]
+					failed.editionToFilename[requiredEdition] = required.editionToFilename[requiredEdition]
 					failedEditions = append(failedEditions, requiredEdition)
 				}
 			}
@@ -130,20 +132,20 @@ func checkRequiredFeatures(
 		pluginName := configs[responseIndex].Name()
 		if len(failedFeatures) > 0 {
 			_, _ = fmt.Fprintf(
-				container.Stderr(),
+				&errorDetails,
 				"Plugin %q does not support required feature(s).\n",
 				pluginName)
 			sort.Slice(failedFeatures, func(i, j int) bool {
 				return failedFeatures[i] < failedFeatures[j]
 			})
 			for _, feature := range failedFeatures {
-				files := failed.flags[feature]
+				files := failed.featureToFilename[feature]
 				_, _ = fmt.Fprintf(
-					container.Stderr(),
+					&errorDetails,
 					"  Feature %q is required by %d file(s):\n",
 					featureName(feature), len(files))
 				_, _ = fmt.Fprintf(
-					container.Stderr(),
+					&errorDetails,
 					"    %s\n",
 					strings.Join(files, ","))
 			}
@@ -151,20 +153,20 @@ func checkRequiredFeatures(
 
 		if len(failedEditions) > 0 {
 			_, _ = fmt.Fprintf(
-				container.Stderr(),
+				&errorDetails,
 				"Plugin %q does not support required edition(s).\n",
 				pluginName)
 			sort.Slice(failedEditions, func(i, j int) bool {
 				return failedEditions[i] < failedEditions[j]
 			})
 			for _, edition := range failedEditions {
-				files := failed.editions[edition]
+				files := failed.editionToFilename[edition]
 				_, _ = fmt.Fprintf(
-					container.Stderr(),
+					&errorDetails,
 					"  Edition %q is required by %d file(s):\n",
 					editionName(edition), len(files))
 				_, _ = fmt.Fprintf(
-					container.Stderr(),
+					&errorDetails,
 					"    %s\n",
 					strings.Join(files, ","))
 			}
@@ -174,14 +176,10 @@ func checkRequiredFeatures(
 			failedPlugins = append(failedPlugins, pluginName)
 		}
 	}
-	switch len(failedPlugins) {
-	case 0:
-		return nil
-	case 1:
-		return fmt.Errorf("plugin %s is unable to generate code for all input files", failedPlugins[0])
-	default:
-		return fmt.Errorf("plugins [%v] are unable to generate code for all input files", strings.Join(failedPlugins, ","))
+	if errorDetails.Len() > 0 {
+		return errors.New(errorDetails.String())
 	}
+	return nil
 }
 
 func featureName(feature pluginpb.CodeGeneratorResponse_Feature) string {

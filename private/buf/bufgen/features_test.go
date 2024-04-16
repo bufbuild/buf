@@ -15,14 +15,11 @@
 package bufgen
 
 import (
-	"bytes"
-	"io"
 	"math"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
@@ -44,22 +41,22 @@ func TestComputeRequiredFeatures(t *testing.T) {
 	requiresBoth := makeImageRequiresBoth(t)
 
 	required := computeRequiredFeatures(noRequiredFeatures)
-	assert.Empty(t, required.flags)
-	assert.Empty(t, required.editions)
+	assert.Empty(t, required.featureToFilename)
+	assert.Empty(t, required.editionToFilename)
 
 	required = computeRequiredFeatures(requiresProto3Optional)
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL: {"proto3_optional.proto"},
-	}, required.flags)
-	assert.Empty(t, required.editions)
+	}, required.featureToFilename)
+	assert.Empty(t, required.editionToFilename)
 
 	required = computeRequiredFeatures(requiresEditions)
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: {"editions.proto"},
-	}, required.flags)
+	}, required.featureToFilename)
 	assert.Equal(t, map[descriptorpb.Edition][]string{
 		descriptorpb.Edition_EDITION_2023: {"editions.proto"},
-	}, required.editions)
+	}, required.editionToFilename)
 	// Note that we can't really test a wider range here right now because
 	// we don't support building an editions file for anything other than
 	// edition 2023 right now.
@@ -70,10 +67,10 @@ func TestComputeRequiredFeatures(t *testing.T) {
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL:   {"proto3_optional.proto"},
 		pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: {"editions.proto"},
-	}, required.flags)
+	}, required.featureToFilename)
 	assert.Equal(t, map[descriptorpb.Edition][]string{
 		descriptorpb.Edition_EDITION_2023: {"editions.proto"},
-	}, required.editions)
+	}, required.editionToFilename)
 	assert.Equal(t, descriptorpb.Edition_EDITION_2023, required.minEdition)
 	assert.Equal(t, descriptorpb.Edition_EDITION_2023, required.maxEdition)
 }
@@ -135,13 +132,11 @@ func testCheckRequiredFeatures(
 	t *testing.T,
 	image bufimage.Image,
 	codeGenResponse *pluginpb.CodeGeneratorResponse,
-	expectedOutput string,
+	expectedErr string,
 ) {
 	t.Helper()
 	required := computeRequiredFeatures(image)
-	var stderr bytes.Buffer
 	err := checkRequiredFeatures(
-		newMockStderrContainer(&stderr),
 		required,
 		[]*pluginpb.CodeGeneratorResponse{
 			codeGenResponse,
@@ -157,9 +152,8 @@ func testCheckRequiredFeatures(
 			newMockPluginConfig("never_fails"),
 		},
 	)
-	if expectedOutput != "" {
-		require.ErrorContains(t, err, "plugin test is unable to generate code for all input files")
-		require.Equal(t, expectedOutput, stderr.String())
+	if expectedErr != "" {
+		require.ErrorContains(t, err, expectedErr)
 	} else {
 		require.NoError(t, err)
 	}
@@ -288,18 +282,6 @@ func makeImageFileRequiresEditions(t *testing.T, name string, isImport bool) buf
 	)
 	require.NoError(t, err)
 	return imageFile
-}
-
-type mockStderrContainer struct {
-	writer io.Writer
-}
-
-func newMockStderrContainer(w io.Writer) app.StderrContainer {
-	return mockStderrContainer{w}
-}
-
-func (m mockStderrContainer) Stderr() io.Writer {
-	return m.writer
 }
 
 type mockPluginConfig struct {
