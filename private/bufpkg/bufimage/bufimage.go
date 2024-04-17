@@ -480,7 +480,9 @@ func ImageWithoutImports(image Image) Image {
 			newImageFiles = append(newImageFiles, imageFile)
 		}
 	}
-	return newImageNoValidate(newImageFiles)
+	// We preserve the original resolver because a resolver can't
+	// be successfully created without the image's dependencies.
+	return newImageNoValidate(newImageFiles, image.Resolver())
 }
 
 // ImageWithOnlyPaths returns a copy of the Image that only includes the files
