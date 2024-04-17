@@ -74,11 +74,7 @@ func newImage(files []ImageFile, reorder bool, resolver protoencoding.Resolver) 
 		files = orderImageFiles(files, pathToImageFile)
 	}
 	if resolver == nil {
-		fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(files))
-		for i := range files {
-			fileDescriptorProtos[i] = files[i].FileDescriptorProto()
-		}
-		resolver = protoencoding.NewLazyResolver(fileDescriptorProtos...)
+		resolver = resolverForImageFiles(files)
 	}
 	return &image{
 		files:           files,
@@ -96,6 +92,7 @@ func newImageNoValidate(files []ImageFile) *image {
 	return &image{
 		files:           files,
 		pathToImageFile: pathToImageFile,
+		resolver:        resolverForImageFiles(files),
 	}
 }
 
@@ -154,4 +151,12 @@ func orderImageFilesRec(
 		}
 	}
 	return append(outputImageFiles, inputImageFile)
+}
+
+func resolverForImageFiles(files []ImageFile) protoencoding.Resolver {
+	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(files))
+	for i := range files {
+		fileDescriptorProtos[i] = files[i].FileDescriptorProto()
+	}
+	return protoencoding.NewLazyResolver(fileDescriptorProtos...)
 }

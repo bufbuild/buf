@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -51,6 +52,24 @@ func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.
 			}
 			add(descriptor, nil, location, `Previously present enum %q was deleted from file.`, previousNestedName)
 		}
+	}
+	return nil
+}
+
+// CheckEnumSameType is a check function.
+var CheckEnumSameType = newEnumPairCheckFunc(checkEnumSameType)
+
+func checkEnumSameType(add addFunc, _ *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if !previousDescriptor.IsClosed() && descriptor.IsClosed() {
+		add(enum, nil, withBackupLocation(enum.Features().EnumTypeLocation(), enum.Location()), `Enum %q changed from open to closed.`, enum.Name())
 	}
 	return nil
 }
@@ -220,6 +239,33 @@ func isDeletedFieldAllowedWithRules(previousField bufprotosource.Field, message 
 		(allowIfNameReserved && bufprotosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
 }
 
+// CheckFieldSameCardinality is a check function.
+var CheckFieldSameCardinality = newFieldDescriptorPairCheckFunc(checkFieldSameCardinality)
+
+func checkFieldSameCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if previousCardinality != currentCardinality {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		// TODO: specific label location
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
+	}
+	return nil
+}
+
 // CheckFieldSameCType is a check function.
 var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
 
@@ -286,7 +332,31 @@ var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousOneof := previousField.Oneof()
+	if previousOneof != nil {
+		previousOneofDescriptor, err := previousOneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if previousOneofDescriptor.IsSynthetic() {
+			// Not considering synthetic oneofs since those are really
+			// just strange byproducts of how "explicit presence" is
+			// modeled in proto3 syntax. We will separately detect this
+			// kind of change via field presence check.
+			previousOneof = nil
+		}
+	}
 	oneof := field.Oneof()
+	if oneof != nil {
+		oneofDescriptor, err := oneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Same remark as above.
+			oneof = nil
+		}
+	}
+
 	previousInsideOneof := previousOneof != nil
 	insideOneof := oneof != nil
 	if !previousInsideOneof && !insideOneof {
@@ -313,6 +383,33 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 	return nil
 }
 
+// CheckFieldSamePresence is a check function.
+var CheckFieldSamePresence = newFieldDescriptorPairCheckFunc(checkFieldSamePresence)
+
+func checkFieldSamePresence(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	previousPresence := getFieldPresence(previousDescriptor)
+	currentPresence := getFieldPresence(descriptor)
+	if previousPresence != currentPresence {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		// TODO: specific label location
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed presence from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousPresence,
+			currentPresence,
+		)
+	}
+	return nil
+}
+
 // TODO: locations not working for map entries
 // TODO: weird output for map entries:
 //
@@ -335,11 +432,22 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 // breaking_field_same_type/2.proto:65:5:Field "2" on message "Nine" changed type from ".a.One" to ".a.Nine".
 
 // CheckFieldSameType is a check function.
-var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
+var CheckFieldSameType = newFieldDescriptorPairCheckFunc(checkFieldSameType)
 
-func checkFieldSameType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.Type() != field.Type() {
-		addFieldChangedType(add, previousField, field)
+func checkFieldSameType(
+	add addFunc,
+	_ *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	if previousDescriptor.Kind() != descriptor.Kind() {
+		addFieldChangedType(add, previousField, previousDescriptor, field, descriptor)
 		return nil
 	}
 
@@ -355,32 +463,43 @@ func checkFieldSameType(add addFunc, corpus *corpus, previousField bufprotosourc
 }
 
 // CheckFieldWireCompatibleType is a check function.
-var CheckFieldWireCompatibleType = newFieldPairCheckFunc(checkFieldWireCompatibleType)
+var CheckFieldWireCompatibleType = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleType)
 
-func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	previousWireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[previousField.Type()]
+func checkFieldWireCompatibleType(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	previousWireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[previousDescriptor.Kind()]
 	if !ok {
-		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[field.Type()]
+	wireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[descriptor.Kind()]
 	if !ok {
-		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", field.Type())
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
 	if previousWireCompatibilityGroup != wireCompatibilityGroup {
 		extraMessages := []string{
 			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.",
 		}
 		switch {
-		case previousField.Type() == descriptorpb.FieldDescriptorProto_TYPE_STRING && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_BYTES:
+		case previousDescriptor.Kind() == protoreflect.StringKind && descriptor.Kind() == protoreflect.BytesKind:
 			// It is OK to evolve from string to bytes
 			return nil
-		case previousField.Type() == descriptorpb.FieldDescriptorProto_TYPE_BYTES && field.Type() == descriptorpb.FieldDescriptorProto_TYPE_STRING:
+		case previousDescriptor.Kind() == protoreflect.BytesKind && descriptor.Kind() == protoreflect.StringKind:
 			extraMessages = append(
 				extraMessages,
-				"Note that while string and bytes are compatible if the data is valid UTF-8, there is no way to enforce that a field is UTF-8, so these fields may be incompatible.",
+				"Note that while string and bytes are compatible if the data is valid UTF-8, there is no way to enforce that a bytes field is UTF-8, so these fields may be incompatible.",
 			)
 		}
-		addFieldChangedType(add, previousField, field, extraMessages...)
+		addFieldChangedType(add, previousField, previousDescriptor, field, descriptor, extraMessages...)
 		return nil
 	}
 	switch field.Type() {
@@ -399,33 +518,45 @@ func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField buf
 }
 
 // CheckFieldWireJSONCompatibleType is a check function.
-var CheckFieldWireJSONCompatibleType = newFieldPairCheckFunc(checkFieldWireJSONCompatibleType)
+var CheckFieldWireJSONCompatibleType = newFieldDescriptorPairCheckFunc(checkFieldWireJSONCompatibleType)
 
-func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	previousWireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[previousField.Type()]
+func checkFieldWireJSONCompatibleType(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	// We use descriptor.Kind(), instead of field.Type(), because it also includes
+	// a check of resolved features in Editions files so it can distinguish between
+	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
+	// are not compatible.
+	previousWireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
 	if !ok {
-		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[field.Type()]
+	wireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[descriptor.Kind()]
 	if !ok {
-		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", field.Type())
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
 	if previousWireJSONCompatibilityGroup != wireJSONCompatibilityGroup {
 		addFieldChangedType(
 			add,
 			previousField,
+			previousDescriptor,
 			field,
+			descriptor,
 			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules and https://developers.google.com/protocol-buffers/docs/proto3#json for JSON compatibility rules.",
 		)
 		return nil
 	}
-	switch field.Type() {
-	case descriptorpb.FieldDescriptorProto_TYPE_ENUM:
+	switch descriptor.Kind() {
+	case protoreflect.EnumKind:
 		if previousField.TypeName() != field.TypeName() {
 			return checkEnumWireCompatibleForField(add, corpus, previousField, field)
 		}
-	case descriptorpb.FieldDescriptorProto_TYPE_GROUP,
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:
+	case protoreflect.GroupKind, protoreflect.MessageKind:
 		if previousField.TypeName() != field.TypeName() {
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 			return nil
@@ -469,7 +600,14 @@ func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField 
 	return nil
 }
 
-func addFieldChangedType(add addFunc, previousField bufprotosource.Field, field bufprotosource.Field, extraMessages ...string) {
+func addFieldChangedType(
+	add addFunc,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+	extraMessages ...string,
+) {
 	combinedExtraMessage := ""
 	if len(extraMessages) > 0 {
 		// protect against mistakenly added empty extra messages
@@ -478,10 +616,8 @@ func addFieldChangedType(add addFunc, previousField bufprotosource.Field, field 
 		}
 	}
 	var fieldLocation bufprotosource.Location
-	switch field.Type() {
-	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:
+	switch descriptor.Kind() {
+	case protoreflect.MessageKind, protoreflect.EnumKind, protoreflect.GroupKind:
 		fieldLocation = field.TypeNameLocation()
 	default:
 		fieldLocation = field.TypeLocation()
@@ -495,8 +631,8 @@ func addFieldChangedType(add addFunc, previousField bufprotosource.Field, field 
 		`Field %q on message %q changed type from %q to %q.%s`,
 		previousNumberString,
 		field.ParentMessage().Name(),
-		protodescriptor.FieldDescriptorProtoTypePrettyString(previousField.Type()),
-		protodescriptor.FieldDescriptorProtoTypePrettyString(field.Type()),
+		fieldDescriptorTypePrettyString(previousDescriptor),
+		fieldDescriptorTypePrettyString(descriptor),
 		combinedExtraMessage,
 	)
 }

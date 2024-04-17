@@ -435,6 +435,15 @@ type resolverForBuildResult struct {
 }
 
 func newResolverForBuildResult(result linker.Files) protoencoding.Resolver {
+	// Expand the set of files so it includes the entire transitive graph
+	allFiles := make(map[string]linker.File, len(result))
+	for _, file := range result {
+		addFileToMap(allFiles, file)
+	}
+	result = make(linker.Files, 0, len(allFiles))
+	for _, file := range allFiles {
+		result = append(result, file)
+	}
 	return &resolverForBuildResult{Resolver: result.AsResolver()}
 }
 
@@ -448,4 +457,16 @@ func (r *resolverForBuildResult) FindEnumByName(enum protoreflect.FullName) (pro
 		return nil, fmt.Errorf("%s is a %T, not a protoreflect.EnumDescriptor", enum, descriptor)
 	}
 	return dynamicpb.NewEnumType(enumDescriptor), nil
+}
+
+func addFileToMap(allFiles map[string]linker.File, file linker.File) {
+	if _, alreadyAdded := allFiles[file.Path()]; alreadyAdded {
+		return
+	}
+	allFiles[file.Path()] = file
+	imports := file.Imports()
+	for i, length := 0, imports.Len(); i < length; i++ {
+		importedFile := file.FindImportByPath(imports.Get(i).Path())
+		addFileToMap(allFiles, importedFile)
+	}
 }

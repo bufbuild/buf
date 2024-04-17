@@ -123,8 +123,10 @@ type ContainerDescriptor interface {
 	Messages() []Message
 }
 
-// OptionExtensionDescriptor contains option extensions.
+// OptionExtensionDescriptor contains options and option extensions.
 type OptionExtensionDescriptor interface {
+	Features() FeaturesDescriptor
+
 	// OptionExtension returns the value for an options extension field.
 	//
 	// Returns false if the extension is not set.
@@ -134,13 +136,19 @@ type OptionExtensionDescriptor interface {
 	OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool)
 
 	// OptionExtensionLocation returns the source location where the given extension
-	// field value is defined. The extra path can be additional path elements, for
-	// getting the location of specific elements inside the extension, for message
+	// field value is defined. This is the same as OptionLocation, but specific to
+	// extension fields.
+	OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location
+	// TODO: Should we just delete OptionExtensionLocation?
+
+	// OptionLocation returns the source location where the given option field
+	// value is defined. The extra path can be additional path elements, for getting
+	// getting the location of specific elements inside the field, for message
 	// and repeated values.
 	//
 	// If a precise location cannot be found, but a general one can be, the general
 	// location will be returned. For example, if a specific field inside a message
-	// extension is requested but the source code info only includes information
+	// field is requested but the source code info only includes information
 	// about the message itself (and not that particular field), the location of the
 	// message value is returned. Conversely, if a message location is requested but
 	// the source code info only has information about specific fields inside that
@@ -148,7 +156,7 @@ type OptionExtensionDescriptor interface {
 	// are in source code info for the requested value, the first one is returned.
 	//
 	// If no relevant location is found in source code info, this returns nil.
-	OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location
+	OptionLocation(field protoreflect.FieldDescriptor, extraPath ...int32) Location
 
 	// PresentExtensionNumbers returns field numbers for all extensions/custom options
 	// that have a set value on this descriptor.
@@ -160,6 +168,29 @@ type OptionExtensionDescriptor interface {
 	// If fn returns false, the iteration is terminated and ForEachPresentOption
 	// immediately returns.
 	ForEachPresentOption(fn func(protoreflect.FieldDescriptor, protoreflect.Value) bool)
+}
+
+// FeaturesDescriptor contains information about features, which are
+// special options in Protobuf Editions.
+type FeaturesDescriptor interface {
+	// FieldPresenceLocation returns the location for the field_presence
+	// feature, if it is present in the options of the containing element.
+	FieldPresenceLocation() Location
+	// EnumTypeLocation returns the location for the enum_type
+	// feature, if it is present in the options of the containing element.
+	EnumTypeLocation() Location
+	// RepeatedFieldEncodingLocation returns the location for the repeated_field_encoding
+	// feature, if it is present in the options of the containing element.
+	RepeatedFieldEncodingLocation() Location
+	// UTF8ValidationLocation returns the location for the utf8_validation
+	// feature, if it is present in the options of the containing element.
+	UTF8ValidationLocation() Location
+	// MessageEncodingLocation returns the location for the message_encoding
+	// feature, if it is present in the options of the containing element.
+	MessageEncodingLocation() Location
+	// JSONFormatLocation returns the location for the json_format
+	// feature, if it is present in the options of the containing element.
+	JSONFormatLocation() Location
 }
 
 // Location defines source code info location information.
@@ -828,6 +859,16 @@ func NumberToMessageFieldForLabel(message Message, label descriptorpb.FieldDescr
 func NameToMessageOneof(message Message) (map[string]Oneof, error) {
 	nameToMessageOneof := make(map[string]Oneof)
 	for _, messageOneof := range message.Oneofs() {
+		oneofDescriptor, err := messageOneof.AsDescriptor()
+		if err != nil {
+			return nil, err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Synthetic descriptors are weird artifact of how
+			// proto3 represented fields with explicit field presence.
+			// Their deletion is instead caught by field presence check.
+			continue
+		}
 		name := messageOneof.Name()
 		if _, ok := nameToMessageOneof[name]; ok {
 			return nil, fmt.Errorf("duplicate message oneof: %q", name)
