@@ -1,6 +1,8 @@
 module github.com/bufbuild/buf
 
-go 1.20
+go 1.21
+
+toolchain go1.22.2
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1
@@ -19,6 +21,7 @@ require (
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.19.1
+	github.com/google/go-github/v61 v61.0.0
 	github.com/jdx/go-netrc v1.0.0
 	github.com/jhump/protoreflect v1.16.0
 	github.com/klauspost/compress v1.17.8
@@ -67,6 +70,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20240422182052-72c8669ad3e7 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
