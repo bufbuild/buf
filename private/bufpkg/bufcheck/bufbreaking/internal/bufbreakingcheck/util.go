@@ -444,3 +444,30 @@ func withBackupLocation(primary bufprotosource.Location, secondary bufprotosourc
 	}
 	return secondary
 }
+
+func fieldDescription(field bufprotosource.Field) string {
+	var name string
+	if field.Extendee() != "" {
+		// extensions are known by fully-qualified name
+		name = field.FullName()
+	} else {
+		name = field.Name()
+	}
+	return fieldDescriptionWithName(field, name)
+}
+
+func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
+	if name != "" {
+		name = fmt.Sprintf(" with name %q", name)
+	}
+	// otherwise prints as hex
+	numberString := strconv.FormatInt(int64(field.Number()), 10)
+	var kind string
+	if field.Extendee() != "" {
+		kind = "Extension"
+	} else {
+		kind = "Field"
+	}
+	return fmt.Sprintf("%s %q%s on message %q",
+		kind, numberString, name, field.ParentMessage().Name())
+}
