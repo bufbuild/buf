@@ -41,22 +41,22 @@ func TestComputeRequiredFeatures(t *testing.T) {
 	requiresBoth := makeImageRequiresBoth(t)
 
 	required := computeRequiredFeatures(noRequiredFeatures)
-	assert.Empty(t, required.featureToFilename)
-	assert.Empty(t, required.editionToFilename)
+	assert.Empty(t, required.featureToFilenames)
+	assert.Empty(t, required.editionToFilenames)
 
 	required = computeRequiredFeatures(requiresProto3Optional)
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL: {"proto3_optional.proto"},
-	}, required.featureToFilename)
-	assert.Empty(t, required.editionToFilename)
+	}, required.featureToFilenames)
+	assert.Empty(t, required.editionToFilenames)
 
 	required = computeRequiredFeatures(requiresEditions)
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: {"editions.proto"},
-	}, required.featureToFilename)
+	}, required.featureToFilenames)
 	assert.Equal(t, map[descriptorpb.Edition][]string{
 		descriptorpb.Edition_EDITION_2023: {"editions.proto"},
-	}, required.editionToFilename)
+	}, required.editionToFilenames)
 	// Note that we can't really test a wider range here right now because
 	// we don't support building an editions file for anything other than
 	// edition 2023 right now.
@@ -67,10 +67,10 @@ func TestComputeRequiredFeatures(t *testing.T) {
 	assert.Equal(t, map[pluginpb.CodeGeneratorResponse_Feature][]string{
 		pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL:   {"proto3_optional.proto"},
 		pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS: {"editions.proto"},
-	}, required.featureToFilename)
+	}, required.featureToFilenames)
 	assert.Equal(t, map[descriptorpb.Edition][]string{
 		descriptorpb.Edition_EDITION_2023: {"editions.proto"},
-	}, required.editionToFilename)
+	}, required.editionToFilenames)
 	assert.Equal(t, descriptorpb.Edition_EDITION_2023, required.minEdition)
 	assert.Equal(t, descriptorpb.Edition_EDITION_2023, required.maxEdition)
 }
@@ -105,27 +105,14 @@ func TestCheckRequiredFeatures(t *testing.T) {
 
 	// Error cases
 	testCheckRequiredFeatures(t, requiresProto3Optional, supportsNoFeatures,
-		`Plugin "test" does not support required feature(s).
-  Feature "proto3 optional" is required by 1 file(s):
-    proto3_optional.proto
-`)
+		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"`)
 	testCheckRequiredFeatures(t, requiresEditions, supportsNoFeatures,
-		`Plugin "test" does not support required feature(s).
-  Feature "supports editions" is required by 1 file(s):
-    editions.proto
-`)
+		`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
 	testCheckRequiredFeatures(t, requiresBoth, supportsNoFeatures,
-		`Plugin "test" does not support required feature(s).
-  Feature "proto3 optional" is required by 1 file(s):
-    proto3_optional.proto
-  Feature "supports editions" is required by 1 file(s):
-    editions.proto
-`)
+		`plugin "test" does not support feature "proto3 optional" which is required by "proto3_optional.proto"; `+
+			`plugin "test" does not support feature "supports editions" which is required by "editions.proto"`)
 	testCheckRequiredFeatures(t, requiresEditions, supportsEditionsButOutOfRange,
-		`Plugin "test" does not support required edition(s).
-  Edition "2023" is required by 1 file(s):
-    editions.proto
-`)
+		`plugin "test" does not support edition "2023" which is required by "editions.proto"`)
 }
 
 func testCheckRequiredFeatures(
