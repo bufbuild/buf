@@ -17,6 +17,7 @@ package bufmoduleapi
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	modulev1 "buf.build/gen/go/bufbuild/registry/protocolbuffers/go/buf/registry/module/v1"
@@ -111,6 +112,7 @@ func (a *uploader) Upload(
 		return nil, err
 	}
 
+	// This must be in the same order as contentModules.
 	var modules []*modulev1.Module
 	if uploadOptions.CreateIfNotExist() {
 		// We must attempt to create each module one at a time, since CreateModules will return
@@ -130,6 +132,8 @@ func (a *uploader) Upload(
 			modules[i] = module
 		}
 	} else {
+		// The modules retrieved by GetModules retains the same order as the request, so
+		// this matches the order of contentModules.
 		modules, err = a.validateContentModulesExist(
 			ctx,
 			primaryRegistry,
@@ -141,47 +145,44 @@ func (a *uploader) Upload(
 	}
 
 	var v1beta1ProtoUploadRequestContents []*modulev1beta1.UploadRequest_Content
-	if uploadOptions.BranchOrDraft() != "" {
-		if len(contentModules) != 1 {
-			return nil, fmt.Errorf("--branch and --draft are disallowed for use when pushing a workspace that does not have exactly one module")
-		}
-		// We know that there is only one module we are uploading contents for.
-		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
-			ctx,
-			[]*modulev1beta1.ScopedLabelRef{
-				labelNameToV1Beta1ProtoScopedLabelRef(uploadOptions.BranchOrDraft()),
-			},
-			primaryRegistry,
-			contentModules[0],
+	if len(uploadOptions.Tags()) > 0 {
+		contentModuleSortedDefaultLabels := slicesext.ToUniqueSorted(
+			slicesext.Map(
+				modules,
+				func(module *modulev1.Module) string {
+					return module.DefaultLabelName
+				},
+			),
 		)
-		if err != nil {
-			return nil, err
+		if len(contentModuleSortedDefaultLabels) > 1 {
+			return nil, fmt.Errorf(
+				`--tag was used, but modules %q had multiple default tags %q. If multiple modules are being pushed and --tag is used, all modules must have the same default label.`,
+				strings.Join(slicesext.Map(
+					contentModules,
+					func(module bufmodule.Module) string {
+						return module.ModuleFullName().String()
+					},
+				), ", "),
+				strings.Join(contentModuleSortedDefaultLabels, ", "),
+			)
 		}
-		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
-	} else if len(uploadOptions.Tags()) > 0 {
-		if len(contentModules) != 1 {
-			return nil, fmt.Errorf("--tag is disallowed for use when pushing a workspace that does not have exactly one module")
+		for i, contentModule := range contentModules {
+			labelNames := append(uploadOptions.Tags(), modules[i].DefaultLabelName)
+			v1beta1ProtoScopedLabelRefs := slicesext.Map(
+				labelNames,
+				labelNameToV1Beta1ProtoScopedLabelRef,
+			)
+			v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
+				ctx,
+				v1beta1ProtoScopedLabelRefs,
+				primaryRegistry,
+				contentModule,
+			)
+			if err != nil {
+				return nil, err
+			}
+			v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
 		}
-		v1beta1ProtoScopedLabelRefs := slicesext.Map(
-			uploadOptions.Tags(),
-			labelNameToV1Beta1ProtoScopedLabelRef,
-		)
-		// Add the default label to this
-		v1beta1ProtoScopedLabelRefs = append(
-			v1beta1ProtoScopedLabelRefs,
-			labelNameToV1Beta1ProtoScopedLabelRef(modules[0].DefaultLabelName),
-		)
-		// We know that there is only one module we are uploading contents for.
-		v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
-			ctx,
-			v1beta1ProtoScopedLabelRefs,
-			primaryRegistry,
-			contentModules[0],
-		)
-		if err != nil {
-			return nil, err
-		}
-		v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
 	} else {
 		// While the API allows different labels per reference, we don't expose this through
 		// the use of the `--label` flag, so all references will have the same labels.
