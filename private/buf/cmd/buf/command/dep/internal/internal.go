@@ -92,8 +92,7 @@ func Prune(
 		switch t := malformedDep.Type(); t {
 		case bufworkspace.MalformedDepTypeUnused:
 			logger.Sugar().Warnf(
-				`Module %s is declared in your buf.yaml deps but is unused. This command only modifies buf.locks, not buf.yamls, please %s from your buf.yaml deps if it is not needed.`,
-				malformedDep.ModuleFullName(),
+				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
 				malformedDep.ModuleFullName(),
 			)
 		default:
