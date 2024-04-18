@@ -26,6 +26,16 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+const (
+	cardinalitySingular cardinality = iota + 1
+	cardinalityRepeated
+	cardinalityMap
+
+	fieldPresenceExplicit fieldPresence = iota + 1
+	fieldPresenceImplicit
+	fieldPresenceRequired
+)
+
 var (
 	// https://developers.google.com/protocol-buffers/docs/proto3#updating
 	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[protoreflect.Kind]int{
@@ -110,13 +120,6 @@ func newCorpus(
 
 type cardinality int
 
-const (
-	cardinalityUnknown cardinality = iota
-	cardinalitySingular
-	cardinalityRepeated
-	cardinalityMap
-)
-
 func (c cardinality) String() string {
 	switch c {
 	case cardinalitySingular:
@@ -142,13 +145,6 @@ func getCardinality(field protoreflect.FieldDescriptor) cardinality {
 }
 
 type fieldPresence int
-
-const (
-	fieldPresenceUnknown fieldPresence = iota
-	fieldPresenceExplicit
-	fieldPresenceImplicit
-	fieldPresenceRequired
-)
 
 func (f fieldPresence) String() string {
 	switch f {
