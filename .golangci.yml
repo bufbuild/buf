@@ -282,3 +282,8 @@ issues:
       # Only safe way to opt-in to protocompile editions support. Temporary and
       # will be removed once opt-in is not necessary.
       path: private/bufpkg/bufimage/build_image.go
+    - linters:
+        - gochecknoinits
+      # must use init to safely enable editions support for testing
+      # TODO: this is temporary; remove it when editions support is ready
+      path: private/buf/bufgen/features_test.go
