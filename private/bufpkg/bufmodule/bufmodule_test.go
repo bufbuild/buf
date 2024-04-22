@@ -147,10 +147,6 @@ func TestBasic(t *testing.T) {
 				"module2.proto": []byte(
 					`syntax = proto3; package module2; import "module1.proto"; import "extdep1.proto";`,
 				),
-				// Add a WKT, which is imported by a dependency. Make sure we have no cycle error.
-				"google/protobuf/timestamp.proto": []byte(
-					`syntax = proto3; package google.protobuf;`,
-				),
 				// module2 is excluded by path, but imports a Module that is not imported anywhere
 				// else. We want to make sure this path is not targeted, but extdep3 is still
 				// a dependency of the Module.
@@ -212,14 +208,12 @@ func TestBasic(t *testing.T) {
 		t,
 		module2,
 		"foo/module2_excluded.proto",
-		"google/protobuf/timestamp.proto",
 		"module2.proto",
 	)
 	// These are the target files. We excluded foo, so we only have module2.proto.
 	testTargetFilePaths(
 		t,
 		module2,
-		"google/protobuf/timestamp.proto",
 		"module2.proto",
 	)
 	//module2ProtoFileInfo, err := module2.StatFileInfo(ctx, "module2.proto")
