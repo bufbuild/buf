@@ -167,15 +167,22 @@ func getModuleDepsRec(
 				return fmt.Errorf("%s: %w", fileInfo.Path(), err)
 			}
 			for _, imp := range fastscanResult.Imports {
-				// Do not include as a dependency. If someone checks in the WKT, and one of their dependencies also
-				// imports a WKT (as is common), this algorithm will treat the original module as a dependency of
-				// the dependency, resulting in a module cycle.
-				if datawkt.Exists(imp.Path) {
-					continue
-				}
 				potentialModuleDep, err := moduleSet.getModuleForFilePath(ctx, imp.Path)
 				if err != nil {
 					if errors.Is(err, fs.ErrNotExist) {
+						// It is OK to not have a module with the WKT specified as a dependency. In this case,
+						// we do not include WKTs in our digest calculations. We've determined this is OK since
+						// WKTs are not downloaded and not subject to supply-side attacks.
+						//
+						// It is also OK for a module to have the WKT, such as buf.build/protocolbuffers/wellknowntypes.
+						// In this case, we want this to be recognized.
+						//
+						// Note that if someone checks in a WKT as part of their module, this will result in this module
+						// being a dependency for all other modules that import that WKT.
+						// This could result in unintended module cycles.
+						if datawkt.Exists(imp.Path) {
+							continue
+						}
 						// We specifically handle ImportNotExistErrors with exit code 100 in buf.go.
 						//
 						// We don't want to return a FileAnnotationSet here as we never have line

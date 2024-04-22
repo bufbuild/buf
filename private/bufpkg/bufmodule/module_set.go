@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"sort"
 
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/cache"
 	"github.com/bufbuild/buf/private/pkg/dag"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
@@ -29,10 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/gofrs/uuid/v5"
 )
-
-// errIsWKT is the error returned by getFastscanResultForPath or getModuleForFilePath if the
-// input filePath is a well-known type.
-var errIsWKT = errors.New("wkt")
 
 // ModuleSet is a set of Modules constructed by a ModuleBuilder.
 //
@@ -80,7 +75,6 @@ type ModuleSet interface {
 	// of getModuleDeps will result in nasty bugs down the line - we effectively ignore WKTs in this function,
 	// but WKTs may be included in one of the Modules as files.
 	//
-	// returns errIsWKT if the filePath is a WKT.
 	// returns an error with fs.ErrNotExist if the file is not found.
 	getModuleForFilePath(ctx context.Context, filePath string) (Module, error)
 
@@ -372,13 +366,11 @@ func (m *moduleSet) getModuleForFilePathUncached(ctx context.Context, filePath s
 	}
 	switch len(matchingOpaqueIDs) {
 	case 0:
-		// We do not include WKTs in our digest calculations. We've determined this is OK since
-		// WKTs are not downloaded and not subject to supply-side attacks.
-		if datawkt.Exists(filePath) {
-			return nil, errIsWKT
-		}
 		// This will happen if there is a file path we cannot find in our modules, which will result
 		// in an error on ModuleDeps() or Digest().
+		//
+		// Note that we will commonly call getModuleForFilePathUncached for a WKT, which will result
+		// in this error (this is desired).
 		return nil, &fs.PathError{Op: "stat", Path: filePath, Err: fs.ErrNotExist}
 	case 1:
 		var matchingOpaqueID string
