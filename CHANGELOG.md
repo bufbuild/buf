@@ -16,6 +16,10 @@
 - Delete `buf beta migrate-v1beta1`.
 - Add `buf registry sdk version` to get the version of a Generated SDK for a module and plugin.
 
+## [v1.31.0] - 2024-04-23
+
+- Update dependencies.
+
 ## [v1.30.1] - 2024-04-03
 
 - Fix issue where `buf lint` incorrectly reports an error for `(buf.validate.field).repeated`
@@ -1036,7 +1040,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.30.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.31.0...HEAD
+[v1.31.0]: https://github.com/bufbuild/buf/compare/v1.30.1...v1.31.0
 [v1.30.1]: https://github.com/bufbuild/buf/compare/v1.30.0...v1.30.1
 [v1.30.0]: https://github.com/bufbuild/buf/compare/v1.29.0...v1.30.0
 [v1.29.0]: https://github.com/bufbuild/buf/compare/v1.28.1...v1.29.0
