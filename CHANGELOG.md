@@ -2,7 +2,7 @@
 
 ## [v1.31.0] - 2024-04-23
 
-- No changes yet.
+- Update dependencies.
 
 ## [v1.30.1] - 2024-04-03
 
