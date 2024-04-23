@@ -1,0 +1,8 @@
+version: v2
+deps:
+  - name: buf.testing/acme/date
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: b5:24ed4f13925cf89ea0ae0127fa28540704c7ae14750af027270221b737a1ce658f8014ca2555f6f7fcd95ea84e071d33f37f86cc36d07fe0d0963329a5ec2462
+  - name: buf.testing/acme/extension
+    commit: b8488077ea6d4f6d9562a337b98259c8
+    digest: b5:d2c1da8f8331c5c75b50549c79fc360394dedfb6a11f5381c4523592018964119f561088fc8aaddfc9f5773ba02692e6fd9661853450f76a3355dec62c1f57b4

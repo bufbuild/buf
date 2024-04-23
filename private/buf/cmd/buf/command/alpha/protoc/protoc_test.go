@@ -22,11 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/buftesting"
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -49,7 +49,7 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"private",
-	"bufpkg",
+	"buf",
 	"buftesting",
 )
 
@@ -66,7 +66,7 @@ func TestOverlap(t *testing.T) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		nil,
@@ -105,7 +105,7 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		actualProtocStdout.String(),
@@ -250,7 +250,7 @@ func testInsertionPointMixedPathsSuccess(t *testing.T, runner command.Runner, re
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -313,7 +313,7 @@ func testCompareGeneratedStubs(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -401,7 +401,7 @@ func testCompareGeneratedStubsArchive(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		func(string) map[string]string {
@@ -429,8 +429,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
 		actualReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	bufData, err := os.ReadFile(bufProtocFile)
@@ -441,8 +439,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
 		bufReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
@@ -476,7 +472,7 @@ func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		nil,

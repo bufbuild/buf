@@ -18,16 +18,21 @@
 package buflint
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1beta1"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv2"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.uber.org/zap"
 )
 
@@ -44,23 +49,27 @@ type Handler interface {
 	// The image should have source code info for this to work properly.
 	//
 	// Images should *not* be filtered with regards to imports before passing to this function.
+	//
+	// An error of type bufanalysis.FileAnnotationSet will be returned on breaking failure.
 	Check(
 		ctx context.Context,
-		config *buflintconfig.Config,
+		config bufconfig.LintConfig,
 		image bufimage.Image,
-	) ([]bufanalysis.FileAnnotation, error)
+	) error
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(logger *zap.Logger) Handler {
-	return newHandler(logger)
+func NewHandler(logger *zap.Logger, tracer tracing.Tracer) Handler {
+	return newHandler(logger, tracer)
 }
 
 // RulesForConfig returns the rules for a given config.
 //
+// Does NOT include deprecated rules.
+//
 // Should only be used for printing.
-func RulesForConfig(config *buflintconfig.Config) ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(config)
+func RulesForConfig(config bufconfig.LintConfig) ([]bufcheck.Rule, error) {
+	internalConfig, err := internalConfigForConfig(config, true)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +80,11 @@ func RulesForConfig(config *buflintconfig.Config) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(
-		&buflintconfig.Config{
-			Use:     internal.AllIDsForVersionSpec(buflintv1beta1.VersionSpec),
-			Version: bufconfig.V1Beta1Version,
-		},
-	)
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1beta1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -87,53 +95,115 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(
-		&buflintconfig.Config{
-			Use:     internal.AllIDsForVersionSpec(buflintv1.VersionSpec),
-			Version: bufconfig.V1Version,
-		},
-	)
+	lintConfig, err := newLintConfigForVersionSpec(buflintv1.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
+// GetAllRulesV2 gets all known rules.
 //
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1Beta1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1beta1.VersionSpec)
+// Should only be used for printing.
+func GetAllRulesV2() ([]bufcheck.Rule, error) {
+	lintConfig, err := newLintConfigForVersionSpec(buflintv2.VersionSpec)
+	if err != nil {
+		return nil, err
+	}
+	internalConfig, err := internalConfigForConfig(lintConfig, false)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
+// PrintFileAnnotationSetConfigIgnoreYAMLV1 prints the FileAnnotationSet to the Writer
+// for the config-ignore-yaml format.
 //
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1() []string {
-	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1.VersionSpec)
+// TODO FUTURE: This is messed.
+func PrintFileAnnotationSetConfigIgnoreYAMLV1(
+	writer io.Writer,
+	fileAnnotationSet bufanalysis.FileAnnotationSet,
+) error {
+	ignoreIDToPathMap := make(map[string]map[string]struct{})
+	for _, fileAnnotation := range fileAnnotationSet.FileAnnotations() {
+		fileInfo := fileAnnotation.FileInfo()
+		if fileInfo == nil || fileAnnotation.Type() == "" {
+			continue
+		}
+		pathMap, ok := ignoreIDToPathMap[fileAnnotation.Type()]
+		if !ok {
+			pathMap = make(map[string]struct{})
+			ignoreIDToPathMap[fileAnnotation.Type()] = pathMap
+		}
+		pathMap[fileInfo.Path()] = struct{}{}
+	}
+	if len(ignoreIDToPathMap) == 0 {
+		return nil
+	}
+
+	sortedIgnoreIDs := make([]string, 0, len(ignoreIDToPathMap))
+	ignoreIDToSortedPaths := make(map[string][]string, len(ignoreIDToPathMap))
+	for id, pathMap := range ignoreIDToPathMap {
+		sortedIgnoreIDs = append(sortedIgnoreIDs, id)
+		paths := make([]string, 0, len(pathMap))
+		for path := range pathMap {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+		ignoreIDToSortedPaths[id] = paths
+	}
+	sort.Strings(sortedIgnoreIDs)
+
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString(`version: v1
+lint:
+  ignore_only:
+`)
+	for _, id := range sortedIgnoreIDs {
+		_, _ = buffer.WriteString("    ")
+		_, _ = buffer.WriteString(id)
+		_, _ = buffer.WriteString(":\n")
+		for _, rootPath := range ignoreIDToSortedPaths[id] {
+			_, _ = buffer.WriteString("      - ")
+			_, _ = buffer.WriteString(rootPath)
+			_, _ = buffer.WriteString("\n")
+		}
+	}
+	_, err := writer.Write(buffer.Bytes())
+	return err
 }
 
-func internalConfigForConfig(config *buflintconfig.Config) (*internal.Config, error) {
+func internalConfigForConfig(config bufconfig.LintConfig, transformDeprecated bool) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
-	switch config.Version {
-	case bufconfig.V1Beta1Version:
+	switch fileVersion := config.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1:
 		versionSpec = buflintv1beta1.VersionSpec
-	case bufconfig.V1Version:
+	case bufconfig.FileVersionV1:
 		versionSpec = buflintv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = buflintv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
 	return internal.ConfigBuilder{
-		Use:                                  config.Use,
-		Except:                               config.Except,
-		IgnoreRootPaths:                      config.IgnoreRootPaths,
-		IgnoreIDOrCategoryToRootPaths:        config.IgnoreIDOrCategoryToRootPaths,
-		AllowCommentIgnores:                  config.AllowCommentIgnores,
-		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
-		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
-		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
-		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
-		ServiceSuffix:                        config.ServiceSuffix,
+		Use:                                  config.UseIDsAndCategories(),
+		Except:                               config.ExceptIDsAndCategories(),
+		IgnoreRootPaths:                      config.IgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        config.IgnoreIDOrCategoryToPaths(),
+		AllowCommentIgnores:                  config.AllowCommentIgnores(),
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix(),
+		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse(),
+		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests(),
+		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses(),
+		ServiceSuffix:                        config.ServiceSuffix(),
 	}.NewConfig(
 		versionSpec,
+		transformDeprecated,
 	)
 }
 
@@ -146,4 +216,23 @@ func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
 		s[i] = e
 	}
 	return s
+}
+
+func newLintConfigForVersionSpec(versionSpec *internal.VersionSpec) (bufconfig.LintConfig, error) {
+	ids, err := internal.AllIDsForVersionSpec(versionSpec, true)
+	if err != nil {
+		return nil, err
+	}
+	return bufconfig.NewLintConfig(
+		bufconfig.NewEnabledCheckConfigForUseIDsAndCategories(
+			versionSpec.FileVersion,
+			ids,
+		),
+		"",
+		false,
+		false,
+		false,
+		"",
+		false,
+	), nil
 }

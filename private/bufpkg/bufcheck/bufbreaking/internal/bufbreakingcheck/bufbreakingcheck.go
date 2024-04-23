@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -33,12 +33,12 @@ import (
 // CheckEnumNoDelete is a check function.
 var CheckEnumNoDelete = newFilePairCheckFunc(checkEnumNoDelete)
 
-func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
-	previousNestedNameToEnum, err := protosource.NestedNameToEnum(previousFile)
+func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
+	previousNestedNameToEnum, err := bufprotosource.NestedNameToEnum(previousFile)
 	if err != nil {
 		return err
 	}
-	nestedNameToEnum, err := protosource.NestedNameToEnum(file)
+	nestedNameToEnum, err := bufprotosource.NestedNameToEnum(file)
 	if err != nil {
 		return err
 	}
@@ -58,30 +58,30 @@ func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile protosource.Fil
 // CheckEnumValueNoDelete is a check function.
 var CheckEnumValueNoDelete = newEnumPairCheckFunc(checkEnumValueNoDelete)
 
-func checkEnumValueNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDelete(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, false, false)
 }
 
 // CheckEnumValueNoDeleteUnlessNumberReserved is a check function.
 var CheckEnumValueNoDeleteUnlessNumberReserved = newEnumPairCheckFunc(checkEnumValueNoDeleteUnlessNumberReserved)
 
-func checkEnumValueNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, true, false)
 }
 
 // CheckEnumValueNoDeleteUnlessNameReserved is a check function.
 var CheckEnumValueNoDeleteUnlessNameReserved = newEnumPairCheckFunc(checkEnumValueNoDeleteUnlessNameReserved)
 
-func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, false, true)
 }
 
-func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protosource.Enum, enum protosource.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) error {
-	previousNumberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(previousEnum)
+func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum bufprotosource.Enum, enum bufprotosource.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) error {
+	previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
 	if err != nil {
 		return err
 	}
-	numberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(enum)
+	numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
 	if err != nil {
 		return err
 	}
@@ -109,14 +109,14 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protosource.Enum,
 	return nil
 }
 
-func isDeletedEnumValueAllowedWithRules(previousNumber int, previousNameToEnumValue map[string]protosource.EnumValue, enum protosource.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
+func isDeletedEnumValueAllowedWithRules(previousNumber int, previousNameToEnumValue map[string]bufprotosource.EnumValue, enum bufprotosource.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
 	if allowIfNumberReserved {
-		return protosource.NumberInReservedRanges(previousNumber, enum.ReservedTagRanges()...)
+		return bufprotosource.NumberInReservedRanges(previousNumber, enum.ReservedTagRanges()...)
 	}
 	if allowIfNameReserved {
 		// if true for all names, then ok
 		for previousName := range previousNameToEnumValue {
-			if !protosource.NameInReservedNames(previousName, enum.ReservedNames()...) {
+			if !bufprotosource.NameInReservedNames(previousName, enum.ReservedNames()...) {
 				return false
 			}
 		}
@@ -128,7 +128,7 @@ func isDeletedEnumValueAllowedWithRules(previousNumber int, previousNameToEnumVa
 // CheckEnumValueSameName is a check function.
 var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 
-func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue map[string]protosource.EnumValue, nameToEnumValue map[string]protosource.EnumValue) error {
+func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue map[string]bufprotosource.EnumValue, nameToEnumValue map[string]bufprotosource.EnumValue) error {
 	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
 	names := getSortedEnumValueNames(nameToEnumValue)
 	// all current names for this number need to be in the previous set
@@ -152,9 +152,9 @@ func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue
 // CheckExtensionMessageNoDelete is a check function.
 var CheckExtensionMessageNoDelete = newMessagePairCheckFunc(checkExtensionMessageNoDelete)
 
-func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-	previousStringToExtensionRange := protosource.StringToExtensionMessageRange(previousMessage)
-	stringToExtensionRange := protosource.StringToExtensionMessageRange(message)
+func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+	previousStringToExtensionRange := bufprotosource.StringToExtensionMessageRange(previousMessage)
+	stringToExtensionRange := bufprotosource.StringToExtensionMessageRange(message)
 	for previousString := range previousStringToExtensionRange {
 		if _, ok := stringToExtensionRange[previousString]; !ok {
 			add(message, nil, message.Location(), `Previously present extension range %q on message %q was deleted.`, previousString, message.Name())
@@ -166,30 +166,30 @@ func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage 
 // CheckFieldNoDelete is a check function.
 var CheckFieldNoDelete = newMessagePairCheckFunc(checkFieldNoDelete)
 
-func checkFieldNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, false, false)
 }
 
 // CheckFieldNoDeleteUnlessNumberReserved is a check function.
 var CheckFieldNoDeleteUnlessNumberReserved = newMessagePairCheckFunc(checkFieldNoDeleteUnlessNumberReserved)
 
-func checkFieldNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, true, false)
 }
 
 // CheckFieldNoDeleteUnlessNameReserved is a check function.
 var CheckFieldNoDeleteUnlessNameReserved = newMessagePairCheckFunc(checkFieldNoDeleteUnlessNameReserved)
 
-func checkFieldNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, false, true)
 }
 
-func checkFieldNoDeleteWithRules(add addFunc, previousMessage protosource.Message, message protosource.Message, allowIfNumberReserved bool, allowIfNameReserved bool) error {
-	previousNumberToField, err := protosource.NumberToMessageField(previousMessage)
+func checkFieldNoDeleteWithRules(add addFunc, previousMessage bufprotosource.Message, message bufprotosource.Message, allowIfNumberReserved bool, allowIfNameReserved bool) error {
+	previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
 	if err != nil {
 		return err
 	}
-	numberToField, err := protosource.NumberToMessageField(message)
+	numberToField, err := bufprotosource.NumberToMessageField(message)
 	if err != nil {
 		return err
 	}
@@ -215,15 +215,15 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage protosource.Messag
 	return nil
 }
 
-func isDeletedFieldAllowedWithRules(previousField protosource.Field, message protosource.Message, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
-	return (allowIfNumberReserved && protosource.NumberInReservedRanges(previousField.Number(), message.ReservedTagRanges()...)) ||
-		(allowIfNameReserved && protosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
+func isDeletedFieldAllowedWithRules(previousField bufprotosource.Field, message bufprotosource.Message, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
+	return (allowIfNumberReserved && bufprotosource.NumberInReservedRanges(previousField.Number(), message.ReservedTagRanges()...)) ||
+		(allowIfNameReserved && bufprotosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
 }
 
 // CheckFieldSameCType is a check function.
 var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
 
-func checkFieldSameCType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameCType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.CType() != field.CType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -235,7 +235,7 @@ func checkFieldSameCType(add addFunc, corpus *corpus, previousField protosource.
 // CheckFieldSameJSONName is a check function.
 var CheckFieldSameJSONName = newFieldPairCheckFunc(checkFieldSameJSONName)
 
-func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.JSONName() != field.JSONName() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -247,7 +247,7 @@ func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField protosour
 // CheckFieldSameJSType is a check function.
 var CheckFieldSameJSType = newFieldPairCheckFunc(checkFieldSameJSType)
 
-func checkFieldSameJSType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.JSType() != field.JSType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -259,7 +259,7 @@ func checkFieldSameJSType(add addFunc, corpus *corpus, previousField protosource
 // CheckFieldSameLabel is a check function.
 var CheckFieldSameLabel = newFieldPairCheckFunc(checkFieldSameLabel)
 
-func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameLabel(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.Label() != field.Label() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -272,7 +272,7 @@ func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.
 // CheckFieldSameName is a check function.
 var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
-func checkFieldSameName(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.Name() != field.Name() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -284,7 +284,7 @@ func checkFieldSameName(add addFunc, corpus *corpus, previousField protosource.F
 // CheckFieldSameOneof is a check function.
 var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
-func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousOneof := previousField.Oneof()
 	oneof := field.Oneof()
 	previousInsideOneof := previousOneof != nil
@@ -337,7 +337,7 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.
 // CheckFieldSameType is a check function.
 var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
 
-func checkFieldSameType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.Type() != field.Type() {
 		addFieldChangedType(add, previousField, field)
 		return nil
@@ -357,7 +357,7 @@ func checkFieldSameType(add addFunc, corpus *corpus, previousField protosource.F
 // CheckFieldWireCompatibleType is a check function.
 var CheckFieldWireCompatibleType = newFieldPairCheckFunc(checkFieldWireCompatibleType)
 
-func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousWireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[previousField.Type()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
@@ -401,7 +401,7 @@ func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField pro
 // CheckFieldWireJSONCompatibleType is a check function.
 var CheckFieldWireJSONCompatibleType = newFieldPairCheckFunc(checkFieldWireJSONCompatibleType)
 
-func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousWireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[previousField.Type()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
@@ -434,7 +434,7 @@ func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField
 	return nil
 }
 
-func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousEnum, err := getEnumByFullName(
 		corpus.previousFiles,
 		strings.TrimPrefix(previousField.TypeName(), "."),
@@ -454,7 +454,7 @@ func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField 
 		addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 		return nil
 	}
-	isSubset, err := protosource.EnumIsSubset(enum, previousEnum)
+	isSubset, err := bufprotosource.EnumIsSubset(enum, previousEnum)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,7 @@ func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField 
 	return nil
 }
 
-func addFieldChangedType(add addFunc, previousField protosource.Field, field protosource.Field, extraMessages ...string) {
+func addFieldChangedType(add addFunc, previousField bufprotosource.Field, field bufprotosource.Field, extraMessages ...string) {
 	combinedExtraMessage := ""
 	if len(extraMessages) > 0 {
 		// protect against mistakenly added empty extra messages
@@ -477,7 +477,7 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 			combinedExtraMessage = " " + joined
 		}
 	}
-	var fieldLocation protosource.Location
+	var fieldLocation bufprotosource.Location
 	switch field.Type() {
 	case descriptorpb.FieldDescriptorProto_TYPE_MESSAGE,
 		descriptorpb.FieldDescriptorProto_TYPE_ENUM,
@@ -501,7 +501,7 @@ func addFieldChangedType(add addFunc, previousField protosource.Field, field pro
 	)
 }
 
-func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField protosource.Field, field protosource.Field) {
+func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField bufprotosource.Field, field bufprotosource.Field) {
 	// otherwise prints as hex
 	numberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
@@ -520,11 +520,11 @@ func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField protosou
 var CheckFileNoDelete = newFilesCheckFunc(checkFileNoDelete)
 
 func checkFileNoDelete(add addFunc, corpus *corpus) error {
-	previousFilePathToFile, err := protosource.FilePathToFile(corpus.previousFiles...)
+	previousFilePathToFile, err := bufprotosource.FilePathToFile(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	filePathToFile, err := protosource.FilePathToFile(corpus.files...)
+	filePathToFile, err := bufprotosource.FilePathToFile(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -533,7 +533,7 @@ func checkFileNoDelete(add addFunc, corpus *corpus) error {
 			// Add previous descriptor to check for ignores. This will mean that if
 			// we have ignore_unstable_packages set, this file will cause the ignore
 			// to happen.
-			add(nil, []protosource.Descriptor{previousFile}, nil, `Previously present file %q was deleted.`, previousFilePath)
+			add(nil, []bufprotosource.Descriptor{previousFile}, nil, `Previously present file %q was deleted.`, previousFilePath)
 		}
 	}
 	return nil
@@ -542,152 +542,145 @@ func checkFileNoDelete(add addFunc, corpus *corpus) error {
 // CheckFileSameCsharpNamespace is a check function.
 var CheckFileSameCsharpNamespace = newFilePairCheckFunc(checkFileSameCsharpNamespace)
 
-func checkFileSameCsharpNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCsharpNamespace(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.CsharpNamespace(), file.CsharpNamespace(), file, file.CsharpNamespaceLocation(), `option "csharp_namespace"`)
 }
 
 // CheckFileSameGoPackage is a check function.
 var CheckFileSameGoPackage = newFilePairCheckFunc(checkFileSameGoPackage)
 
-func checkFileSameGoPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameGoPackage(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.GoPackage(), file.GoPackage(), file, file.GoPackageLocation(), `option "go_package"`)
 }
 
 // CheckFileSameJavaMultipleFiles is a check function.
 var CheckFileSameJavaMultipleFiles = newFilePairCheckFunc(checkFileSameJavaMultipleFiles)
 
-func checkFileSameJavaMultipleFiles(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaMultipleFiles(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaMultipleFiles()), strconv.FormatBool(file.JavaMultipleFiles()), file, file.JavaMultipleFilesLocation(), `option "java_multiple_files"`)
 }
 
 // CheckFileSameJavaOuterClassname is a check function.
 var CheckFileSameJavaOuterClassname = newFilePairCheckFunc(checkFileSameJavaOuterClassname)
 
-func checkFileSameJavaOuterClassname(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaOuterClassname(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.JavaOuterClassname(), file.JavaOuterClassname(), file, file.JavaOuterClassnameLocation(), `option "java_outer_classname"`)
 }
 
 // CheckFileSameJavaPackage is a check function.
 var CheckFileSameJavaPackage = newFilePairCheckFunc(checkFileSameJavaPackage)
 
-func checkFileSameJavaPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaPackage(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.JavaPackage(), file.JavaPackage(), file, file.JavaPackageLocation(), `option "java_package"`)
 }
 
 // CheckFileSameJavaStringCheckUtf8 is a check function.
 var CheckFileSameJavaStringCheckUtf8 = newFilePairCheckFunc(checkFileSameJavaStringCheckUtf8)
 
-func checkFileSameJavaStringCheckUtf8(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaStringCheckUtf8(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaStringCheckUtf8()), strconv.FormatBool(file.JavaStringCheckUtf8()), file, file.JavaStringCheckUtf8Location(), `option "java_string_check_utf8"`)
 }
 
 // CheckFileSameObjcClassPrefix is a check function.
 var CheckFileSameObjcClassPrefix = newFilePairCheckFunc(checkFileSameObjcClassPrefix)
 
-func checkFileSameObjcClassPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameObjcClassPrefix(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.ObjcClassPrefix(), file.ObjcClassPrefix(), file, file.ObjcClassPrefixLocation(), `option "objc_class_prefix"`)
 }
 
 // CheckFileSamePackage is a check function.
 var CheckFileSamePackage = newFilePairCheckFunc(checkFileSamePackage)
 
-func checkFileSamePackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePackage(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.Package(), file.Package(), file, file.PackageLocation(), `package`)
 }
 
 // CheckFileSamePhpClassPrefix is a check function.
 var CheckFileSamePhpClassPrefix = newFilePairCheckFunc(checkFileSamePhpClassPrefix)
 
-func checkFileSamePhpClassPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpClassPrefix(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpClassPrefix(), file.PhpClassPrefix(), file, file.PhpClassPrefixLocation(), `option "php_class_prefix"`)
 }
 
 // CheckFileSamePhpNamespace is a check function.
 var CheckFileSamePhpNamespace = newFilePairCheckFunc(checkFileSamePhpNamespace)
 
-func checkFileSamePhpNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpNamespace(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpNamespace(), file.PhpNamespace(), file, file.PhpNamespaceLocation(), `option "php_namespace"`)
 }
 
 // CheckFileSamePhpMetadataNamespace is a check function.
 var CheckFileSamePhpMetadataNamespace = newFilePairCheckFunc(checkFileSamePhpMetadataNamespace)
 
-func checkFileSamePhpMetadataNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpMetadataNamespace(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpMetadataNamespace(), file.PhpMetadataNamespace(), file, file.PhpMetadataNamespaceLocation(), `option "php_metadata_namespace"`)
 }
 
 // CheckFileSameRubyPackage is a check function.
 var CheckFileSameRubyPackage = newFilePairCheckFunc(checkFileSameRubyPackage)
 
-func checkFileSameRubyPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameRubyPackage(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.RubyPackage(), file.RubyPackage(), file, file.RubyPackageLocation(), `option "ruby_package"`)
 }
 
 // CheckFileSameSwiftPrefix is a check function.
 var CheckFileSameSwiftPrefix = newFilePairCheckFunc(checkFileSameSwiftPrefix)
 
-func checkFileSameSwiftPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameSwiftPrefix(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.SwiftPrefix(), file.SwiftPrefix(), file, file.SwiftPrefixLocation(), `option "swift_prefix"`)
 }
 
 // CheckFileSameOptimizeFor is a check function.
 var CheckFileSameOptimizeFor = newFilePairCheckFunc(checkFileSameOptimizeFor)
 
-func checkFileSameOptimizeFor(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameOptimizeFor(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, previousFile.OptimizeFor().String(), file.OptimizeFor().String(), file, file.OptimizeForLocation(), `option "optimize_for"`)
 }
 
 // CheckFileSameCcGenericServices is a check function.
 var CheckFileSameCcGenericServices = newFilePairCheckFunc(checkFileSameCcGenericServices)
 
-func checkFileSameCcGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCcGenericServices(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.CcGenericServices()), strconv.FormatBool(file.CcGenericServices()), file, file.CcGenericServicesLocation(), `option "cc_generic_services"`)
 }
 
 // CheckFileSameJavaGenericServices is a check function.
 var CheckFileSameJavaGenericServices = newFilePairCheckFunc(checkFileSameJavaGenericServices)
 
-func checkFileSameJavaGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaGenericServices(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaGenericServices()), strconv.FormatBool(file.JavaGenericServices()), file, file.JavaGenericServicesLocation(), `option "java_generic_services"`)
 }
 
 // CheckFileSamePyGenericServices is a check function.
 var CheckFileSamePyGenericServices = newFilePairCheckFunc(checkFileSamePyGenericServices)
 
-func checkFileSamePyGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePyGenericServices(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.PyGenericServices()), strconv.FormatBool(file.PyGenericServices()), file, file.PyGenericServicesLocation(), `option "py_generic_services"`)
-}
-
-// CheckFileSamePhpGenericServices is a check function.
-var CheckFileSamePhpGenericServices = newFilePairCheckFunc(checkFileSamePhpGenericServices)
-
-func checkFileSamePhpGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
-	return checkFileSameValue(add, strconv.FormatBool(previousFile.PhpGenericServices()), strconv.FormatBool(file.PhpGenericServices()), file, file.PhpGenericServicesLocation(), `option "php_generic_services"`)
 }
 
 // CheckFileSameCcEnableArenas is a check function.
 var CheckFileSameCcEnableArenas = newFilePairCheckFunc(checkFileSameCcEnableArenas)
 
-func checkFileSameCcEnableArenas(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCcEnableArenas(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.CcEnableArenas()), strconv.FormatBool(file.CcEnableArenas()), file, file.CcEnableArenasLocation(), `option "cc_enable_arenas"`)
 }
 
 // CheckFileSameSyntax is a check function.
 var CheckFileSameSyntax = newFilePairCheckFunc(checkFileSameSyntax)
 
-func checkFileSameSyntax(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
+func checkFileSameSyntax(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
 	previousSyntax := previousFile.Syntax()
-	if previousSyntax == protosource.SyntaxUnspecified {
-		previousSyntax = protosource.SyntaxProto2
+	if previousSyntax == bufprotosource.SyntaxUnspecified {
+		previousSyntax = bufprotosource.SyntaxProto2
 	}
 	syntax := file.Syntax()
-	if syntax == protosource.SyntaxUnspecified {
-		syntax = protosource.SyntaxProto2
+	if syntax == bufprotosource.SyntaxUnspecified {
+		syntax = bufprotosource.SyntaxProto2
 	}
 	return checkFileSameValue(add, previousSyntax.String(), syntax.String(), file, file.SyntaxLocation(), `syntax`)
 }
 
-func checkFileSameValue(add addFunc, previousValue interface{}, value interface{}, file protosource.File, location protosource.Location, name string) error {
+func checkFileSameValue(add addFunc, previousValue interface{}, value interface{}, file bufprotosource.File, location bufprotosource.Location, name string) error {
 	if previousValue != value {
 		add(file, nil, location, `File %s changed from %q to %q.`, name, previousValue, value)
 	}
@@ -697,12 +690,12 @@ func checkFileSameValue(add addFunc, previousValue interface{}, value interface{
 // CheckMessageNoDelete is a check function.
 var CheckMessageNoDelete = newFilePairCheckFunc(checkMessageNoDelete)
 
-func checkMessageNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
-	previousNestedNameToMessage, err := protosource.NestedNameToMessage(previousFile)
+func checkMessageNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
+	previousNestedNameToMessage, err := bufprotosource.NestedNameToMessage(previousFile)
 	if err != nil {
 		return err
 	}
-	nestedNameToMessage, err := protosource.NestedNameToMessage(file)
+	nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 	if err != nil {
 		return err
 	}
@@ -718,7 +711,7 @@ func checkMessageNoDelete(add addFunc, corpus *corpus, previousFile protosource.
 // CheckMessageNoRemoveStandardDescriptorAccessor is a check function.
 var CheckMessageNoRemoveStandardDescriptorAccessor = newMessagePairCheckFunc(checkMessageNoRemoveStandardDescriptorAccessor)
 
-func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
 	if previous == "false" && current == "true" {
@@ -730,7 +723,7 @@ func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, corpus *corpus,
 // CheckMessageSameMessageSetWireFormat is a check function.
 var CheckMessageSameMessageSetWireFormat = newMessagePairCheckFunc(checkMessageSameMessageSetWireFormat)
 
-func checkMessageSameMessageSetWireFormat(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkMessageSameMessageSetWireFormat(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	previous := strconv.FormatBool(previousMessage.MessageSetWireFormat())
 	current := strconv.FormatBool(message.MessageSetWireFormat())
 	if previous != current {
@@ -742,15 +735,15 @@ func checkMessageSameMessageSetWireFormat(add addFunc, corpus *corpus, previousM
 // CheckMessageSameRequiredFields is a check function.
 var CheckMessageSameRequiredFields = newMessagePairCheckFunc(checkMessageSameRequiredFields)
 
-func checkMessageSameRequiredFields(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-	previousNumberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
+func checkMessageSameRequiredFields(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+	previousNumberToRequiredField, err := bufprotosource.NumberToMessageFieldForLabel(
 		previousMessage,
 		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
 	)
 	if err != nil {
 		return err
 	}
-	numberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
+	numberToRequiredField, err := bufprotosource.NumberToMessageFieldForLabel(
 		message,
 		descriptorpb.FieldDescriptorProto_LABEL_REQUIRED,
 	)
@@ -775,12 +768,12 @@ func checkMessageSameRequiredFields(add addFunc, corpus *corpus, previousMessage
 // CheckOneofNoDelete is a check function.
 var CheckOneofNoDelete = newMessagePairCheckFunc(checkOneofNoDelete)
 
-func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-	previousNameToOneof, err := protosource.NameToMessageOneof(previousMessage)
+func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+	previousNameToOneof, err := bufprotosource.NameToMessageOneof(previousMessage)
 	if err != nil {
 		return err
 	}
-	nameToOneof, err := protosource.NameToMessageOneof(message)
+	nameToOneof, err := bufprotosource.NameToMessageOneof(message)
 	if err != nil {
 		return err
 	}
@@ -796,23 +789,23 @@ func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage protosource
 var CheckPackageEnumNoDelete = newFilesCheckFunc(checkPackageEnumNoDelete)
 
 func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
-	previousPackageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(corpus.previousFiles...)
+	previousPackageToNestedNameToEnum, err := bufprotosource.PackageToNestedNameToEnum(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(corpus.files...)
+	packageToNestedNameToEnum, err := bufprotosource.PackageToNestedNameToEnum(corpus.files...)
 	if err != nil {
 		return err
 	}
 	// caching across loops
-	var filePathToFile map[string]protosource.File
+	var filePathToFile map[string]bufprotosource.File
 	for previousPackage, previousNestedNameToEnum := range previousPackageToNestedNameToEnum {
 		if nestedNameToEnum, ok := packageToNestedNameToEnum[previousPackage]; ok {
 			for previousNestedName, previousEnum := range previousNestedNameToEnum {
 				if _, ok := nestedNameToEnum[previousNestedName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
+						filePathToFile, err = bufprotosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -831,7 +824,7 @@ func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
 						// Add the previous enum to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous enum was in an unstable package.
-						add(nil, []protosource.Descriptor{previousEnum}, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(nil, []bufprotosource.Descriptor{previousEnum}, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -844,23 +837,23 @@ func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
 var CheckPackageMessageNoDelete = newFilesCheckFunc(checkPackageMessageNoDelete)
 
 func checkPackageMessageNoDelete(add addFunc, corpus *corpus) error {
-	previousPackageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(corpus.previousFiles...)
+	previousPackageToNestedNameToMessage, err := bufprotosource.PackageToNestedNameToMessage(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(corpus.files...)
+	packageToNestedNameToMessage, err := bufprotosource.PackageToNestedNameToMessage(corpus.files...)
 	if err != nil {
 		return err
 	}
 	// caching across loops
-	var filePathToFile map[string]protosource.File
+	var filePathToFile map[string]bufprotosource.File
 	for previousPackage, previousNestedNameToMessage := range previousPackageToNestedNameToMessage {
 		if nestedNameToMessage, ok := packageToNestedNameToMessage[previousPackage]; ok {
 			for previousNestedName, previousMessage := range previousNestedNameToMessage {
 				if _, ok := nestedNameToMessage[previousNestedName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
+						filePathToFile, err = bufprotosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -876,7 +869,7 @@ func checkPackageMessageNoDelete(add addFunc, corpus *corpus) error {
 						// Add the previous message to check for ignores. This means that if
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous message was in an unstable package.
-						add(nil, []protosource.Descriptor{previousMessage}, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(nil, []bufprotosource.Descriptor{previousMessage}, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -889,11 +882,11 @@ func checkPackageMessageNoDelete(add addFunc, corpus *corpus) error {
 var CheckPackageNoDelete = newFilesCheckFunc(checkPackageNoDelete)
 
 func checkPackageNoDelete(add addFunc, corpus *corpus) error {
-	previousPackageToFiles, err := protosource.PackageToFiles(corpus.previousFiles...)
+	previousPackageToFiles, err := bufprotosource.PackageToFiles(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToFiles, err := protosource.PackageToFiles(corpus.files...)
+	packageToFiles, err := bufprotosource.PackageToFiles(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -904,7 +897,7 @@ func checkPackageNoDelete(add addFunc, corpus *corpus) error {
 			// any one of these files will cause the ignore to happen. Note that we
 			// could probably just attach a single file, but we do this in case we
 			// have other ways to ignore in the future.
-			previousDescriptors := make([]protosource.Descriptor, len(previousFiles))
+			previousDescriptors := make([]bufprotosource.Descriptor, len(previousFiles))
 			for i, previousFile := range previousFiles {
 				previousDescriptors[i] = previousFile
 			}
@@ -918,23 +911,23 @@ func checkPackageNoDelete(add addFunc, corpus *corpus) error {
 var CheckPackageServiceNoDelete = newFilesCheckFunc(checkPackageServiceNoDelete)
 
 func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
-	previousPackageToNameToService, err := protosource.PackageToNameToService(corpus.previousFiles...)
+	previousPackageToNameToService, err := bufprotosource.PackageToNameToService(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNameToService, err := protosource.PackageToNameToService(corpus.files...)
+	packageToNameToService, err := bufprotosource.PackageToNameToService(corpus.files...)
 	if err != nil {
 		return err
 	}
 	// caching across loops
-	var filePathToFile map[string]protosource.File
+	var filePathToFile map[string]bufprotosource.File
 	for previousPackage, previousNameToService := range previousPackageToNameToService {
 		if nameToService, ok := packageToNameToService[previousPackage]; ok {
 			for previousName, previousService := range previousNameToService {
 				if _, ok := nameToService[previousName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
+						filePathToFile, err = bufprotosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -950,7 +943,7 @@ func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
 						// ignore_unstable_packages is set, this will be triggered if the
 						// previous service was in an unstable package.
 						// TODO: find the service and print that this moved?
-						add(nil, []protosource.Descriptor{previousService}, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
+						add(nil, []bufprotosource.Descriptor{previousService}, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
 					}
 				}
 			}
@@ -962,16 +955,16 @@ func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
 // CheckReservedEnumNoDelete is a check function.
 var CheckReservedEnumNoDelete = newEnumPairCheckFunc(checkReservedEnumNoDelete)
 
-func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
 	previousRanges := previousEnum.ReservedTagRanges()
 	ranges := enum.ReservedTagRanges()
-	if isSubset, missing := protosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
+	if isSubset, missing := bufprotosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
 		for _, tagRange := range missing {
-			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, protosource.TagRangeString(tagRange), enum.Name())
+			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, bufprotosource.TagRangeString(tagRange), enum.Name())
 		}
 	}
-	previousValueToReservedName := protosource.ValueToReservedName(previousEnum)
-	valueToReservedName := protosource.ValueToReservedName(enum)
+	previousValueToReservedName := bufprotosource.ValueToReservedName(previousEnum)
+	valueToReservedName := bufprotosource.ValueToReservedName(enum)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
 			add(enum, nil, enum.Location(), `Previously present reserved name %q on enum %q was deleted.`, previousValue, enum.Name())
@@ -983,16 +976,16 @@ func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protoso
 // CheckReservedMessageNoDelete is a check function.
 var CheckReservedMessageNoDelete = newMessagePairCheckFunc(checkReservedMessageNoDelete)
 
-func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
+func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
 	previousRanges := previousMessage.ReservedTagRanges()
 	ranges := message.ReservedTagRanges()
-	if isSubset, missing := protosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
+	if isSubset, missing := bufprotosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
 		for _, tagRange := range missing {
-			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, protosource.TagRangeString(tagRange), message.Name())
+			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, bufprotosource.TagRangeString(tagRange), message.Name())
 		}
 	}
-	previousValueToReservedName := protosource.ValueToReservedName(previousMessage)
-	valueToReservedName := protosource.ValueToReservedName(message)
+	previousValueToReservedName := bufprotosource.ValueToReservedName(previousMessage)
+	valueToReservedName := bufprotosource.ValueToReservedName(message)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
 			add(message, nil, message.Location(), `Previously present reserved name %q on message %q was deleted.`, previousValue, message.Name())
@@ -1004,12 +997,12 @@ func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage p
 // CheckRPCNoDelete is a check function.
 var CheckRPCNoDelete = newServicePairCheckFunc(checkRPCNoDelete)
 
-func checkRPCNoDelete(add addFunc, corpus *corpus, previousService protosource.Service, service protosource.Service) error {
-	previousNameToMethod, err := protosource.NameToMethod(previousService)
+func checkRPCNoDelete(add addFunc, corpus *corpus, previousService bufprotosource.Service, service bufprotosource.Service) error {
+	previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
 	if err != nil {
 		return err
 	}
-	nameToMethod, err := protosource.NameToMethod(service)
+	nameToMethod, err := bufprotosource.NameToMethod(service)
 	if err != nil {
 		return err
 	}
@@ -1024,7 +1017,7 @@ func checkRPCNoDelete(add addFunc, corpus *corpus, previousService protosource.S
 // CheckRPCSameClientStreaming is a check function.
 var CheckRPCSameClientStreaming = newMethodPairCheckFunc(checkRPCSameClientStreaming)
 
-func checkRPCSameClientStreaming(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameClientStreaming(add addFunc, corpus *corpus, previousMethod bufprotosource.Method, method bufprotosource.Method) error {
 	if previousMethod.ClientStreaming() != method.ClientStreaming() {
 		previous := "streaming"
 		current := "unary"
@@ -1040,7 +1033,7 @@ func checkRPCSameClientStreaming(add addFunc, corpus *corpus, previousMethod pro
 // CheckRPCSameIdempotencyLevel is a check function.
 var CheckRPCSameIdempotencyLevel = newMethodPairCheckFunc(checkRPCSameIdempotencyLevel)
 
-func checkRPCSameIdempotencyLevel(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameIdempotencyLevel(add addFunc, corpus *corpus, previousMethod bufprotosource.Method, method bufprotosource.Method) error {
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
@@ -1052,7 +1045,7 @@ func checkRPCSameIdempotencyLevel(add addFunc, corpus *corpus, previousMethod pr
 // CheckRPCSameRequestType is a check function.
 var CheckRPCSameRequestType = newMethodPairCheckFunc(checkRPCSameRequestType)
 
-func checkRPCSameRequestType(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameRequestType(add addFunc, corpus *corpus, previousMethod bufprotosource.Method, method bufprotosource.Method) error {
 	if previousMethod.InputTypeName() != method.InputTypeName() {
 		add(method, nil, method.InputTypeLocation(), `RPC %q on service %q changed request type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.InputTypeName(), method.InputTypeName())
 	}
@@ -1062,7 +1055,7 @@ func checkRPCSameRequestType(add addFunc, corpus *corpus, previousMethod protoso
 // CheckRPCSameResponseType is a check function.
 var CheckRPCSameResponseType = newMethodPairCheckFunc(checkRPCSameResponseType)
 
-func checkRPCSameResponseType(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameResponseType(add addFunc, corpus *corpus, previousMethod bufprotosource.Method, method bufprotosource.Method) error {
 	if previousMethod.OutputTypeName() != method.OutputTypeName() {
 		add(method, nil, method.OutputTypeLocation(), `RPC %q on service %q changed response type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.OutputTypeName(), method.OutputTypeName())
 	}
@@ -1072,7 +1065,7 @@ func checkRPCSameResponseType(add addFunc, corpus *corpus, previousMethod protos
 // CheckRPCSameServerStreaming is a check function.
 var CheckRPCSameServerStreaming = newMethodPairCheckFunc(checkRPCSameServerStreaming)
 
-func checkRPCSameServerStreaming(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameServerStreaming(add addFunc, corpus *corpus, previousMethod bufprotosource.Method, method bufprotosource.Method) error {
 	if previousMethod.ServerStreaming() != method.ServerStreaming() {
 		previous := "streaming"
 		current := "unary"
@@ -1088,12 +1081,12 @@ func checkRPCSameServerStreaming(add addFunc, corpus *corpus, previousMethod pro
 // CheckServiceNoDelete is a check function.
 var CheckServiceNoDelete = newFilePairCheckFunc(checkServiceNoDelete)
 
-func checkServiceNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
-	previousNameToService, err := protosource.NameToService(previousFile)
+func checkServiceNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
+	previousNameToService, err := bufprotosource.NameToService(previousFile)
 	if err != nil {
 		return err
 	}
-	nameToService, err := protosource.NameToService(file)
+	nameToService, err := bufprotosource.NameToService(file)
 	if err != nil {
 		return err
 	}

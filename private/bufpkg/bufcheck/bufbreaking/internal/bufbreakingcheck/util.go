@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -87,19 +87,19 @@ var (
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
-type addFunc func(protosource.Descriptor, []protosource.Descriptor, protosource.Location, string, ...interface{})
+type addFunc func(bufprotosource.Descriptor, []bufprotosource.Descriptor, bufprotosource.Location, string, ...interface{})
 
 // corpus is a store of the previous files and files given to a check function.
 //
 // this is passed down so that pair functions have access to the original inputs.
 type corpus struct {
-	previousFiles []protosource.File
-	files         []protosource.File
+	previousFiles []bufprotosource.File
+	files         []bufprotosource.File
 }
 
 func newCorpus(
-	previousFiles []protosource.File,
-	files []protosource.File,
+	previousFiles []bufprotosource.File,
+	files []bufprotosource.File,
 ) *corpus {
 	return &corpus{
 		previousFiles: previousFiles,
@@ -109,8 +109,8 @@ func newCorpus(
 
 func newFilesCheckFunc(
 	f func(addFunc, *corpus) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []bufprotosource.File, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationWithExtraIgnoreDescriptorsf, newCorpus(previousFiles, files)); err != nil {
 			return nil, err
@@ -120,15 +120,15 @@ func newFilesCheckFunc(
 }
 
 func newFilePairCheckFunc(
-	f func(addFunc, *corpus, protosource.File, protosource.File) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.File, bufprotosource.File) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFilePathToFile, err := protosource.FilePathToFile(corpus.previousFiles...)
+			previousFilePathToFile, err := bufprotosource.FilePathToFile(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			filePathToFile, err := protosource.FilePathToFile(corpus.files...)
+			filePathToFile, err := bufprotosource.FilePathToFile(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -145,15 +145,15 @@ func newFilePairCheckFunc(
 }
 
 func newEnumPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Enum, protosource.Enum) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Enum, bufprotosource.Enum) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFullNameToEnum, err := protosource.FullNameToEnum(corpus.previousFiles...)
+			previousFullNameToEnum, err := bufprotosource.FullNameToEnum(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToEnum, err := protosource.FullNameToEnum(corpus.files...)
+			fullNameToEnum, err := bufprotosource.FullNameToEnum(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -172,15 +172,15 @@ func newEnumPairCheckFunc(
 // compares all the enums that are of the same number
 // map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
-	f func(addFunc, *corpus, map[string]protosource.EnumValue, map[string]protosource.EnumValue) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, map[string]bufprotosource.EnumValue, map[string]bufprotosource.EnumValue) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumPairCheckFunc(
-		func(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
-			previousNumberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(previousEnum)
+		func(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
+			previousNumberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
-			numberToNameToEnumValue, err := protosource.NumberToNameToEnumValue(enum)
+			numberToNameToEnumValue, err := bufprotosource.NumberToNameToEnumValue(enum)
 			if err != nil {
 				return err
 			}
@@ -197,15 +197,15 @@ func newEnumValuePairCheckFunc(
 }
 
 func newMessagePairCheckFunc(
-	f func(addFunc, *corpus, protosource.Message, protosource.Message) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Message, bufprotosource.Message) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFullNameToMessage, err := protosource.FullNameToMessage(corpus.previousFiles...)
+			previousFullNameToMessage, err := bufprotosource.FullNameToMessage(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToMessage, err := protosource.FullNameToMessage(corpus.files...)
+			fullNameToMessage, err := bufprotosource.FullNameToMessage(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -222,15 +222,15 @@ func newMessagePairCheckFunc(
 }
 
 func newFieldPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Field, protosource.Field) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Field, bufprotosource.Field) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessagePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
-			previousNumberToField, err := protosource.NumberToMessageField(previousMessage)
+		func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+			previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
 			if err != nil {
 				return err
 			}
-			numberToField, err := protosource.NumberToMessageField(message)
+			numberToField, err := bufprotosource.NumberToMessageField(message)
 			if err != nil {
 				return err
 			}
@@ -247,15 +247,15 @@ func newFieldPairCheckFunc(
 }
 
 func newServicePairCheckFunc(
-	f func(addFunc, *corpus, protosource.Service, protosource.Service) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Service, bufprotosource.Service) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, corpus *corpus) error {
-			previousFullNameToService, err := protosource.FullNameToService(corpus.previousFiles...)
+			previousFullNameToService, err := bufprotosource.FullNameToService(corpus.previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToService, err := protosource.FullNameToService(corpus.files...)
+			fullNameToService, err := bufprotosource.FullNameToService(corpus.files...)
 			if err != nil {
 				return err
 			}
@@ -272,15 +272,15 @@ func newServicePairCheckFunc(
 }
 
 func newMethodPairCheckFunc(
-	f func(addFunc, *corpus, protosource.Method, protosource.Method) error,
-) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, *corpus, bufprotosource.Method, bufprotosource.Method) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServicePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousService protosource.Service, service protosource.Service) error {
-			previousNameToMethod, err := protosource.NameToMethod(previousService)
+		func(add addFunc, corpus *corpus, previousService bufprotosource.Service, service bufprotosource.Service) error {
+			previousNameToMethod, err := bufprotosource.NameToMethod(previousService)
 			if err != nil {
 				return err
 			}
-			nameToMethod, err := protosource.NameToMethod(service)
+			nameToMethod, err := bufprotosource.NameToMethod(service)
 			if err != nil {
 				return err
 			}
@@ -296,9 +296,9 @@ func newMethodPairCheckFunc(
 	)
 }
 
-func getDescriptorAndLocationForDeletedEnum(file protosource.File, previousNestedName string) (protosource.Descriptor, protosource.Location, error) {
+func getDescriptorAndLocationForDeletedEnum(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
-		nestedNameToMessage, err := protosource.NestedNameToMessage(file)
+		nestedNameToMessage, err := bufprotosource.NestedNameToMessage(file)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -312,7 +312,7 @@ func getDescriptorAndLocationForDeletedEnum(file protosource.File, previousNeste
 	return file, nil, nil
 }
 
-func getDescriptorAndLocationForDeletedMessage(file protosource.File, nestedNameToMessage map[string]protosource.Message, previousNestedName string) (protosource.Descriptor, protosource.Location) {
+func getDescriptorAndLocationForDeletedMessage(file bufprotosource.File, nestedNameToMessage map[string]bufprotosource.Message, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location) {
 	if strings.Contains(previousNestedName, ".") {
 		split := strings.Split(previousNestedName, ".")
 		for i := len(split) - 1; i > 0; i-- {
@@ -324,7 +324,7 @@ func getDescriptorAndLocationForDeletedMessage(file protosource.File, nestedName
 	return file, nil
 }
 
-func getSortedEnumValueNames(nameToEnumValue map[string]protosource.EnumValue) []string {
+func getSortedEnumValueNames(nameToEnumValue map[string]bufprotosource.EnumValue) []string {
 	names := make([]string, 0, len(nameToEnumValue))
 	for name := range nameToEnumValue {
 		names = append(names, name)
@@ -333,8 +333,8 @@ func getSortedEnumValueNames(nameToEnumValue map[string]protosource.EnumValue) [
 	return names
 }
 
-func getEnumByFullName(files []protosource.File, enumFullName string) (protosource.Enum, error) {
-	fullNameToEnum, err := protosource.FullNameToEnum(files...)
+func getEnumByFullName(files []bufprotosource.File, enumFullName string) (bufprotosource.Enum, error) {
+	fullNameToEnum, err := bufprotosource.FullNameToEnum(files...)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func getEnumByFullName(files []protosource.File, enumFullName string) (protosour
 	return enum, nil
 }
 
-func withBackupLocation(primary protosource.Location, secondary protosource.Location) protosource.Location {
+func withBackupLocation(primary bufprotosource.Location, secondary bufprotosource.Location) bufprotosource.Location {
 	if primary != nil {
 		return primary
 	}

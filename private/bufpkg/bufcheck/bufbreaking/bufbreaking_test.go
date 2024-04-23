@@ -16,23 +16,24 @@ package bufbreaking_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/buf/bufworkspace"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
@@ -297,8 +298,6 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 		t,
 		"breaking_field_same_type",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 12, 8, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 12, 9, 15, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 6, "FIELD_SAME_TYPE"),
@@ -479,7 +478,6 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 		t,
 		"breaking_message_same_values",
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 42, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 3, 7, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 7, 13, 53, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -487,7 +485,6 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 5, 21, 44, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 5, 24, 43, "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "2.proto", "MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 49, "MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR"),
@@ -756,7 +753,7 @@ func testBreaking(
 ) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	logger := zap.NewNop()
+	logger := zaptest.NewLogger(t)
 
 	previousDirPath := filepath.Join("testdata_previous", relDirPath)
 	dirPath := filepath.Join("testdata", relDirPath)
@@ -767,72 +764,90 @@ func testBreaking(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
+	previousBucketTargeting, err := buftarget.NewBucketTargeting(
+		ctx,
+		logger,
+		previousReadWriteBucket,
+		".", // the bucket is rooted at the input
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
+	)
+	require.NoError(t, err)
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-
-	previousConfig := testGetConfig(t, previousReadWriteBucket)
-	config := testGetConfig(t, readWriteBucket)
-
-	previousModule, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		previousReadWriteBucket,
-		previousConfig.Build,
-	)
-	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	bucketTargeting, err := buftarget.NewBucketTargeting(
 		ctx,
-		previousModule,
-		bufimagebuild.WithExcludeSourceCodeInfo(),
+		logger,
+		readWriteBucket,
+		".", // the bucket is rooted at the input
+		nil,
+		nil,
+		buftarget.TerminateAtControllingWorkspace,
 	)
 	require.NoError(t, err)
-	require.Empty(t, previousFileAnnotations)
+
+	workspaceProvider := bufworkspace.NewWorkspaceProvider(
+		zap.NewNop(),
+		tracing.NopTracer,
+		bufmodule.NopGraphProvider,
+		bufmodule.NopModuleDataProvider,
+		bufmodule.NopCommitProvider,
+	)
+	previousWorkspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		previousReadWriteBucket,
+		previousBucketTargeting,
+	)
+	require.NoError(t, err)
+	workspace, err := workspaceProvider.GetWorkspaceForBucket(
+		ctx,
+		readWriteBucket,
+		bucketTargeting,
+	)
+	require.NoError(t, err)
+
+	previousImage, err := bufimage.BuildImage(
+		ctx,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(previousWorkspace),
+		bufimage.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
 	previousImage = bufimage.ImageWithoutImports(previousImage)
 
-	module, err := bufmodulebuild.NewModuleBucketBuilder().BuildForBucket(
-		context.Background(),
-		readWriteBucket,
-		config.Build,
-	)
-	require.NoError(t, err)
-	image, fileAnnotations, err := bufimagebuild.NewBuilder(
-		zap.NewNop(),
-		bufmodule.NewNopModuleReader(),
-	).Build(
+	image, err := bufimage.BuildImage(
 		ctx,
-		module,
+		tracing.NopTracer,
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFiles(workspace),
 	)
 	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
-	handler := bufbreaking.NewHandler(logger)
-	fileAnnotations, err = handler.Check(
+	breakingConfig := workspace.GetBreakingConfigForOpaqueID(".")
+	require.NotNil(t, breakingConfig)
+	handler := bufbreaking.NewHandler(
+		zap.NewNop(),
+		tracing.NopTracer,
+	)
+	err = handler.Check(
 		ctx,
-		config.Breaking,
+		breakingConfig,
 		previousImage,
 		image,
 	)
-	assert.NoError(t, err)
-	bufanalysistesting.AssertFileAnnotationsEqual(
-		t,
-		expectedFileAnnotations,
-		fileAnnotations,
-	)
-}
-
-func testGetConfig(
-	t *testing.T,
-	readBucket storage.ReadBucket,
-) *bufconfig.Config {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
-	require.NoError(t, err)
-	return config
+	if len(expectedFileAnnotations) == 0 {
+		assert.NoError(t, err)
+	} else {
+		var fileAnnotationSet bufanalysis.FileAnnotationSet
+		require.True(t, errors.As(err, &fileAnnotationSet))
+		bufanalysistesting.AssertFileAnnotationsEqual(
+			t,
+			expectedFileAnnotations,
+			fileAnnotationSet.FileAnnotations(),
+		)
+	}
 }

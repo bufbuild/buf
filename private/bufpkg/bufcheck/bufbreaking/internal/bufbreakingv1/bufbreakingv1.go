@@ -15,11 +15,12 @@
 // Package bufbreakingv1 contains the VersionSpec for v1.
 //
 // It uses bufbreakingcheck and bufbreakingbuild.
-//
-// There were no changes from v1beta1.
 package bufbreakingv1
 
-import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+import (
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+)
 
 // VersionSpec is the version specification for v1.
 //
@@ -31,6 +32,7 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 // FIRE_WIRE_JSON_COMPATIBLE_TYPE for WIRE_JSON, and
 // FIELD_WIRE_COMPATIBLE_TYPE for WIRE.
 var VersionSpec = &internal.VersionSpec{
+	FileVersion:       bufconfig.FileVersionV1,
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,
 	IDToCategories:    v1IDToCategories,

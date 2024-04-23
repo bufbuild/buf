@@ -15,30 +15,152 @@
 package bufimage
 
 import (
+	"context"
 	"fmt"
+	"io/fs"
 	"sort"
+	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/syserror"
+	"github.com/bufbuild/buf/private/pkg/tracing"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/gofrs/uuid/v5"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// ImageFileInfo is the minimal interface that can be fulfilled by both an ImageFile
+// and (with conversion) a bufmodule.FileInfo.
+//
+// This is used by ls-files.
+type ImageFileInfo interface {
+	storage.ObjectInfo
+
+	// ModuleFullName returns the full name of the Module that this ImageFile came from,
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message),
+	// and if the ModuleFullName was known.
+	//
+	// May be nil. Callers should not rely on this value being present.
+	ModuleFullName() bufmodule.ModuleFullName
+	// CommitID returns the BSR ID of the Commit of the Module that this ImageFile came from.
+	// if the ImageFile came from a Module (as opposed to a serialized Protobuf message), and
+	// if the CommitID was known..
+	//
+	// May be empty, that is CommitID().IsNil() may be true. Callers should not rely on this
+	// value being present. If ModuleFullName is nil, this will always be empty.
+	CommitID() uuid.UUID
+	// Imports returns the imports for this ImageFile.
+	Imports() ([]string, error)
+	// IsImport returns true if this file is an import.
+	IsImport() bool
+
+	isImageFileInfo()
+}
+
+// ImageFileInfoForModuleFileInfo returns a new ImageFileInfo for the bufmodule.FileInfo.
+func ImageFileInfoForModuleFileInfo(moduleFileInfo bufmodule.FileInfo) ImageFileInfo {
+	return newModuleImageFileInfo(moduleFileInfo)
+}
+
+// AppendWellKnownTypeImageFileInfos appends any Well-Known Types that are not already present
+// in the input ImageFileInfos.
+//
+// For example, if imageFileInfos contains "google/protobuf/timestamp.proto", the returned
+// ImageFileInfos will have all the Well-Known Types except for "google/protobuf/timestamp.proto"
+// appended.
+//
+// This function uses the input wktBucket to determine what is a Well-Known Type.
+// This bucket should contain all the Well-Known Types, and nothing else. This is used instead
+// of using datawkt directly so that we can pass in a bucket backed by a cache on-disk with
+// the Well-Known Types, and use its LocalPath information.
+//
+// The appended Well-Known Types will be in sorted order by path, and will all be marked as imports.
+func AppendWellKnownTypeImageFileInfos(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
+	imageFileInfos []ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+	return appendWellKnownTypeImageFileInfos(ctx, wktBucket, imageFileInfos, pathToImageFileInfo)
+}
+
+// ImageFileInfosWithOnlyTargetsAndTargetImports returns a new slice of ImageFileInfos that only
+// contains the non-imports (ie targets), and the files that those non-imports themselves
+// transitively import.
+//
+// This is used in ls-files.
+//
+// As an example, assume a module has files a.proto, b.proto, and it has a dependency on
+// a module with files c.proto, d.proto. a.proto imports c.proto. We only target the module
+// with a.proto, b.proto. The resulting slice should have a.proto, b.proto, c.proto, but not
+// d.proto.
+//
+// It is assumed that the input ImageFileInfos are self-contained, that is every import should
+// be contained within the input, except for the Well-Known Types. If a Well-Known Type is imported
+// and not present in the input, an ImageFileInfo for the Well-Known Type is automatically added
+// to the result from the given bucket.
+//
+// The result will be sorted by path.
+func ImageFileInfosWithOnlyTargetsAndTargetImports(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
+	imageFileInfos []ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	pathToImageFileInfo, err := slicesext.ToUniqueValuesMap(imageFileInfos, ImageFileInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+	imageFileInfos, err = appendWellKnownTypeImageFileInfos(ctx, wktBucket, imageFileInfos, pathToImageFileInfo)
+	if err != nil {
+		return nil, err
+	}
+	resultPaths := make(map[string]struct{}, len(imageFileInfos))
+	for _, imageFileInfo := range imageFileInfos {
+		if imageFileInfo.IsImport() {
+			continue
+		}
+		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(imageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+			return nil, err
+		}
+	}
+	resultImageFileInfos := make([]ImageFileInfo, 0, len(resultPaths))
+	for resultPath := range resultPaths {
+		imageFileInfo, ok := pathToImageFileInfo[resultPath]
+		if !ok {
+			return nil, fmt.Errorf("no ImageFileInfo for path %q", resultPath)
+		}
+		resultImageFileInfos = append(resultImageFileInfos, imageFileInfo)
+	}
+	sort.Slice(
+		resultImageFileInfos,
+		func(i int, j int) bool {
+			return resultImageFileInfos[i].Path() < resultImageFileInfos[j].Path()
+		},
+	)
+	return resultImageFileInfos, nil
+}
+
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
-	bufmoduleref.FileInfo
+	ImageFileInfo
 
 	// FileDescriptorProto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// This will never be nil.
 	// The value Path() is equal to FileDescriptorProto().GetName() .
 	FileDescriptorProto() *descriptorpb.FileDescriptorProto
-	// IsImport returns true if this file is an import.
-	IsImport() bool
 	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
 	IsSyntaxUnspecified() bool
 	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
@@ -55,21 +177,23 @@ type ImageFile interface {
 //
 // If externalPath is empty, path is used.
 //
-// TODO: moduleIdentity and commit should be options since they are optional.
+// TODO FUTURE: moduleFullName and commitID should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commitID uuid.UUID,
 	externalPath string,
+	localPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
 ) (ImageFile, error) {
 	return newImageFile(
 		fileDescriptor,
-		moduleIdentity,
-		commit,
+		moduleFullName,
+		commitID,
 		externalPath,
+		localPath,
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
@@ -88,7 +212,10 @@ func ImageFileWithIsImport(imageFile ImageFile, isImport bool) ImageFile {
 	// No need to validate as ImageFile is already validated.
 	return newImageFileNoValidate(
 		imageFile.FileDescriptorProto(),
-		imageFile,
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
+		imageFile.ExternalPath(),
+		imageFile.LocalPath(),
 		isImport,
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),
@@ -102,7 +229,7 @@ type Image interface {
 	// This contains all files, including imports if available.
 	// The returned files are in correct DAG order.
 	//
-	// All files that have the same ModuleIdentity will also have the same commit, or no commit.
+	// All files that have the same ModuleFullName will also have the same commit, or no commit.
 	// This is enforced at construction time.
 	Files() []ImageFile
 	// GetFile gets the file for the root relative file path.
@@ -111,16 +238,70 @@ type Image interface {
 	// The path is expected to be normalized and validated.
 	// Note that all values of GetDependency() can be used here.
 	GetFile(path string) ImageFile
+	// Resolver returns a resolver backed by this image.
+	Resolver() protoencoding.Resolver
+
 	isImage()
 }
 
 // NewImage returns a new Image for the given ImageFiles.
 //
 // The input ImageFiles are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 // If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
-	return newImage(imageFiles, false)
+	return newImage(imageFiles, false, nil)
+}
+
+// BuildImage runs compilation.
+//
+// An error of type FileAnnotationSet may be returned. It is up to the caller to parse this if needed.
+// FileAnnotations will use external file paths.
+//
+// The given ModuleReadBucket must be self-contained.
+//
+// A ModuleReadBucket is self-contained if it was constructed from
+// ModuleSetToModuleReadBucketWithOnlyProtoFiles or
+// ModuleToSelfContainedModuleReadBucketWithOnlyProtoFiles. These are likely
+// the only two ways you should have a ModuleReadBucket that you pass to BuildImage.
+func BuildImage(
+	ctx context.Context,
+	tracer tracing.Tracer,
+	moduleReadBucket bufmodule.ModuleReadBucket,
+	options ...BuildImageOption,
+) (Image, error) {
+	buildImageOptions := newBuildImageOptions()
+	for _, option := range options {
+		option(buildImageOptions)
+	}
+	return buildImage(
+		ctx,
+		tracer,
+		moduleReadBucket,
+		buildImageOptions.excludeSourceCodeInfo,
+		buildImageOptions.noParallelism,
+	)
+}
+
+// BuildImageOption is an option for BuildImage.
+type BuildImageOption func(*buildImageOptions)
+
+// WithExcludeSourceCodeInfo returns a new BuildImageOption that excludes sourceCodeInfo.
+func WithExcludeSourceCodeInfo() BuildImageOption {
+	return func(buildImageOptions *buildImageOptions) {
+		buildImageOptions.excludeSourceCodeInfo = true
+	}
+}
+
+// WithNoParallelism turns off parallelism for a build.
+//
+// The default is to use thread.Parallelism().
+//
+// Used for testing.
+func WithNoParallelism() BuildImageOption {
+	return func(buildImageOptions *buildImageOptions) {
+		buildImageOptions.noParallelism = true
+	}
 }
 
 // CloneImage returns a deep copy of the given image.
@@ -152,64 +333,22 @@ func CloneImageFile(imageFile ImageFile) (ImageFile, error) {
 	// The other attributes are already immutable, so we don't need to copy them.
 	return NewImageFile(
 		clonedDescriptor,
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
 		imageFile.ExternalPath(),
+		imageFile.LocalPath(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		unusedDeps,
 	)
 }
 
-// MergeImages returns a new Image for the given Images. ImageFiles
-// treated as non-imports in at least one of the given Images will
-// be treated as non-imports in the returned Image. The first non-import
-// version of a file will be used in the result.
-//
-// Reorders the ImageFiles to be in DAG order.
-// Duplicates can exist across the Images, but only if duplicates are non-imports.
-func MergeImages(images ...Image) (Image, error) {
-	switch len(images) {
-	case 0:
-		return nil, nil
-	case 1:
-		return images[0], nil
-	default:
-		var paths []string
-		imageFileSet := make(map[string]ImageFile)
-		for _, image := range images {
-			for _, currentImageFile := range image.Files() {
-				storedImageFile, ok := imageFileSet[currentImageFile.Path()]
-				if !ok {
-					imageFileSet[currentImageFile.Path()] = currentImageFile
-					paths = append(paths, currentImageFile.Path())
-					continue
-				}
-				if !storedImageFile.IsImport() && !currentImageFile.IsImport() {
-					return nil, fmt.Errorf("%s is a non-import in multiple images", currentImageFile.Path())
-				}
-				if storedImageFile.IsImport() && !currentImageFile.IsImport() {
-					imageFileSet[currentImageFile.Path()] = currentImageFile
-				}
-			}
-		}
-		// We need to preserve order for deterministic results, so we add
-		// the files in the order they're given, but base our selection
-		// on the imageFileSet.
-		imageFiles := make([]ImageFile, 0, len(imageFileSet))
-		for _, path := range paths {
-			imageFiles = append(imageFiles, imageFileSet[path] /* Guaranteed to exist */)
-		}
-		return newImage(imageFiles, true)
-	}
-}
-
 // NewImageForProto returns a new Image for the given proto Image.
 //
 // The input Files are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 //
-// TODO: do we want to add the ability to do external path resolution here?
+// TODO FUTURE: do we want to add the ability to do external path resolution here?
 func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOption) (Image, error) {
 	var newImageOptions newImageForProtoOptions
 	for _, option := range options {
@@ -218,8 +357,10 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	if newImageOptions.noReparse && newImageOptions.computeUnusedImports {
 		return nil, fmt.Errorf("cannot use both WithNoReparse and WithComputeUnusedImports options; they are mutually exclusive")
 	}
+	var resolver protoencoding.Resolver
 	if !newImageOptions.noReparse {
-		if err := reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
+		var err error
+		if resolver, err = reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
 		}
 	}
@@ -231,8 +372,8 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
-		var moduleIdentity bufmoduleref.ModuleIdentity
-		var commit string
+		var moduleFullName bufmodule.ModuleFullName
+		var commitID uuid.UUID
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
 			isImport = protoImageFileExtension.GetIsImport()
@@ -240,7 +381,7 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
 			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
 				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-					moduleIdentity, err = bufmoduleref.NewModuleIdentity(
+					moduleFullName, err = bufmodule.NewModuleFullName(
 						protoModuleName.GetRemote(),
 						protoModuleName.GetOwner(),
 						protoModuleName.GetRepository(),
@@ -249,15 +390,21 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 						return nil, err
 					}
 					// we only want to set this if there is a module name
-					commit = protoModuleInfo.GetCommit()
+					if protoCommitID := protoModuleInfo.GetCommit(); protoCommitID != "" {
+						commitID, err = uuidutil.FromDashless(protoCommitID)
+						if err != nil {
+							return nil, err
+						}
+					}
 				}
 			}
 		}
 		imageFile, err := NewImageFile(
 			protoImageFile,
-			moduleIdentity,
-			commit,
+			moduleFullName,
+			commitID,
 			protoImageFile.GetName(),
+			"",
 			isImport,
 			isSyntaxUnspecified,
 			unusedDependencyIndexes,
@@ -267,17 +414,14 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 		}
 		imageFiles[i] = imageFile
 	}
-	return NewImage(imageFiles)
+	return newImage(imageFiles, false, resolver)
 }
 
 // NewImageForCodeGeneratorRequest returns a new Image from a given CodeGeneratorRequest.
 //
 // The input Files are expected to be in correct DAG order!
-// TODO: Consider checking the above, and if not, reordering the Files.
+// TODO FUTURE: Consider checking the above, and if not, reordering the Files.
 func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest, options ...NewImageForProtoOption) (Image, error) {
-	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
-		return nil, err
-	}
 	protoImageFiles := make([]*imagev1.ImageFile, len(request.GetProtoFile()))
 	for i, fileDescriptorProto := range request.GetProtoFile() {
 		// we filter whether something is an import or not in ImageWithOnlyPaths
@@ -407,15 +551,19 @@ func ImageByDir(image Image) ([]Image, error) {
 }
 
 // ImageToProtoImage returns a new ProtoImage for the Image.
-func ImageToProtoImage(image Image) *imagev1.Image {
+func ImageToProtoImage(image Image) (*imagev1.Image, error) {
 	imageFiles := image.Files()
 	protoImage := &imagev1.Image{
 		File: make([]*imagev1.ImageFile, len(imageFiles)),
 	}
 	for i, imageFile := range imageFiles {
-		protoImage.File[i] = imageFileToProtoImageFile(imageFile)
+		protoImageFile, err := imageFileToProtoImageFile(imageFile)
+		if err != nil {
+			return nil, err
+		}
+		protoImage.File[i] = protoImageFile
 	}
-	return protoImage
+	return protoImage, nil
 }
 
 // ImageToFileDescriptorSet returns a new FileDescriptorSet for the Image.
@@ -516,109 +664,17 @@ func ImagesToCodeGeneratorRequests(
 	return requests, nil
 }
 
-// ImageModuleDependency is a dependency of an image.
-//
-// This could conceivably be part of ImageFile or bufmoduleref.FileInfo.
-// For ImageFile, this would be a field that is ignored when translated to proto,
-// and is calculated on creation from proto. IsImport would become ImportType.
-// You could go a step further and make this optionally part of the proto definition.
-//
-// You could even go down to bufmoduleref.FileInfo if you used the AST, but this
-// could be error prone.
-//
-// However, for simplicity now (and to not rewrite the whole codebase), we make
-// this a separate type that is calculated off of an Image after the fact.
-//
-// If this became part of ImageFile or bufmoduleref.FileInfo, you would get
-// all the ImageDependencies from the ImageFiles, and then sort | uniq them
-// to get the ImageDependencies for an Image. This would remove the requirement
-// of this associated type to have a ModuleIdentity and commit, so in
-// the IsDirect example  below, d.proto would not be "ignored" - it would
-// be an ImageFile like any other, with ImportType DIRECT.
-//
-// Note that if we ever do this, there is validation in newImage that enforces
-// that all ImageFiles with the same ModuleIdentity have the same commit. This
-// validation will likely have to be moved around.
-type ImageModuleDependency interface {
-	// String() returns remote/owner/repository[:commit].
-	fmt.Stringer
-
-	// Required. Will never be nil.
-	ModuleIdentity() bufmoduleref.ModuleIdentity
-	// Optional. May be empty.
-	Commit() string
-
-	// IsDirect returns true if the dependency is a direct dependency.
-	//
-	// A dependency is direct if it is only an import of non-imports in the image.
-	//
-	// Example:
-	//
-	//		a.proto, module buf.build/foo/a, is non-import, imports b.proto
-	//		b.proto, module buf.build/foo/b, is import, imports c.proto
-	//		c.proto, module buf.build/foo/c, is import
-	//
-	// In this case, the list would contain only buf.build/foo/b, as buf.build/foo/a
-	// for a.proto is a non-import, and buf.build/foo/c for c.proto is only imported
-	// by an import
-	IsDirect() bool
-
-	isImageModuleDependency()
-}
-
-// ImageModuleDependencies returns all ImageModuleDependency values for the Image.
-//
-// Does not return any ImageModuleDependency values for non-imports, that is the
-// ModuleIdentities and commits represented by non-imports are not represented
-// in this list.
-func ImageModuleDependencies(image Image) []ImageModuleDependency {
-	importsOfNonImports := make(map[string]struct{})
-	for _, imageFile := range image.Files() {
-		if !imageFile.IsImport() {
-			for _, dependency := range imageFile.FileDescriptorProto().GetDependency() {
-				importsOfNonImports[dependency] = struct{}{}
-			}
-		}
-	}
-	// We know that all ImageFiles with the same ModuleIdentity
-	// have the same commit or no commit, so using String() will properly identify
-	// unique dependencies.
-	stringToImageModuleDependency := make(map[string]ImageModuleDependency)
-	for _, imageFile := range image.Files() {
-		if imageFile.IsImport() {
-			if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-				_, isDirect := importsOfNonImports[imageFile.Path()]
-				imageModuleDependency := newImageModuleDependency(
-					moduleIdentity,
-					imageFile.Commit(),
-					isDirect,
-				)
-				stringToImageModuleDependency[imageModuleDependency.String()] = imageModuleDependency
-			}
-		}
-	}
-	imageModuleDependencies := make([]ImageModuleDependency, 0, len(stringToImageModuleDependency))
-	for _, imageModuleDependency := range stringToImageModuleDependency {
-		imageModuleDependencies = append(
-			imageModuleDependencies,
-			imageModuleDependency,
-		)
-	}
-	sortImageModuleDependencies(imageModuleDependencies)
-	return imageModuleDependencies
-}
-
 type newImageForProtoOptions struct {
 	noReparse            bool
 	computeUnusedImports bool
 }
 
-func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) error {
-	// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) (protoencoding.Resolver, error) {
+	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
 	// we want to make this into a check, and we verify if we need this for the individual command
 	resolver := protoencoding.NewLazyResolver(protoImage.File...)
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
-		return fmt.Errorf("could not reparse image: %v", err)
+		return nil, fmt.Errorf("could not reparse image: %v", err)
 	}
 	if computeUnusedImports {
 		tracker := &importTracker{
@@ -650,6 +706,66 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) err
 					}
 				}
 			}
+		}
+	}
+	return resolver, nil
+}
+
+// We pass in the pathToImageFileInfo here because we also call this in
+// ImageFileInfosWithOnlyTargetsAndTargetImports and we don't want to have to make this map twice.
+//
+// This also modifies the pathToImageFileInfo map if a Well-Known Type is added.
+func appendWellKnownTypeImageFileInfos(
+	ctx context.Context,
+	wktBucket storage.ReadBucket,
+	imageFileInfos []ImageFileInfo,
+	pathToImageFileInfo map[string]ImageFileInfo,
+) ([]ImageFileInfo, error) {
+	// Sorted.
+	wktObjectInfos, err := storage.AllObjectInfos(ctx, wktBucket, "")
+	if err != nil {
+		return nil, err
+	}
+	wktPaths := slicesext.Map(wktObjectInfos, storage.ObjectInfo.Path)
+	if !slicesext.Equal(datawkt.AllFilePaths, wktPaths) {
+		return nil, syserror.Newf("wktBucket paths %s are not equal to datawkt.AllFilePaths %s", strings.Join(wktPaths, ","), strings.Join(datawkt.AllFilePaths, ","))
+	}
+	resultImageFileInfos := slicesext.Copy(imageFileInfos)
+	for _, wktObjectInfo := range wktObjectInfos {
+		if _, ok := pathToImageFileInfo[wktObjectInfo.Path()]; !ok {
+			fileImports, ok := datawkt.FileImports(wktObjectInfo.Path())
+			if !ok {
+				return nil, syserror.Newf("datawkt.FileImports returned false for wkt %s", wktObjectInfo.Path())
+			}
+			imageFileInfo := newWellKnownTypeImageFileInfo(wktObjectInfo, fileImports, true)
+			resultImageFileInfos = append(resultImageFileInfos, imageFileInfo)
+			pathToImageFileInfo[wktObjectInfo.Path()] = imageFileInfo
+		}
+	}
+	return resultImageFileInfos, nil
+}
+
+func imageFileInfosWithOnlyTargetsAndTargetImportsRec(
+	imageFileInfo ImageFileInfo,
+	pathToImageFileInfo map[string]ImageFileInfo,
+	resultPaths map[string]struct{},
+) error {
+	path := imageFileInfo.Path()
+	if _, ok := resultPaths[path]; ok {
+		return nil
+	}
+	resultPaths[path] = struct{}{}
+	imports, err := imageFileInfo.Imports()
+	if err != nil {
+		return err
+	}
+	for _, imp := range imports {
+		importImageFileInfo, ok := pathToImageFileInfo[imp]
+		if !ok {
+			return fmt.Errorf("%s: import %q: %w", imageFileInfo.ExternalPath(), imp, fs.ErrNotExist)
+		}
+		if err := imageFileInfosWithOnlyTargetsAndTargetImportsRec(importImageFileInfo, pathToImageFileInfo, resultPaths); err != nil {
+			return err
 		}
 	}
 	return nil

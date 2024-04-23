@@ -23,29 +23,21 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"go.uber.org/zap"
-)
-
-const (
-	loggerName = "buffetch"
-	tracerName = "bufbuild/buf"
 )
 
 type refParser struct {
 	logger         *zap.Logger
 	fetchRefParser internal.RefParser
-	tracer         trace.Tracer
 }
 
 func newRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named(loggerName),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
+		logger: logger,
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRef),
@@ -103,7 +95,7 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 		option(messageRefParserOptions)
 	}
 	return &refParser{
-		logger: logger.Named(loggerName),
+		logger: logger,
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(newProcessRawRefMessage(messageRefParserOptions.defaultMessageEncoding)),
@@ -133,13 +125,12 @@ func newMessageRefParser(logger *zap.Logger, options ...MessageRefParserOption) 
 				),
 			),
 		),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func newSourceRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named(loggerName),
+		logger: logger,
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefSource),
@@ -160,26 +151,48 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 			),
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
+	}
+}
+
+func newDirRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger,
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefDir),
+			internal.WithDirFormat(formatDir),
+		),
+	}
+}
+
+func newDirOrProtoFileRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger,
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefDirOrProtoFile),
+			internal.WithDirFormat(formatDir),
+			internal.WithProtoFileFormat(formatProtoFile),
+		),
 	}
 }
 
 func newModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named(loggerName),
+		logger: logger,
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefModule),
 			internal.WithModuleFormat(formatMod),
 		),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
-		logger: logger.Named(loggerName),
+		logger: logger,
 		fetchRefParser: internal.NewRefParser(
 			logger,
 			internal.WithRawRefProcessor(processRawRefSourceOrModule),
@@ -201,23 +214,15 @@ func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
 			internal.WithModuleFormat(formatMod),
+			internal.WithProtoFileFormat(formatProtoFile),
 		),
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
 func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,
-) (_ Ref, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_ref")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+) (Ref, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
 	if err != nil {
 		return nil, err
@@ -232,7 +237,37 @@ func (a *refParser) GetRef(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (Ref, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, allFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		messageEncoding, err := parseMessageEncoding(t.Format())
+		if err != nil {
+			return nil, err
+		}
+		return newMessageRef(t, messageEncoding)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -247,15 +282,7 @@ func (a *refParser) GetRef(
 func (a *refParser) GetSourceOrModuleRef(
 	ctx context.Context,
 	value string,
-) (_ SourceOrModuleRef, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_source_or_module_ref")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+) (SourceOrModuleRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, sourceOrModuleFormats)
 	if err != nil {
 		return nil, err
@@ -266,7 +293,33 @@ func (a *refParser) GetSourceOrModuleRef(
 	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
 	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetSourceOrModuleRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (SourceOrModuleRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, sourceOrModuleFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
 	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
@@ -281,16 +334,27 @@ func (a *refParser) GetSourceOrModuleRef(
 func (a *refParser) GetMessageRef(
 	ctx context.Context,
 	value string,
-) (_ MessageRef, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_message_ref")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+) (MessageRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, messageFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
+	if !ok {
+		return nil, fmt.Errorf("invalid ParsedRef type for message: %T", parsedRef)
+	}
+	messageEncoding, err := parseMessageEncoding(parsedSingleRef.Format())
+	if err != nil {
+		return nil, err
+	}
+	return newMessageRef(parsedSingleRef, messageEncoding)
+}
+
+func (a *refParser) GetMessageRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (MessageRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, messageFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -308,15 +372,7 @@ func (a *refParser) GetMessageRef(
 func (a *refParser) GetSourceRef(
 	ctx context.Context,
 	value string,
-) (_ SourceRef, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_source_ref")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+) (SourceRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
 	if err != nil {
 		return nil, err
@@ -329,18 +385,94 @@ func (a *refParser) GetSourceRef(
 	return newSourceRef(parsedBucketRef), nil
 }
 
+func (a *refParser) GetSourceRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (SourceRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, sourceFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedBucketRef, ok := parsedRef.(internal.ParsedBucketRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newSourceRef(parsedBucketRef), nil
+}
+
+func (a *refParser) GetDirRef(
+	ctx context.Context,
+	value string,
+) (DirRef, error) {
+	parsedRef, err := a.getParsedRef(ctx, value, dirFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedDirRef, ok := parsedRef.(internal.ParsedDirRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newDirRef(parsedDirRef), nil
+}
+
+func (a *refParser) GetDirRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (DirRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, dirFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedDirRef, ok := parsedRef.(internal.ParsedDirRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newDirRef(parsedDirRef), nil
+}
+
+func (a *refParser) GetDirOrProtoFileRef(
+	ctx context.Context,
+	value string,
+) (DirOrProtoFileRef, error) {
+	parsedRef, err := a.getParsedRef(ctx, value, dirOrProtoFileFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("invalid ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetDirOrProtoFileRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (DirOrProtoFileRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, dirOrProtoFileFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedDirRef:
+		return newDirRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
+	default:
+		return nil, fmt.Errorf("invalid ParsedRef type: %T", parsedRef)
+	}
+}
+
 func (a *refParser) GetModuleRef(
 	ctx context.Context,
 	value string,
-) (_ ModuleRef, retErr error) {
-	ctx, span := a.tracer.Start(ctx, "get_source_ref")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
+) (ModuleRef, error) {
 	parsedRef, err := a.getParsedRef(ctx, value, moduleFormats)
 	if err != nil {
 		return nil, err
@@ -353,6 +485,23 @@ func (a *refParser) GetModuleRef(
 	return newModuleRef(parsedModuleRef), nil
 }
 
+func (a *refParser) GetModuleRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+) (ModuleRef, error) {
+	parsedRef, err := a.getParsedRefForInputConfig(ctx, inputConfig, moduleFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedModuleRef, ok := parsedRef.(internal.ParsedModuleRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newModuleRef(parsedModuleRef), nil
+}
+
+// TODO FUTURE: rename to getParsedRefForString
 func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
@@ -361,6 +510,23 @@ func (a *refParser) getParsedRef(
 	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
+		internal.WithAllowedFormats(allowedFormats...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	a.checkDeprecated(parsedRef)
+	return parsedRef, nil
+}
+
+func (a *refParser) getParsedRefForInputConfig(
+	ctx context.Context,
+	inputConfig bufconfig.InputConfig,
+	allowedFormats []string,
+) (internal.ParsedRef, error) {
+	parsedRef, err := a.fetchRefParser.GetParsedRefForInputConfig(
+		ctx,
+		inputConfig,
 		internal.WithAllowedFormats(allowedFormats...),
 	)
 	if err != nil {
@@ -385,7 +551,7 @@ func processRawRef(rawRef *internal.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
-	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
+	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
 		format = formatBinpb
 	} else {
 		switch filepath.Ext(rawRef.Path) {
@@ -438,17 +604,13 @@ func processRawRef(rawRef *internal.RawRef) error {
 			compressionType = internal.CompressionTypeGzip
 		case ".git":
 			format = formatGit
-			// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
-			// it falls through to the `default` case.
 		case ".proto":
 			fileInfo, err := os.Stat(rawRef.Path)
-			if err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+			if err == nil && fileInfo.IsDir() {
+				format = formatDir
+			} else {
+				format = formatProtoFile
 			}
-			if fileInfo != nil && fileInfo.IsDir() {
-				return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
-			}
-			format = formatProtoFile
 		default:
 			var err error
 			format, err = assumeModuleOrDir(rawRef.Path)
@@ -463,7 +625,6 @@ func processRawRef(rawRef *internal.RawRef) error {
 }
 
 func processRawRefSource(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
@@ -492,6 +653,13 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
 		format = formatGit
+	case ".proto":
+		fileInfo, err := os.Stat(rawRef.Path)
+		if err == nil && fileInfo.IsDir() {
+			format = formatDir
+		} else {
+			format = formatProtoFile
+		}
 	default:
 		format = formatDir
 	}
@@ -500,8 +668,40 @@ func processRawRefSource(rawRef *internal.RawRef) error {
 	return nil
 }
 
+func processRawRefDir(rawRef *internal.RawRef) error {
+	rawRef.Format = formatDir
+	return nil
+}
+
+func processRawRefDirOrProtoFile(rawRef *internal.RawRef) error {
+	var format string
+	if rawRef.Path == "-" || app.IsDevPath(rawRef.Path) {
+		format = formatProtoFile
+	} else {
+		switch filepath.Ext(rawRef.Path) {
+		case ".proto":
+			fileInfo, err := os.Stat(rawRef.Path)
+			if err == nil && fileInfo.IsDir() {
+				format = formatDir
+			} else {
+				format = formatProtoFile
+			}
+		default:
+			var err error
+			format, err = assumeModuleOrDir(rawRef.Path)
+			if err != nil {
+				return err
+			}
+			if format == formatMod {
+				return ErrModuleFormatDetectedForDirOrProtoFileRef
+			}
+		}
+	}
+	rawRef.Format = format
+	return nil
+}
+
 func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType internal.CompressionType
 	switch filepath.Ext(rawRef.Path) {
@@ -530,6 +730,15 @@ func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
 		compressionType = internal.CompressionTypeGzip
 	case ".git":
 		format = formatGit
+	case ".proto":
+		fileInfo, err := os.Stat(rawRef.Path)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+		}
+		if fileInfo != nil && fileInfo.IsDir() {
+			return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
+		}
+		format = formatProtoFile
 	default:
 		var err error
 		format, err = assumeModuleOrDir(rawRef.Path)
@@ -547,7 +756,7 @@ func newProcessRawRefMessage(defaultMessageEncoding MessageEncoding) func(*inter
 		defaultFormat, ok := messageEncodingToFormat[defaultMessageEncoding]
 		if !ok {
 			// This is a system error.
-			return fmt.Errorf("unknown MessageEncoding: %v", defaultMessageEncoding)
+			return syserror.Newf("unknown MessageEncoding: %v", defaultMessageEncoding)
 		}
 		// if format option is not set and path is "-", default to bin
 		var format string
@@ -622,13 +831,13 @@ func parseMessageEncoding(format string) (MessageEncoding, error) {
 	}
 }
 
-// TODO: this is a terrible heuristic, and we shouldn't be using what amounts
+// TODO FUTURE: this is a terrible heuristic, and we shouldn't be using what amounts
 // to heuristics here (technically this is a documentable rule, but still)
 func assumeModuleOrDir(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("assumeModuleOrDir: no path given")
 	}
-	if _, err := bufmoduleref.ModuleReferenceForString(path); err == nil {
+	if _, err := bufmodule.ParseModuleRef(path); err == nil {
 		// this is possible to be a module, check if it is a directory though
 		// OK to use os.Stat instead of os.Lstat here
 		fileInfo, err := os.Stat(path)

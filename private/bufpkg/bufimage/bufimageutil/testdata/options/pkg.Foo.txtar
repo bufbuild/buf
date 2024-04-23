@@ -7,7 +7,7 @@ option (UsedOption.file_foo) = { foo: "str" };
 message Foo {
   option (message_baz) = "str";
   option (message_foo) = { foo: "str" };
-  optional string foo = 1 [
+  optional uint64 foo = 1 [
     jstype = JS_STRING,
     (field_baz) = "str",
     (field_foo) = { foo: "str" }
@@ -105,10 +105,10 @@ message FeatureSet {
   }
   enum Utf8Validation {
     UTF8_VALIDATION_UNKNOWN = 0;
-    NONE = 1;
     VERIFY = 2;
+    NONE = 3;
   }
-  extensions 1000, 1001, 9995 to 9999;
+  extensions 1000, 1001, 1002, 9995 to 9999, 10000;
   reserved 999;
 }
 message FieldOptions {
@@ -177,7 +177,6 @@ message FileOptions {
   optional string swift_prefix = 39;
   optional string php_class_prefix = 40;
   optional string php_namespace = 41;
-  optional bool php_generic_services = 42 [default = false];
   optional string php_metadata_namespace = 44;
   optional string ruby_package = 45;
   optional FeatureSet features = 50;
@@ -188,7 +187,7 @@ message FileOptions {
     LITE_RUNTIME = 3;
   }
   extensions 1000 to max;
-  reserved 38;
+  reserved 38, 42;
 }
 message MessageOptions {
   optional bool message_set_wire_format = 1 [default = false];
@@ -226,9 +225,11 @@ enum Edition {
   EDITION_PROTO2 = 998;
   EDITION_PROTO3 = 999;
   EDITION_2023 = 1000;
+  EDITION_2024 = 1001;
   EDITION_99997_TEST_ONLY = 99997;
   EDITION_99998_TEST_ONLY = 99998;
   EDITION_99999_TEST_ONLY = 99999;
+  EDITION_MAX = 2147483647;
 }
 -- options.proto --
 syntax = "proto3";

@@ -21,13 +21,12 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -39,18 +38,17 @@ const (
 // NewCommand returns a new Command
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Create a BSR repository",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -67,7 +65,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
+	_ = appcmd.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
@@ -78,11 +76,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -101,15 +99,17 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	resp, err := service.CreateRepositoryByFullName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.CreateRepositoryByFullNameRequest{
-			FullName:   moduleIdentity.Owner() + "/" + moduleIdentity.Repository(),
-			Visibility: visibility,
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.CreateRepositoryByFullNameRequest{
+				FullName:   moduleFullName.Owner() + "/" + moduleFullName.Name(),
+				Visibility: visibility,
+			},
+		),
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {
@@ -120,7 +120,7 @@ func run(
 	repository := resp.Msg.Repository
 	return bufprint.NewRepositoryPrinter(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		container.Stdout(),
 	).PrintRepository(ctx, format, repository)
 }

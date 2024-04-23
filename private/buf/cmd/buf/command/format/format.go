@@ -21,22 +21,20 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufformat"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
 )
@@ -59,7 +57,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -72,101 +70,100 @@ Examples:
 
 Write the current directory's formatted content to stdout:
 
-    $ buf format
+$ buf format
 
 Most people will want to rewrite the files defined in the current directory in-place with -w:
 
-    $ buf format -w
+$ buf format -w
 
 Display a diff between the original and formatted content with -d
 Write a diff instead of the formatted file:
 
-    $ buf format simple/simple.proto -d
+$ buf format simple/simple.proto -d
 
-    $ diff -u simple/simple.proto.orig simple/simple.proto
-    --- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
-    +++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
-    @@ -2,8 +2,7 @@
+$ diff -u simple/simple.proto.orig simple/simple.proto
+--- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
++++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
+@@ -2,8 +2,7 @@
 
-     package simple;
+package simple;
 
-    -
-     message Object {
-    -    string key = 1;
-    -   bytes value = 2;
-    +  string key = 1;
-    +  bytes value = 2;
-     }
+-
+message Object {
+-    string key = 1;
+-   bytes value = 2;
++  string key = 1;
++  bytes value = 2;
+}
 
 Use the --exit-code flag to exit with a non-zero exit code if there is a diff:
 
-    $ buf format --exit-code
-    $ buf format -w --exit-code
-    $ buf format -d --exit-code
+$ buf format --exit-code
+$ buf format -w --exit-code
+$ buf format -d --exit-code
 
 Format a file, directory, or module reference by specifying a source e.g.
 Write the formatted file to stdout:
 
-    $ buf format simple/simple.proto
+$ buf format simple/simple.proto
 
-    syntax = "proto3";
+syntax = "proto3";
 
-    package simple;
+package simple;
 
-    message Object {
-      string key = 1;
-      bytes value = 2;
-    }
+message Object {
+string key = 1;
+bytes value = 2;
+}
 
 Write the formatted directory to stdout:
 
-    $ buf format simple
-    ...
+$ buf format simple
+...
 
 Write the formatted module reference to stdout:
 
-    $ buf format buf.build/acme/petapis
-    ...
+$ buf format buf.build/acme/petapis
+...
 
 Write the result to a specified output file or directory with -o e.g.
 
 Write the formatted file to another file:
 
-    $ buf format simple/simple.proto -o simple/simple.formatted.proto
+$ buf format simple/simple.proto -o simple/simple.formatted.proto
 
 Write the formatted directory to another directory, creating it if it doesn't exist:
 
-    $ buf format proto -o formatted
+$ buf format proto -o formatted
 
 This also works with module references:
 
-    $ buf format buf.build/acme/weather -o formatted
+$ buf format buf.build/acme/weather -o formatted
 
 Rewrite the file(s) in-place with -w. e.g.
 
 Rewrite a single file in-place:
 
-    $ buf format simple.proto -w
+$ buf format simple.proto -w
 
 Rewrite an entire directory in-place:
 
-    $ buf format proto -w
+$ buf format proto -w
 
 Write a diff and rewrite the file(s) in-place:
 
-    $ buf format simple -d -w
+$ buf format simple -d -w
 
-    $ diff -u simple/simple.proto.orig simple/simple.proto
-    ...
+$ diff -u simple/simple.proto.orig simple/simple.proto
+...
 
 The -w and -o flags cannot be used together in a single invocation.
 `,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -231,7 +228,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"-",
 		fmt.Sprintf(
 			`The output location for the formatted files. Must be one of format %s. If omitted, the result is written to stdout`,
-			buffetch.SourceFormatsString,
+			buffetch.DirOrProtoFileFormatsString,
 		),
 	)
 	flagSet.StringVar(
@@ -244,286 +241,127 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) (retErr error) {
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
-	if flags.Output != "-" && flags.Write {
-		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
-	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	refParser := buffetch.NewRefParser(container.Logger())
-	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, source)
-	if err != nil {
-		return err
-	}
-	if _, ok := sourceOrModuleRef.(buffetch.ModuleRef); ok && flags.Write {
-		return fmt.Errorf("--%s cannot be used with module reference inputs", writeFlagName)
-	}
-	clientConfig, err := bufcli.NewConnectClientConfig(container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, clientConfig)
-	if err != nil {
-		return err
-	}
-	runner := command.NewRunner()
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	moduleConfigReader, err := bufcli.NewWireModuleConfigReaderForModuleReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-		moduleReader,
-	)
-	if err != nil {
-		return err
-	}
-	moduleConfigSet, err := moduleConfigReader.GetModuleConfigSet(
-		ctx,
-		container,
-		sourceOrModuleRef,
-		flags.Config,
-		flags.Paths,
-		flags.ExcludePaths,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-	moduleConfigs := moduleConfigSet.ModuleConfigs()
-	var outputDirectory string
-	var singleFileOutputFilename string
-	if flags.Output != "-" {
-		// The output file type is determined based on its extension,
-		// so it's possible to write a single file's formatted content
-		// to another single file.
-		//
-		//  $ buf format simple.proto -o simple.formatted.proto
-		//
-		// In this case, it's also possible to write an entire directory's
-		// formatted content to a single file (like we see in the default
-		// behavior with stdout).
-		//
-		//  $ buf format simple -o simple.formatted.proto
-		//
-		outputRef, err := refParser.GetSourceOrModuleRef(ctx, flags.Output)
-		if err != nil {
+	// We use getDirOrProtoFileRef to see if we have a valid DirOrProtoFileRef, and if so,
+	// whether or not we have IncludePackageFiles Set.
+	//
+	// We abuse ExternalPaths below to say that if flags.Write is set, just write over
+	// the ExternalPath, You can only really use flags.Write if you have a dir
+	// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
+	// if flags.Write is set
+	//
+	// We also want to check that if we have a ProtoFileRef, we don't have IncludePackageFiles
+	// set, regardless of if flags.Write is set.
+	sourceDirOrProtoFileRef, sourceDirOrProtoFileRefErr := getDirOrProtoFileRef(ctx, container, source)
+	if sourceDirOrProtoFileRefErr == nil {
+		if err := validateNoIncludePackageFiles(sourceDirOrProtoFileRef); err != nil {
 			return err
 		}
-		if _, ok := outputRef.(buffetch.ProtoFileRef); ok {
-			if directory := filepath.Dir(flags.Output); directory != "." {
-				// The output is a single file, so we need to create
-				// the file's directory (if any).
-				//
-				// For example,
-				//
-				//  $ buf format simple.proto -o formatted/simple.formatted.proto
-				//
-				outputDirectory = directory
+	}
+	if flags.Write {
+		if flags.Output != "-" {
+			return appcmd.NewInvalidArgumentErrorf("cannot use --%s when using --%s", outputFlagName, writeFlagName)
+		}
+		// We abuse ExternalPaths below to say that if flags.Write is set, just write over
+		// the ExternalPath. Also, you can only really use flags.Write if you have a dir
+		// or proto file. So, we abuse getDirOrProtoFileRef to determine if we have a writable source.
+		if sourceDirOrProtoFileRefErr != nil {
+			if errors.Is(sourceDirOrProtoFileRefErr, buffetch.ErrModuleFormatDetectedForDirOrProtoFileRef) {
+				return appcmd.NewInvalidArgumentErrorf("invalid input %q when using --%s: must be a directory or proto file", source, writeFlagName)
 			}
-			// The outputDirectory will not be set for single file outputs
-			// in the current directory (e.g. simple.formatted.proto).
-			singleFileOutputFilename = flags.Output
-		} else {
-			// The output is a directory, so we can just create it as-is.
-			outputDirectory = flags.Output
+			return appcmd.NewInvalidArgumentErrorf("invalid input %q when using --%s: %v", source, writeFlagName, sourceDirOrProtoFileRefErr)
 		}
 	}
-	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
-		// If we have a single ProtoFileRef, we only want to format that file.
-		// The file will be available from the first module (i.e. it's
-		// the target source, or the first module in a workspace).
-		if len(moduleConfigs) == 0 {
-			// Unreachable - we should always have at least one module.
-			return fmt.Errorf("could not build module for %s", container.Arg(0))
+	dirOrProtoFileRef, err := getDirOrProtoFileRef(ctx, container, flags.Output)
+	if err != nil {
+		if errors.Is(err, buffetch.ErrModuleFormatDetectedForDirOrProtoFileRef) {
+			return appcmd.NewInvalidArgumentErrorf("--%s must be a directory or proto file", outputFlagName)
 		}
-		if protoFileRef.IncludePackageFiles() {
-			// TODO: We need to have a better answer here. Right now, it's
-			// possible that the other files in the same package are defined
-			// in a remote dependency, which makes it impossible to rewrite
-			// in-place.
-			//
-			// In the case that the user uses the -w flag, we'll either need
-			// to return an error, or omit the file that it can't rewrite in-place
-			// (potentially including a debug log).
-			return errors.New("this command does not support including package files")
-		}
-		module := moduleConfigs[0].Module()
-		fileInfos, err := module.TargetFileInfos(ctx)
-		if err != nil {
-			return err
-		}
-		var moduleFile bufmodule.ModuleFile
-		for _, fileInfo := range fileInfos {
-			if _, err := protoFileRef.PathForExternalPath(fileInfo.ExternalPath()); err != nil {
-				// The target file we're looking for is the only one that will not
-				// return an error.
-				continue
-			}
-			moduleFile, err = module.GetModuleFile(
-				ctx,
-				fileInfo.Path(),
-			)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, moduleFile.Close())
-			}()
-			break
-		}
-		if moduleFile == nil {
-			// This will only happen if a buf.work.yaml exists in a parent
-			// directory, but it does not contain the target file.
-			//
-			// This is also a problem for other commands that interact
-			// with buffetch.ProtoFileRef.
-			//
-			// TODO: Fix the buffetch.ProtoFileRef so that it works in
-			// these situtations.
-			return fmt.Errorf(
-				"source %s was not found - is the directory containing this file defined in your %s?",
-				container.Arg(0),
-				bufwork.ExternalConfigV1FilePath,
-			)
-		}
-		module, err = bufmodule.ModuleWithTargetPaths(
-			module,
-			[]string{
-				moduleFile.Path(),
-			},
-			nil, // Nothing to exclude.
-		)
-		if err != nil {
-			return err
-		}
-		diffPresent, err := formatModule(
-			ctx,
-			container,
-			runner,
-			storageosProvider,
-			module,
-			outputDirectory,
-			singleFileOutputFilename,
-			flags.ErrorFormat,
-			flags.Diff,
-			flags.Write,
-		)
-		if err != nil {
-			return err
-		}
-		if flags.ExitCode && diffPresent {
-			return bufcli.ErrFileAnnotation
-		}
-		return nil
+		return err
 	}
-	for _, moduleConfig := range moduleConfigs {
-		diffPresent, err := formatModule(
-			ctx,
-			container,
-			runner,
-			storageosProvider,
-			moduleConfig.Module(),
-			outputDirectory,
-			singleFileOutputFilename,
-			flags.ErrorFormat,
-			flags.Diff,
-			flags.Write,
-		)
-		if err != nil {
-			return err
-		}
-		if flags.ExitCode && diffPresent {
-			return bufcli.ErrFileAnnotation
-		}
+	if err := validateNoIncludePackageFiles(dirOrProtoFileRef); err != nil {
+		return err
 	}
-	return nil
-}
 
-// formatModule formats the module's target files and writes them to the
-// writeBucket, if any. If diff is true, the diff between the original and
-// formatted files is written to stdout.
-//
-// Returns true if there was a diff and no other error.
-func formatModule(
-	ctx context.Context,
-	container appflag.Container,
-	runner command.Runner,
-	storageosProvider storageos.Provider,
-	module bufmodule.Module,
-	outputDirectory string,
-	singleFileOutputFilename string,
-	errorFormat string,
-	diff bool,
-	rewrite bool,
-) (_ bool, retErr error) {
-	originalReadWriteBucket := storagemem.NewReadWriteBucket()
-	if err := bufmodule.TargetModuleFilesToBucket(
-		ctx,
-		module,
-		originalReadWriteBucket,
-	); err != nil {
-		return false, err
-	}
-	// Note that external paths are set properly for the files in this read bucket.
-	formattedReadBucket, err := bufformat.FormatModule(ctx, module)
+	runner := command.NewRunner()
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
+	)
 	if err != nil {
-		return false, err
+		return err
 	}
+	workspace, err := controller.GetWorkspace(
+		ctx,
+		source,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithConfigOverride(flags.Config),
+	)
+	if err != nil {
+		return err
+	}
+	moduleReadBucket := bufmodule.ModuleReadBucketWithOnlyTargetFiles(
+		// We only want to start with the target Modules. Otherwise, we're going to fetch potential
+		// ModuleDeps that are not targeted, which may result in buf format making remote calls
+		// when all we care to do is format local files.
+		//
+		// We need to make remote Modules even lazier to make sure that buf format is really
+		// not making these remote calls, but this is one component of it.
+		bufmodule.ModuleSetToModuleReadBucketWithOnlyProtoFilesForTargetModules(workspace),
+	)
+	originalReadBucket := bufmodule.ModuleReadBucketToStorageReadBucket(moduleReadBucket)
+	formattedReadBucket, err := bufformat.FormatBucket(ctx, originalReadBucket)
+	if err != nil {
+		return err
+	}
+
 	diffBuffer := bytes.NewBuffer(nil)
 	if err := storage.Diff(
 		ctx,
 		runner,
 		diffBuffer,
-		originalReadWriteBucket,
+		originalReadBucket,
 		formattedReadBucket,
 		storage.DiffWithExternalPaths(), // No need to set prefixes as the buckets are from the same location.
 	); err != nil {
-		return false, err
+		return err
 	}
-	diffPresent := diffBuffer.Len() > 0
-	if diff {
-		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
-			return false, err
+	diffExists := diffBuffer.Len() > 0
+	defer func() {
+		if retErr == nil && flags.ExitCode && diffExists {
+			retErr = bufctl.ErrFileAnnotation
 		}
-		if outputDirectory == "" && singleFileOutputFilename == "" && !rewrite {
-			// If the user specified --diff and has not explicitly overridden
-			// the --output or rewritten the sources in-place with --write, we
-			// can stop here.
-			return diffPresent, nil
+	}()
+
+	if flags.Diff {
+		if diffExists {
+			if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
+				return err
+			}
+		}
+		// If we haven't overridden the output flag and havent set write, we can stop here.
+		if flags.Output == "-" && !flags.Write {
+			return nil
 		}
 	}
-	if rewrite {
-		// Rewrite the sources in place.
-		if err := storage.WalkReadObjects(
+	if flags.Write {
+		return storage.WalkReadObjects(
 			ctx,
-			originalReadWriteBucket,
+			formattedReadBucket,
 			"",
 			func(readObject storage.ReadObject) error {
-				formattedReadObject, err := formattedReadBucket.Get(ctx, readObject.Path())
-				if err != nil {
-					return err
-				}
-				// We use os.OpenFile here instead of storage.Copy for a few reasons.
+				// TODO FUTURE: This is a legacy hack that we shouldn't use. We should not
+				// rely on external paths being writable.
 				//
-				// storage.Copy operates on normal paths, so the copied content is always placed
-				// relative to the bucket's root (as expected). The rewrite in-place behavior can
-				// be rephrased as writing to the same bucket as the input (e.g. buf format proto -o proto).
-				//
-				// Now, if the user asks to rewrite an entire workspace (i.e. a directory containing
-				// a buf.work.yaml), we would need to call storage.Copy for each of the directories
-				// defined in the workspace. This involves parsing the buf.work.yaml and creating
-				// a storage.Bucket for each of the directories.
-				//
-				// It's simpler to just copy the files in-place based on their external path since
-				// it's the same behavior for single files, directories, and workspaces.
+				// We do validation above on the flags.Write flag to quasi-ensure that ExternalPath
+				// will be a real externalPath, but it's not great.
 				file, err := os.OpenFile(readObject.ExternalPath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 				if err != nil {
 					return err
@@ -531,91 +369,134 @@ func formatModule(
 				defer func() {
 					retErr = multierr.Append(retErr, file.Close())
 				}()
-				if _, err := file.ReadFrom(formattedReadObject); err != nil {
+				if _, err := file.ReadFrom(readObject); err != nil {
 					return err
 				}
 				return nil
 			},
-		); err != nil {
-			return false, err
-		}
-		return diffPresent, nil
-	}
-	var readWriteBucket storage.ReadWriteBucket
-	if outputDirectory != "" {
-		// OK to use os.Stat instead of os.LStat here as this is CLI-only
-		if _, err := os.Stat(outputDirectory); err != nil {
-			// We don't need to check fileInfo.IsDir() because it's
-			// already handled by the storageosProvider.
-			if os.IsNotExist(err) {
-				if err := os.MkdirAll(outputDirectory, 0755); err != nil {
-					return false, err
-				}
-				// Although unlikely, if an error occurs in the midst of
-				// writing the formatted files, we want to clean up the
-				// directory we just created because it didn't previously
-				// exist.
-				defer func() {
-					if retErr != nil {
-						retErr = multierr.Append(retErr, os.RemoveAll(outputDirectory))
-					}
-				}()
-			}
-		}
-		readWriteBucket, err = storageosProvider.NewReadWriteBucket(
-			outputDirectory,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
 		)
-		if err != nil {
-			return false, err
-		}
 	}
-	if readWriteBucket == nil || singleFileOutputFilename != "" {
-		// If the readWriteBucket is nil, we write the output to stdout.
-		//
-		// If a single file output was used, we can't just copy the content
-		// between buckets - we need to write all of the bucket's content
-		// into the single file (exactly like we do for writing to stdout).
-		//
-		// We might want to order these, although the output is kind of useless
-		// if we're writing more than one file.
-		writer := container.Stdout()
-		if singleFileOutputFilename != "" {
-			file, err := os.OpenFile(singleFileOutputFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-			if err != nil {
-				return false, err
-			}
-			defer func() {
-				retErr = multierr.Append(retErr, file.Close())
-			}()
-			writer = file
+	// Both flags.Diff and flags.Write not set, do output logic.
+	switch t := dirOrProtoFileRef.(type) {
+	case buffetch.DirRef:
+		if err := writeToDir(ctx, flags.DisableSymlinks, formattedReadBucket, t); err != nil {
+			return err
 		}
-		if err := storage.WalkReadObjects(
-			ctx,
-			formattedReadBucket,
-			"",
-			func(readObject storage.ReadObject) error {
-				data, err := io.ReadAll(readObject)
-				if err != nil {
-					return err
-				}
-				if _, err := writer.Write(data); err != nil {
-					return err
-				}
-				return nil
-			},
-		); err != nil {
-			return false, err
+	case buffetch.ProtoFileRef:
+		if err := writeToProtoFile(ctx, container, formattedReadBucket, t); err != nil {
+			return err
 		}
-		return diffPresent, nil
+	default:
+		return syserror.Newf("buffetch ref type must be dir or proto file: %T", dirOrProtoFileRef)
 	}
-	// The user specified -o, so we copy the files into the output bucket.
-	if _, err := storage.Copy(
+	return nil
+}
+
+func writeToDir(
+	ctx context.Context,
+	disableSymlinks bool,
+	formattedReadBucket storage.ReadBucket,
+	dirRef buffetch.DirRef,
+) error {
+	if err := createDirIfNotExists(dirRef.DirPath()); err != nil {
+		return err
+	}
+	readWriteBucket, err := newStorageosProvider(disableSymlinks).NewReadWriteBucket(
+		dirRef.DirPath(),
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	// We don't copy with ExternalPaths, we use Paths.
+	// This is what we were always doing, including pre-refactor.
+	_, err = storage.Copy(
 		ctx,
 		formattedReadBucket,
 		readWriteBucket,
-	); err != nil {
-		return false, err
+	)
+	return err
+}
+
+func writeToProtoFile(
+	ctx context.Context,
+	container appext.Container,
+	formattedReadBucket storage.ReadBucket,
+	protoFileRef buffetch.ProtoFileRef,
+) (retErr error) {
+	writeCloser, err := buffetch.NewProtoFileWriter(container.Logger()).PutProtoFile(
+		ctx,
+		container,
+		protoFileRef,
+	)
+	if err != nil {
+		return err
 	}
-	return diffPresent, nil
+	defer func() {
+		retErr = multierr.Append(retErr, writeCloser.Close())
+	}()
+	return storage.WalkReadObjects(
+		ctx,
+		formattedReadBucket,
+		"",
+		func(readObject storage.ReadObject) error {
+			data, err := io.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
+			if _, err := writeCloser.Write(data); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+func createDirIfNotExists(dirPath string) error {
+	// OK to use os.Stat instead of os.LStat here as this is CLI-only
+	if _, err := os.Stat(dirPath); err != nil {
+		// We don't need to check fileInfo.IsDir() because it's
+		// already handled by the storageosProvider.
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
+				return err
+			}
+			// We could os.RemoveAll if the overall command exits without error, but we're
+			// not going to, just to be safe.
+		}
+	}
+	return nil
+}
+
+func getDirOrProtoFileRef(
+	ctx context.Context,
+	container appext.Container,
+	value string,
+) (buffetch.DirOrProtoFileRef, error) {
+	return buffetch.NewDirOrProtoFileRefParser(
+		container.Logger(),
+	).GetDirOrProtoFileRef(ctx, value)
+}
+
+func validateNoIncludePackageFiles(dirOrProtoFileRef buffetch.DirOrProtoFileRef) error {
+	if protoFileRef, ok := dirOrProtoFileRef.(buffetch.ProtoFileRef); ok && protoFileRef.IncludePackageFiles() {
+		// We should have a better answer here. Right now, it's
+		// possible that the other files in the same package are defined
+		// in a remote dependency, which makes it impossible to rewrite
+		// in-place.
+		//
+		// In the case that the user uses the -w flag, we'll either need
+		// to return an error, or omit the file that it can't rewrite in-place
+		// (potentially including a debug log).
+		return appcmd.NewInvalidArgumentError("cannot specify include_package_files=true with format")
+	}
+	return nil
+}
+
+func newStorageosProvider(disableSymlinks bool) storageos.Provider {
+	var options []storageos.ProviderOption
+	if !disableSymlinks {
+		options = append(options, storageos.ProviderWithSymlinks())
+	}
+	return storageos.NewProvider(options...)
 }

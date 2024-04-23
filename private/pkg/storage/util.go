@@ -43,16 +43,40 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 }
 
 // PutPath puts the data at the path.
-func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte) (retErr error) {
-	writeObject, err := writeBucket.Put(ctx, path)
+func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte, options ...PutOption) (retErr error) {
+	writeObjectCloser, err := writeBucket.Put(ctx, path, options...)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeObject.Close())
+		retErr = multierr.Append(retErr, writeObjectCloser.Close())
 	}()
-	_, err = writeObject.Write(data)
+	_, err = writeObjectCloser.Write(data)
 	return err
+}
+
+// ForReadObject gets a ReadObjectCloser at the given path, calls f on it, and then closes the ReadObjectCloser.
+func ForReadObject(ctx context.Context, readBucket ReadBucket, path string, f func(ReadObject) error) (retErr error) {
+	readObjectCloser, err := readBucket.Get(ctx, path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
+	}()
+	return f(readObjectCloser)
+}
+
+// ForWriteObject gets a WriteObjectCloser at the given path, calls f on it, and then closes the WriteObjectCloser.
+func ForWriteObject(ctx context.Context, writeBucket WriteBucket, path string, f func(WriteObject) error, options ...PutOption) (retErr error) {
+	writeObjectCloser, err := writeBucket.Put(ctx, path, options...)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+	}()
+	return f(writeObjectCloser)
 }
 
 // WalkReadObjects walks the bucket and calls get on each, closing the resulting ReadObjectCloser
@@ -77,6 +101,8 @@ func WalkReadObjects(
 }
 
 // AllPaths walks the bucket and gets all the paths.
+//
+// The returned paths are sorted.
 func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]string, error) {
 	var allPaths []string
 	if err := readBucket.Walk(
@@ -89,12 +115,35 @@ func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]stri
 	); err != nil {
 		return nil, err
 	}
+	sort.Strings(allPaths)
 	return allPaths, nil
 }
 
-// Exists returns true if the path exists, false otherwise.
+// AllObjectInfos walks the bucket and gets all the ObjectInfos.
 //
-// Returns error on system error.
+// The returned ObjectInfos are sorted by path.
+func AllObjectInfos(ctx context.Context, readBucket ReadBucket, prefix string) ([]ObjectInfo, error) {
+	var allObjectInfos []ObjectInfo
+	if err := readBucket.Walk(
+		ctx,
+		prefix,
+		func(objectInfo ObjectInfo) error {
+			allObjectInfos = append(allObjectInfos, objectInfo)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	sort.Slice(
+		allObjectInfos,
+		func(i int, j int) bool {
+			return allObjectInfos[i].Path() < allObjectInfos[j].Path()
+		},
+	)
+	return allObjectInfos, nil
+}
+
+// Exists returns true if the path exists, false otherwise.
 func Exists(ctx context.Context, readBucket ReadBucket, path string) (bool, error) {
 	_, err := readBucket.Stat(ctx, path)
 	if err != nil {
@@ -163,7 +212,15 @@ type compositeReadObjectCloser struct {
 	io.ReadCloser
 }
 
-type compositeReadWriteBucket struct {
+type compositeReadWriteBucketCloser struct {
 	ReadBucket
 	WriteBucket
+	closeFunc func() error
+}
+
+func (c compositeReadWriteBucketCloser) Close() error {
+	if c.closeFunc != nil {
+		return c.closeFunc()
+	}
+	return nil
 }

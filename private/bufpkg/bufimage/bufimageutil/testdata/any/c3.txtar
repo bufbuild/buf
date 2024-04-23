@@ -126,10 +126,10 @@ message FeatureSet {
   }
   enum Utf8Validation {
     UTF8_VALIDATION_UNKNOWN = 0;
-    NONE = 1;
     VERIFY = 2;
+    NONE = 3;
   }
-  extensions 1000, 1001, 9995 to 9999;
+  extensions 1000, 1001, 1002, 9995 to 9999, 10000;
   reserved 999;
 }
 message MessageOptions {

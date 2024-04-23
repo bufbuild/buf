@@ -19,5 +19,5 @@ option optimize_for = SPEED;
 option cc_generic_services = false;
 option java_generic_services = false;
 option py_generic_services = false;
-option php_generic_services = false;
+//option php_generic_services = false;
 option cc_enable_arenas = false;

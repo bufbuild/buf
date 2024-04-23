@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="25.0"
+PROTOC_VERSION="26.0"
 PROTOC_GEN_GO_VERSION="v1.33.0"
 CONNECT_VERSION="v1.16.1"
 
@@ -31,5 +31,6 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION}
 go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${CONNECT_VERSION}
 go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
-  ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver
+  ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver \
+  ./private/buf/cmd/buf/command/generate/internal/protoc-gen-top-level-type-names-yaml
 go test ./...

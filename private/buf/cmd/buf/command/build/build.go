@@ -19,14 +19,14 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -48,19 +48,18 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Build Protobuf files into a Buf image",
 		Long:  bufcli.GetInputLong(`the source or module to build or image to convert`),
-		Args:  cobra.MaximumNArgs(1),
+		Args:  appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -135,43 +134,35 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
-	if flags.Output == "" {
-		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
-	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+	if err := bufcli.ValidateRequiredFlag(outputFlagName, flags.Output); err != nil {
 		return err
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
-	image, err := bufcli.NewImageForSource(
-		ctx,
+	controller, err := bufcli.NewController(
 		container,
-		input,
-		flags.ErrorFormat,
-		flags.DisableSymlinks,
-		flags.Config,
-		flags.Paths,
-		flags.ExcludePaths, // we exclude these paths
-		false,
-		flags.ExcludeSourceInfo,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
 	}
-	messageRef, err := buffetch.NewMessageRefParser(container.Logger()).GetMessageRef(ctx, flags.Output)
+	image, err := controller.GetImage(
+		ctx,
+		input,
+		bufctl.WithTargetPaths(flags.Paths, flags.ExcludePaths),
+		bufctl.WithImageExcludeSourceInfo(flags.ExcludeSourceInfo),
+		bufctl.WithImageExcludeImports(flags.ExcludeImports),
+		bufctl.WithImageTypes(flags.Types),
+		bufctl.WithConfigOverride(flags.Config),
+	)
 	if err != nil {
-		return fmt.Errorf("--%s: %v", outputFlagName, err)
-	}
-	if len(flags.Types) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types...)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	if flags.ExcludeSourceRetentionOptions {
 		image, err = bufimageutil.StripSourceRetentionOptions(image)
@@ -179,14 +170,10 @@ func run(
 			return err
 		}
 	}
-	return bufcli.NewWireImageWriter(
-		container.Logger(),
-	).PutImage(
+	return controller.PutImage(
 		ctx,
-		container,
-		messageRef,
+		flags.Output,
 		image,
-		flags.AsFileDescriptorSet,
-		flags.ExcludeImports,
+		bufctl.WithImageAsFileDescriptorSet(flags.AsFileDescriptorSet),
 	)
 }

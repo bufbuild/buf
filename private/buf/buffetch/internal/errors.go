@@ -38,14 +38,14 @@ func NewFormatCannotBeDeterminedError(value string) error {
 	return fmt.Errorf("format cannot be determined from %q", value)
 }
 
-// NewCannotSpecifyGitBranchAndTagError is a fetch error.
-func NewCannotSpecifyGitBranchAndTagError() error {
-	return errors.New(`must specify only one of "branch", "tag"`)
+// NewCannotSpecifyGitBranchAndCommitOrTagError is a fetch error.
+func NewCannotSpecifyGitBranchAndCommitOrTagError() error {
+	return errors.New(`must specify only one of "branch", "commit", or "tag"`)
 }
 
-// NewCannotSpecifyTagWithRefError is a fetch error.
-func NewCannotSpecifyTagWithRefError() error {
-	return errors.New(`cannot specify "tag" with "ref"`)
+// NewCannotSpecifyCommitOrTagWithRefError is a fetch error.
+func NewCannotSpecifyCommitOrTagWithRefError() error {
+	return errors.New(`cannot specify "commit" or "tag" with "ref"`)
 }
 
 // NewDepthParseError is a fetch error.
@@ -92,8 +92,8 @@ func NewOptionsInvalidValueForKeyError(key string, value string) error {
 }
 
 // NewOptionsInvalidForFormatError is a fetch error.
-func NewOptionsInvalidForFormatError(format string, s string) error {
-	return fmt.Errorf("invalid options for format %q: %q", format, s)
+func NewOptionsInvalidForFormatError(format string, inputName string, issue string) error {
+	return fmt.Errorf("invalid options for input %q for format %q: %s", inputName, format, issue)
 }
 
 // NewOptionsCouldNotParseStripComponentsError is a fetch error.

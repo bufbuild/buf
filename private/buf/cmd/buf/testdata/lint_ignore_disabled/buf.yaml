@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: proto
+  - path: vendor
+lint:
+  use:
+    - MESSAGE_PASCAL_CASE
+  ignore:
+    - vendor

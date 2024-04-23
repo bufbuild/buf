@@ -21,8 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -31,6 +30,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO FUTURE: test ref from input config as well.
 func TestGetParsedRefSuccess(t *testing.T) {
 	t.Parallel()
 	// This allows us to test an os-agnostic root directory
@@ -1083,7 +1083,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleReference(
+			testNewModuleRef(
 				t,
 				"example.com",
 				"foob",
@@ -1097,15 +1097,15 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleReference(
+			testNewModuleRef(
 				t,
 				"example.com",
 				"foob",
 				"bar",
-				bufmoduletesting.TestCommit,
+				"12345",
 			),
 		),
-		"example.com/foob/bar:"+bufmoduletesting.TestCommit,
+		"example.com/foob/bar:12345",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -1173,6 +1173,77 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		),
 		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.binpb?private_token=bar#format=binpb",
 	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"foo",
+		),
+		nil,
+		"foo",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"internal/testdata/direndsinproto.proto",
+		),
+		nil,
+		"internal/testdata/direndsinproto.proto",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"foo.proto",
+			internal.FileSchemeLocal,
+			false,
+		),
+		nil,
+		"foo.proto",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedDirRef(
+			formatDir,
+			"foo.proto",
+		),
+		nil,
+		"foo.proto#format=dir",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"foo.proto",
+			internal.FileSchemeLocal,
+			true,
+		),
+		nil,
+		"foo.proto#include_package_files=true",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"",
+			internal.FileSchemeStdio,
+			false,
+		),
+		nil,
+		"-",
+	)
+	testGetParsedDirOrProtoFileRef(
+		t,
+		internal.NewDirectParsedProtoFileRef(
+			formatProtoFile,
+			"",
+			internal.FileSchemeStdio,
+			true,
+		),
+		nil,
+		"-#include_package_files=true",
+	)
 }
 
 func TestGetParsedRefError(t *testing.T) {
@@ -1189,17 +1260,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndCommitOrTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndCommitOrTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar,ref=baz",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewCannotSpecifyTagWithRefError(),
+		internal.NewCannotSpecifyCommitOrTagWithRefError(),
 		"path/to/foo#format=git,tag=foo,ref=bar",
 	)
 	testGetParsedRefError(
@@ -1249,17 +1320,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main"),
+		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main", "git options set"),
 		"path/to/foo.tar.gz#branch=main",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1", "archive options set"),
 		"path/to/some/foo#strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none", "compression set"),
 		"path/to/some/foo#compression=none",
 	)
 	testGetParsedRefError(
@@ -1340,14 +1411,39 @@ func testGetParsedRef(
 	}
 }
 
-func testNewModuleReference(
+func testGetParsedDirOrProtoFileRef(
 	t *testing.T,
-	remote string,
+	expectedParsedRef internal.ParsedRef,
+	expectedErr error,
+	value string,
+) {
+	parsedRef, err := newDirOrProtoFileRefParser(zap.NewNop()).getParsedRef(
+		context.Background(),
+		value,
+		dirOrProtoFileFormats,
+	)
+	if expectedErr != nil {
+		if err == nil {
+			assert.Equal(t, nil, parsedRef, "expected error")
+		} else {
+			assert.Equal(t, expectedErr, err)
+		}
+	} else {
+		assert.NoError(t, err)
+		if err == nil {
+			assert.Equal(t, expectedParsedRef, parsedRef)
+		}
+	}
+}
+
+func testNewModuleRef(
+	t *testing.T,
+	registry string,
 	owner string,
-	repository string,
-	reference string,
-) bufmoduleref.ModuleReference {
-	moduleReference, err := bufmoduleref.NewModuleReference(remote, owner, repository, reference)
+	name string,
+	ref string,
+) bufmodule.ModuleRef {
+	moduleRef, err := bufmodule.NewModuleRef(registry, owner, name, ref)
 	require.NoError(t, err)
-	return moduleReference
+	return moduleRef
 }

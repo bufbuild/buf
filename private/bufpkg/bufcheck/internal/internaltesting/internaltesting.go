@@ -29,16 +29,38 @@ func RunTestVersionSpec(t *testing.T, versionSpec *internal.VersionSpec) {
 }
 
 func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec) {
-	_, err := internal.ConfigBuilder{}.NewConfig(versionSpec)
+	config, err := internal.ConfigBuilder{}.NewConfig(versionSpec, true)
+	assert.NoError(t, err)
+	for _, rule := range config.Rules {
+		assert.False(t, rule.Deprecated())
+	}
+	_, err = internal.ConfigBuilder{}.NewConfig(versionSpec, false)
 	assert.NoError(t, err)
 }
 
 func runTestRuleBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
 	idsMap := make(map[string]struct{}, len(versionSpec.RuleBuilders))
+	deprecatedIDMap := make(map[string]struct{}, len(versionSpec.RuleBuilders))
 	for _, ruleBuilder := range versionSpec.RuleBuilders {
 		_, ok := idsMap[ruleBuilder.ID()]
 		assert.False(t, ok, "duplicated id %q", ruleBuilder.ID())
 		idsMap[ruleBuilder.ID()] = struct{}{}
+		if ruleBuilder.Deprecated() {
+			deprecatedIDMap[ruleBuilder.ID()] = struct{}{}
+		}
+	}
+	for _, ruleBuilder := range versionSpec.RuleBuilders {
+		if ruleBuilder.Deprecated() {
+			for _, replacementID := range ruleBuilder.ReplacementIDs() {
+				if _, ok := deprecatedIDMap[replacementID]; ok {
+					assert.False(t, true, "%q specifies %q as a replacement but %q is deprecated", ruleBuilder.ID(), replacementID, replacementID)
+				}
+			}
+		} else {
+			if len(ruleBuilder.ReplacementIDs()) > 0 {
+				assert.False(t, true, "undeprecated rule %q has replacement IDs", ruleBuilder.ID())
+			}
+		}
 	}
 	for id := range idsMap {
 		expectedID := stringutil.ToUpperSnakeCase(id)

@@ -24,23 +24,23 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/buftesting"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
-	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/testingext"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: this has to change if we split up this repository
+// TODO FUTURE: this has to change if we split up this repository
 var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
@@ -49,7 +49,7 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"private",
-	"bufpkg",
+	"buf",
 	"buftesting",
 )
 
@@ -136,19 +136,219 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 	)
 }
 
-func TestOutputFlag(t *testing.T) {
+func TestGenerateV2LocalPluginBasic(t *testing.T) {
 	t.Parallel()
+
 	tempDirPath := t.TempDir()
+	input := filepath.Join("testdata", "v2", "local_plugin")
+	template := filepath.Join("testdata", "v2", "local_plugin", "buf.basic.gen.yaml")
+
 	testRunSuccess(
 		t,
 		"--output",
 		tempDirPath,
 		"--template",
-		filepath.Join("testdata", "simple", "buf.gen.yaml"),
-		filepath.Join("testdata", "simple"),
+		template,
+		input,
 	)
-	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+
+	expected, err := storagemem.NewReadBucket(
+		map[string][]byte{
+			filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+			filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+		},
+	)
 	require.NoError(t, err)
+	actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func TestGenerateV2LocalPluginTypes(t *testing.T) {
+	t.Parallel()
+	testRunTypeArgs := func(t *testing.T, expect map[string][]byte, args ...string) {
+		t.Helper()
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			append([]string{
+				"--output",
+				tempDirPath,
+			}, args...)...,
+		)
+		expected, err := storagemem.NewReadBucket(expect)
+		require.NoError(t, err)
+		require.NoError(t, err)
+		actual, err := storageos.NewProvider().NewReadWriteBucket(tempDirPath)
+		require.NoError(t, err)
+
+		diff, err := storage.DiffBytes(context.Background(), command.NewRunner(), expected, actual)
+		require.NoError(t, err)
+		require.Empty(t, string(diff))
+	}
+
+	// buf.basic.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.basic.gen.yaml"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// buf.types.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+	)
+	// input specified
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		filepath.Join("testdata", "v2", "local_plugin"), // input
+	)
+	// --template as CLI flag
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		`version: v2
+plugins:
+  - local: protoc-gen-top-level-type-names-yaml
+    out: gen
+inputs:
+  - directory: ./testdata/v2/local_plugin
+    types:
+      - a.v1.Foo`,
+	)
+	// --type
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--type",
+		"b.v1.Bar",
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// --path
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--path",
+		filepath.Join("testdata", "v2", "local_plugin", "b"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// --exclude-path
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "v2", "local_plugin", "b", "v1"),
+		filepath.Join("testdata", "v2", "local_plugin"),
+	)
+	// buf.paths.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "a", "v1", "a.top-level-type-names.yaml"): []byte(`messages:
+    - a.v1.Bar
+    - a.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.paths.gen.yaml"),
+	)
+	// buf.exclude.paths.gen.yaml
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+    - b.v1.Foo
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.exclude.paths.gen.yaml"),
+	)
+	// --type overrides template
+	testRunTypeArgs(t, map[string][]byte{
+		filepath.Join("gen", "b", "v1", "b.top-level-type-names.yaml"): []byte(`messages:
+    - b.v1.Bar
+`),
+	},
+		"--template",
+		filepath.Join("testdata", "v2", "local_plugin", "buf.types.gen.yaml"),
+		"--type",
+		"b.v1.Bar",
+	)
+}
+
+func TestOutputFlag(t *testing.T) {
+	t.Parallel()
+	for _, paths := range []struct {
+		template string
+		dir      string
+	}{
+		// v1 buf.gen.yaml, v1 module
+		{filepath.Join("testdata", "simple", "buf.gen.yaml"), filepath.Join("testdata", "simple")},
+		// v1 buf.gen.yaml, v2 module
+		{filepath.Join("testdata", "simple", "buf.gen.yaml"), filepath.Join("testdata", "v2", "simple")},
+		// v2 buf.gen.yaml, v1 module
+		{filepath.Join("testdata", "v2", "simple", "buf.gen.yaml"), filepath.Join("testdata", "simple")},
+		// v2 buf.gen.yaml, v2 module
+		{filepath.Join("testdata", "v2", "simple", "buf.gen.yaml"), filepath.Join("testdata", "v2", "simple")},
+	} {
+		tempDirPath := t.TempDir()
+		testRunSuccess(
+			t,
+			"--output",
+			tempDirPath,
+			"--template",
+			paths.template,
+			paths.dir,
+		)
+		_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+		require.NoError(t, err)
+	}
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
@@ -185,6 +385,23 @@ func TestGenerateDuplicatePlugins(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGenerateDuplicatePluginsV2(t *testing.T) {
+	t.Parallel()
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "v2", "duplicate_plugins", "buf.gen.yaml"),
+		filepath.Join("testdata", "v2", "duplicate_plugins"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "foo", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
 func TestOutputWithPathEqualToExclude(t *testing.T) {
 	t.Parallel()
 	tempDirPath := t.TempDir()
@@ -193,7 +410,7 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path flags: a/v1/a.proto`),
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path: "testdata/paths/a/v1/a.proto"`),
 		"--output",
 		tempDirPath,
 		"--template",
@@ -209,9 +426,12 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 func TestGenerateInsertionPoint(t *testing.T) {
 	t.Parallel()
 	runner := command.NewRunner()
-	testGenerateInsertionPoint(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
-	testGenerateInsertionPoint(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
-	testGenerateInsertionPoint(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV1(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPointV1(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV1(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV2(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPointV2(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPointV2(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
 }
 
 func TestGenerateInsertionPointFail(t *testing.T) {
@@ -231,6 +451,32 @@ plugins:
 		``,
 		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
 		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
+func TestGenerateInsertionPointFailV2(t *testing.T) {
+	t.Parallel()
+	successTemplate := `
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: gen/proto/insertion
+  - protoc_builtin: insertion-point-writer
+    out: .
+managed:
+ enabled: false
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin insertion-point-writer: read test.txt: file does not exist`,
+		filepath.Join("testdata", "v2", "simple"), // The input directory is irrelevant for these insertion points.
 		"--template",
 		successTemplate,
 		"-o",
@@ -262,12 +508,111 @@ plugins:
 	)
 }
 
+func TestGenerateDuplicateFileFailV2(t *testing.T) {
+	t.Parallel()
+	successTemplate := `
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: .
+  - protoc_builtin: insertion-point-receiver
+    out: .
+managed:
+  enabled: false
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "insertion-point-receiver" and again by plugin "insertion-point-receiver"`,
+		filepath.Join("testdata", "v2", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
 func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 	t.Parallel()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
-	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
+	testGenerateInsertionPointMixedPathsFailV1(t, ".", wd)
+	testGenerateInsertionPointMixedPathsFailV1(t, wd, ".")
+	testGenerateInsertionPointMixedPathsFailV2(t, ".", wd)
+	testGenerateInsertionPointMixedPathsFailV2(t, wd, ".")
+}
+
+func TestBoolPointerFlagTrue(t *testing.T) {
+	t.Parallel()
+	expected := true
+	testParseBoolPointer(t, "test-name", &expected, "--test-name")
+}
+
+func TestBoolPointerFlagTrueSpecified(t *testing.T) {
+	t.Parallel()
+	expected := true
+	testParseBoolPointer(t, "test-name", &expected, "--test-name=true")
+}
+
+func TestBoolPointerFlagFalseSpecified(t *testing.T) {
+	t.Parallel()
+	expected := false
+	testParseBoolPointer(t, "test-name", &expected, "--test-name=false")
+}
+
+func TestBoolPointerFlagUnspecified(t *testing.T) {
+	t.Parallel()
+	testParseBoolPointer(t, "test-name", nil)
+}
+
+func testGenerateInsertionPointV1(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
+	testGenerateInsertionPoint(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+		`
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: %s
+  - name: insertion-point-writer
+    out: %s
+`,
+	)
+}
+
+func testGenerateInsertionPointV2(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
+	testGenerateInsertionPoint(
+		t,
+		runner,
+		receiverOut,
+		writerOut,
+		expectedOutputPath,
+		`
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: %s
+  - protoc_builtin: insertion-point-writer
+    out: %s
+`,
+	)
 }
 
 func testGenerateInsertionPoint(
@@ -276,15 +621,8 @@ func testGenerateInsertionPoint(
 	receiverOut string,
 	writerOut string,
 	expectedOutputPath string,
+	successTemplate string,
 ) {
-	successTemplate := `
-version: v1
-plugins:
-  - name: insertion-point-receiver
-    out: %s
-  - name: insertion-point-writer
-    out: %s
-`
 	storageosProvider := storageos.NewProvider()
 	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
 		context.Background(),
@@ -307,18 +645,55 @@ plugins:
 	require.Empty(t, string(diff))
 }
 
-// testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
-// able to generate to the same output directory, even if the absolute path points to the
-// same place. This is equivalent to protoc's behavior.
-func testGenerateInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOut string) {
-	successTemplate := `
+func testGenerateInsertionPointMixedPathsFailV1(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+) {
+	testGenerateInsertionPointMixedPathsFail(
+		t,
+		receiverOut,
+		writerOut,
+		`
 version: v1
 plugins:
   - name: insertion-point-receiver
     out: %s
   - name: insertion-point-writer
     out: %s
-`
+`,
+	)
+}
+
+func testGenerateInsertionPointMixedPathsFailV2(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+) {
+	testGenerateInsertionPointMixedPathsFail(
+		t,
+		receiverOut,
+		writerOut,
+		`
+version: v2
+plugins:
+  - protoc_builtin: insertion-point-receiver
+    out: %s
+  - protoc_builtin: insertion-point-writer
+    out: %s
+`,
+	)
+}
+
+// testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
+// able to generate to the same output directory, even if the absolute path points to the
+// same place. This is equivalent to protoc's behavior.
+func testGenerateInsertionPointMixedPathsFail(
+	t *testing.T,
+	receiverOut string,
+	writerOut string,
+	successTemplate string,
+) {
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -379,7 +754,7 @@ func testCompareGeneratedStubs(
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -468,8 +843,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
 		actualReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	bufData, err := os.ReadFile(bufGenFile)
@@ -480,8 +853,6 @@ func testCompareGeneratedStubsArchive(
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
 		bufReadWriteBucket,
-		nil,
-		0,
 	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
@@ -501,7 +872,7 @@ func testRunSuccess(t *testing.T, args ...string) {
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(name),
 			)
 		},
 		internaltesting.NewEnvFunc(t),
@@ -517,7 +888,23 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		func(name string) *appcmd.Command {
 			return NewCommand(
 				name,
-				appflag.NewBuilder(name),
+				appext.NewBuilder(
+					name,
+					appext.BuilderWithInterceptor(
+						// TODO FUTURE: use the real interceptor. Currently in buf.go, NewBuilder receives appflag.BuilderWithInterceptor(newErrorInterceptor()).
+						// However we cannot depend on newErrorInterceptor because it would create an import cycle, not to mention it needs to be exported first.
+						// This can depend on newErroInterceptor when it's moved to a separate package and made public.
+						func(next func(context.Context, appext.Container) error) func(context.Context, appext.Container) error {
+							return func(ctx context.Context, container appext.Container) error {
+								err := next(ctx, container)
+								if err == nil {
+									return nil
+								}
+								return fmt.Errorf("Failure: %w", err)
+							}
+						},
+					),
+				),
 			)
 		},
 		expectedExitCode,
@@ -529,20 +916,30 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 	)
 }
 
+func testParseBoolPointer(t *testing.T, flagName string, expectedResult *bool, args ...string) {
+	var boolPointer *bool
+	flagSet := pflag.NewFlagSet("test flag set", pflag.ContinueOnError)
+	bindBoolPointer(flagSet, flagName, &boolPointer, "test usage")
+	err := flagSet.Parse(args)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, boolPointer)
+}
+
 func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
-	externalConfig := bufgen.ExternalConfigV1{
-		Version: "v1",
-	}
+	externalConfig := make(map[string]interface{})
+	externalConfig["version"] = "v1"
+	pluginConfigs := []map[string]string{}
 	for _, plugin := range plugins {
-		externalConfig.Plugins = append(
-			externalConfig.Plugins,
-			bufgen.ExternalPluginConfigV1{
-				Name: plugin.name,
-				Out:  out,
-				Opt:  plugin.opt,
+		pluginConfigs = append(
+			pluginConfigs,
+			map[string]string{
+				"name": plugin.name,
+				"opt":  plugin.opt,
+				"out":  out,
 			},
 		)
 	}
+	externalConfig["plugins"] = pluginConfigs
 	data, err := json.Marshal(externalConfig)
 	require.NoError(t, err)
 	return string(data)

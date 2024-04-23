@@ -37,6 +37,7 @@ func TestMem(t *testing.T) {
 		testNewReadBucket,
 		testNewWriteBucket,
 		testWriteBucketToReadBucket,
+		false,
 	)
 }
 
@@ -51,7 +52,7 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 		context.Background(),
 		osBucket,
 		readWriteBucket,
-		storage.CopyWithExternalPaths(),
+		storage.CopyWithExternalAndLocalPaths(),
 	)
 	require.NoError(t, err)
 	return readWriteBucket, func(t *testing.T, rootPath string, path string) string {

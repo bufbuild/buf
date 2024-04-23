@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/protocompile/options"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -30,6 +30,8 @@ import (
 
 const (
 	anyFullName = "google.protobuf.Any"
+
+	messageRangeInclusiveMax = 536870911
 )
 
 var (
@@ -41,19 +43,6 @@ var (
 	// a specified type name is declared in a module dependency.
 	ErrImageFilterTypeIsImport = errors.New("type declared in imported module")
 )
-
-// NewInputFiles converts the ImageFiles to InputFiles.
-//
-// Since protosource is a pkg package, it cannot depend on bufmoduleref, which has the
-// definition for bufmoduleref.ModuleIdentity, so we have our own interfaces for this
-// in protosource. Given Go's type system, we need to do a conversion here.
-func NewInputFiles(imageFiles []bufimage.ImageFile) []protosource.InputFile {
-	inputFiles := make([]protosource.InputFile, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		inputFiles[i] = newInputFile(imageFile)
-	}
-	return inputFiles
-}
 
 // FreeMessageRangeStrings gets the free MessageRange strings for the target files.
 //
@@ -69,12 +58,12 @@ func FreeMessageRangeStrings(
 		if imageFile == nil {
 			return nil, fmt.Errorf("unexpected nil image file: %q", filePath)
 		}
-		file, err := protosource.NewFile(newInputFile(imageFile))
-		if err != nil {
-			return nil, err
+		prefix := imageFile.FileDescriptorProto().GetPackage()
+		if prefix != "" {
+			prefix += "."
 		}
-		for _, message := range file.Messages() {
-			s = freeMessageRangeStringsRec(s, message)
+		for _, message := range imageFile.FileDescriptorProto().GetMessageType() {
+			s = freeMessageRangeStringsRec(s, prefix+message.GetName(), message)
 		}
 	}
 	return s, nil
@@ -907,17 +896,78 @@ func (t *transitiveClosure) exploreOptionSingularValueForAny(
 	return err
 }
 
+type int32Range struct {
+	start, end int32 // both inclusive
+}
+
 func freeMessageRangeStringsRec(
 	s []string,
-	message protosource.Message,
+	fullName string,
+	message *descriptorpb.DescriptorProto,
 ) []string {
-	for _, nestedMessage := range message.Messages() {
-		s = freeMessageRangeStringsRec(s, nestedMessage)
+	for _, nestedMessage := range message.GetNestedType() {
+		s = freeMessageRangeStringsRec(s, fullName+"."+nestedMessage.GetName(), nestedMessage)
 	}
-	if e := protosource.FreeMessageRangeString(message); e != "" {
-		return append(s, e)
+	freeRanges := freeMessageRanges(message)
+	if len(freeRanges) == 0 {
+		return s
 	}
-	return s
+	suffixes := make([]string, len(freeRanges))
+	for i, freeRange := range freeRanges {
+		start := freeRange.start
+		end := freeRange.end
+		var suffix string
+		switch {
+		case start == end:
+			suffix = fmt.Sprintf("%d", start)
+		case freeRange.end == messageRangeInclusiveMax:
+			suffix = fmt.Sprintf("%d-INF", start)
+		default:
+			suffix = fmt.Sprintf("%d-%d", start, end)
+		}
+		suffixes[i] = suffix
+	}
+	return append(s, fmt.Sprintf(
+		"%- 35s free: %s",
+		fullName,
+		strings.Join(suffixes, " "),
+	))
+}
+
+// freeMessageRanges returns the free message ranges for the given message.
+//
+// Not recursive.
+func freeMessageRanges(message *descriptorpb.DescriptorProto) []int32Range {
+	used := make([]int32Range, 0, len(message.GetReservedRange())+len(message.GetExtensionRange())+len(message.GetField()))
+	for _, reservedRange := range message.GetReservedRange() {
+		// we subtract one because ranges in the proto have exclusive end
+		used = append(used, int32Range{start: reservedRange.GetStart(), end: reservedRange.GetEnd() - 1})
+	}
+	for _, extensionRange := range message.GetExtensionRange() {
+		// we subtract one because ranges in the proto have exclusive end
+		used = append(used, int32Range{start: extensionRange.GetStart(), end: extensionRange.GetEnd() - 1})
+	}
+	for _, field := range message.GetField() {
+		used = append(used, int32Range{start: field.GetNumber(), end: field.GetNumber()})
+	}
+	sort.Slice(used, func(i, j int) bool {
+		return used[i].start < used[j].start
+	})
+	// now compute the inverse (unused ranges)
+	var unused []int32Range
+	var last int32
+	for _, r := range used {
+		if r.start <= last+1 {
+			last = r.end
+			continue
+		}
+		unused = append(unused, int32Range{start: last + 1, end: r.start - 1})
+		last = r.end
+	}
+	if last < messageRangeInclusiveMax {
+		unused = append(unused, int32Range{start: last + 1, end: messageRangeInclusiveMax})
+	}
+	return unused
 }
 
 type imageFilterOptions struct {
@@ -941,9 +991,10 @@ func stripSourceRetentionOptionsFromFile(imageFile bufimage.ImageFile) (bufimage
 	}
 	return bufimage.NewImageFile(
 		updatedFileDescriptor,
-		imageFile.ModuleIdentity(),
-		imageFile.Commit(),
+		imageFile.ModuleFullName(),
+		imageFile.CommitID(),
 		imageFile.ExternalPath(),
+		imageFile.LocalPath(),
 		imageFile.IsImport(),
 		imageFile.IsSyntaxUnspecified(),
 		imageFile.UnusedDependencyIndexes(),

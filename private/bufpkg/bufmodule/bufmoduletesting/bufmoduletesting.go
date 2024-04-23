@@ -16,266 +16,495 @@ package bufmoduletesting
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	"time"
 
-	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
-	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
-	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/dag"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
-)
-
-const (
-	// TestDigest is a valid digest.
-	//
-	// This matches TestData.
-	TestDigest = "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ="
-	// TestDigestB3WithConfiguration is a valid digest.
-	//
-	// This matches TestDataWithConfiguration.
-	TestDigestB3WithConfiguration = "b3-b2gkRgE1WxTKpEfsK4ql8STGxqc6nRimCeMBGB5i2OU="
-	// This matches TestDataWithConfigurationAndFallbackDocumentationPath.
-	TestDigestB3WithConfigurationAndFallbackDocumentationPath = "b3-Zy8TSrRHq9GvkqVGz8bChvBEpAW3psNvXjzCHkxWzTE="
-	// TestDigestWithDocumentation is a valid test digest.
-	//
-	// This matches TestDataWithDocumentation.
-	TestDigestWithDocumentation = "b1-Vqi49Lw-sr3tTLQVwSJrRJnJSwV0yeg97ea957z02B0="
-	// TestDigestB3WithLicense is a valid digest.
-	//
-	// This matches TestDataWithLicense.
-	TestDigestB3WithLicense = "b3-j7iu4iVzYQUFr97mbq2PNAlM5UjEnjtwEas0q7g4DVM="
-	// TestModuleReferenceFooBarV1String is a valid module reference string.
-	TestModuleReferenceFooBarV1String = "buf.build/foob/bar:v1"
-	// TestModuleReferenceFooBarV2String is a valid module reference string.
-	TestModuleReferenceFooBarV2String = "buf.build/foob/bar:v2"
-	// TestModuleReferenceFooBazV1String is a valid module reference string.
-	TestModuleReferenceFooBazV1String = "buf.build/foob/baz:v1"
-	// TestModuleReferenceFooBazV2String is a valid module reference string.
-	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
-	// TestModuleDocumentation is a markdown module documentation file.
-	TestModuleDocumentation = "# Module Documentation"
-	// TestModuleDocumentationPath is the default path for module documentation file.
-	TestModuleDocumentationPath = "buf.md"
-	// TestModuleFallbackDocumentationPath is a fallback path for module documentation file.
-	TestModuleFallbackDocumentationPath = "README.md"
-	// TestModuleLicense is a txt module license file.
-	TestModuleLicense = "Module License"
-	// TestModuleConfiguration is a configuration file with an arbitrary module name,
-	// and example lint and breaking configuration that covers every key. At least two
-	// items are included in every key (where applicable) so that we validate whether
-	// or not the digest is deterministic.
-	TestModuleConfiguration = `
-version: v1
-name: buf.build/acme/weather
-lint:
-  use:
-    - DEFAULT
-    - UNARY_RPC
-  except:
-    - BASIC
-    - FILE_LOWER_SNAKE_CASE
-  ignore:
-    - file1.proto
-    - folder/file2.proto
-  ignore_only:
-    ENUM_PASCAL_CASE:
-      - file1.proto
-      - folder
-    BASIC:
-      - file1.proto
-      - folder
-  enum_zero_value_suffix: _UNSPECIFIED
-  rpc_allow_same_request_response: true
-  rpc_allow_google_protobuf_empty_requests: true
-  rpc_allow_google_protobuf_empty_responses: true
-  service_suffix: Service
-  allow_comment_ignores: true
-breaking:
-  use:
-    - FILE
-    - WIRE
-  except:
-    - FILE_NO_DELETE
-    - RPC_NO_DELETE
-  ignore:
-    - file1.proto
-    - folder/file2.proto
-  ignore_only:
-    FIELD_SAME_JSON_NAME:
-      - file1.proto
-      - folder
-    WIRE:
-      - file1.proto
-      - folder
-  ignore_unstable_packages: true
-`
+	"github.com/gofrs/uuid/v5"
 )
 
 var (
-	// TestData is the data that maps to TestDigest with TestModuleReferenceString.
-	TestData = map[string][]byte{
-		TestFile1Path: []byte(`syntax="proto3";`),
-		TestFile2Path: []byte(`syntax="proto3";`),
-	}
-	//TestDataProto is the proto representation of TestData.
-	TestDataProto = &modulev1alpha1.Module{
-		Files: []*modulev1alpha1.ModuleFile{
-			{
-				Path:    TestFile1Path,
-				Content: []byte(`syntax="proto3";`),
-			},
-			{
-				Path:    TestFile2Path,
-				Content: []byte(`syntax="proto3";`),
-			},
-		},
-		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
-		LintConfig:     &lintv1.Config{Version: "v1beta1"},
-	}
-	// TestDataWithDocumentation is the data that maps to TestDigestB3WithConfiguration.
-	//
-	// It includes a buf.md file.
-	TestDataWithDocumentation = map[string][]byte{
-		TestFile1Path:               []byte(`syntax="proto3";`),
-		TestModuleDocumentationPath: []byte(TestModuleDocumentation),
-	}
-	// TestDataWithFallbackDocumentationPath is the data that maps to TestDigestWithDocumentation.
-	//
-	// It includes a README.md file.
-	TestDataWithFallbackDocumentationPath = map[string][]byte{
-		TestFile1Path:                       []byte(`syntax="proto3";`),
-		TestModuleFallbackDocumentationPath: []byte(TestModuleDocumentation),
-	}
-	// TestDataWithDocumentationProto is the proto representation of TestDataWithDocumentation.
-	TestDataWithDocumentationProto = &modulev1alpha1.Module{
-		Files: []*modulev1alpha1.ModuleFile{
-			{
-				Path:    TestFile1Path,
-				Content: []byte(`syntax="proto3";`),
-			},
-		},
-		Documentation:     TestModuleDocumentation,
-		DocumentationPath: TestModuleDocumentationPath,
-		BreakingConfig:    &breakingv1.Config{Version: "v1beta1"},
-		LintConfig:        &lintv1.Config{Version: "v1beta1"},
-	}
-	// TestDataWithConfiguration is the data that maps to TestDigestWithConfiguration.
-	//
-	// It includes a buf.yaml and a buf.md file.
-	TestDataWithConfiguration = map[string][]byte{
-		TestFile1Path:               []byte(`syntax="proto3";`),
-		TestFile2Path:               []byte(`syntax="proto3";`),
-		"buf.yaml":                  []byte(TestModuleConfiguration),
-		TestModuleDocumentationPath: []byte(TestModuleDocumentation),
-	}
-	// TestDataWithConfigurationAndFallbackDocumentationPath is the data that maps to TestDigestB3WithConfigurationAndFallbackDocumentation.
-	//
-	// It includes a buf.yaml and a README.md file.
-	TestDataWithConfigurationAndFallbackDocumentationPath = map[string][]byte{
-		TestFile1Path:                       []byte(`syntax="proto3";`),
-		TestFile2Path:                       []byte(`syntax="proto3";`),
-		"buf.yaml":                          []byte(TestModuleConfiguration),
-		TestModuleFallbackDocumentationPath: []byte(TestModuleDocumentation),
-	}
-	// TestDataWithLicense is the data that maps to TestDigestB3WithLicense.
-	//
-	// It includes a LICENSE file.
-	TestDataWithLicense = map[string][]byte{
-		TestFile1Path: []byte(`syntax="proto3";`),
-		"LICENSE":     []byte(TestModuleLicense),
-	}
-	// TestFile1Path is the path of file1.proto.
-	TestFile1Path = "file1.proto"
-	// TestFile2Path is the path of file2.proto.
-	TestFile2Path = "folder/file2.proto"
-	// TestCommit is a valid commit.
-	TestCommit string
-	// TestModuleReferenceFooBarCommitString is a valid module reference string.
-	TestModuleReferenceFooBarCommitString string
-	// TestModuleReferenceFooBazCommitString is a valid module reference string.
-	TestModuleReferenceFooBazCommitString string
+	// 2023-01-01 at 12:00 UTC
+	mockTime = time.Unix(1672574400, 0)
 )
 
-// NewTestModuleReader returns a new ModuleReader that will return the mapped module
-// for any ModulePin that has the IdentityString matching the key.
+// ModuleData is the data needed to construct a Module in test.
 //
-// For example:
+// Exactly one of PathToData, Bucket, DirPath must be set.
 //
-//	{"buf.build/foo/bar" -> testModule }
+// Name is the ModuleFullName string. When creating an OmniProvider, Name is required.
 //
-// For any ModulePin that has remote "buf.build", owner "foo", and repository "bar",
-// testModule will be returned.
+// CommitID is optional, but it must be unique across all ModuleDatas. If CommitID is not set,
+// a mock commitID is created if Name is set.
 //
-// Will typically need to be used in conjunction with WriteTestLockFileToBucket.
-// A bucket will be built with .proto files and a lock file that references the moduleIdentities,
-// and then a test ModuleReader will be created with these Modules.
+// CreateTime is optional. If CreateTime is not set, a mock create Time is created. This create
+// time is the same for all data without a Time.
 //
-// Example:
-//
-//	bucket := storagemem.NewReadWriteBucket()
-//	err := storage.PutPaths(ctx, bucket, map[string][]data{...}) // put the .proto files
-//	require.NoError(t, err)
-//	err = WriteTestLockFileToBucket(ctx, bucket, "buf.build/acme/bar", "buf.build/acme/baz")
-//	require.NoError(t, err)
-//	fooModule, err := bufmodule.NewModuleForBucket(ctx, bucket)
-//	require.NoError(t, err)
-//	imageBuilder := bufimagebuild.NewBuilder(
-//	  zap.NewNop(),
-//	  bufmoduletesting.NewTestModuleReader(
-//	    map[string]bufmodule.Module{
-//	      "buf.build/acme/bar": barModule,
-//	      "buf.build/acme/baz": bazModule,
-//	    },
-//	  ),
-//	)
-//	err = imageBuilder.Build(ctx, fooModule)
-//
-// TODO: change this to moduleCommitToModule if we ever introduce a ModuleCommit type to
-// replace ModulePin.
-func NewTestModuleReader(moduleIdentityStringToModule map[string]bufmodule.Module) bufmodule.ModuleReader {
-	return newTestModuleReader(moduleIdentityStringToModule)
+// If ReadObjectDataFromBucket is true, buf.yamls and buf.locks will attempt to be read from
+// PathToData, Bucket, or DirPath. Otherwise, BufYAMLObjectData and BufLockObjectData will be
+// used. It is an error to both set ReadObjectDataFromBucket and set Buf.*ObjectData.
+type ModuleData struct {
+	Name                     string
+	CommitID                 uuid.UUID
+	CreateTime               time.Time
+	DirPath                  string
+	PathToData               map[string][]byte
+	Bucket                   storage.ReadBucket
+	NotTargeted              bool
+	BufYAMLObjectData        bufmodule.ObjectData
+	BufLockObjectData        bufmodule.ObjectData
+	ReadObjectDataFromBucket bool
 }
 
-// WriteTestLockFileToBucket write a test buf.lock to the given bucket with the given IdentityStrings.
+// OmniProvider is a ModuleKeyProvider, ModuleDataProvider, GraphProvider, CommitProvider, and ModuleSet for testing.
+type OmniProvider interface {
+	bufmodule.ModuleKeyProvider
+	bufmodule.ModuleDataProvider
+	bufmodule.GraphProvider
+	bufmodule.CommitProvider
+	bufmodule.ModuleSet
+}
+
+// NewOmniProvider returns a new OmniProvider.
 //
-// Must be used with a ModuleReader created with NewTestModuleReader.
-// See NewTestModuleReader for example usage.
-func WriteTestLockFileToBucket(ctx context.Context, writeBucket storage.WriteBucket, moduleIdentityStrings ...string) error {
-	moduleIdentities := make([]bufmoduleref.ModuleIdentity, len(moduleIdentityStrings))
-	for i, moduleIdentityString := range moduleIdentityStrings {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleIdentityString)
+// Note the ModuleDatas must be self-contained, that is they only import from each other.
+func NewOmniProvider(
+	moduleDatas ...ModuleData,
+) (OmniProvider, error) {
+	return newOmniProvider(moduleDatas)
+}
+
+// NewModuleSet returns a new ModuleSet.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+//
+// Note the ModuleDatas must be self-contained, that is they only import from each other.
+func NewModuleSet(
+	moduleDatas ...ModuleData,
+) (bufmodule.ModuleSet, error) {
+	return newModuleSet(moduleDatas, false, nil)
+}
+
+// NewModuleSetForDirPath returns a new ModuleSet for the directory path.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
+func NewModuleSetForDirPath(
+	dirPath string,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			DirPath: dirPath,
+		},
+	)
+}
+
+// NewModuleSetForPathToData returns a new ModuleSet for the path to data map.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
+func NewModuleSetForPathToData(
+	pathToData map[string][]byte,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			PathToData: pathToData,
+		},
+	)
+}
+
+// NewModuleSetForBucket returns a new ModuleSet for the Bucket.
+//
+// This can be used in cases where ModuleKeyProviders and ModuleDataProviders are not needed,
+// and when ModuleFullNames do not matter.
+//
+// Note that this Module cannot have any dependencies.
+func NewModuleSetForBucket(
+	bucket storage.ReadBucket,
+) (bufmodule.ModuleSet, error) {
+	return NewModuleSet(
+		ModuleData{
+			Bucket: bucket,
+		},
+	)
+}
+
+// *** PRIVATE ***
+
+type omniProvider struct {
+	bufmodule.ModuleSet
+	commitIDToCreateTime map[uuid.UUID]time.Time
+}
+
+func newOmniProvider(
+	moduleDatas []ModuleData,
+) (*omniProvider, error) {
+	commitIDToCreateTime := make(map[uuid.UUID]time.Time)
+	moduleSet, err := newModuleSet(moduleDatas, true, commitIDToCreateTime)
+	if err != nil {
+		return nil, err
+	}
+	return &omniProvider{
+		ModuleSet:            moduleSet,
+		commitIDToCreateTime: commitIDToCreateTime,
+	}, nil
+}
+
+func (o *omniProvider) GetModuleKeysForModuleRefs(
+	ctx context.Context,
+	moduleRefs []bufmodule.ModuleRef,
+	digestType bufmodule.DigestType,
+) ([]bufmodule.ModuleKey, error) {
+	moduleKeys := make([]bufmodule.ModuleKey, len(moduleRefs))
+	for i, moduleRef := range moduleRefs {
+		module := o.GetModuleForModuleFullName(moduleRef.ModuleFullName())
+		if module == nil {
+			return nil, &fs.PathError{Op: "read", Path: moduleRef.String(), Err: fs.ErrNotExist}
+		}
+		moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
+		if err != nil {
+			return nil, err
+		}
+		moduleKeys[i] = moduleKey
+	}
+	return moduleKeys, nil
+}
+
+func (o *omniProvider) GetModuleDatasForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.ModuleData, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys); err != nil {
+		return nil, err
+	}
+	if _, err := bufmodule.ModuleFullNameStringToUniqueValue(moduleKeys); err != nil {
+		return nil, err
+	}
+	return slicesext.MapError(
+		moduleKeys,
+		func(moduleKey bufmodule.ModuleKey) (bufmodule.ModuleData, error) {
+			return o.getModuleDataForModuleKey(ctx, moduleKey)
+		},
+	)
+}
+
+func (o *omniProvider) GetCommitsForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) ([]bufmodule.Commit, error) {
+	if len(moduleKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys); err != nil {
+		return nil, err
+	}
+	commits := make([]bufmodule.Commit, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		createTime, ok := o.commitIDToCreateTime[moduleKey.CommitID()]
+		if !ok {
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+		}
+		commits[i] = bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return createTime, nil
+			},
+		)
+	}
+	return commits, nil
+}
+
+func (o *omniProvider) GetCommitsForCommitKeys(
+	ctx context.Context,
+	commitKeys []bufmodule.CommitKey,
+) ([]bufmodule.Commit, error) {
+	if len(commitKeys) == 0 {
+		return nil, nil
+	}
+	if _, err := bufmodule.UniqueDigestTypeForCommitKeys(commitKeys); err != nil {
+		return nil, err
+	}
+	commits := make([]bufmodule.Commit, len(commitKeys))
+	for i, commitKey := range commitKeys {
+		module := o.GetModuleForCommitID(commitKey.CommitID())
+		if module == nil {
+			return nil, &fs.PathError{Op: "read", Path: uuidutil.ToDashless(commitKey.CommitID()), Err: fs.ErrNotExist}
+		}
+		createTime, ok := o.commitIDToCreateTime[commitKey.CommitID()]
+		if !ok {
+			return nil, &fs.PathError{Op: "read", Path: uuidutil.ToDashless(commitKey.CommitID()), Err: fs.ErrNotExist}
+		}
+		moduleKey, err := bufmodule.ModuleToModuleKey(module, commitKey.DigestType())
+		if err != nil {
+			return nil, err
+		}
+		commits[i] = bufmodule.NewCommit(
+			moduleKey,
+			func() (time.Time, error) {
+				return createTime, nil
+			},
+		)
+	}
+	return commits, nil
+}
+
+func (o *omniProvider) GetGraphForModuleKeys(
+	ctx context.Context,
+	moduleKeys []bufmodule.ModuleKey,
+) (*dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey], error) {
+	graph := dag.NewGraph[bufmodule.RegistryCommitID, bufmodule.ModuleKey](bufmodule.ModuleKeyToRegistryCommitID)
+	if len(moduleKeys) == 0 {
+		return graph, nil
+	}
+	digestType, err := bufmodule.UniqueDigestTypeForModuleKeys(moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+	modules := make([]bufmodule.Module, len(moduleKeys))
+	for i, moduleKey := range moduleKeys {
+		module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+		if module == nil {
+			return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+		}
+		modules[i] = module
+	}
+	for _, module := range modules {
+		if err := addModuleToGraphRec(module, graph, digestType); err != nil {
+			return nil, err
+		}
+	}
+	return graph, nil
+}
+
+func (o *omniProvider) getModuleDataForModuleKey(
+	ctx context.Context,
+	moduleKey bufmodule.ModuleKey,
+) (bufmodule.ModuleData, error) {
+	module := o.GetModuleForModuleFullName(moduleKey.ModuleFullName())
+	if module == nil {
+		return nil, &fs.PathError{Op: "read", Path: moduleKey.String(), Err: fs.ErrNotExist}
+	}
+	moduleDeps, err := module.ModuleDeps()
+	if err != nil {
+		return nil, err
+	}
+	digest, err := moduleKey.Digest()
+	if err != nil {
+		return nil, err
+	}
+	declaredDepModuleKeys, err := slicesext.MapError(
+		moduleDeps,
+		func(moduleDep bufmodule.ModuleDep) (bufmodule.ModuleKey, error) {
+			return bufmodule.ModuleToModuleKey(moduleDep, digest.Type())
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return bufmodule.NewModuleData(
+		ctx,
+		moduleKey,
+		func() (storage.ReadBucket, error) {
+			return bufmodule.ModuleReadBucketToStorageReadBucket(module), nil
+		},
+		func() ([]bufmodule.ModuleKey, error) {
+			return declaredDepModuleKeys, nil
+		},
+		func() (bufmodule.ObjectData, error) {
+			return module.V1Beta1OrV1BufYAMLObjectData()
+		},
+		func() (bufmodule.ObjectData, error) {
+			return module.V1Beta1OrV1BufLockObjectData()
+		},
+	), nil
+}
+
+func newModuleSet(
+	moduleDatas []ModuleData,
+	requireName bool,
+	// may be nil
+	commitIDToCreateTime map[uuid.UUID]time.Time,
+) (bufmodule.ModuleSet, error) {
+	moduleSetBuilder := bufmodule.NewModuleSetBuilder(context.Background(), tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+	for i, moduleData := range moduleDatas {
+		if err := addModuleDataToModuleSetBuilder(
+			moduleSetBuilder,
+			moduleData,
+			requireName,
+			commitIDToCreateTime,
+			i,
+		); err != nil {
+			return nil, err
+		}
+	}
+	return moduleSetBuilder.Build()
+}
+
+func addModuleDataToModuleSetBuilder(
+	moduleSetBuilder bufmodule.ModuleSetBuilder,
+	moduleData ModuleData,
+	requireName bool,
+	// may be nil
+	commitIDToCreateTime map[uuid.UUID]time.Time,
+	index int,
+) error {
+	if boolCount(
+		moduleData.DirPath != "",
+		moduleData.PathToData != nil,
+		moduleData.Bucket != nil,
+	) != 1 {
+		return errors.New("exactly one of Bucket, PathToData, DirPath must be set on ModuleData")
+	}
+	if boolCount(
+		moduleData.ReadObjectDataFromBucket,
+		moduleData.BufYAMLObjectData != nil,
+	) > 1 || boolCount(
+		moduleData.ReadObjectDataFromBucket,
+		moduleData.BufLockObjectData != nil,
+	) > 1 {
+		return errors.New("cannot set ReadObjectDataFromBucket alongside BufYAMLObjectData or BufLockObjectData")
+	}
+
+	var bucket storage.ReadBucket
+	var bucketID string
+	var err error
+	switch {
+	case moduleData.DirPath != "":
+		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+		bucket, err = storageosProvider.NewReadWriteBucket(
+			moduleData.DirPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
 		if err != nil {
 			return err
 		}
-		moduleIdentities[i] = moduleIdentity
+		bucketID = moduleData.DirPath
+	case moduleData.PathToData != nil:
+		bucket, err = storagemem.NewReadBucket(moduleData.PathToData)
+		if err != nil {
+			return err
+		}
+		bucketID = fmt.Sprintf("omniProviderBucket-%d", index)
+	case moduleData.Bucket != nil:
+		bucket = moduleData.Bucket
+		bucketID = fmt.Sprintf("omniProviderBucket-%d", index)
+	default:
+		// Should never get here.
+		return errors.New("boolCount returned 1 but all ModuleData fields were nil")
 	}
-	lockConfig := &buflock.Config{
-		Dependencies: make([]buflock.Dependency, len(moduleIdentities)),
+	var localModuleOptions []bufmodule.LocalModuleOption
+	if moduleData.Name != "" {
+		moduleFullName, err := bufmodule.ParseModuleFullName(moduleData.Name)
+		if err != nil {
+			return err
+		}
+		commitID := moduleData.CommitID
+		if commitID.IsNil() {
+			commitID, err = uuidutil.New()
+			if err != nil {
+				return err
+			}
+		}
+		if commitIDToCreateTime != nil {
+			createTime := moduleData.CreateTime
+			if createTime.IsZero() {
+				createTime = mockTime
+			}
+			commitIDToCreateTime[commitID] = createTime
+		}
+		localModuleOptions = []bufmodule.LocalModuleOption{
+			bufmodule.LocalModuleWithModuleFullNameAndCommitID(moduleFullName, commitID),
+		}
+	} else if requireName {
+		return errors.New("ModuleData.Name was required in this context")
 	}
-	for i, moduleIdentity := range moduleIdentities {
-		lockConfig.Dependencies[i] = buflock.Dependency{
-			Remote:     moduleIdentity.Remote(),
-			Owner:      moduleIdentity.Owner(),
-			Repository: moduleIdentity.Repository(),
-			Commit:     TestCommit,
-			Digest:     TestDigest,
+	if moduleData.ReadObjectDataFromBucket {
+		ctx := context.Background()
+		bufYAMLObjectData, err := bufconfig.GetBufYAMLV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		}
+		bufLockObjectData, err := bufconfig.GetBufLockV1Beta1OrV1ObjectDataForPrefix(ctx, bucket, ".")
+		if err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		}
+		localModuleOptions = append(
+			localModuleOptions,
+			bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(bufYAMLObjectData),
+			bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(bufLockObjectData),
+		)
+	} else {
+		if moduleData.BufYAMLObjectData != nil {
+			localModuleOptions = append(
+				localModuleOptions,
+				bufmodule.LocalModuleWithV1Beta1OrV1BufYAMLObjectData(moduleData.BufYAMLObjectData),
+			)
+		}
+		if moduleData.BufLockObjectData != nil {
+			localModuleOptions = append(
+				localModuleOptions,
+				bufmodule.LocalModuleWithV1Beta1OrV1BufLockObjectData(moduleData.BufLockObjectData),
+			)
 		}
 	}
-	return buflock.WriteConfig(ctx, writeBucket, lockConfig)
+	moduleSetBuilder.AddLocalModule(
+		bucket,
+		bucketID,
+		!moduleData.NotTargeted,
+		localModuleOptions...,
+	)
+	return nil
 }
 
-func init() {
-	testCommitUUID, err := uuidutil.New()
+func addModuleToGraphRec(
+	module bufmodule.Module,
+	graph *dag.Graph[bufmodule.RegistryCommitID, bufmodule.ModuleKey],
+	digestType bufmodule.DigestType,
+) error {
+	moduleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
-	testCommitDashless, err := uuidutil.ToDashless(testCommitUUID)
+	graph.AddNode(moduleKey)
+	directModuleDeps, err := bufmodule.ModuleDirectModuleDeps(module)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
-	TestCommit = testCommitDashless
-	TestModuleReferenceFooBarCommitString = "buf.build/foob/bar:" + TestCommit
-	TestModuleReferenceFooBazCommitString = "buf.build/foob/baz:" + TestCommit
+	for _, directModuleDep := range directModuleDeps {
+		directDepModuleKey, err := bufmodule.ModuleToModuleKey(module, digestType)
+		if err != nil {
+			return err
+		}
+		graph.AddEdge(moduleKey, directDepModuleKey)
+		if err := addModuleToGraphRec(directModuleDep, graph, digestType); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func boolCount(bools ...bool) int {
+	return slicesext.Count(bools, func(value bool) bool { return value })
 }

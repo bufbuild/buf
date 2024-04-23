@@ -20,13 +20,13 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/connectclient"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/spf13/pflag"
 )
 
@@ -35,23 +35,22 @@ const (
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+func NewCommand(name string, builder appext.SubCommandBuilder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
 		Short: "Update BSR repository settings",
-		Args:  cobra.ExactArgs(1),
+		Args:  appcmd.ExactArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
 }
 
-// TODO: add Description and Url field if it's desired to udpate them from the CLI
+// TODO FUTURE: add Description and Url field if it's desired to udpate them from the CLI
 type flags struct {
 	Visibility string
 }
@@ -66,11 +65,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleFullName, err := bufmodule.ParseModuleFullName(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -84,17 +83,19 @@ func run(
 	}
 	service := connectclient.Make(
 		clientConfig,
-		moduleIdentity.Remote(),
+		moduleFullName.Registry(),
 		registryv1alpha1connect.NewRepositoryServiceClient,
 	)
 	if _, err := service.UpdateRepositorySettingsByName(
 		ctx,
-		connect.NewRequest(&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
-			OwnerName:      moduleIdentity.Owner(),
-			RepositoryName: moduleIdentity.Repository(),
-			Visibility:     visibility,
-			// TODO: pass description and url
-		}),
+		connect.NewRequest(
+			&registryv1alpha1.UpdateRepositorySettingsByNameRequest{
+				OwnerName:      moduleFullName.Owner(),
+				RepositoryName: moduleFullName.Name(),
+				Visibility:     visibility,
+				// TODO FUTURE: pass description and url
+			},
+		),
 	); err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
@@ -102,7 +103,7 @@ func run(
 		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
-		return bufcli.NewInternalError(err)
+		return syserror.Wrap(err)
 	}
 	return nil
 }

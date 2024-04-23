@@ -16,70 +16,73 @@ package modopen
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/pkg/browser"
-	"github.com/spf13/cobra"
 )
+
+const deprecationMessage = "this command is not supported for v2 buf.yaml files as v2 buf.yaml files contain multiple modules. However, this command will continue to work for v1 buf.yaml files."
 
 // NewCommand returns a new open Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <directory>",
 		Short: "Open the module's homepage in a web browser",
-		Long:  `The first argument is the directory of the local module to open. Defaults to "." if no argument is specified.`,
-		Args:  cobra.MaximumNArgs(1),
+		Long: `The first argument is the directory with the buf.yaml of the module to open.
+
+The directory must have a buf.yaml that contains a single specified module name.
+
+The directory defaults to "." if no argument is specified.`,
+		Deprecated: deprecationMessage,
+		Hidden:     true,
+		Args:       appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 	}
 }
 
-// run tidy to trim the buf.lock file for a specific module.
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 ) error {
-	directoryInput, err := bufcli.GetInputValue(container, "", ".")
+	dirPath := "."
+	if container.NumArgs() > 0 {
+		dirPath = container.Arg(0)
+	}
+	bufYAMLFile, err := bufcli.GetBufYAMLFileForDirPath(ctx, dirPath)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("no buf.yaml discovered in directory %s", dirPath)
+		}
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		directoryInput,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
+	switch fileVersion := bufYAMLFile.FileVersion(); fileVersion {
+	case bufconfig.FileVersionV1Beta1, bufconfig.FileVersionV1:
+		moduleConfigs := bufYAMLFile.ModuleConfigs()
+		if len(moduleConfigs) != 1 {
+			return syserror.Newf("got %d ModuleConfigs for a v1beta1/v1 buf.yaml", len(moduleConfigs))
+		}
+		moduleFullName := moduleConfigs[0].ModuleFullName()
+		if moduleFullName == nil {
+			return fmt.Errorf("%s/buf.yaml has no module name", dirPath)
+		}
+		return browser.OpenURL("https://" + moduleFullName.String())
+	case bufconfig.FileVersionV2:
+		return errors.New(deprecationMessage)
+	default:
+		return syserror.Newf("unknown FileVersion: %v", fileVersion)
 	}
-	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
-	if err != nil {
-		return err
-	}
-	if existingConfigFilePath == "" {
-		return bufcli.ErrNoConfigFile
-	}
-	config, err := bufconfig.GetConfigForBucket(ctx, readWriteBucket)
-	if err != nil {
-		return err
-	}
-	var moduleIdentityString string
-	if config.ModuleIdentity != nil {
-		moduleIdentityString = config.ModuleIdentity.IdentityString()
-	}
-	if moduleIdentityString == "" {
-		return fmt.Errorf("%s has no module name", existingConfigFilePath)
-	}
-	return browser.OpenURL("https://" + moduleIdentityString)
 }

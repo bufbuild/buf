@@ -20,14 +20,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/private/buf/bufctl"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/uuidutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidNoImports(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "people"),
 	)
@@ -36,16 +41,87 @@ func TestValidNoImports(t *testing.T) {
 func TestValidImportFromCache(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "students"),
+	)
+}
+
+func TestValidImportFromCorruptedCacheFile(t *testing.T) {
+	t.Parallel()
+
+	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "people")
+	require.NoError(t, err)
+	commitID, err := uuidutil.FromDashless("fc7d540124fd42db92511c19a60a1d98")
+	require.NoError(t, err)
+	expectedDigest, err := bufmodule.ParseDigest("b5:b22338d6faf2a727613841d760c9cbfd21af6950621a589df329e1fe6611125904c39e22a73e0aa8834006a514dbd084e6c33b6bef29c8e4835b4b9dec631465")
+	require.NoError(t, err)
+	actualDigest, err := bufmodule.ParseDigest("b5:87403abcc5ec8403180536840a46bef8751df78caa8ad4b46939f4673d8bd58663d0f593668651bb2cd23049fedac4989e8b28c7e0e36b9b524f58ab09bf1053")
+	require.NoError(t, err)
+	digestMismatchError := &bufmodule.DigestMismatchError{
+		ModuleFullName: moduleFullName,
+		CommitID:       commitID,
+		ExpectedDigest: expectedDigest,
+		ActualDigest:   actualDigest,
+	}
+
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		1,
+		appFailureError(digestMismatchError).Error(),
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_file"),
+			}
+		},
+		nil,
+		"build",
+		filepath.Join("testdata", "imports", "success", "students"),
+		"--no-warn",
+	)
+}
+
+func TestValidImportFromCorruptedCacheDep(t *testing.T) {
+	t.Parallel()
+	moduleFullName, err := bufmodule.NewModuleFullName("bufbuild.test", "bufbot", "students")
+	require.NoError(t, err)
+	commitID, err := uuidutil.FromDashless("6c776ed5bee54462b06d31fb7f7c16b8")
+	require.NoError(t, err)
+	expectedDigest, err := bufmodule.ParseDigest("b5:01764dd31d0e1b8355eb3b262bba4539657af44872df6e4dfec76f57fbd9f1ae645c7c9c607db5c8352fb7041ca97111e3b0f142dafc1028832acbbc14ba1d70")
+	require.NoError(t, err)
+	actualDigest, err := bufmodule.ParseDigest("b5:975dad3641303843fb6a06eedf038b0e6ff41da82b8a483920afb36011e0b0a24f720a2407f5e0783389530486ff410b7e132f219add69a5c7324d54f6f89a6c")
+	require.NoError(t, err)
+	digestMismatchError := &bufmodule.DigestMismatchError{
+		ModuleFullName: moduleFullName,
+		CommitID:       commitID,
+		ExpectedDigest: expectedDigest,
+		ActualDigest:   actualDigest,
+	}
+
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		1,
+		appFailureError(digestMismatchError).Error(),
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "corrupted_cache_dep"),
+			}
+		},
+		nil,
+		"build",
+		filepath.Join("testdata", "imports", "success", "school"),
+		"--no-warn",
 	)
 }
 
 func TestValidImportTransitiveFromCache(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 0, nil,
+		t, nil, 0,
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "success", "school"),
 	)
@@ -53,7 +129,7 @@ func TestValidImportTransitiveFromCache(t *testing.T) {
 
 func TestValidImportWKT(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
 		"build",
@@ -64,8 +140,8 @@ func TestValidImportWKT(t *testing.T) {
 func TestInvalidNonexistentImport(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:read nonexistent.proto: file does not exist`)},
+		t, nil, bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/imports/failure/people/people/v1/people1.proto:5:8:import "nonexistent.proto": file does not exist`),
 		"build",
 		filepath.Join("testdata", "imports", "failure", "people"),
 	)
@@ -74,8 +150,8 @@ func TestInvalidNonexistentImport(t *testing.T) {
 func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
-		t, nil, 100,
-		[]string{filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:6:8:`) + `read people/v1/people_nonexistent.proto: file does not exist`},
+		t, nil, bufctl.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/imports/failure/students/students/v1/students.proto:`)+`6:8:import "people/v1/people_nonexistent.proto": file does not exist`,
 		"build",
 		filepath.Join("testdata", "imports", "failure", "students"),
 	)
@@ -83,15 +159,14 @@ func TestInvalidNonexistentImportFromDirectDep(t *testing.T) {
 
 func TestInvalidImportFromTransitive(t *testing.T) {
 	t.Parallel()
-	testRunStderrWithCache(
+	// We actually want to verify that there are no warnings now. Transitive dependencies not declared
+	// in your buf.yaml are acceptable now.
+	testRunStderrContainsWithCache(
 		t, nil, 0,
 		[]string{
-			"WARN",
-			"bufimagebuild",
-			// school1 -> people1
-			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
-			// school1 -> people2
-			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not found in your local files or direct dependencies, but is found in the transitive dependency "bufbuild.test/bufbot/people". Declare dependency "bufbuild.test/bufbot/people" in the deps key in buf.yaml.`,
+			`WARN`,
+			`File "school/v1/school1.proto" imports "people/v1/people1.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`,
+			`File "school/v1/school1.proto" imports "people/v1/people2.proto", which is not in your workspace or in the dependencies declared in your buf.yaml`,
 		},
 		"build",
 		filepath.Join("testdata", "imports", "failure", "school"),
@@ -102,12 +177,9 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 	t.Parallel()
 	testRunStderrWithCache(
 		t, nil, 0,
-		[]string{
-			"WARN",
-			"bufimagebuild",
-			// a -> c
-			`File "a.proto" imports "c.proto", which is not found in your local files or direct dependencies, but is found in local workspace module "bufbuild.test/workspace/third". Declare dependency "bufbuild.test/workspace/third" in the deps key in buf.yaml.`,
-		},
+		// We actually want to verify that there are no warnings now. deps in your v1 buf.yaml may actually
+		// have an effect - they can affect your buf.lock.
+		"",
 		"build",
 		filepath.Join("testdata", "imports", "failure", "workspace", "transitive_imports"),
 	)
@@ -115,7 +187,7 @@ func TestInvalidImportFromTransitiveWorkspace(t *testing.T) {
 
 func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
 		"build",
@@ -125,15 +197,32 @@ func TestValidImportFromLocalOnlyWorkspaceUnnamedModules(t *testing.T) {
 
 func TestGraphNoWarningsValidImportFromWorkspaceNamedModules(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
+	testRunStderr(
 		t, nil, 0,
 		"", // no warnings
-		"beta", "graph",
+		"dep",
+		"graph",
 		filepath.Join("testdata", "imports", "success", "workspace", "valid_explicit_deps"),
 	)
 }
 
-func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
+func testRunStderrWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderr string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStderr(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		expectedExitCode,
+		expectedStderr,
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CACHE_DIR"): filepath.Join("testdata", "imports", "cache"),
+			}
+		},
+		stdin,
+		args...,
+	)
+}
+
+func testRunStderrContainsWithCache(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStderrPartials []string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStderrContains(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },

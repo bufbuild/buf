@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package appcmdtesting contains test utilities for appcmd.
 package appcmdtesting
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,7 +56,12 @@ func RunCommandExitCodeStdout(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStdoutFile runs the command and compares the exit code and stdout output.
@@ -101,7 +109,33 @@ func RunCommandExitCodeStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
+}
+
+// RunCommandExitCodesStderr runs the command and compares the exit codes and stderr output.
+func RunCommandExitCodesStderr(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCodes []int,
+	expectedStderr string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCodes(t, newCommand, expectedExitCodes, newEnv, stdin, stdout, stderr, args...)
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandExitCodeStderrContains runs the command and compares the exit code and stderr output
@@ -119,8 +153,11 @@ func RunCommandExitCodeStderrContains(
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	allStderr := stderr.String()
+	if len(expectedStderrPartials) == 0 {
+		require.Empty(t, allStderr, "stderr was not empty:\n"+requireErrorMessage(args, stdout, stderr))
+	}
 	for _, expectedPartial := range expectedStderrPartials {
-		assert.Contains(t, allStderr, expectedPartial)
+		require.Contains(t, allStderr, expectedPartial, "stderr expected to contain %q:\n:%s", expectedPartial, requireErrorMessage(args, stdout, stderr))
 	}
 }
 
@@ -138,8 +175,18 @@ func RunCommandExitCodeStdoutStderr(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
-	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStdout),
+		stringutil.TrimLines(stdout.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
+	require.Equal(
+		t,
+		stringutil.TrimLines(expectedStderr),
+		stringutil.TrimLines(stderr.String()),
+		requireErrorMessage(args, stdout, stderr),
+	)
 }
 
 // RunCommandSuccess runs the command and makes sure it was successful.
@@ -160,6 +207,31 @@ func RunCommandExitCode(
 	t *testing.T,
 	newCommand func(use string) *appcmd.Command,
 	expectedExitCode int,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	stdout io.Writer,
+	stderr io.Writer,
+	args ...string,
+) {
+	RunCommandExitCodes(t, newCommand, []int{expectedExitCode}, newEnv, stdin, stdout, stderr, args...)
+}
+
+// RunCommandExitCodes runs the command and compares the exit code to the expected
+// exit codes.
+//
+// It would be nice if we could do:
+//
+//	type IntOrInts interface {
+//	  int | []int
+//	}
+//
+//	func RunCommandExitCode[I IntOrInts](expectedExitCode I)
+//
+// However we can't: https://github.com/golang/go/issues/49206
+func RunCommandExitCodes(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCodes []int,
 	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
@@ -198,10 +270,32 @@ func RunCommandExitCode(
 			newCommand(use),
 		),
 	)
-	require.Equal(
-		t,
-		expectedExitCode,
-		exitCode,
-		stringutil.TrimLines(stdoutCopy.String())+"\n"+stringutil.TrimLines(stderrCopy.String()),
+	if slicesext.Count(expectedExitCodes, func(i int) bool { return exitCode == i }) == 0 {
+		require.True(
+			t,
+			false,
+			"expected exit code %d to be one of %v\n:%s",
+			exitCode,
+			expectedExitCodes,
+			requireErrorMessage(args, stdoutCopy, stderrCopy),
+		)
+	}
+}
+
+func requireErrorMessage(args []string, stdout *bytes.Buffer, stderr *bytes.Buffer) string {
+	return fmt.Sprintf(
+		"args: %s\nstdout: %s\nstderr: %s",
+		strings.Join(
+			slicesext.Map(
+				args,
+				// To make the args copy-pastable.
+				func(arg string) string {
+					return `'` + arg + `'`
+				},
+			),
+			" ",
+		),
+		stringutil.TrimLines(stdout.String()),
+		stringutil.TrimLines(stderr.String()),
 	)
 }

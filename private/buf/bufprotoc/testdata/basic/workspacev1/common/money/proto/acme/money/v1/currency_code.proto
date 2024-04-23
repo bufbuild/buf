@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package acme.money.v1;
+
+enum CurrencyCode {
+  CURRENCY_CODE_UNSPECIFIED = 0;
+  CURRENCY_CODE_USD = 1;
+  CURRENCY_CODE_CAD = 2;
+}

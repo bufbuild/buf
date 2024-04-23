@@ -1,0 +1,4 @@
+version: v2
+modules:
+  - path: other/proto
+  - path: proto

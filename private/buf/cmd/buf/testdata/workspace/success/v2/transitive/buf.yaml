@@ -1,0 +1,17 @@
+version: v2
+modules:
+  - path: other/proto
+    name: bufbuild.test/workspace/third
+    lint:
+      except:
+        - PACKAGE_NO_IMPORT_CYCLE
+  - path: private/proto
+    name: bufbuild.test/workspace/second
+    lint:
+      except:
+        - PACKAGE_NO_IMPORT_CYCLE
+  - path: proto
+    name: bufbuild.test/workspace/first
+    lint:
+      except:
+        - PACKAGE_NO_IMPORT_CYCLE

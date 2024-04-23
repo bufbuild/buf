@@ -16,11 +16,14 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
+	"github.com/bufbuild/buf/private/buf/buftarget"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -83,6 +86,20 @@ type ArchiveType int
 
 // CompressionType is a compression type.
 type CompressionType int
+
+// String implements fmt.Stringer
+func (c CompressionType) String() string {
+	switch c {
+	case CompressionTypeNone:
+		return "none"
+	case CompressionTypeGzip:
+		return "gzip"
+	case CompressionTypeZstd:
+		return "zstd"
+	default:
+		return strconv.Itoa(int(c))
+	}
+}
 
 // Ref is a reference.
 type Ref interface {
@@ -167,8 +184,9 @@ type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
 	Path() string
-	// IncludePackageFiles says to include the same package files TODO update comment
+	// IncludePackageFiles says to include the files from the same package files
 	IncludePackageFiles() bool
+	FileScheme() FileScheme
 	protoFileRef()
 }
 
@@ -205,15 +223,8 @@ func NewGitRef(
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleReference() bufmoduleref.ModuleReference
+	ModuleRef() bufmodule.ModuleRef
 	moduleRef()
-}
-
-// NewModuleRef returns a new ModuleRef.
-//
-// The path must be in the form server/owner/repository/branch[:digest].
-func NewModuleRef(path string) (ModuleRef, error) {
-	return newModuleRef("", path)
 }
 
 // HasFormat is an object that has a format.
@@ -312,6 +323,18 @@ type ParsedProtoFileRef interface {
 	HasFormat
 }
 
+// NewDirectParsedProtoFileRef returns a new ParsedProtoFileRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedProtoFileRef(
+	format string,
+	path string,
+	fileScheme FileScheme,
+	includePackageFiles bool,
+) ParsedProtoFileRef {
+	return newDirectProtoFileRef(format, path, fileScheme, includePackageFiles)
+}
+
 // ParsedGitRef is a parsed GitRef.
 type ParsedGitRef interface {
 	GitRef
@@ -352,11 +375,11 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleReference bufmoduleref.ModuleReference,
+	moduleRef bufmodule.ModuleRef,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
-		moduleReference,
+		moduleRef,
 	)
 }
 
@@ -368,6 +391,12 @@ type RefParser interface {
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
 	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
+	// GetParsedRefForInputConfig gets the ParsedRef for the input config.
+	//
+	// The returned ParsedRef will be either a ParsedSingleRef, ParsedArchiveRef, ParsedDirRef, ParsedGitRef, or ParsedModuleRef.
+	//
+	// The options should be used to validate that you are getting one of the correct formats.
+	GetParsedRefForInputConfig(ctx context.Context, inputConfig bufconfig.InputConfig, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.
@@ -375,62 +404,32 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// TerminateFileProvider provides TerminateFiles.
-type TerminateFileProvider interface {
-	// GetTerminateFiles returns the list of terminate files in priority order.
-	GetTerminateFiles() []TerminateFile
-}
-
-// TerminateFile is a terminate file.
-type TerminateFile interface {
-	// Name returns the name of the TerminateFile (i.e. the base of the fully-qualified file paths).
-	Name() string
-	// Path returns the normalized directory path where the TemrinateFile is located.
-	Path() string
-}
-
-// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
-type ReadBucketCloserWithTerminateFileProvider interface {
-	ReadBucketCloser
-
-	// TerminateFileProvider returns a TerminateFileProvider.
-	TerminateFileProvider() TerminateFileProvider
-}
-
-// ReadBucketCloser is a bucket returned from GetBucket.
-type ReadBucketCloser interface {
-	storage.ReadBucketCloser
-
-	// RelativeRootPath is the relative path to the root of the bucket
-	// based on the current working directory.
-	//
-	// This will be set if a terminate filename was specified and found.
-	RelativeRootPath() string
+// BucketExtender has extra methods we attach to buckets.
+type BucketExtender interface {
 	// SubDirPath is the subdir within the Bucket of the actual asset.
 	//
-	// This will be set if a terminate filename was specified and found.
-	// If so, the actual Bucket will be the directory that contained
-	// this terminate file, and the subdir will be the subdir of
+	// This will be set if a terminate file was found. If so, the actual Bucket will be
+	// the directory that contained this terminate file, and the subDirPath will be the sub-direftory of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-	// SetSubDirPath sets the value of `SubDirPath`.
-	//
-	// This should only be called if a terminate file name was specified and found outside of
-	// a workspace where the bucket is originally closed.
-	SetSubDirPath(string)
 }
 
-// ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
-//
-// The returned ReadBucketCloser may be upgradeable to a ReadWriteBucketCloser.
-type ReadWriteBucketCloser interface {
-	ReadBucketCloser
-	storage.WriteBucket
+// ReadBucketCloser is a bucket returned from GetReadBucketCloser.
+type ReadBucketCloser interface {
+	storage.ReadBucketCloser
+	BucketExtender
+}
+
+// ReadWriteBucket is a bucket returned from GetReadWriteBucket.
+type ReadWriteBucket interface {
+	storage.ReadWriteBucket
+	BucketExtender
 }
 
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
+	//
 	// SingleRefs and ArchiveRefs will result in decompressed files unless KeepFileCompression is set.
 	GetFile(
 		ctx context.Context,
@@ -438,22 +437,27 @@ type Reader interface {
 		fileRef FileRef,
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
-	// GetBucket gets the bucket.
-	//
-	// The returned ReadBucketCloser may actually be upgradeable to a ReadWriteBucketCloser.
-	GetBucket(
+	// GetReadBucketCloser gets the bucket.
+	GetReadBucketCloser(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
-		options ...GetBucketOption,
-	) (ReadBucketCloserWithTerminateFileProvider, error)
-	// GetModule gets the module.
-	GetModule(
+		options ...GetReadBucketCloserOption,
+	) (ReadBucketCloser, buftarget.BucketTargeting, error)
+	// GetReadWriteBucket gets the bucket.
+	GetReadWriteBucket(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		dirRef DirRef,
+		options ...GetReadWriteBucketOption,
+	) (ReadWriteBucket, buftarget.BucketTargeting, error)
+	// GetModuleKey gets the ModuleKey.
+	GetModuleKey(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		moduleRef ModuleRef,
 		options ...GetModuleOption,
-	) (bufmodule.Module, error)
+	) (bufmodule.ModuleKey, error)
 }
 
 // NewReader returns a new Reader.
@@ -491,6 +495,25 @@ func NewWriter(
 	)
 }
 
+// ProtoFileWriter is a writer of ProtoFiles.
+type ProtoFileWriter interface {
+	// PutProtoFile puts the proto file.
+	PutProtoFile(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		protoFileRef ProtoFileRef,
+	) (io.WriteCloser, error)
+}
+
+// NewProtoWriter returns a new ProtoWriter.
+func NewProtoFileWriter(
+	logger *zap.Logger,
+) ProtoFileWriter {
+	return newProtoFileWriter(
+		logger,
+	)
+}
+
 // RawRef is an unprocessed ref used for WithRefProcessor.
 //
 // A RawRefProcessor will allow modifications to a RawRef before continuing parsing.
@@ -499,35 +522,41 @@ func NewWriter(
 // The Path will be the only value set when the RawRefProcessor is invoked, and is not normalized.
 // After the RawRefProcessor is called, options will be parsed.
 type RawRef struct {
-	// Will always be set
-	// Not normalized yet
+	// Will always be set.
+	// Not normalized yet.
 	Path string
-	// Will always be set
-	// Set via RawRefProcessor if not explicitly set
+	// Will always be set.
+	// Set via RawRefProcessor if not explicitly set.
 	Format string
-	// Only set for single, archive formats
-	// Cannot be set for zip archives
+	// Only set for single, archive formats.
+	// Cannot be set for zip archives.
 	CompressionType CompressionType
-	// Only set for archive, git formats
+	// Only set for archive, git formats.
 	SubDirPath string
-	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
+	// Only set for git formats.
+	// Only one of GitBranch and GitCommitOrTag will be set.
 	GitBranch string
+	// Only set for git formats.
+	// Only one of GitBranch and GitCommitOrTag will be set.
+	// Should indicate a full commit hash or tag name.
+	// This is defined as anything that can be given to "git fetch".
+	GitCommitOrTag string
 	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
-	GitTag string
-	// Only set for git formats
-	// Specifies an exact git reference to use with git checkout.
-	// Can be used on its own or with GitBranch. Not allowed with GitTag.
-	// This is defined as anything that can be given to git checkout.
+	// Specifies a git reference to use with "git checkout".
+	// Can be used on its own or with GitBranch. Not allowed with GitCommitOrTag.
+	// This is defined as anything that can be given to "git checkout".
+	// Differs from GitCommitOrTag in that it can be a short hash, or even a
+	// relative commit, such as "HEAD^2".
 	GitRef string
-	// Only set for git formats
+	// Only set for git formats.
 	GitRecurseSubmodules bool
 	// Only set for git formats.
 	// The depth to use when cloning a repository. Only allowed when GitRef
-	// is set. Defaults to 50 if unset.
+	// is set. Defaults to 50 if unset. It must be deep enough that the
+	// requested GitRef will be included when cloning the requested branch
+	// (or the repo's default branch if GitBranch is empty).
 	GitDepth uint32
-	// Only set for archive formats
+	// Only set for archive formats.
 	ArchiveStripComponents uint32
 	// Only set for proto file ref format.
 	// Sets whether or not to include the files in the rest of the package
@@ -718,13 +747,11 @@ func WithReaderGit(gitCloner git.Cloner) ReaderOption {
 
 // WithReaderModule enables modules.
 func WithReaderModule(
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 ) ReaderOption {
 	return func(reader *reader) {
 		reader.moduleEnabled = true
-		reader.moduleResolver = moduleResolver
-		reader.moduleReader = moduleReader
+		reader.moduleKeyProvider = moduleKeyProvider
 	}
 }
 
@@ -781,35 +808,70 @@ func WithGetFileKeepFileCompression() GetFileOption {
 	}
 }
 
-// GetBucketOption is a GetBucket option.
-type GetBucketOption func(*getBucketOptions)
+// GetReadBucketCloserOption is a GetReadBucketCloser option.
+type GetReadBucketCloserOption func(*getReadBucketCloserOptions)
 
-// WithGetBucketTerminateFileNames only applies if subdir is specified.
+// WithGetBucketCopyToInMemory says to copy the returned ReadBucketCloser to an
+// in-memory ReadBucket. This can be a performance optimization at the expense of memory.
+func WithGetReadBucketCloserCopyToInMemory() GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.copyToInMemory = true
+	}
+}
+
+// WithGetReadBucketCloserTerminateFunc says to check the bucket at the given prefix, and
+// potentially terminate the search for the workspace file. This will result in the
+// given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
-// The terminate files are organized as a slice of slices of file names.
-// Priority will be given to the first slice of terminate file names, which will be workspace
-// configuration files. The second layer of priority will be given to modules.
+// See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
+// This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
+// to find the controlling workspace of an enclosing module or workspace.
+func WithGetReadBucketCloserTerminateFunc(terminateFunc buftarget.TerminateFunc) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.terminateFunc = terminateFunc
+	}
+}
+
+// WithGetReadBucketCloserTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetPaths(targetPaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetPaths = targetPaths
+	}
+}
+
+// WithGetReadBucketCloserTargetExcludePaths sets the target exclude paths for the bucket targeting information.
+func WithGetReadBucketCloserTargetExcludePaths(targetExcludePaths []string) GetReadBucketCloserOption {
+	return func(getReadBucketCloserOptions *getReadBucketCloserOptions) {
+		getReadBucketCloserOptions.targetExcludePaths = targetExcludePaths
+	}
+}
+
+// GetReadWriteBucketOption is a GetReadWriteBucket option.
+type GetReadWriteBucketOption func(*getReadWriteBucketOptions)
+
+// WithGetReadWriteBucketTerminateFunc says to check the bucket at the given prefix, and
+// potentially terminate the search for the workspace file. This will result in the
+// given prefix being the workspace directory, and a SubDirPath being computed appropriately.
 //
-// This says that for a given subdir, ascend directories until you reach
-// a file with one of these names, and if you do, the returned bucket will be
-// for the directory with this filename, while SubDirPath on the
-// returned bucket will be set to the original subdir relative
-// to the terminate file.
-//
-// This is used for workspaces and modules. So if you have i.e. "proto/foo"
-// subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
-// be for "proto", and the SubDirPath will be "foo".
-//
-// The terminateFileNames are expected to be valid and have no slashes.
-// Example of terminateFileNames:
-//
-//	[][]string{
-//		[]string{"buf.work.yaml", "buf.work"},
-//		[]string{"buf.yaml", "buf.mod"},
-//	}.
-func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.terminateFileNames = terminateFileNames
+// See bufconfig.TerminateAtControllingWorkspace, which is the only thing that uses this.
+// This is used by both non-ProtoFileRefs to find the controlling workspace, AND ProtoFileRefs
+// to find the controlling workspace of an enclosing module or workspace.
+func WithGetReadWriteBucketTerminateFunc(terminateFunc buftarget.TerminateFunc) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.terminateFunc = terminateFunc
+	}
+}
+
+// WithGetReadWriteBucketTargetPaths sets the target paths for the bucket targeting information.
+func WithGetReadWriteBucketTargetPaths(targetPaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetPaths = targetPaths
+	}
+}
+
+func WithGetReadWriteBucketTargetExcludePaths(targetExcludePaths []string) GetReadWriteBucketOption {
+	return func(getReadWriteBucketOptions *getReadWriteBucketOptions) {
+		getReadWriteBucketOptions.targetExcludePaths = targetExcludePaths
 	}
 }
 
@@ -825,3 +887,62 @@ func WithPutFileNoFileCompression() PutFileOption {
 
 // GetModuleOption is a GetModule option.
 type GetModuleOption func(*getModuleOptions)
+
+// GetInputConfigForRef returns the input config for the ref. A string is also
+// passed because if the ref is a git ref, it would only have a git.Name, instead
+// of a git branch, a git ref and a git tag. Therefore the original string is passed.
+func GetInputConfigForRef(ref Ref, value string) (bufconfig.InputConfig, error) {
+	_, options, err := getRawPathAndOptions(value)
+	if err != nil {
+		return nil, err
+	}
+	switch t := ref.(type) {
+	case ArchiveRef:
+		switch t.ArchiveType() {
+		case ArchiveTypeZip:
+			return bufconfig.NewZipArchiveInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.StripComponents(),
+			)
+		case ArchiveTypeTar:
+			return bufconfig.NewTarballInputConfig(
+				t.Path(),
+				t.SubDirPath(),
+				t.CompressionType().String(),
+				t.StripComponents(),
+			)
+		default:
+			return nil, fmt.Errorf("invalid archive type: %v", t.ArchiveType())
+		}
+	case DirRef:
+		return bufconfig.NewDirectoryInputConfig(
+			t.Path(),
+		)
+	case ModuleRef:
+		return bufconfig.NewModuleInputConfig(
+			t.ModuleRef().String(),
+		)
+	case ProtoFileRef:
+		return bufconfig.NewProtoFileInputConfig(
+			t.Path(),
+			t.IncludePackageFiles(),
+		)
+	case GitRef:
+		return bufconfig.NewGitRepoInputConfig(
+			t.Path(),
+			t.SubDirPath(),
+			options["branch"],
+			options["tag"],
+			options["ref"],
+			toPointer(t.Depth()),
+			t.RecurseSubmodules(),
+		)
+	default:
+		return nil, fmt.Errorf("unexpected Ref of type %T", ref)
+	}
+}
+
+func toPointer[T any](value T) *T {
+	return &value
+}

@@ -38,13 +38,14 @@ type ImmutableObject struct {
 func NewImmutableObject(
 	path string,
 	externalPath string,
+	localPath string,
 	data []byte,
 ) *ImmutableObject {
 	if externalPath == "" {
 		externalPath = normalpath.Unnormalize(path)
 	}
 	return &ImmutableObject{
-		ObjectInfo: storageutil.NewObjectInfo(path, externalPath),
+		ObjectInfo: storageutil.NewObjectInfo(path, externalPath, localPath),
 		data:       data,
 	}
 }

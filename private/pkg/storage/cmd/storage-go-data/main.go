@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -48,7 +47,7 @@ func newCommand() *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:  fmt.Sprintf("%s path/to/dir", programName),
-		Args: cobra.ExactArgs(1),
+		Args: appcmd.ExactArgs(1),
 		Run: func(ctx context.Context, container app.Container) error {
 			return run(ctx, container, flags)
 		},

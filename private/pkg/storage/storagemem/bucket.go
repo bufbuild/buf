@@ -16,7 +16,6 @@ package storagemem
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"sort"
 	"sync"
@@ -25,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 type bucket struct {
@@ -73,7 +73,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectI
 		immutableObject, ok := b.pathToImmutableObject[path]
 		if !ok {
 			// this is a system error
-			return fmt.Errorf("path %q not in pathToObject", path)
+			return syserror.Newf("path %q not in pathToObject", path)
 		}
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
@@ -133,7 +133,7 @@ func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
 	return nil
 }
 
-func (*bucket) SetExternalPathSupported() bool {
+func (*bucket) SetExternalAndLocalPathsSupported() bool {
 	return true
 }
 

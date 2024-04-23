@@ -27,9 +27,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
-	"go.opentelemetry.io/otel"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -41,29 +40,29 @@ const (
 	// We can fetch directly from an origin URL, but without any remote set git LFS
 	// will fail to fetch so we need to pick something.
 	bufCloneOrigin = "bufCloneOrigin"
-	tracerName     = "bufbuild/buf/cloner"
 )
 
 type cloner struct {
 	logger            *zap.Logger
+	tracer            tracing.Tracer
 	storageosProvider storageos.Provider
 	runner            command.Runner
 	options           ClonerOptions
-	tracer            trace.Tracer
 }
 
 func newCloner(
 	logger *zap.Logger,
+	tracer tracing.Tracer,
 	storageosProvider storageos.Provider,
 	runner command.Runner,
 	options ClonerOptions,
 ) *cloner {
 	return &cloner{
 		logger:            logger,
+		tracer:            tracer,
 		storageosProvider: storageosProvider,
 		runner:            runner,
 		options:           options,
-		tracer:            otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -75,14 +74,8 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	ctx, span := c.tracer.Start(ctx, "git_clone_to_bucket")
+	ctx, span := c.tracer.Start(ctx, tracing.WithErr(&retErr))
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			span.RecordError(retErr)
-			span.SetStatus(codes.Error, retErr.Error())
-		}
-	}()
 
 	var err error
 	switch {
@@ -259,14 +252,7 @@ func (c *cloner) CloneToBucket(
 	if options.Mapper != nil {
 		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
 	}
-	ctx, span2 := c.tracer.Start(ctx, "git_clone_to_bucket_copy")
-	defer span2.End()
-	// do NOT copy external paths
 	_, err = storage.Copy(ctx, readBucket, writeBucket)
-	if err != nil {
-		span2.RecordError(err)
-		span2.SetStatus(codes.Error, err.Error())
-	}
 	return err
 }
 

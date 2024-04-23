@@ -1,0 +1,7 @@
+version: v2
+modules:
+  - path: a/proto
+  - path: other/proto
+    name: bufbuild.test/workspace/request
+  - path: proto
+    name: bufbuild.test/workspace/rpc

@@ -13,25 +13,3 @@
 // limitations under the License.
 
 package bufmodulecache
-
-import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/verbose"
-	"go.uber.org/zap"
-)
-
-// NewModuleReader creates a new module reader using content addressable storage.
-func NewModuleReader(
-	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
-	bucket storage.ReadWriteBucket,
-	delegate bufmodule.ModuleReader,
-) bufmodule.ModuleReader {
-	return newCASModuleReader(
-		bucket,
-		delegate,
-		logger,
-		verbosePrinter,
-	)
-}

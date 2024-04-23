@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
 )
 
 // Helper is a helper for rules.
@@ -41,8 +41,8 @@ func NewHelper(id string, ignoreFunc IgnoreFunc) *Helper {
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationf(
-	descriptor protosource.Descriptor,
-	location protosource.Location,
+	descriptor bufprotosource.Descriptor,
+	location bufprotosource.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -63,9 +63,9 @@ func (h *Helper) AddFileAnnotationf(
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationWithExtraIgnoreDescriptorsf(
-	descriptor protosource.Descriptor,
-	extraIgnoreDescriptors []protosource.Descriptor,
-	location protosource.Location,
+	descriptor bufprotosource.Descriptor,
+	extraIgnoreDescriptors []bufprotosource.Descriptor,
+	location bufprotosource.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -86,9 +86,9 @@ func (h *Helper) AddFileAnnotationWithExtraIgnoreDescriptorsf(
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationWithExtraIgnoreLocationsf(
-	descriptor protosource.Descriptor,
-	location protosource.Location,
-	extraIgnoreLocations []protosource.Location,
+	descriptor bufprotosource.Descriptor,
+	location bufprotosource.Location,
+	extraIgnoreLocations []bufprotosource.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -103,17 +103,17 @@ func (h *Helper) AddFileAnnotationWithExtraIgnoreLocationsf(
 }
 
 func (h *Helper) addFileAnnotationf(
-	descriptor protosource.Descriptor,
-	extraIgnoreDescriptors []protosource.Descriptor,
-	location protosource.Location,
-	extraIgnoreLocations []protosource.Location,
+	descriptor bufprotosource.Descriptor,
+	extraIgnoreDescriptors []bufprotosource.Descriptor,
+	location bufprotosource.Location,
+	extraIgnoreLocations []bufprotosource.Location,
 	format string,
 	args ...interface{},
 ) {
 	if h.ignoreFunc != nil && h.ignoreFunc(
 		h.id,
-		append([]protosource.Descriptor{descriptor}, extraIgnoreDescriptors...),
-		append([]protosource.Location{location}, extraIgnoreLocations...),
+		append([]bufprotosource.Descriptor{descriptor}, extraIgnoreDescriptors...),
+		append([]bufprotosource.Location{location}, extraIgnoreLocations...),
 	) {
 		return
 	}
@@ -140,8 +140,8 @@ func (h *Helper) FileAnnotations() []bufanalysis.FileAnnotation {
 // If location is nil, no line or column information will be added.
 func newFileAnnotationf(
 	id string,
-	descriptor protosource.Descriptor,
-	location protosource.Location,
+	descriptor bufprotosource.Descriptor,
+	location bufprotosource.Location,
 	format string,
 	args ...interface{},
 ) bufanalysis.FileAnnotation {

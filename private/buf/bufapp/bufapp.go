@@ -18,7 +18,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 )
 
@@ -44,7 +44,7 @@ type Config struct {
 
 // NewConfig returns a new Config for the ExternalConfig.
 func NewConfig(
-	container appname.Container,
+	container appext.NameContainer,
 	externalConfig ExternalConfig,
 ) (*Config, error) {
 	if externalConfig.Version != currentVersion && !externalConfig.IsEmpty() {

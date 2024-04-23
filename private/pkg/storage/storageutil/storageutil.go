@@ -30,16 +30,19 @@ import (
 type ObjectInfo struct {
 	path         string
 	externalPath string
+	localPath    string
 }
 
 // NewObjectInfo returns a new ObjectInfo.
 func NewObjectInfo(
 	path string,
 	externalPath string,
+	localPath string,
 ) ObjectInfo {
 	return ObjectInfo{
 		path:         path,
 		externalPath: externalPath,
+		localPath:    localPath,
 	}
 }
 
@@ -51,6 +54,11 @@ func (o ObjectInfo) Path() string {
 // ExternalPath implements ObjectInfo.
 func (o ObjectInfo) ExternalPath() string {
 	return o.externalPath
+}
+
+// LocalPath implements ObjectInfo.
+func (o ObjectInfo) LocalPath() string {
+	return o.localPath
 }
 
 // ValidatePath validates a path.

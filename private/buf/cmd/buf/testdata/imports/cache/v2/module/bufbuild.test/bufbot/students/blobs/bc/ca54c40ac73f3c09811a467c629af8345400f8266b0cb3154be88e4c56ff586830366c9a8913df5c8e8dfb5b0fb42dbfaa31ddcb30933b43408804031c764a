@@ -1,4 +1,0 @@
-version: v1
-name: bufbuild.test/bufbot/students
-deps:
-  - bufbuild.test/bufbot/people

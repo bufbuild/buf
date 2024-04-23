@@ -25,8 +25,7 @@ func TestRoundTrip(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		id, err := New()
 		require.NoError(t, err)
-		dashless, err := ToDashless(id)
-		require.NoError(t, err)
+		dashless := ToDashless(id)
 		roundTripID, err := FromDashless(dashless)
 		require.NoError(t, err)
 		require.Equal(t, id, roundTripID)
@@ -37,8 +36,7 @@ func TestFromStringFailsWithDashless(t *testing.T) {
 	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
-	dashless, err := ToDashless(id)
-	require.NoError(t, err)
+	dashless := ToDashless(id)
 	_, err = FromString(dashless)
 	require.Error(t, err)
 }
@@ -55,8 +53,7 @@ func TestValidateFailsWithDashless(t *testing.T) {
 	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
-	dashless, err := ToDashless(id)
-	require.NoError(t, err)
+	dashless := ToDashless(id)
 	err = Validate(dashless)
 	require.Error(t, err)
 }
@@ -75,11 +72,7 @@ func TestFromStringSliceFailsWithDashless(t *testing.T) {
 	require.NoError(t, err)
 	id2, err := New()
 	require.NoError(t, err)
-	dashless1, err := ToDashless(id1)
-	require.NoError(t, err)
-	dashless2, err := ToDashless(id2)
-	require.NoError(t, err)
-	dashless := []string{dashless1, dashless2}
+	dashless := []string{ToDashless(id1), ToDashless(id2)}
 	_, err = FromStringSlice(dashless)
 	require.Error(t, err)
 }

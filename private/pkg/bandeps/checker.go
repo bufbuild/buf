@@ -21,23 +21,18 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
 type checker struct {
 	logger *zap.Logger
 	runner command.Runner
-	tracer trace.Tracer
 }
 
 func newChecker(logger *zap.Logger, runner command.Runner) *checker {
 	return &checker{
 		logger: logger,
 		runner: runner,
-		tracer: otel.GetTracerProvider().Tracer(tracerName),
 	}
 }
 
@@ -63,27 +58,18 @@ func (c *checker) checkBan(
 	state *state,
 	externalBanConfig ExternalBanConfig,
 ) error {
-	ctx, span := c.tracer.Start(ctx, "checkBan")
-	defer span.End()
-
 	packages, err := c.getPackages(ctx, state, externalBanConfig.Packages)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	banPackages, err := c.getPackages(ctx, state, externalBanConfig.Deps)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
 	for pkg := range packages {
 		deps, err := state.DepsForPackages(ctx, pkg)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
 		for dep := range deps {
@@ -120,9 +106,6 @@ func (c *checker) getPackages(
 }
 
 func (c *checker) populateState(ctx context.Context, state *state, externalConfig ExternalConfig) error {
-	ctx, span := c.tracer.Start(ctx, "populateState")
-	defer span.End()
-
 	var depPackageExpressions []string
 	var packageExpressions []string
 	for _, externalBanConfig := range externalConfig.Bans {
@@ -164,8 +147,6 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 

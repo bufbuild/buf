@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,11 +68,13 @@ func testFormatNoDiff(t *testing.T, path string) {
 	t.Run(path, func(t *testing.T) {
 		ctx := context.Background()
 		runner := command.NewRunner()
-		moduleBucket, err := storageos.NewProvider().NewReadWriteBucket(path)
+		bucket, err := storageos.NewProvider().NewReadWriteBucket(path)
 		require.NoError(t, err)
-		module, err := bufmodule.NewModuleForBucket(ctx, moduleBucket)
+		moduleSetBuilder := bufmodule.NewModuleSetBuilder(ctx, tracing.NopTracer, bufmodule.NopModuleDataProvider, bufmodule.NopCommitProvider)
+		moduleSetBuilder.AddLocalModule(bucket, path, true)
+		moduleSet, err := moduleSetBuilder.Build()
 		require.NoError(t, err)
-		readBucket, err := FormatModule(ctx, module)
+		readBucket, err := FormatModuleSet(ctx, moduleSet)
 		require.NoError(t, err)
 		require.NoError(
 			t,
@@ -90,7 +93,7 @@ func testFormatNoDiff(t *testing.T, path string) {
 						}
 						formattedData, err := io.ReadAll(formattedFile)
 						require.NoError(t, err)
-						expectedFile, err := moduleBucket.Get(ctx, expectedPath)
+						expectedFile, err := bucket.Get(ctx, expectedPath)
 						require.NoError(t, err)
 						expectedData, err := io.ReadAll(expectedFile)
 						require.NoError(t, err)

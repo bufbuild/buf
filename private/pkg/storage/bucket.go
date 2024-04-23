@@ -83,12 +83,12 @@ type WriteBucket interface {
 	// NOT a string prefix. For example, the prefix "foo/bar"
 	// will delete "foo/bar/baz", but NOT "foo/barbaz".
 	DeleteAll(ctx context.Context, prefix string) error
-	// SetExternalPathSupported returns true if SetExternalPath is supported.
+	// SetExternalAndLocalPathsSupported returns true if SetExternalPath and SetLocalPath are supported.
 	//
 	// For example, in-memory buckets may choose to return true so that object sources
 	// are preserved, but filesystem buckets may choose to return false as they have
 	// their own external paths.
-	SetExternalPathSupported() bool
+	SetExternalAndLocalPathsSupported() bool
 }
 
 // ReadWriteBucket is a simple read/write bucket.
@@ -166,6 +166,14 @@ type ObjectInfo interface {
 	//   Path: baz/bat.proto
 	//   ExternalPath: s3://foo/baz/bat.proto
 	ExternalPath() string
+
+	// LocalPath is the path on disk of the object, if the object originated from a local disk.
+	//
+	// This will be unnormalized if present.
+	//
+	// Will not be present if the path did not originate from disk. For example, objects that originated
+	// from archives, git repositories, or object stores will not have this present.
+	LocalPath() string
 }
 
 // ReadObject is an object read from a bucket.
@@ -186,10 +194,14 @@ type ReadObjectCloser interface {
 type WriteObject interface {
 	io.Writer
 
-	// ExternalPath attempts to explicitly set the external path for the new object.
+	// SetExternalPath attempts to explicitly set the external path for the new object.
 	//
-	// If SetExternalPathSupported returns false, this returns error.
+	// If SetExternalAndLocalPathsSupported returns false, this returns error.
 	SetExternalPath(externalPath string) error
+	// SetLocalPath attempts to explicitly set the local path for the new object.
+	//
+	// If SetExternalAndLocalPathsSupported  returns false, this returns  error.
+	SetLocalPath(localPath string) error
 }
 
 // WriteObjectCloser is a WriteObject with a closer.

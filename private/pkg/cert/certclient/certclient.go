@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 )
 
 // ExternalClientTLSConfig allows users to configure TLS on the client side.
@@ -38,7 +38,7 @@ func (e ExternalClientTLSConfig) IsEmpty() bool {
 //
 // The default is to use the system TLS config.
 func NewClientTLSConfig(
-	container appname.Container,
+	container appext.NameContainer,
 	externalClientTLSConfig ExternalClientTLSConfig,
 ) (*tls.Config, error) {
 	opts := []TLSOption{}

@@ -18,9 +18,10 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/gofrs/uuid/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -28,22 +29,24 @@ import (
 
 // NewImageFile returns a new ImageFile for testing.
 //
-// TODO: moduleIdentity and commit should be options.
+// TODO FUTURE: moduleFullName and commit should be options.
 func NewImageFile(
 	t testing.TB,
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmoduleref.ModuleIdentity,
-	commit string,
+	moduleFullName bufmodule.ModuleFullName,
+	commit uuid.UUID,
 	externalPath string,
+	localPath string,
 	isImport bool,
 	isSyntaxUnspecified bool,
 	unusedDependencyIndexes []int32,
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptor,
-		moduleIdentity,
+		moduleFullName,
 		commit,
 		externalPath,
+		localPath,
 		isImport,
 		isSyntaxUnspecified,
 		unusedDependencyIndexes,
@@ -105,9 +108,10 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.FileDescriptorProto().GetName(),
 				imageFile.FileDescriptorProto().GetDependency()...,
 			),
-			imageFile.ModuleIdentity(),
-			imageFile.Commit(),
+			imageFile.ModuleFullName(),
+			imageFile.CommitID(),
 			imageFile.ExternalPath(),
+			imageFile.LocalPath(),
 			imageFile.IsImport(),
 			imageFile.IsSyntaxUnspecified(),
 			imageFile.UnusedDependencyIndexes(),

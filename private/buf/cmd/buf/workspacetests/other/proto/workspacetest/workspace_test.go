@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
@@ -56,7 +56,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         ../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
@@ -66,7 +66,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`),
 		"lint",
@@ -77,7 +77,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
 		"lint",
 		filepath.Join("..", "..", ".."),
@@ -105,7 +105,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
@@ -145,7 +145,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`,
 			parentDirectory, parentDirectory,
@@ -158,7 +158,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(fmt.Sprintf(`%s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
 			parentDirectory,
 		)),
@@ -177,7 +177,7 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: failed to build input "other/proto/one" because it is contained by directory "other/proto" listed in ../../../buf.work.yaml`),
+		`Failure: failed to build input "other/proto/one" because it is contained by module at path "other/proto" specified in your configuration, you must provide the workspace or module as the input, and filter to this path using --path`,
 		"build",
 		filepath.Join("..", "one"),
 	)
@@ -197,7 +197,7 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
+		bufctl.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
 		../../../../testdata/workspace/success/protofileref/another/foo/foo.proto:3:1:Package name "foo" should be suffixed with a correctly formed version, such as "foo.v1".
 		`),
@@ -214,7 +214,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 		expectedStdout,
 		func(use string) map[string]string {
 			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): "cache",
+				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
 			}
 		},
 		stdin,
@@ -231,7 +231,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		expectedStderr,
 		func(use string) map[string]string {
 			return map[string]string{
-				useEnvVar(use, "CACHE_DIR"): "cache",
+				useEnvVar(use, "CACHE_DIR"): t.TempDir(),
 			}
 		},
 		stdin,

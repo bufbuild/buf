@@ -17,20 +17,25 @@ package generate
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appext"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/spf13/cobra"
+	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -51,7 +56,7 @@ const (
 // NewCommand returns a new Command.
 func NewCommand(
 	name string,
-	builder appflag.Builder,
+	builder appext.SubCommandBuilder,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -181,28 +186,27 @@ before writing the result.
 
 Insertion points are processed in the order the plugins are specified in the template.
 `,
-		Args: cobra.MaximumNArgs(1),
+		Args: appcmd.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container appflag.Container) error {
+			func(ctx context.Context, container appext.Container) error {
 				return run(ctx, container, flags)
 			},
-			bufcli.NewErrorInterceptor(),
 		),
 		BindFlags: flags.Bind,
 	}
 }
 
 type flags struct {
-	Template        string
-	BaseOutDirPath  string
-	ErrorFormat     string
-	Files           []string
-	Config          string
-	Paths           []string
-	IncludeImports  bool
-	IncludeWKT      bool
-	ExcludePaths    []string
-	DisableSymlinks bool
+	Template               string
+	BaseOutDirPath         string
+	ErrorFormat            string
+	Files                  []string
+	Config                 string
+	Paths                  []string
+	IncludeImportsOverride *bool
+	IncludeWKTOverride     *bool
+	ExcludePaths           []string
+	DisableSymlinks        bool
 	// We may be able to bind two flags to one string slice but I don't
 	// want to find out what will break if we do.
 	Types           []string
@@ -220,18 +224,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
-	flagSet.BoolVar(
-		&f.IncludeImports,
+	bindBoolPointer(
+		flagSet,
 		includeImportsFlagName,
-		false,
+		&f.IncludeImportsOverride,
 		"Also generate all imports except for Well-Known Types",
 	)
-	flagSet.BoolVar(
-		&f.IncludeWKT,
+	bindBoolPointer(
+		flagSet,
 		includeWKTFlagName,
-		false,
+		&f.IncludeWKTOverride,
 		fmt.Sprintf(
-			"Also generate Well-Known Types. Cannot be set without --%s",
+			"Also generate Well-Known Types. Cannot be set to true without setting --%s to true",
 			includeImportsFlagName,
 		),
 	)
@@ -281,43 +285,33 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container appflag.Container,
+	container appext.Container,
 	flags *flags,
 ) (retErr error) {
 	logger := container.Logger()
-	if flags.IncludeWKT && !flags.IncludeImports {
-		// You need to set --include-imports if you set --include-wkt, which isn’t great. The alternative is to have
-		// --include-wkt implicitly set --include-imports, but this could be surprising. Or we could rename
-		// --include-wkt to --include-imports-and/with-wkt. But the summary is that the flag only makes sense
-		// in the context of including imports.
-		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s", includeWKTFlagName, includeImportsFlagName)
+	if flags.IncludeWKTOverride != nil &&
+		*flags.IncludeWKTOverride &&
+		(flags.IncludeImportsOverride == nil || !*flags.IncludeImportsOverride) {
+		// You need to set --include-imports to true if you set --include-wkt to true, which isn’t great.
+		// The alternative is to have --include-wkt implicitly set --include-imports, but this could be surprising.
+		// Or we could rename --include-wkt to --include-imports-and/with-wkt. But the summary is that the flag
+		// only makes sense in the context of including imports.
+		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s to true without setting --%s to true", includeWKTFlagName, includeImportsFlagName)
 	}
-	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
-		return err
-	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "")
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
-	if err != nil {
-		return err
+	var storageosProvider storageos.Provider
+	if flags.DisableSymlinks {
+		storageosProvider = storageos.NewProvider()
+	} else {
+		storageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
 	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		".",
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	genConfig, err := bufgen.ReadConfig(
-		ctx,
-		logger,
-		bufgen.NewProvider(logger),
-		readWriteBucket,
-		bufgen.ReadConfigWithOverride(flags.Template),
+	controller, err := bufcli.NewController(
+		container,
+		bufctl.WithDisableSymlinks(flags.DisableSymlinks),
+		bufctl.WithFileAnnotationErrorFormat(flags.ErrorFormat),
 	)
 	if err != nil {
 		return err
@@ -326,80 +320,186 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageConfigReader, err := bufcli.NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		runner,
-		clientConfig,
-	)
+	bufGenYAMLFile, err := readBufGenYAMLFile(ctx, storageosProvider, flags.Template)
 	if err != nil {
 		return err
 	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+	images, err := getInputImages(
 		ctx,
-		container,
-		ref,
+		logger,
+		controller,
+		input,
+		bufGenYAMLFile,
 		flags.Config,
-		flags.Paths,        // we filter on files
-		flags.ExcludePaths, // we exclude these paths
-		false,              // input files must exist
-		false,              // we must include source info for generation
+		flags.Paths,
+		flags.ExcludePaths,
+		flags.Types,
 	)
-	if err != nil {
-		return err
-	}
-	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, flags.ErrorFormat); err != nil {
-			return err
-		}
-		return bufcli.ErrFileAnnotation
-	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	image, err := bufimage.MergeImages(images...)
 	if err != nil {
 		return err
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	}
-	if flags.IncludeImports {
+	if flags.IncludeImportsOverride != nil {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeImports(),
+			bufgen.GenerateWithIncludeImportsOverride(*flags.IncludeImportsOverride),
 		)
 	}
-	if flags.IncludeWKT {
+	if flags.IncludeWKTOverride != nil {
 		generateOptions = append(
 			generateOptions,
-			bufgen.GenerateWithIncludeWellKnownTypes(),
+			bufgen.GenerateWithIncludeWellKnownTypesOverride(*flags.IncludeWKTOverride),
 		)
-	}
-	var includedTypes []string
-	if len(flags.Types) > 0 || len(flags.TypesDeprecated) > 0 {
-		// command-line flags take precedence
-		includedTypes = append(flags.Types, flags.TypesDeprecated...)
-	} else if genConfig.TypesConfig != nil {
-		includedTypes = genConfig.TypesConfig.Include
-	}
-	if len(includedTypes) > 0 {
-		image, err = bufimageutil.ImageFilteredByTypes(image, includedTypes...)
-		if err != nil {
-			return err
-		}
 	}
 	return bufgen.NewGenerator(
 		logger,
+		tracing.NewTracer(container.Tracer()),
 		storageosProvider,
-		runner,
+		command.NewRunner(),
 		clientConfig,
 	).Generate(
 		ctx,
 		container,
-		genConfig,
-		image,
+		bufGenYAMLFile.GenerateConfig(),
+		images,
 		generateOptions...,
 	)
+}
+
+func readBufGenYAMLFile(
+	ctx context.Context,
+	storageosProvider storageos.Provider,
+	templatePath string,
+) (bufconfig.BufGenYAMLFile, error) {
+	templatePathExtension := filepath.Ext(templatePath)
+	switch {
+	case templatePath == "":
+		bucket, err := storageosProvider.NewReadWriteBucket(".", storageos.ReadWriteBucketWithSymlinksIfSupported())
+		if err != nil {
+			return nil, err
+		}
+		return bufconfig.GetBufGenYAMLFileForPrefix(ctx, bucket, ".")
+	case templatePathExtension == ".yaml" || templatePathExtension == ".yml" || templatePathExtension == ".json":
+		// We should not read from a bucket at "." because this path can jump context.
+		configFile, err := os.Open(templatePath)
+		if err != nil {
+			return nil, err
+		}
+		defer configFile.Close()
+		return bufconfig.ReadBufGenYAMLFile(configFile)
+	default:
+		return bufconfig.ReadBufGenYAMLFile(strings.NewReader(templatePath))
+	}
+}
+
+func getInputImages(
+	ctx context.Context,
+	logger *zap.Logger,
+	controller bufctl.Controller,
+	inputSpecified string,
+	bufGenYAMLFile bufconfig.BufGenYAMLFile,
+	moduleConfigOverride string,
+	targetPathsOverride []string,
+	excludePathsOverride []string,
+	includeTypesOverride []string,
+) ([]bufimage.Image, error) {
+	// If input is specified on the command line, we use that. If input is not
+	// specified on the command line, use the default input.
+	if inputSpecified != "" || len(bufGenYAMLFile.InputConfigs()) == 0 {
+		input := "."
+		if inputSpecified != "" {
+			input = inputSpecified
+		}
+		var includeTypes []string
+		if typesConfig := bufGenYAMLFile.GenerateConfig().GenerateTypeConfig(); typesConfig != nil {
+			includeTypes = typesConfig.IncludeTypes()
+		}
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImage(
+			ctx,
+			input,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(targetPathsOverride, excludePathsOverride),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		return []bufimage.Image{inputImage}, nil
+	}
+	var inputImages []bufimage.Image
+	for _, inputConfig := range bufGenYAMLFile.InputConfigs() {
+		targetPaths := inputConfig.TargetPaths()
+		if len(targetPathsOverride) > 0 {
+			targetPaths = targetPathsOverride
+		}
+		excludePaths := inputConfig.ExcludePaths()
+		if len(excludePathsOverride) > 0 {
+			excludePaths = excludePathsOverride
+		}
+		// In V2 we do not need to look at generateTypeConfig.IncludeTypes()
+		// because it is always nil.
+		includeTypes := inputConfig.IncludeTypes()
+		if len(includeTypesOverride) > 0 {
+			includeTypes = includeTypesOverride
+		}
+		inputImage, err := controller.GetImageForInputConfig(
+			ctx,
+			inputConfig,
+			bufctl.WithConfigOverride(moduleConfigOverride),
+			bufctl.WithTargetPaths(targetPaths, excludePaths),
+			bufctl.WithImageTypes(includeTypes),
+		)
+		if err != nil {
+			return nil, err
+		}
+		inputImages = append(inputImages, inputImage)
+	}
+	return inputImages, nil
+}
+
+// TODO FUTURE: where does this belong? A flagsext package?
+// value must not be nil.
+func bindBoolPointer(flagSet *pflag.FlagSet, name string, value **bool, usage string) {
+	flag := flagSet.VarPF(
+		&boolPointerValue{
+			valuePointer: value,
+		},
+		name,
+		"",
+		usage,
+	)
+	flag.NoOptDefVal = "true"
+}
+
+// Implements pflag.Value.
+type boolPointerValue struct {
+	// This must not be nil at construction time.
+	valuePointer **bool
+}
+
+func (b *boolPointerValue) Type() string {
+	// From the CLI users' perspective, this is just a bool.
+	return "bool"
+}
+
+func (b *boolPointerValue) String() string {
+	if *b.valuePointer == nil {
+		// From the CLI users' perspective, this is just false.
+		return "false"
+	}
+	return strconv.FormatBool(**b.valuePointer)
+}
+
+func (b *boolPointerValue) Set(value string) error {
+	parsedValue, err := strconv.ParseBool(value)
+	if err != nil {
+		return err
+	}
+	*b.valuePointer = &parsedValue
+	return nil
 }

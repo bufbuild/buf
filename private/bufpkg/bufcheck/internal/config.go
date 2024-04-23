@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/syserror"
 )
 
 const (
@@ -29,6 +30,9 @@ const (
 )
 
 // Config is the check config.
+//
+// This should only be built via a ConfigBuilder. If we were exposing this API publicly, we would
+// enforce this.
 type Config struct {
 	// Rules are the rules to run.
 	//
@@ -45,10 +49,13 @@ type Config struct {
 
 // ConfigBuilder is a config builder.
 type ConfigBuilder struct {
-	Use    []string
+	// May contain deprecated IDs.
+	Use []string
+	// May contain deprecated IDs.
 	Except []string
 
-	IgnoreRootPaths               []string
+	IgnoreRootPaths []string
+	// May contain deprecated IDs.
 	IgnoreIDOrCategoryToRootPaths map[string][]string
 
 	AllowCommentIgnores    bool
@@ -62,11 +69,13 @@ type ConfigBuilder struct {
 }
 
 // NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig(versionSpec *VersionSpec) (*Config, error) {
-	return newConfig(b, versionSpec)
+//
+// TransformDeprecated should always be true if building a Config for a Runner.
+func (b ConfigBuilder) NewConfig(versionSpec *VersionSpec, transformDeprecated bool) (*Config, error) {
+	return newConfig(b, versionSpec, transformDeprecated)
 }
 
-func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, error) {
+func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec, transformDeprecated bool) (*Config, error) {
 	configBuilder.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Use)
 	configBuilder.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Except)
 	if len(configBuilder.Use) == 0 {
@@ -83,6 +92,7 @@ func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, 
 		configBuilder,
 		versionSpec.RuleBuilders,
 		versionSpec.IDToCategories,
+		transformDeprecated,
 	)
 }
 
@@ -90,10 +100,15 @@ func newConfigForRuleBuilders(
 	configBuilder ConfigBuilder,
 	ruleBuilders []*RuleBuilder,
 	idToCategories map[string][]string,
+	transformDeprecated bool,
 ) (*Config, error) {
 	// this checks that there are not duplicate IDs for a given revision
 	// which would be a system error
 	idToRuleBuilder, err := getIDToRuleBuilder(ruleBuilders)
+	if err != nil {
+		return nil, err
+	}
+	deprecatedIDToReplacementIDs, err := getDeprecatedIDToReplacementIDs(idToRuleBuilder)
 	if err != nil {
 		return nil, err
 	}
@@ -102,9 +117,15 @@ func newConfigForRuleBuilders(
 	if err != nil {
 		return nil, err
 	}
+	if transformDeprecated {
+		useIDMap = transformIDsToUndeprecated(useIDMap, deprecatedIDToReplacementIDs)
+	}
 	exceptIDMap, err := transformToIDMap(configBuilder.Except, idToCategories, categoryToIDs)
 	if err != nil {
 		return nil, err
+	}
+	if transformDeprecated {
+		exceptIDMap = transformIDsToUndeprecated(exceptIDMap, deprecatedIDToReplacementIDs)
 	}
 
 	// this removes duplicates
@@ -146,6 +167,9 @@ func newConfigForRuleBuilders(
 	ignoreIDToRootPathsUnnormalized, err := transformToIDToListMap(configBuilder.IgnoreIDOrCategoryToRootPaths, idToCategories, categoryToIDs)
 	if err != nil {
 		return nil, err
+	}
+	if transformDeprecated {
+		ignoreIDToRootPathsUnnormalized = transformIDsToUndeprecated(ignoreIDToRootPathsUnnormalized, deprecatedIDToReplacementIDs)
 	}
 	ignoreIDToRootPaths := make(map[string]map[string]struct{})
 	for id, rootPaths := range ignoreIDToRootPathsUnnormalized {
@@ -191,6 +215,22 @@ func newConfigForRuleBuilders(
 		AllowCommentIgnores:    configBuilder.AllowCommentIgnores,
 		IgnoreUnstablePackages: configBuilder.IgnoreUnstablePackages,
 	}, nil
+}
+
+func transformIDsToUndeprecated[T any](idToValue map[string]T, deprecatedIDToReplacementIDs map[string][]string) map[string]T {
+	undeprecatedIDToValue := make(map[string]T, len(idToValue))
+	for id, value := range idToValue {
+		replacementIDs, ok := deprecatedIDToReplacementIDs[id]
+		if ok {
+			// May iterate over empty.
+			for _, replacementID := range replacementIDs {
+				undeprecatedIDToValue[replacementID] = value
+			}
+		} else {
+			undeprecatedIDToValue[id] = value
+		}
+	}
+	return undeprecatedIDToValue
 }
 
 func transformToIDMap(idsOrCategories []string, idToCategories map[string][]string, categoryToIDs map[string][]string) (map[string]struct{}, error) {
@@ -260,13 +300,33 @@ func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
 	return categoryToIDs
 }
 
+// []string{} as a value represents that the ID is deprecated but has no replacements.
+func getDeprecatedIDToReplacementIDs(idToRuleBuilder map[string]*RuleBuilder) (map[string][]string, error) {
+	m := make(map[string][]string)
+	for _, ruleBuilder := range idToRuleBuilder {
+		if ruleBuilder.Deprecated() {
+			replacementIDs := ruleBuilder.ReplacementIDs()
+			if replacementIDs == nil {
+				replacementIDs = []string{}
+			}
+			for _, replacementID := range replacementIDs {
+				if _, ok := idToRuleBuilder[replacementID]; !ok {
+					return nil, syserror.Newf("unknown rule given as a replacement ID: %q", replacementID)
+				}
+			}
+			m[ruleBuilder.ID()] = replacementIDs
+		}
+	}
+	return m, nil
+}
+
 func getIDToRuleBuilder(ruleBuilders []*RuleBuilder) (map[string]*RuleBuilder, error) {
 	m := make(map[string]*RuleBuilder)
 	for _, ruleBuilder := range ruleBuilders {
-		if _, ok := m[ruleBuilder.id]; ok {
-			return nil, fmt.Errorf("duplicate rule ID: %q", ruleBuilder.id)
+		if _, ok := m[ruleBuilder.ID()]; ok {
+			return nil, syserror.Newf("duplicate rule ID: %q", ruleBuilder.ID())
 		}
-		m[ruleBuilder.id] = ruleBuilder
+		m[ruleBuilder.ID()] = ruleBuilder
 	}
 	return m, nil
 }
@@ -275,9 +335,9 @@ func getRuleBuilderCategories(
 	ruleBuilder *RuleBuilder,
 	idToCategories map[string][]string,
 ) ([]string, error) {
-	categories, ok := idToCategories[ruleBuilder.id]
+	categories, ok := idToCategories[ruleBuilder.ID()]
 	if !ok {
-		return nil, fmt.Errorf("%q is not configured for categories", ruleBuilder.id)
+		return nil, syserror.Newf("%q is not configured for categories", ruleBuilder.ID())
 	}
 	// it is ok for categories to be empty, however the map must contain an entry
 	// or otherwise this is a system error

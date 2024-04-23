@@ -1,0 +1,12 @@
+version: v1
+deps:
+  - remote: buf.testing
+    owner: acme
+    repository: date
+    commit: ffded0b4cf6b47cab74da08d291a3c2f
+    digest: shake256:0d698ce17cbe2d0f4e927005e03822423747d759ba7948c53e89baa1303a9e6d090594ba8ba7bc7d83ac57bb4346426f186846dd610562663e83f095b5bf6c00
+  - remote: buf.testing
+    owner: acme
+    repository: extension
+    commit: b8488077ea6d4f6d9562a337b98259c8
+    digest: shake256:6892463bdaa65fd9944c39cbc8398d3154bf54c6725c1e8096d28de25ad83b0200fccc8da0d96979171b905342b9553b7d4db15cbe243a708f472e43926affc0

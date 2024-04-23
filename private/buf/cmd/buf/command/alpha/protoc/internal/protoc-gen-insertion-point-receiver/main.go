@@ -17,23 +17,22 @@ package main
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/protoplugin"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func main() {
-	appproto.Main(context.Background(), appproto.HandlerFunc(handle))
+	protoplugin.Main(protoplugin.HandlerFunc(handle))
 }
 
 func handle(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseBuilder,
-	request *pluginpb.CodeGeneratorRequest,
+	_ context.Context,
+	_ protoplugin.PluginEnv,
+	responseWriter protoplugin.ResponseWriter,
+	_ protoplugin.Request,
 ) error {
-	return responseWriter.AddFile(
+	responseWriter.AddCodeGeneratorResponseFiles(
 		&pluginpb.CodeGeneratorResponse_File{
 			Name: proto.String("test.txt"),
 			Content: proto.String(`
@@ -52,4 +51,5 @@ func handle(
 		`),
 		},
 	)
+	return nil
 }
