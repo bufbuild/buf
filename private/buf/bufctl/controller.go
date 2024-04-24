@@ -601,12 +601,6 @@ func (c *controller) GetMessage(
 	if messageRef.IsNull() {
 		return nil, messageEncoding, nil
 	}
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptorProtos(schemaImage)...,
-	)
-	if err != nil {
-		return nil, 0, err
-	}
 	var validator protoyaml.Validator
 	if functionOptions.messageValidation {
 		var err error
@@ -618,14 +612,14 @@ func (c *controller) GetMessage(
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageEncoding {
 	case buffetch.MessageEncodingBinpb:
-		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
+		unmarshaler = protoencoding.NewWireUnmarshaler(schemaImage.Resolver())
 	case buffetch.MessageEncodingJSON:
-		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
+		unmarshaler = protoencoding.NewJSONUnmarshaler(schemaImage.Resolver())
 	case buffetch.MessageEncodingTxtpb:
-		unmarshaler = protoencoding.NewTxtpbUnmarshaler(resolver)
+		unmarshaler = protoencoding.NewTxtpbUnmarshaler(schemaImage.Resolver())
 	case buffetch.MessageEncodingYAML:
 		unmarshaler = protoencoding.NewYAMLUnmarshaler(
-			resolver,
+			schemaImage.Resolver(),
 			protoencoding.YAMLUnmarshalerWithPath(messageRef.Path()),
 			// This will pretty print validation errors.
 			protoencoding.YAMLUnmarshalerWithValidator(validator),
@@ -1270,23 +1264,11 @@ func newProtoencodingMarshaler(
 	case buffetch.MessageEncodingBinpb:
 		return protoencoding.NewWireMarshaler(), nil
 	case buffetch.MessageEncodingJSON:
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return newJSONMarshaler(resolver, messageRef), nil
+		return newJSONMarshaler(image.Resolver(), messageRef), nil
 	case buffetch.MessageEncodingTxtpb:
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return protoencoding.NewTxtpbMarshaler(resolver), nil
+		return protoencoding.NewTxtpbMarshaler(image.Resolver()), nil
 	case buffetch.MessageEncodingYAML:
-		resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return nil, err
-		}
-		return newYAMLMarshaler(resolver, messageRef), nil
+		return newYAMLMarshaler(image.Resolver(), messageRef), nil
 	default:
 		// This is a system error.
 		return nil, syserror.Newf("unknown MessageEncoding: %v", messageEncoding)

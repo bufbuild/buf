@@ -33,7 +33,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufcurl"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appext"
@@ -901,11 +900,7 @@ func run(ctx context.Context, container appext.Container, f *flags) (err error) 
 		if err != nil {
 			return err
 		}
-		res, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(image)...)
-		if err != nil {
-			return err
-		}
-		resolvers = append(resolvers, res)
+		resolvers = append(resolvers, image.Resolver())
 	}
 	res := protoencoding.CombineResolvers(resolvers...)
 
