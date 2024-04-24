@@ -21,10 +21,10 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// stripLegacyOptions modifies the given slice so that it does not contain legacy
-// elements that the Go protobuf runtime does not support -- namely messages that use
-// the message set wire format (and any extensions whose tags are too high to use outside
-// of message set wire format) and weak fields.
+// stripLegacyOptions modifies the given slice of file descriptors so that the slice does
+// not contain legacy elements that the Go protobuf runtime does not support -- namely
+// messages that use the message set wire format (and any extensions whose tags are too
+// high to use outside of message set wire format) and weak fields.
 //
 // It does this by simply clearing any message_set_wire_format message options and weak
 // field options encountered, by omitting extensions whose tags are too high, and by
