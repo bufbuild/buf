@@ -528,7 +528,7 @@ func (r *resolverForFiles) FindMessageByName(message protoreflect.FullName) (pro
 }
 
 func (r *resolverForFiles) FindMessageByURL(url string) (protoreflect.MessageType, error) {
-	pos := strings.IndexByte(url, '/')
+	pos := strings.LastIndexByte(url, '/')
 	return r.FindMessageByName(protoreflect.FullName(url[pos+1:]))
 }
 
