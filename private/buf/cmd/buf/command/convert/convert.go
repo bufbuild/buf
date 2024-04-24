@@ -206,7 +206,7 @@ func run(
 	if schemaImageErr != nil && schemaImage == nil {
 		return schemaImageErr
 	}
-
+	schemaImage = noResolveMessageSetWireFormat(schemaImage)
 	var fromFunctionOptions []bufctl.FunctionOption
 	if flags.Validate {
 		fromFunctionOptions = append(fromFunctionOptions, bufctl.WithMessageValidation())

@@ -480,7 +480,7 @@ func ImageWithoutImports(image Image) Image {
 			newImageFiles = append(newImageFiles, imageFile)
 		}
 	}
-	return newImageNoValidate(newImageFiles)
+	return newImageNoValidate(newImageFiles, image.Resolver())
 }
 
 // ImageWithOnlyPaths returns a copy of the Image that only includes the files

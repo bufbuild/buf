@@ -87,7 +87,7 @@ func newImage(files []ImageFile, reorder bool, resolver protoencoding.Resolver) 
 	}, nil
 }
 
-func newImageNoValidate(files []ImageFile) *image {
+func newImageNoValidate(files []ImageFile, resolver protoencoding.Resolver) *image {
 	pathToImageFile := make(map[string]ImageFile, len(files))
 	for _, file := range files {
 		path := file.Path()
@@ -96,6 +96,7 @@ func newImageNoValidate(files []ImageFile) *image {
 	return &image{
 		files:           files,
 		pathToImageFile: pathToImageFile,
+		resolver:        resolver,
 	}
 }
 
