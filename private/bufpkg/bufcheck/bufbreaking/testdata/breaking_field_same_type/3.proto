@@ -1,0 +1,25 @@
+edition = "2023";
+
+package a;
+
+import "2.proto";
+
+message One3 {
+  One3 normal = 1 [features.message_encoding=DELIMITED];
+  One3 delimited = 2;
+  One3 normal_b = 3;
+  One3 delimited_b = 4 [features.message_encoding=DELIMITED];
+}
+
+message Nine2 {
+  oneof foo {
+    int32 one = 1;
+    One two = 2;
+  }
+}
+
+message Ten2 {
+  Foo foo = 1 [features.message_encoding=DELIMITED];
+  message Foo {
+  }
+}
