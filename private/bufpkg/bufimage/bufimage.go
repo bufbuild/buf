@@ -357,10 +357,11 @@ func NewImageForProto(protoImage *imagev1.Image, options ...NewImageForProtoOpti
 	if newImageOptions.noReparse && newImageOptions.computeUnusedImports {
 		return nil, fmt.Errorf("cannot use both WithNoReparse and WithComputeUnusedImports options; they are mutually exclusive")
 	}
-	var resolver protoencoding.Resolver
+	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
+	// we want to make this into a check, and we verify if we need this for the individual command
+	resolver := protoencoding.NewLazyResolver(protoImage.File...)
 	if !newImageOptions.noReparse {
-		var err error
-		if resolver, err = reparseImageProto(protoImage, newImageOptions.computeUnusedImports); err != nil {
+		if err := reparseImageProto(protoImage, resolver, newImageOptions.computeUnusedImports); err != nil {
 			return nil, err
 		}
 	}
@@ -669,12 +670,9 @@ type newImageForProtoOptions struct {
 	computeUnusedImports bool
 }
 
-func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) (protoencoding.Resolver, error) {
-	// TODO FUTURE: right now, NewResolver sets AllowUnresolvable to true all the time
-	// we want to make this into a check, and we verify if we need this for the individual command
-	resolver := protoencoding.NewLazyResolver(protoImage.File...)
+func reparseImageProto(protoImage *imagev1.Image, resolver protoencoding.Resolver, computeUnusedImports bool) error {
 	if err := protoencoding.ReparseUnrecognized(resolver, protoImage.ProtoReflect()); err != nil {
-		return nil, fmt.Errorf("could not reparse image: %v", err)
+		return fmt.Errorf("could not reparse image: %v", err)
 	}
 	if computeUnusedImports {
 		tracker := &importTracker{
@@ -708,7 +706,7 @@ func reparseImageProto(protoImage *imagev1.Image, computeUnusedImports bool) (pr
 			}
 		}
 	}
-	return resolver, nil
+	return nil
 }
 
 // We pass in the pathToImageFileInfo here because we also call this in
