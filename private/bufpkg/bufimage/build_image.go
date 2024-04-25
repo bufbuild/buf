@@ -494,27 +494,6 @@ func (r *resolverForFiles) FindExtensionByNumber(message protoreflect.FullName, 
 	return dynamicpb.NewExtensionType(ext), nil
 }
 
-type container interface {
-	Messages() protoreflect.MessageDescriptors
-	Extensions() protoreflect.ExtensionDescriptors
-}
-
-func findExtension(d container, message protoreflect.FullName, field protoreflect.FieldNumber) protoreflect.ExtensionDescriptor {
-	exts := d.Extensions()
-	for i, length := 0, exts.Len(); i < length; i++ {
-		ext := exts.Get(i)
-		if ext.Number() == field && ext.ContainingMessage().FullName() == message {
-			return ext
-		}
-	}
-	for i := 0; i < d.Messages().Len(); i++ {
-		if ext := findExtension(d.Messages().Get(i), message, field); ext != nil {
-			return ext
-		}
-	}
-	return nil // could not be found
-}
-
 func (r *resolverForFiles) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
 	descriptor, err := r.FindDescriptorByName(message)
 	if err != nil {
@@ -542,6 +521,27 @@ func (r *resolverForFiles) FindEnumByName(enum protoreflect.FullName) (protorefl
 		return nil, fmt.Errorf("element %q is not an enum", enum)
 	}
 	return dynamicpb.NewEnumType(en), nil
+}
+
+type container interface {
+	Messages() protoreflect.MessageDescriptors
+	Extensions() protoreflect.ExtensionDescriptors
+}
+
+func findExtension(d container, message protoreflect.FullName, field protoreflect.FieldNumber) protoreflect.ExtensionDescriptor {
+	exts := d.Extensions()
+	for i, length := 0, exts.Len(); i < length; i++ {
+		ext := exts.Get(i)
+		if ext.Number() == field && ext.ContainingMessage().FullName() == message {
+			return ext
+		}
+	}
+	for i := 0; i < d.Messages().Len(); i++ {
+		if ext := findExtension(d.Messages().Get(i), message, field); ext != nil {
+			return ext
+		}
+	}
+	return nil // could not be found
 }
 
 func addFileToMapRec(pathToFile map[string]linker.File, file linker.File) {
