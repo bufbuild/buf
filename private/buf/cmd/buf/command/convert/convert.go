@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -206,7 +207,10 @@ func run(
 	if schemaImageErr != nil && schemaImage == nil {
 		return schemaImageErr
 	}
-
+	// We can't correctly convert anything that uses message-set wire
+	// format. So we prevent that by having the resolver return an error
+	// if asked to resolve any type that uses it.
+	schemaImage = bufconvert.ImageWithoutMessageSetWireFormatResolution(schemaImage)
 	var fromFunctionOptions []bufctl.FunctionOption
 	if flags.Validate {
 		fromFunctionOptions = append(fromFunctionOptions, bufctl.WithMessageValidation())

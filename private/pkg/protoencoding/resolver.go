@@ -24,16 +24,20 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
+const maxTagNumber = 536870911 // 2^29 - 1
+
 func newResolver[F protodescriptor.FileDescriptor](fileDescriptors ...F) (Resolver, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
+	fileDescriptorSet := protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...)
+	if err := stripLegacyOptions(fileDescriptorSet.File); err != nil {
+		return nil, err
+	}
 	// TODO: handle if resolvable
 	files, err := protodesc.FileOptions{
 		AllowUnresolvable: true,
-	}.NewFiles(
-		protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...),
-	)
+	}.NewFiles(fileDescriptorSet)
 	if err != nil {
 		return nil, err
 	}
