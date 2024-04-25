@@ -114,9 +114,10 @@ func TestRunBreakingExtensionMessageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 36, 4, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 73, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 49, 1, 53, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "EXTENSION_MESSAGE_NO_DELETE"),
 	)
 }
 
@@ -565,11 +566,12 @@ func TestRunBreakingReservedEnumNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 86, 1, 93, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 53, 1, 58, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 1, 95, 2, "RESERVED_ENUM_NO_DELETE"),
 	)
 }
 
@@ -593,11 +595,12 @@ func TestRunBreakingReservedMessageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 34, 3, 41, 4, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 89, 1, 96, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 56, 1, 60, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 91, 1, 98, 2, "RESERVED_MESSAGE_NO_DELETE"),
 	)
 }
 

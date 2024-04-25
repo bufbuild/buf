@@ -45,3 +45,9 @@ message Three {
   optional int32 two = 2;
   optional int32 three = 3;
 }
+
+message Ten {
+  extensions 1 to 1000;
+  extensions 2000 to 5000, 10000 to 50000;
+  extensions 100000 to max;
+}

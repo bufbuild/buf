@@ -14,8 +14,14 @@
 
 package bufprotosource
 
+import "math"
+
 const (
-	messageRangeInclusiveMax = 536870911
+	// MessageRangeInclusiveMax is the maximum allowed tag for a message field.
+	MessageRangeInclusiveMax = 536870911 // 2^29 - 1
+	// MessageSetRangeInclusiveMax is the maximum allowed tag for a message
+	// field for a message that uses the message-set wire format.
+	MessageSetRangeInclusiveMax = math.MaxInt32 - 1
 )
 
 type messageRange struct {
@@ -54,7 +60,10 @@ func (r *messageRange) End() int {
 }
 
 func (r *messageRange) Max() bool {
-	return r.end == messageRangeInclusiveMax
+	if r.message.MessageSetWireFormat() {
+		return r.end == MessageSetRangeInclusiveMax
+	}
+	return r.end == MessageRangeInclusiveMax
 }
 
 type extensionRange struct {

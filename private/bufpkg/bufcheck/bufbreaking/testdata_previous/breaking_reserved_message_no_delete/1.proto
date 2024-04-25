@@ -5,6 +5,7 @@ package a;
 message One {
   reserved 4 to 5, 100 to 200;
   reserved 300, 301, 1000 to max;
+  reserved 10 to 20, 50 to 75;
   reserved "foo", "bar";
   reserved "baz";
   int32 one = 1;
@@ -74,4 +75,8 @@ message Nine {
   int32 one = 1;
   int32 two = 2;
   int32 three = 3;
+}
+
+message Ten {
+  reserved 1 to max;
 }

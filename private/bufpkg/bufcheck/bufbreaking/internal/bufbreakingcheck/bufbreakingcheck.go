@@ -153,14 +153,7 @@ func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue
 var CheckExtensionMessageNoDelete = newMessagePairCheckFunc(checkExtensionMessageNoDelete)
 
 func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
-	previousStringToExtensionRange := bufprotosource.StringToExtensionMessageRange(previousMessage)
-	stringToExtensionRange := bufprotosource.StringToExtensionMessageRange(message)
-	for previousString := range previousStringToExtensionRange {
-		if _, ok := stringToExtensionRange[previousString]; !ok {
-			add(message, nil, message.Location(), `Previously present extension range %q on message %q was deleted.`, previousString, message.Name())
-		}
-	}
-	return nil
+	return checkTagRanges(add, "extension", message, previousMessage.ExtensionRanges(), message.ExtensionRanges())
 }
 
 // CheckFieldNoDelete is a check function.
@@ -956,12 +949,8 @@ func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
 var CheckReservedEnumNoDelete = newEnumPairCheckFunc(checkReservedEnumNoDelete)
 
 func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
-	previousRanges := previousEnum.ReservedTagRanges()
-	ranges := enum.ReservedTagRanges()
-	if isSubset, missing := bufprotosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
-		for _, tagRange := range missing {
-			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, bufprotosource.TagRangeString(tagRange), enum.Name())
-		}
+	if err := checkTagRanges(add, "reserved", enum, previousEnum.ReservedEnumRanges(), enum.ReservedEnumRanges()); err != nil {
+		return err
 	}
 	previousValueToReservedName := bufprotosource.ValueToReservedName(previousEnum)
 	valueToReservedName := bufprotosource.ValueToReservedName(enum)
@@ -977,12 +966,8 @@ func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum bufprot
 var CheckReservedMessageNoDelete = newMessagePairCheckFunc(checkReservedMessageNoDelete)
 
 func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
-	previousRanges := previousMessage.ReservedTagRanges()
-	ranges := message.ReservedTagRanges()
-	if isSubset, missing := bufprotosource.CheckTagRangeIsSubset(ranges, previousRanges); !isSubset {
-		for _, tagRange := range missing {
-			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, bufprotosource.TagRangeString(tagRange), message.Name())
-		}
+	if err := checkTagRanges(add, "reserved", message, previousMessage.ReservedMessageRanges(), message.ReservedMessageRanges()); err != nil {
+		return err
 	}
 	previousValueToReservedName := bufprotosource.ValueToReservedName(previousMessage)
 	valueToReservedName := bufprotosource.ValueToReservedName(message)
