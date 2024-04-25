@@ -270,12 +270,10 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	// So we serialize and then de-serialize, and use only the filtered results to parse extensions. That
 	// way, the result will omit custom options that aren't present in the filtered set (as they will be
 	// considered unrecognized fields).
-	resolver, err := protoencoding.NewResolver(bufimage.ImageToFileDescriptorProtos(filteredImage)...)
-	require.NoError(t, err)
 	data, err := proto.Marshal(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	err = proto.UnmarshalOptions{Resolver: resolver}.Unmarshal(data, fileDescriptorSet)
+	err = proto.UnmarshalOptions{Resolver: filteredImage.Resolver()}.Unmarshal(data, fileDescriptorSet)
 	require.NoError(t, err)
 
 	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(fileDescriptorSet)

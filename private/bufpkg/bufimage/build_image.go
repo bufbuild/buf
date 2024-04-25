@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -33,6 +34,7 @@ import (
 	"github.com/bufbuild/protocompile/protoutil"
 	"github.com/bufbuild/protocompile/reporter"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -80,14 +82,15 @@ func buildImage(
 	if buildResult.Err != nil {
 		return nil, buildResult.Err
 	}
-	fileDescriptors, err := checkAndSortFileDescriptors(buildResult.FileDescriptors, paths)
+	sortedFiles, err := checkAndSortFiles(buildResult.Files, paths)
 	if err != nil {
 		return nil, err
 	}
 	image, err := getImage(
 		ctx,
 		excludeSourceCodeInfo,
-		fileDescriptors,
+		sortedFiles,
+		buildResult.Symbols,
 		parserAccessorHandler,
 		buildResult.SyntaxUnspecifiedFilenames,
 		buildResult.FilenameToUnusedDependencyFilenames,
@@ -118,10 +121,12 @@ func getBuildResult(
 	if noParallelism {
 		parallelism = 1
 	}
+	symbols := &linker.Symbols{}
 	compiler := protocompile.Compiler{
 		MaxParallelism: parallelism,
 		SourceInfoMode: sourceInfoMode,
 		Resolver:       &protocompile.SourceResolver{Accessor: parserAccessorHandler.Open},
+		Symbols:        symbols,
 		Reporter: reporter.NewReporter(
 			func(errorWithPos reporter.ErrorWithPos) error {
 				errorsWithPos = append(errorsWithPos, errorWithPos)
@@ -137,10 +142,7 @@ func getBuildResult(
 	if err != nil {
 		if err == reporter.ErrInvalidSource {
 			if len(errorsWithPos) == 0 {
-				return newBuildResult(
-					nil,
-					nil,
-					nil,
+				return newFailedBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
@@ -149,9 +151,9 @@ func getBuildResult(
 				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
-				return newBuildResult(nil, nil, nil, err)
+				return newFailedBuildResult(err)
 			}
-			return newBuildResult(nil, nil, nil, fileAnnotationSet)
+			return newFailedBuildResult(fileAnnotationSet)
 		}
 		if errorWithPos, ok := err.(reporter.ErrorWithPos); ok {
 			fileAnnotation, err := bufprotocompile.FileAnnotationForErrorWithPos(
@@ -159,25 +161,19 @@ func getBuildResult(
 				bufprotocompile.WithExternalPathResolver(parserAccessorHandler.ExternalPath),
 			)
 			if err != nil {
-				return newBuildResult(nil, nil, nil, err)
+				return newFailedBuildResult(err)
 			}
-			return newBuildResult(nil, nil, nil, bufanalysis.NewFileAnnotationSet(fileAnnotation))
+			return newFailedBuildResult(bufanalysis.NewFileAnnotationSet(fileAnnotation))
 		}
-		return newBuildResult(nil, nil, nil, err)
+		return newFailedBuildResult(err)
 	} else if len(errorsWithPos) > 0 {
 		// https://github.com/jhump/protoreflect/pull/331
-		return newBuildResult(
-			nil,
-			nil,
-			nil,
+		return newFailedBuildResult(
 			errors.New("got no error from parse but errors reported"),
 		)
 	}
 	if len(compiledFiles) != len(paths) {
-		return newBuildResult(
-			nil,
-			nil,
-			nil,
+		return newFailedBuildResult(
 			fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(paths), len(compiledFiles)),
 		)
 	}
@@ -187,10 +183,7 @@ func getBuildResult(
 		// doing another rough verification
 		// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
 		if path != filename {
-			return newBuildResult(
-				nil,
-				nil,
-				nil,
+			return newFailedBuildResult(
 				fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", filename, path),
 			)
 		}
@@ -203,16 +196,16 @@ func getBuildResult(
 	}
 	return newBuildResult(
 		compiledFiles,
+		symbols,
 		syntaxUnspecifiedFilenames,
 		filenameToUnusedDependencyFilenames,
-		nil,
 	)
 }
 
-// We need to sort the FileDescriptors as they may/probably are out of order
+// We need to sort the files as they may/probably are out of order
 // relative to input order after concurrent builds. This mimics the output
 // order of protoc.
-func checkAndSortFileDescriptors(
+func checkAndSortFiles(
 	fileDescriptors linker.Files,
 	rootRelFilePaths []string,
 ) (linker.Files, error) {
@@ -247,11 +240,12 @@ func checkAndSortFileDescriptors(
 // getImage gets the Image for the protoreflect.FileDescriptors.
 //
 // This mimics protoc's output order.
-// This assumes checkAndSortFileDescriptors was called.
+// This assumes checkAndSortFiles was called.
 func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
-	sortedFileDescriptors linker.Files,
+	sortedFiles linker.Files,
+	symbols *linker.Symbols,
 	parserAccessorHandler *parserAccessorHandler,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
@@ -265,14 +259,14 @@ func getImage(
 	// all input protoreflect.FileDescriptors are not imports, we derive the imports
 	// from GetDependencies.
 	nonImportFilenames := map[string]struct{}{}
-	for _, fileDescriptor := range sortedFileDescriptors {
+	for _, fileDescriptor := range sortedFiles {
 		nonImportFilenames[fileDescriptor.Path()] = struct{}{}
 	}
 
 	var imageFiles []ImageFile
 	var err error
 	alreadySeen := map[string]struct{}{}
-	for _, fileDescriptor := range sortedFileDescriptors {
+	for _, fileDescriptor := range sortedFiles {
 		imageFiles, err = getImageFilesRec(
 			ctx,
 			excludeSourceCodeInfo,
@@ -288,7 +282,7 @@ func getImage(
 			return nil, err
 		}
 	}
-	return newImage(imageFiles, false, newResolverForBuildResult(sortedFileDescriptors))
+	return newImage(imageFiles, false, newResolverForFiles(sortedFiles, symbols))
 }
 
 func getImageFilesRec(
@@ -398,7 +392,8 @@ func maybeAddUnusedImport(
 }
 
 type buildResult struct {
-	FileDescriptors                     linker.Files
+	Files                               linker.Files
+	Symbols                             *linker.Symbols
 	SyntaxUnspecifiedFilenames          map[string]struct{}
 	FilenameToUnusedDependencyFilenames map[string]map[string]struct{}
 	Err                                 error
@@ -406,16 +401,20 @@ type buildResult struct {
 
 func newBuildResult(
 	fileDescriptors linker.Files,
+	symbols *linker.Symbols,
 	syntaxUnspecifiedFilenames map[string]struct{},
 	filenameToUnusedDependencyFilenames map[string]map[string]struct{},
-	err error,
 ) *buildResult {
 	return &buildResult{
-		FileDescriptors:                     fileDescriptors,
+		Files:                               fileDescriptors,
+		Symbols:                             symbols,
 		SyntaxUnspecifiedFilenames:          syntaxUnspecifiedFilenames,
 		FilenameToUnusedDependencyFilenames: filenameToUnusedDependencyFilenames,
-		Err:                                 err,
 	}
+}
+
+func newFailedBuildResult(err error) *buildResult {
+	return &buildResult{Err: err}
 }
 
 type buildImageOptions struct {
@@ -427,19 +426,93 @@ func newBuildImageOptions() *buildImageOptions {
 	return &buildImageOptions{}
 }
 
-// resolverForBuildResult implements protoencoding.Resolver and is backed
-// by a linker.Resolver which is the result of a protocompile operation.
-// The linker.Resolver provides all necessary methods except FindEnumByName.
-type resolverForBuildResult struct {
-	linker.Resolver
+// resolverForFiles implements protoencoding.Resolver and is backed
+// by a linker.Files and the *linker.Symbols symbol table produced
+// when compiling the files. The symbol table is used as an index
+// for more efficient lookup.
+type resolverForFiles struct {
+	pathToFile map[string]linker.File
+	symbols    *linker.Symbols
 }
 
-func newResolverForBuildResult(result linker.Files) protoencoding.Resolver {
-	return &resolverForBuildResult{Resolver: result.AsResolver()}
+func newResolverForFiles(files linker.Files, symbols *linker.Symbols) protoencoding.Resolver {
+	// Expand the set of files so it includes the entire transitive graph
+	pathToFile := make(map[string]linker.File, len(files))
+	for _, file := range files {
+		addFileToMapRec(pathToFile, file)
+	}
+	return &resolverForFiles{pathToFile: pathToFile, symbols: symbols}
 }
 
-func (r *resolverForBuildResult) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
-	descriptor, err := r.Resolver.FindDescriptorByName(enum)
+func (r *resolverForFiles) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
+	fileDescriptor, ok := r.pathToFile[path]
+	if !ok {
+		return nil, protoregistry.NotFound
+	}
+	return fileDescriptor, nil
+}
+
+func (r *resolverForFiles) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+	span := r.symbols.Lookup(name)
+	if span == nil {
+		return nil, protoregistry.NotFound
+	}
+	descriptor := r.pathToFile[span.Start().Filename].FindDescriptorByName(name)
+	if descriptor == nil {
+		return nil, protoregistry.NotFound
+	}
+	return descriptor, nil
+}
+
+func (r *resolverForFiles) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	descriptor, err := r.FindDescriptorByName(field)
+	if err != nil {
+		return nil, err
+	}
+	extensionDescriptor, ok := descriptor.(protoreflect.ExtensionDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.ExtensionDescriptor", field, descriptor)
+	}
+	if extensionTypeDescriptor, ok := extensionDescriptor.(protoreflect.ExtensionTypeDescriptor); ok {
+		return extensionTypeDescriptor.Type(), nil
+	}
+	return dynamicpb.NewExtensionType(extensionDescriptor), nil
+}
+
+func (r *resolverForFiles) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	span := r.symbols.LookupExtension(message, field)
+	if span == nil {
+		return nil, protoregistry.NotFound
+	}
+	extensionDescriptor := findExtension(r.pathToFile[span.Start().Filename], message, field)
+	if extensionDescriptor == nil {
+		return nil, protoregistry.NotFound
+	}
+	if extensionTypeDescriptor, ok := extensionDescriptor.(protoreflect.ExtensionTypeDescriptor); ok {
+		return extensionTypeDescriptor.Type(), nil
+	}
+	return dynamicpb.NewExtensionType(extensionDescriptor), nil
+}
+
+func (r *resolverForFiles) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+	descriptor, err := r.FindDescriptorByName(message)
+	if err != nil {
+		return nil, err
+	}
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.MessageDescriptor", message, descriptor)
+	}
+	return dynamicpb.NewMessageType(messageDescriptor), nil
+}
+
+func (r *resolverForFiles) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	pos := strings.LastIndexByte(url, '/')
+	return r.FindMessageByName(protoreflect.FullName(url[pos+1:]))
+}
+
+func (r *resolverForFiles) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+	descriptor, err := r.FindDescriptorByName(enum)
 	if err != nil {
 		return nil, err
 	}
@@ -448,4 +521,37 @@ func (r *resolverForBuildResult) FindEnumByName(enum protoreflect.FullName) (pro
 		return nil, fmt.Errorf("%s is a %T, not a protoreflect.EnumDescriptor", enum, descriptor)
 	}
 	return dynamicpb.NewEnumType(enumDescriptor), nil
+}
+
+type container interface {
+	Messages() protoreflect.MessageDescriptors
+	Extensions() protoreflect.ExtensionDescriptors
+}
+
+func findExtension(d container, message protoreflect.FullName, field protoreflect.FieldNumber) protoreflect.ExtensionDescriptor {
+	extensions := d.Extensions()
+	for i, length := 0, extensions.Len(); i < length; i++ {
+		extension := extensions.Get(i)
+		if extension.Number() == field && extension.ContainingMessage().FullName() == message {
+			return extension
+		}
+	}
+	for i := 0; i < d.Messages().Len(); i++ {
+		if ext := findExtension(d.Messages().Get(i), message, field); ext != nil {
+			return ext
+		}
+	}
+	return nil // could not be found
+}
+
+func addFileToMapRec(pathToFile map[string]linker.File, file linker.File) {
+	if _, alreadyAdded := pathToFile[file.Path()]; alreadyAdded {
+		return
+	}
+	pathToFile[file.Path()] = file
+	imports := file.Imports()
+	for i, length := 0, imports.Len(); i < length; i++ {
+		importedFile := file.FindImportByPath(imports.Get(i).Path())
+		addFileToMapRec(pathToFile, importedFile)
+	}
 }
