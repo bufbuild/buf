@@ -22,65 +22,65 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
 	// https://developers.google.com/protocol-buffers/docs/proto3#updating
-	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
-		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_INT64:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64: 1,
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL:   1,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32: 2,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64: 2,
+	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[protoreflect.Kind]int{
+		protoreflect.Int32Kind:  1,
+		protoreflect.Int64Kind:  1,
+		protoreflect.Uint32Kind: 1,
+		protoreflect.Uint64Kind: 1,
+		protoreflect.BoolKind:   1,
+		protoreflect.Sint32Kind: 2,
+		protoreflect.Sint64Kind: 2,
 		// While string and bytes are compatible if the bytes are valid UTF-8, we cannot
 		// determine if a field will actually be valid UTF-8, as we are concerned with the
 		// definitions and not individual messages, so we have these in different
 		// compatibility groups. We allow string to evolve to bytes, but not bytes to
 		// string, but we need them to be in different compatibility groups so that
 		// we have to manually detect this.
-		descriptorpb.FieldDescriptorProto_TYPE_STRING:   3,
-		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    4,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  5,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 5,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  6,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 6,
-		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   7,
-		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    8,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    9,
+		protoreflect.StringKind:   3,
+		protoreflect.BytesKind:    4,
+		protoreflect.Fixed32Kind:  5,
+		protoreflect.Sfixed32Kind: 5,
+		protoreflect.Fixed64Kind:  6,
+		protoreflect.Sfixed64Kind: 6,
+		protoreflect.DoubleKind:   7,
+		protoreflect.FloatKind:    8,
+		protoreflect.GroupKind:    9,
 		// Embedded messages are compatible with bytes if the bytes are serialized versions
 		// of the message, but we have no way of verifying this.
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE: 10,
+		protoreflect.MessageKind: 10,
 		// Enum is compatible with int32, uint32, int64, uint64 if the values match
 		// an enum value, but we have no way of verifying this.
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM: 11,
+		protoreflect.EnumKind: 11,
 	}
 
-	// https://developers.google.com/protocol-buffers/docs/proto3#json
+	// httpsKind://developers.google.com/protocol-buffers/docs/proto3#json
 	// this is not just JSON-compatible, but also wire-compatible, i.e. the intersection
-	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[descriptorpb.FieldDescriptorProto_Type]int{
+	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[protoreflect.Kind]int{
 		// fixed32 not compatible for wire so not included
-		descriptorpb.FieldDescriptorProto_TYPE_INT32:  1,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT32: 1,
+		protoreflect.Int32Kind:  1,
+		protoreflect.Uint32Kind: 1,
 		// fixed64 not compatible for wire so not included
-		descriptorpb.FieldDescriptorProto_TYPE_INT64:    2,
-		descriptorpb.FieldDescriptorProto_TYPE_UINT64:   2,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED32:  3,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED32: 3,
-		descriptorpb.FieldDescriptorProto_TYPE_FIXED64:  4,
-		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64: 4,
-		descriptorpb.FieldDescriptorProto_TYPE_BOOL:     5,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT32:   6,
-		descriptorpb.FieldDescriptorProto_TYPE_SINT64:   7,
-		descriptorpb.FieldDescriptorProto_TYPE_STRING:   8,
-		descriptorpb.FieldDescriptorProto_TYPE_BYTES:    9,
-		descriptorpb.FieldDescriptorProto_TYPE_DOUBLE:   10,
-		descriptorpb.FieldDescriptorProto_TYPE_FLOAT:    11,
-		descriptorpb.FieldDescriptorProto_TYPE_GROUP:    12,
-		descriptorpb.FieldDescriptorProto_TYPE_MESSAGE:  14,
-		descriptorpb.FieldDescriptorProto_TYPE_ENUM:     15,
+		protoreflect.Int64Kind:    2,
+		protoreflect.Uint64Kind:   2,
+		protoreflect.Fixed32Kind:  3,
+		protoreflect.Sfixed32Kind: 3,
+		protoreflect.Fixed64Kind:  4,
+		protoreflect.Sfixed64Kind: 4,
+		protoreflect.BoolKind:     5,
+		protoreflect.Sint32Kind:   6,
+		protoreflect.Sint64Kind:   7,
+		protoreflect.StringKind:   8,
+		protoreflect.BytesKind:    9,
+		protoreflect.DoubleKind:   10,
+		protoreflect.FloatKind:    11,
+		protoreflect.GroupKind:    12,
+		protoreflect.MessageKind:  13,
+		protoreflect.EnumKind:     14,
 	}
 )
 
@@ -105,6 +105,14 @@ func newCorpus(
 		previousFiles: previousFiles,
 		files:         files,
 	}
+}
+
+func fieldDescriptorTypePrettyString(descriptor protoreflect.FieldDescriptor) string {
+	if descriptor.Kind() == protoreflect.GroupKind && descriptor.Syntax() != protoreflect.Proto2 {
+		// Kind will be set to "group", but it's really a "delimited-encoded message"
+		return "message (delimited encoding)"
+	}
+	return descriptor.Kind().String()
 }
 
 func newFilesCheckFunc(
@@ -242,6 +250,24 @@ func newFieldPairCheckFunc(
 				}
 			}
 			return nil
+		},
+	)
+}
+
+func newFieldDescriptorPairCheckFunc(
+	f func(addFunc, *corpus, bufprotosource.Field, protoreflect.FieldDescriptor, bufprotosource.Field, protoreflect.FieldDescriptor) error,
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return newFieldPairCheckFunc(
+		func(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
+			previousDescriptor, err := previousField.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			descriptor, err := field.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			return f(add, corpus, previousField, previousDescriptor, field, descriptor)
 		},
 	)
 }
