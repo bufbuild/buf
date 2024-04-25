@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package convert
+package bufconvert
 
 import (
 	"reflect"
@@ -27,7 +27,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func TestNoResolveMessageSetWireFormat(t *testing.T) {
+func TestImageWithoutMessageSetWireFormatResolution(t *testing.T) {
 	t.Parallel()
 	file := getTestFileWithMessageSets()
 	imageFile, err := bufimage.NewImageFile(
@@ -44,7 +44,7 @@ func TestNoResolveMessageSetWireFormat(t *testing.T) {
 	image, err := bufimage.NewImage([]bufimage.ImageFile{imageFile})
 	require.NoError(t, err)
 
-	noResolveImage := noResolveMessageSetWireFormat(image)
+	noResolveImage := ImageWithoutMessageSetWireFormatResolution(image)
 	// assert.Same only supported pointers and not other reference types like slices :/
 	assert.Equal(t, reflect.ValueOf(image.Files()).Pointer(), reflect.ValueOf(noResolveImage.Files()).Pointer())
 

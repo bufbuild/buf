@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package convert
+package bufconvert
 
 import (
 	"fmt"
@@ -24,29 +24,32 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// noResolveMessageSetWireFormat returns an image with the same contents
-// as the given image, but whose resolver refuses to resolve elements that
-// refer to messages that use the message-set wire format. We do this
-// because the protobuf-go runtime does not support message-set wire format
-// (unless built with a "protolegacy" build tag). So if such a message were
-// used, we would not be able to correctly serialize/de-serialize it.
-func noResolveMessageSetWireFormat(image bufimage.Image) bufimage.Image {
-	return noResolveMessageSetWireFormatImage{image}
+// ImageWithoutMessageSetWireFormatResolution returns an image with the
+// same contents as the given image, but whose resolver refuses to
+// resolve elements that refer to messages that use the message-set wire
+// format.
+//
+// We do this because the protobuf-go runtime does not support message-set
+// wire format (unless built with a "protolegacy" build tag). So if such a
+// message were used, we would not be able to correctly serialize or
+// de-serialize it.
+func ImageWithoutMessageSetWireFormatResolution(image bufimage.Image) bufimage.Image {
+	return &noResolveMessageSetWireFormatImage{image}
 }
 
 type noResolveMessageSetWireFormatImage struct {
 	bufimage.Image
 }
 
-func (n noResolveMessageSetWireFormatImage) Resolver() protoencoding.Resolver {
+func (n *noResolveMessageSetWireFormatImage) Resolver() protoencoding.Resolver {
 	return n
 }
 
-func (n noResolveMessageSetWireFormatImage) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
+func (n *noResolveMessageSetWireFormatImage) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
 	return n.Image.Resolver().FindFileByPath(path)
 }
 
-func (n noResolveMessageSetWireFormatImage) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
+func (n *noResolveMessageSetWireFormatImage) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
 	descriptor, err := n.Image.Resolver().FindDescriptorByName(name)
 	if err != nil {
 		return nil, err
@@ -66,7 +69,7 @@ func (n noResolveMessageSetWireFormatImage) FindDescriptorByName(name protorefle
 	return descriptor, nil
 }
 
-func (n noResolveMessageSetWireFormatImage) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
+func (n *noResolveMessageSetWireFormatImage) FindExtensionByName(field protoreflect.FullName) (protoreflect.ExtensionType, error) {
 	extension, err := n.Image.Resolver().FindExtensionByName(field)
 	if err != nil {
 		return nil, err
@@ -79,7 +82,7 @@ func (n noResolveMessageSetWireFormatImage) FindExtensionByName(field protorefle
 	return extension, nil
 }
 
-func (n noResolveMessageSetWireFormatImage) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+func (n *noResolveMessageSetWireFormatImage) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
 	extension, err := n.Image.Resolver().FindExtensionByNumber(message, field)
 	if err != nil {
 		return nil, err
@@ -92,7 +95,7 @@ func (n noResolveMessageSetWireFormatImage) FindExtensionByNumber(message protor
 	return extension, nil
 }
 
-func (n noResolveMessageSetWireFormatImage) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
+func (n *noResolveMessageSetWireFormatImage) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
 	messageType, err := n.Image.Resolver().FindMessageByName(message)
 	if err != nil {
 		return nil, err
@@ -105,7 +108,7 @@ func (n noResolveMessageSetWireFormatImage) FindMessageByName(message protorefle
 	return messageType, nil
 }
 
-func (n noResolveMessageSetWireFormatImage) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+func (n *noResolveMessageSetWireFormatImage) FindMessageByURL(url string) (protoreflect.MessageType, error) {
 	messageType, err := n.Image.Resolver().FindMessageByURL(url)
 	if err != nil {
 		return nil, err
@@ -118,7 +121,7 @@ func (n noResolveMessageSetWireFormatImage) FindMessageByURL(url string) (protor
 	return messageType, nil
 }
 
-func (n noResolveMessageSetWireFormatImage) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
+func (n *noResolveMessageSetWireFormatImage) FindEnumByName(enum protoreflect.FullName) (protoreflect.EnumType, error) {
 	return n.Image.Resolver().FindEnumByName(enum)
 }
 
