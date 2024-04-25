@@ -112,14 +112,15 @@ enum ResolvedReferenceType {
 }
 
 message LocalModuleResolveResult {
+  reserved 4;
+  reserved "is_bsr_head";
+
   // A copy of the reference that was resolved.
   buf.alpha.registry.v1alpha1.LocalModuleReference reference = 1;
   // The pin the reference resolved to.
   buf.alpha.registry.v1alpha1.LocalModulePin pin = 2;
   // The type the reference resolved as.
   ResolvedReferenceType resolved_reference_type = 3;
-  reserved 4;
-  reserved "is_bsr_head";
 }
 
 message GetLocalModulePinsResponse {
