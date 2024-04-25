@@ -445,11 +445,11 @@ func newResolverForFiles(files linker.Files, symbols *linker.Symbols) protoencod
 }
 
 func (r *resolverForFiles) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
-	file, ok := r.pathToFile[path]
+	fileDescriptor, ok := r.pathToFile[path]
 	if !ok {
 		return nil, protoregistry.NotFound
 	}
-	return file, nil
+	return fileDescriptor, nil
 }
 
 func (r *resolverForFiles) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
@@ -469,14 +469,14 @@ func (r *resolverForFiles) FindExtensionByName(field protoreflect.FullName) (pro
 	if err != nil {
 		return nil, err
 	}
-	ext, ok := descriptor.(protoreflect.ExtensionDescriptor)
+	extensionDescriptor, ok := descriptor.(protoreflect.ExtensionDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %q is not an extension", field)
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.ExtensionDescriptor", field, descriptor)
 	}
-	if xtd, ok := ext.(protoreflect.ExtensionTypeDescriptor); ok {
-		return xtd.Type(), nil
+	if extensionTypeDescriptor, ok := extensionDescriptor.(protoreflect.ExtensionTypeDescriptor); ok {
+		return extensionTypeDescriptor.Type(), nil
 	}
-	return dynamicpb.NewExtensionType(ext), nil
+	return dynamicpb.NewExtensionType(extensionDescriptor), nil
 }
 
 func (r *resolverForFiles) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
@@ -484,14 +484,14 @@ func (r *resolverForFiles) FindExtensionByNumber(message protoreflect.FullName, 
 	if span == nil {
 		return nil, protoregistry.NotFound
 	}
-	ext := findExtension(r.pathToFile[span.Start().Filename], message, field)
-	if ext == nil {
+	extensionDescriptor := findExtension(r.pathToFile[span.Start().Filename], message, field)
+	if extensionDescriptor == nil {
 		return nil, protoregistry.NotFound
 	}
-	if xtd, ok := ext.(protoreflect.ExtensionTypeDescriptor); ok {
-		return xtd.Type(), nil
+	if extensionTypeDescriptor, ok := extensionDescriptor.(protoreflect.ExtensionTypeDescriptor); ok {
+		return extensionTypeDescriptor.Type(), nil
 	}
-	return dynamicpb.NewExtensionType(ext), nil
+	return dynamicpb.NewExtensionType(extensionDescriptor), nil
 }
 
 func (r *resolverForFiles) FindMessageByName(message protoreflect.FullName) (protoreflect.MessageType, error) {
@@ -499,11 +499,11 @@ func (r *resolverForFiles) FindMessageByName(message protoreflect.FullName) (pro
 	if err != nil {
 		return nil, err
 	}
-	msg, ok := descriptor.(protoreflect.MessageDescriptor)
+	messageDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %q is not a message", message)
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.MessageDescriptor", message, descriptor)
 	}
-	return dynamicpb.NewMessageType(msg), nil
+	return dynamicpb.NewMessageType(messageDescriptor), nil
 }
 
 func (r *resolverForFiles) FindMessageByURL(url string) (protoreflect.MessageType, error) {
@@ -516,11 +516,11 @@ func (r *resolverForFiles) FindEnumByName(enum protoreflect.FullName) (protorefl
 	if err != nil {
 		return nil, err
 	}
-	en, ok := descriptor.(protoreflect.EnumDescriptor)
+	enumDescriptor, ok := descriptor.(protoreflect.EnumDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("element %q is not an enum", enum)
+		return nil, fmt.Errorf("%s is a %T, not a protoreflect.EnumDescriptor", enum, descriptor)
 	}
-	return dynamicpb.NewEnumType(en), nil
+	return dynamicpb.NewEnumType(enumDescriptor), nil
 }
 
 type container interface {
@@ -529,11 +529,11 @@ type container interface {
 }
 
 func findExtension(d container, message protoreflect.FullName, field protoreflect.FieldNumber) protoreflect.ExtensionDescriptor {
-	exts := d.Extensions()
-	for i, length := 0, exts.Len(); i < length; i++ {
-		ext := exts.Get(i)
-		if ext.Number() == field && ext.ContainingMessage().FullName() == message {
-			return ext
+	extensions := d.Extensions()
+	for i, length := 0, extensions.Len(); i < length; i++ {
+		extension := extensions.Get(i)
+		if extension.Number() == field && extension.ContainingMessage().FullName() == message {
+			return extension
 		}
 	}
 	for i := 0; i < d.Messages().Len(); i++ {
