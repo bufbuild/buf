@@ -56,7 +56,7 @@ func checkTagRanges[R bufprotosource.TagRange](
 			add(element,
 				nil,
 				element.Location(),
-				`Previously present %s range %q on %s %q is missing values: %s were removed`,
+				`Previously present %s range %q on %s %q is missing values: %s were removed.`,
 				rangeKind,
 				previousString,
 				elementKind,
