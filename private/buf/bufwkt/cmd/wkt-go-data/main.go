@@ -16,14 +16,15 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
 	"go/format"
 	"io"
-	"math"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"golang.org/x/exp/constraints"
 
@@ -45,12 +46,13 @@ const (
 	programName             = "wkt-go-data"
 	pkgFlagName             = "package"
 	protobufVersionFlagName = "protobuf-version"
-	sliceLength             = math.MaxInt64
+	bytesPerLine            = 20
 )
 
 var failedError = app.NewError( /* exitCode */ 100, "something went wrong")
 
 func main() {
+	// TODO: The datawkt machinery would be WAY simpler if it just used go:embed instead.
 	appcmd.Main(context.Background(), newCommand())
 }
 
@@ -249,6 +251,11 @@ func getGolangFileData(
 	p(`
 
 import (
+	"bytes"
+	"compress/gzip"
+	"fmt"
+	"io"
+
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -282,17 +289,26 @@ const Version = "`)
 		p(path)
 		p(`": {
 `)
-		data := pathToData[path]
+		rawData := pathToData[path]
+		var buf bytes.Buffer
+		compressor := gzip.NewWriter(&buf)
+		if _, err := compressor.Write(rawData); err != nil {
+			return nil, fmt.Errorf("failed to compress %q: %v", path, err)
+		}
+		if err := compressor.Close(); err != nil {
+			return nil, fmt.Errorf("failed to compress %q: %v", path, err)
+		}
+		data := buf.Bytes()
 		for len(data) > 0 {
-			n := sliceLength
+			n := bytesPerLine
 			if n > len(data) {
 				n = len(data)
 			}
-			accum := ""
+			var accum strings.Builder
 			for _, elem := range data[:n] {
-				accum += fmt.Sprintf("0x%02x,", elem)
+				_, _ = fmt.Fprintf(&accum, "0x%02x,", elem)
 			}
-			p(accum)
+			p(accum.String())
 			p("\n")
 			data = data[n:]
 		}
@@ -346,7 +362,11 @@ const Version = "`)
 	p(`)`)
 	p("\n\n")
 	p(`func init() {
-	readBucket, err := storagemem.NewReadBucket(filePathToData)
+	filePathToDecompressedData, err := decompressFiles(filePathToData)
+	if err != nil {
+		panic(err.Error())
+	}
+	readBucket, err := storagemem.NewReadBucket(filePathToDecompressedData)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -384,6 +404,21 @@ func EnumFilePath(enumName string) (string, bool) {
 	return filePath, ok
 }
 
+func decompressFiles(fileToData map[string][]byte) (map[string][]byte, error) {
+	fileToDecompressedData := make(map[string][]byte, len(fileToData))
+	for name, compressed := range fileToData {
+		decompressor, err := gzip.NewReader(bytes.NewReader(compressed))
+		if err != nil {
+			return nil, fmt.Errorf("could not initialize decompressor for %q: %w", name, err)
+		}
+		decompressed, err := io.ReadAll(decompressor)
+		if err != nil {
+			return nil, fmt.Errorf("could not decompress %q: %w", name, err)
+		}
+		fileToDecompressedData[name] = decompressed
+	}
+	return fileToDecompressedData, nil
+}
 `)
 	formatted, err := format.Source(buffer.Bytes())
 	if err != nil {
