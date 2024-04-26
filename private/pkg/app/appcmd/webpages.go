@@ -299,6 +299,7 @@ func readConfig(filename string) (webpagesConfig, error) {
 	if err != nil {
 		return webpagesConfig{}, err
 	}
+	defer file.Close()
 	yamlBytes, err := io.ReadAll(file)
 	if err != nil {
 		return webpagesConfig{}, err
