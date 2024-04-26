@@ -259,6 +259,10 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
+
+  optional string organization_id = 3;
+
+  optional string repository_id = 4;
 }
 
 message GetClusterUsageResponse {
