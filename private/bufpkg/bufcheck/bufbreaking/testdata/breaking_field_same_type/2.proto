@@ -52,13 +52,6 @@ message Three2 {
   }
 }
 
-message Nine2 {
-  oneof foo {
-    int32 one = 1;
-    One two = 2;
-  }
-}
-
 message Nine {
   oneof foo {
     int64 one = 1;

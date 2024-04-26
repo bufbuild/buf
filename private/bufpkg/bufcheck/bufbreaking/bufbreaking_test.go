@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tracing"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )
+
+func init() {
+	protodescriptor.AllowEditionsForTesting()
+}
 
 func TestRunBreakingEnumNoDelete(t *testing.T) {
 	t.Parallel()
@@ -310,8 +315,10 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 14, 37, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 8, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 8, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 64, 5, 64, 10, "FIELD_SAME_TYPE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 65, 5, 65, 9, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 57, 5, 57, 10, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 58, 5, 58, 9, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 7, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 9, 3, 9, 7, "FIELD_SAME_TYPE"),
 	)
 }
 
@@ -339,6 +346,8 @@ func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 79, 3, 79, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 80, 3, 80, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 85, 3, 85, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
 	)
 }
 func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
@@ -366,6 +375,8 @@ func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 83, 3, 83, 6, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 87, 3, 87, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 3, 88, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 7, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 7, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
 	)
 }
 

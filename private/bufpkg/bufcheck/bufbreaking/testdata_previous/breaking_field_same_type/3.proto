@@ -1,0 +1,10 @@
+edition = "2023";
+
+package a;
+
+message One3 {
+  One3 normal = 1;
+  One3 delimited = 2 [features.message_encoding=DELIMITED];
+  One3 normal_b = 3;
+  One3 delimited_b = 4 [features.message_encoding=DELIMITED];
+}
