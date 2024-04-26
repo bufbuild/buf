@@ -268,7 +268,8 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue bufprotosource.EnumValue, s
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
 func checkFieldLowerSnakeCase(add addFunc, field bufprotosource.Field) error {
-	if message := field.ParentMessage(); message != nil && message.IsMapEntry() {
+	message := field.ParentMessage()
+	if message != nil && message.IsMapEntry() {
 		// this check should always pass anyways but just in case
 		return nil
 	}
@@ -276,10 +277,10 @@ func checkFieldLowerSnakeCase(add addFunc, field bufprotosource.Field) error {
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
 		var otherLocs []bufprotosource.Location
-		if field.Extendee() == "" {
+		if message != nil {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
-			otherLocs = []bufprotosource.Location{field.ParentMessage().Location()}
+			otherLocs = []bufprotosource.Location{message.Location()}
 		}
 		add(
 			field,
@@ -300,10 +301,10 @@ func checkFieldNoDescriptor(add addFunc, field bufprotosource.Field) error {
 	name := field.Name()
 	if strings.ToLower(strings.Trim(name, "_")) == "descriptor" {
 		var otherLocs []bufprotosource.Location
-		if field.Extendee() == "" {
+		if message := field.ParentMessage(); message != nil {
 			// also check the message for this comment ignore
 			// this allows users to set this "globally" for a message
-			otherLocs = []bufprotosource.Location{field.ParentMessage().Location()}
+			otherLocs = []bufprotosource.Location{message.Location()}
 		}
 		add(
 			field,
