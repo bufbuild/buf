@@ -27,7 +27,7 @@ import (
 
 var (
 	// https://developers.google.com/protocol-buffers/docs/proto3#updating
-	fieldDescriptorProtoTypeToWireCompatiblityGroup = map[protoreflect.Kind]int{
+	fieldKindToWireCompatiblityGroup = map[protoreflect.Kind]int{
 		protoreflect.Int32Kind:  1,
 		protoreflect.Int64Kind:  1,
 		protoreflect.Uint32Kind: 1,
@@ -60,7 +60,7 @@ var (
 
 	// httpsKind://developers.google.com/protocol-buffers/docs/proto3#json
 	// this is not just JSON-compatible, but also wire-compatible, i.e. the intersection
-	fieldDescriptorProtoTypeToWireJSONCompatiblityGroup = map[protoreflect.Kind]int{
+	fieldKindToWireJSONCompatiblityGroup = map[protoreflect.Kind]int{
 		// fixed32 not compatible for wire so not included
 		protoreflect.Int32Kind:  1,
 		protoreflect.Uint32Kind: 1,

@@ -381,11 +381,11 @@ func checkFieldWireCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[descriptor.Kind()]
+	wireCompatibilityGroup, ok := fieldKindToWireCompatiblityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
@@ -436,11 +436,11 @@ func checkFieldWireJSONCompatibleType(
 	// a check of resolved features in Editions files so it can distinguish between
 	// normal (length-prefixed) and delimited (aka "group" encoded) messages, which
 	// are not compatible.
-	previousWireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
+	previousWireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[previousDescriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousDescriptor.Kind())
 	}
-	wireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[descriptor.Kind()]
+	wireJSONCompatibilityGroup, ok := fieldKindToWireJSONCompatiblityGroup[descriptor.Kind()]
 	if !ok {
 		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", descriptor.Kind())
 	}
