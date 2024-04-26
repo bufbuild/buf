@@ -5,6 +5,8 @@ package a;
 message One {
   reserved 4 to 5, 100 to 200;
   reserved 300, 301, 1000 to max;
+  reserved 8 to 25;
+  reserved 50, 51, 52, 53 to 60, 61 to 65, 66, 67, 68 to 70, 71 to 75;
   reserved "foo", "bar";
   reserved "baz";
   int32 one = 1;

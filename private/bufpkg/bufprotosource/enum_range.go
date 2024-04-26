@@ -14,8 +14,11 @@
 
 package bufprotosource
 
+import "math"
+
 const (
-	enumRangeInclusiveMax = 2147483647
+	// EnumRangeInclusiveMax is the maximum allowed number for an enum value.
+	EnumRangeInclusiveMax = math.MaxInt32
 )
 
 type enumRange struct {
@@ -54,5 +57,5 @@ func (r *enumRange) End() int {
 }
 
 func (r *enumRange) Max() bool {
-	return r.end == enumRangeInclusiveMax
+	return r.end == EnumRangeInclusiveMax
 }
