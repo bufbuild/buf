@@ -275,14 +275,16 @@ func checkFieldLowerSnakeCase(add addFunc, field bufprotosource.Field) error {
 	name := field.Name()
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
+		var otherLocs []bufprotosource.Location
+		if field.Extendee() == "" {
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			otherLocs = []bufprotosource.Location{field.ParentMessage().Location()}
+		}
 		add(
 			field,
 			field.NameLocation(),
-			// also check the message for this comment ignore
-			// this allows users to set this "globally" for a message
-			[]bufprotosource.Location{
-				field.ParentMessage().Location(),
-			},
+			otherLocs,
 			"Field name %q should be lower_snake_case, such as %q.",
 			name,
 			expectedName,
@@ -297,14 +299,16 @@ var CheckFieldNoDescriptor = newFieldCheckFunc(checkFieldNoDescriptor)
 func checkFieldNoDescriptor(add addFunc, field bufprotosource.Field) error {
 	name := field.Name()
 	if strings.ToLower(strings.Trim(name, "_")) == "descriptor" {
+		var otherLocs []bufprotosource.Location
+		if field.Extendee() == "" {
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			otherLocs = []bufprotosource.Location{field.ParentMessage().Location()}
+		}
 		add(
 			field,
 			field.NameLocation(),
-			// also check the message for this comment ignore
-			// this allows users to set this "globally" for a message
-			[]bufprotosource.Location{
-				field.ParentMessage().Location(),
-			},
+			otherLocs,
 			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
 			name,
 		)
