@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"go/format"
 	"io"
-	"math"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"golang.org/x/exp/constraints"
 
@@ -45,12 +45,13 @@ const (
 	programName             = "wkt-go-data"
 	pkgFlagName             = "package"
 	protobufVersionFlagName = "protobuf-version"
-	sliceLength             = math.MaxInt64
+	bytesPerLine            = 20
 )
 
 var failedError = app.NewError( /* exitCode */ 100, "something went wrong")
 
 func main() {
+	// TODO: The datawkt machinery would be WAY simpler if it just used go:embed instead.
 	appcmd.Main(context.Background(), newCommand())
 }
 
@@ -284,15 +285,15 @@ const Version = "`)
 `)
 		data := pathToData[path]
 		for len(data) > 0 {
-			n := sliceLength
+			n := bytesPerLine
 			if n > len(data) {
 				n = len(data)
 			}
-			accum := ""
+			var accum strings.Builder
 			for _, elem := range data[:n] {
-				accum += fmt.Sprintf("0x%02x,", elem)
+				_, _ = fmt.Fprintf(&accum, "0x%02x,", elem)
 			}
-			p(accum)
+			p(accum.String())
 			p("\n")
 			data = data[n:]
 		}
@@ -383,7 +384,6 @@ func EnumFilePath(enumName string) (string, bool) {
 	filePath, ok := enumNameToFilePath[enumName]
 	return filePath, ok
 }
-
 `)
 	formatted, err := format.Source(buffer.Bytes())
 	if err != nil {
