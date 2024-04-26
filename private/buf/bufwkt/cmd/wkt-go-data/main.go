@@ -16,7 +16,6 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -251,11 +250,6 @@ func getGolangFileData(
 	p(`
 
 import (
-	"bytes"
-	"compress/gzip"
-	"fmt"
-	"io"
-
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -289,16 +283,7 @@ const Version = "`)
 		p(path)
 		p(`": {
 `)
-		rawData := pathToData[path]
-		var buf bytes.Buffer
-		compressor := gzip.NewWriter(&buf)
-		if _, err := compressor.Write(rawData); err != nil {
-			return nil, fmt.Errorf("failed to compress %q: %v", path, err)
-		}
-		if err := compressor.Close(); err != nil {
-			return nil, fmt.Errorf("failed to compress %q: %v", path, err)
-		}
-		data := buf.Bytes()
+		data := pathToData[path]
 		for len(data) > 0 {
 			n := bytesPerLine
 			if n > len(data) {
@@ -362,11 +347,7 @@ const Version = "`)
 	p(`)`)
 	p("\n\n")
 	p(`func init() {
-	filePathToDecompressedData, err := decompressFiles(filePathToData)
-	if err != nil {
-		panic(err.Error())
-	}
-	readBucket, err := storagemem.NewReadBucket(filePathToDecompressedData)
+	readBucket, err := storagemem.NewReadBucket(filePathToData)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -402,22 +383,6 @@ func MessageFilePath(messageName string) (string, bool) {
 func EnumFilePath(enumName string) (string, bool) {
 	filePath, ok := enumNameToFilePath[enumName]
 	return filePath, ok
-}
-
-func decompressFiles(fileToData map[string][]byte) (map[string][]byte, error) {
-	fileToDecompressedData := make(map[string][]byte, len(fileToData))
-	for name, compressed := range fileToData {
-		decompressor, err := gzip.NewReader(bytes.NewReader(compressed))
-		if err != nil {
-			return nil, fmt.Errorf("could not initialize decompressor for %q: %w", name, err)
-		}
-		decompressed, err := io.ReadAll(decompressor)
-		if err != nil {
-			return nil, fmt.Errorf("could not decompress %q: %w", name, err)
-		}
-		fileToDecompressedData[name] = decompressed
-	}
-	return fileToDecompressedData, nil
 }
 `)
 	formatted, err := format.Source(buffer.Bytes())
