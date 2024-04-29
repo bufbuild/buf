@@ -17,6 +17,8 @@ package bufmodule
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/url"
 
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/syserror"
@@ -66,6 +68,14 @@ func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility) UploadO
 	}
 }
 
+// UploadWithSourceControlURL returns a new UploadOption that will set the source control
+// url for the module contents uploaded.
+func UploadWithSourceControlURL(sourceControlURL string) UploadOption {
+	return func(uploadOptions *uploadOptions) {
+		uploadOptions.sourceControlURL = sourceControlURL
+	}
+}
+
 // UploadOptions are the possible options for upload.
 //
 // This is used by Uploader implementations.
@@ -91,6 +101,9 @@ type UploadOptions interface {
 	// We disallow the use of `--tag` when the modules we are uploading to do not all have
 	// the same default label.
 	Tags() []string
+	// SourceControlURL returns the source control URL set by the user for the module
+	// contents uploaded. We set the same source control URL for all module contents.
+	SourceControlURL() string
 
 	isUploadOptions()
 }
@@ -120,6 +133,7 @@ type uploadOptions struct {
 	tags                   []string
 	createIfNotExist       bool
 	createModuleVisibility ModuleVisibility
+	sourceControlURL       string
 }
 
 func newUploadOptions() *uploadOptions {
@@ -142,6 +156,10 @@ func (u *uploadOptions) CreateModuleVisibility() ModuleVisibility {
 	return u.createModuleVisibility
 }
 
+func (u *uploadOptions) SourceControlURL() string {
+	return u.sourceControlURL
+}
+
 func (u *uploadOptions) validate() error {
 	if u.createIfNotExist && u.createModuleVisibility == 0 {
 		return errors.New("must set a valid ModuleVisibility if CreateIfNotExist was specified")
@@ -150,6 +168,11 @@ func (u *uploadOptions) validate() error {
 	// This is enforced at the flag level, so if more than one is set, we return a syserror.
 	if len(u.labels) > 0 && len(u.tags) > 0 {
 		return syserror.New("cannot set both labels and tags")
+	}
+	if u.sourceControlURL != "" {
+		if _, err := url.Parse(u.sourceControlURL); err != nil {
+			return fmt.Errorf("must set a valid url for the source control url: %w", err)
+		}
 	}
 	return nil
 }

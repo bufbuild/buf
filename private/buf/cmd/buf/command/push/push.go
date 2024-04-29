@@ -39,6 +39,7 @@ const (
 	disableSymlinksFlagName  = "disable-symlinks"
 	createFlagName           = "create"
 	createVisibilityFlagName = "create-visibility"
+	sourceControlURLFlagName = "source-control-url"
 
 	// All deprecated.
 	tagFlagName      = "tag"
@@ -80,6 +81,7 @@ type flags struct {
 	DisableSymlinks  bool
 	Create           bool
 	CreateVisibility string
+	SourceControlURL string
 	// special
 	InputHashtag string
 }
@@ -115,6 +117,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"Create the repository if it does not exist. Must set --%s",
 			createVisibilityFlagName,
 		),
+	)
+	flagSet.StringVar(
+		&f.SourceControlURL,
+		sourceControlURLFlagName,
+		"",
+		"The URL for viewing the source code of the pushed modules (e.g. the specific commit in source control).",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
@@ -159,6 +167,9 @@ func run(
 			return err
 		}
 		uploadOptions = append(uploadOptions, bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity))
+	}
+	if flags.SourceControlURL != "" {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
