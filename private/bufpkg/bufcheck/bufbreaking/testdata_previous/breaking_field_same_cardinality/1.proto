@@ -48,7 +48,7 @@ message Three {
     map<int32, One> six = 6;
   }
   message Eight {
-    int32 one = 1;
+    optional int32 one = 1;
     One two = 2;
     repeated int32 three = 3;
     repeated One four = 4;

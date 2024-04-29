@@ -53,3 +53,8 @@ message Nine2 {
     One two = 2;
   }
 }
+
+message Ten2 {
+  repeated int64 one = 1;
+  required int64 two = 2;
+}

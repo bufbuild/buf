@@ -80,6 +80,12 @@ var (
 		"fields are not deleted from a given message unless the number is reserved",
 		bufbreakingcheck.CheckFieldNoDeleteUnlessNumberReserved,
 	)
+	// FieldSameCardinalityRuleBuilder is a rule builder.
+	FieldSameCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_CARDINALITY",
+		"fields have the same cardinalities in a given message",
+		bufbreakingcheck.CheckFieldSameCardinality,
+	)
 	// FieldSameCTypeRuleBuilder is a rule builder.
 	FieldSameCTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_CTYPE",
@@ -99,10 +105,10 @@ var (
 		bufbreakingcheck.CheckFieldSameJSType,
 	)
 	// FieldSameLabelRuleBuilder is a rule builder.
-	FieldSameLabelRuleBuilder = internal.NewNopRuleBuilder(
+	FieldSameLabelRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FIELD_SAME_LABEL",
 		"fields have the same labels in a given message",
-		bufbreakingcheck.CheckFieldSameLabel,
+		[]string{"FIELD_SAME_CARDINALITY"},
 	)
 	// FieldSameNameRuleBuilder is a rule builder.
 	FieldSameNameRuleBuilder = internal.NewNopRuleBuilder(
@@ -122,11 +128,23 @@ var (
 		"fields have the same types in a given message",
 		bufbreakingcheck.CheckFieldSameType,
 	)
+	// FieldWireCompatibleCardinalityRuleBuilder is a rule builder.
+	FieldWireCompatibleCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_COMPATIBLE_CARDINALITY",
+		"fields have wire-compatible cardinalities in a given message",
+		bufbreakingcheck.CheckFieldWireCompatibleCardinality,
+	)
 	// FieldWireCompatibleTypeRuleBuilder is a rule builder.
 	FieldWireCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_WIRE_COMPATIBLE_TYPE",
 		"fields have wire-compatible types in a given message",
 		bufbreakingcheck.CheckFieldWireCompatibleType,
+	)
+	// FieldWireJSONCompatibleCardinalityRuleBuilder is a rule builder.
+	FieldWireJSONCompatibleCardinalityRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		"fields have wire and JSON compatible cardinalities in a given message",
+		bufbreakingcheck.CheckFieldWireJSONCompatibleCardinality,
 	)
 	// FieldWireJSONCompatibleTypeRuleBuilder is a rule builder.
 	FieldWireJSONCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(

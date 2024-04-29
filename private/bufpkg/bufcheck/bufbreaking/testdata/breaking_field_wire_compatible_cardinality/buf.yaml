@@ -1,0 +1,4 @@
+version: v2
+breaking:
+  use:
+    - FIELD_WIRE_COMPATIBLE_CARDINALITY

@@ -16,7 +16,6 @@ package bufbreaking_test
 
 import (
 	"context"
-	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -167,6 +166,39 @@ func TestRunBreakingFieldNoDeleteUnlessNumberReserved(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldSameCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 48, 5, 48, 19, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_SAME_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_SAME_CARDINALITY"),
+	)
+}
+
 func TestRunBreakingFieldSameCType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -235,36 +267,6 @@ func TestRunBreakingFieldSameJSType(t *testing.T) {
 	)
 }
 
-func TestRunBreakingFieldSameLabel(t *testing.T) {
-	t.Parallel()
-	testBreaking(
-		t,
-		"breaking_field_same_label",
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 36, 5, 36, 28, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 5, 37, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 38, 5, 38, 21, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 18, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 20, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 19, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_SAME_LABEL"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_SAME_LABEL"),
-	)
-}
-
 func TestRunBreakingFieldSameName(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -323,6 +325,36 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldWireCompatibleCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_wire_compatible_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_COMPATIBLE_CARDINALITY"),
+	)
+}
+
 func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -351,6 +383,38 @@ func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
 	)
 }
+
+func TestRunBreakingFieldWireJSONCompatibleCardinality(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_wire_json_compatible_cardinality",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 3, 9, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 16, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 17, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 7, 19, 30, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 7, 20, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 21, 7, 21, 23, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 22, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 32, 7, 32, 10, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 28, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 5, 42, 21, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 5, 43, 18, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 44, 5, 44, 20, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 45, 5, 45, 19, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 13, 3, 13, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 14, 3, 14, 24, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 70, 3, 70, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 71, 3, 71, 26, "FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY"),
+	)
+}
+
 func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -733,8 +797,10 @@ func TestRunBreakingMessageEnum(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_message_enum",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 0, 0, 0, 0, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 7, "FIELD_SAME_TYPE"),
 	)
 }
@@ -744,7 +810,9 @@ func TestRunBreakingMessageInt(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_message_int",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 3, 3, 3, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 8, "FIELD_SAME_CARDINALITY"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 3, 3, 3, 8, "FIELD_SAME_TYPE"),
 	)
 }
@@ -857,7 +925,7 @@ func testBreaking(
 		assert.NoError(t, err)
 	} else {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.True(t, errors.As(err, &fileAnnotationSet))
+		require.ErrorAs(t, err, &fileAnnotationSet)
 		bufanalysistesting.AssertFileAnnotationsEqual(
 			t,
 			expectedFileAnnotations,
