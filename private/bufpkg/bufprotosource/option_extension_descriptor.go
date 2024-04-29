@@ -25,13 +25,15 @@ type optionExtensionDescriptor struct {
 	message       proto.Message
 	optionsPath   []int32
 	locationStore *locationStore
+	featuresTag   protoreflect.FieldNumber
 }
 
-func newOptionExtensionDescriptor(message proto.Message, optionsPath []int32, locationStore *locationStore) optionExtensionDescriptor {
+func newOptionExtensionDescriptor(message proto.Message, optionsPath []int32, locationStore *locationStore, featuresTag protoreflect.FieldNumber) optionExtensionDescriptor {
 	return optionExtensionDescriptor{
 		message:       message,
 		optionsPath:   optionsPath,
 		locationStore: locationStore,
+		featuresTag:   featuresTag,
 	}
 }
 
@@ -46,7 +48,11 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 }
 
 func (o *optionExtensionDescriptor) OptionExtensionLocation(extensionType protoreflect.ExtensionType, extraPath ...int32) Location {
-	if extensionType.TypeDescriptor().ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
+	return o.OptionLocation(extensionType.TypeDescriptor(), extraPath...)
+}
+
+func (o *optionExtensionDescriptor) OptionLocation(field protoreflect.FieldDescriptor, extraPath ...int32) Location {
+	if field.ContainingMessage().FullName() != o.message.ProtoReflect().Descriptor().FullName() {
 		return nil
 	}
 	if o.locationStore == nil {
@@ -54,7 +60,7 @@ func (o *optionExtensionDescriptor) OptionExtensionLocation(extensionType protor
 	}
 	path := make([]int32, len(o.optionsPath), len(o.optionsPath)+1+len(extraPath))
 	copy(path, o.optionsPath)
-	path = append(path, int32(extensionType.TypeDescriptor().Number()))
+	path = append(path, int32(field.Number()))
 	extensionPathLen := len(path) // length of path to extension (without extraPath)
 	path = append(path, extraPath...)
 	loc := o.locationStore.getLocation(path)
@@ -132,4 +138,38 @@ func (o *optionExtensionDescriptor) ForEachPresentOption(fn func(protoreflect.Fi
 	// Should not be a problem since descriptors models in the buf CLI codebase should have them
 	// all correctly parsed and known.
 	o.message.ProtoReflect().Range(fn)
+}
+
+func (o *optionExtensionDescriptor) Features() FeaturesDescriptor {
+	return o
+}
+
+func (o *optionExtensionDescriptor) FieldPresenceLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 1)
+}
+
+func (o *optionExtensionDescriptor) EnumTypeLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 2)
+}
+
+func (o *optionExtensionDescriptor) RepeatedFieldEncodingLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 3)
+}
+
+func (o *optionExtensionDescriptor) UTF8ValidationLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 4)
+}
+
+func (o *optionExtensionDescriptor) MessageEncodingLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 5)
+}
+
+func (o *optionExtensionDescriptor) JSONFormatLocation() Location {
+	features := o.message.ProtoReflect().Descriptor().Fields().ByNumber(o.featuresTag)
+	return o.OptionLocation(features, 6)
 }
