@@ -125,6 +125,7 @@ func (a *uploader) Upload(
 				primaryRegistry,
 				contentModule,
 				uploadOptions.CreateModuleVisibility(),
+				uploadOptions.CreateDefaultLabel(),
 			)
 			if err != nil {
 				return nil, err
@@ -328,6 +329,7 @@ func (a *uploader) createContentModuleIfNotExist(
 	primaryRegistry string,
 	contentModule bufmodule.Module,
 	createModuleVisibility bufmodule.ModuleVisibility,
+	createDefaultLabel string,
 ) (*modulev1.Module, error) {
 	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
 	if err != nil {
@@ -344,8 +346,9 @@ func (a *uploader) createContentModuleIfNotExist(
 								Name: contentModule.ModuleFullName().Owner(),
 							},
 						},
-						Name:       contentModule.ModuleFullName().Name(),
-						Visibility: v1ProtoCreateModuleVisibility,
+						Name:             contentModule.ModuleFullName().Name(),
+						Visibility:       v1ProtoCreateModuleVisibility,
+						DefaultLabelName: createDefaultLabel,
 					},
 				},
 			},
@@ -426,7 +429,7 @@ func getV1Beta1ProtoUploadRequestContent(
 		return nil, err
 	}
 
-	return &modulev1beta1.UploadRequest_Content{
+	uploadRequestContent := &modulev1beta1.UploadRequest_Content{
 		ModuleRef: &modulev1beta1.ModuleRef{
 			Value: &modulev1beta1.ModuleRef_Name_{
 				Name: &modulev1beta1.ModuleRef_Name{
@@ -435,10 +438,13 @@ func getV1Beta1ProtoUploadRequestContent(
 				},
 			},
 		},
-		Files:            v1beta1ProtoFiles,
-		ScopedLabelRefs:  v1beta1ProtoScopedLabelRefs,
-		SourceControlUrl: sourceControlURL,
-	}, nil
+		Files:           v1beta1ProtoFiles,
+		ScopedLabelRefs: v1beta1ProtoScopedLabelRefs,
+	}
+	if sourceControlURL != "" {
+		uploadRequestContent.SourceControlUrl = sourceControlURL
+	}
+	return uploadRequestContent, nil
 }
 
 func remoteDepToV1Beta1ProtoUploadRequestDepRef(
