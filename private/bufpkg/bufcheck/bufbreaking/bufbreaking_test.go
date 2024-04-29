@@ -285,17 +285,17 @@ func TestRunBreakingFieldSameOneof(t *testing.T) {
 		t,
 		"breaking_field_same_oneof",
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 8, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 3, 18, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 3, 23, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 3, 37, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 3, 39, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 3, 42, 19, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 94, 3, 94, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 96, 3, 96, 17, "FIELD_SAME_ONEOF"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 99, 3, 99, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 5, 8, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 5, 11, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 7, 18, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 9, 20, 23, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 9, 23, 25, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 5, 37, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 7, 39, 21, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 42, 7, 42, 23, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 95, 3, 95, 17, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 97, 5, 97, 19, "FIELD_SAME_ONEOF"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 100, 5, 100, 21, "FIELD_SAME_ONEOF"),
 	)
 }
 
@@ -597,7 +597,7 @@ func TestRunBreakingOneofNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 9, 2, "ONEOF_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 5, 17, 6, "ONEOF_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 3, 30, 4, "ONEOF_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "2.proto", 75, 1, 79, 2, "ONEOF_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 76, 1, 80, 2, "ONEOF_NO_DELETE"),
 	)
 }
 

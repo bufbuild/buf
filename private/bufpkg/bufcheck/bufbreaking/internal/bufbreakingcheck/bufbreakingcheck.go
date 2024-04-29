@@ -302,7 +302,31 @@ var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousOneof := previousField.Oneof()
+	if previousOneof != nil {
+		previousOneofDescriptor, err := previousOneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if previousOneofDescriptor.IsSynthetic() {
+			// Not considering synthetic oneofs since those are really
+			// just strange byproducts of how "explicit presence" is
+			// modeled in proto3 syntax. We will separately detect this
+			// kind of change via field presence check.
+			previousOneof = nil
+		}
+	}
 	oneof := field.Oneof()
+	if oneof != nil {
+		oneofDescriptor, err := oneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Same remark as above.
+			oneof = nil
+		}
+	}
+
 	previousInsideOneof := previousOneof != nil
 	insideOneof := oneof != nil
 	if !previousInsideOneof && !insideOneof {
@@ -904,8 +928,19 @@ func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosou
 	if err != nil {
 		return err
 	}
-	for previousName := range previousNameToOneof {
+	for previousName, previousOneof := range previousNameToOneof {
 		if _, ok := nameToOneof[previousName]; !ok {
+			previousOneofDescriptor, err := previousOneof.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			if previousOneofDescriptor.IsSynthetic() {
+				// Not considering synthetic oneofs since those are really
+				// just strange byproducts of how "explicit presence" is
+				// modeled in proto3 syntax. We will separately detect this
+				// kind of change via field presence check.
+				continue
+			}
 			add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
 		}
 	}
