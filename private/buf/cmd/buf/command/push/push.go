@@ -122,7 +122,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.SourceControlURL,
 		sourceControlURLFlagName,
 		"",
-		"The URL for viewing the source code of the modules pushed.",
+		"The URL for viewing the source code of the specific contents of the modules pushed (e.g. the specific commit in source control).",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
