@@ -16,7 +16,6 @@ package bufbreaking_test
 
 import (
 	"context"
-	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -299,23 +298,24 @@ func TestRunBreakingFieldSameOneof(t *testing.T) {
 
 func TestRunBreakingFieldSameType(t *testing.T) {
 	t.Parallel()
-	// TODO: double check all this
 	testBreaking(
 		t,
 		"breaking_field_same_type",
-		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 12, 8, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 12, 9, 15, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 11, 3, 11, 6, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 3, 12, 6, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 3, 13, 18, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 16, 19, 21, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 16, 20, 19, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 7, 22, 10, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 7, 23, 10, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 7, 24, 22, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 36, 14, 36, 19, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 37, 14, 37, 17, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 39, 5, 39, 8, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 5, 40, 8, "FIELD_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 41, 5, 41, 20, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 57, 5, 57, 10, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 58, 5, 58, 9, "FIELD_SAME_TYPE"),
 		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 7, "FIELD_SAME_TYPE"),
@@ -857,7 +857,7 @@ func testBreaking(
 		assert.NoError(t, err)
 	} else {
 		var fileAnnotationSet bufanalysis.FileAnnotationSet
-		require.True(t, errors.As(err, &fileAnnotationSet))
+		require.ErrorAs(t, err, &fileAnnotationSet)
 		bufanalysistesting.AssertFileAnnotationsEqual(
 			t,
 			expectedFileAnnotations,

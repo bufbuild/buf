@@ -184,11 +184,19 @@ func (f *field) NumberLocation() Location {
 }
 
 func (f *field) TypeLocation() Location {
-	return f.getLocation(f.typePath)
+	loc := f.getLocation(f.typePath)
+	if loc == nil {
+		return f.maybeMapEntryLocation()
+	}
+	return loc
 }
 
 func (f *field) TypeNameLocation() Location {
-	return f.getLocation(f.typeNamePath)
+	loc := f.getLocation(f.typeNamePath)
+	if loc == nil {
+		return f.maybeMapEntryLocation()
+	}
+	return loc
 }
 
 func (f *field) JSONNameLocation() Location {
@@ -213,4 +221,27 @@ func (f *field) ExtendeeLocation() Location {
 
 func (f *field) AsDescriptor() (protoreflect.FieldDescriptor, error) {
 	return asDescriptor[protoreflect.FieldDescriptor](&f.descriptor, f.FullName(), "a field")
+}
+
+func (f *field) Location() Location {
+	loc := f.namedDescriptor.Location()
+	if loc == nil {
+		return f.maybeMapEntryLocation()
+	}
+	return loc
+}
+
+func (f *field) NameLocation() Location {
+	loc := f.namedDescriptor.NameLocation()
+	if loc == nil {
+		return f.maybeMapEntryLocation()
+	}
+	return loc
+}
+
+func (f *field) maybeMapEntryLocation() Location {
+	if message, _ := f.parentMessage.(*message); message != nil {
+		return message.maybeMapEntryLocation()
+	}
+	return nil
 }

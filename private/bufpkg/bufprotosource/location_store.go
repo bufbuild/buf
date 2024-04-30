@@ -34,6 +34,10 @@ func newLocationStore(sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Loc
 	}
 }
 
+func (l *locationStore) isEmpty() bool {
+	return len(l.sourceCodeInfoLocations) == 0
+}
+
 func (l *locationStore) getLocation(path []int32) Location {
 	return l.getLocationByPathKey(getPathKey(path))
 }

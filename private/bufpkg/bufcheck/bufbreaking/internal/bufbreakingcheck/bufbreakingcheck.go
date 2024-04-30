@@ -307,27 +307,6 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 	return nil
 }
 
-// TODO: locations not working for map entries
-// TODO: weird output for map entries:
-//
-// breaking_field_same_type/1.proto:1:1:Field "2" on message "SixEntry" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:1:1:Field "2" on message "SixEntry" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:1:1:Field "2" on message "SixEntry" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:8:3:Field "1" on message "Two" changed type from "int32" to "int64".
-// breaking_field_same_type/1.proto:9:3:Field "2" on message "Two" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:11:3:Field "4" on message "Two" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:12:3:Field "5" on message "Two" changed type from ".a.Two.FiveEntry" to ".a.Two".
-// breaking_field_same_type/1.proto:19:7:Field "1" on message "Five" changed type from "int32" to "int64".
-// breaking_field_same_type/1.proto:20:7:Field "2" on message "Five" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:22:7:Field "4" on message "Five" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:23:7:Field "5" on message "Five" changed type from ".a.Three.Four.Five.FiveEntry" to ".a.Two".
-// breaking_field_same_type/1.proto:36:5:Field "1" on message "Seven" changed type from "int32" to "int64".
-// breaking_field_same_type/1.proto:37:5:Field "2" on message "Seven" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:39:5:Field "4" on message "Seven" changed type from ".a.One" to ".a.Two".
-// breaking_field_same_type/1.proto:40:5:Field "5" on message "Seven" changed type from ".a.Three.Seven.FiveEntry" to ".a.Two".
-// breaking_field_same_type/2.proto:64:5:Field "1" on message "Nine" changed type from "int32" to "int64".
-// breaking_field_same_type/2.proto:65:5:Field "2" on message "Nine" changed type from ".a.One" to ".a.Nine".
-
 // CheckFieldSameType is a check function.
 var CheckFieldSameType = newFieldDescriptorPairCheckFunc(checkFieldSameType)
 

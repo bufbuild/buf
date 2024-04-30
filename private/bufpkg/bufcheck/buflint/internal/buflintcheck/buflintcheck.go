@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -68,14 +69,32 @@ func checkCommentEnumValue(add addFunc, value bufprotosource.EnumValue) error {
 }
 
 func checkCommentField(add addFunc, value bufprotosource.Field) error {
+	if value.ParentMessage() != nil && value.ParentMessage().IsMapEntry() {
+		// Don't check synthetic fields for map entries. They have no comments.
+		return nil
+	}
+	if value.Type() == descriptorpb.FieldDescriptorProto_TYPE_GROUP {
+		// Group fields also have no comments: comments in source get
+		// attributed to the nested message, not the field.
+		return nil
+	}
 	return checkCommentNamedDescriptor(add, value, "Field")
 }
 
 func checkCommentMessage(add addFunc, value bufprotosource.Message) error {
+	if value.IsMapEntry() {
+		// Don't check synthetic map entries. They have no comments.
+		return nil
+	}
 	return checkCommentNamedDescriptor(add, value, "Message")
 }
 
 func checkCommentOneof(add addFunc, value bufprotosource.Oneof) error {
+	oneofDescriptor, err := value.AsDescriptor()
+	if err == nil && oneofDescriptor.IsSynthetic() {
+		// Don't check synthetic oneofs (for proto3-optional fields). They have no comments.
+		return nil
+	}
 	return checkCommentNamedDescriptor(add, value, "Oneof")
 }
 
