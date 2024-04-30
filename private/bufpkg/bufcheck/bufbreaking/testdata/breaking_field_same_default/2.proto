@@ -1,0 +1,99 @@
+edition = "2023";
+
+package a;
+
+message Fizz {
+  string s1 = 1 [default = "abc"];
+  string s2 = 2;
+  int32 s3 = 3 [default = 123];
+
+  bytes b1 = 5 [default = "abc"];
+  bytes b2 = 6;
+  bool b3 = 7 [default = true];
+
+  message Int32s {
+    int32 i1 = 1 [default = 123];
+    int32 i2 = 2;
+    string i3 = 3 [default = "abc"];
+  }
+
+  message Uint32s {
+    uint32 i1 = 1 [default = 123];
+    uint32 i2 = 2;
+    fixed64 i3 = 3 [default = 456];
+  }
+
+  message Sint32s {
+    sint32 i1 = 1 [default = 123];
+    sint32 i2 = 2;
+    bytes i3 = 3 [default = "abc"];
+  }
+
+  message Fixed32s {
+    fixed32 i1 = 1 [default = 123];
+    fixed32 i2 = 2;
+    sint64 i3 = 3 [default = 456];
+  }
+
+  message Sfixed32s {
+    sfixed32 i1 = 1 [default = 123];
+    sfixed32 i2 = 2;
+    int64 i3 = 3 [default = 64];
+  }
+
+  message Int64s {
+    int64 i1 = 1 [default = 123];
+    int64 i2 = 2;
+    sint32 i3 = 3 [default = 456];
+  }
+
+  message Uint64s {
+    uint64 i1 = 1 [default = 123];
+    uint64 i2 = 2;
+    string i3 = 3 [default = "xyz"];
+  }
+
+  message Sint64s {
+    sint64 i1 = 1 [default = 123];
+    sint64 i2 = 2;
+    uint32 i3 = 3 [default = 456];
+  }
+
+  message Fixed64s {
+    fixed64 i1 = 1 [default = 123];
+    fixed64 i2 = 2;
+    int32 i3 = 3 [default = 456];
+  }
+
+  message Sfixed64s {
+    sfixed64 i1 = 1 [default = 123];
+    sfixed64 i2 = 2;
+    bytes i3 = 3 [default = "xyz"];
+  }
+
+  message Floats {
+    float i1 = 1 [default = 123.123];
+    float i2 = 2;
+    uint32 i3 = 3 [default = 456];
+  }
+
+  message Doubles {
+    double i1 = 1 [default = 123.123];
+    double i2 = 2;
+    string i3 = 3 [default = "xyz"];
+  }
+
+  message Bools {
+    bool i1 = 1 [default = true];
+    bool i2 = 2;
+    uint32 i3 = 3 [default = 456];
+  }
+}
+
+message Buzz {
+  map<string, int32> map = 1;
+  repeated string strings = 2;
+  repeated uint64 uints = 3;
+  Buzz buzz = 4;
+  repeated Buzz buzzes = 5;
+}

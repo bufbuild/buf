@@ -1,0 +1,136 @@
+syntax = "proto2";
+
+package a;
+
+message Foo {
+  optional string s1 = 1 [default = "abc"];
+  optional string s2 = 2 [default = "abc"];
+  optional string s3 = 3 [default = "abc"];
+  optional string s4 = 4 [default = "abc"];
+
+  optional bytes b1 = 5 [default = "xyz"];
+  optional bytes b2 = 6 [default = "xyz"];
+  optional bytes b3 = 7 [default = "xyz"];
+  optional bytes b4 = 8 [default = "xyz"];
+
+  message Int32s {
+    optional int32 i1 = 1 [default = 123];
+    optional int32 i2 = 2 [default = 123];
+    optional int32 i3 = 3 [default = 123];
+    optional int32 i4 = 4 [default = 123];
+  }
+
+  message Uint32s {
+    optional uint32 i1 = 1 [default = 123];
+    optional uint32 i2 = 2 [default = 123];
+    optional uint32 i3 = 3 [default = 123];
+    optional uint32 i4 = 4 [default = 123];
+  }
+
+  message Sint32s {
+    optional sint32 i1 = 1 [default = 123];
+    optional sint32 i2 = 2 [default = 123];
+    optional sint32 i3 = 3 [default = 123];
+    optional sint32 i4 = 4 [default = 123];
+  }
+
+  message Fixed32s {
+    optional fixed32 i1 = 1 [default = 123];
+    optional fixed32 i2 = 2 [default = 123];
+    optional fixed32 i3 = 3 [default = 123];
+    optional fixed32 i4 = 4 [default = 123];
+  }
+
+  message Sfixed32s {
+    optional sfixed32 i1 = 1 [default = 123];
+    optional sfixed32 i2 = 2 [default = 123];
+    optional sfixed32 i3 = 3 [default = 123];
+    optional sfixed32 i4 = 4 [default = 123];
+  }
+
+  message Int64s {
+    optional int64 i1 = 1 [default = 123];
+    optional int64 i2 = 2 [default = 123];
+    optional int64 i3 = 3 [default = 123];
+    optional int64 i4 = 4 [default = 123];
+  }
+
+  message Uint64s {
+    optional uint64 i1 = 1 [default = 123];
+    optional uint64 i2 = 2 [default = 123];
+    optional uint64 i3 = 3 [default = 123];
+    optional uint64 i4 = 4 [default = 123];
+  }
+
+  message Sint64s {
+    optional sint64 i1 = 1 [default = 123];
+    optional sint64 i2 = 2 [default = 123];
+    optional sint64 i3 = 3 [default = 123];
+    optional sint64 i4 = 4 [default = 123];
+  }
+
+  message Fixed64s {
+    optional fixed64 i1 = 1 [default = 123];
+    optional fixed64 i2 = 2 [default = 123];
+    optional fixed64 i3 = 3 [default = 123];
+    optional fixed64 i4 = 4 [default = 123];
+  }
+
+  message Sfixed64s {
+    optional sfixed64 i1 = 1 [default = 123];
+    optional sfixed64 i2 = 2 [default = 123];
+    optional sfixed64 i3 = 3 [default = 123];
+    optional sfixed64 i4 = 4 [default = 123];
+  }
+
+  message Floats {
+    optional float i1 = 1 [default = 123];
+    optional float i2 = 2 [default = 123];
+    optional float i3 = 3 [default = 123];
+    optional float i4 = 4 [default = 123];
+  }
+
+  message Doubles {
+    optional double i1 = 1 [default = 123];
+    optional double i2 = 2 [default = 123];
+    optional double i3 = 3 [default = 123];
+    optional double i4 = 4 [default = 123];
+  }
+
+  message Bools {
+    optional bool i1 = 1 [default = true];
+    optional bool i2 = 2 [default = true];
+    optional bool i3 = 3 [default = true];
+    optional bool i4 = 4 [default = true];
+  }
+
+  message Enums {
+    optional Enum i1 = 1 [default = ABC];
+    optional Enum i2 = 2 [default = ABC];
+    optional Enum i3 = 3 [default = ABC];
+    optional Enum i4 = 4 [default = ABC];
+
+    enum Enum {
+      ZERO = 0;
+      ABC = 1;
+      DEF = 2;
+      XYZ = 3;
+    }
+  }
+}
+
+message Bar {
+  map<string, int32> map = 1;
+  repeated string strings = 2;
+  repeated uint64 uints = 3;
+  optional Bar bar = 4;
+  repeated Bar bars = 5;
+}
+
+message Baz {
+  map<string, int32> map = 1;
+  repeated string strings = 2;
+  repeated uint64 uints = 3;
+  optional Bar bar = 4;
+  repeated Bar bars = 5;
+}

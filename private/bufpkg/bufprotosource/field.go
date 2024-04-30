@@ -41,6 +41,7 @@ type field struct {
 	targets        []descriptorpb.FieldOptions_OptionTargetType
 	debugRedact    bool
 	packed         *bool
+	defaultVal     string
 	deprecated     bool
 	numberPath     []int32
 	typePath       []int32
@@ -49,6 +50,7 @@ type field struct {
 	jsTypePath     []int32
 	cTypePath      []int32
 	packedPath     []int32
+	defaultPath    []int32
 	extendeePath   []int32
 }
 
@@ -70,6 +72,7 @@ func newField(
 	targets []descriptorpb.FieldOptions_OptionTargetType,
 	debugRedact bool,
 	packed *bool,
+	defaultVal string,
 	deprecated bool,
 	numberPath []int32,
 	typePath []int32,
@@ -78,6 +81,7 @@ func newField(
 	jsTypePath []int32,
 	cTypePath []int32,
 	packedPath []int32,
+	defaultPath []int32,
 	extendeePath []int32,
 ) *field {
 	return &field{
@@ -98,6 +102,7 @@ func newField(
 		targets:                   targets,
 		debugRedact:               debugRedact,
 		packed:                    packed,
+		defaultVal:                defaultVal,
 		deprecated:                deprecated,
 		numberPath:                numberPath,
 		typePath:                  typePath,
@@ -106,6 +111,7 @@ func newField(
 		jsTypePath:                jsTypePath,
 		cTypePath:                 cTypePath,
 		packedPath:                packedPath,
+		defaultPath:               defaultPath,
 		extendeePath:              extendeePath,
 	}
 }
@@ -179,6 +185,10 @@ func (f *field) Deprecated() bool {
 	return f.deprecated
 }
 
+func (f *field) Default() string {
+	return f.defaultVal
+}
+
 func (f *field) NumberLocation() Location {
 	return f.getLocation(f.numberPath)
 }
@@ -213,6 +223,10 @@ func (f *field) CTypeLocation() Location {
 
 func (f *field) PackedLocation() Location {
 	return f.getLocation(f.packedPath)
+}
+
+func (f *field) DefaultLocation() Location {
+	return f.getLocation(f.defaultPath)
 }
 
 func (f *field) ExtendeeLocation() Location {
