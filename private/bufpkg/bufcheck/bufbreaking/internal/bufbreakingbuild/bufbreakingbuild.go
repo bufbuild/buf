@@ -108,6 +108,16 @@ var (
 	FieldSameLabelRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FIELD_SAME_LABEL",
 		"fields have the same labels in a given message",
+		[]string{
+			"FIELD_SAME_CARDINALITY",
+			"FIELD_WIRE_COMPATIBLE_CARDINALITY",
+			"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY",
+		},
+	)
+	// FieldSameLabelV1Beta1RuleBuilder is a rule builder.
+	FieldSameLabelV1Beta1RuleBuilder = internal.NewDeprecatedRuleBuilder(
+		"FIELD_SAME_LABEL",
+		"fields have the same labels in a given message",
 		[]string{"FIELD_SAME_CARDINALITY"},
 	)
 	// FieldSameNameRuleBuilder is a rule builder.

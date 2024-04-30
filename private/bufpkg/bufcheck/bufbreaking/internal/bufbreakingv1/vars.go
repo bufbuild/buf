@@ -39,7 +39,9 @@ var (
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
+		bufbreakingbuild.FieldWireCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireCompatibleTypeRuleBuilder,
+		bufbreakingbuild.FieldWireJSONCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireJSONCompatibleTypeRuleBuilder,
 		bufbreakingbuild.FileNoDeleteRuleBuilder,
 		bufbreakingbuild.FileSameCsharpNamespaceRuleBuilder,
@@ -125,8 +127,6 @@ var (
 		"FIELD_SAME_CARDINALITY": {
 			"FILE",
 			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
 		},
 		"FIELD_SAME_CTYPE": {
 			"FILE",
@@ -162,8 +162,14 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
+		"FIELD_WIRE_COMPATIBLE_CARDINALITY": {
+			"WIRE",
+		},
 		"FIELD_WIRE_COMPATIBLE_TYPE": {
 			"WIRE",
+		},
+		"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY": {
+			"WIRE_JSON",
 		},
 		"FIELD_WIRE_JSON_COMPATIBLE_TYPE": {
 			"WIRE_JSON",

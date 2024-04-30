@@ -35,7 +35,7 @@ var (
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
-		bufbreakingbuild.FieldSameLabelRuleBuilder,
+		bufbreakingbuild.FieldSameLabelV1Beta1RuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
