@@ -246,6 +246,9 @@ message PayloadRepositoryCreated {
   string owner_name = 2;
   // visibility is the visibility of the repository.
   buf.alpha.registry.v1alpha1.Visibility visibility = 3;
+  // default_label_name is the name of the default label for the repository.
+  // If empty, the repository was created with the default label name of 'main'.
+  string default_label_name = 4;
 }
 
 message PayloadRepositoryDeleted {
