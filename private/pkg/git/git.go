@@ -15,7 +15,11 @@
 package git
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -134,4 +138,23 @@ type ListFilesAndUnstagedFilesOptions struct {
 	// These must be unnormalized in the manner of the local OS that the Lister
 	// is being applied to.
 	IgnorePathRegexps []*regexp.Regexp
+}
+
+// GetDefaultBranch returns the repository's default branch name. It attempts to read it from the
+// `.git/refs/remotes/origin/HEAD` file, and expects it to be pointing to a branch also in the
+// `origin` remote.
+func GetDefaultBranch(gitDirPath string) (string, error) {
+	const defaultRemoteName = "origin"
+	path := filepath.Join(gitDirPath, "refs", "remotes", defaultRemoteName, "HEAD")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	var defaultBranchRefPrefix = []byte("ref: refs/remotes/" + defaultRemoteName + "/")
+	if !bytes.HasPrefix(data, defaultBranchRefPrefix) {
+		return "", errors.New("invalid contents in " + path)
+	}
+	data = bytes.TrimPrefix(data, defaultBranchRefPrefix)
+	data = bytes.TrimSuffix(data, []byte("\n"))
+	return string(data), nil
 }

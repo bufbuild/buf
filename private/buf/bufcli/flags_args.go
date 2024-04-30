@@ -148,8 +148,8 @@ func BindCreateVisibility(flagSet *pflag.FlagSet, addr *string, flagName string,
 	flagSet.StringVar(
 		addr,
 		flagName,
-		"",
-		fmt.Sprintf(`The repository's visibility setting, if created. Must be set if --%s is set. Must be one of %s`, createFlagName, stringutil.SliceToString(allVisibiltyStrings)),
+		privateVisibility,
+		fmt.Sprintf(`The repository's visibility setting, if created. Can only be set if --%s is set. Defaults to %s if not set with --%s. Must be one of %s`, createFlagName, createFlagName, privateVisibility, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
