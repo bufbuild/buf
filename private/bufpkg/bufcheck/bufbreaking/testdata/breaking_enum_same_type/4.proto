@@ -1,0 +1,31 @@
+edition = "2023";
+
+package a;
+
+option features.enum_type = CLOSED;
+
+enum A4 {
+  A4_ZERO = 0;
+}
+
+enum B4 {
+  B4_ZERO = 0;
+}
+
+enum C4 {
+  C4_ZERO = 0;
+}
+
+enum D4 {
+  option features.enum_type = OPEN;
+  D4_ZERO = 0;
+}
+
+enum C5 {
+  C5_ZERO = 0;
+}
+
+enum C6 {
+  option features.enum_type = OPEN;
+  C6_ZERO = 0;
+}

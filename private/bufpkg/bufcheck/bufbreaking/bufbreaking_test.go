@@ -51,6 +51,40 @@ func TestRunBreakingEnumNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingEnumSameJSONFormat(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_enum_same_json_format",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "ENUM_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "ENUM_SAME_JSON_FORMAT"),
+	)
+}
+
+func TestRunBreakingEnumSameType(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_enum_same_type",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "ENUM_SAME_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "ENUM_SAME_TYPE"),
+	)
+}
+
 func TestRunBreakingEnumValueNoDelete(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -323,6 +357,68 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldSameUTF8Validation(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_field_same_utf8_validation",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 16, 3, 16, 27, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 17, 3, 17, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 3, 18, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 19, 3, 19, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 20, 3, 20, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 26, 3, 26, 27, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 3, 27, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 28, 3, 28, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 29, 3, 29, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 30, 3, 30, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 7, 3, 7, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 8, 3, 8, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 9, 3, 9, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 36, 3, 36, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 37, 3, 37, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 38, 3, 38, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 39, 3, 39, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 6, 3, 6, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 7, 3, 7, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 8, 3, 8, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 9, 3, 9, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 10, 3, 10, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 36, 3, 36, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 37, 3, 37, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 38, 3, 38, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 39, 3, 39, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 40, 3, 40, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 56, 19, 56, 50, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 57, 29, 57, 60, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 58, 3, 58, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 59, 3, 59, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 60, 3, 60, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 60, 3, 60, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 18, 3, 18, 18, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 19, 3, 19, 28, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 20, 3, 20, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 21, 3, 21, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 22, 3, 22, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 22, 3, 22, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 58, 19, 58, 52, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 59, 29, 59, 62, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 60, 3, 60, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 61, 3, 61, 21, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 62, 3, 62, 22, "FIELD_SAME_UTF8_VALIDATION"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 62, 3, 62, 22, "FIELD_SAME_UTF8_VALIDATION"),
+	)
+}
+
 func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
 	t.Parallel()
 	testBreaking(
@@ -481,6 +577,23 @@ func TestRunBreakingMessageNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 1, 12, 2, "MESSAGE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 10, 4, "MESSAGE_NO_DELETE"),
+	)
+}
+
+func TestRunBreakingMessageSameJSONFormat(t *testing.T) {
+	t.Parallel()
+	testBreaking(
+		t,
+		"breaking_message_same_json_format",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 15, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 5, 1, 7, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 17, 1, 19, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "3.proto", 26, 3, 26, 52, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 11, 1, 13, 2, "MESSAGE_SAME_JSON_FORMAT"),
+		bufanalysistesting.NewFileAnnotation(t, "4.proto", 29, 3, 29, 52, "MESSAGE_SAME_JSON_FORMAT"),
 	)
 }
 
