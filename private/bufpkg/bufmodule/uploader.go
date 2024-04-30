@@ -61,7 +61,7 @@ func UploadWithTags(tags ...string) UploadOption {
 
 // UploadWithCreateIfNotExist returns a new UploadOption that will result in the
 // Modules being created on the registry with the given visibility and default label if they do not exist.
-// If not default label name is provided, the module will be created with the default label "main".
+// If the default label name is not provided, the module will be created with the default label "main".
 func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility, createDefaultLabel string) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.createIfNotExist = true
