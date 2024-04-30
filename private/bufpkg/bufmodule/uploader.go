@@ -60,11 +60,13 @@ func UploadWithTags(tags ...string) UploadOption {
 }
 
 // UploadWithCreateIfNotExist returns a new UploadOption that will result in the
-// Modules being created on the registry with the given visibility if they do not exist.
-func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility) UploadOption {
+// Modules being created on the registry with the given visibility and default label if they do not exist.
+// If the default label name is not provided, the module will be created with the default label "main".
+func UploadWithCreateIfNotExist(createModuleVisibility ModuleVisibility, createDefaultLabel string) UploadOption {
 	return func(uploadOptions *uploadOptions) {
 		uploadOptions.createIfNotExist = true
 		uploadOptions.createModuleVisibility = createModuleVisibility
+		uploadOptions.createDefaultLabel = createDefaultLabel
 	}
 }
 
@@ -90,6 +92,9 @@ type UploadOptions interface {
 	//
 	// Will always be present if CreateIfNotExist() is true.
 	CreateModuleVisibility() ModuleVisibility
+	// CreateDefaultLabel returns the default label to create Modules with. If this is an
+	// emptry string, then the Modules will be created with default label "main".
+	CreateDefaultLabel() string
 	// Tags returns unique and sorted set of tags to be added as labels.
 	// Tags are set using the `--tag` flag when calling `buf push`, and represent labels
 	// that are set **in addition to** the default label when uploading module content.
@@ -133,6 +138,7 @@ type uploadOptions struct {
 	tags                   []string
 	createIfNotExist       bool
 	createModuleVisibility ModuleVisibility
+	createDefaultLabel     string
 	sourceControlURL       string
 }
 
@@ -154,6 +160,10 @@ func (u *uploadOptions) CreateIfNotExist() bool {
 
 func (u *uploadOptions) CreateModuleVisibility() ModuleVisibility {
 	return u.createModuleVisibility
+}
+
+func (u *uploadOptions) CreateDefaultLabel() string {
+	return u.createDefaultLabel
 }
 
 func (u *uploadOptions) SourceControlURL() string {
