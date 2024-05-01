@@ -71,7 +71,7 @@ message CollisionSource {
   string path = 3;
 }
 
-// MonthlyUsage contains the total amount of message, enum and services types
+// MonthlyUsage contains the total amount of message, enum and method types
 // for every organizations repositories within a single tenant BSR instance
 // for a given month and year.
 message MonthlyUsage {
@@ -85,6 +85,21 @@ message MonthlyUsage {
   uint32 total_enum_types = 4;
   // The total amount of method types for the month and year.
   uint32 total_method_types = 5;
+}
+
+// RepositoryUsage contains the total amount of message, enum and method types
+// for an repository within an organization.
+message RepositoryUsage {
+  string repository_id = 1;
+  string repository_name = 2;
+  repeated MonthlyUsage usage = 3;
+}
+
+// OrganizationUsage
+message OrganizationUsage {
+  string organization_id = 1;
+  string organization_name = 2;
+  repeated RepositoryUsage repository = 3;
 }
 
 // CollisionType is the type of collisions that can occur.
@@ -142,6 +157,9 @@ service AdminService {
   // GetClusterUsage returns the summation of total message, enum and service types usage
   // for every repository in each organization within a single tenant BSR instance.
   rpc GetClusterUsage(GetClusterUsageRequest) returns (GetClusterUsageResponse);
+  // GetAllOrganizationsUsages returns the usage metrics for all repositories for every organization
+  // within a single tenant BSR instance for a given time range.
+  rpc GetAllOrganizationsUsages(GetAllOrganizationsUsagesRequest) returns (GetAllOrganizationsUsagesResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -263,4 +281,15 @@ message GetClusterUsageRequest {
 
 message GetClusterUsageResponse {
   repeated MonthlyUsage usage = 1;
+}
+
+message GetAllOrganizationsUsagesRequest {
+  // The timestamp of the beginning time of a date range.
+  google.protobuf.Timestamp start_time = 1;
+  // The timestamp of the ending time of a date range.
+  google.protobuf.Timestamp end_time = 2;
+}
+
+message GetAllOrganizationsUsagesResponse {
+  repeated OrganizationUsage organizations = 1;
 }
