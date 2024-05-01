@@ -125,6 +125,11 @@ type ContainerDescriptor interface {
 
 // OptionExtensionDescriptor contains options and option extensions.
 type OptionExtensionDescriptor interface {
+	// Features returns information about any features present in the
+	// options. It only provides information about standard features,
+	// not custom features (i.e. extensions of google.protobuf.FeatureSet).
+	//
+	// Never returns nil.
 	Features() FeaturesDescriptor
 
 	// OptionExtension returns the value for an options extension field.
