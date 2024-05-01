@@ -1,0 +1,4 @@
+version: v1
+breaking:
+  use:
+    - FIELD_SAME_JAVA_UTF8_VALIDATION

@@ -640,7 +640,8 @@ ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
 FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
 FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
@@ -652,7 +653,6 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
@@ -756,7 +756,8 @@ ENUM_SAME_TYPE                                  FILE, PACKAGE                   
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
@@ -767,7 +768,6 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.

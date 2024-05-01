@@ -20,9 +20,12 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (
@@ -371,9 +374,116 @@ func getEnumByFullName(files []bufprotosource.File, enumFullName string) (bufpro
 	return enum, nil
 }
 
-func withBackupLocation(primary bufprotosource.Location, secondary bufprotosource.Location) bufprotosource.Location {
-	if primary != nil {
-		return primary
+func withBackupLocation(locs ...bufprotosource.Location) bufprotosource.Location {
+	for _, loc := range locs {
+		if loc != nil {
+			return loc
+		}
 	}
-	return secondary
+	return nil
+}
+
+func findFeatureField(name protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.FieldDescriptor, error) {
+	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
+	featureField := featureSetDescriptor.Fields().ByName(name)
+	if featureField == nil {
+		return nil, fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), name)
+	}
+	if featureField.Kind() != expectedKind || featureField.IsList() {
+		return nil, fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional %s, got %s %s",
+			featureSetDescriptor.FullName(), name, expectedKind, featureField.Cardinality(), featureField.Kind())
+	}
+	return featureField, nil
+}
+
+func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.FieldDescriptor) (customfeatures.CppStringType, error) {
+	// We don't support Edition 2024 yet. But we know of this rule, so we can go ahead and
+	// implement it so it's one less thing to do when we DO add support for 2024.
+	if field.File().Edition() < descriptorpb.Edition_EDITION_2024 {
+		opts, _ := descriptor.Options().(*descriptorpb.FieldOptions)
+		// TODO: In Edition 2024, it will be *required* to use the new (pb.cpp).string_type option. So
+		//       we shouldn't bother checking the ctype option in editions >= 2024.
+		if opts != nil && opts.Ctype != nil {
+			switch opts.GetCtype() {
+			case descriptorpb.FieldOptions_CORD:
+				return customfeatures.CppStringTypeCord, nil
+			case descriptorpb.FieldOptions_STRING_PIECE:
+				return customfeatures.CppStringTypeStringPiece, nil
+			case descriptorpb.FieldOptions_STRING:
+				return customfeatures.CppStringTypeString, nil
+			default:
+				if descriptor.ParentFile().Syntax() != protoreflect.Editions {
+					return customfeatures.CppStringTypeString, nil
+				}
+				// If the file is edition 2023, we fall through to below since 2023 allows either
+				// the ctype field or the (pb.cpp).string_type feature.
+			}
+		}
+	}
+	val, err := customfeatures.ResolveCppFeature(descriptor, cppFeatureNameStringType, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	return customfeatures.CppStringType(val.Enum()), nil
+}
+
+func fieldCppStringTypeLocation(field bufprotosource.Field) bufprotosource.Location {
+	ext, err := customfeatures.CppFeatures()
+	if err != nil || ext.Message() == nil {
+		return nil
+	}
+	return getCustomFeatureLocation(field, ext, cppFeatureNameStringType)
+}
+
+func fieldJavaUTF8Validation(field protoreflect.FieldDescriptor) (descriptorpb.FeatureSet_Utf8Validation, error) {
+	standardFeatureField, err := findFeatureField(featureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	val, err := protoutil.ResolveFeature(field, standardFeatureField)
+	if err != nil {
+		return 0, fmt.Errorf("unable to resolve value of %s feature: %w", standardFeatureField.Name(), err)
+	}
+	defaultValue := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+
+	opts, _ := field.ParentFile().Options().(*descriptorpb.FileOptions)
+	if field.ParentFile().Syntax() != protoreflect.Editions || (opts != nil && opts.JavaStringCheckUtf8 != nil) {
+		if opts.GetJavaStringCheckUtf8() {
+			return descriptorpb.FeatureSet_VERIFY, nil
+		}
+		return defaultValue, nil
+	}
+
+	val, err = customfeatures.ResolveJavaFeature(field, javaFeatureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return 0, err
+	}
+	if customfeatures.JavaUTF8Validation(val.Enum()) == customfeatures.JavaUTF8ValidationVerify {
+		return descriptorpb.FeatureSet_VERIFY, nil
+	}
+	return defaultValue, nil
+}
+
+func fieldJavaUTF8ValidationLocation(field bufprotosource.Field) bufprotosource.Location {
+	ext, err := customfeatures.JavaFeatures()
+	if err != nil || ext.Message() == nil {
+		return nil
+	}
+	return getCustomFeatureLocation(field, ext, javaFeatureNameUTF8Validation)
+}
+
+func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect.ExtensionTypeDescriptor, fieldName protoreflect.Name) bufprotosource.Location {
+	if extension.Message() == nil {
+		return nil
+	}
+	feature := extension.Message().Fields().ByName(fieldName)
+	if feature == nil {
+		return nil
+	}
+	featureField := (*descriptorpb.FieldOptions)(nil).ProtoReflect().Descriptor().Fields().ByName(featuresFieldName)
+	if featureField == nil {
+		// should not be possible
+		return nil
+	}
+	return field.OptionLocation(featureField, int32(extension.Number()), int32(feature.Number()))
 }

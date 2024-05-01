@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package a;
+
+message C1 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C1 other4 = 14;
+}
+
+message C2 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C2 other4 = 14;
+}
+
+message C3 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C3 other4 = 14;
+}
+
+message C4 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C4 other4 = 14;
+}
+
+message C5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C5 other4 = 14;
+}
+
+message C6 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C6 other4 = 14;
+}

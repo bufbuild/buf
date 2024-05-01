@@ -142,6 +142,14 @@ bufgenerateclean:: \
 bufgeneratego:
 	$(BUF_BIN) generate --template data/template/buf.go.gen.yaml
 	$(BUF_BIN) generate --template data/template/buf.go-client.gen.yaml
+	@# TODO: These should use the protocolbuffers/wellknowntypes module. We can change to that once a final v27.0 is released.
+	$(BUF_BIN) build -o private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures/cpp_features.bin \
+		https://github.com/protocolbuffers/protobuf.git#tag=v27.0-rc1,subdir=src \
+		--path src/google/protobuf/cpp_features.proto \
+		--path src/google/protobuf/descriptor.proto # We need the newer descriptor.proto for above file to build.
+	$(BUF_BIN) build -o private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures/java_features.bin \
+		https://github.com/protocolbuffers/protobuf.git#tag=v26.1,subdir=java/core/src/main/resources \
+		--path java/core/src/main/resources/google/protobuf/java_features.proto
 
 .PHONY: bufgeneratebuflinttestdata
 bufgeneratebuflinttestdata:

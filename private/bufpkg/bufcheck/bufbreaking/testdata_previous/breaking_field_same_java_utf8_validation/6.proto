@@ -1,0 +1,96 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/java_features.proto";
+
+option features.utf8_validation = NONE;
+option features.(pb.java).utf8_validation = VERIFY;
+
+message F1 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F1 other4 = 14;
+}
+
+message F2 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F2 other4 = 14;
+}
+
+message F3 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F3 other4 = 14;
+}
+
+message F4 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F4 other4 = 14;
+}
+
+message F5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F5 other4 = 14;
+}
+
+message F6 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F6 other4 = 14;
+}
+
+message F7 {
+  string s1 = 1 [features.(pb.java).utf8_validation=DEFAULT];
+  repeated string s2 = 2 [features.(pb.java).utf8_validation=VERIFY];
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F7 other4 = 14;
+}
+
+message F8 {
+  string s1 = 1 [features.(pb.java).utf8_validation=DEFAULT];
+  repeated string s2 = 2 [features.(pb.java).utf8_validation=VERIFY];
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F8 other4 = 14;
+}

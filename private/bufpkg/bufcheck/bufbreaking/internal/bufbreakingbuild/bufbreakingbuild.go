@@ -98,11 +98,23 @@ var (
 		"fields have the same cardinalities in a given message",
 		bufbreakingcheck.CheckFieldSameCardinality,
 	)
+	// FieldSameCppStringTypeRuleBuilder is a rule builder.
+	FieldSameCppStringTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_CPP_STRING_TYPE",
+		"fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature",
+		bufbreakingcheck.CheckFieldSameCppStringType,
+	)
 	// FieldSameCTypeRuleBuilder is a rule builder.
-	FieldSameCTypeRuleBuilder = internal.NewNopRuleBuilder(
+	FieldSameCTypeRuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FIELD_SAME_CTYPE",
 		"fields have the same value for the ctype option",
-		bufbreakingcheck.CheckFieldSameCType,
+		[]string{"FIELD_SAME_CPP_STRING_TYPE"},
+	)
+	// FieldSameJavaUTF8ValidationRuleBuilder is a rule builder.
+	FieldSameJavaUTF8ValidationRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_JAVA_UTF8_VALIDATION",
+		"fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature",
+		bufbreakingcheck.CheckFieldSameJavaUTF8Validation,
 	)
 	// FieldSameJSONNameRuleBuilder is a rule builder.
 	FieldSameJSONNameRuleBuilder = internal.NewNopRuleBuilder(
@@ -217,10 +229,10 @@ var (
 		bufbreakingcheck.CheckFileSameJavaPackage,
 	)
 	// FileSameJavaStringCheckUtf8RuleBuilder is a rule builder.
-	FileSameJavaStringCheckUtf8RuleBuilder = internal.NewNopRuleBuilder(
+	FileSameJavaStringCheckUtf8RuleBuilder = internal.NewDeprecatedRuleBuilder(
 		"FILE_SAME_JAVA_STRING_CHECK_UTF8",
 		"files have the same value for the java_string_check_utf8 option",
-		bufbreakingcheck.CheckFileSameJavaStringCheckUtf8,
+		[]string{"FIELD_SAME_JAVA_UTF8_VALIDATION"},
 	)
 	// FileSameObjcClassPrefixRuleBuilder is a rule builder.
 	FileSameObjcClassPrefixRuleBuilder = internal.NewNopRuleBuilder(
