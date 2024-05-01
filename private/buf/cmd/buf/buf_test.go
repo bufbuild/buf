@@ -634,12 +634,15 @@ ENUM_NO_DELETE                                  FILE                            
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
 FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
 FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
 FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
@@ -659,6 +662,7 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
@@ -745,11 +749,14 @@ FILE_NO_DELETE                                  FILE                            
 FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
 FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
 FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
 FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
@@ -769,6 +776,7 @@ FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   
 FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
 FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
 MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
 ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
 RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.

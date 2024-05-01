@@ -27,8 +27,14 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
+)
+
+const (
+	featureNameUTF8Validation = "utf8_validation"
+	featureNameJSONFormat     = "json_format"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -52,6 +58,86 @@ func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile bufprotosource.
 			}
 			add(descriptor, nil, location, `Previously present enum %q was deleted from file.`, previousNestedName)
 		}
+	}
+	return nil
+}
+
+// CheckEnumSameJSONFormat is a check function.
+var CheckEnumSameJSONFormat = newEnumPairCheckFunc(checkEnumSameJSONFormat)
+
+func checkEnumSameJSONFormat(
+	add addFunc,
+	_ *corpus,
+	previousEnum bufprotosource.Enum,
+	enum bufprotosource.Enum,
+) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
+	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
+	if featureField == nil {
+		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
+	}
+	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
+		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
+			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousJSONFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	if previousJSONFormat != jsonFormat {
+		add(
+			enum,
+			nil,
+			withBackupLocation(enum.Features().JSONFormatLocation(), enum.Location()),
+			`Enum %q JSON format support changed from %v to %v.`,
+			enum.Name(),
+			previousJSONFormat,
+			jsonFormat,
+		)
+	}
+	return nil
+}
+
+// CheckEnumSameType is a check function.
+var CheckEnumSameType = newEnumPairCheckFunc(checkEnumSameType)
+
+func checkEnumSameType(add addFunc, _ *corpus, previousEnum bufprotosource.Enum, enum bufprotosource.Enum) error {
+	previousDescriptor, err := previousEnum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := enum.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	if previousDescriptor.IsClosed() != descriptor.IsClosed() {
+		previousState, currentState := "closed", "open"
+		if descriptor.IsClosed() {
+			previousState, currentState = currentState, previousState
+		}
+		add(
+			enum,
+			nil,
+			withBackupLocation(enum.Features().EnumTypeLocation(), enum.Location()),
+			`Enum %q changed from %s to %s.`,
+			enum.Name(),
+			previousState,
+			currentState,
+		)
 	}
 	return nil
 }
@@ -334,6 +420,57 @@ func checkFieldSameType(
 		if previousField.TypeName() != field.TypeName() {
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 		}
+	}
+	return nil
+}
+
+// CheckFieldSameUTF8Validation is a check function.
+var CheckFieldSameUTF8Validation = newFieldDescriptorPairCheckFunc(checkFieldSameUTF8Validation)
+
+func checkFieldSameUTF8Validation(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
+		return nil
+	}
+	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
+	featureField := featureSetDescriptor.Fields().ByName(featureNameUTF8Validation)
+	if featureField == nil {
+		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameUTF8Validation)
+	}
+	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
+		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
+			featureSetDescriptor.FullName(), featureNameUTF8Validation, featureField.Cardinality(), featureField.Kind())
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousUTF8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	utf8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
+	if previousUTF8Validation != utf8Validation {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(
+			field,
+			nil,
+			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
+			`Field %q with name %q on message %q changed UTF8 validation from %v to %v.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousUTF8Validation,
+			utf8Validation,
+		)
 	}
 	return nil
 }
@@ -728,6 +865,56 @@ func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, corpus *corpus,
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
 	if previous == "false" && current == "true" {
 		add(message, nil, message.NoStandardDescriptorAccessorLocation(), `Message option "no_standard_descriptor_accessor" changed from %q to %q.`, previous, current)
+	}
+	return nil
+}
+
+// CheckMessageSameJSONFormat is a check function.
+var CheckMessageSameJSONFormat = newMessagePairCheckFunc(checkMessageSameJSONFormat)
+
+func checkMessageSameJSONFormat(
+	add addFunc,
+	_ *corpus,
+	previousMessage bufprotosource.Message,
+	message bufprotosource.Message,
+) error {
+	previousDescriptor, err := previousMessage.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	descriptor, err := message.AsDescriptor()
+	if err != nil {
+		return err
+	}
+	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
+	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
+	if featureField == nil {
+		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
+	}
+	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
+		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
+			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	}
+	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	previousJSONFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	val, err = protoutil.ResolveFeature(descriptor, featureField)
+	if err != nil {
+		return fmt.Errorf("unable to resolve value of %s feature: %w", featureField.Name(), err)
+	}
+	jsonFormat := descriptorpb.FeatureSet_JsonFormat(val.Enum())
+	if previousJSONFormat != jsonFormat {
+		add(
+			message,
+			nil,
+			withBackupLocation(message.Features().JSONFormatLocation(), message.Location()),
+			`Message %q JSON format support changed from %v to %v.`,
+			message.Name(),
+			previousJSONFormat,
+			jsonFormat,
+		)
 	}
 	return nil
 }

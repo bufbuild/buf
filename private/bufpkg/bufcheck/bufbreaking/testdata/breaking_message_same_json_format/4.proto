@@ -1,0 +1,31 @@
+edition = "2023";
+
+package a;
+
+option features.json_format = LEGACY_BEST_EFFORT;
+
+message A4 {
+  string s = 1;
+}
+
+message B4 {
+  string s = 1;
+}
+
+message C4 {
+  string s = 1;
+}
+
+message D4 {
+  option features.json_format = ALLOW;
+  string s = 1;
+}
+
+message C5 {
+  string s = 1;
+}
+
+message C6 {
+  option features.json_format = ALLOW;
+  string s = 1;
+}
