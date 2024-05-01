@@ -34,11 +34,13 @@ import (
 )
 
 const (
-	labelFlagName            = "label"
-	errorFormatFlagName      = "error-format"
-	disableSymlinksFlagName  = "disable-symlinks"
-	createFlagName           = "create"
-	createVisibilityFlagName = "create-visibility"
+	labelFlagName              = "label"
+	errorFormatFlagName        = "error-format"
+	disableSymlinksFlagName    = "disable-symlinks"
+	createFlagName             = "create"
+	createVisibilityFlagName   = "create-visibility"
+	createDefaultLabelFlagName = "create-default-label"
+	sourceControlURLFlagName   = "source-control-url"
 
 	// All deprecated.
 	tagFlagName      = "tag"
@@ -72,14 +74,16 @@ func NewCommand(
 }
 
 type flags struct {
-	Tags             []string
-	Branch           string
-	Draft            string
-	Labels           []string
-	ErrorFormat      string
-	DisableSymlinks  bool
-	Create           bool
-	CreateVisibility string
+	Tags               []string
+	Branch             string
+	Draft              string
+	Labels             []string
+	ErrorFormat        string
+	DisableSymlinks    bool
+	Create             bool
+	CreateVisibility   string
+	CreateDefaultLabel string
+	SourceControlURL   string
 	// special
 	InputHashtag string
 }
@@ -115,6 +119,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"Create the repository if it does not exist. Must set --%s",
 			createVisibilityFlagName,
 		),
+	)
+	flagSet.StringVar(
+		&f.CreateDefaultLabel,
+		createDefaultLabelFlagName,
+		"",
+		`The repository's default label setting, if created. If this is not set, then the repository will be created with the default label "main".`,
+	)
+	flagSet.StringVar(
+		&f.SourceControlURL,
+		sourceControlURLFlagName,
+		"",
+		"The URL for viewing the source code of the pushed modules (e.g. the specific commit in source control).",
 	)
 
 	flagSet.StringSliceVarP(&f.Tags, tagFlagName, tagFlagShortName, nil, useLabelInstead)
@@ -158,7 +174,13 @@ func run(
 		if err != nil {
 			return err
 		}
-		uploadOptions = append(uploadOptions, bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity))
+		uploadOptions = append(
+			uploadOptions,
+			bufmodule.UploadWithCreateIfNotExist(createModuleVisiblity, flags.CreateDefaultLabel),
+		)
+	}
+	if flags.SourceControlURL != "" {
+		uploadOptions = append(uploadOptions, bufmodule.UploadWithSourceControlURL(flags.SourceControlURL))
 	}
 
 	commits, err := uploader.Upload(ctx, workspace, uploadOptions...)
@@ -261,6 +283,13 @@ func validateCreateFlags(flags *flags) error {
 			return appcmd.NewInvalidArgumentErrorf(
 				"Cannot set --%s without --%s",
 				createVisibilityFlagName,
+				createFlagName,
+			)
+		}
+		if flags.CreateDefaultLabel != "" {
+			return appcmd.NewInvalidArgumentErrorf(
+				"Cannot set --%s without --%s",
+				createDefaultLabelFlagName,
 				createFlagName,
 			)
 		}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package a;
+
+enum B1 {
+  B1_ZERO = 0;
+}
+
+enum B2 {
+  B2_ZERO = 0;
+}
+
+enum B3 {
+  B3_ZERO = 0;
+}
+
+enum B4 {
+  B4_ZERO = 0;
+}

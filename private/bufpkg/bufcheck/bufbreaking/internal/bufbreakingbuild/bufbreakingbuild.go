@@ -32,6 +32,18 @@ var (
 		"enums are not deleted from a given file",
 		bufbreakingcheck.CheckEnumNoDelete,
 	)
+	// EnumSameJSONFormatRuleBuilder is a rule builder.
+	EnumSameJSONFormatRuleBuilder = internal.NewNopRuleBuilder(
+		"ENUM_SAME_JSON_FORMAT",
+		"enums have the same JSON format support",
+		bufbreakingcheck.CheckEnumSameJSONFormat,
+	)
+	// EnumSameTypeRuleBuilder is a rule builder.
+	EnumSameTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"ENUM_SAME_TYPE",
+		"enums have the same type (open vs closed)",
+		bufbreakingcheck.CheckEnumSameType,
+	)
 	// EnumValueNoDeleteRuleBuilder is a rule builder.
 	EnumValueNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_NO_DELETE",
@@ -131,6 +143,12 @@ var (
 		"FIELD_SAME_ONEOF",
 		"fields have the same oneofs in a given message",
 		bufbreakingcheck.CheckFieldSameOneof,
+	)
+	// FieldSameUTF8ValidationRuleBuilder is a rule builder.
+	FieldSameUTF8ValidationRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_UTF8_VALIDATION",
+		"string fields have the same UTF8 validation mode",
+		bufbreakingcheck.CheckFieldSameUTF8Validation,
 	)
 	// FieldSameTypeRuleBuilder is a rule builder.
 	FieldSameTypeRuleBuilder = internal.NewNopRuleBuilder(
@@ -299,6 +317,12 @@ var (
 		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR",
 		"messages do not change the no_standard_descriptor_accessor option from false or unset to true",
 		bufbreakingcheck.CheckMessageNoRemoveStandardDescriptorAccessor,
+	)
+	// MessageSameJSONFormatRuleBuilder is a rule builder.
+	MessageSameJSONFormatRuleBuilder = internal.NewNopRuleBuilder(
+		"MESSAGE_SAME_JSON_FORMAT",
+		"messages have the same JSON format support",
+		bufbreakingcheck.CheckMessageSameJSONFormat,
 	)
 	// MessageSameMessageSetWireFormatRuleBuilder is a rule builder.
 	MessageSameMessageSetWireFormatRuleBuilder = internal.NewNopRuleBuilder(

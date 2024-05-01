@@ -20,6 +20,7 @@ import "buf/alpha/registry/v1alpha1/organization.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "buf/alpha/registry/v1alpha1/verification_status.proto";
+import "google/protobuf/timestamp.proto";
 
 // BreakingChangeCategory is the allowed list of categories for breaking rule settings.
 enum BreakingChangeCategory {
@@ -253,7 +254,12 @@ message UpdateReviewFlowGracePeriodPolicyRequest {
 
 message UpdateReviewFlowGracePeriodPolicyResponse {}
 
-message GetClusterUsageRequest {}
+message GetClusterUsageRequest {
+  // The timestamp of the beginning time of a date range.
+  google.protobuf.Timestamp start_time = 1;
+  // The timestamp of the ending time of a date range.
+  google.protobuf.Timestamp end_time = 2;
+}
 
 message GetClusterUsageResponse {
   repeated MonthlyUsage usage = 1;

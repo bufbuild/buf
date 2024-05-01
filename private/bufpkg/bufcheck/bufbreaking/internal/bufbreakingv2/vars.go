@@ -23,6 +23,8 @@ var (
 	// v2RuleBuilders are the rule builders.
 	v2RuleBuilders = []*internal.RuleBuilder{
 		bufbreakingbuild.EnumNoDeleteRuleBuilder,
+		bufbreakingbuild.EnumSameJSONFormatRuleBuilder,
+		bufbreakingbuild.EnumSameTypeRuleBuilder,
 		bufbreakingbuild.EnumValueNoDeleteRuleBuilder,
 		bufbreakingbuild.EnumValueNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.EnumValueNoDeleteUnlessNumberReservedRuleBuilder,
@@ -39,6 +41,7 @@ var (
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
+		bufbreakingbuild.FieldSameUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldWireCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireCompatibleTypeRuleBuilder,
 		bufbreakingbuild.FieldWireJSONCompatibleCardinalityRuleBuilder,
@@ -66,6 +69,7 @@ var (
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
 		bufbreakingbuild.MessageNoRemoveStandardDescriptorAccessorRuleBuilder,
+		bufbreakingbuild.MessageSameJSONFormatRuleBuilder,
 		bufbreakingbuild.MessageSameMessageSetWireFormatRuleBuilder,
 		bufbreakingbuild.MessageSameRequiredFieldsRuleBuilder,
 		bufbreakingbuild.OneofNoDeleteRuleBuilder,
@@ -92,6 +96,14 @@ var (
 	v2IDToCategories = map[string][]string{
 		"ENUM_NO_DELETE": {
 			"FILE",
+		},
+		"ENUM_SAME_JSON_FORMAT": {
+			"FILE",
+			"PACKAGE",
+		},
+		"ENUM_SAME_TYPE": {
+			"FILE",
+			"PACKAGE",
 		},
 		"ENUM_VALUE_NO_DELETE": {
 			"FILE",
@@ -159,6 +171,10 @@ var (
 			"WIRE",
 		},
 		"FIELD_SAME_TYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
 		},
@@ -263,6 +279,10 @@ var (
 			"FILE",
 		},
 		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR": {
+			"FILE",
+			"PACKAGE",
+		},
+		"MESSAGE_SAME_JSON_FORMAT": {
 			"FILE",
 			"PACKAGE",
 		},

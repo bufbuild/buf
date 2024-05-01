@@ -67,7 +67,7 @@ func TestOptionExtensionLocation(t *testing.T) {
 		},
 	}
 	locationStore := newLocationStore(locations)
-	descriptor := newOptionExtensionDescriptor(&descriptorpb.MessageOptions{}, []int32{1, 2, 3, 4, 5}, locationStore)
+	descriptor := newOptionExtensionDescriptor(&descriptorpb.MessageOptions{}, []int32{1, 2, 3, 4, 5}, locationStore, 12)
 	customOption1079 := makeCustomOption(t, 1079)
 	customOption1089 := makeCustomOption(t, 1089)
 	customOption1099 := makeCustomOption(t, 1099)

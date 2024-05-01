@@ -14,7 +14,10 @@
 
 package bufprotosource
 
-import "google.golang.org/protobuf/reflect/protoreflect"
+import (
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/descriptorpb"
+)
 
 type message struct {
 	namedDescriptor
@@ -142,6 +145,47 @@ func (m *message) MessageSetWireFormatLocation() Location {
 
 func (m *message) NoStandardDescriptorAccessorLocation() Location {
 	return m.getLocation(m.noStandardDescriptorAccessorPath)
+}
+
+func (m *message) Location() Location {
+	loc := m.namedDescriptor.Location()
+	if loc == nil {
+		return m.maybeMapEntryLocation()
+	}
+	return loc
+}
+
+func (m *message) NameLocation() Location {
+	loc := m.namedDescriptor.NameLocation()
+	if loc == nil {
+		return m.maybeMapEntryLocation()
+	}
+	return loc
+}
+
+func (m *message) maybeMapEntryLocation() Location {
+	parent, _ := m.parent.(*message)
+	if !m.isMapEntry || parent == nil || m.namedDescriptor.locationStore.isEmpty() {
+		// not a map entry
+		return nil
+	}
+	// Synthetic map messages come from the type of the corresponding
+	// map field. So report that location.
+	if field := parent.findMapField(m.FullName()); field != nil {
+		return field.TypeNameLocation()
+	}
+	return nil
+}
+
+func (m *message) findMapField(entryName string) Field {
+	for _, field := range m.fields {
+		if field.Type() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE &&
+			field.Label() == descriptorpb.FieldDescriptorProto_LABEL_REPEATED &&
+			field.TypeName() == entryName {
+			return field
+		}
+	}
+	return nil
 }
 
 func (m *message) addField(field Field) {

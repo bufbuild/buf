@@ -125,6 +125,7 @@ func (a *uploader) Upload(
 				primaryRegistry,
 				contentModule,
 				uploadOptions.CreateModuleVisibility(),
+				uploadOptions.CreateDefaultLabel(),
 			)
 			if err != nil {
 				return nil, err
@@ -144,7 +145,7 @@ func (a *uploader) Upload(
 		}
 	}
 
-	var v1beta1ProtoUploadRequestContents []*modulev1beta1.UploadRequest_Content
+	var v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef
 	if len(uploadOptions.Tags()) > 0 {
 		contentModuleSortedDefaultLabels := slicesext.ToUniqueSorted(
 			slicesext.Map(
@@ -166,49 +167,45 @@ func (a *uploader) Upload(
 				strings.Join(contentModuleSortedDefaultLabels, ", "),
 			)
 		}
-		for i, contentModule := range contentModules {
-			labelNames := append(uploadOptions.Tags(), modules[i].DefaultLabelName)
-			v1beta1ProtoScopedLabelRefs := slicesext.Map(
-				labelNames,
-				labelNameToV1Beta1ProtoScopedLabelRef,
-			)
-			v1beta1ProtoUploadRequestContent, err := getV1Beta1ProtoUploadRequestContent(
-				ctx,
-				v1beta1ProtoScopedLabelRefs,
-				primaryRegistry,
-				contentModule,
-			)
-			if err != nil {
-				return nil, err
-			}
-			v1beta1ProtoUploadRequestContents = append(v1beta1ProtoUploadRequestContents, v1beta1ProtoUploadRequestContent)
+		if len(contentModuleSortedDefaultLabels) < 1 {
+			// This should never happen, every module should have a default label, so we return
+			// a syserror.
+			return nil, syserror.New("no default labels for modules")
 		}
+		// While the API allows different labels per reference, we don't expose this through
+		// the use of the `--label` flag, so all references will have the same labels.
+		// We just pre-compute them now.
+		labelNames := append(uploadOptions.Tags(), contentModuleSortedDefaultLabels[0])
+		v1beta1ProtoScopedLabelRefs = slicesext.Map(
+			labelNames,
+			labelNameToV1Beta1ProtoScopedLabelRef,
+		)
 	} else {
 		// While the API allows different labels per reference, we don't expose this through
 		// the use of the `--label` flag, so all references will have the same labels.
 		// We just pre-compute them now.
-		var v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef
 		if len(uploadOptions.Labels()) > 0 {
 			v1beta1ProtoScopedLabelRefs = slicesext.Map(
 				uploadOptions.Labels(),
 				labelNameToV1Beta1ProtoScopedLabelRef,
 			)
 		}
-		// Maintains ordering, important for when we create bufmodule.Commit objects below.
-		v1beta1ProtoUploadRequestContents, err = slicesext.MapError(
-			contentModules,
-			func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
-				return getV1Beta1ProtoUploadRequestContent(
-					ctx,
-					v1beta1ProtoScopedLabelRefs,
-					primaryRegistry,
-					module,
-				)
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
+	}
+	// Maintains ordering, important for when we create bufmodule.Commit objects below.
+	v1beta1ProtoUploadRequestContents, err := slicesext.MapError(
+		contentModules,
+		func(module bufmodule.Module) (*modulev1beta1.UploadRequest_Content, error) {
+			return getV1Beta1ProtoUploadRequestContent(
+				ctx,
+				v1beta1ProtoScopedLabelRefs,
+				primaryRegistry,
+				module,
+				uploadOptions.SourceControlURL(),
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	remoteDeps, err := bufmodule.RemoteDepsForModules(contentModules)
@@ -332,6 +329,7 @@ func (a *uploader) createContentModuleIfNotExist(
 	primaryRegistry string,
 	contentModule bufmodule.Module,
 	createModuleVisibility bufmodule.ModuleVisibility,
+	createDefaultLabel string,
 ) (*modulev1.Module, error) {
 	v1ProtoCreateModuleVisibility, err := moduleVisibilityToV1Proto(createModuleVisibility)
 	if err != nil {
@@ -348,8 +346,9 @@ func (a *uploader) createContentModuleIfNotExist(
 								Name: contentModule.ModuleFullName().Owner(),
 							},
 						},
-						Name:       contentModule.ModuleFullName().Name(),
-						Visibility: v1ProtoCreateModuleVisibility,
+						Name:             contentModule.ModuleFullName().Name(),
+						Visibility:       v1ProtoCreateModuleVisibility,
+						DefaultLabelName: createDefaultLabel,
 					},
 				},
 			},
@@ -412,6 +411,7 @@ func getV1Beta1ProtoUploadRequestContent(
 	v1beta1ProtoScopedLabelRefs []*modulev1beta1.ScopedLabelRef,
 	primaryRegistry string,
 	module bufmodule.Module,
+	sourceControlURL string,
 ) (*modulev1beta1.UploadRequest_Content, error) {
 	if !module.IsLocal() {
 		return nil, syserror.New("expected local Module in getProtoLegacyFederationUploadRequestContent")
@@ -429,7 +429,7 @@ func getV1Beta1ProtoUploadRequestContent(
 		return nil, err
 	}
 
-	return &modulev1beta1.UploadRequest_Content{
+	uploadRequestContent := &modulev1beta1.UploadRequest_Content{
 		ModuleRef: &modulev1beta1.ModuleRef{
 			Value: &modulev1beta1.ModuleRef_Name_{
 				Name: &modulev1beta1.ModuleRef_Name{
@@ -440,8 +440,11 @@ func getV1Beta1ProtoUploadRequestContent(
 		},
 		Files:           v1beta1ProtoFiles,
 		ScopedLabelRefs: v1beta1ProtoScopedLabelRefs,
-		// TODO FUTURE: vcs_commit
-	}, nil
+	}
+	if sourceControlURL != "" {
+		uploadRequestContent.SourceControlUrl = sourceControlURL
+	}
+	return uploadRequestContent, nil
 }
 
 func remoteDepToV1Beta1ProtoUploadRequestDepRef(

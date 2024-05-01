@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package a;
+
+// Comment for FooWithGroup
+message FooWithGroup {
+  // Comment for Group1
+  optional group Group1 = 1 {
+    // Comment for s
+    optional string s = 1;
+  }
+
+  optional group Group2 = 2 {}
+}
