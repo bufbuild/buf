@@ -823,42 +823,53 @@ func TestLsBreakingRulesDeprecated(t *testing.T) {
 	stdout := bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
+	// The deprecated rules are omitted from v2.
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2", "--include-deprecated")
-	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
 
 	// Test the non-all version too. Should never have deprecated rules.
 

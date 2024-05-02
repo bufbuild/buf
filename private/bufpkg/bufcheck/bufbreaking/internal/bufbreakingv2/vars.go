@@ -37,7 +37,6 @@ var (
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
-		bufbreakingbuild.FieldSameLabelRuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
@@ -64,7 +63,6 @@ var (
 		bufbreakingbuild.FileSameCcGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameJavaGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSamePyGenericServicesRuleBuilder,
-		bufbreakingbuild.FileSamePhpGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameCcEnableArenasRuleBuilder,
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
@@ -153,7 +151,6 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
@@ -255,10 +252,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_PY_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
 			"FILE",
 			"PACKAGE",
 		},

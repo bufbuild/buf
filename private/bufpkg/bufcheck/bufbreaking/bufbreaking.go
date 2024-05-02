@@ -113,6 +113,24 @@ func GetAllRulesV2() ([]bufcheck.Rule, error) {
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
+// GetRelevantDeprecations gets deprecation information for the given
+// version. The map is from deprecated rule IDs to zero or more replacement
+// rule IDs.
+func GetRelevantDeprecations(fileVersion bufconfig.FileVersion) (map[string][]string, error) {
+	var versionSpec *internal.VersionSpec
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		versionSpec = bufbreakingv1beta1.VersionSpec
+	case bufconfig.FileVersionV1:
+		versionSpec = bufbreakingv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = bufbreakingv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	return internal.RelevantDeprecationsForVersionSpec(versionSpec)
+}
+
 func internalConfigForConfig(config bufconfig.BreakingConfig, transformDeprecated bool) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
 	switch fileVersion := config.FileVersion(); fileVersion {

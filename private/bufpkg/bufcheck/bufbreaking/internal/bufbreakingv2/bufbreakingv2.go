@@ -23,6 +23,12 @@ import (
 )
 
 // VersionSpec is the version specification for v2.
+// Changes from v1:
+//
+// Removes deprecated checks (and retains only their
+// replacements):
+//   - FIELD_SAME_LABEL
+//   - FILE_SAME_PHP_GENERIC_SERVICES
 var VersionSpec = &internal.VersionSpec{
 	FileVersion:       bufconfig.FileVersionV2,
 	RuleBuilders:      v2RuleBuilders,

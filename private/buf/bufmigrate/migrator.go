@@ -639,6 +639,10 @@ func resolvedDeclaredAndLockedDependencies(
 }
 
 func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintConfig, error) {
+	deprecations, err := buflint.GetRelevantDeprecations(lintConfig.FileVersion())
+	if err != nil {
+		return nil, err
+	}
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		lintConfig,
 		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
@@ -653,6 +657,7 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 			)
 			return buflint.RulesForConfig(lintConfig)
 		},
+		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -669,6 +674,10 @@ func equivalentLintConfigInV2(lintConfig bufconfig.LintConfig) (bufconfig.LintCo
 }
 
 func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufconfig.BreakingConfig, error) {
+	deprecations, err := bufbreaking.GetRelevantDeprecations(breakingConfig.FileVersion())
+	if err != nil {
+		return nil, err
+	}
 	equivalentCheckConfigV2, err := equivalentCheckConfigInV2(
 		breakingConfig,
 		func(checkConfig bufconfig.CheckConfig) ([]bufcheck.Rule, error) {
@@ -678,6 +687,7 @@ func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufc
 			)
 			return bufbreaking.RulesForConfig(breakingConfig)
 		},
+		deprecations,
 	)
 	if err != nil {
 		return nil, err
@@ -693,6 +703,7 @@ func equivalentBreakingConfigInV2(breakingConfig bufconfig.BreakingConfig) (bufc
 func equivalentCheckConfigInV2(
 	checkConfig bufconfig.CheckConfig,
 	getRulesFunc func(bufconfig.CheckConfig) ([]bufcheck.Rule, error),
+	deprecations map[string][]string,
 ) (bufconfig.CheckConfig, error) {
 	// These are the rules we want the returned config to have in effect.
 	// i.e. getRulesFunc(returnedConfig) should return this list.
@@ -712,10 +723,10 @@ func equivalentCheckConfigInV2(
 	// is a simple translation. It may or may not be equivalent to the given check config.
 	simplyTranslatedCheckConfig, err := bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		checkConfig.UseIDsAndCategories(),
-		checkConfig.ExceptIDsAndCategories(),
+		undeprecateSlice(checkConfig.UseIDsAndCategories(), deprecations),
+		undeprecateSlice(checkConfig.ExceptIDsAndCategories(), deprecations),
 		checkConfig.IgnorePaths(),
-		checkConfig.IgnoreIDOrCategoryToPaths(),
+		undeprecateMap(checkConfig.IgnoreIDOrCategoryToPaths(), deprecations),
 	)
 	if err != nil {
 		return nil, err
@@ -758,4 +769,38 @@ func equivalentCheckConfigInV2(
 		checkConfig.IgnorePaths(),
 		checkConfig.IgnoreIDOrCategoryToPaths(),
 	)
+}
+
+// undeprecateSlice transforms the given slice of IDs so that any deprecated
+// IDs are replaced with their replacements per the given deprecations.
+func undeprecateSlice(ids []string, deprecations map[string][]string) []string {
+	newIDs := make([]string, 0, len(ids))
+	for _, id := range ids {
+		replacements, ok := deprecations[id]
+		if ok {
+			newIDs = append(newIDs, replacements...)
+		} else {
+			newIDs = append(newIDs, id)
+		}
+	}
+	return newIDs
+}
+
+// undeprecateMap transforms the given map of IDs to values so that any
+// deprecated IDs are replaced with their replacements per the given
+// deprecations. When there is more than one replacement, all entries
+// for the replacements will have the same value.
+func undeprecateMap[T any](idMap map[string]T, deprecations map[string][]string) map[string]T {
+	newIDs := make(map[string]T, len(idMap))
+	for id, val := range idMap {
+		replacements, ok := deprecations[id]
+		if ok {
+			for _, replacement := range replacements {
+				newIDs[replacement] = val
+			}
+		} else {
+			newIDs[id] = val
+		}
+	}
+	return newIDs
 }
