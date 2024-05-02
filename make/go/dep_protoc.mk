@@ -12,7 +12,14 @@ $(call _assert_var,CACHE_BIN)
 # Settable
 # https://github.com/protocolbuffers/protobuf/releases 20240313 checked 20240313
 # NOTE: Set to version compatible with genproto source code (only used in tests).
-PROTOC_VERSION ?= 26.1
+PROTOC_VERSION ?= 27.0-rc1
+
+# Google does i.e. v27.0-rc-1 for zip files for version v27.0-rc1
+ifeq(,$(findstring $(PROTOC_VERSION),rc))
+PROTOC_RELEASE_VERSION := $(patsubst rc,rc-,$(PROTOC_VERSION))
+else
+PROTOC_RELEASE_VERSION := $(PROTOC_VERSION)
+endif
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
@@ -35,7 +42,7 @@ $(PROTOC):
 	@rm -rf $(CACHE_INCLUDE)/google
 	@mkdir -p $(CACHE_BIN) $(CACHE_INCLUDE)
 	$(eval PROTOC_TMP := $(shell mktemp -d))
-	cd $(PROTOC_TMP); curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_VERSION)-$(PROTOC_OS)-$(PROTOC_ARCH).zip -o protoc.zip
+	cd $(PROTOC_TMP); curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/protoc-$(PROTOC_RELEASE_VERSION)-$(PROTOC_OS)-$(PROTOC_ARCH).zip -o protoc.zip
 	cd $(PROTOC_TMP); unzip protoc.zip && mv bin/protoc $(CACHE_BIN)/protoc && mv include/google $(CACHE_INCLUDE)/google
 	@rm -rf $(PROTOC_TMP)
 	@rm -rf $(dir $(PROTOC))

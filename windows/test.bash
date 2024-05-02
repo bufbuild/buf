@@ -2,9 +2,14 @@
 
 set -eo pipefail
 
-PROTOC_VERSION="26.1"
+PROTOC_VERSION="27.0-rc1"
 PROTOC_GEN_GO_VERSION="v1.33.0"
 CONNECT_VERSION="v1.16.1"
+
+PROTOC_RELEASE_VERSION="${PROTOC_VERSION}"
+if [ "${PROTOC_VERSION}" =~ "rc" ]; then
+  PROTOC_RELEASE_VERSION="$(echo "${PROTOC_VERSION}" | sed "s/rc/rc-/")"
+fi
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
@@ -16,7 +21,7 @@ if [ -f "${DOWNLOAD_CACHE}/protoc/bin/protoc.exe" ]; then
 fi
 
 if [ "${CACHED_PROTOC_VERSION}" != "$PROTOC_VERSION" ]; then
-  PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-win64.zip"
+  PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_RELEASE_VERSION}-win64.zip"
   curl -sSL -o "${DOWNLOAD_CACHE}/protoc.zip" "${PROTOC_URL}"
   7z x -y -o"${DOWNLOAD_CACHE}/protoc" "${DOWNLOAD_CACHE}/protoc.zip"
   mkdir -p "${DOWNLOAD_CACHE}/protoc/lib"
