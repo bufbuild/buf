@@ -6,8 +6,9 @@ PROTOC_VERSION="27.0-rc1"
 PROTOC_GEN_GO_VERSION="v1.33.0"
 CONNECT_VERSION="v1.16.1"
 
+# Google does i.e. v27.0-rc-1 for zip files for version v27.0-rc1
 PROTOC_RELEASE_VERSION="${PROTOC_VERSION}"
-if [ "${PROTOC_VERSION}" =~ "rc" ]; then
+if [[ "${PROTOC_VERSION}" =~ "rc" ]]; then
   PROTOC_RELEASE_VERSION="$(echo "${PROTOC_VERSION}" | sed "s/rc/rc-/")"
 fi
 
