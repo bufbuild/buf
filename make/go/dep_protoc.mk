@@ -16,7 +16,8 @@ PROTOC_VERSION ?= 27.0-rc1
 
 # Google does i.e. v27.0-rc-1 for zip files for version v27.0-rc1
 ifeq (,$(findstring $(PROTOC_VERSION),rc))
-PROTOC_RELEASE_VERSION := $(patsubst rc,rc-,$(PROTOC_VERSION))
+# This should really use patsubst. Can't figure it out right now.
+PROTOC_RELEASE_VERSION := $(shell echo $(PROTOC_VERSION) | sed "s/rc/rc-/")
 else
 PROTOC_RELEASE_VERSION := $(PROTOC_VERSION)
 endif
