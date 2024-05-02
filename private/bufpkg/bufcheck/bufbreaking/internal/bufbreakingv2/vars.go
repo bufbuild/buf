@@ -153,12 +153,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
-		},
+		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",

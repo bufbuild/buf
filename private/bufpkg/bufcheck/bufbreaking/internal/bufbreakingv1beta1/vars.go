@@ -151,12 +151,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
-		},
+		"FIELD_SAME_LABEL": {},
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
