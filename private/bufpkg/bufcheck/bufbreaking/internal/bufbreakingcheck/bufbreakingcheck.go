@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -300,6 +299,42 @@ func isDeletedFieldAllowedWithRules(previousField bufprotosource.Field, message 
 		(allowIfNameReserved && bufprotosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
 }
 
+// CheckFieldSameCardinality is a check function.
+var CheckFieldSameCardinality = newFieldDescriptorPairCheckFunc(checkFieldSameCardinality)
+
+func checkFieldSameCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if previousCardinality != currentCardinality {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
+	}
+	return nil
+}
+
 // CheckFieldSameCType is a check function.
 var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
 
@@ -336,19 +371,6 @@ func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosou
 	return nil
 }
 
-// CheckFieldSameLabel is a check function.
-var CheckFieldSameLabel = newFieldPairCheckFunc(checkFieldSameLabel)
-
-func checkFieldSameLabel(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.Label() != field.Label() {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		// TODO: specific label location
-		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.ParentMessage().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
-	}
-	return nil
-}
-
 // CheckFieldSameName is a check function.
 var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
@@ -366,7 +388,31 @@ var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousOneof := previousField.Oneof()
+	if previousOneof != nil {
+		previousOneofDescriptor, err := previousOneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if previousOneofDescriptor.IsSynthetic() {
+			// Not considering synthetic oneofs since those are really
+			// just strange byproducts of how "explicit presence" is
+			// modeled in proto3 syntax. We will separately detect this
+			// kind of change via field presence check.
+			previousOneof = nil
+		}
+	}
 	oneof := field.Oneof()
+	if oneof != nil {
+		oneofDescriptor, err := oneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Same remark as above.
+			oneof = nil
+		}
+	}
+
 	previousInsideOneof := previousOneof != nil
 	insideOneof := oneof != nil
 	if !previousInsideOneof && !insideOneof {
@@ -475,6 +521,42 @@ func checkFieldSameUTF8Validation(
 	return nil
 }
 
+// CheckFieldWireCompatibleCardinality is a check function.
+var CheckFieldWireCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleCardinality)
+
+func checkFieldWireCompatibleCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
+	}
+	return nil
+}
+
 // CheckFieldWireCompatibleType is a check function.
 var CheckFieldWireCompatibleType = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleType)
 
@@ -526,6 +608,42 @@ func checkFieldWireCompatibleType(
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 			return nil
 		}
+	}
+	return nil
+}
+
+// CheckFieldWireJSONCompatibleCardinality is a check function.
+var CheckFieldWireJSONCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireJSONCompatibleCardinality)
+
+func checkFieldWireJSONCompatibleCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
 	}
 	return nil
 }
@@ -976,8 +1094,19 @@ func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosou
 	if err != nil {
 		return err
 	}
-	for previousName := range previousNameToOneof {
+	for previousName, previousOneof := range previousNameToOneof {
 		if _, ok := nameToOneof[previousName]; !ok {
+			previousOneofDescriptor, err := previousOneof.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			if previousOneofDescriptor.IsSynthetic() {
+				// Not considering synthetic oneofs since those are really
+				// just strange byproducts of how "explicit presence" is
+				// modeled in proto3 syntax. We will separately detect this
+				// kind of change via field presence check.
+				continue
+			}
 			add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
 		}
 	}

@@ -1,0 +1,8 @@
+edition = "2023";
+
+package a;
+
+message Ten2 {
+  repeated int64 one = 1;
+  int64 two = 2 [features.field_presence = LEGACY_REQUIRED];
+}
