@@ -18,8 +18,22 @@ package buf.plugin.v1beta1;
 
 import "google/protobuf/descriptor.proto";
 
+// A File to check.
 message File {
+  // The FileDescriptorProto that represents the file.
+  //
+  // This will contain SourceCodeInfo.
   google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  // Whether or not the file is considered an "import".
+  //
+  // An import is a file that is either:
+  //
+  //   - A Well-Known Type included from the compiler and imported by a targeted file.
+  //   - A file that was included from a Buf module dependency and imported by a targeted file.
+  //   - A file that was not targeted, but was imported by a targeted file.
+  //
+  // We use "import" as this matches with the protoc concept of
+  // --include_imports, however import is a bit of an overloaded term.
   bool is_import = 2;
 }
 
@@ -62,31 +76,43 @@ message Annotation {
   string message = 7;
 }
 
-service LintService {
-  rpc Lint(LintRequest) returns (LintResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-}
-
-service BreakingService {
-  rpc Breaking(BreakingRequest) returns (BreakingResponse) {
-    option idempotency_level = NO_SIDE_EFFECTS;
-  }
-}
-
 message LintRequest {
-  repeated File files = 1;
+  message Lint {
+    repeated File files = 1;
+  }
+
+  oneof method {
+    Lint lint = 1;
+  }
 }
 
 message LintResponse {
-  repeated Annotation annotations = 1;
+  message Lint {
+    repeated Annotation annotations = 1;
+  }
+
+  oneof method {
+    Lint lint = 1;
+  }
 }
 
 message BreakingRequest {
-  repeated File files = 1;
-  repeated File against_files = 2;
+  message Breaking {
+    repeated File files = 1;
+    repeated File against_files = 2;
+  }
+
+  oneof method {
+    Breaking breaking = 1;
+  }
 }
 
 message BreakingResponse {
-  repeated Annotation annotations = 1;
+  message Breaking {
+    repeated Annotation annotations = 1;
+  }
+
+  oneof method {
+    Breaking breaking = 1;
+  }
 }
