@@ -1742,6 +1742,9 @@ type GetClusterUsageRequest struct {
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp of the ending time of a date range.
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	// Entity id is a optional organization or repository id that we want to
+	// display usage for.
+	//
 	// Types that are assignable to EntityId:
 	//
 	//	*GetClusterUsageRequest_OrganizationId

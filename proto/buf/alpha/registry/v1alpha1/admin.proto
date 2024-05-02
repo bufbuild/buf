@@ -275,7 +275,8 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-
+  // Entity id is a optional organization or repository id that we want to
+  // display usage for.
   oneof entity_id {
     // The id of the organization.
     string organization_id = 3;
