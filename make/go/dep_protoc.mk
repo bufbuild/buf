@@ -15,7 +15,7 @@ $(call _assert_var,CACHE_BIN)
 PROTOC_VERSION ?= 27.0-rc1
 
 # Google does i.e. v27.0-rc-1 for zip files for version v27.0-rc1
-ifeq(,$(findstring $(PROTOC_VERSION),rc))
+ifeq (,$(findstring $(PROTOC_VERSION),rc))
 PROTOC_RELEASE_VERSION := $(patsubst rc,rc-,$(PROTOC_VERSION))
 else
 PROTOC_RELEASE_VERSION := $(PROTOC_VERSION)
