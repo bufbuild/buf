@@ -7,7 +7,10 @@ managed:
 plugins:
   - local: protoc-gen-go
     out: private/gen/proto/go
-    opt: paths=source_relative
+    opt:
+      - paths=source_relative
+      - Mgoogle/protobuf/cpp_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
+      - Mgoogle/protobuf/java_features.proto=github.com/bufbuild/buf/private/gen/proto/go/google/protobuf
 inputs:
   - directory: proto
   - module: buf.build/grpc/grpc
