@@ -94,10 +94,12 @@ message RepositoryUsage {
   string repository_id = 1;
   // The name of the repository.
   string repository_name = 2;
-  // organization_id is the id of the organization that the repository belongs to.
-  string organization_id = 3;
+  // owner_id is the id of the owner that the repository belongs to.
+  string owner_id = 3;
+  // owner_name is the name of the owner that the repository belongs to.
+  string owner_name = 4;
   // The total amount of messages, enums and method types usage for the repository.
-  MonthlyUsage usage = 4;
+  MonthlyUsage usage = 5;
 }
 
 // CollisionType is the type of collisions that can occur.
