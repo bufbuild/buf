@@ -35,6 +35,7 @@ var (
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
 		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameDefaultRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
@@ -141,6 +142,12 @@ var (
 		"FIELD_SAME_CTYPE": {
 			"FILE",
 			"PACKAGE",
+		},
+		"FIELD_SAME_DEFAULT": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
 		},
 		"FIELD_SAME_JSON_NAME": {
 			"FILE",
