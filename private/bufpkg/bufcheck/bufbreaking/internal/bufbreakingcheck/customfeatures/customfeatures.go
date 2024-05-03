@@ -15,120 +15,25 @@
 package customfeatures
 
 import (
-	"context"
-	_ "embed"
 	"fmt"
-	"io"
-	"sync"
 
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
-	"github.com/bufbuild/protocompile"
-	"github.com/bufbuild/protocompile/linker"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
-
-// These values are defined in cpp_features.proto
-// https://github.com/protocolbuffers/protobuf/blob/v27.0-rc1/src/google/protobuf/cpp_features.proto#L42-L44
-const (
-	CppStringTypeView        CppStringType = 1
-	CppStringTypeCord        CppStringType = 2
-	CppStringTypeString      CppStringType = 3
-	CppStringTypeStringPiece CppStringType = -999999
-	// This last one is not really part of the features enum. But it was a
-	// value in the old ctype option enum. We have this here so we can
-	// compare ctype to string_type values.
-)
-
-// These values are defined in java_features.proto
-// https://github.com/protocolbuffers/protobuf/blob/v26.1/java/core/src/main/resources/google/protobuf/java_features.proto#L39-L44
-const (
-	JavaUTF8ValidationDefault JavaUTF8Validation = 1
-	JavaUTF8ValidationVerify  JavaUTF8Validation = 2
-)
-
-const (
-	cppFeaturesPath  = "google/protobuf/cpp_features.proto"
-	javaFeaturesPath = "google/protobuf/java_features.proto"
-)
-
-var (
-	descriptorsInit sync.Once
-	descriptors     linker.Files
-	descriptorsErr  error
-)
-
-// CppStringType represents enum values for pb.CppFeatures.StringType.
-type CppStringType int32
-
-func (c CppStringType) String() string {
-	switch c {
-	case CppStringTypeView:
-		return "VIEW"
-	case CppStringTypeCord:
-		return "CORD"
-	case CppStringTypeString:
-		return "STRING"
-	case CppStringTypeStringPiece:
-		return "STRING_PIECE"
-	default:
-		return fmt.Sprintf("%d", c)
-	}
-}
-
-// JavaUTF8Validation represents enum values for pb.JavaFeatures.Utf8Validation.
-type JavaUTF8Validation int32
-
-func (j JavaUTF8Validation) String() string {
-	switch j {
-	case JavaUTF8ValidationDefault:
-		return "DEFAULT"
-	case JavaUTF8ValidationVerify:
-		return "VERIFY"
-	default:
-		return fmt.Sprintf("%d", j)
-	}
-}
 
 // ResolveCppFeature returns a value for the given field name of the (pb.cpp) custom feature
 // for the given field.
 func ResolveCppFeature(field protoreflect.FieldDescriptor, fieldName protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.Value, error) {
-	extension, err := CppFeatures()
-	if err != nil {
-		return protoreflect.Value{}, err
-	}
-	return resolveFeature(field, extension, fieldName, expectedKind)
+	return resolveFeature(field, protobuf.E_Cpp.TypeDescriptor(), fieldName, expectedKind)
 }
 
 // ResolveJavaFeature returns a value for the given field name of the (pb.java) custom feature
 // for the given field.
 func ResolveJavaFeature(field protoreflect.FieldDescriptor, fieldName protoreflect.Name, expectedKind protoreflect.Kind) (protoreflect.Value, error) {
-	extension, err := JavaFeatures()
-	if err != nil {
-		return protoreflect.Value{}, err
-	}
-	return resolveFeature(field, extension, fieldName, expectedKind)
-}
-
-// CppFeatures returns the extension of FeatureSet named (pb.cpp).
-func CppFeatures() (protoreflect.ExtensionTypeDescriptor, error) {
-	return getExtensionDescriptor(
-		cppFeaturesPath,
-		"pb.cpp",
-		"pb.CppFeatures",
-	)
-}
-
-// JavaFeatures returns the extension of FeatureSet named (pb.java).
-func JavaFeatures() (protoreflect.ExtensionTypeDescriptor, error) {
-	return getExtensionDescriptor(
-		javaFeaturesPath,
-		"pb.java",
-		"pb.JavaFeatures",
-	)
+	return resolveFeature(field, protobuf.E_Java.TypeDescriptor(), fieldName, expectedKind)
 }
 
 type resolverForExtension struct {
@@ -185,53 +90,6 @@ type fileDescriptorWithOptions struct {
 
 func (f *fileDescriptorWithOptions) Options() proto.Message {
 	return f.options
-}
-
-func getExtensionDescriptor(
-	path string,
-	extensionName protoreflect.FullName,
-	messageTypeName protoreflect.FullName,
-) (protoreflect.ExtensionTypeDescriptor, error) {
-	descriptorsInit.Do(func() {
-		ctx := context.Background()
-		compiler := protocompile.Compiler{
-			Resolver: &protocompile.SourceResolver{
-				Accessor: func(path string) (io.ReadCloser, error) {
-					return datawkt.ReadBucket.Get(ctx, path)
-				},
-			},
-		}
-		descriptors, descriptorsErr = compiler.Compile(ctx, cppFeaturesPath, javaFeaturesPath)
-	})
-	if descriptorsErr != nil {
-		return nil, descriptorsErr
-	}
-
-	fileDescriptor := descriptors.FindFileByPath(path)
-	if fileDescriptor == nil {
-		// If compile succeeded and descriptorsErr == nil, this should not be possible.
-		return nil, fmt.Errorf("failed to find file descriptor for %s in datawkt bucket", path)
-	}
-	if fileDescriptor.Package() != extensionName.Parent() {
-		return nil, fmt.Errorf("file descriptor for %s does not contain %s", path, extensionName)
-	}
-	extension := fileDescriptor.Extensions().ByName(extensionName.Name())
-	if extension == nil {
-		return nil, fmt.Errorf("file descriptor for %s does not contain %s", path, extensionName)
-	}
-	if extension.Message() == nil || extension.Message().FullName() != messageTypeName {
-		var actualType, expectedType string
-		if extension.Message() != nil {
-			actualType = string(extension.Message().FullName())
-			expectedType = string(messageTypeName)
-		} else {
-			actualType = extension.Kind().String()
-			expectedType = "message"
-		}
-		return nil, fmt.Errorf("file descriptor for %s contains extension %s with unexpected type: %s != %s",
-			path, extensionName, actualType, expectedType)
-	}
-	return dynamicpb.NewExtensionType(extension).TypeDescriptor(), nil
 }
 
 func resolveFeature(

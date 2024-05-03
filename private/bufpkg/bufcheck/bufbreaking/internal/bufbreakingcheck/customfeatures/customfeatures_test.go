@@ -17,6 +17,7 @@ package customfeatures
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -24,26 +25,18 @@ import (
 
 func TestResolveCppFeatures(t *testing.T) {
 	t.Parallel()
-	extension, err := CppFeatures()
-	require.NoError(t, err)
-	require.Equal(t, protoreflect.FullName("pb.cpp"), extension.FullName())
-
 	field := (*descriptorpb.FileDescriptorProto)(nil).ProtoReflect().Descriptor().Fields().ByName("package")
 	val, err := ResolveCppFeature(field, "string_type", protoreflect.EnumKind)
 	require.NoError(t, err)
 	// This will use the default value for proto2
-	require.Equal(t, CppStringTypeString, CppStringType(val.Enum()))
+	require.Equal(t, protobuf.CppFeatures_STRING.Number(), val.Enum())
 }
 
 func TestResolveJavaFeatures(t *testing.T) {
 	t.Parallel()
-	extension, err := JavaFeatures()
-	require.NoError(t, err)
-	require.Equal(t, protoreflect.FullName("pb.java"), extension.FullName())
-
 	field := (*descriptorpb.FileDescriptorProto)(nil).ProtoReflect().Descriptor().Fields().ByName("package")
 	val, err := ResolveJavaFeature(field, "utf8_validation", protoreflect.EnumKind)
 	require.NoError(t, err)
 	// This will use the default value for proto2
-	require.Equal(t, JavaUTF8ValidationDefault, JavaUTF8Validation(val.Enum()))
+	require.Equal(t, protobuf.JavaFeatures_DEFAULT.Number(), val.Enum())
 }

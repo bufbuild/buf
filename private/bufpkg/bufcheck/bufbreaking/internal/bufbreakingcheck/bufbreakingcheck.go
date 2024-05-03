@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -356,19 +356,30 @@ func checkFieldSameCppStringType(
 		// this check only applies to string/bytes fields
 		return nil
 	}
-	previousStringType, err := fieldCppStringType(previousField, previousDescriptor)
+	previousStringType, previousIsStringPiece, err := fieldCppStringType(previousField, previousDescriptor)
 	if err != nil {
 		return err
 	}
-	stringType, err := fieldCppStringType(field, descriptor)
+	stringType, isStringPiece, err := fieldCppStringType(field, descriptor)
 	if err != nil {
 		return err
 	}
-	if previousStringType != stringType &&
+	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
 		// it is NOT breaking to move from string_piece -> string
-		!(previousStringType == customfeatures.CppStringTypeStringPiece && stringType == customfeatures.CppStringTypeString) {
+		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		var previousType, currentType fmt.Stringer
+		if previousIsStringPiece {
+			previousType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			previousType = previousStringType
+		}
+		if isStringPiece {
+			currentType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			currentType = stringType
+		}
 		add(
 			field,
 			nil,
@@ -377,8 +388,8 @@ func checkFieldSameCppStringType(
 			numberString,
 			field.Name(),
 			field.ParentMessage().Name(),
-			previousStringType,
-			stringType,
+			previousType,
+			currentType,
 		)
 	}
 	return nil

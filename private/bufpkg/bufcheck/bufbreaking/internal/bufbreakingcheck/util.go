@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingcheck/customfeatures"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -396,7 +397,7 @@ func findFeatureField(name protoreflect.Name, expectedKind protoreflect.Kind) (p
 	return featureField, nil
 }
 
-func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.FieldDescriptor) (customfeatures.CppStringType, error) {
+func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.FieldDescriptor) (protobuf.CppFeatures_StringType, bool, error) {
 	// We don't support Edition 2024 yet. But we know of this rule, so we can go ahead and
 	// implement it so it's one less thing to do when we DO add support for 2024.
 	if field.File().Edition() < descriptorpb.Edition_EDITION_2024 {
@@ -406,14 +407,14 @@ func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.Fiel
 		if opts != nil && opts.Ctype != nil {
 			switch opts.GetCtype() {
 			case descriptorpb.FieldOptions_CORD:
-				return customfeatures.CppStringTypeCord, nil
+				return protobuf.CppFeatures_CORD, false, nil
 			case descriptorpb.FieldOptions_STRING_PIECE:
-				return customfeatures.CppStringTypeStringPiece, nil
+				return protobuf.CppFeatures_STRING, true, nil
 			case descriptorpb.FieldOptions_STRING:
-				return customfeatures.CppStringTypeString, nil
+				return protobuf.CppFeatures_STRING, false, nil
 			default:
 				if descriptor.ParentFile().Syntax() != protoreflect.Editions {
-					return customfeatures.CppStringTypeString, nil
+					return protobuf.CppFeatures_STRING, false, nil
 				}
 				// If the file is edition 2023, we fall through to below since 2023 allows either
 				// the ctype field or the (pb.cpp).string_type feature.
@@ -422,14 +423,14 @@ func fieldCppStringType(field bufprotosource.Field, descriptor protoreflect.Fiel
 	}
 	val, err := customfeatures.ResolveCppFeature(descriptor, cppFeatureNameStringType, protoreflect.EnumKind)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
-	return customfeatures.CppStringType(val.Enum()), nil
+	return protobuf.CppFeatures_StringType(val.Enum()), false, nil
 }
 
 func fieldCppStringTypeLocation(field bufprotosource.Field) bufprotosource.Location {
-	ext, err := customfeatures.CppFeatures()
-	if err != nil || ext.Message() == nil {
+	ext := protobuf.E_Cpp.TypeDescriptor()
+	if ext.Message() == nil {
 		return nil
 	}
 	return getCustomFeatureLocation(field, ext, cppFeatureNameStringType)
@@ -458,15 +459,15 @@ func fieldJavaUTF8Validation(field protoreflect.FieldDescriptor) (descriptorpb.F
 	if err != nil {
 		return 0, err
 	}
-	if customfeatures.JavaUTF8Validation(val.Enum()) == customfeatures.JavaUTF8ValidationVerify {
+	if protobuf.JavaFeatures_Utf8Validation(val.Enum()) == protobuf.JavaFeatures_VERIFY {
 		return descriptorpb.FeatureSet_VERIFY, nil
 	}
 	return defaultValue, nil
 }
 
 func fieldJavaUTF8ValidationLocation(field bufprotosource.Field) bufprotosource.Location {
-	ext, err := customfeatures.JavaFeatures()
-	if err != nil || ext.Message() == nil {
+	ext := protobuf.E_Java.TypeDescriptor()
+	if ext.Message() == nil {
 		return nil
 	}
 	return getCustomFeatureLocation(field, ext, javaFeatureNameUTF8Validation)
