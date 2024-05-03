@@ -15,16 +15,19 @@
 package customfeatures
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
+	"io"
 	"sync"
 
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
+	"github.com/bufbuild/protocompile"
+	"github.com/bufbuild/protocompile/linker"
 	"github.com/bufbuild/protocompile/protoutil"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -47,20 +50,15 @@ const (
 	JavaUTF8ValidationVerify  JavaUTF8Validation = 2
 )
 
+const (
+	cppFeaturesPath  = "google/protobuf/cpp_features.proto"
+	javaFeaturesPath = "google/protobuf/java_features.proto"
+)
+
 var (
-	//go:embed cpp_features.bin
-	cppFeaturesBin []byte
-
-	cppFeaturesInit       sync.Once
-	cppFeaturesDescriptor protoreflect.ExtensionTypeDescriptor
-	cppFeaturesErr        error
-
-	//go:embed java_features.bin
-	javaFeaturesBin []byte
-
-	javaFeaturesInit       sync.Once
-	javaFeaturesDescriptor protoreflect.ExtensionTypeDescriptor
-	javaFeaturesErr        error
+	descriptorsInit sync.Once
+	descriptors     linker.Files
+	descriptorsErr  error
 )
 
 // CppStringType represents enum values for pb.CppFeatures.StringType.
@@ -117,28 +115,20 @@ func ResolveJavaFeature(field protoreflect.FieldDescriptor, fieldName protorefle
 
 // CppFeatures returns the extension of FeatureSet named (pb.cpp).
 func CppFeatures() (protoreflect.ExtensionTypeDescriptor, error) {
-	cppFeaturesInit.Do(func() {
-		cppFeaturesDescriptor, cppFeaturesErr = getExtensionDescriptor(
-			cppFeaturesBin,
-			"google/protobuf/cpp_features.proto",
-			"pb.cpp",
-			"pb.CppFeatures",
-		)
-	})
-	return cppFeaturesDescriptor, cppFeaturesErr
+	return getExtensionDescriptor(
+		cppFeaturesPath,
+		"pb.cpp",
+		"pb.CppFeatures",
+	)
 }
 
 // JavaFeatures returns the extension of FeatureSet named (pb.java).
 func JavaFeatures() (protoreflect.ExtensionTypeDescriptor, error) {
-	javaFeaturesInit.Do(func() {
-		javaFeaturesDescriptor, javaFeaturesErr = getExtensionDescriptor(
-			javaFeaturesBin,
-			"google/protobuf/java_features.proto",
-			"pb.java",
-			"pb.JavaFeatures",
-		)
-	})
-	return javaFeaturesDescriptor, javaFeaturesErr
+	return getExtensionDescriptor(
+		javaFeaturesPath,
+		"pb.java",
+		"pb.JavaFeatures",
+	)
 }
 
 type resolverForExtension struct {
@@ -198,28 +188,29 @@ func (f *fileDescriptorWithOptions) Options() proto.Message {
 }
 
 func getExtensionDescriptor(
-	fileDescriptorSetData []byte,
 	path string,
 	extensionName protoreflect.FullName,
 	messageTypeName protoreflect.FullName,
 ) (protoreflect.ExtensionTypeDescriptor, error) {
-	var fileDescriptorSet descriptorpb.FileDescriptorSet
-	if err := proto.Unmarshal(fileDescriptorSetData, &fileDescriptorSet); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal descriptor set containing %s: %w", path, err)
-	}
-	var fileDescriptorProto *descriptorpb.FileDescriptorProto
-	for _, file := range fileDescriptorSet.File {
-		if file.GetName() == path {
-			fileDescriptorProto = file
-			break
+	descriptorsInit.Do(func() {
+		ctx := context.Background()
+		compiler := protocompile.Compiler{
+			Resolver: &protocompile.SourceResolver{
+				Accessor: func(path string) (io.ReadCloser, error) {
+					return datawkt.ReadBucket.Get(ctx, path)
+				},
+			},
 		}
+		descriptors, descriptorsErr = compiler.Compile(ctx, cppFeaturesPath, javaFeaturesPath)
+	})
+	if descriptorsErr != nil {
+		return nil, descriptorsErr
 	}
-	if fileDescriptorProto == nil {
-		return nil, fmt.Errorf("file %s not found in descriptor set", path)
-	}
-	fileDescriptor, err := protodesc.NewFile(fileDescriptorProto, protoregistry.GlobalFiles)
-	if err != nil {
-		return nil, fmt.Errorf("failed to process file descriptor for %s: %w", path, err)
+
+	fileDescriptor := descriptors.FindFileByPath(path)
+	if fileDescriptor == nil {
+		// If compile succeeded and descriptorsErr == nil, this should not be possible.
+		return nil, fmt.Errorf("failed to find file descriptor for %s in datawkt bucket", path)
 	}
 	if fileDescriptor.Package() != extensionName.Parent() {
 		return nil, fmt.Errorf("file descriptor for %s does not contain %s", path, extensionName)
