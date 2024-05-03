@@ -425,6 +425,44 @@ func checkFieldSameJavaUTF8Validation(
 	return nil
 }
 
+// CheckFieldSameDefault is a check function.
+var CheckFieldSameDefault = newFieldDescriptorPairCheckFunc(checkFieldSameDefault)
+
+func checkFieldSameDefault(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if !canHaveDefault(previousDescriptor) || !canHaveDefault(descriptor) {
+		return nil
+	}
+	previousDefault := getDefault(previousDescriptor)
+	currentDefault := getDefault(descriptor)
+	if previousDefault.isZero() && currentDefault.isZero() {
+		// no defaults to check
+		return nil
+	}
+	if !defaultsEqual(previousDefault, currentDefault) {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(
+			field,
+			nil,
+			withBackupLocation(field.DefaultLocation(), field.Location()),
+			`Field %q with name %q on message %q changed default value from %v to %v.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousDefault.printable,
+			currentDefault.printable,
+		)
+	}
+	return nil
+}
+
 // CheckFieldSameJSONName is a check function.
 var CheckFieldSameJSONName = newFieldPairCheckFunc(checkFieldSameJSONName)
 

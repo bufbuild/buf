@@ -116,6 +116,12 @@ var (
 		"fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature",
 		bufbreakingcheck.CheckFieldSameJavaUTF8Validation,
 	)
+	// FieldSameDefaultRuleBuilder is a rule builder.
+	FieldSameDefaultRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_DEFAULT",
+		"fields have the same default value, if a default is specified",
+		bufbreakingcheck.CheckFieldSameDefault,
+	)
 	// FieldSameJSONNameRuleBuilder is a rule builder.
 	FieldSameJSONNameRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_JSON_NAME",

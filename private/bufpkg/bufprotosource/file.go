@@ -567,6 +567,7 @@ func (f *file) populateMessage(
 			fieldDescriptorProto.GetOptions().GetTargets(),
 			fieldDescriptorProto.GetOptions().GetDebugRedact(),
 			packed,
+			fieldDescriptorProto.GetDefaultValue(),
 			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageFieldNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -575,6 +576,7 @@ func (f *file) populateMessage(
 			getMessageFieldJSTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldCTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			getMessageFieldDefaultPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
 		message.addField(field)
@@ -631,6 +633,7 @@ func (f *file) populateMessage(
 			fieldDescriptorProto.GetOptions().GetTargets(),
 			fieldDescriptorProto.GetOptions().GetDebugRedact(),
 			packed,
+			fieldDescriptorProto.GetDefaultValue(),
 			fieldDescriptorProto.GetOptions().GetDeprecated(),
 			getMessageExtensionNumberPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
@@ -639,6 +642,7 @@ func (f *file) populateMessage(
 			getMessageExtensionJSTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionCTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			getMessageExtensionDefaultPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
 		message.addExtension(field)
@@ -832,6 +836,7 @@ func (f *file) populateExtension(
 		fieldDescriptorProto.GetOptions().GetTargets(),
 		fieldDescriptorProto.GetOptions().GetDebugRedact(),
 		packed,
+		fieldDescriptorProto.GetDefaultValue(),
 		fieldDescriptorProto.GetOptions().GetDeprecated(),
 		getFileExtensionNumberPath(fieldIndex),
 		getFileExtensionTypePath(fieldIndex),
@@ -840,6 +845,7 @@ func (f *file) populateExtension(
 		getFileExtensionJSTypePath(fieldIndex),
 		getFileExtensionCTypePath(fieldIndex),
 		getFileExtensionPackedPath(fieldIndex),
+		getFileExtensionDefaultPath(fieldIndex),
 		getFileExtensionExtendeePath(fieldIndex),
 	), nil
 }

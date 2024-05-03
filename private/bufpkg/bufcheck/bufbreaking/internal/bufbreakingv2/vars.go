@@ -36,6 +36,7 @@ var (
 		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
 		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameDefaultRuleBuilder,
 		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
@@ -149,6 +150,12 @@ var (
 		"FIELD_SAME_CTYPE": {
 			"FILE",
 			"PACKAGE",
+		},
+		"FIELD_SAME_DEFAULT": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
 		},
 		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
