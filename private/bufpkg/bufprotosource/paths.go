@@ -104,6 +104,10 @@ func getMessageFieldPackedPath(fieldIndex int, topLevelMessageIndex int, nestedM
 	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 8, 2)
 }
 
+func getMessageFieldDefaultPath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 7)
+}
+
 func getMessageFieldExtendeePath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 2)
 }
@@ -146,6 +150,10 @@ func getMessageExtensionCTypePath(extensionIndex int, topLevelMessageIndex int, 
 
 func getMessageExtensionPackedPath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 8, 2)
+}
+
+func getMessageExtensionDefaultPath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 7)
 }
 
 func getMessageExtensionExtendeePath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
@@ -301,6 +309,10 @@ func getFileExtensionCTypePath(fieldIndex int) []int32 {
 
 func getFileExtensionPackedPath(fieldIndex int) []int32 {
 	return append(getFileExtensionPath(fieldIndex), 8, 2)
+}
+
+func getFileExtensionDefaultPath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 7)
 }
 
 func getFileExtensionExtendeePath(fieldIndex int) []int32 {

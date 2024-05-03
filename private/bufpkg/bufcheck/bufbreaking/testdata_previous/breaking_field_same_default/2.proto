@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package a;
+
+message Fizz {
+  string s1 = 1;
+  string s2 = 2;
+  string s3 = 3;
+
+  bytes b1 = 5;
+  bytes b2 = 6;
+  bytes b3 = 7;
+
+  message Int32s {
+    int32 i1 = 1;
+    int32 i2 = 2;
+    int32 i3 = 3;
+  }
+
+  message Uint32s {
+    uint32 i1 = 1;
+    uint32 i2 = 2;
+    uint32 i3 = 3;
+  }
+
+  message Sint32s {
+    sint32 i1 = 1;
+    sint32 i2 = 2;
+    sint32 i3 = 3;
+  }
+
+  message Fixed32s {
+    fixed32 i1 = 1;
+    fixed32 i2 = 2;
+    fixed32 i3 = 3;
+  }
+
+  message Sfixed32s {
+    sfixed32 i1 = 1;
+    sfixed32 i2 = 2;
+    sfixed32 i3 = 3;
+  }
+
+  message Int64s {
+    int64 i1 = 1;
+    int64 i2 = 2;
+    int64 i3 = 3;
+  }
+
+  message Uint64s {
+    uint64 i1 = 1;
+    uint64 i2 = 2;
+    uint64 i3 = 3;
+  }
+
+  message Sint64s {
+    sint64 i1 = 1;
+    sint64 i2 = 2;
+    sint64 i3 = 3;
+  }
+
+  message Fixed64s {
+    fixed64 i1 = 1;
+    fixed64 i2 = 2;
+    fixed64 i3 = 3;
+  }
+
+  message Sfixed64s {
+    sfixed64 i1 = 1;
+    sfixed64 i2 = 2;
+    sfixed64 i3 = 3;
+  }
+
+  message Floats {
+    float i1 = 1;
+    float i2 = 2;
+    float i3 = 3;
+  }
+
+  message Doubles {
+    double i1 = 1;
+    double i2 = 2;
+    double i3 = 3;
+  }
+
+  message Bools {
+    bool i1 = 1;
+    bool i2 = 2;
+    bool i3 = 3;
+  }
+}
+
+message Buzz {
+  map<string, int32> map = 1;
+  repeated string strings = 2;
+  repeated uint64 uints = 3;
+  Buzz buzz = 4;
+  repeated Buzz buzzes = 5;
+}

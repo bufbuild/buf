@@ -23,6 +23,13 @@ import (
 )
 
 // VersionSpec is the version specification for v2.
+//
+// Changes from v1:
+//
+// Adds a new FIELD_SAME_DEFAULT check, which requires that the
+// new schema not change default values for fields. (Defaults
+// values are a feature of proto2 and editions, but not in
+// proto3 syntax.)
 var VersionSpec = &internal.VersionSpec{
 	FileVersion:       bufconfig.FileVersionV2,
 	RuleBuilders:      v2RuleBuilders,

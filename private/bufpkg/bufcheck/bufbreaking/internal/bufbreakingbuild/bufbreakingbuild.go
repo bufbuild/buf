@@ -104,6 +104,12 @@ var (
 		"fields have the same value for the ctype option",
 		bufbreakingcheck.CheckFieldSameCType,
 	)
+	// FieldSameDefaultRuleBuilder is a rule builder.
+	FieldSameDefaultRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_SAME_DEFAULT",
+		"fields have the same default value, if a default is specified",
+		bufbreakingcheck.CheckFieldSameDefault,
+	)
 	// FieldSameJSONNameRuleBuilder is a rule builder.
 	FieldSameJSONNameRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_JSON_NAME",
