@@ -125,7 +125,9 @@ func NewPluginResponse(
 	}
 }
 
-// ValidatePluginResponses validates that each file is only defined by a single *PluginResponse.
+// ValidatePluginResponses validates that each file is only defined by a single
+// *PluginResponse, and validates each individual plugin response with
+// [ValidatePluginResponse].
 func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 	seen := make(map[string]string)
 	for _, pluginResponse := range pluginResponses {
@@ -146,28 +148,36 @@ func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 			}
 			seen[fileName] = pluginResponse.PluginName
 		}
-		if pluginResponse.Response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 {
-			// If plugin says it supports editions, it must set min and max edition.
-			if pluginResponse.Response.MinimumEdition == nil {
-				return fmt.Errorf(
-					"plugin %q advertises that it supports editions but did not indicate a minimum supported edition",
-					pluginResponse.PluginName,
-				)
-			}
-			if pluginResponse.Response.MaximumEdition == nil {
-				return fmt.Errorf(
-					"plugin %q advertises that it supports editions but did not indicate a maximum supported edition",
-					pluginResponse.PluginName,
-				)
-			}
-			if pluginResponse.Response.GetMaximumEdition() < pluginResponse.Response.GetMinimumEdition() {
-				return fmt.Errorf(
-					"plugin %q indicates a maximum supported edition (%d) that is less than its minimum supported edition (%d)",
-					pluginResponse.PluginName,
-					descriptorpb.Edition(pluginResponse.Response.GetMaximumEdition()),
-					descriptorpb.Edition(pluginResponse.Response.GetMinimumEdition()),
-				)
-			}
+		if err := ValidatePluginResponse(pluginResponse); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ValidatePluginResponse validates the pluginResponse.
+func ValidatePluginResponse(pluginResponse *PluginResponse) error {
+	if pluginResponse.Response.GetSupportedFeatures()&uint64(pluginpb.CodeGeneratorResponse_FEATURE_SUPPORTS_EDITIONS) != 0 {
+		// If plugin says it supports editions, it must set min and max edition.
+		if pluginResponse.Response.MinimumEdition == nil {
+			return fmt.Errorf(
+				"plugin %q advertises that it supports editions but did not indicate a minimum supported edition",
+				pluginResponse.PluginName,
+			)
+		}
+		if pluginResponse.Response.MaximumEdition == nil {
+			return fmt.Errorf(
+				"plugin %q advertises that it supports editions but did not indicate a maximum supported edition",
+				pluginResponse.PluginName,
+			)
+		}
+		if pluginResponse.Response.GetMaximumEdition() < pluginResponse.Response.GetMinimumEdition() {
+			return fmt.Errorf(
+				"plugin %q indicates a maximum supported edition (%d) that is less than its minimum supported edition (%d)",
+				pluginResponse.PluginName,
+				descriptorpb.Edition(pluginResponse.Response.GetMaximumEdition()),
+				descriptorpb.Edition(pluginResponse.Response.GetMinimumEdition()),
+			)
 		}
 	}
 	return nil
