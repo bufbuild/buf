@@ -266,7 +266,7 @@ func modifyImage(
 	}
 	sweeper := internal.NewMarkSweeper(image)
 	for _, imageFile := range image.Files() {
-		if datawkt.Exists(imageFile.Path()) {
+		if imageFile.IsImport() && datawkt.Exists(imageFile.Path()) {
 			continue
 		}
 		for _, modifyFunc := range modifyFuncs {
