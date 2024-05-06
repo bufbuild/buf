@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -32,8 +33,12 @@ import (
 )
 
 const (
-	featureNameUTF8Validation = "utf8_validation"
-	featureNameJSONFormat     = "json_format"
+	featuresFieldName = "features"
+
+	featureNameUTF8Validation     = "utf8_validation"
+	featureNameJSONFormat         = "json_format"
+	cppFeatureNameStringType      = "string_type"
+	javaFeatureNameUTF8Validation = "utf8_validation"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -78,14 +83,9 @@ func checkEnumSameJSONFormat(
 	if err != nil {
 		return err
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {
@@ -335,14 +335,103 @@ func checkFieldSameCardinality(
 	return nil
 }
 
-// CheckFieldSameCType is a check function.
-var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
+// CheckFieldSameCppStringType is a check function.
+var CheckFieldSameCppStringType = newFieldDescriptorPairCheckFunc(checkFieldSameCppStringType)
 
-func checkFieldSameCType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.CType() != field.CType() {
+func checkFieldSameCppStringType(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries, even with string or bytes keys or values,
+		// don't allow configuring the string type.
+		return nil
+	}
+	if (previousDescriptor.Kind() != protoreflect.StringKind && previousDescriptor.Kind() != protoreflect.BytesKind) ||
+		(descriptor.Kind() != protoreflect.StringKind && descriptor.Kind() != protoreflect.BytesKind) {
+		// this check only applies to string/bytes fields
+		return nil
+	}
+	previousStringType, previousIsStringPiece, err := fieldCppStringType(previousField, previousDescriptor)
+	if err != nil {
+		return err
+	}
+	stringType, isStringPiece, err := fieldCppStringType(field, descriptor)
+	if err != nil {
+		return err
+	}
+	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
+		// it is NOT breaking to move from string_piece -> string
+		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.CType().String(), field.CType().String())
+		var previousType, currentType fmt.Stringer
+		if previousIsStringPiece {
+			previousType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			previousType = previousStringType
+		}
+		if isStringPiece {
+			currentType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			currentType = stringType
+		}
+		add(
+			field,
+			nil,
+			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
+			`Field %q with name %q on message %q changed C++ string type from %q to %q.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousType,
+			currentType,
+		)
+	}
+	return nil
+}
+
+// CheckFieldSameJavaUTF8Validation is a check function.
+var CheckFieldSameJavaUTF8Validation = newFieldDescriptorPairCheckFunc(checkFieldSameJavaUTF8Validation)
+
+func checkFieldSameJavaUTF8Validation(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
+		// this check only applies to string fields
+		return nil
+	}
+	previousValidation, err := fieldJavaUTF8Validation(previousDescriptor)
+	if err != nil {
+		return err
+	}
+	validation, err := fieldJavaUTF8Validation(descriptor)
+	if err != nil {
+		return err
+	}
+	if previousValidation != validation {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(
+			field,
+			nil,
+			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
+			`Field %q with name %q on message %q changed Java string UTF8 validation from %q to %q.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousValidation,
+			validation,
+		)
 	}
 	return nil
 }
@@ -522,14 +611,9 @@ func checkFieldSameUTF8Validation(
 	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
 		return nil
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameUTF8Validation)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameUTF8Validation)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameUTF8Validation, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {
@@ -879,13 +963,6 @@ func checkFileSameJavaPackage(add addFunc, corpus *corpus, previousFile bufproto
 	return checkFileSameValue(add, previousFile.JavaPackage(), file.JavaPackage(), file, file.JavaPackageLocation(), `option "java_package"`)
 }
 
-// CheckFileSameJavaStringCheckUtf8 is a check function.
-var CheckFileSameJavaStringCheckUtf8 = newFilePairCheckFunc(checkFileSameJavaStringCheckUtf8)
-
-func checkFileSameJavaStringCheckUtf8(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
-	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaStringCheckUtf8()), strconv.FormatBool(file.JavaStringCheckUtf8()), file, file.JavaStringCheckUtf8Location(), `option "java_string_check_utf8"`)
-}
-
 // CheckFileSameObjcClassPrefix is a check function.
 var CheckFileSameObjcClassPrefix = newFilePairCheckFunc(checkFileSameObjcClassPrefix)
 
@@ -1042,14 +1119,9 @@ func checkMessageSameJSONFormat(
 	if err != nil {
 		return err
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {

@@ -1,0 +1,21 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/cpp_features.proto";
+
+option features.(pb.cpp).string_type=VIEW;
+
+message Baz {
+  string default1 = 1;
+  bytes default2 = 2;
+  repeated string default3 = 3;
+  repeated bytes default4 = 4;
+  string default5 = 5;
+  bytes default6 = 6;
+  repeated string default7 = 7;
+
+  map<string, Baz> map1 = 11;
+  map<uint32, string> map2 = 12;
+  map<int64, bytes> map3 = 13;
+}

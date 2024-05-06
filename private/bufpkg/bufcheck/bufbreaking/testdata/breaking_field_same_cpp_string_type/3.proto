@@ -1,0 +1,21 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/cpp_features.proto";
+
+option features.(pb.cpp).string_type=CORD;
+
+message Baz {
+  string default1 = 1 [ctype=STRING];
+  bytes default2 = 2 [ctype=CORD];
+  repeated string default3 = 3 [ctype=STRING_PIECE];
+  repeated bytes default4 = 4 [features.(pb.cpp).string_type=STRING];
+  string default5 = 5 [features.(pb.cpp).string_type=VIEW];
+  bytes default6 = 6 [features.(pb.cpp).string_type=CORD];
+  repeated string default7 = 7;
+
+  map<string, Baz> map1 = 11;
+  map<uint32, string> map2 = 12;
+  map<int64, bytes> map3 = 13;
+}
