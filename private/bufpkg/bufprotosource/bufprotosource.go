@@ -125,6 +125,11 @@ type ContainerDescriptor interface {
 
 // OptionExtensionDescriptor contains options and option extensions.
 type OptionExtensionDescriptor interface {
+	// Features returns information about any features present in the
+	// options. It only provides information about standard features,
+	// not custom features (i.e. extensions of google.protobuf.FeatureSet).
+	//
+	// Never returns nil.
 	Features() FeaturesDescriptor
 
 	// OptionExtension returns the value for an options extension field.
@@ -463,6 +468,14 @@ type Field interface {
 	// See the comments on descriptor.proto
 	Packed() *bool
 	Deprecated() bool
+	// Default is the field's default value, encoded as a string.
+	// Instead of trying to interpret or decode this string, it is
+	// typically better to instead use AsDescriptor() and query the
+	// Default() method of the resulting protoreflect.FieldDescriptor.
+	// If empty, the default value is a zero value for the field's
+	// type. Defaults cannot be set for repeated or message fields
+	// (which also means it cannot be set for map fields).
+	Default() string
 	// Empty string unless the field is part of an extension
 	Extendee() string
 
@@ -473,6 +486,7 @@ type Field interface {
 	JSTypeLocation() Location
 	CTypeLocation() Location
 	PackedLocation() Location
+	DefaultLocation() Location
 	ExtendeeLocation() Location
 
 	// AsDescriptor returns a [protoreflect.Descriptor] that

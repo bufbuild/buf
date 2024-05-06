@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package a;
+
+message Foo {
+  string string1 = 1 [ctype=STRING];
+  bytes string2 = 2 [ctype=STRING];
+  repeated string string3 = 3 [ctype=STRING];
+  repeated bytes string4 = 4 [ctype=STRING];
+  string string5 = 5 [ctype=STRING];
+  bytes string6 = 6 [ctype=STRING];
+
+  string cord1 = 11 [ctype=CORD];
+  bytes cord2 = 12 [ctype=CORD];
+  repeated string cord3 = 13 [ctype=CORD];
+  repeated bytes cord4 = 14 [ctype=CORD];
+  string cord5 = 15 [ctype=CORD];
+  bytes cord6 = 16 [ctype=CORD];
+
+  string string_piece1 = 21 [ctype=STRING_PIECE];
+  bytes string_piece2 = 22 [ctype=STRING_PIECE];
+  repeated string string_piece3 = 23 [ctype=STRING_PIECE];
+  repeated bytes string_piece4 = 24 [ctype=STRING_PIECE];
+  string string_piece5 = 25 [ctype=STRING_PIECE];
+  bytes string_piece6 = 26 [ctype=STRING_PIECE];
+
+  string default1 = 31;
+  bytes default2 = 32;
+  repeated string default3 = 33;
+  repeated bytes default4 = 34;
+  string default5 = 35;
+  bytes default6 = 36;
+  repeated string default7 = 37;
+
+  // ignored for non-string/non-bytes fields (not even allowed editions)
+  Foo message1 = 40 [ctype=STRING_PIECE];
+  bool bool1 = 41 [ctype=CORD];
+  repeated uint32 uint32s1= 42 [ctype=STRING_PIECE];
+  map<string,string> map1 = 43 [ctype=CORD];
+  Foo message2 = 44;
+  bool bool2 = 45;
+  repeated uint32 uint32s2 = 46;
+  map<string,string> map2 = 47;
+}

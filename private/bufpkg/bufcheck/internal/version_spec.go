@@ -68,3 +68,14 @@ func AllIDsForVersionSpec(versionSpec *VersionSpec, includeDeprecated bool) ([]s
 	}
 	return slicesext.MapKeysToSortedSlice(m), nil
 }
+
+// RelevantDeprecationsForVersionSpec returns the map of deprecations
+// for the VersionSpec. The keys are deprecated rule names and the
+// values are rules' replacements (which may be empty).
+func RelevantDeprecationsForVersionSpec(versionSpec *VersionSpec) (map[string][]string, error) {
+	idToRuleBuilder, err := getIDToRuleBuilder(versionSpec.RuleBuilders)
+	if err != nil {
+		return nil, err
+	}
+	return getDeprecatedIDToReplacementIDs(idToRuleBuilder)
+}

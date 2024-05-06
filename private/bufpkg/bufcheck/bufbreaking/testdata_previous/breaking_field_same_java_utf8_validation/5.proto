@@ -1,0 +1,95 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/java_features.proto";
+
+option features.(pb.java).utf8_validation = VERIFY;
+
+message E1 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E1 other4 = 14;
+}
+
+message E2 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E2 other4 = 14;
+}
+
+message E3 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E3 other4 = 14;
+}
+
+message E4 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E4 other4 = 14;
+}
+
+message E5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E5 other4 = 14;
+}
+
+message E6 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E6 other4 = 14;
+}
+
+message E7 {
+  string s1 = 1 [features.(pb.java).utf8_validation=DEFAULT];
+  repeated string s2 = 2 [features.(pb.java).utf8_validation=VERIFY];
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E7 other4 = 14;
+}
+
+message E8 {
+  string s1 = 1 [features.(pb.java).utf8_validation=DEFAULT];
+  repeated string s2 = 2 [features.(pb.java).utf8_validation=VERIFY];
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E8 other4 = 14;
+}

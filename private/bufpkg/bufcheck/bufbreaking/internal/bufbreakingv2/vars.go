@@ -33,15 +33,19 @@ var (
 		bufbreakingbuild.FieldNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
-		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
+		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
+		bufbreakingbuild.FieldSameDefaultRuleBuilder,
+		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
-		bufbreakingbuild.FieldSameLabelRuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
 		bufbreakingbuild.FieldSameUTF8ValidationRuleBuilder,
+		bufbreakingbuild.FieldWireCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireCompatibleTypeRuleBuilder,
+		bufbreakingbuild.FieldWireJSONCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireJSONCompatibleTypeRuleBuilder,
 		bufbreakingbuild.FileNoDeleteRuleBuilder,
 		bufbreakingbuild.FileSameCsharpNamespaceRuleBuilder,
@@ -49,7 +53,6 @@ var (
 		bufbreakingbuild.FileSameJavaMultipleFilesRuleBuilder,
 		bufbreakingbuild.FileSameJavaOuterClassnameRuleBuilder,
 		bufbreakingbuild.FileSameJavaPackageRuleBuilder,
-		bufbreakingbuild.FileSameJavaStringCheckUtf8RuleBuilder,
 		bufbreakingbuild.FileSameObjcClassPrefixRuleBuilder,
 		bufbreakingbuild.FileSamePackageRuleBuilder,
 		bufbreakingbuild.FileSamePhpClassPrefixRuleBuilder,
@@ -61,7 +64,6 @@ var (
 		bufbreakingbuild.FileSameCcGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameJavaGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSamePyGenericServicesRuleBuilder,
-		bufbreakingbuild.FileSamePhpGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameCcEnableArenasRuleBuilder,
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
@@ -133,7 +135,21 @@ var (
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_CTYPE": {
+		"FIELD_SAME_CARDINALITY": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_CPP_STRING_TYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_DEFAULT": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
+		},
+		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
 		},
@@ -145,12 +161,6 @@ var (
 		"FIELD_SAME_JSTYPE": {
 			"FILE",
 			"PACKAGE",
-		},
-		"FIELD_SAME_LABEL": {
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
 		},
 		"FIELD_SAME_NAME": {
 			"FILE",
@@ -171,8 +181,14 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
+		"FIELD_WIRE_COMPATIBLE_CARDINALITY": {
+			"WIRE",
+		},
 		"FIELD_WIRE_COMPATIBLE_TYPE": {
 			"WIRE",
+		},
+		"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY": {
+			"WIRE_JSON",
 		},
 		"FIELD_WIRE_JSON_COMPATIBLE_TYPE": {
 			"WIRE_JSON",
@@ -197,10 +213,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_JAVA_PACKAGE": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
 			"FILE",
 			"PACKAGE",
 		},
@@ -247,10 +259,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_PY_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
 			"FILE",
 			"PACKAGE",
 		},

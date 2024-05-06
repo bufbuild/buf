@@ -16,20 +16,27 @@ package buf
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufctl"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
@@ -626,7 +633,7 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 	)
 }
 
-func TestCheckLsBreakingRules1(t *testing.T) {
+func TestCheckLsBreakingRulesV1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
@@ -639,7 +646,9 @@ ENUM_SAME_TYPE                                  FILE, PACKAGE                   
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
 FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
@@ -651,7 +660,6 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
@@ -668,7 +676,6 @@ RPC_NO_DELETE                                   FILE, PACKAGE                   
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -686,9 +693,11 @@ PACKAGE_NO_DELETE                               PACKAGE                         
 PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
 ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
 FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
 FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
 ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
 FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
 FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
 		`
 	testRunStdout(
@@ -703,44 +712,7 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 	)
 }
 
-func TestCheckLsBreakingRules2(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
-		`,
-		"mod",
-		"ls-breaking-rules",
-		"--config",
-		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
-	)
-}
-
-func TestCheckLsBreakingRules3(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
-		ID                    CATEGORIES     PURPOSE
-		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
-		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
-		`,
-		"mod",
-		"ls-breaking-rules",
-		"--config",
-		// making sure that .yml works
-		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
-	)
-}
-
-func TestCheckLsBreakingRules4(t *testing.T) {
+func TestCheckLsBreakingRulesV1Beta1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
@@ -754,7 +726,8 @@ ENUM_SAME_TYPE                                  FILE, PACKAGE                   
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
 EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
 FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
-FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
 FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
 FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
 FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
@@ -765,7 +738,6 @@ FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   
 FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
 FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
 FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
-FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
 FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
 FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
 FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
@@ -782,7 +754,7 @@ RPC_NO_DELETE                                   FILE, PACKAGE                   
 ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same cardinalities in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
@@ -815,65 +787,284 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 	)
 }
 
+func TestCheckLsBreakingRulesV2(t *testing.T) {
+	t.Parallel()
+	expectedStdout := `
+ID                                              CATEGORIES                      PURPOSE
+ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
+MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_SAME_JSON_FORMAT                           FILE, PACKAGE                   Checks that enums have the same JSON format support.
+ENUM_SAME_TYPE                                  FILE, PACKAGE                   Checks that enums have the same type (open vs closed).
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
+FIELD_SAME_CARDINALITY                          FILE, PACKAGE                   Checks that fields have the same cardinalities in a given message.
+FIELD_SAME_CPP_STRING_TYPE                      FILE, PACKAGE                   Checks that fields have the same C++ string type, based on ctype field option or (pb.cpp).string_type feature.
+FIELD_SAME_JAVA_UTF8_VALIDATION                 FILE, PACKAGE                   Checks that fields have the same Java string UTF8 validation, based on java_string_check_utf8 file option or (pb.java).utf8_validation feature.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FIELD_SAME_TYPE                                 FILE, PACKAGE                   Checks that fields have the same types in a given message.
+FIELD_SAME_UTF8_VALIDATION                      FILE, PACKAGE                   Checks that string fields have the same UTF8 validation mode.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+MESSAGE_SAME_JSON_FORMAT                        FILE, PACKAGE                   Checks that messages have the same JSON format support.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+FIELD_SAME_DEFAULT                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same default value, if a default is specified.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
+FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
+MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY          WIRE_JSON                       Checks that fields have wire and JSON compatible cardinalities in a given message.
+FIELD_WIRE_JSON_COMPATIBLE_TYPE                 WIRE_JSON                       Checks that fields have wire and JSON compatible types in a given message.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+FIELD_WIRE_COMPATIBLE_CARDINALITY               WIRE                            Checks that fields have wire-compatible cardinalities in a given message.
+FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            Checks that fields have wire-compatible types in a given message.
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-breaking-rules",
+		"--version",
+		"v2",
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfig(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                    CATEGORIES     PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		`,
+		"mod",
+		"ls-breaking-rules",
+		"--config",
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfigNotNamedBufYAML(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                    CATEGORIES     PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		`,
+		"mod",
+		"ls-breaking-rules",
+		"--config",
+		// making sure that .yml works
+		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
+	)
+}
+
+func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
+	t.Parallel()
+
+	for _, version := range bufconfig.AllFileVersions {
+		version := version
+		t.Run(version.String(), func(t *testing.T) {
+			t.Parallel()
+			allRules, err := bufbreaking.GetAllRules(version)
+			require.NoError(t, err)
+			allPackageIDs := make([]string, 0, len(allRules))
+			for _, rule := range allRules {
+				if rule.Deprecated() {
+					// Deprecated rules should not be associated with a category.
+					// Instead, their replacements are associated with categories.
+					assert.Empty(t, rule.Categories())
+					continue
+				}
+				var found bool
+				for _, category := range rule.Categories() {
+					if category == "PACKAGE" {
+						found = true
+						break
+					}
+				}
+				if found {
+					allPackageIDs = append(allPackageIDs, rule.ID())
+				}
+			}
+			sort.Strings(allPackageIDs)
+			deprecations, err := bufbreaking.GetRelevantDeprecations(version)
+			require.NoError(t, err)
+
+			for deprecatedRule := range deprecations {
+				deprecatedRule := deprecatedRule
+				t.Run(deprecatedRule, func(t *testing.T) {
+					t.Parallel()
+					ids := getRuleIDsFromLsBreaking(t, version.String(), []string{"PACKAGE"}, []string{deprecatedRule})
+					expectedIDs := make([]string, 0, len(allPackageIDs))
+					replacements := deprecations[deprecatedRule]
+					for _, id := range allPackageIDs {
+						var skip bool
+						for _, replacement := range replacements {
+							if id == replacement {
+								skip = true
+								break
+							}
+						}
+						if skip {
+							continue
+						}
+						expectedIDs = append(expectedIDs, id)
+					}
+					require.Equal(t, expectedIDs, ids)
+				})
+			}
+		})
+	}
+}
+
 func TestLsBreakingRulesDeprecated(t *testing.T) {
 	t.Parallel()
 
 	stdout := bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1beta1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v1", "--include-deprecated")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.Contains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.Contains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
+	// The deprecated rules are omitted from v2.
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--version", "v2", "--include-deprecated")
-	assert.Contains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	// Test the non-all version too. Should never have deprecated rules.
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "mod", "ls-breaking-rules", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 
 	stdout = bytes.NewBuffer(nil)
 	testRun(t, 0, nil, stdout, "config", "ls-breaking-rules", "--configured-only", "--include-deprecated")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_CTYPE")
+	assert.NotContains(t, stdout.String(), "FIELD_SAME_LABEL")
+	assert.NotContains(t, stdout.String(), "FILE_SAME_JAVA_STRING_CHECK_UTF8")
 	assert.NotContains(t, stdout.String(), "FILE_SAME_PHP_GENERIC_SERVICES")
 }
 
@@ -2593,4 +2784,45 @@ func testRun(
 		stderr,
 		args...,
 	)
+}
+
+func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string, exceptIDs []string) []string {
+	t.Helper()
+	var stdout bytes.Buffer
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		0,
+		internaltesting.NewEnvFunc(t),
+		nil,
+		&stdout,
+		nil,
+		"config",
+		"ls-breaking-rules",
+		"--format=json",
+		"--configured-only",
+		"--config",
+		fmt.Sprintf(
+			`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
+			fileVersion,
+			"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+			"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+		),
+	)
+	var ids []string
+	decoder := json.NewDecoder(&stdout)
+	type entry struct {
+		ID string
+	}
+	for {
+		var entry entry
+		err := decoder.Decode(&entry)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		ids = append(ids, entry.ID)
+	}
+	sort.Strings(ids)
+	return ids
 }

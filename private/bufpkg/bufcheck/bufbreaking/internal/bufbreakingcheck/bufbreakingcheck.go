@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufprotosource"
-	"github.com/bufbuild/buf/private/pkg/protodescriptor"
+	"github.com/bufbuild/buf/private/gen/proto/go/google/protobuf"
 	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/protocompile/protoutil"
@@ -33,8 +33,12 @@ import (
 )
 
 const (
-	featureNameUTF8Validation = "utf8_validation"
-	featureNameJSONFormat     = "json_format"
+	featuresFieldName = "features"
+
+	featureNameUTF8Validation     = "utf8_validation"
+	featureNameJSONFormat         = "json_format"
+	cppFeatureNameStringType      = "string_type"
+	javaFeatureNameUTF8Validation = "utf8_validation"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -79,14 +83,9 @@ func checkEnumSameJSONFormat(
 	if err != nil {
 		return err
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {
@@ -300,14 +299,177 @@ func isDeletedFieldAllowedWithRules(previousField bufprotosource.Field, message 
 		(allowIfNameReserved && bufprotosource.NameInReservedNames(previousField.Name(), message.ReservedNames()...))
 }
 
-// CheckFieldSameCType is a check function.
-var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
+// CheckFieldSameCardinality is a check function.
+var CheckFieldSameCardinality = newFieldDescriptorPairCheckFunc(checkFieldSameCardinality)
 
-func checkFieldSameCType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.CType() != field.CType() {
+func checkFieldSameCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if previousCardinality != currentCardinality {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.CType().String(), field.CType().String())
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
+	}
+	return nil
+}
+
+// CheckFieldSameCppStringType is a check function.
+var CheckFieldSameCppStringType = newFieldDescriptorPairCheckFunc(checkFieldSameCppStringType)
+
+func checkFieldSameCppStringType(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries, even with string or bytes keys or values,
+		// don't allow configuring the string type.
+		return nil
+	}
+	if (previousDescriptor.Kind() != protoreflect.StringKind && previousDescriptor.Kind() != protoreflect.BytesKind) ||
+		(descriptor.Kind() != protoreflect.StringKind && descriptor.Kind() != protoreflect.BytesKind) {
+		// this check only applies to string/bytes fields
+		return nil
+	}
+	previousStringType, previousIsStringPiece, err := fieldCppStringType(previousField, previousDescriptor)
+	if err != nil {
+		return err
+	}
+	stringType, isStringPiece, err := fieldCppStringType(field, descriptor)
+	if err != nil {
+		return err
+	}
+	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
+		// it is NOT breaking to move from string_piece -> string
+		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		var previousType, currentType fmt.Stringer
+		if previousIsStringPiece {
+			previousType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			previousType = previousStringType
+		}
+		if isStringPiece {
+			currentType = descriptorpb.FieldOptions_STRING_PIECE
+		} else {
+			currentType = stringType
+		}
+		add(
+			field,
+			nil,
+			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
+			`Field %q with name %q on message %q changed C++ string type from %q to %q.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousType,
+			currentType,
+		)
+	}
+	return nil
+}
+
+// CheckFieldSameJavaUTF8Validation is a check function.
+var CheckFieldSameJavaUTF8Validation = newFieldDescriptorPairCheckFunc(checkFieldSameJavaUTF8Validation)
+
+func checkFieldSameJavaUTF8Validation(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
+		// this check only applies to string fields
+		return nil
+	}
+	previousValidation, err := fieldJavaUTF8Validation(previousDescriptor)
+	if err != nil {
+		return err
+	}
+	validation, err := fieldJavaUTF8Validation(descriptor)
+	if err != nil {
+		return err
+	}
+	if previousValidation != validation {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(
+			field,
+			nil,
+			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
+			`Field %q with name %q on message %q changed Java string UTF8 validation from %q to %q.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousValidation,
+			validation,
+		)
+	}
+	return nil
+}
+
+// CheckFieldSameDefault is a check function.
+var CheckFieldSameDefault = newFieldDescriptorPairCheckFunc(checkFieldSameDefault)
+
+func checkFieldSameDefault(
+	add addFunc,
+	corpus *corpus,
+	previousField bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if !canHaveDefault(previousDescriptor) || !canHaveDefault(descriptor) {
+		return nil
+	}
+	previousDefault := getDefault(previousDescriptor)
+	currentDefault := getDefault(descriptor)
+	if previousDefault.isZero() && currentDefault.isZero() {
+		// no defaults to check
+		return nil
+	}
+	if !defaultsEqual(previousDefault, currentDefault) {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(
+			field,
+			nil,
+			withBackupLocation(field.DefaultLocation(), field.Location()),
+			`Field %q with name %q on message %q changed default value from %v to %v.`,
+			numberString,
+			field.Name(),
+			field.ParentMessage().Name(),
+			previousDefault.printable,
+			currentDefault.printable,
+		)
 	}
 	return nil
 }
@@ -336,19 +498,6 @@ func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosou
 	return nil
 }
 
-// CheckFieldSameLabel is a check function.
-var CheckFieldSameLabel = newFieldPairCheckFunc(checkFieldSameLabel)
-
-func checkFieldSameLabel(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
-	if previousField.Label() != field.Label() {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		// TODO: specific label location
-		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.ParentMessage().Name(), protodescriptor.FieldDescriptorProtoLabelPrettyString(previousField.Label()), protodescriptor.FieldDescriptorProtoLabelPrettyString(field.Label()))
-	}
-	return nil
-}
-
 // CheckFieldSameName is a check function.
 var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
@@ -366,7 +515,31 @@ var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	previousOneof := previousField.Oneof()
+	if previousOneof != nil {
+		previousOneofDescriptor, err := previousOneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if previousOneofDescriptor.IsSynthetic() {
+			// Not considering synthetic oneofs since those are really
+			// just strange byproducts of how "explicit presence" is
+			// modeled in proto3 syntax. We will separately detect this
+			// kind of change via field presence check.
+			previousOneof = nil
+		}
+	}
 	oneof := field.Oneof()
+	if oneof != nil {
+		oneofDescriptor, err := oneof.AsDescriptor()
+		if err != nil {
+			return err
+		}
+		if oneofDescriptor.IsSynthetic() {
+			// Same remark as above.
+			oneof = nil
+		}
+	}
+
 	previousInsideOneof := previousOneof != nil
 	insideOneof := oneof != nil
 	if !previousInsideOneof && !insideOneof {
@@ -438,14 +611,9 @@ func checkFieldSameUTF8Validation(
 	if previousDescriptor.Kind() != protoreflect.StringKind || descriptor.Kind() != protoreflect.StringKind {
 		return nil
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameUTF8Validation)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameUTF8Validation)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameUTF8Validation, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameUTF8Validation, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {
@@ -470,6 +638,42 @@ func checkFieldSameUTF8Validation(
 			field.ParentMessage().Name(),
 			previousUTF8Validation,
 			utf8Validation,
+		)
+	}
+	return nil
+}
+
+// CheckFieldWireCompatibleCardinality is a check function.
+var CheckFieldWireCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireCompatibleCardinality)
+
+func checkFieldWireCompatibleCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
 		)
 	}
 	return nil
@@ -526,6 +730,42 @@ func checkFieldWireCompatibleType(
 			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 			return nil
 		}
+	}
+	return nil
+}
+
+// CheckFieldWireJSONCompatibleCardinality is a check function.
+var CheckFieldWireJSONCompatibleCardinality = newFieldDescriptorPairCheckFunc(checkFieldWireJSONCompatibleCardinality)
+
+func checkFieldWireJSONCompatibleCardinality(
+	add addFunc,
+	_ *corpus,
+	_ bufprotosource.Field,
+	previousDescriptor protoreflect.FieldDescriptor,
+	field bufprotosource.Field,
+	descriptor protoreflect.FieldDescriptor,
+) error {
+	if previousDescriptor.ContainingMessage().IsMapEntry() && descriptor.ContainingMessage().IsMapEntry() {
+		// Map entries are generated so nothing to do here. They
+		// usually would be safe to check anyway, but it's possible
+		// that a map entry field "appears" to inherit field presence
+		// from a file default or file syntax, but they don't actually
+		// behave differently whether they report implicit vs explicit
+		// presence. So just skip the check.
+		return nil
+	}
+
+	previousCardinality := getCardinality(previousDescriptor)
+	currentCardinality := getCardinality(descriptor)
+	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
+		// otherwise prints as hex
+		numberString := strconv.FormatInt(int64(field.Number()), 10)
+		add(field, nil, field.Location(),
+			`Field %q on message %q changed cardinality from %q to %q.`,
+			numberString, field.ParentMessage().Name(),
+			previousCardinality,
+			currentCardinality,
+		)
 	}
 	return nil
 }
@@ -723,13 +963,6 @@ func checkFileSameJavaPackage(add addFunc, corpus *corpus, previousFile bufproto
 	return checkFileSameValue(add, previousFile.JavaPackage(), file.JavaPackage(), file, file.JavaPackageLocation(), `option "java_package"`)
 }
 
-// CheckFileSameJavaStringCheckUtf8 is a check function.
-var CheckFileSameJavaStringCheckUtf8 = newFilePairCheckFunc(checkFileSameJavaStringCheckUtf8)
-
-func checkFileSameJavaStringCheckUtf8(add addFunc, corpus *corpus, previousFile bufprotosource.File, file bufprotosource.File) error {
-	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaStringCheckUtf8()), strconv.FormatBool(file.JavaStringCheckUtf8()), file, file.JavaStringCheckUtf8Location(), `option "java_string_check_utf8"`)
-}
-
 // CheckFileSameObjcClassPrefix is a check function.
 var CheckFileSameObjcClassPrefix = newFilePairCheckFunc(checkFileSameObjcClassPrefix)
 
@@ -886,14 +1119,9 @@ func checkMessageSameJSONFormat(
 	if err != nil {
 		return err
 	}
-	featureSetDescriptor := (*descriptorpb.FeatureSet)(nil).ProtoReflect().Descriptor()
-	featureField := featureSetDescriptor.Fields().ByName(featureNameJSONFormat)
-	if featureField == nil {
-		return fmt.Errorf("unable to resolve field descriptor for %s.%s", featureSetDescriptor.FullName(), featureNameJSONFormat)
-	}
-	if featureField.Kind() != protoreflect.EnumKind || featureField.IsList() {
-		return fmt.Errorf("resolved field descriptor for %s.%s has unexpected type: expected optional enum, got %s %s",
-			featureSetDescriptor.FullName(), featureNameJSONFormat, featureField.Cardinality(), featureField.Kind())
+	featureField, err := findFeatureField(featureNameJSONFormat, protoreflect.EnumKind)
+	if err != nil {
+		return err
 	}
 	val, err := protoutil.ResolveFeature(previousDescriptor, featureField)
 	if err != nil {
@@ -976,8 +1204,19 @@ func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage bufprotosou
 	if err != nil {
 		return err
 	}
-	for previousName := range previousNameToOneof {
+	for previousName, previousOneof := range previousNameToOneof {
 		if _, ok := nameToOneof[previousName]; !ok {
+			previousOneofDescriptor, err := previousOneof.AsDescriptor()
+			if err != nil {
+				return err
+			}
+			if previousOneofDescriptor.IsSynthetic() {
+				// Not considering synthetic oneofs since those are really
+				// just strange byproducts of how "explicit presence" is
+				// modeled in proto3 syntax. We will separately detect this
+				// kind of change via field presence check.
+				continue
+			}
 			add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
 		}
 	}

@@ -33,7 +33,10 @@ var (
 		bufbreakingbuild.FieldNoDeleteRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
+		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
+		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
 		bufbreakingbuild.FieldSameLabelRuleBuilder,
@@ -41,7 +44,9 @@ var (
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
 		bufbreakingbuild.FieldSameUTF8ValidationRuleBuilder,
+		bufbreakingbuild.FieldWireCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireCompatibleTypeRuleBuilder,
+		bufbreakingbuild.FieldWireJSONCompatibleCardinalityRuleBuilder,
 		bufbreakingbuild.FieldWireJSONCompatibleTypeRuleBuilder,
 		bufbreakingbuild.FileNoDeleteRuleBuilder,
 		bufbreakingbuild.FileSameCsharpNamespaceRuleBuilder,
@@ -133,7 +138,16 @@ var (
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_CTYPE": {
+		"FIELD_SAME_CARDINALITY": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_CPP_STRING_TYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_CTYPE": {}, // deprecated, so not part of any category by default
+		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
 		},
@@ -146,12 +160,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-			"WIRE",
-		},
+		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
@@ -171,8 +180,14 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
+		"FIELD_WIRE_COMPATIBLE_CARDINALITY": {
+			"WIRE",
+		},
 		"FIELD_WIRE_COMPATIBLE_TYPE": {
 			"WIRE",
+		},
+		"FIELD_WIRE_JSON_COMPATIBLE_CARDINALITY": {
+			"WIRE_JSON",
 		},
 		"FIELD_WIRE_JSON_COMPATIBLE_TYPE": {
 			"WIRE_JSON",
@@ -200,10 +215,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_OBJC_CLASS_PREFIX": {
 			"FILE",
 			"PACKAGE",
@@ -250,10 +262,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_PHP_GENERIC_SERVICES": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_CC_ENABLE_ARENAS": {
 			"FILE",
 			"PACKAGE",

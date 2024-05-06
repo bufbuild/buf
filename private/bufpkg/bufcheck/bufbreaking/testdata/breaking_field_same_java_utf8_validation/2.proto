@@ -1,0 +1,71 @@
+syntax = "proto2";
+
+package a;
+
+option java_string_check_utf8 = true;
+
+message A2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional A2 other4 = 14;
+}
+
+message B2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional B2 other4 = 14;
+}
+
+message C2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional C2 other4 = 14;
+}
+
+message D2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional D2 other4 = 14;
+}
+
+message E2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional E2 other4 = 14;
+}
+
+message F2 {
+  optional string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  optional uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  optional F2 other4 = 14;
+}
