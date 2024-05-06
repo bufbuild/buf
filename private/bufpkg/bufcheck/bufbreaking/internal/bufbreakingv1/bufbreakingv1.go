@@ -28,7 +28,7 @@ import (
 //
 // Adds FILE_SAME_PACKAGE to PACKAGE, WIRE, and WIRE_JSON.
 //
-// Splits FIELD_SAME_TYPE into FIELD_SAME_TYPE for FILE AND PACKAGE,
+// Splits FIELD_SAME_TYPE into FIELD_SAME_TYPE for FILE and PACKAGE,
 // FIRE_WIRE_JSON_COMPATIBLE_TYPE for WIRE_JSON, and
 // FIELD_WIRE_COMPATIBLE_TYPE for WIRE.
 var VersionSpec = &internal.VersionSpec{

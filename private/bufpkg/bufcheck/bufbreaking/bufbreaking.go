@@ -68,11 +68,22 @@ func RulesForConfig(config bufconfig.BreakingConfig) ([]bufcheck.Rule, error) {
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesV1Beta1 gets all known rules.
+// GetAllRules gets all known rules for the given version.
 //
-// Should only be used for printing.
-func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv1beta1.VersionSpec)
+// Should only be used for testing.
+func GetAllRules(fileVersion bufconfig.FileVersion) ([]bufcheck.Rule, error) {
+	var versionSpec *internal.VersionSpec
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		versionSpec = bufbreakingv1beta1.VersionSpec
+	case bufconfig.FileVersionV1:
+		versionSpec = bufbreakingv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = bufbreakingv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	breakingConfig, err := newBreakingConfigForVersionSpec(versionSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -81,36 +92,45 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
+}
+
+// GetAllRulesV1Beta1 gets all known rules.
+//
+// Should only be used for printing.
+func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
+	return GetAllRules(bufconfig.FileVersionV1Beta1)
 }
 
 // GetAllRulesV1 gets all known rules.
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv1.VersionSpec)
-	if err != nil {
-		return nil, err
-	}
-	internalConfig, err := internalConfigForConfig(breakingConfig, false)
-	if err != nil {
-		return nil, err
-	}
-	return rulesForInternalRules(internalConfig.Rules), nil
+	return GetAllRules(bufconfig.FileVersionV1)
 }
 
 // GetAllRulesV2 gets all known rules.
 //
 // Should only be used for printing.
 func GetAllRulesV2() ([]bufcheck.Rule, error) {
-	breakingConfig, err := newBreakingConfigForVersionSpec(bufbreakingv2.VersionSpec)
-	if err != nil {
-		return nil, err
+	return GetAllRules(bufconfig.FileVersionV2)
+}
+
+// GetRelevantDeprecations gets deprecation information for the given
+// version. The map is from deprecated rule IDs to zero or more replacement
+// rule IDs.
+func GetRelevantDeprecations(fileVersion bufconfig.FileVersion) (map[string][]string, error) {
+	var versionSpec *internal.VersionSpec
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		versionSpec = bufbreakingv1beta1.VersionSpec
+	case bufconfig.FileVersionV1:
+		versionSpec = bufbreakingv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = bufbreakingv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
 	}
-	internalConfig, err := internalConfigForConfig(breakingConfig, false)
-	if err != nil {
-		return nil, err
-	}
-	return rulesForInternalRules(internalConfig.Rules), nil
+	return internal.RelevantDeprecationsForVersionSpec(versionSpec)
 }
 
 func internalConfigForConfig(config bufconfig.BreakingConfig, transformDeprecated bool) (*internal.Config, error) {

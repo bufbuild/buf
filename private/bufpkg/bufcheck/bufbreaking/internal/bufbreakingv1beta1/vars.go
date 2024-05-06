@@ -144,10 +144,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_CTYPE": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FIELD_SAME_CTYPE": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
@@ -161,7 +158,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {},
+		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
@@ -206,10 +203,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_OBJC_CLASS_PREFIX": {
 			"FILE",
 			"PACKAGE",
@@ -253,10 +247,7 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
+		"FILE_SAME_PHP_GENERIC_SERVICES": {}, // deprecated, so not part of any category by default
 		"FILE_SAME_CC_ENABLE_ARENAS": {
 			"FILE",
 			"PACKAGE",

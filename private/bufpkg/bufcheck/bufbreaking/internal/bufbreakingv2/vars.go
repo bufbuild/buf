@@ -35,12 +35,10 @@ var (
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
 		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
 		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
-		bufbreakingbuild.FieldSameCTypeRuleBuilder,
 		bufbreakingbuild.FieldSameDefaultRuleBuilder,
 		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
-		bufbreakingbuild.FieldSameLabelRuleBuilder,
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
@@ -55,7 +53,6 @@ var (
 		bufbreakingbuild.FileSameJavaMultipleFilesRuleBuilder,
 		bufbreakingbuild.FileSameJavaOuterClassnameRuleBuilder,
 		bufbreakingbuild.FileSameJavaPackageRuleBuilder,
-		bufbreakingbuild.FileSameJavaStringCheckUtf8RuleBuilder,
 		bufbreakingbuild.FileSameObjcClassPrefixRuleBuilder,
 		bufbreakingbuild.FileSamePackageRuleBuilder,
 		bufbreakingbuild.FileSamePhpClassPrefixRuleBuilder,
@@ -67,7 +64,6 @@ var (
 		bufbreakingbuild.FileSameCcGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameJavaGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSamePyGenericServicesRuleBuilder,
-		bufbreakingbuild.FileSamePhpGenericServicesRuleBuilder,
 		bufbreakingbuild.FileSameCcEnableArenasRuleBuilder,
 		bufbreakingbuild.FileSameSyntaxRuleBuilder,
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
@@ -147,10 +143,6 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_CTYPE": {
-			"FILE",
-			"PACKAGE",
-		},
 		"FIELD_SAME_DEFAULT": {
 			"FILE",
 			"PACKAGE",
@@ -170,7 +162,6 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": {}, // deprecated, so not part of any category by default
 		"FIELD_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
@@ -225,10 +216,6 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
-			"FILE",
-			"PACKAGE",
-		},
 		"FILE_SAME_OBJC_CLASS_PREFIX": {
 			"FILE",
 			"PACKAGE",
@@ -272,10 +259,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_PY_GENERIC_SERVICES": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": {
 			"FILE",
 			"PACKAGE",
 		},

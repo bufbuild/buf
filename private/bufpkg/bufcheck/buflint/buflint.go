@@ -121,6 +121,24 @@ func GetAllRulesV2() ([]bufcheck.Rule, error) {
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
+// GetRelevantDeprecations gets deprecation information for the given
+// version. The map is from deprecated rule IDs to zero or more replacement
+// rule IDs.
+func GetRelevantDeprecations(fileVersion bufconfig.FileVersion) (map[string][]string, error) {
+	var versionSpec *internal.VersionSpec
+	switch fileVersion {
+	case bufconfig.FileVersionV1Beta1:
+		versionSpec = buflintv1beta1.VersionSpec
+	case bufconfig.FileVersionV1:
+		versionSpec = buflintv1.VersionSpec
+	case bufconfig.FileVersionV2:
+		versionSpec = buflintv2.VersionSpec
+	default:
+		return nil, fmt.Errorf("unknown FileVersion: %v", fileVersion)
+	}
+	return internal.RelevantDeprecationsForVersionSpec(versionSpec)
+}
+
 // PrintFileAnnotationSetConfigIgnoreYAMLV1 prints the FileAnnotationSet to the Writer
 // for the config-ignore-yaml format.
 //
