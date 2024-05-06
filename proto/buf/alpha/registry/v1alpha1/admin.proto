@@ -94,11 +94,11 @@ message RepositoryUsage {
   string repository_id = 1;
   // The name of the repository.
   string repository_name = 2;
-  // The id of the owner that the repository belongs to.
+  // The id of the repository owner.
   string owner_id = 3;
-  // The name of the owner that the repository belongs to.
+  // // The name of the respository owner.
   string owner_name = 4;
-  // The total amount of messages, enums and method types usage for the repository.
+  // The total number of message, enum and method types usage for the repository.
   MonthlyUsage usage = 5;
 }
 
@@ -277,8 +277,7 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-  // Entity id is a optional owner or repository id that we want to
-  // display usage for.
+  // Entity id is an optional owner or repository id used to filter usage.
   oneof entity_id {
     // The id of the owner.
     string owner_id = 3;
@@ -299,5 +298,6 @@ message GetAllOrganizationsUsagesRequest {
 }
 
 message GetAllOrganizationsUsagesResponse {
+  // The list of types usage for all repositories in all orgs on a single BSR instance.
   repeated RepositoryUsage repository_usages = 1;
 }

@@ -542,11 +542,11 @@ type RepositoryUsage struct {
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The name of the repository.
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	// The id of the owner that the repository belongs to.
+	// The id of the repository owner.
 	OwnerId string `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	// The name of the owner that the repository belongs to.
+	// // The name of the respository owner.
 	OwnerName string `protobuf:"bytes,4,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	// The total amount of messages, enums and method types usage for the repository.
+	// The total number of message, enum and method types usage for the repository.
 	Usage *MonthlyUsage `protobuf:"bytes,5,opt,name=usage,proto3" json:"usage,omitempty"`
 }
 
@@ -1751,8 +1751,7 @@ type GetClusterUsageRequest struct {
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp of the ending time of a date range.
 	EndTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	// Entity id is a optional owner or repository id that we want to
-	// display usage for.
+	// Entity id is an optional owner or repository id used to filter usage.
 	//
 	// Types that are assignable to EntityId:
 	//
@@ -1955,6 +1954,7 @@ type GetAllOrganizationsUsagesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The list of types usage for all repositories in all orgs on a single BSR instance.
 	RepositoryUsages []*RepositoryUsage `protobuf:"bytes,1,rep,name=repository_usages,json=repositoryUsages,proto3" json:"repository_usages,omitempty"`
 }
 
