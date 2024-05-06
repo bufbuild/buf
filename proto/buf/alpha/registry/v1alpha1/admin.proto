@@ -281,8 +281,8 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-  // Entity id is an optional owner or repository id used to filter usage.
-  oneof entity_id {
+  // Association id is an optional owner or repository id used to filter usage.
+  oneof association_id {
     // The id of the owner.
     string owner_id = 3;
     // The id of the repository.
