@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -35,6 +36,7 @@ import (
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/slicesext"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
@@ -902,7 +904,7 @@ func TestCheckLsBreakingRulesFromConfigNotNamedBufYAML(t *testing.T) {
 	)
 }
 
-func TestCheckLsBreakingRulesFromConfigExcludeDeprecated(t *testing.T) {
+func TestCheckLsBreakingRulesFromConfigExceptDeprecated(t *testing.T) {
 	t.Parallel()
 
 	for _, version := range bufconfig.AllFileVersions {
@@ -938,38 +940,7 @@ func TestCheckLsBreakingRulesFromConfigExcludeDeprecated(t *testing.T) {
 				deprecatedRule := deprecatedRule
 				t.Run(deprecatedRule, func(t *testing.T) {
 					t.Parallel()
-					var stdout bytes.Buffer
-					appcmdtesting.RunCommandExitCode(
-						t,
-						func(use string) *appcmd.Command { return NewRootCommand(use) },
-						0,
-						internaltesting.NewEnvFunc(t),
-						nil,
-						&stdout,
-						nil,
-						"config",
-						"ls-breaking-rules",
-						"--format=json",
-						"--configured-only",
-						"--config",
-						fmt.Sprintf(`{ "version": %q, "breaking": { "use": ["PACKAGE"], "except": [%q] } }`,
-							version, deprecatedRule),
-					)
-					ids := make([]string, 0, len(allPackageIDs))
-					decoder := json.NewDecoder(&stdout)
-					type entry struct {
-						ID string
-					}
-					for {
-						var entry entry
-						err := decoder.Decode(&entry)
-						if errors.Is(err, io.EOF) {
-							break
-						}
-						require.NoError(t, err)
-						ids = append(ids, entry.ID)
-					}
-					sort.Strings(ids)
+					ids := getRuleIDsFromLsBreaking(t, version.String(), []string{"PACKAGE"}, []string{deprecatedRule})
 					expectedIDs := make([]string, 0, len(allPackageIDs))
 					replacements := deprecations[deprecatedRule]
 					for _, id := range allPackageIDs {
@@ -2813,4 +2784,45 @@ func testRun(
 		stderr,
 		args...,
 	)
+}
+
+func getRuleIDsFromLsBreaking(t *testing.T, fileVersion string, useIDs []string, exceptIDs []string) []string {
+	t.Helper()
+	var stdout bytes.Buffer
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
+		0,
+		internaltesting.NewEnvFunc(t),
+		nil,
+		&stdout,
+		nil,
+		"config",
+		"ls-breaking-rules",
+		"--format=json",
+		"--configured-only",
+		"--config",
+		fmt.Sprintf(
+			`{ "version": %q, "breaking": { "use": %s, "except": %s } }`,
+			fileVersion,
+			"["+strings.Join(slicesext.Map(useIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+			"["+strings.Join(slicesext.Map(exceptIDs, func(s string) string { return strconv.Quote(s) }), ",")+"]",
+		),
+	)
+	var ids []string
+	decoder := json.NewDecoder(&stdout)
+	type entry struct {
+		ID string
+	}
+	for {
+		var entry entry
+		err := decoder.Decode(&entry)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		require.NoError(t, err)
+		ids = append(ids, entry.ID)
+	}
+	sort.Strings(ids)
+	return ids
 }
