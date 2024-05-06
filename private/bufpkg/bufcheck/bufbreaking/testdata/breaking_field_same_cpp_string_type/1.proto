@@ -1,0 +1,45 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/cpp_features.proto";
+
+message Foo {
+  string string1 = 1 [ctype=STRING_PIECE];
+  bytes string2 = 2 [ctype=CORD];
+  repeated string string3 = 3;
+  repeated bytes string4 = 4 [features.(pb.cpp).string_type=STRING];
+  string string5 = 5 [features.(pb.cpp).string_type=VIEW];
+  bytes string6 = 6 [features.(pb.cpp).string_type=CORD];
+
+  string cord1 = 11 [ctype=STRING];
+  bytes cord2 = 12 [ctype=STRING_PIECE];
+  repeated string cord3 = 13;
+  repeated bytes cord4 = 14 [features.(pb.cpp).string_type=STRING];
+  string cord5 = 15 [features.(pb.cpp).string_type=VIEW];
+  bytes cord6 = 16 [features.(pb.cpp).string_type=CORD];
+
+  string string_piece1 = 21 [ctype=STRING];
+  bytes string_piece2 = 22 [ctype=CORD];
+  repeated string string_piece3 = 23;
+  repeated bytes string_piece4 = 24 [features.(pb.cpp).string_type=STRING];
+  string string_piece5 = 25 [features.(pb.cpp).string_type=VIEW];
+  bytes string_piece6 = 26 [features.(pb.cpp).string_type=CORD];
+
+  string default1 = 31  [ctype=STRING];
+  bytes default2 = 32  [ctype=CORD];
+  repeated string default3 = 33 [ctype=STRING_PIECE];
+  repeated bytes default4 = 34 [features.(pb.cpp).string_type=STRING];
+  string default5 = 35 [features.(pb.cpp).string_type=VIEW];
+  bytes default6 = 36 [features.(pb.cpp).string_type=CORD];
+  repeated string default7 = 37;
+
+  Foo message1 = 40;
+  bool bool1 = 41;
+  repeated uint32 uint32s1= 42;
+  map<string,string> map1 = 43;
+  Foo message2 = 44;
+  bool bool2 = 45;
+  repeated uint32 uint32s2 = 46;
+  map<string,string> map2 = 47;
+}

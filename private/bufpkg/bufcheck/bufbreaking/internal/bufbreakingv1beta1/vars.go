@@ -34,7 +34,9 @@ var (
 		bufbreakingbuild.FieldNoDeleteUnlessNameReservedRuleBuilder,
 		bufbreakingbuild.FieldNoDeleteUnlessNumberReservedRuleBuilder,
 		bufbreakingbuild.FieldSameCardinalityRuleBuilder,
+		bufbreakingbuild.FieldSameCppStringTypeRuleBuilder,
 		bufbreakingbuild.FieldSameCTypeRuleBuilder,
+		bufbreakingbuild.FieldSameJavaUTF8ValidationRuleBuilder,
 		bufbreakingbuild.FieldSameJSONNameRuleBuilder,
 		bufbreakingbuild.FieldSameJSTypeRuleBuilder,
 		bufbreakingbuild.FieldSameLabelV1Beta1RuleBuilder,
@@ -138,7 +140,15 @@ var (
 			"WIRE_JSON",
 			"WIRE",
 		},
+		"FIELD_SAME_CPP_STRING_TYPE": {
+			"FILE",
+			"PACKAGE",
+		},
 		"FIELD_SAME_CTYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_JAVA_UTF8_VALIDATION": {
 			"FILE",
 			"PACKAGE",
 		},

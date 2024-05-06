@@ -1,0 +1,36 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/cpp_features.proto";
+
+message Bar {
+  string string1 = 1 [features.(pb.cpp).string_type=STRING];
+  bytes string2 = 2 [features.(pb.cpp).string_type=STRING];
+  repeated string string3 = 3 [features.(pb.cpp).string_type=STRING];
+  repeated bytes string4 = 4 [features.(pb.cpp).string_type=STRING];
+  string string5 = 5 [features.(pb.cpp).string_type=STRING];
+  bytes string6 = 6 [features.(pb.cpp).string_type=STRING];
+
+  string cord1 = 11 [features.(pb.cpp).string_type=CORD];
+  bytes cord2 = 12 [features.(pb.cpp).string_type=CORD];
+  repeated string cord3 = 13 [features.(pb.cpp).string_type=CORD];
+  repeated bytes cord4 = 14 [features.(pb.cpp).string_type=CORD];
+  string cord5 = 15 [features.(pb.cpp).string_type=CORD];
+  bytes cord6 = 16 [features.(pb.cpp).string_type=CORD];
+
+  string view1 = 21 [features.(pb.cpp).string_type=VIEW];
+  bytes view2 = 22 [features.(pb.cpp).string_type=VIEW];
+  repeated string view3 = 23 [features.(pb.cpp).string_type=VIEW];
+  repeated bytes view4 = 24 [features.(pb.cpp).string_type=VIEW];
+  string view5 = 25 [features.(pb.cpp).string_type=VIEW];
+  bytes view6 = 26 [features.(pb.cpp).string_type=VIEW];
+
+  string default1 = 31;
+  bytes default2 = 32;
+  repeated string default3 = 33;
+  repeated bytes default4 = 34;
+  string default5 = 35;
+  bytes default6 = 36;
+  repeated string default7 = 37;
+}

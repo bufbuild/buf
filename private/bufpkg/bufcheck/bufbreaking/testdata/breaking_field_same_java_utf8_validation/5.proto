@@ -1,0 +1,95 @@
+edition = "2023";
+
+package a;
+
+import "google/protobuf/java_features.proto";
+
+option features.(pb.java).utf8_validation = VERIFY;
+
+message A5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  A5 other4 = 14;
+}
+
+message B5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  B5 other4 = 14;
+}
+
+message C5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  C5 other4 = 14;
+}
+
+message D5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  D5 other4 = 14;
+}
+
+message E5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  E5 other4 = 14;
+}
+
+message F5 {
+  string s1 = 1;
+  repeated string s2 = 2;
+  map<string, string> s3 = 3;
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F5 other4 = 14;
+}
+
+message D7 {
+  string s1 = 1 [features.(pb.java).utf8_validation=VERIFY];
+  repeated string s2 = 2;
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  D7 other4 = 14;
+}
+
+message F8 {
+  string s1 = 1 [features.(pb.java).utf8_validation=VERIFY];
+  repeated string s2 = 2;
+  map<string, string> s3 = 3 [features.(pb.java).utf8_validation=DEFAULT];
+
+  uint32 other1 = 11;
+  repeated double other2 = 12;
+  map<uint64, bytes> other3 = 13;
+  F8 other4 = 14;
+}
