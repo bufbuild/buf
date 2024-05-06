@@ -764,10 +764,10 @@ func equivalentCheckConfigInV2(
 	)
 	return bufconfig.NewEnabledCheckConfig(
 		bufconfig.FileVersionV2,
-		append(checkConfig.UseIDsAndCategories(), missingIDs...),
-		append(checkConfig.ExceptIDsAndCategories(), extraIDs...),
-		checkConfig.IgnorePaths(),
-		checkConfig.IgnoreIDOrCategoryToPaths(),
+		append(simplyTranslatedCheckConfig.UseIDsAndCategories(), missingIDs...),
+		append(simplyTranslatedCheckConfig.ExceptIDsAndCategories(), extraIDs...),
+		simplyTranslatedCheckConfig.IgnorePaths(),
+		simplyTranslatedCheckConfig.IgnoreIDOrCategoryToPaths(),
 	)
 }
 
