@@ -103,7 +103,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The buf.yaml configuration file or data to use`,
+		`The buf.yaml file or data to use for configuration`,
 	)
 	flagSet.StringVar(
 		&f.Format,
