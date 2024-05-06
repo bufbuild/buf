@@ -86,9 +86,9 @@ const (
 	// AdminServiceGetClusterUsageProcedure is the fully-qualified name of the AdminService's
 	// GetClusterUsage RPC.
 	AdminServiceGetClusterUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetClusterUsage"
-	// AdminServiceGetAllOrganizationsUsagesProcedure is the fully-qualified name of the AdminService's
-	// GetAllOrganizationsUsages RPC.
-	AdminServiceGetAllOrganizationsUsagesProcedure = "/buf.alpha.registry.v1alpha1.AdminService/GetAllOrganizationsUsages"
+	// AdminServiceListRepositoriesUsageProcedure is the fully-qualified name of the AdminService's
+	// ListRepositoriesUsage RPC.
+	AdminServiceListRepositoriesUsageProcedure = "/buf.alpha.registry.v1alpha1.AdminService/ListRepositoriesUsage"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -107,7 +107,7 @@ var (
 	adminServiceGetReviewFlowGracePeriodPolicyMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("GetReviewFlowGracePeriodPolicy")
 	adminServiceUpdateReviewFlowGracePeriodPolicyMethodDescriptor    = adminServiceServiceDescriptor.Methods().ByName("UpdateReviewFlowGracePeriodPolicy")
 	adminServiceGetClusterUsageMethodDescriptor                      = adminServiceServiceDescriptor.Methods().ByName("GetClusterUsage")
-	adminServiceGetAllOrganizationsUsagesMethodDescriptor            = adminServiceServiceDescriptor.Methods().ByName("GetAllOrganizationsUsages")
+	adminServiceListRepositoriesUsageMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("ListRepositoriesUsage")
 )
 
 // AdminServiceClient is a client for the buf.alpha.registry.v1alpha1.AdminService service.
@@ -143,9 +143,9 @@ type AdminServiceClient interface {
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
-	// GetAllOrganizationsUsages returns the usage metrics for all repositories for every organization
+	// ListRepositoriesUsage returns the usage metrics for all repositories for every organization and owner
 	// within a single tenant BSR instance for a given time range.
-	GetAllOrganizationsUsages(context.Context, *connect.Request[v1alpha1.GetAllOrganizationsUsagesRequest]) (*connect.Response[v1alpha1.GetAllOrganizationsUsagesResponse], error)
+	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the buf.alpha.registry.v1alpha1.AdminService
@@ -242,10 +242,10 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		getAllOrganizationsUsages: connect.NewClient[v1alpha1.GetAllOrganizationsUsagesRequest, v1alpha1.GetAllOrganizationsUsagesResponse](
+		listRepositoriesUsage: connect.NewClient[v1alpha1.ListRepositoriesUsageRequest, v1alpha1.ListRepositoriesUsageResponse](
 			httpClient,
-			baseURL+AdminServiceGetAllOrganizationsUsagesProcedure,
-			connect.WithSchema(adminServiceGetAllOrganizationsUsagesMethodDescriptor),
+			baseURL+AdminServiceListRepositoriesUsageProcedure,
+			connect.WithSchema(adminServiceListRepositoriesUsageMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -266,7 +266,7 @@ type adminServiceClient struct {
 	getReviewFlowGracePeriodPolicy       *connect.Client[v1alpha1.GetReviewFlowGracePeriodPolicyRequest, v1alpha1.GetReviewFlowGracePeriodPolicyResponse]
 	updateReviewFlowGracePeriodPolicy    *connect.Client[v1alpha1.UpdateReviewFlowGracePeriodPolicyRequest, v1alpha1.UpdateReviewFlowGracePeriodPolicyResponse]
 	getClusterUsage                      *connect.Client[v1alpha1.GetClusterUsageRequest, v1alpha1.GetClusterUsageResponse]
-	getAllOrganizationsUsages            *connect.Client[v1alpha1.GetAllOrganizationsUsagesRequest, v1alpha1.GetAllOrganizationsUsagesResponse]
+	listRepositoriesUsage                *connect.Client[v1alpha1.ListRepositoriesUsageRequest, v1alpha1.ListRepositoriesUsageResponse]
 }
 
 // ForceDeleteUser calls buf.alpha.registry.v1alpha1.AdminService.ForceDeleteUser.
@@ -341,10 +341,9 @@ func (c *adminServiceClient) GetClusterUsage(ctx context.Context, req *connect.R
 	return c.getClusterUsage.CallUnary(ctx, req)
 }
 
-// GetAllOrganizationsUsages calls
-// buf.alpha.registry.v1alpha1.AdminService.GetAllOrganizationsUsages.
-func (c *adminServiceClient) GetAllOrganizationsUsages(ctx context.Context, req *connect.Request[v1alpha1.GetAllOrganizationsUsagesRequest]) (*connect.Response[v1alpha1.GetAllOrganizationsUsagesResponse], error) {
-	return c.getAllOrganizationsUsages.CallUnary(ctx, req)
+// ListRepositoriesUsage calls buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesUsage.
+func (c *adminServiceClient) ListRepositoriesUsage(ctx context.Context, req *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error) {
+	return c.listRepositoriesUsage.CallUnary(ctx, req)
 }
 
 // AdminServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.AdminService service.
@@ -380,9 +379,9 @@ type AdminServiceHandler interface {
 	// GetClusterUsage returns the summation of total message, enum and service types usage
 	// for every repository in each organization within a single tenant BSR instance.
 	GetClusterUsage(context.Context, *connect.Request[v1alpha1.GetClusterUsageRequest]) (*connect.Response[v1alpha1.GetClusterUsageResponse], error)
-	// GetAllOrganizationsUsages returns the usage metrics for all repositories for every organization
+	// ListRepositoriesUsage returns the usage metrics for all repositories for every organization and owner
 	// within a single tenant BSR instance for a given time range.
-	GetAllOrganizationsUsages(context.Context, *connect.Request[v1alpha1.GetAllOrganizationsUsagesRequest]) (*connect.Response[v1alpha1.GetAllOrganizationsUsagesResponse], error)
+	ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -475,10 +474,10 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceGetClusterUsageMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	adminServiceGetAllOrganizationsUsagesHandler := connect.NewUnaryHandler(
-		AdminServiceGetAllOrganizationsUsagesProcedure,
-		svc.GetAllOrganizationsUsages,
-		connect.WithSchema(adminServiceGetAllOrganizationsUsagesMethodDescriptor),
+	adminServiceListRepositoriesUsageHandler := connect.NewUnaryHandler(
+		AdminServiceListRepositoriesUsageProcedure,
+		svc.ListRepositoriesUsage,
+		connect.WithSchema(adminServiceListRepositoriesUsageMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/buf.alpha.registry.v1alpha1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -509,8 +508,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceUpdateReviewFlowGracePeriodPolicyHandler.ServeHTTP(w, r)
 		case AdminServiceGetClusterUsageProcedure:
 			adminServiceGetClusterUsageHandler.ServeHTTP(w, r)
-		case AdminServiceGetAllOrganizationsUsagesProcedure:
-			adminServiceGetAllOrganizationsUsagesHandler.ServeHTTP(w, r)
+		case AdminServiceListRepositoriesUsageProcedure:
+			adminServiceListRepositoriesUsageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -572,6 +571,6 @@ func (UnimplementedAdminServiceHandler) GetClusterUsage(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetClusterUsage is not implemented"))
 }
 
-func (UnimplementedAdminServiceHandler) GetAllOrganizationsUsages(context.Context, *connect.Request[v1alpha1.GetAllOrganizationsUsagesRequest]) (*connect.Response[v1alpha1.GetAllOrganizationsUsagesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.GetAllOrganizationsUsages is not implemented"))
+func (UnimplementedAdminServiceHandler) ListRepositoriesUsage(context.Context, *connect.Request[v1alpha1.ListRepositoriesUsageRequest]) (*connect.Response[v1alpha1.ListRepositoriesUsageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.AdminService.ListRepositoriesUsage is not implemented"))
 }

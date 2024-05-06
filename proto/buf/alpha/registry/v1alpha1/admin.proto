@@ -98,8 +98,12 @@ message RepositoryUsage {
   string owner_id = 3;
   // // The name of the respository owner.
   string owner_name = 4;
-  // The total number of message, enum and method types usage for the repository.
-  MonthlyUsage usage = 5;
+  // The total amount of message types for the month and year.
+  uint32 total_message_types = 5;
+  // The total amount of enum types for the month and year.
+  uint32 total_enum_types = 6;
+  // The total amount of method types for the month and year.
+  uint32 total_method_types = 7;
 }
 
 // CollisionType is the type of collisions that can occur.
@@ -157,9 +161,9 @@ service AdminService {
   // GetClusterUsage returns the summation of total message, enum and service types usage
   // for every repository in each organization within a single tenant BSR instance.
   rpc GetClusterUsage(GetClusterUsageRequest) returns (GetClusterUsageResponse);
-  // GetAllOrganizationsUsages returns the usage metrics for all repositories for every organization
+  // ListRepositoriesUsage returns the usage metrics for all repositories for every organization and owner
   // within a single tenant BSR instance for a given time range.
-  rpc GetAllOrganizationsUsages(GetAllOrganizationsUsagesRequest) returns (GetAllOrganizationsUsagesResponse);
+  rpc ListRepositoriesUsage(ListRepositoriesUsageRequest) returns (ListRepositoriesUsageResponse);
 }
 
 message ForceDeleteUserRequest {
@@ -290,14 +294,14 @@ message GetClusterUsageResponse {
   repeated MonthlyUsage usage = 1;
 }
 
-message GetAllOrganizationsUsagesRequest {
+message ListRepositoriesUsageRequest {
   // The timestamp of the beginning time of a date range.
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
 }
 
-message GetAllOrganizationsUsagesResponse {
+message ListRepositoriesUsageResponse {
   // The list of types usage for all repositories in all orgs on a single BSR instance.
   repeated RepositoryUsage repository_usages = 1;
 }
