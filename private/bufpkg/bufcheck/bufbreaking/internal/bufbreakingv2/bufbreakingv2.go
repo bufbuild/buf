@@ -31,9 +31,11 @@ import (
 // values are a feature of proto2 and editions, but not in
 // proto3 syntax.)
 //
-// Removes deprecated checks (and retains only their
+// Removes the following deprecated checks (but retains their
 // replacements):
+//   - FIELD_SAME_CTYPE
 //   - FIELD_SAME_LABEL
+//   - FILE_SAME_JAVA_STRING_CHECK_UTF8
 //   - FILE_SAME_PHP_GENERIC_SERVICES
 var VersionSpec = &internal.VersionSpec{
 	FileVersion:       bufconfig.FileVersionV2,

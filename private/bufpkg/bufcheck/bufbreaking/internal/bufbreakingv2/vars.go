@@ -145,10 +145,6 @@ var (
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_CTYPE": {
-			"FILE",
-			"PACKAGE",
-		},
 		"FIELD_SAME_DEFAULT": {
 			"FILE",
 			"PACKAGE",
@@ -219,10 +215,6 @@ var (
 			"PACKAGE",
 		},
 		"FILE_SAME_JAVA_PACKAGE": {
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
 			"FILE",
 			"PACKAGE",
 		},
