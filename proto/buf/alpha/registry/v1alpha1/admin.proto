@@ -88,7 +88,7 @@ message MonthlyUsage {
 }
 
 // RepositoryUsage contains the total amount of message, enum and method types
-// for an repository within an organization.
+// for a repository.
 message RepositoryUsage {
   // The id of the repository.
   string repository_id = 1;
@@ -98,11 +98,11 @@ message RepositoryUsage {
   string owner_id = 3;
   // // The name of the respository owner.
   string owner_name = 4;
-  // The total amount of message types for the month and year.
+  // The total amount of message types.
   uint32 total_message_types = 5;
-  // The total amount of enum types for the month and year.
+  // The total amount of enum types.
   uint32 total_enum_types = 6;
-  // The total amount of method types for the month and year.
+  // The total amount of method types.
   uint32 total_method_types = 7;
 }
 
@@ -161,8 +161,8 @@ service AdminService {
   // GetClusterUsage returns the summation of total message, enum and service types usage
   // for every repository in each organization within a single tenant BSR instance.
   rpc GetClusterUsage(GetClusterUsageRequest) returns (GetClusterUsageResponse);
-  // ListRepositoriesUsage returns the usage metrics for all repositories for every organization and owner
-  // within a single tenant BSR instance for a given time range.
+  // ListRepositoriesUsage returns the usage metrics for all repositories within
+  // a single tenant BSR instance for a given time range.
   rpc ListRepositoriesUsage(ListRepositoriesUsageRequest) returns (ListRepositoriesUsageResponse);
 }
 
@@ -281,8 +281,8 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-  // Resource id is an optional owner or repository id used to filter usage.
-  oneof resource_id {
+  // Source id is an optional owner or repository id used to filter usage.
+  oneof source_id {
     // The id of the owner.
     string owner_id = 3;
     // The id of the repository.
