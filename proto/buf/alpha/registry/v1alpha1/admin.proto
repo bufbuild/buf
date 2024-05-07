@@ -281,8 +281,8 @@ message GetClusterUsageRequest {
   google.protobuf.Timestamp start_time = 1;
   // The timestamp of the ending time of a date range.
   google.protobuf.Timestamp end_time = 2;
-  // Association id is an optional owner or repository id used to filter usage.
-  oneof association_id {
+  // Resource id is an optional owner or repository id used to filter usage.
+  oneof resource_id {
     // The id of the owner.
     string owner_id = 3;
     // The id of the repository.
@@ -302,6 +302,7 @@ message ListRepositoriesUsageRequest {
 }
 
 message ListRepositoriesUsageResponse {
-  // The list of types usage for all repositories in all orgs on a single BSR instance.
+  // The list containing the maximum types usage with owner and repository information
+  // for all repositories in all orgs on a single BSR instance for a given time range.
   repeated RepositoryUsage repository_usages = 1;
 }
