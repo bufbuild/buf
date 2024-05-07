@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Change the default visibiity of `--create-visibility` flag for `buf push` to `private`
+  when the `--create` flag is set. Users are no longer required to set `--create-visibility`
+  when running `buf push --create`.
+- Add `--label` flag to `buf push` which allows users to set labels when pushing new
+  commits to the BSR.
+- Add `--source-control-url` flag to `buf push` which allows users to set a URL to a
+  source code repository when pushing new commits to the BSR. The URL is associated
+  with the pushed commits, so it can point to a specific commit in source control.
+- Add `--create-default-label` flag to `buf push`, which allows users to set a default
+  label to be created when calling `buf push --create`.
+- Add `--git-metadata` flag to `bush push`, which sets `--label`, `--source-control-url`,
+  and `--create-default-label` flags when pushing new commits to the BSR.
 
 ## [v1.32.0-beta.1] - 2024-04-23
 
