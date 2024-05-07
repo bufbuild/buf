@@ -15,6 +15,7 @@
 package push
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -54,7 +55,7 @@ const (
 	branchFlagName   = "branch"
 
 	gitCommand                = "git"
-	gitDefaultRemote          = "origin"
+	gitOriginRemote           = "origin"
 	defaultGitRemoteURLFormat = "%s/commit/%s"
 	bitBucketRemoteURLFormat  = "%s/commits/%s"
 	bitBucketURL              = "https://bitbucket.org"
@@ -151,24 +152,20 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			`Uses the Git source control state to set flag values. If this flag is set, we will use the following values for your flags:
 
-	--%s to <git remote URL>/<repository name>/commit/<commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53)
-	--%s for each Git tag and branch for this Git commit
+	--%s to <git remote URL>/<repository name>/<route>/<commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53)
+	--%s for each Git tag and branch associated with the currently checked out commit
 	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set
 
-The source control URL and default branch is based on the default Git remote, %q. If you do not have this remote, we take the URL for the first remote based on alphabetical ordering.
+The source control URL and default branch is based on the Git remote, %q, and requires you to have this remote.
 This flag is only compatible with checkouts of Git source repositories.
-This flag does not allow you to set any of the following flags yourself: --%s, --%s, --%s, --%s, --%s, --%s.`,
+This flag does not allow you to set any of the following flags yourself: --%s, --%s.`,
 			sourceControlURLFlagName,
 			labelFlagName,
 			createDefaultLabelFlagName,
 			createFlagName,
-			gitDefaultRemote,
+			gitOriginRemote,
 			sourceControlURLFlagName,
-			labelFlagName,
 			createDefaultLabelFlagName,
-			tagFlagName,
-			branchFlagName,
-			draftFlagName,
 		),
 	)
 
@@ -211,6 +208,10 @@ func run(
 			return err
 		}
 		uploadOptions = append(uploadOptions, gitMetadataUploadOptions...)
+		// Accept any additional labels the user has set using `--label`
+		if len(flags.Labels) > 0 {
+			uploadOptions = append(uploadOptions, bufmodule.UploadWithLabels(slicesext.ToUniqueSorted(flags.Labels)...))
+		}
 	} else {
 		// Otherwise, we parse the flags set individually by the user.
 		if labelUploadOption := getLabelUploadOption(flags); labelUploadOption != nil {
@@ -396,9 +397,6 @@ func validateGitMetadataFlags(flags *flags) error {
 		if flags.SourceControlURL != "" {
 			usedFlags = append(usedFlags, sourceControlURLFlagName)
 		}
-		if len(flags.Labels) > 0 {
-			usedFlags = append(usedFlags, labelFlagName)
-		}
 		if flags.CreateDefaultLabel != "" {
 			usedFlags = append(usedFlags, createDefaultLabelFlagName)
 		}
@@ -439,6 +437,11 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	runner := command.NewRunner()
+	if err := checkForNoCommitGitChanges(ctx, runner, input); err != nil {
+		// We surface additional information here for the user to ensure they are using this flag
+		// with a git checkout.
+		return nil, fmt.Errorf("unable to check input %q, please ensure this is a Git repository checkout: %w", input, err)
+	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
 	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, input)
 	if err != nil {
@@ -475,6 +478,42 @@ func getGitMetadataUploadOptions(
 	return gitMetadataUploadOptions, nil
 }
 
+func checkForNoCommitGitChanges(
+	ctx context.Context,
+	runner command.Runner,
+	input string,
+) error {
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	var modifiedFiles []string
+	// Unstaged changes
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("diff", "--name-only"),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(input),
+	); err != nil {
+		return err
+	}
+
+	// Staged changes
+	if len(modifiedFiles) > 0 {
+		if err := runner.Run(
+			ctx,
+			gitCommand,
+			command.RunWithArgs("diff", "--name-only", "--cached"),
+			command.RunWithStdout(stdout),
+			command.RunWithStderr(stderr),
+			command.RunWithDir(input),
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func getGitRemotes(
 	ctx context.Context,
 	runner command.Runner,
@@ -491,7 +530,7 @@ func getGitRemotes(
 	); err != nil {
 		return nil, err
 	}
-	return strings.Split(strings.TrimSpace(buffer.String()), "\n"), nil
+	return getAllTrimmedLinesFromBuffer(buffer), nil
 }
 
 // This returns an upload option for all Git metadata labels. We set labels for the following
@@ -535,7 +574,7 @@ func getGitTagsOnCurrentCommit(
 		return nil, err
 	}
 	if len(buffer.Bytes()) > 0 {
-		return strings.Split(strings.TrimSpace(buffer.String()), "\n"), nil
+		return getAllTrimmedLinesFromBuffer(buffer), nil
 	}
 	return nil, nil
 }
@@ -581,9 +620,9 @@ func getGitMetadataSourceControlURLUploadOption(
 		remoteToURL[remote] = strings.TrimSpace(buffer.String())
 	}
 	// We prioritize the Git default remote, "origin", URL
-	if gitDefaultRemoteURL, ok := remoteToURL[gitDefaultRemote]; ok {
+	if gitOriginRemoteURL, ok := remoteToURL[gitOriginRemote]; ok {
 		// First we need to trim the `.git` suffix if there is one.
-		gitDefaultRemoteURL = strings.TrimSuffix(gitDefaultRemoteURL, ".git")
+		gitOriginRemoteURL = strings.TrimSuffix(gitOriginRemoteURL, ".git")
 		// Then we get the current HEAD commit.
 		currentHEADCommit, err := getCurrentHEADGitCommit(ctx, runner, input)
 		if err != nil {
@@ -591,16 +630,16 @@ func getGitMetadataSourceControlURLUploadOption(
 		}
 		// Bitbucket is the only URL that uses the "/commits" route, both Github and Gitlab
 		// use "/commit", so we default to that if the remote URL does not point at Bitbucket.
-		if strings.HasPrefix(gitDefaultRemoteURL, bitBucketURL) {
+		if strings.HasPrefix(gitOriginRemoteURL, bitBucketURL) {
 			return bufmodule.UploadWithSourceControlURL(fmt.Sprintf(
 				bitBucketRemoteURLFormat,
-				gitDefaultRemoteURL,
+				gitOriginRemoteURL,
 				currentHEADCommit,
 			)), nil
 		}
 		return bufmodule.UploadWithSourceControlURL(fmt.Sprintf(
 			defaultGitRemoteURLFormat,
-			gitDefaultRemoteURL,
+			gitOriginRemoteURL,
 			currentHEADCommit,
 		)), nil
 	}
@@ -652,40 +691,41 @@ func getGitDefaultBranch(
 		); err != nil {
 			return "", err
 		}
-		branch, err := getHEADBranchFromGitRemoteOutput(buffer.Bytes())
+		branch, err := getHEADBranchFromGitRemoteOutput(buffer)
 		if err != nil {
 			return "", err
 		}
 		remoteToHEADBranch[remote] = branch
 	}
-	// We prioritze the Git default remote, "origin", HEAD branch as the default branch
-	if gitDefaultRemoteHEADBranch, ok := remoteToHEADBranch[gitDefaultRemote]; ok {
-		return gitDefaultRemoteHEADBranch, nil
+	// We always use the Git remote, "origin", to check for the `HEAD` branch as the
+	// "default" branch.
+	if gitOriginRemoteHEADBranch, ok := remoteToHEADBranch[gitOriginRemote]; ok {
+		return gitOriginRemoteHEADBranch, nil
 	}
-	// Otherwise we sort by alphabetical order and return the first URL
-	sortedRemotes := slicesext.MapKeysToSortedSlice(remoteToHEADBranch)
-	if len(sortedRemotes) > 0 {
-		return remoteToHEADBranch[sortedRemotes[0]], nil
-	}
-	return "", nil
+	return "", fmt.Errorf("no HEAD branch found for Git remote %q", gitOriginRemote)
 }
 
 // This checks for the HEAD branch from the output of `git remote show <remote>`.
 // sed -n '/HEAD branch/s/.*: //p'
-func getHEADBranchFromGitRemoteOutput(output []byte) (string, error) {
-	// First find where "HEAD branch"
-	index := bytes.Index(output, []byte("HEAD branch: "))
-	if index < 0 {
-		return "", errors.New("no HEAD branch in git remote output")
+func getHEADBranchFromGitRemoteOutput(output *bytes.Buffer) (string, error) {
+	scanner := bufio.NewScanner(output)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, "HEAD branch: ") {
+			continue
+		}
+		return strings.TrimPrefix(strings.TrimSpace(line), "HEAD branch: "), nil
 	}
-	// Then find the next new line
-	firstNewLine := bytes.Index(output[index:], []byte("\n"))
-	if index < 0 {
-		return "", errors.New("no HEAD branch information found")
+	return "", errors.New("no HEAD branch information found")
+}
+
+func getAllTrimmedLinesFromBuffer(buffer *bytes.Buffer) []string {
+	scanner := bufio.NewScanner(buffer)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, strings.TrimSpace(scanner.Text()))
 	}
-	// Return this line with the prefix "HEAD branch: " trimmed off.
-	// The index of the new line is not included here.
-	return strings.TrimPrefix(string(output[index:index+firstNewLine]), "HEAD branch: "), nil
+	return lines
 }
 
 func getLabelUploadOption(flags *flags) bufmodule.UploadOption {
