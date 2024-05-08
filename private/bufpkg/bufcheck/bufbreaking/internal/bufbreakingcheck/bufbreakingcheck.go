@@ -472,6 +472,10 @@ func checkFieldSameDefault(
 var CheckFieldSameJSONName = newFieldPairCheckFunc(checkFieldSameJSONName)
 
 func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
+	if previousField.Extendee() != "" {
+		// JSON name can't be set explicitly for extensions
+		return nil
+	}
 	if previousField.JSONName() != field.JSONName() {
 		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()),
 			`%s changed option "json_name" from %q to %q.`,
@@ -485,6 +489,10 @@ func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField bufprotos
 var CheckFieldSameJSType = newFieldPairCheckFunc(checkFieldSameJSType)
 
 func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
+	if !is64bitInteger(previousField.Type()) || !is64bitInteger(field.Type()) {
+		// this check only applies to 64-bit integer fields
+		return nil
+	}
 	if previousField.JSType() != field.JSType() {
 		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()),
 			`%s changed option "jstype" from %q to %q.`,
@@ -511,6 +519,10 @@ func checkFieldSameName(add addFunc, corpus *corpus, previousField bufprotosourc
 var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
+	if previousField.Extendee() != "" {
+		// extensions can't be defined inside oneofs
+		return nil
+	}
 	previousOneof := previousField.Oneof()
 	if previousOneof != nil {
 		previousOneofDescriptor, err := previousOneof.AsDescriptor()

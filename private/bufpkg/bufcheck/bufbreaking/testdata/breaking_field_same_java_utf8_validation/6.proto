@@ -1,7 +1,7 @@
 edition = "2023";
 
 package a;
-
+import "1.proto";
 import "google/protobuf/java_features.proto";
 
 option features.utf8_validation = NONE;
@@ -16,6 +16,13 @@ message A6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   A6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend A1 {
+    string a1_s1 = 100;
+    repeated string a1_s2 = 101;
+  }
 }
 
 message B6 {
@@ -27,6 +34,13 @@ message B6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   B6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend B1 {
+    string b1_s1 = 100;
+    repeated string b1_s2 = 101;
+  }
 }
 
 message C6 {
@@ -49,6 +63,13 @@ message D6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   D6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend D1 {
+    string d1_s1 = 100;
+    repeated string d1_s2 = 101;
+  }
 }
 
 message E6 {
@@ -60,6 +81,13 @@ message E6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   E6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend E1 {
+    string e1_s1 = 100;
+    repeated string e1_s2 = 101;
+  }
 }
 
 message F6 {
@@ -71,6 +99,13 @@ message F6 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   F6 other4 = 14;
+
+  extensions 100 to 1000;
+
+  extend F1 {
+    string f1_s1 = 100;
+    repeated string f1_s2 = 101;
+  }
 }
 
 message D8 {
@@ -93,4 +128,29 @@ message E8 {
   repeated double other2 = 12;
   map<uint64, bytes> other3 = 13;
   E8 other4 = 14;
+}
+
+extend A6 {
+  string a6_s1 = 100;
+  repeated string a6_s2 = 101;
+}
+
+extend B6 {
+  string b6_s1 = 100;
+  repeated string b6_s2 = 101;
+}
+
+extend D6 {
+  string d6_s1 = 100;
+  repeated string d6_s2 = 101;
+}
+
+extend E6 {
+  string e6_s1 = 100;
+  repeated string e6_s2 = 101;
+}
+
+extend F6 {
+  string f6_s1 = 100;
+  repeated string f6_s2 = 101;
 }

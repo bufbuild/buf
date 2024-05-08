@@ -1,6 +1,6 @@
 syntax = "proto3";
-
 package a;
+import "google/protobuf/descriptor.proto";
 
 message CompatiblePrimitives {
   int32 int32_field_1 = 1;
@@ -82,4 +82,10 @@ message WithIncompatibleEnums {
 message StringBytes {
   string string_field_1 = 1;
   bytes bytes_field_1 = 2;
+}
+
+extend google.protobuf.FieldOptions {
+  repeated Bar bar_option = 10101;
+  string str_option = 10102;
+  bytes byt_option = 10103;
 }

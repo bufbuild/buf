@@ -6,3 +6,21 @@ message Ten2 {
   repeated int64 one = 1;
   int64 two = 2 [features.field_presence = LEGACY_REQUIRED];
 }
+
+message Foo {
+  extensions 10 to 100;
+
+  message Bar {
+    int32 len = 1;
+
+    extend Foo {
+      repeated string str = 10;
+      repeated string labels = 11;
+    }
+  }
+}
+
+extend Foo {
+  bytes meta = 20;
+  uint64 tags = 21;
+}

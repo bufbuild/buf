@@ -1,6 +1,6 @@
 syntax = "proto3";
-
 package a;
+import "google/protobuf/descriptor.proto";
 
 message One {
   int64 one = 1 [jstype = JS_NORMAL];
@@ -38,4 +38,12 @@ message Three {
 message Nine {
   int64 one = 1 [jstype = JS_NORMAL];
   int64 two = 2 [jstype = JS_STRING];
+
+  extend google.protobuf.FileOptions {
+    uint64 f1 = 10001;
+    sint64 f2 = 10002 [jstype = JS_STRING];
+    int64 f3 = 10003 [jstype = JS_NUMBER];
+    fixed64 f4 = 10004 [jstype = JS_NORMAL];
+    sfixed64 f5 = 10005 [jstype = JS_STRING];
+  }
 }

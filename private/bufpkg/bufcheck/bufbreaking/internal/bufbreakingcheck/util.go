@@ -583,6 +583,7 @@ func addToTypeToNumberToExtension(container container, typeToNumberToExt map[str
 				existing.FullName(), existing.File().Path(),
 				extension.FullName(), extension.File().Path())
 		}
+		numberToExt[extension.Number()] = extension
 	}
 	for _, message := range container.Messages() {
 		if err := addToTypeToNumberToExtension(message, typeToNumberToExt); err != nil {
@@ -590,4 +591,17 @@ func addToTypeToNumberToExtension(container container, typeToNumberToExt map[str
 		}
 	}
 	return nil
+}
+
+func is64bitInteger(fieldType descriptorpb.FieldDescriptorProto_Type) bool {
+	switch fieldType {
+	case descriptorpb.FieldDescriptorProto_TYPE_INT64,
+		descriptorpb.FieldDescriptorProto_TYPE_SINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_UINT64,
+		descriptorpb.FieldDescriptorProto_TYPE_FIXED64,
+		descriptorpb.FieldDescriptorProto_TYPE_SFIXED64:
+		return true
+	default:
+		return false
+	}
 }

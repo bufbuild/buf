@@ -113,7 +113,7 @@ func AssertFileAnnotationsEqual(
 		slicesext.Map(expected, bufanalysis.FileAnnotation.String),
 		slicesext.Map(actual, bufanalysis.FileAnnotation.String),
 	) {
-		t.Log("Expecting:")
+		t.Log("If actuals are correct, change expectations to the following:")
 		for _, annotation := range actual {
 			t.Logf("    bufanalysistesting.NewFileAnnotation(t, %q, %d, %d, %d, %d, %q),",
 				annotation.FileInfo().Path(),
