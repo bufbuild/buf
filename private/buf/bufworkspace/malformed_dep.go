@@ -38,11 +38,19 @@ const (
 type MalformedDepType int
 
 // MalformedDep is a dep that was malformed in some way in the buf.yaml.
+//
+// TODO: rename this to MalformedDepRef or something and give it a ModuleRef
 type MalformedDep interface {
 	// ModuleFullName returns the full name of the malformed dep.
 	//
 	// Always present.
 	ModuleFullName() bufmodule.ModuleFullName
+	// Ref returns the reference within the Module.
+	//
+	// May be a label or dashless commitID.
+	//
+	// May be empty, in which case this references the commit of the default label of the Module.
+	Ref() string
 	// Type is why this dep was malformed.
 	//
 	// Always present.
@@ -106,6 +114,7 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 				malformedDeps,
 				newMalformedDep(
 					configuredDepModuleRef.ModuleFullName(),
+					configuredDepModuleRef.Ref(),
 					MalformedDepTypeUnused,
 				),
 			)
@@ -125,18 +134,28 @@ func MalformedDepsForWorkspace(workspace Workspace) ([]MalformedDep, error) {
 
 type malformedDep struct {
 	moduleFullName   bufmodule.ModuleFullName
+	ref              string
 	malformedDepType MalformedDepType
 }
 
-func newMalformedDep(moduleFullName bufmodule.ModuleFullName, malformedDepType MalformedDepType) *malformedDep {
+func newMalformedDep(
+	moduleFullName bufmodule.ModuleFullName,
+	ref string,
+	malformedDepType MalformedDepType,
+) *malformedDep {
 	return &malformedDep{
 		moduleFullName:   moduleFullName,
+		ref:              ref,
 		malformedDepType: malformedDepType,
 	}
 }
 
 func (m *malformedDep) ModuleFullName() bufmodule.ModuleFullName {
 	return m.moduleFullName
+}
+
+func (m *malformedDep) Ref() string {
+	return m.ref
 }
 
 func (m *malformedDep) Type() MalformedDepType {

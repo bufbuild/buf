@@ -58,6 +58,7 @@ func Prune(
 	ctx context.Context,
 	logger *zap.Logger,
 	controller bufctl.Controller,
+	moduleKeyProvider bufmodule.ModuleKeyProvider,
 	// Contains all the Modules and their transitive dependencies based on the  buf.yaml.
 	//
 	// All dependencies must be within this group from RemoteDepsForModuleSet. If a dependency
@@ -69,6 +70,7 @@ func Prune(
 	bufYAMLBasedDepModuleKeys []bufmodule.ModuleKey,
 	workspaceDepManager bufworkspace.WorkspaceDepManager,
 	dirPath string,
+	keepUnused bool,
 ) error {
 	workspace, err := controller.GetWorkspace(ctx, dirPath, bufctl.WithIgnoreAndDisallowV1BufWorkYAMLs())
 	if err != nil {
@@ -88,6 +90,7 @@ func Prune(
 	if err != nil {
 		return err
 	}
+	var unusedMalformedDeps []bufworkspace.MalformedDep
 	for _, malformedDep := range malformedDeps {
 		switch t := malformedDep.Type(); t {
 		case bufworkspace.MalformedDepTypeUnused:
@@ -95,6 +98,7 @@ func Prune(
 				`Module %[1]s is declared in your buf.yaml deps but is unused. This command only modifies buf.lock files, not buf.yaml files. Please remove %[1]s from your buf.yaml deps if it is not needed.`,
 				malformedDep.ModuleFullName(),
 			)
+			unusedMalformedDeps = append(unusedMalformedDeps, malformedDep)
 		default:
 			return fmt.Errorf("unknown MalformedDepType: %v", t)
 		}
