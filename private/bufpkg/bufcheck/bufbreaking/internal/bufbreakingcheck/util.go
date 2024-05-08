@@ -17,6 +17,7 @@ package bufbreakingcheck
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -487,4 +488,32 @@ func getCustomFeatureLocation(field bufprotosource.Field, extension protoreflect
 		return nil
 	}
 	return field.OptionLocation(featureField, int32(extension.Number()), int32(feature.Number()))
+}
+
+func fieldDescription(field bufprotosource.Field) string {
+	var name string
+	if field.Extendee() != "" {
+		// extensions are known by fully-qualified name
+		name = field.FullName()
+	} else {
+		name = field.Name()
+	}
+	return fieldDescriptionWithName(field, name)
+}
+
+func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
+	if name != "" {
+		name = fmt.Sprintf(" with name %q", name)
+	}
+	// otherwise prints as hex
+	numberString := strconv.FormatInt(int64(field.Number()), 10)
+	var kind, message string
+	if field.Extendee() != "" {
+		kind = "Extension"
+		message = field.Extendee()
+	} else {
+		kind = "Field"
+		message = field.ParentMessage().Name()
+	}
+	return fmt.Sprintf("%s %q%s on message %q", kind, numberString, name, message)
 }

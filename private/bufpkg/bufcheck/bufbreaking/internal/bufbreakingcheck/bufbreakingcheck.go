@@ -275,8 +275,6 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage bufprotosource.Mes
 	for previousNumber, previousField := range previousNumberToField {
 		if _, ok := numberToField[previousNumber]; !ok {
 			if !isDeletedFieldAllowedWithRules(previousField, message, allowIfNumberReserved, allowIfNameReserved) {
-				// otherwise prints as hex
-				previousNumberString := strconv.FormatInt(int64(previousNumber), 10)
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
 					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
@@ -287,7 +285,17 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage bufprotosource.Mes
 				if allowIfNameReserved {
 					suffix = fmt.Sprintf(` without reserving the name %q`, previousField.Name())
 				}
-				add(message, nil, message.Location(), `Previously present field %q with name %q on message %q was deleted%s.`, previousNumberString, previousField.Name(), message.Name(), suffix)
+				description := fieldDescription(previousField)
+				// Description will start with capital letter; lower-case it
+				// to better fit in this message.
+				description = strings.ToLower(description[:1]) + description[1:]
+				add(
+					message,
+					nil,
+					message.Location(),
+					`Previously present %s was deleted%s.`,
+					description,
+					suffix)
 			}
 		}
 	}
@@ -323,11 +331,9 @@ func checkFieldSameCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if previousCardinality != currentCardinality {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(field, nil, field.Location(),
-			`Field %q on message %q changed cardinality from %q to %q.`,
-			numberString, field.ParentMessage().Name(),
+			`%s changed cardinality from %q to %q.`,
+			fieldDescription(field),
 			previousCardinality,
 			currentCardinality,
 		)
@@ -367,8 +373,6 @@ func checkFieldSameCppStringType(
 	if (previousStringType != stringType || previousIsStringPiece != isStringPiece) &&
 		// it is NOT breaking to move from string_piece -> string
 		!(previousIsStringPiece && stringType == protobuf.CppFeatures_STRING) {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		var previousType, currentType fmt.Stringer
 		if previousIsStringPiece {
 			previousType = descriptorpb.FieldOptions_STRING_PIECE
@@ -384,10 +388,8 @@ func checkFieldSameCppStringType(
 			field,
 			nil,
 			withBackupLocation(field.CTypeLocation(), fieldCppStringTypeLocation(field), field.Location()),
-			`Field %q with name %q on message %q changed C++ string type from %q to %q.`,
-			numberString,
-			field.Name(),
-			field.ParentMessage().Name(),
+			`%s changed C++ string type from %q to %q.`,
+			fieldDescription(field),
 			previousType,
 			currentType,
 		)
@@ -419,16 +421,12 @@ func checkFieldSameJavaUTF8Validation(
 		return err
 	}
 	if previousValidation != validation {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(
 			field,
 			nil,
 			withBackupLocation(field.File().JavaStringCheckUtf8Location(), fieldJavaUTF8ValidationLocation(field), field.Location()),
-			`Field %q with name %q on message %q changed Java string UTF8 validation from %q to %q.`,
-			numberString,
-			field.Name(),
-			field.ParentMessage().Name(),
+			`%s changed Java string UTF8 validation from %q to %q.`,
+			fieldDescription(field),
 			previousValidation,
 			validation,
 		)
@@ -457,16 +455,12 @@ func checkFieldSameDefault(
 		return nil
 	}
 	if !defaultsEqual(previousDefault, currentDefault) {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(
 			field,
 			nil,
 			withBackupLocation(field.DefaultLocation(), field.Location()),
-			`Field %q with name %q on message %q changed default value from %v to %v.`,
-			numberString,
-			field.Name(),
-			field.ParentMessage().Name(),
+			`% changed default value from %v to %v.`,
+			fieldDescription(field),
 			previousDefault.printable,
 			currentDefault.printable,
 		)
@@ -479,9 +473,10 @@ var CheckFieldSameJSONName = newFieldPairCheckFunc(checkFieldSameJSONName)
 
 func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.JSONName() != field.JSONName() {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()), `Field %q with name %q on message %q changed option "json_name" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.JSONName(), field.JSONName())
+		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()),
+			`%s changed option "json_name" from %q to %q.`,
+			fieldDescription(field),
+			previousField.JSONName(), field.JSONName())
 	}
 	return nil
 }
@@ -491,9 +486,10 @@ var CheckFieldSameJSType = newFieldPairCheckFunc(checkFieldSameJSType)
 
 func checkFieldSameJSType(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.JSType() != field.JSType() {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "jstype" from %q to %q.`, numberString, field.Name(), field.ParentMessage().Name(), previousField.JSType().String(), field.JSType().String())
+		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()),
+			`%s changed option "jstype" from %q to %q.`,
+			fieldDescription(field),
+			previousField.JSType().String(), field.JSType().String())
 	}
 	return nil
 }
@@ -503,9 +499,10 @@ var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
 func checkFieldSameName(add addFunc, corpus *corpus, previousField bufprotosource.Field, field bufprotosource.Field) error {
 	if previousField.Name() != field.Name() {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, nil, field.NameLocation(), `Field %q on message %q changed name from %q to %q.`, numberString, field.ParentMessage().Name(), previousField.Name(), field.Name())
+		add(field, nil, field.NameLocation(),
+			`%s changed name from %q to %q.`,
+			fieldDescriptionWithName(field, ""), // don't include name in description
+			previousField.Name(), field.Name())
 	}
 	return nil
 }
@@ -547,9 +544,10 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 	}
 	if previousInsideOneof && insideOneof {
 		if previousOneof.Name() != oneof.Name() {
-			// otherwise prints as hex
-			numberString := strconv.FormatInt(int64(field.Number()), 10)
-			add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.ParentMessage().Name(), previousOneof.Name(), oneof.Name())
+			add(field, nil, field.Location(),
+				`%sq moved from oneof %q to oneof %q.`,
+				fieldDescription(field),
+				previousOneof.Name(), oneof.Name())
 		}
 		return nil
 	}
@@ -560,9 +558,10 @@ func checkFieldSameOneof(add addFunc, corpus *corpus, previousField bufprotosour
 		previous = "outside"
 		current = "inside"
 	}
-	// otherwise prints as hex
-	numberString := strconv.FormatInt(int64(field.Number()), 10)
-	add(field, nil, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.ParentMessage().Name(), previous, current)
+	add(field, nil, field.Location(),
+		`%s moved from %s to %s a oneof.`,
+		fieldDescription(field),
+		previous, current)
 	return nil
 }
 
@@ -626,16 +625,12 @@ func checkFieldSameUTF8Validation(
 	}
 	utf8Validation := descriptorpb.FeatureSet_Utf8Validation(val.Enum())
 	if previousUTF8Validation != utf8Validation {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(
 			field,
 			nil,
 			withBackupLocation(field.Features().UTF8ValidationLocation(), field.Location()),
-			`Field %q with name %q on message %q changed UTF8 validation from %v to %v.`,
-			numberString,
-			field.Name(),
-			field.ParentMessage().Name(),
+			`%s changed UTF8 validation from %v to %v.`,
+			fieldDescription(field),
 			previousUTF8Validation,
 			utf8Validation,
 		)
@@ -667,11 +662,9 @@ func checkFieldWireCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireCompatiblityGroup[previousCardinality] != cardinalityToWireCompatiblityGroup[currentCardinality] {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(field, nil, field.Location(),
-			`Field %q on message %q changed cardinality from %q to %q.`,
-			numberString, field.ParentMessage().Name(),
+			`%s changed cardinality from %q to %q.`,
+			fieldDescription(field),
 			previousCardinality,
 			currentCardinality,
 		)
@@ -758,11 +751,9 @@ func checkFieldWireJSONCompatibleCardinality(
 	previousCardinality := getCardinality(previousDescriptor)
 	currentCardinality := getCardinality(descriptor)
 	if cardinalityToWireJSONCompatiblityGroup[previousCardinality] != cardinalityToWireJSONCompatiblityGroup[currentCardinality] {
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		add(field, nil, field.Location(),
-			`Field %q on message %q changed cardinality from %q to %q.`,
-			numberString, field.ParentMessage().Name(),
+			`%s changed cardinality from %q to %q.`,
+			fieldDescription(field),
 			previousCardinality,
 			currentCardinality,
 		)
@@ -875,15 +866,12 @@ func addFieldChangedType(
 	default:
 		fieldLocation = field.TypeLocation()
 	}
-	// otherwise prints as hex
-	previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
 		field,
 		nil,
 		fieldLocation,
-		`Field %q on message %q changed type from %q to %q.%s`,
-		previousNumberString,
-		field.ParentMessage().Name(),
+		`%s changed type from %q to %q.%s`,
+		fieldDescription(field),
 		fieldDescriptorTypePrettyString(previousDescriptor),
 		fieldDescriptorTypePrettyString(descriptor),
 		combinedExtraMessage,
@@ -891,15 +879,12 @@ func addFieldChangedType(
 }
 
 func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField bufprotosource.Field, field bufprotosource.Field) {
-	// otherwise prints as hex
-	numberString := strconv.FormatInt(int64(previousField.Number()), 10)
 	add(
 		field,
 		nil,
 		field.TypeNameLocation(),
-		`Field %q on message %q changed type from %q to %q.`,
-		numberString,
-		field.ParentMessage().Name(),
+		`%s changed type from %q to %q.`,
+		fieldDescription(field),
 		strings.TrimPrefix(previousField.TypeName(), "."),
 		strings.TrimPrefix(field.TypeName(), "."),
 	)

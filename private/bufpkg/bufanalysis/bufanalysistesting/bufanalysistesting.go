@@ -110,8 +110,8 @@ func AssertFileAnnotationsEqual(
 	actual = normalizeFileAnnotations(t, actual)
 	if !assert.Equal(
 		t,
-		slicesext.Map(expected, func(annotation bufanalysis.FileAnnotation) string { return annotation.String() }),
-		slicesext.Map(actual, func(annotation bufanalysis.FileAnnotation) string { return annotation.String() }),
+		slicesext.Map(expected, bufanalysis.FileAnnotation.String),
+		slicesext.Map(actual, bufanalysis.FileAnnotation.String),
 	) {
 		t.Log("Expecting:")
 		for _, annotation := range actual {
