@@ -92,6 +92,7 @@ type RegistryConfig struct {
 	Maven  *MavenRegistryConfig
 	Swift  *SwiftRegistryConfig
 	Python *PythonRegistryConfig
+	Cargo  *CargoRegistryConfig
 	// Options is the set of options passed into the plugin for the
 	// remote registry.
 	//
@@ -241,6 +242,31 @@ type PythonRegistryConfig struct {
 	PackageType string
 }
 
+// CargoRegistryDependency defines a runtime dependency for a generated crate.
+// It is the subset of a full Cargo dependency specification, which contains
+// fields that are currently irrelevant for Generated SDKs.
+// Ref: https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+type CargoRegistryDependency struct {
+	// Name specifies the name of the dependency.
+	Name string
+	// VersionRequirement specifies the version requirement of the dependency.
+	VersionRequirement string
+	// DefaultFeatures specifies whether or not the default features will
+	// be enabled for the dependency.
+	DefaultFeatures bool
+	// Features specifies the features enabled for the dependency.
+	Features []string
+}
+
+// CargoRegistryConfig is the registry configuration for a Cargo plugin.
+type CargoRegistryConfig struct {
+	// RustVersion specifies the minimum supported Rust version (MSRV) for the generated crate.
+	// Ref: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
+	RustVersion string
+	// Deps specifies the runtime dependencies of the crate.
+	Deps []CargoRegistryDependency
+}
+
 // ConfigOption is an optional option used when loading a Config.
 type ConfigOption func(*configOptions)
 
@@ -371,6 +397,7 @@ type ExternalRegistryConfig struct {
 	Maven  *ExternalMavenRegistryConfig  `json:"maven,omitempty" yaml:"maven,omitempty"`
 	Swift  *ExternalSwiftRegistryConfig  `json:"swift,omitempty" yaml:"swift,omitempty"`
 	Python *ExternalPythonRegistryConfig `json:"python,omitempty" yaml:"python,omitempty"`
+	Cargo  *ExternalCargoRegistryConfig  `json:"cargo,omitempty" yaml:"cargo,omitempty"`
 	Opts   []string                      `json:"opts,omitempty" yaml:"opts,omitempty"`
 }
 
@@ -479,6 +506,7 @@ type ExternalSwiftRegistryDependencyPlatformConfig struct {
 	WatchOS string `json:"watchos,omitempty" yaml:"watchos,omitempty"`
 }
 
+// ExternalPythonRegistryConfig is the registry configuration for a Python plugin.
 type ExternalPythonRegistryConfig struct {
 	// Deps are dependency specifications for the generated SDK.
 	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
@@ -487,6 +515,28 @@ type ExternalPythonRegistryConfig struct {
 	// PackageType is the type of package generated.
 	// Must be one of "runtime" or "stub-only".
 	PackageType string `json:"package_type,omitempty" yaml:"package_type,omitempty"`
+}
+
+// ExternalCargoDependency specifies a runtime dependency for a Cargo generated SDK.
+type ExternalCargoDependency struct {
+	// Name specifies the name of the dependency.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// VersionRequirement specifies the version requirement of the dependency.
+	VersionRequirement string `json:"req,omitempty" yaml:"req,omitempty"`
+	// DefaultFeatures specifies whether or not the default features will
+	// be enabled for the dependency.
+	DefaultFeatures bool `json:"default_features,omitempty" yaml:"default_features,omitempty"`
+	// Features specifies the features enabled for the dependency.
+	Features []string `json:"features,omitempty" yaml:"features,omitempty"`
+}
+
+// ExternalCargoRegistryConfig is the registry configuration for a Rust plugin.
+type ExternalCargoRegistryConfig struct {
+	// RustVersion specifies the minimum supported Rust version (MSRV) for the generated crate.
+	// Ref: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
+	RustVersion string `json:"rust_version,omitempty" yaml:"rust_version,omitempty"`
+	// Deps specifies the dependencies for the generated SDK.
+	Deps []ExternalCargoDependency `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 type externalConfigVersion struct {

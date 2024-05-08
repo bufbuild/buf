@@ -174,6 +174,19 @@ func TestPluginRegistryRoundTrip(t *testing.T) {
 			},
 		},
 	})
+	assertPluginRegistryRoundTrip(t, &bufpluginconfig.RegistryConfig{
+		Cargo: &bufpluginconfig.CargoRegistryConfig{
+			RustVersion: "1.60",
+			Deps: []bufpluginconfig.CargoRegistryDependency{
+				{
+					Name:               "prost",
+					VersionRequirement: "0.12.3",
+					DefaultFeatures:    true,
+					Features:           []string{"some/feature"},
+				},
+			},
+		},
+	})
 }
 
 func assertPluginRegistryRoundTrip(t testing.TB, config *bufpluginconfig.RegistryConfig) {
