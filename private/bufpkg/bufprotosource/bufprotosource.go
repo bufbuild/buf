@@ -815,8 +815,7 @@ func PackageToNestedNameToMessage(files ...File) (map[string]map[string]Message,
 
 // NumberToMessageField maps the Fields in the Message to a map from number to Field.
 //
-// TODO: is this right?
-// Includes extensions.
+// Does not includes extensions.
 //
 // Returns error if the Fields do not have unique numbers within the Message,
 // which should generally never happen for properly-formed Messages.
@@ -829,27 +828,13 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 		}
 		numberToMessageField[number] = messageField
 	}
-	for _, messageField := range message.Extensions() {
-		if messageField.Extendee() != message.FullName() {
-			// TODO: ideally we want this field to be returned when
-			// the Extendee message is passed into some function,
-			// need to investigate what index is necessary for that.
-			continue
-		}
-		number := messageField.Number()
-		if _, ok := numberToMessageField[number]; ok {
-			return nil, fmt.Errorf("duplicate message field: %d", number)
-		}
-		numberToMessageField[number] = messageField
-	}
 	return numberToMessageField, nil
 }
 
 // NumberToMessageFieldForLabel maps the Fields with the given label in the message
 // to a map from number to Field.
 //
-// TODO: is this right?
-// Includes extensions.
+// Does not includes extensions.
 //
 // Returns error if the Fields do not have unique numbers within the Message,
 // which should generally never happen for properly-formed Messages.

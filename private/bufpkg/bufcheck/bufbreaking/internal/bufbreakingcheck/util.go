@@ -112,6 +112,11 @@ func newCorpus(
 	}
 }
 
+type container interface {
+	Extensions() []bufprotosource.Field
+	Messages() []bufprotosource.Message
+}
+
 func fieldDescriptorTypePrettyString(descriptor protoreflect.FieldDescriptor) string {
 	if descriptor.Kind() == protoreflect.GroupKind && descriptor.Syntax() != protoreflect.Proto2 {
 		// Kind will be set to "group", but it's really a "delimited-encoded message"
@@ -237,25 +242,56 @@ func newMessagePairCheckFunc(
 func newFieldPairCheckFunc(
 	f func(addFunc, *corpus, bufprotosource.Field, bufprotosource.Field) error,
 ) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
-	return newMessagePairCheckFunc(
-		func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
-			previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
-			if err != nil {
-				return err
-			}
-			numberToField, err := bufprotosource.NumberToMessageField(message)
-			if err != nil {
-				return err
-			}
-			for previousNumber, previousField := range previousNumberToField {
-				if field, ok := numberToField[previousNumber]; ok {
-					if err := f(add, corpus, previousField, field); err != nil {
+	return combine(
+		// Regular fields
+		newMessagePairCheckFunc(
+			func(add addFunc, corpus *corpus, previousMessage bufprotosource.Message, message bufprotosource.Message) error {
+				previousNumberToField, err := bufprotosource.NumberToMessageField(previousMessage)
+				if err != nil {
+					return err
+				}
+				numberToField, err := bufprotosource.NumberToMessageField(message)
+				if err != nil {
+					return err
+				}
+				for previousNumber, previousField := range previousNumberToField {
+					if field, ok := numberToField[previousNumber]; ok {
+						if err := f(add, corpus, previousField, field); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			},
+		),
+		// And extension fields
+		newFilesCheckFunc(
+			func(add addFunc, corpus *corpus) error {
+				previousTypeToNumberToField := make(map[string]map[int]bufprotosource.Field)
+				for _, previousFile := range corpus.previousFiles {
+					if err := addToTypeToNumberToExtension(previousFile, previousTypeToNumberToField); err != nil {
 						return err
 					}
 				}
-			}
-			return nil
-		},
+				typeToNumberToField := make(map[string]map[int]bufprotosource.Field)
+				for _, file := range corpus.files {
+					if err := addToTypeToNumberToExtension(file, typeToNumberToField); err != nil {
+						return err
+					}
+				}
+				for previousType, previousNumberToField := range previousTypeToNumberToField {
+					numberToField := typeToNumberToField[previousType]
+					for previousNumber, previousField := range previousNumberToField {
+						if field, ok := numberToField[previousNumber]; ok {
+							if err := f(add, corpus, previousField, field); err != nil {
+								return err
+							}
+						}
+					}
+				}
+				return nil
+			},
+		),
 	)
 }
 
@@ -325,6 +361,22 @@ func newMethodPairCheckFunc(
 			return nil
 		},
 	)
+}
+
+func combine(
+	checks ...func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, internal.IgnoreFunc, []bufprotosource.File, []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles, files []bufprotosource.File) ([]bufanalysis.FileAnnotation, error) {
+		var annotations []bufanalysis.FileAnnotation
+		for _, check := range checks {
+			checkAnnotations, err := check(id, ignoreFunc, previousFiles, files)
+			if err != nil {
+				return nil, err
+			}
+			annotations = append(annotations, checkAnnotations...)
+		}
+		return annotations, nil
+	}
 }
 
 func getDescriptorAndLocationForDeletedEnum(file bufprotosource.File, previousNestedName string) (bufprotosource.Descriptor, bufprotosource.Location, error) {
@@ -516,4 +568,26 @@ func fieldDescriptionWithName(field bufprotosource.Field, name string) string {
 		message = field.ParentMessage().Name()
 	}
 	return fmt.Sprintf("%s %q%s on message %q", kind, numberString, name, message)
+}
+
+func addToTypeToNumberToExtension(container container, typeToNumberToExt map[string]map[int]bufprotosource.Field) error {
+	for _, extension := range container.Extensions() {
+		numberToExt := typeToNumberToExt[extension.Extendee()]
+		if numberToExt == nil {
+			numberToExt = make(map[int]bufprotosource.Field)
+			typeToNumberToExt[extension.Extendee()] = numberToExt
+		}
+		if existing, ok := numberToExt[extension.Number()]; ok {
+			return fmt.Errorf("duplicate extension %d of %s: %s in %q and %s in %q",
+				extension.Number(), extension.Extendee(),
+				existing.FullName(), existing.File().Path(),
+				extension.FullName(), extension.File().Path())
+		}
+	}
+	for _, message := range container.Messages() {
+		if err := addToTypeToNumberToExtension(message, typeToNumberToExt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
