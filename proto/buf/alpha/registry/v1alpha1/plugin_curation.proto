@@ -39,6 +39,7 @@ enum PluginRegistryType {
   PLUGIN_REGISTRY_TYPE_MAVEN = 3;
   PLUGIN_REGISTRY_TYPE_SWIFT = 4;
   PLUGIN_REGISTRY_TYPE_PYTHON = 5;
+  PLUGIN_REGISTRY_TYPE_CARGO = 7;
 }
 
 // PluginLanguage is used to specify the output languages a plugin supports.
@@ -227,6 +228,29 @@ message PythonConfig {
   PythonPackageType package_type = 3;
 }
 
+// CargoConfig specifies the Cargo Registry configuration for a Rust plugin.
+message CargoConfig {
+  // RuntimeLibrary specifies a runtime dependency for a generated crate.
+  // It is the subset of a full Cargo dependency specification, which contains
+  // fields that are irrelevant for Generated SDKs.
+  // Ref: https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+  message RuntimeLibrary {
+    // name specifies the name of the dependency.
+    string name = 1;
+    // version_requirement specifies the version requirement of the dependency.
+    string version_requirement = 2;
+    // default_features specifies whether or not default features will be enabled for the dependency.
+    bool default_features = 3;
+    // features specifies the features enabled for the dependency.
+    repeated string features = 4;
+  }
+  // rust_version specifies the minimum supported Rust version (MSRV) for the generated crate.
+  // Ref: https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field
+  string rust_version = 1;
+  // runtime_libraries specifies the runtime dependencies for the generated crate. Optional.
+  repeated RuntimeLibrary runtime_libraries = 2;
+}
+
 // RegistryConfig is the configuration for the remote registry of a plugin.
 message RegistryConfig {
   oneof registry_config {
@@ -235,6 +259,7 @@ message RegistryConfig {
     MavenConfig maven_config = 3;
     SwiftConfig swift_config = 4;
     PythonConfig python_config = 5;
+    CargoConfig cargo_config = 6;
   }
   // Reserved for future remote registry types.
   reserved 7 to 9;

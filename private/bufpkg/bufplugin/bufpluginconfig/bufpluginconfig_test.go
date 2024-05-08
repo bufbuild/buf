@@ -328,6 +328,41 @@ func TestParsePluginConfigPythonYAML(t *testing.T) {
 	)
 }
 
+func TestParsePluginConfigCargoYAML(t *testing.T) {
+	t.Parallel()
+	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "cargo", "buf.plugin.yaml"))
+	require.NoError(t, err)
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/community/neoeinstein-prost")
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		&Config{
+			Name:            pluginIdentity,
+			PluginVersion:   "v0.3.1",
+			SourceURL:       "https://github.com/neoeinstein/protoc-gen-prost",
+			Description:     "Generates code using the Prost! code generation engine.",
+			SPDXLicenseID:   "Apache-2.0",
+			LicenseURL:      "https://github.com/neoeinstein/protoc-gen-prost/blob/protoc-gen-prost-v0.3.1/LICENSE",
+			OutputLanguages: []string{"rust"},
+			Registry: &RegistryConfig{
+				Cargo: &CargoRegistryConfig{
+					RustVersion: "1.60",
+					Deps: []CargoRegistryDependency{
+						{
+							Name:               "prost",
+							VersionRequirement: "0.12.3",
+							DefaultFeatures:    true,
+							Features:           []string{"a-feature"},
+						},
+					},
+				},
+				Options: map[string]string{"enable_type_names": "true"},
+			},
+		},
+		pluginConfig,
+	)
+}
+
 func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	t.Parallel()
 	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "options", "buf.plugin.yaml"))

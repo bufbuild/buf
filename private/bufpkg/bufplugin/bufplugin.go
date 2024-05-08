@@ -78,6 +78,8 @@ func PluginToProtoPluginRegistryType(plugin Plugin) registryv1alpha1.PluginRegis
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_SWIFT
 		} else if plugin.Registry().Python != nil {
 			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_PYTHON
+		} else if plugin.Registry().Cargo != nil {
+			registryType = registryv1alpha1.PluginRegistryType_PLUGIN_REGISTRY_TYPE_CARGO
 		}
 	}
 	return registryType
@@ -195,6 +197,12 @@ func PluginRegistryToProtoRegistryConfig(pluginRegistry *bufpluginconfig.Registr
 			return nil, err
 		}
 		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_PythonConfig{PythonConfig: pythonConfig}
+	} else if pluginRegistry.Cargo != nil {
+		cargoConfig, err := CargoRegistryConfigToProtoCargoConfig(pluginRegistry.Cargo)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.RegistryConfig = &registryv1alpha1.RegistryConfig_CargoConfig{CargoConfig: cargoConfig}
 	}
 	return registryConfig, nil
 }
@@ -264,10 +272,49 @@ func ProtoRegistryConfigToPluginRegistry(config *registryv1alpha1.RegistryConfig
 			return nil, err
 		}
 		registryConfig.Python = pythonConfig
+	} else if protoCargoConfig := config.GetCargoConfig(); protoCargoConfig != nil {
+		cargoConfig, err := ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig)
+		if err != nil {
+			return nil, err
+		}
+		registryConfig.Cargo = cargoConfig
 	}
 	return registryConfig, nil
 }
 
+// ProtoCargoConfigToCargoRegistryConfig converts protoCargoConfig to an equivalent [*bufpluginconfig.CargoRegistryConfig].
+func ProtoCargoConfigToCargoRegistryConfig(protoCargoConfig *registryv1alpha1.CargoConfig) (*bufpluginconfig.CargoRegistryConfig, error) {
+	cargoConfig := &bufpluginconfig.CargoRegistryConfig{
+		RustVersion: protoCargoConfig.RustVersion,
+	}
+	for _, dependency := range protoCargoConfig.RuntimeLibraries {
+		cargoConfig.Deps = append(cargoConfig.Deps, bufpluginconfig.CargoRegistryDependency{
+			Name:               dependency.Name,
+			VersionRequirement: dependency.VersionRequirement,
+			DefaultFeatures:    dependency.DefaultFeatures,
+			Features:           dependency.Features,
+		})
+	}
+	return cargoConfig, nil
+}
+
+// CargoRegistryConfigToProtoCargoConfig converts cargoConfig to an equivalent [*registryv1alpha1.CargoConfig].
+func CargoRegistryConfigToProtoCargoConfig(cargoConfig *bufpluginconfig.CargoRegistryConfig) (*registryv1alpha1.CargoConfig, error) {
+	protoCargoConfig := &registryv1alpha1.CargoConfig{
+		RustVersion: cargoConfig.RustVersion,
+	}
+	for _, dependency := range cargoConfig.Deps {
+		protoCargoConfig.RuntimeLibraries = append(protoCargoConfig.RuntimeLibraries, &registryv1alpha1.CargoConfig_RuntimeLibrary{
+			Name:               dependency.Name,
+			VersionRequirement: dependency.VersionRequirement,
+			DefaultFeatures:    dependency.DefaultFeatures,
+			Features:           dependency.Features,
+		})
+	}
+	return protoCargoConfig, nil
+}
+
+// ProtoPythonConfigToPythonRegistryConfig converts protoPythonConfig to an equivalent [*bufpluginconfig.PythonRegistryConfig].
 func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1.PythonConfig) (*bufpluginconfig.PythonRegistryConfig, error) {
 	pythonConfig := &bufpluginconfig.PythonRegistryConfig{
 		RequiresPython: protoPythonConfig.RequiresPython,
@@ -286,6 +333,7 @@ func ProtoPythonConfigToPythonRegistryConfig(protoPythonConfig *registryv1alpha1
 	return pythonConfig, nil
 }
 
+// PythonRegistryConfigToProtoPythonConfig converts pythonConfig to an equivalent [*registryv1alpha1.PythonConfig].
 func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.PythonRegistryConfig) (*registryv1alpha1.PythonConfig, error) {
 	protoPythonConfig := &registryv1alpha1.PythonConfig{
 		RequiresPython: pythonConfig.RequiresPython,
@@ -306,6 +354,7 @@ func PythonRegistryConfigToProtoPythonConfig(pythonConfig *bufpluginconfig.Pytho
 	return protoPythonConfig, nil
 }
 
+// ProtoSwiftConfigToSwiftRegistryConfig converts protoSwiftConfig to an equivalent [*bufpluginconfig.SwiftRegistryConfig].
 func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.SwiftConfig) (*bufpluginconfig.SwiftRegistryConfig, error) {
 	swiftConfig := &bufpluginconfig.SwiftRegistryConfig{}
 	runtimeLibs := protoSwiftConfig.GetRuntimeLibraries()
@@ -340,6 +389,7 @@ func ProtoSwiftConfigToSwiftRegistryConfig(protoSwiftConfig *registryv1alpha1.Sw
 	return swiftConfig, nil
 }
 
+// SwiftRegistryConfigToProtoSwiftConfig converts swiftConfig to an equivalent [*registryv1alpha1.SwiftConfig].
 func SwiftRegistryConfigToProtoSwiftConfig(swiftConfig *bufpluginconfig.SwiftRegistryConfig) *registryv1alpha1.SwiftConfig {
 	protoSwiftConfig := &registryv1alpha1.SwiftConfig{}
 	if swiftConfig.Dependencies != nil {
