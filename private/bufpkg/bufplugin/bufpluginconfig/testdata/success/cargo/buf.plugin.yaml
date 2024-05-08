@@ -1,0 +1,26 @@
+version: v1
+name: buf.build/community/neoeinstein-prost
+plugin_version: v0.3.1
+source_url: https://github.com/neoeinstein/protoc-gen-prost
+description: Generates code using the Prost! code generation engine.
+output_languages:
+  - rust
+spdx_license_id: Apache-2.0
+license_url: https://github.com/neoeinstein/protoc-gen-prost/blob/protoc-gen-prost-v0.3.1/LICENSE
+registry:
+  # NOTE: This configuration does not perfectly match with the version in
+  # plugins, because we want values to be set to check for round-tripping.
+  cargo:
+    # https://github.com/neoeinstein/protoc-gen-prost/blob/protoc-gen-prost-v0.3.1/protoc-gen-prost/Cargo.toml#L21
+    # https://github.com/tokio-rs/prost/blob/v0.12.3/prost-build/Cargo.toml#L15
+    rust_version: "1.60"
+    deps:
+      # https://github.com/tokio-rs/prost/blob/v0.12.3/prost-build/Cargo.toml#L30
+      - name: prost
+        req: "0.12.3"
+        default_features: true
+        features: ["a-feature"]
+  # https://github.com/neoeinstein/protoc-gen-prost/tree/protoc-gen-prost-v0.3.1/protoc-gen-prost#options
+  opts:
+    # `Any` support.
+    - enable_type_names=true
