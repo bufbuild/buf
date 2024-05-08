@@ -152,7 +152,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		fmt.Sprintf(
 			`Uses the Git source control state to set flag values. If this flag is set, we will use the following values for your flags:
 
-	--%s to <git remote URL>/<repository name>/<route>/<commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53)
+	--%s to <git remote URL>/<repository name>/<route>/<checked out commit sha> (e.g. https://github.com/acme/weather/commit/ffac537e6cbbf934b08745a378932722df287a53)
 	--%s for each Git tag and branch associated with the currently checked out commit
 	--%s to the Git default branch (e.g. main) - this is only in effect if --%s is also set
 
@@ -437,10 +437,18 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	runner := command.NewRunner()
-	if err := checkForNoCommitGitChanges(ctx, runner, input); err != nil {
+	uncommitedFiles, err := checkForUncommitedGitChanges(ctx, runner, input)
+	if err != nil {
 		// We surface additional information here for the user to ensure they are using this flag
 		// with a git checkout.
 		return nil, fmt.Errorf("unable to check input %q, please ensure this is a Git repository checkout: %w", input, err)
+	}
+	if len(uncommitedFiles) > 0 {
+		return nil, fmt.Errorf("uncommited changes found in the following files: %v", uncommitedFiles)
+	}
+	remotes, err := getGitRemotes(ctx, runner, input)
+	if err != nil {
+		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
 	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, input)
@@ -449,10 +457,6 @@ func getGitMetadataUploadOptions(
 	}
 	if gitLabelsUploadOption != nil {
 		gitMetadataUploadOptions = append(gitMetadataUploadOptions, gitLabelsUploadOption)
-	}
-	remotes, err := getGitRemotes(ctx, runner, input)
-	if err != nil {
-		return nil, err
 	}
 	gitSourceControlURLUploadOption, err := getGitMetadataSourceControlURLUploadOption(ctx, runner, remotes, input)
 	if err != nil {
@@ -478,11 +482,11 @@ func getGitMetadataUploadOptions(
 	return gitMetadataUploadOptions, nil
 }
 
-func checkForNoCommitGitChanges(
+func checkForUncommitedGitChanges(
 	ctx context.Context,
 	runner command.Runner,
 	input string,
-) error {
+) ([]string, error) {
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	var modifiedFiles []string
@@ -495,23 +499,26 @@ func checkForNoCommitGitChanges(
 		command.RunWithStderr(stderr),
 		command.RunWithDir(input),
 	); err != nil {
-		return err
+		return nil, err
+	}
+	modifiedFiles = append(modifiedFiles, getAllTrimmedLinesFromBuffer(stdout)...)
+
+	stdout = bytes.NewBuffer(nil)
+	stderr = bytes.NewBuffer(nil)
+	// Staged changes
+	if err := runner.Run(
+		ctx,
+		gitCommand,
+		command.RunWithArgs("diff", "--name-only", "--cached"),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+		command.RunWithDir(input),
+	); err != nil {
+		return nil, err
 	}
 
-	// Staged changes
-	if len(modifiedFiles) > 0 {
-		if err := runner.Run(
-			ctx,
-			gitCommand,
-			command.RunWithArgs("diff", "--name-only", "--cached"),
-			command.RunWithStdout(stdout),
-			command.RunWithStderr(stderr),
-			command.RunWithDir(input),
-		); err != nil {
-			return err
-		}
-	}
-	return nil
+	modifiedFiles = append(modifiedFiles, getAllTrimmedLinesFromBuffer(stdout)...)
+	return modifiedFiles, nil
 }
 
 func getGitRemotes(
