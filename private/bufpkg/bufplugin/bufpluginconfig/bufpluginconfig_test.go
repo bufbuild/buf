@@ -352,6 +352,7 @@ func TestParsePluginConfigCargoYAML(t *testing.T) {
 							Name:               "prost",
 							VersionRequirement: "0.12.3",
 							DefaultFeatures:    true,
+							Features:           []string{"a-feature"},
 						},
 					},
 				},
