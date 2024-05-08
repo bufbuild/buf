@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1.32.0-beta.1
+        with:
+          github_token: ${{ github.token }}
       - uses: bufbuild/buf-lint-action@v1.1.1
         with:
           buf_token: ${{ secrets.BUF_TOKEN }}
@@ -17,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1.32.0-beta.1
+        with:
+          github_token: ${{ github.token }}
       - uses: bufbuild/buf-breaking-action@v1.1.4
         with:
           against: buf.build/bufbuild/buf
@@ -30,6 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1.32.0-beta.1
+        with:
+          github_token: ${{ github.token }}
       - uses: bufbuild/buf-push-action@v1.2.0
         with:
           input: 'proto'
