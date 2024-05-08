@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/syserror"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -437,21 +438,21 @@ func getGitMetadataUploadOptions(
 		return nil, err
 	}
 	runner := command.NewRunner()
-	uncommitedFiles, err := checkForUncommitedGitChanges(ctx, runner, input)
+	uncommittedFiles, err := checkForUncommittedGitChanges(ctx, runner, input)
 	if err != nil {
 		// We surface additional information here for the user to ensure they are using this flag
 		// with a git checkout.
 		return nil, fmt.Errorf("unable to check input %q, please ensure this is a Git repository checkout: %w", input, err)
 	}
-	if len(uncommitedFiles) > 0 {
-		return nil, fmt.Errorf("uncommited changes found in the following files: %v", uncommitedFiles)
+	if len(uncommittedFiles) > 0 {
+		return nil, fmt.Errorf("uncommitted changes found in the following files: %v", uncommittedFiles)
 	}
-	remotes, err := getGitRemotes(ctx, runner, input)
+	remotes, err := getGitRemotes(ctx, runner, container.Logger(), input)
 	if err != nil {
 		return nil, err
 	}
 	var gitMetadataUploadOptions []bufmodule.UploadOption
-	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, input)
+	gitLabelsUploadOption, err := getGitMetadataLabelsUploadOptions(ctx, runner, container.Logger(), input)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +483,7 @@ func getGitMetadataUploadOptions(
 	return gitMetadataUploadOptions, nil
 }
 
-func checkForUncommitedGitChanges(
+func checkForUncommittedGitChanges(
 	ctx context.Context,
 	runner command.Runner,
 	input string,
@@ -524,6 +525,7 @@ func checkForUncommitedGitChanges(
 func getGitRemotes(
 	ctx context.Context,
 	runner command.Runner,
+	logger *zap.Logger,
 	input string,
 ) ([]string, error) {
 	buffer := bytes.NewBuffer(nil)
@@ -537,30 +539,55 @@ func getGitRemotes(
 	); err != nil {
 		return nil, err
 	}
-	return getAllTrimmedLinesFromBuffer(buffer), nil
+	scanner := bufio.NewScanner(buffer)
+	var gitOriginRemoteFound bool
+	var remotes []string
+	for scanner.Scan() {
+		remote := strings.TrimSpace(scanner.Text())
+		if remote == gitOriginRemote {
+			gitOriginRemoteFound = true
+		}
+		remotes = append(remotes, remote)
+	}
+	if !gitOriginRemoteFound {
+		return nil, fmt.Errorf("Git remote %q not found", gitOriginRemote)
+	}
+	if len(remotes) > 1 {
+		logger.Warn(
+			fmt.Sprintf("More than one Git remote found, %q will be used for Git metadata: %v", gitOriginRemote, remotes),
+		)
+	}
+	return remotes, nil
 }
 
 // This returns an upload option for all Git metadata labels. We set labels for the following
 // Git matadata:
 //   - tags on current commit
-//   - current branch
+//   - all branches that point directly to the commit
 func getGitMetadataLabelsUploadOptions(
 	ctx context.Context,
 	runner command.Runner,
+	logger *zap.Logger,
 	input string,
 ) (bufmodule.UploadOption, error) {
+	var labels []string
 	tags, err := getGitTagsOnCurrentCommit(ctx, runner, input)
 	if err != nil {
 		return nil, err
 	}
+	labels = append(labels, tags...)
 	branch, err := getCurrentGitBranch(ctx, runner, input)
 	if err != nil {
 		return nil, err
 	}
-	labels := append(tags, branch)
+	if branch != "" {
+		// We do not want to add an empty string to the list of labels
+		labels = append(labels, branch)
+	}
 	if len(labels) > 0 {
 		return bufmodule.UploadWithLabels(labels...), nil
 	}
+	logger.Warn("No tags or branch found for HEAD, contents will be pushed to the default label")
 	return nil, nil
 }
 
@@ -595,14 +622,19 @@ func getCurrentGitBranch(
 	if err := runner.Run(
 		ctx,
 		gitCommand,
-		command.RunWithArgs("branch", "--show-current"),
+		command.RunWithArgs("rev-parse", "--abbrev-ref", "HEAD"),
 		command.RunWithStdout(buffer),
 		command.RunWithStderr(buffer),
 		command.RunWithDir(input),
 	); err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(buffer.String()), nil
+	branch := strings.TrimSpace(buffer.String())
+	if branch == "HEAD" {
+		// This is a detached HEAD -- "HEAD" is not a valid branch name in Git
+		return "", nil
+	}
+	return branch, nil
 }
 
 func getGitMetadataSourceControlURLUploadOption(
